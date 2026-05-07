@@ -47,11 +47,18 @@ app = FastAPI(
     ]
 )
 
+PUBLIC_PATHS = {
+    "/",
+    "/health",
+    "/docs",
+    "/openapi.json",
+    "/redoc"
+}
+
+
 @app.middleware("http")
 async def require_action_key(request: Request, call_next):
-    public_paths = {"/health", "/openapi.json", "/docs", "/redoc"}
-
-    if request.url.path not in public_paths:
+    if request.url.path not in PUBLIC_PATHS:
         x_action_key = request.headers.get("x-action-key")
 
         if not x_action_key:
@@ -67,6 +74,15 @@ async def require_action_key(request: Request, call_next):
             )
 
     return await call_next(request)
+
+
+@app.get("/", include_in_schema=False)
+def root():
+    return {
+        "status": "ok",
+        "service": "betting-stock-api",
+        "message": "Use /health, /docs, or /openapi.json"
+    }
 
 
 @app.get("/health", operation_id="healthCheck")
