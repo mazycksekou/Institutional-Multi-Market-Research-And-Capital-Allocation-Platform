@@ -3,7 +3,7 @@ import secrets
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 from fastapi import FastAPI, Query, Request
 from fastapi.responses import JSONResponse
@@ -164,6 +164,37 @@ def api_get_active_events(
         object.__setattr__(config, "default_league", original_league)
 
 
+def get_kalshi_market_odds(odds_lookup_id: str, event: dict[str, Any]) -> dict[str, Any]:
+    snapshot_fields = [
+        "book_count",
+        "market_count",
+        "markets",
+        "books",
+        "external_ids",
+        "status"
+    ]
+    has_market_snapshot = any(event.get(field) for field in snapshot_fields)
+
+    if has_market_snapshot:
+        return {
+            "data": event,
+            "result_type": "market_snapshot",
+            "has_actual_odds": False,
+            "message": "No price odds returned by provider, but active market data was found.",
+            "odds_lookup_id": odds_lookup_id,
+            "provider_hint": "kalshi"
+        }
+
+    return {
+        "data": None,
+        "result_type": "no_data",
+        "has_actual_odds": False,
+        "message": "No Kalshi price odds or active market snapshot data found.",
+        "odds_lookup_id": odds_lookup_id,
+        "provider_hint": "kalshi"
+    }
+
+
 @app.get("/odds/first-event", operation_id="getFirstEventOdds")
 def api_get_first_event_odds():
     start_time = time.time()
@@ -272,9 +303,17 @@ def api_get_first_event_odds():
                 try:
                     lookup_timeout = max(1, min(8, int(remaining_seconds)))
                     object.__setattr__(config, "request_timeout", lookup_timeout)
-                    odds_response = get_event_odds(config, logger, session, odds_id)
+
+                    if provider_hint.lower() == "kalshi":
+                        odds_response = get_kalshi_market_odds(odds_id, event)
+                    else:
+                        odds_response = get_event_odds(config, logger, session, odds_id)
 
                     odds_data = None
+                    result_type = "odds"
+                    has_actual_odds = True
+                    message = None
+
                     if isinstance(odds_response, dict):
                         odds_data = (
                             odds_response.get("data")
@@ -283,6 +322,9 @@ def api_get_first_event_odds():
                             or odds_response.get("sportsbooks")
                             or odds_response.get("books")
                         )
+                        result_type = odds_response.get("result_type") or result_type
+                        has_actual_odds = odds_response.get("has_actual_odds", has_actual_odds)
+                        message = odds_response.get("message")
                     elif isinstance(odds_response, list):
                         odds_data = odds_response
 
@@ -296,16 +338,24 @@ def api_get_first_event_odds():
                     })
 
                     if has_data:
-                        return {
+                        response = {
                             "ok": True,
                             "event_id": internal_id,
                             "provider_hint": provider_hint,
                             "odds_lookup_id": odds_id,
+                            "result_type": result_type,
+                            "has_actual_odds": has_actual_odds,
                             "event": event,
                             "odds": odds_response,
+                            "lookup_results": lookup_results,
                             "updated_at": datetime.now(timezone.utc).isoformat(),
                             "elapsed_seconds": round(time.time() - start_time, 2)
                         }
+
+                        if message:
+                            response["message"] = message
+
+                        return response
 
                 except Exception as lookup_error:
                     lookup_results.append({
