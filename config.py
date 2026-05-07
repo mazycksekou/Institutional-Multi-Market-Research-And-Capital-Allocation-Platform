@@ -21,8 +21,8 @@ class Config:
 
     def __init__(self):
         # API Keys
-        self.action_api_key = get_required_env("ACTION_API_KEY")
-        self.api_base_url = os.getenv("API_BASE_URL", "http://127.0.0.1:8000")
+        self.action_api_key = os.getenv("ACTION_API_KEY", "")
+        self.api_base_url = os.getenv("API_BASE_URL", "https://betting-stock-api-code-integration.onrender.com")
 
         # OpenAI Configuration
         self.openai_api_key = os.getenv("OPENAI_API_KEY", "")
@@ -41,10 +41,11 @@ class Config:
         self.default_league = os.getenv("DEFAULT_LEAGUE", "nba")
 
         # Request Configuration
-        self.request_timeout = int(os.getenv("REQUEST_TIMEOUT", "20"))
+        self.request_timeout = min(int(os.getenv("REQUEST_TIMEOUT", "8")), 8)
         self.log_level = os.getenv("LOG_LEVEL", "INFO")
 
         # File paths
+        self.database_url = os.getenv("DATABASE_URL", "")
         self.app_log_file = "app.log"
         self.data_dir = "data"
         self.stock_log_file = os.path.join(self.data_dir, "stock_log.csv")

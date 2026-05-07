@@ -1,5 +1,6 @@
 openai
 python-dotenv
+pydantic
 yfinance
 requests
 pandas

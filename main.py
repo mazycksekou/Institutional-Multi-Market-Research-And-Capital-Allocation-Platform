@@ -13,6 +13,7 @@ from urllib3.util.retry import Retry
 
 from config import Config, load_config, ConfigError
 from logger_setup import setup_logger
+from sharp_client import get_sharp_active_events, get_sharp_event_odds
 
 try:
     config = load_config()
@@ -27,7 +28,7 @@ def build_requests_session() -> requests.Session:
     session = requests.Session()
 
     retry_strategy = Retry(
-        total=3,
+        total=0,
         status_forcelist=[429, 500, 502, 503, 504],
         allowed_methods=["HEAD", "GET", "OPTIONS"],
         backoff_factor=1
@@ -59,6 +60,8 @@ def get_stock_data(config: Config, logger: logging.Logger, ticker: str, period: 
             }
 
         latest = history.tail(1)
+        recent_history = history[["Open", "High", "Low", "Close", "Volume"]].tail(5)
+        recent_history.index = recent_history.index.astype(str)
 
         return {
             "timestamp": datetime.now().isoformat(timespec="seconds"),
@@ -70,9 +73,7 @@ def get_stock_data(config: Config, logger: logging.Logger, ticker: str, period: 
             "volume": int(latest["Volume"].iloc[0]),
             "period": period,
             "interval": interval,
-            "recent_history": history[["Open", "High", "Low", "Close", "Volume"]]
-                .tail(5)
-                .to_dict(orient="index")
+            "recent_history": recent_history.to_dict(orient="index")
         }
     except Exception as e:
         logger.error(f"Error fetching stock data for {ticker}: {e}")
@@ -83,6 +84,7 @@ def get_stock_data(config: Config, logger: logging.Logger, ticker: str, period: 
 
 def save_stock_snapshot(config: Config, stock_data: Dict[str, Any]) -> None:
     """Save stock snapshot to CSV."""
+    Path(config.stock_log_file).parent.mkdir(parents=True, exist_ok=True)
     if stock_data.get("error"):
         row = {
             "timestamp": datetime.now().isoformat(timespec="seconds"),
@@ -112,43 +114,23 @@ def save_stock_snapshot(config: Config, stock_data: Dict[str, Any]) -> None:
 
 def get_active_events(config: Config, logger: logging.Logger, session: requests.Session) -> Dict[str, Any]:
     """Get active betting events."""
-    url = "https://api.sharpapi.io/api/v1/events"
-    headers = {"X-API-Key": config.sharp_api_key}
-    params = {
-        "sport": config.default_sport,
-        "league": config.default_league,
-        "limit": 20
-    }
-
     logger.info(f"Fetching active events for {config.default_sport}/{config.default_league}")
-
-    try:
-        response = session.get(url, headers=headers, params=params, timeout=config.request_timeout)
-        response.raise_for_status()
-        return response.json()
-    except Exception as e:
-        logger.error(f"Error fetching active events: {e}")
-        return {"error": str(e)}
+    return get_sharp_active_events(
+        api_key=config.sharp_api_key,
+        sport=config.default_sport,
+        league=config.default_league,
+        session=session,
+        limit=20
+    )
 
 def get_event_odds(config: Config, logger: logging.Logger, session: requests.Session, event_id: str) -> Dict[str, Any]:
     """Get odds for a specific event."""
-    url = f"https://api.sharpapi.io/api/v1/events/{event_id}/odds"
-    headers = {"X-API-Key": config.sharp_api_key}
-    params = {
-        "sportsbook": "draftkings,fanduel,betmgm",
-        "market": "moneyline",
-        "limit": 50
-    }
-
     logger.info(f"Fetching odds for event {event_id}")
-
-    try:
-        response = session.get(url, headers=headers, params=params, timeout=config.request_timeout)
-        response.raise_for_status()
-        return response.json()
-    except Exception as e:
-        logger.error(f"Error fetching event odds for {event_id}: {e}")
-        return {"error": str(e)}
+    return get_sharp_event_odds(
+        api_key=config.sharp_api_key,
+        event_id=event_id,
+        session=session
+    )
 
 def get_first_event_id(events_response: Dict[str, Any]) -> str:
     """Extract the first event ID from events response."""
@@ -238,6 +220,7 @@ Return this format:
 
 def save_analysis_to_csv(config: Config, stock_data: Dict, odds_data: Dict, analysis_text: str) -> None:
     """Save analysis to CSV."""
+    Path(config.analysis_log_file).parent.mkdir(parents=True, exist_ok=True)
     row = {
         "timestamp": datetime.now().isoformat(timespec="seconds"),
         "ticker": stock_data.get("ticker"),
@@ -261,6 +244,7 @@ def save_analysis_to_csv(config: Config, stock_data: Dict, odds_data: Dict, anal
 def initialize_bets_csv(config: Config) -> None:
     """Initialize bets CSV if it doesn't exist."""
     bets_file_path = Path(config.bets_file)
+    bets_file_path.parent.mkdir(parents=True, exist_ok=True)
     if bets_file_path.exists():
         return
 
@@ -284,39 +268,68 @@ def initialize_bets_csv(config: Config) -> None:
 
 def summarize_bets(config: Config) -> Dict[str, Any]:
     """Summarize betting results."""
-    initialize_bets_csv(config)
+    try:
+        initialize_bets_csv(config)
 
-    bets_file_path = Path(config.bets_file)
-    if not bets_file_path.exists():
-        return {"message": "No bets logged yet."}
+        bets_file_path = Path(config.bets_file)
+        if not bets_file_path.exists() or bets_file_path.stat().st_size == 0:
+            return {"message": "No bets logged yet"}
 
-    df = pd.read_csv(bets_file_path)
+        try:
+            df = pd.read_csv(bets_file_path)
+        except pd.errors.EmptyDataError:
+            return {"message": "No bets logged yet"}
+        except Exception as error:
+            return {
+                "ok": False,
+                "message": "Could not read bets CSV",
+                "error_type": type(error).__name__,
+                "error": str(error)
+            }
 
-    if df.empty:
-        return {"message": "No bets logged yet."}
+        if df.empty:
+            return {"message": "No bets logged yet"}
 
-    df["stake"] = pd.to_numeric(df["stake"], errors="coerce").fillna(0)
-    df["profit_loss"] = pd.to_numeric(df["profit_loss"], errors="coerce").fillna(0)
+        if "stake" not in df.columns:
+            df["stake"] = 0
+        if "profit_loss" not in df.columns:
+            df["profit_loss"] = 0
 
-    total_staked = df["stake"].sum()
-    total_profit = df["profit_loss"].sum()
-    total_bets = len(df)
-    winning_bets = len(df[df["profit_loss"] > 0])
-    losing_bets = len(df[df["profit_loss"] < 0])
+        df["stake"] = pd.to_numeric(df["stake"], errors="coerce").fillna(0)
+        df["profit_loss"] = pd.to_numeric(df["profit_loss"], errors="coerce").fillna(0)
 
-    win_rate = (winning_bets / total_bets * 100) if total_bets > 0 else 0
-    roi = (total_profit / total_staked * 100) if total_staked > 0 else 0
+        total_staked = float(df["stake"].sum())
+        total_profit = float(df["profit_loss"].sum())
+        total_bets = int(len(df))
+        winning_bets = int(len(df[df["profit_loss"] > 0]))
+        losing_bets = int(len(df[df["profit_loss"] < 0]))
 
-    return {
-        "total_bets": total_bets,
-        "winning_bets": winning_bets,
-        "losing_bets": losing_bets,
-        "win_rate_percent": round(win_rate, 2),
-        "total_staked": round(total_staked, 2),
-        "total_profit": round(total_profit, 2),
-        "roi_percent": round(roi, 2),
-        "recent_bets": df.tail(5).to_dict(orient="records")
-    }
+        win_rate = (winning_bets / total_bets * 100) if total_bets > 0 else 0
+        roi = (total_profit / total_staked * 100) if total_staked > 0 else 0
+
+        summary = {
+            "total_bets": total_bets,
+            "winning_bets": winning_bets,
+            "losing_bets": losing_bets,
+            "win_rate_percent": round(win_rate, 2),
+            "total_staked": round(total_staked, 2),
+            "total_profit": round(total_profit, 2),
+            "roi_percent": round(roi, 2),
+        }
+
+        return {
+            "ok": True,
+            "count": total_bets,
+            "summary": summary,
+            "records": df.tail(25).to_dict(orient="records")
+        }
+    except Exception as error:
+        return {
+            "ok": False,
+            "message": "Could not summarize bets",
+            "error_type": type(error).__name__,
+            "error": str(error)
+        }
 
 
 def read_large_csv_in_chunks(file_path, chunksize=10000):
