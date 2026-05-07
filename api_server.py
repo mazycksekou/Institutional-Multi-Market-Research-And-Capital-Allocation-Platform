@@ -1,5 +1,6 @@
 import os
 import secrets
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -164,21 +165,84 @@ def api_get_active_events(
 
 @app.get("/odds/first-event", operation_id="getFirstEventOdds")
 def api_get_first_event_odds():
-    events = get_active_events(config, logger, session)
-    event_id = get_first_event_id(events)
+    try:
+        events_response = get_active_events(config, logger, session)
 
-    if not event_id:
+        if isinstance(events_response, dict):
+            events = (
+                events_response.get("events")
+                or events_response.get("data")
+                or []
+            )
+        else:
+            events = events_response or []
+
+        if isinstance(events, dict):
+            events = events.get("events") or events.get("data") or []
+
+        if not events:
+            return {
+                "ok": False,
+                "message": "No active betting events found",
+                "events_response": events_response,
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }
+
+        checked_event_ids = []
+
+        for event in events[:10]:
+            if not isinstance(event, dict):
+                continue
+
+            event_id = (
+                event.get("id")
+                or event.get("event_id")
+                or event.get("game_id")
+                or event.get("eventId")
+            )
+
+            if not event_id:
+                continue
+
+            checked_event_ids.append(event_id)
+            odds_response = get_event_odds(config, logger, session, event_id)
+
+            odds_data = None
+            if isinstance(odds_response, dict):
+                odds_data = (
+                    odds_response.get("data")
+                    or odds_response.get("odds")
+                    or odds_response.get("markets")
+                    or odds_response.get("sportsbooks")
+                )
+            elif isinstance(odds_response, list):
+                odds_data = odds_response
+
+            if odds_data:
+                return {
+                    "ok": True,
+                    "event_id": event_id,
+                    "event": event,
+                    "odds": odds_response,
+                    "updated_at": datetime.now(timezone.utc).isoformat()
+                }
+
         return {
-            "error": "No event ID found.",
-            "events_response": events
+            "ok": False,
+            "message": "No odds available for active events",
+            "checked_event_ids": checked_event_ids,
+            "sample_event": events[0] if events else None,
+            "updated_at": datetime.now(timezone.utc).isoformat()
         }
 
-    odds_data = get_event_odds(config, logger, session, event_id)
-
-    return {
-        "event_id": event_id,
-        "odds": odds_data
-    }
+    except Exception as error:
+        return {
+            "ok": False,
+            "endpoint": "/odds/first-event",
+            "error_type": type(error).__name__,
+            "error": str(error),
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }
 
 
 @app.get("/analyze", operation_id="analyzeStocksAndOdds")
