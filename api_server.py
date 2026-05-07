@@ -1,7 +1,9 @@
+import os
 import secrets
 from typing import Optional
 
-from fastapi import FastAPI, Header, HTTPException, Query
+from fastapi import FastAPI, Query, Request
+from fastapi.responses import JSONResponse
 from openai import OpenAI
 
 from config import load_config, ConfigError
@@ -29,56 +31,55 @@ logger = setup_logger(config.app_log_file, config.log_level)
 session = build_requests_session()
 client = OpenAI(api_key=config.openai_api_key)
 
+API_BASE_URL = os.getenv(
+    "API_BASE_URL",
+    "https://betting-stock-api-code-integration.onrender.com"
+).rstrip("/")
+
 app = FastAPI(
     title="Betting Stock Bot API",
     description="Private API for stock tracking, betting odds, CSV logs, and ChatGPT analysis.",
     version="1.0.0",
     servers=[
-        {"url": config.api_base_url}
-    ],
+        {
+            "url": API_BASE_URL
+        }
+    ]
 )
 
+@app.middleware("http")
+async def require_action_key(request: Request, call_next):
+    public_paths = {"/health", "/openapi.json", "/docs", "/redoc"}
 
-def verify_action_key(x_action_key: Optional[str] = Header(default=None)):
-    if not x_action_key:
-        raise HTTPException(status_code=401, detail="Missing X-Action-Key header.")
+    if request.url.path not in public_paths:
+        x_action_key = request.headers.get("x-action-key")
 
-    if not secrets.compare_digest(x_action_key, config.action_api_key):
-        raise HTTPException(status_code=403, detail="Invalid action key.")
+        if not x_action_key:
+            return JSONResponse(
+                status_code=401,
+                content={"detail": "Missing X-Action-Key header."}
+            )
+
+        if not secrets.compare_digest(x_action_key, config.action_api_key):
+            return JSONResponse(
+                status_code=403,
+                content={"detail": "Invalid action key."}
+            )
+
+    return await call_next(request)
 
 
 @app.get("/health", operation_id="healthCheck")
 def health_check():
     return {
         "status": "ok",
-        "service": "betting-stock-bot"
+        "service": "betting-stock-api",
+        "message": "API is running"
     }
 
 
-@app.get("/stocks/{ticker}", operation_id="getStockData")
-def api_get_stock_data(
-    ticker: str,
-    x_action_key: Optional[str] = Header(default=None)
-):
-    verify_action_key(x_action_key)
-
-    stock_data = get_stock_data(
-        config=config,
-        logger=logger,
-        ticker=ticker.upper()
-    )
-
-    save_stock_snapshot(config, stock_data)
-
-    return stock_data
-
-
 @app.get("/stocks/watchlist", operation_id="getWatchlistData")
-def api_get_watchlist_data(
-    x_action_key: Optional[str] = Header(default=None)
-):
-    verify_action_key(x_action_key)
-
+def api_get_watchlist_data():
     watchlist_data = []
 
     for ticker in config.default_watchlist:
@@ -97,14 +98,24 @@ def api_get_watchlist_data(
     }
 
 
+@app.get("/stocks/{ticker}", operation_id="getStockData")
+def api_get_stock_data(ticker: str):
+    stock_data = get_stock_data(
+        config=config,
+        logger=logger,
+        ticker=ticker.upper()
+    )
+
+    save_stock_snapshot(config, stock_data)
+
+    return stock_data
+
+
 @app.get("/odds/events", operation_id="getActiveBettingEvents")
 def api_get_active_events(
     sport: Optional[str] = Query(default=None),
-    league: Optional[str] = Query(default=None),
-    x_action_key: Optional[str] = Header(default=None)
+    league: Optional[str] = Query(default=None)
 ):
-    verify_action_key(x_action_key)
-
     original_sport = config.default_sport
     original_league = config.default_league
 
@@ -114,20 +125,15 @@ def api_get_active_events(
     if league:
         object.__setattr__(config, "default_league", league)
 
-    events = get_active_events(config, logger, session)
-
-    object.__setattr__(config, "default_sport", original_sport)
-    object.__setattr__(config, "default_league", original_league)
-
-    return events
+    try:
+        return get_active_events(config, logger, session)
+    finally:
+        object.__setattr__(config, "default_sport", original_sport)
+        object.__setattr__(config, "default_league", original_league)
 
 
 @app.get("/odds/first-event", operation_id="getFirstEventOdds")
-def api_get_first_event_odds(
-    x_action_key: Optional[str] = Header(default=None)
-):
-    verify_action_key(x_action_key)
-
+def api_get_first_event_odds():
     events = get_active_events(config, logger, session)
     event_id = get_first_event_id(events)
 
@@ -147,11 +153,8 @@ def api_get_first_event_odds(
 
 @app.get("/analyze", operation_id="analyzeStocksAndOdds")
 def api_analyze(
-    ticker: str = Query(default=None),
-    x_action_key: Optional[str] = Header(default=None)
+    ticker: Optional[str] = Query(default=None)
 ):
-    verify_action_key(x_action_key)
-
     selected_ticker = ticker.upper() if ticker else config.default_ticker
 
     stock_data = get_stock_data(
@@ -208,11 +211,40 @@ def api_analyze(
 
 
 @app.get("/bets/summary", operation_id="getBetSummary")
-def api_get_bet_summary(
-    x_action_key: Optional[str] = Header(default=None)
-):
-    verify_action_key(x_action_key)
-
+def api_get_bet_summary():
     initialize_bets_csv(config)
 
     return summarize_bets(config)
+
+
+from fastapi.openapi.utils import get_openapi
+
+
+def custom_openapi():
+    openapi_schema = get_openapi(
+        title="Betting Stock Bot API",
+        version="1.0.0",
+        description="Private API for stock tracking, betting odds, CSV logs, and ChatGPT analysis.",
+        routes=app.routes,
+    )
+
+    openapi_schema["servers"] = [
+        {
+            "url": "https://betting-stock-api-code-integration.onrender.com"
+        }
+    ]
+
+    for path_item in openapi_schema.get("paths", {}).values():
+        for operation in path_item.values():
+            if isinstance(operation, dict):
+                operation["parameters"] = [
+                    p for p in operation.get("parameters", [])
+                    if p.get("name") != "x-action-key"
+                ]
+
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
+
+app.openapi_schema = None
+app.openapi = custom_openapi
