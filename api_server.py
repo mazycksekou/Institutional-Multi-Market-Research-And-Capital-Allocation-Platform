@@ -204,37 +204,39 @@ def api_get_first_event_odds():
             )
             uuid = event.get("uuid")
             external_ids = event.get("external_ids") or {}
-            fanduel_id = external_ids.get("fanduel")
 
-            if not internal_id:
-                continue
+            if internal_id:
+                checked_event_ids.append(str(internal_id))
 
-            home_team = str(event.get("home_team") or "").lower()
-            away_team = str(event.get("away_team") or "").lower()
-            internal_id_text = str(internal_id).lower()
+            possible_ids = []
 
-            if "awards" in home_team or "awards" in internal_id_text:
-                continue
+            if external_ids.get("kalshi"):
+                possible_ids.append(external_ids.get("kalshi"))
 
-            if not away_team:
-                continue
+            if external_ids.get("fanduel"):
+                possible_ids.append(external_ids.get("fanduel"))
 
-            checked_event_ids.append(internal_id)
+            for value in external_ids.values():
+                if value:
+                    possible_ids.append(value)
 
+            if uuid:
+                possible_ids.append(uuid)
+
+            if internal_id:
+                possible_ids.append(internal_id)
+
+            seen = set()
             possible_ids = [
-                fanduel_id,
-                uuid,
-                internal_id
+                str(item)
+                for item in possible_ids
+                if item and not (str(item) in seen or seen.add(str(item)))
             ]
 
             for odds_id in possible_ids:
-                if not odds_id:
-                    continue
+                checked_provider_ids.append(odds_id)
 
-                odds_lookup_id = str(odds_id)
-                checked_provider_ids.append(odds_lookup_id)
-
-                odds_response = get_event_odds(config, logger, session, odds_lookup_id)
+                odds_response = get_event_odds(config, logger, session, odds_id)
                 last_odds_response = odds_response
 
                 odds_data = None
@@ -244,6 +246,7 @@ def api_get_first_event_odds():
                         or odds_response.get("odds")
                         or odds_response.get("markets")
                         or odds_response.get("sportsbooks")
+                        or odds_response.get("books")
                     )
                 elif isinstance(odds_response, list):
                     odds_data = odds_response
@@ -252,7 +255,7 @@ def api_get_first_event_odds():
                     return {
                         "ok": True,
                         "event_id": internal_id,
-                        "odds_lookup_id": odds_lookup_id,
+                        "odds_lookup_id": odds_id,
                         "event": event,
                         "odds": odds_response,
                         "updated_at": datetime.now(timezone.utc).isoformat()
