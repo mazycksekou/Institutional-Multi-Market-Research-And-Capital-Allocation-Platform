@@ -49,10 +49,15 @@ app = FastAPI(
 
 PUBLIC_PATHS = {
     "/",
+    "/ping",
+    "/ping/",
     "/health",
+    "/health/",
     "/docs",
+    "/docs/",
     "/openapi.json",
-    "/redoc"
+    "/redoc",
+    "/redoc/"
 }
 
 
@@ -76,12 +81,17 @@ async def require_action_key(request: Request, call_next):
     return await call_next(request)
 
 
+@app.get("/ping", operation_id="ping")
+def ping():
+    return {"ok": True}
+
+
 @app.get("/", include_in_schema=False)
 def root():
     return {
         "status": "ok",
         "service": "betting-stock-api",
-        "message": "Use /health, /docs, or /openapi.json"
+        "message": "Use /ping, /health, /docs, or /openapi.json"
     }
 
 
