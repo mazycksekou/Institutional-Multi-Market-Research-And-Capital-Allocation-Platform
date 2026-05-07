@@ -1,5 +1,6 @@
 import os
 import secrets
+from pathlib import Path
 from typing import Optional
 
 from fastapi import FastAPI, Query, Request
@@ -21,6 +22,9 @@ from main import (
     summarize_bets,
     initialize_bets_csv,
 )
+
+DATA_DIR = Path("data")
+DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 try:
     config = load_config()
@@ -238,6 +242,7 @@ def api_analyze(
 
 @app.get("/bets/summary", operation_id="getBetSummary")
 def api_get_bet_summary():
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
     initialize_bets_csv(config)
 
     return summarize_bets(config)
