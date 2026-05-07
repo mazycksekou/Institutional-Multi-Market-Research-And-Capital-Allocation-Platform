@@ -173,8 +173,7 @@ def api_get_first_event_odds():
 
     checked_event_ids = []
     checked_provider_ids = []
-    failed_lookup_errors = []
-    last_odds_response = None
+    lookup_results = []
 
     try:
         events_response = get_active_events(config, logger, session)
@@ -221,24 +220,38 @@ def api_get_first_event_odds():
 
             possible_ids = []
 
-            for value in external_ids.values():
-                if value:
-                    possible_ids.append(str(value))
+            for provider_name, provider_id in external_ids.items():
+                if provider_id:
+                    possible_ids.append({
+                        "provider_hint": str(provider_name),
+                        "odds_lookup_id": str(provider_id)
+                    })
 
             if uuid:
-                possible_ids.append(str(uuid))
+                possible_ids.append({
+                    "provider_hint": "uuid",
+                    "odds_lookup_id": str(uuid)
+                })
 
             if internal_id:
-                possible_ids.append(str(internal_id))
+                possible_ids.append({
+                    "provider_hint": "internal_id",
+                    "odds_lookup_id": str(internal_id)
+                })
 
             seen = set()
-            possible_ids = [
-                item
-                for item in possible_ids
-                if item and not (item in seen or seen.add(item))
-            ]
+            deduped_possible_ids = []
 
-            for odds_id in possible_ids[:3]:
+            for item in possible_ids:
+                odds_lookup_id = item["odds_lookup_id"]
+
+                if odds_lookup_id in seen:
+                    continue
+
+                seen.add(odds_lookup_id)
+                deduped_possible_ids.append(item)
+
+            for item in deduped_possible_ids[:3]:
                 remaining_seconds = max_elapsed_seconds - (time.time() - start_time)
                 if remaining_seconds <= 1:
                     return {
@@ -246,20 +259,20 @@ def api_get_first_event_odds():
                         "message": "No odds available within quick lookup limit",
                         "checked_event_ids": checked_event_ids,
                         "checked_provider_ids": checked_provider_ids,
-                        "failed_lookup_errors": failed_lookup_errors,
+                        "lookup_results": lookup_results,
                         "sample_event": events[0] if events else None,
-                        "last_odds_response": last_odds_response,
                         "updated_at": datetime.now(timezone.utc).isoformat(),
                         "elapsed_seconds": round(time.time() - start_time, 2)
                     }
 
+                odds_id = item["odds_lookup_id"]
+                provider_hint = item["provider_hint"]
                 checked_provider_ids.append(odds_id)
 
                 try:
                     lookup_timeout = max(1, min(8, int(remaining_seconds)))
                     object.__setattr__(config, "request_timeout", lookup_timeout)
                     odds_response = get_event_odds(config, logger, session, odds_id)
-                    last_odds_response = odds_response
 
                     odds_data = None
                     if isinstance(odds_response, dict):
@@ -273,10 +286,20 @@ def api_get_first_event_odds():
                     elif isinstance(odds_response, list):
                         odds_data = odds_response
 
-                    if odds_data:
+                    has_data = bool(odds_data)
+                    lookup_results.append({
+                        "event_id": internal_id,
+                        "provider_hint": provider_hint,
+                        "odds_lookup_id": odds_id,
+                        "has_data": has_data,
+                        "raw_response": odds_response
+                    })
+
+                    if has_data:
                         return {
                             "ok": True,
                             "event_id": internal_id,
+                            "provider_hint": provider_hint,
                             "odds_lookup_id": odds_id,
                             "event": event,
                             "odds": odds_response,
@@ -285,8 +308,11 @@ def api_get_first_event_odds():
                         }
 
                 except Exception as lookup_error:
-                    failed_lookup_errors.append({
-                        "odds_id": odds_id,
+                    lookup_results.append({
+                        "event_id": internal_id,
+                        "provider_hint": provider_hint,
+                        "odds_lookup_id": odds_id,
+                        "has_data": False,
                         "error_type": type(lookup_error).__name__,
                         "error": str(lookup_error)
                     })
@@ -296,9 +322,8 @@ def api_get_first_event_odds():
             "message": "No odds available within quick lookup limit",
             "checked_event_ids": checked_event_ids,
             "checked_provider_ids": checked_provider_ids,
-            "failed_lookup_errors": failed_lookup_errors,
+            "lookup_results": lookup_results,
             "sample_event": events[0] if events else None,
-            "last_odds_response": last_odds_response,
             "updated_at": datetime.now(timezone.utc).isoformat(),
             "elapsed_seconds": round(time.time() - start_time, 2)
         }
