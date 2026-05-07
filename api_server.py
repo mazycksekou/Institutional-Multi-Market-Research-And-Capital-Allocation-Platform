@@ -1,5 +1,6 @@
 import os
 import secrets
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
@@ -165,6 +166,16 @@ def api_get_active_events(
 
 @app.get("/odds/first-event", operation_id="getFirstEventOdds")
 def api_get_first_event_odds():
+    start_time = time.time()
+    max_elapsed_seconds = 10
+    original_timeout = config.request_timeout
+    object.__setattr__(config, "request_timeout", 8)
+
+    checked_event_ids = []
+    checked_provider_ids = []
+    failed_lookup_errors = []
+    last_odds_response = None
+
     try:
         events_response = get_active_events(config, logger, session)
 
@@ -185,14 +196,14 @@ def api_get_first_event_odds():
                 "ok": False,
                 "message": "No active betting events found",
                 "events_response": events_response,
-                "updated_at": datetime.now(timezone.utc).isoformat()
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+                "elapsed_seconds": round(time.time() - start_time, 2)
             }
 
-        checked_event_ids = []
-        checked_provider_ids = []
-        last_odds_response = None
+        for event in events[:3]:
+            if time.time() - start_time >= max_elapsed_seconds - 1:
+                break
 
-        for event in events[:25]:
             if not isinstance(event, dict):
                 continue
 
@@ -210,65 +221,86 @@ def api_get_first_event_odds():
 
             possible_ids = []
 
-            if external_ids.get("kalshi"):
-                possible_ids.append(external_ids.get("kalshi"))
-
-            if external_ids.get("fanduel"):
-                possible_ids.append(external_ids.get("fanduel"))
-
             for value in external_ids.values():
                 if value:
-                    possible_ids.append(value)
+                    possible_ids.append(str(value))
 
             if uuid:
-                possible_ids.append(uuid)
+                possible_ids.append(str(uuid))
 
             if internal_id:
-                possible_ids.append(internal_id)
+                possible_ids.append(str(internal_id))
 
             seen = set()
             possible_ids = [
-                str(item)
+                item
                 for item in possible_ids
-                if item and not (str(item) in seen or seen.add(str(item)))
+                if item and not (item in seen or seen.add(item))
             ]
 
-            for odds_id in possible_ids:
+            for odds_id in possible_ids[:3]:
+                remaining_seconds = max_elapsed_seconds - (time.time() - start_time)
+                if remaining_seconds <= 1:
+                    return {
+                        "ok": False,
+                        "message": "No odds available within quick lookup limit",
+                        "checked_event_ids": checked_event_ids,
+                        "checked_provider_ids": checked_provider_ids,
+                        "failed_lookup_errors": failed_lookup_errors,
+                        "sample_event": events[0] if events else None,
+                        "last_odds_response": last_odds_response,
+                        "updated_at": datetime.now(timezone.utc).isoformat(),
+                        "elapsed_seconds": round(time.time() - start_time, 2)
+                    }
+
                 checked_provider_ids.append(odds_id)
 
-                odds_response = get_event_odds(config, logger, session, odds_id)
-                last_odds_response = odds_response
+                try:
+                    lookup_timeout = max(1, min(8, int(remaining_seconds)))
+                    object.__setattr__(config, "request_timeout", lookup_timeout)
+                    odds_response = get_event_odds(config, logger, session, odds_id)
+                    last_odds_response = odds_response
 
-                odds_data = None
-                if isinstance(odds_response, dict):
-                    odds_data = (
-                        odds_response.get("data")
-                        or odds_response.get("odds")
-                        or odds_response.get("markets")
-                        or odds_response.get("sportsbooks")
-                        or odds_response.get("books")
-                    )
-                elif isinstance(odds_response, list):
-                    odds_data = odds_response
+                    odds_data = None
+                    if isinstance(odds_response, dict):
+                        odds_data = (
+                            odds_response.get("data")
+                            or odds_response.get("odds")
+                            or odds_response.get("markets")
+                            or odds_response.get("sportsbooks")
+                            or odds_response.get("books")
+                        )
+                    elif isinstance(odds_response, list):
+                        odds_data = odds_response
 
-                if odds_data:
-                    return {
-                        "ok": True,
-                        "event_id": internal_id,
-                        "odds_lookup_id": odds_id,
-                        "event": event,
-                        "odds": odds_response,
-                        "updated_at": datetime.now(timezone.utc).isoformat()
-                    }
+                    if odds_data:
+                        return {
+                            "ok": True,
+                            "event_id": internal_id,
+                            "odds_lookup_id": odds_id,
+                            "event": event,
+                            "odds": odds_response,
+                            "updated_at": datetime.now(timezone.utc).isoformat(),
+                            "elapsed_seconds": round(time.time() - start_time, 2)
+                        }
+
+                except Exception as lookup_error:
+                    failed_lookup_errors.append({
+                        "odds_id": odds_id,
+                        "error_type": type(lookup_error).__name__,
+                        "error": str(lookup_error)
+                    })
 
         return {
             "ok": False,
-            "message": "No odds available for active events",
+            "message": "No odds available within quick lookup limit",
             "checked_event_ids": checked_event_ids,
             "checked_provider_ids": checked_provider_ids,
+            "failed_lookup_errors": failed_lookup_errors,
             "sample_event": events[0] if events else None,
             "last_odds_response": last_odds_response,
-            "updated_at": datetime.now(timezone.utc).isoformat()
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "elapsed_seconds": round(time.time() - start_time, 2)
         }
 
     except Exception as error:
@@ -277,8 +309,11 @@ def api_get_first_event_odds():
             "endpoint": "/odds/first-event",
             "error_type": type(error).__name__,
             "error": str(error),
-            "updated_at": datetime.now(timezone.utc).isoformat()
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "elapsed_seconds": round(time.time() - start_time, 2)
         }
+    finally:
+        object.__setattr__(config, "request_timeout", original_timeout)
 
 
 @app.get("/analyze", operation_id="analyzeStocksAndOdds")
