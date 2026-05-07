@@ -189,49 +189,82 @@ def api_get_first_event_odds():
             }
 
         checked_event_ids = []
+        checked_provider_ids = []
+        last_odds_response = None
 
-        for event in events[:10]:
+        for event in events[:25]:
             if not isinstance(event, dict):
                 continue
 
-            event_id = (
+            internal_id = (
                 event.get("id")
                 or event.get("event_id")
                 or event.get("game_id")
                 or event.get("eventId")
             )
+            uuid = event.get("uuid")
+            external_ids = event.get("external_ids") or {}
+            fanduel_id = external_ids.get("fanduel")
 
-            if not event_id:
+            if not internal_id:
                 continue
 
-            checked_event_ids.append(event_id)
-            odds_response = get_event_odds(config, logger, session, event_id)
+            home_team = str(event.get("home_team") or "").lower()
+            away_team = str(event.get("away_team") or "").lower()
+            internal_id_text = str(internal_id).lower()
 
-            odds_data = None
-            if isinstance(odds_response, dict):
-                odds_data = (
-                    odds_response.get("data")
-                    or odds_response.get("odds")
-                    or odds_response.get("markets")
-                    or odds_response.get("sportsbooks")
-                )
-            elif isinstance(odds_response, list):
-                odds_data = odds_response
+            if "awards" in home_team or "awards" in internal_id_text:
+                continue
 
-            if odds_data:
-                return {
-                    "ok": True,
-                    "event_id": event_id,
-                    "event": event,
-                    "odds": odds_response,
-                    "updated_at": datetime.now(timezone.utc).isoformat()
-                }
+            if not away_team:
+                continue
+
+            checked_event_ids.append(internal_id)
+
+            possible_ids = [
+                fanduel_id,
+                uuid,
+                internal_id
+            ]
+
+            for odds_id in possible_ids:
+                if not odds_id:
+                    continue
+
+                odds_lookup_id = str(odds_id)
+                checked_provider_ids.append(odds_lookup_id)
+
+                odds_response = get_event_odds(config, logger, session, odds_lookup_id)
+                last_odds_response = odds_response
+
+                odds_data = None
+                if isinstance(odds_response, dict):
+                    odds_data = (
+                        odds_response.get("data")
+                        or odds_response.get("odds")
+                        or odds_response.get("markets")
+                        or odds_response.get("sportsbooks")
+                    )
+                elif isinstance(odds_response, list):
+                    odds_data = odds_response
+
+                if odds_data:
+                    return {
+                        "ok": True,
+                        "event_id": internal_id,
+                        "odds_lookup_id": odds_lookup_id,
+                        "event": event,
+                        "odds": odds_response,
+                        "updated_at": datetime.now(timezone.utc).isoformat()
+                    }
 
         return {
             "ok": False,
             "message": "No odds available for active events",
             "checked_event_ids": checked_event_ids,
+            "checked_provider_ids": checked_provider_ids,
             "sample_event": events[0] if events else None,
+            "last_odds_response": last_odds_response,
             "updated_at": datetime.now(timezone.utc).isoformat()
         }
 
