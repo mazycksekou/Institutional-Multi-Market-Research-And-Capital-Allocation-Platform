@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: betting-stock-api-code-integration
+    env: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: ODDS_API_KEY
+        sync: false
+      - key: ACTION_API_KEY
+        sync: false
+      - key: SHARP_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: ENABLE_KALSHI
+        value: "false"
+      - key: DEFAULT_BOOKMAKERS
+        value: draftkings,fanduel,betmgm,caesars,espnbet,bet365
+      - key: DEFAULT_REGIONS
+        value: us

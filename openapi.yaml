@@ -1,0 +1,711 @@
+openapi: 3.1.0
+info:
+  title: Betting Stock API
+  description: Custom GPT Action API. Betting endpoints require sport or league, never
+    use unrelated sport fallback, never use Kalshi fallback, and return no_data when
+    requested odds are missing.
+  version: 2.0.0
+paths:
+  /:
+    get:
+      summary: Root
+      operationId: root
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+      parameters: []
+  /health:
+    get:
+      summary: Health Check
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+      parameters: []
+  /ping:
+    get:
+      summary: Ping
+      operationId: ping
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+      parameters: []
+  /api/debug/config:
+    get:
+      summary: Debug Config
+      operationId: getDebugConfig
+      parameters: []
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/betting/events/active:
+    get:
+      summary: Get Active Betting Events
+      operationId: getActiveBettingEvents
+      parameters:
+      - name: sport
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Required if league is not supplied.
+          title: Sport
+        description: Required if league is not supplied.
+      - name: league
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Required if sport is not supplied.
+          title: League
+        description: Required if sport is not supplied.
+      - name: team
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Team
+      - name: home_team
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Home Team
+      - name: away_team
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Away Team
+      - name: date
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Date
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/betting/events/{event_id}/odds:
+    get:
+      summary: Get Event Odds Endpoint
+      operationId: getEventOdds
+      parameters:
+      - name: event_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Event Id
+      - name: sport
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Required if league is not supplied.
+          title: Sport
+        description: Required if league is not supplied.
+      - name: league
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Required if sport is not supplied.
+          title: League
+        description: Required if sport is not supplied.
+      - name: markets
+        in: query
+        required: false
+        schema:
+          type: string
+          default: h2h,spreads,totals
+          title: Markets
+      - name: bookmakers
+        in: query
+        required: false
+        schema:
+          type: string
+          default: draftkings,fanduel,betmgm,caesars,espnbet,bet365
+          title: Bookmakers
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/betting/first-event-odds:
+    get:
+      summary: Get First Event Odds
+      operationId: getFirstEventOdds
+      parameters:
+      - name: sport
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Required if league is not supplied.
+          title: Sport
+        description: Required if league is not supplied.
+      - name: league
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Required if sport is not supplied.
+          title: League
+        description: Required if sport is not supplied.
+      - name: team
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Team
+      - name: home_team
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Home Team
+      - name: away_team
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Away Team
+      - name: date
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Date
+      - name: markets
+        in: query
+        required: false
+        schema:
+          type: string
+          default: h2h,spreads,totals
+          title: Markets
+      - name: bookmakers
+        in: query
+        required: false
+        schema:
+          type: string
+          default: draftkings,fanduel,betmgm,caesars,espnbet,bet365
+          title: Bookmakers
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/stocks/{ticker}:
+    get:
+      summary: Get Stock Data
+      operationId: getStockData
+      parameters:
+      - name: ticker
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Ticker
+      - name: period
+        in: query
+        required: false
+        schema:
+          type: string
+          default: 1mo
+          title: Period
+      - name: interval
+        in: query
+        required: false
+        schema:
+          type: string
+          default: 1d
+          title: Interval
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/watchlist:
+    get:
+      summary: Get Watchlist Data
+      operationId: getWatchlistData
+      parameters:
+      - name: tickers
+        in: query
+        required: false
+        schema:
+          type: string
+          default: AAPL,NVDA,TSLA,SPY,QQQ
+          title: Tickers
+      - name: period
+        in: query
+        required: false
+        schema:
+          type: string
+          default: 1mo
+          title: Period
+      - name: interval
+        in: query
+        required: false
+        schema:
+          type: string
+          default: 1d
+          title: Interval
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/analyze:
+    get:
+      summary: Analyze
+      operationId: analyzeStocksAndOdds
+      parameters:
+      - name: ticker
+        in: query
+        required: false
+        schema:
+          type: string
+          default: NVDA
+          title: Ticker
+      - name: league
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: League
+      - name: sport
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Sport
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/bets/log:
+    post:
+      summary: Log Bet
+      operationId: logBet
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BetLogRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/bets/summary:
+    get:
+      summary: Get Bet Summary
+      operationId: getBetSummary
+      parameters: []
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /quant/bet-analysis:
+    post:
+      summary: Quant Bet Analysis
+      operationId: quantBetAnalysis
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BetAnalysisRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /quant/stock-analysis:
+    post:
+      summary: Quant Stock Analysis
+      operationId: quantStockAnalysis
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StockAnalysisRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+components:
+  schemas:
+    BetAnalysisRequest:
+      properties:
+        sport:
+          type: string
+          title: Sport
+        event:
+          type: string
+          title: Event
+        pick:
+          type: string
+          title: Pick
+        market:
+          type: string
+          title: Market
+        odds:
+          type: integer
+          title: Odds
+        true_probability_pct:
+          type: number
+          title: True Probability Pct
+        stake:
+          type: number
+          title: Stake
+        bankroll:
+          type: number
+          title: Bankroll
+        correlation_group:
+          type: string
+          title: Correlation Group
+        current_group_exposure:
+          type: number
+          title: Current Group Exposure
+          default: 0
+        notes:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Notes
+      type: object
+      required:
+      - sport
+      - event
+      - pick
+      - market
+      - odds
+      - true_probability_pct
+      - stake
+      - bankroll
+      - correlation_group
+      title: BetAnalysisRequest
+    BetLogRequest:
+      properties:
+        date:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Date
+        type:
+          type: string
+          title: Type
+          default: bet
+        sport:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Sport
+        event:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Event
+        pick:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Pick
+        market:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Market
+        odds:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Odds
+        stake:
+          type: number
+          title: Stake
+          default: 0
+        bankroll:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Bankroll
+        true_probability_pct:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: True Probability Pct
+        implied_probability_pct:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Implied Probability Pct
+        edge_pct:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Edge Pct
+        ev_per_100:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Ev Per 100
+        ev_dollars:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Ev Dollars
+        kelly_pct:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Kelly Pct
+        suggested_stake:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Suggested Stake
+        correlation_group:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Correlation Group
+        exposure_status:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Exposure Status
+        decision:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Decision
+        result:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Result
+          default: pending
+        profit_or_loss:
+          type: number
+          title: Profit Or Loss
+          default: 0
+        notes:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Notes
+      type: object
+      title: BetLogRequest
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    StockAnalysisRequest:
+      properties:
+        ticker:
+          type: string
+          title: Ticker
+        current_price:
+          type: number
+          title: Current Price
+        expected_stock_return_pct:
+          type: number
+          title: Expected Stock Return Pct
+        beta:
+          type: number
+          title: Beta
+        risk_free_rate_pct:
+          type: number
+          title: Risk Free Rate Pct
+        expected_market_return_pct:
+          type: number
+          title: Expected Market Return Pct
+        planned_position_size:
+          type: number
+          title: Planned Position Size
+        portfolio_value:
+          type: number
+          title: Portfolio Value
+        notes:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Notes
+      type: object
+      required:
+      - ticker
+      - current_price
+      - expected_stock_return_pct
+      - beta
+      - risk_free_rate_pct
+      - expected_market_return_pct
+      - planned_position_size
+      - portfolio_value
+      title: StockAnalysisRequest
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+          type: array
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+        input:
+          title: Input
+        ctx:
+          type: object
+          title: Context
+      type: object
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError
+servers:
+- url: https://betting-stock-api-code-integration.onrender.com

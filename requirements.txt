@@ -1,8 +1,7 @@
-openai
-python-dotenv
-pydantic
-yfinance
-requests
-pandas
-fastapi
-uvicorn[standard]
+fastapi==0.111.0
+uvicorn[standard]==0.30.1
+httpx==0.27.0
+python-dotenv==1.0.1
+pydantic==2.7.4
+yfinance==0.2.40
+pandas==2.2.2
