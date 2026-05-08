@@ -6,6 +6,8 @@ services:
     dockerfilePath: ./Dockerfile
     dockerCommand: sh -c "uvicorn main:app --host 0.0.0.0 --port ${PORT:-10000}"
     envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.11
       - key: ODDS_API_KEY
         sync: false
       - key: ACTION_API_KEY
