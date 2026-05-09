@@ -185,10 +185,23 @@ def provider_error_response(message: str, status_code: Optional[int] = None, raw
     }
 
 
-async def require_action_key(x_action_key: Optional[str] = Header(default=None, alias="X-Action-Key")) -> None:
+async def require_action_key(
+    x_api_key: Optional[str] = Header(default=None, alias="X-API-Key"),
+    authorization: Optional[str] = Header(default=None, alias="Authorization"),
+) -> None:
     action_key = os.getenv("ACTION_API_KEY", "")
-    if action_key and not secrets.compare_digest(x_action_key or "", action_key):
-        raise HTTPException(status_code=401, detail="Invalid or missing X-Action-Key header.")
+    if not action_key:
+        raise HTTPException(status_code=500, detail="ACTION_API_KEY is not configured.")
+
+    bearer_key = ""
+    if authorization:
+        scheme, _, token = authorization.partition(" ")
+        if scheme.lower() == "bearer" and token:
+            bearer_key = token
+
+    header_keys = [key for key in (x_api_key, bearer_key) if key]
+    if not any(secrets.compare_digest(key, action_key) for key in header_keys):
+        raise HTTPException(status_code=401, detail="Invalid or missing API key.")
 
 
 def resolve_sport_key(sport: Optional[str], league: Optional[str]) -> tuple[Optional[str], Optional[str], Optional[dict[str, Any]]]:
@@ -728,7 +741,7 @@ def custom_openapi():
                 operation["parameters"] = [
                     parameter
                     for parameter in operation.get("parameters", [])
-                    if parameter.get("name", "").lower() != "x-action-key"
+                    if parameter.get("name", "").lower() not in {"x-api-key", "authorization"}
                 ]
     app.openapi_schema = schema
     return schema
