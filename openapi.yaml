@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Betting Stock API
-  description: Minimal Custom GPT Action schema for betting event lookup.
+  description: Minimal Custom GPT Action schema for betting and prediction market data.
   version: 2.0.0
 servers:
   - url: https://betting-stock-api-code-integration.onrender.com
@@ -17,6 +17,7 @@ paths:
             application/json:
               schema:
                 type: object
+                properties: {}
                 additionalProperties: true
   /api/debug/config:
     get:
@@ -25,13 +26,37 @@ paths:
       security:
         - ApiKeyAuth: []
       responses:
-        "200":
+        "200": &genericResponse
           description: Successful Response
           content:
             application/json:
               schema:
                 type: object
+                properties: {}
                 additionalProperties: true
+  /api/betting/providers:
+    get:
+      operationId: getBettingProviders
+      summary: Get Betting Providers
+      security:
+        - ApiKeyAuth: []
+      responses:
+        "200": *genericResponse
+  /api/betting/sports:
+    get:
+      operationId: getSupportedBettingSports
+      summary: Get Supported Betting Sports
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: provider
+          in: query
+          required: false
+          schema:
+            type: string
+            example: the_odds_api
+      responses:
+        "200": *genericResponse
   /api/betting/events/active:
     get:
       operationId: getActiveBettingEvents
@@ -41,19 +66,58 @@ paths:
       parameters:
         - name: league
           in: query
-          required: true
+          required: false
           description: League code such as mlb, nba, nhl, nfl
           schema:
             type: string
             example: mlb
+        - name: sport
+          in: query
+          required: false
+          schema:
+            type: string
+            example: baseball_mlb
+        - name: provider
+          in: query
+          required: false
+          schema:
+            type: string
+            example: the_odds_api
       responses:
-        "200":
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: true
+        "200": *genericResponse
+  /api/betting/events/{event_id}/odds:
+    get:
+      operationId: getEventOdds
+      summary: Get Event Odds
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: league
+          in: query
+          required: false
+          description: League code such as mlb, nba, nhl, nfl
+          schema:
+            type: string
+            example: mlb
+        - name: sport
+          in: query
+          required: false
+          schema:
+            type: string
+            example: baseball_mlb
+        - name: provider
+          in: query
+          required: false
+          schema:
+            type: string
+            example: the_odds_api
+      responses:
+        "200": *genericResponse
   /api/betting/first-event-odds:
     get:
       operationId: getFirstEventOdds
@@ -63,19 +127,144 @@ paths:
       parameters:
         - name: league
           in: query
-          required: true
+          required: false
           description: League code such as mlb, nba, nhl, nfl
           schema:
             type: string
             example: mlb
+        - name: sport
+          in: query
+          required: false
+          schema:
+            type: string
+            example: baseball_mlb
+        - name: provider
+          in: query
+          required: false
+          schema:
+            type: string
+            example: the_odds_api
       responses:
-        "200":
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: true
+        "200": *genericResponse
+  /api/markets/providers:
+    get:
+      operationId: getMarketProviders
+      summary: Get Market Providers
+      security:
+        - ApiKeyAuth: []
+      responses:
+        "200": *genericResponse
+  /api/markets/kalshi/events:
+    get:
+      operationId: getKalshiEvents
+      summary: Get Kalshi Events
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: series_ticker
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 100
+      responses:
+        "200": *genericResponse
+  /api/markets/kalshi/markets:
+    get:
+      operationId: getKalshiMarkets
+      summary: Get Kalshi Markets
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: query
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: event_ticker
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: series_ticker
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 100
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200": *genericResponse
+  /api/markets/kalshi/markets/{ticker}/orderbook:
+    get:
+      operationId: getKalshiOrderbook
+      summary: Get Kalshi Orderbook
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: ticker
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200": *genericResponse
+  /quant/bet-analysis:
+    post:
+      operationId: analyzeBet
+      summary: Analyze Bet
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: {}
+              additionalProperties: true
+      responses:
+        "200": *genericResponse
+  /quant/stock-analysis:
+    post:
+      operationId: analyzeStock
+      summary: Analyze Stock
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: {}
+              additionalProperties: true
+      responses:
+        "200": *genericResponse
 components:
   schemas: {}
   securitySchemes:

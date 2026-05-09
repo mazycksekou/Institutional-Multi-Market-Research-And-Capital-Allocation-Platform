@@ -13,6 +13,8 @@ from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
+from betting_providers.base import PREDICTION_MARKET
+from betting_providers.provider_router import ProviderRouter
 from quant_engine import (
     capm_required_return,
     classify_bet,
@@ -87,6 +89,7 @@ SPORT_LABELS = {
 }
 
 LINE_SNAPSHOTS: dict[str, dict[str, Any]] = {}
+PROVIDER_ROUTER = ProviderRouter()
 
 app = FastAPI(
     title="Betting Stock API",
@@ -508,22 +511,28 @@ async def ping():
     return {"ok": True}
 
 
-@app.get("/api/debug/config", operation_id="getDebugConfig", dependencies=[Depends(require_action_key)])
+@app.get("/api/debug/config", operation_id="debugConfig", dependencies=[Depends(require_action_key)])
 async def debug_config():
     return {
         "ok": True,
         "environment": {
             "ODDS_API_KEY": bool(os.getenv("ODDS_API_KEY")),
+            "ODDS_API_ENABLED": os.getenv("ODDS_API_ENABLED", "true").lower() == "true",
             "ACTION_API_KEY": bool(os.getenv("ACTION_API_KEY")),
             "SHARP_API_KEY": bool(os.getenv("SHARP_API_KEY")),
+            "SHARP_API_BASE_URL": bool(os.getenv("SHARP_API_BASE_URL")),
+            "SHARP_API_ENABLED": os.getenv("SHARP_API_ENABLED", "false").lower() == "true",
             "OPENAI_API_KEY": bool(os.getenv("OPENAI_API_KEY")),
-            "ENABLE_KALSHI": os.getenv("ENABLE_KALSHI", "false").lower() == "true",
+            "KALSHI_ENABLED": os.getenv("KALSHI_ENABLED", "false").lower() == "true",
+            "KALSHI_ENV": os.getenv("KALSHI_ENV", "demo"),
             "KALSHI_BASE_URL": bool(os.getenv("KALSHI_BASE_URL")),
             "KALSHI_API_KEY_ID": bool(os.getenv("KALSHI_API_KEY_ID")),
-            "KALSHI_PRIVATE_KEY_PEM": bool(os.getenv("KALSHI_PRIVATE_KEY_PEM")),
+            "KALSHI_PRIVATE_KEY": bool(os.getenv("KALSHI_PRIVATE_KEY")),
         },
         "default_bookmakers": DEFAULT_BOOKMAKERS,
         "default_regions": DEFAULT_REGIONS,
+        "default_betting_provider": PROVIDER_ROUTER.default_betting_provider(),
+        "default_market_provider": PROVIDER_ROUTER.default_market_provider(),
     }
 
 
@@ -536,19 +545,39 @@ async def auth_status():
     }
 
 
+@app.get("/api/betting/providers", operation_id="getBettingProviders", dependencies=[Depends(require_action_key)])
+async def get_betting_providers():
+    return {
+        "ok": True,
+        "default_provider": PROVIDER_ROUTER.default_betting_provider(),
+        "providers": PROVIDER_ROUTER.capabilities(),
+    }
+
+
+@app.get("/api/betting/sports", operation_id="getSupportedBettingSports", dependencies=[Depends(require_action_key)])
+async def get_supported_betting_sports(provider: Optional[str] = None):
+    return await PROVIDER_ROUTER.get_supported_sports(provider)
+
+
 @app.get("/api/betting/events/active", operation_id="getActiveBettingEvents", dependencies=[Depends(require_action_key)])
 async def get_active_betting_events(
     sport: Optional[str] = Query(default=None, description="Required if league is not supplied."),
     league: Optional[str] = Query(default=None, description="Required if sport is not supplied."),
+    provider: Optional[str] = None,
     team: Optional[str] = None,
     home_team: Optional[str] = None,
     away_team: Optional[str] = None,
     date: Optional[str] = Query(default=None),
 ):
-    sport_key, league_label, error = resolve_sport_key(sport, league)
-    if error:
-        return error
-    return await fetch_active_events_filtered(sport_key, league_label, team, home_team, away_team, date)
+    return await PROVIDER_ROUTER.get_active_events(
+        provider,
+        sport,
+        league,
+        team=team,
+        home_team=home_team,
+        away_team=away_team,
+        date=date,
+    )
 
 
 @app.get("/api/betting/events/{event_id}/odds", operation_id="getEventOdds", dependencies=[Depends(require_action_key)])
@@ -556,19 +585,25 @@ async def get_event_odds_endpoint(
     event_id: str,
     sport: Optional[str] = Query(default=None, description="Required if league is not supplied."),
     league: Optional[str] = Query(default=None, description="Required if sport is not supplied."),
+    provider: Optional[str] = None,
     markets: str = DEFAULT_MARKETS,
     bookmakers: str = DEFAULT_BOOKMAKERS,
 ):
-    sport_key, league_label, error = resolve_sport_key(sport, league)
-    if error:
-        return error
-    return await fetch_event_odds(sport_key, league_label, event_id, markets, bookmakers)
+    return await PROVIDER_ROUTER.get_event_odds(
+        provider,
+        event_id,
+        sport,
+        league,
+        markets=markets,
+        bookmakers=bookmakers,
+    )
 
 
 @app.get("/api/betting/first-event-odds", operation_id="getFirstEventOdds", dependencies=[Depends(require_action_key)])
 async def get_first_event_odds(
     sport: Optional[str] = Query(default=None, description="Required if league is not supplied."),
     league: Optional[str] = Query(default=None, description="Required if sport is not supplied."),
+    provider: Optional[str] = None,
     team: Optional[str] = None,
     home_team: Optional[str] = None,
     away_team: Optional[str] = None,
@@ -576,16 +611,59 @@ async def get_first_event_odds(
     markets: str = DEFAULT_MARKETS,
     bookmakers: str = DEFAULT_BOOKMAKERS,
 ):
-    sport_key, league_label, error = resolve_sport_key(sport, league)
-    if error:
-        return error
-    events_response = await fetch_active_events_filtered(sport_key, league_label, team, home_team, away_team, date)
-    if not events_response.get("ok"):
-        return events_response
-    events = events_response.get("events") or []
-    if not events:
-        return no_data_response("No matching events found for requested sport/league/filters.", sport_key=sport_key, league=league_label)
-    return await fetch_event_odds(sport_key, league_label, events[0]["event_id"], markets, bookmakers)
+    return await PROVIDER_ROUTER.get_first_event_odds(
+        provider,
+        sport,
+        league,
+        team=team,
+        home_team=home_team,
+        away_team=away_team,
+        date=date,
+        markets=markets,
+        bookmakers=bookmakers,
+    )
+
+
+@app.get("/api/markets/providers", operation_id="getMarketProviders", dependencies=[Depends(require_action_key)])
+async def get_market_providers():
+    return {
+        "ok": True,
+        "default_provider": PROVIDER_ROUTER.default_market_provider(),
+        "providers": PROVIDER_ROUTER.capabilities(PREDICTION_MARKET),
+    }
+
+
+@app.get("/api/markets/kalshi/events", operation_id="getKalshiEvents", dependencies=[Depends(require_action_key)])
+async def get_kalshi_events(
+    status: Optional[str] = None,
+    series_ticker: Optional[str] = None,
+    limit: int = 100,
+):
+    return await PROVIDER_ROUTER.get_kalshi_events(status=status, series_ticker=series_ticker, limit=limit)
+
+
+@app.get("/api/markets/kalshi/markets", operation_id="getKalshiMarkets", dependencies=[Depends(require_action_key)])
+async def get_kalshi_markets(
+    query: Optional[str] = None,
+    event_ticker: Optional[str] = None,
+    series_ticker: Optional[str] = None,
+    status: Optional[str] = None,
+    limit: int = 100,
+    cursor: Optional[str] = None,
+):
+    return await PROVIDER_ROUTER.get_kalshi_markets(
+        query=query,
+        event_ticker=event_ticker,
+        series_ticker=series_ticker,
+        status=status,
+        limit=limit,
+        cursor=cursor,
+    )
+
+
+@app.get("/api/markets/kalshi/markets/{ticker}/orderbook", operation_id="getKalshiOrderbook", dependencies=[Depends(require_action_key)])
+async def get_kalshi_orderbook(ticker: str):
+    return await PROVIDER_ROUTER.get_kalshi_orderbook(ticker)
 
 
 @app.get("/api/stocks/{ticker}", operation_id="getStockData", dependencies=[Depends(require_action_key)])
@@ -606,10 +684,9 @@ async def get_watchlist_data(
 @app.get("/api/analyze", operation_id="analyzeStocksAndOdds", dependencies=[Depends(require_action_key)])
 async def analyze(ticker: str = "NVDA", league: Optional[str] = None, sport: Optional[str] = None):
     stock = stock_data(ticker, "1mo", "1d")
-    sport_key, league_label, error = resolve_sport_key(sport, league) if (sport or league) else (None, None, None)
-    odds = error or no_data_response("sport or league was not supplied, so no betting odds were fetched.", "SPORT_REQUIRED")
-    if sport_key:
-        odds = await fetch_active_events_filtered(sport_key, league_label)
+    odds = no_data_response("sport or league was not supplied, so no betting odds were fetched.", "SPORT_REQUIRED")
+    if sport or league:
+        odds = await PROVIDER_ROUTER.get_active_events(None, sport, league)
     return {"ok": True, "ticker": ticker.upper(), "stock_data": stock, "odds_data": odds}
 
 
@@ -748,6 +825,7 @@ def custom_openapi():
             "application/json": {
                 "schema": {
                     "type": "object",
+                    "properties": {},
                     "additionalProperties": True,
                 }
             }
@@ -756,7 +834,7 @@ def custom_openapi():
     league_parameter = {
         "name": "league",
         "in": "query",
-        "required": True,
+        "required": False,
         "description": "League code such as mlb, nba, nhl, nfl",
         "schema": {
             "type": "string",
@@ -764,6 +842,54 @@ def custom_openapi():
         },
     }
     protected_security = [{"ApiKeyAuth": []}]
+    provider_parameter = {
+        "name": "provider",
+        "in": "query",
+        "required": False,
+        "schema": {"type": "string", "example": "the_odds_api"},
+    }
+    sport_parameter = {
+        "name": "sport",
+        "in": "query",
+        "required": False,
+        "schema": {"type": "string", "example": "baseball_mlb"},
+    }
+    event_id_parameter = {
+        "name": "event_id",
+        "in": "path",
+        "required": True,
+        "schema": {"type": "string"},
+    }
+    ticker_parameter = {
+        "name": "ticker",
+        "in": "path",
+        "required": True,
+        "schema": {"type": "string"},
+    }
+    optional_string_query = lambda name: {
+        "name": name,
+        "in": "query",
+        "required": False,
+        "schema": {"type": "string"},
+    }
+    limit_parameter = {
+        "name": "limit",
+        "in": "query",
+        "required": False,
+        "schema": {"type": "integer", "default": 100},
+    }
+    generic_request_body = {
+        "required": True,
+        "content": {
+            "application/json": {
+                "schema": {
+                    "type": "object",
+                    "properties": {},
+                    "additionalProperties": True,
+                }
+            }
+        },
+    }
 
     schema = {
         "openapi": "3.1.0",
@@ -789,12 +915,38 @@ def custom_openapi():
                     "responses": {"200": generic_object_response},
                 }
             },
+            "/api/betting/providers": {
+                "get": {
+                    "operationId": "getBettingProviders",
+                    "summary": "Get Betting Providers",
+                    "security": protected_security,
+                    "responses": {"200": generic_object_response},
+                }
+            },
+            "/api/betting/sports": {
+                "get": {
+                    "operationId": "getSupportedBettingSports",
+                    "summary": "Get Supported Betting Sports",
+                    "security": protected_security,
+                    "parameters": [provider_parameter],
+                    "responses": {"200": generic_object_response},
+                }
+            },
             "/api/betting/events/active": {
                 "get": {
                     "operationId": "getActiveBettingEvents",
                     "summary": "Get Active Betting Events",
                     "security": protected_security,
-                    "parameters": [league_parameter],
+                    "parameters": [league_parameter, sport_parameter, provider_parameter],
+                    "responses": {"200": generic_object_response},
+                }
+            },
+            "/api/betting/events/{event_id}/odds": {
+                "get": {
+                    "operationId": "getEventOdds",
+                    "summary": "Get Event Odds",
+                    "security": protected_security,
+                    "parameters": [event_id_parameter, league_parameter, sport_parameter, provider_parameter],
                     "responses": {"200": generic_object_response},
                 }
             },
@@ -803,7 +955,67 @@ def custom_openapi():
                     "operationId": "getFirstEventOdds",
                     "summary": "Get First Event Odds",
                     "security": protected_security,
-                    "parameters": [league_parameter],
+                    "parameters": [league_parameter, sport_parameter, provider_parameter],
+                    "responses": {"200": generic_object_response},
+                }
+            },
+            "/api/markets/providers": {
+                "get": {
+                    "operationId": "getMarketProviders",
+                    "summary": "Get Market Providers",
+                    "security": protected_security,
+                    "responses": {"200": generic_object_response},
+                }
+            },
+            "/api/markets/kalshi/events": {
+                "get": {
+                    "operationId": "getKalshiEvents",
+                    "summary": "Get Kalshi Events",
+                    "security": protected_security,
+                    "parameters": [optional_string_query("status"), optional_string_query("series_ticker"), limit_parameter],
+                    "responses": {"200": generic_object_response},
+                }
+            },
+            "/api/markets/kalshi/markets": {
+                "get": {
+                    "operationId": "getKalshiMarkets",
+                    "summary": "Get Kalshi Markets",
+                    "security": protected_security,
+                    "parameters": [
+                        optional_string_query("query"),
+                        optional_string_query("event_ticker"),
+                        optional_string_query("series_ticker"),
+                        optional_string_query("status"),
+                        limit_parameter,
+                        optional_string_query("cursor"),
+                    ],
+                    "responses": {"200": generic_object_response},
+                }
+            },
+            "/api/markets/kalshi/markets/{ticker}/orderbook": {
+                "get": {
+                    "operationId": "getKalshiOrderbook",
+                    "summary": "Get Kalshi Orderbook",
+                    "security": protected_security,
+                    "parameters": [ticker_parameter],
+                    "responses": {"200": generic_object_response},
+                }
+            },
+            "/quant/bet-analysis": {
+                "post": {
+                    "operationId": "analyzeBet",
+                    "summary": "Analyze Bet",
+                    "security": protected_security,
+                    "requestBody": generic_request_body,
+                    "responses": {"200": generic_object_response},
+                }
+            },
+            "/quant/stock-analysis": {
+                "post": {
+                    "operationId": "analyzeStock",
+                    "summary": "Analyze Stock",
+                    "security": protected_security,
+                    "requestBody": generic_request_body,
                     "responses": {"200": generic_object_response},
                 }
             },

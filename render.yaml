@@ -10,14 +10,32 @@ services:
         value: 3.12.11
       - key: ODDS_API_KEY
         sync: false
+      - key: ODDS_API_ENABLED
+        value: "true"
       - key: ACTION_API_KEY
         sync: false
       - key: SHARP_API_KEY
         sync: false
+      - key: SHARP_API_BASE_URL
+        sync: false
+      - key: SHARP_API_ENABLED
+        value: "false"
       - key: OPENAI_API_KEY
         sync: false
-      - key: ENABLE_KALSHI
+      - key: KALSHI_ENABLED
         value: "false"
+      - key: KALSHI_ENV
+        value: demo
+      - key: KALSHI_API_KEY_ID
+        sync: false
+      - key: KALSHI_PRIVATE_KEY
+        sync: false
+      - key: KALSHI_BASE_URL
+        sync: false
+      - key: DEFAULT_BETTING_PROVIDER
+        value: the_odds_api
+      - key: DEFAULT_MARKET_PROVIDER
+        value: kalshi
       - key: DEFAULT_BOOKMAKERS
         value: draftkings,fanduel,betmgm,caesars,espnbet,bet365
       - key: DEFAULT_REGIONS
