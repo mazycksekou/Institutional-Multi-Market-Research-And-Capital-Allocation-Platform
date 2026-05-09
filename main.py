@@ -185,21 +185,28 @@ def provider_error_response(message: str, status_code: Optional[int] = None, raw
     }
 
 
+def get_configured_action_key() -> str:
+    return os.getenv("ACTION_API_KEY", "").strip()
+
+
+def extract_bearer_token(authorization: Optional[str]) -> str:
+    if not authorization:
+        return ""
+    scheme, _, token = authorization.strip().partition(" ")
+    if scheme.lower() != "bearer" or not token:
+        return ""
+    return token.strip()
+
+
 async def require_action_key(
     x_api_key: Optional[str] = Header(default=None, alias="X-API-Key"),
     authorization: Optional[str] = Header(default=None, alias="Authorization"),
 ) -> None:
-    action_key = os.getenv("ACTION_API_KEY", "")
+    action_key = get_configured_action_key()
     if not action_key:
-        raise HTTPException(status_code=500, detail="ACTION_API_KEY is not configured.")
+        raise HTTPException(status_code=500, detail="API authentication is not configured")
 
-    bearer_key = ""
-    if authorization:
-        scheme, _, token = authorization.partition(" ")
-        if scheme.lower() == "bearer" and token:
-            bearer_key = token
-
-    header_keys = [key for key in (x_api_key, bearer_key) if key]
+    header_keys = [key.strip() for key in (x_api_key, extract_bearer_token(authorization)) if key and key.strip()]
     if not any(secrets.compare_digest(key, action_key) for key in header_keys):
         raise HTTPException(status_code=401, detail="Invalid or missing API key.")
 
@@ -518,6 +525,15 @@ async def debug_config():
         },
         "default_bookmakers": DEFAULT_BOOKMAKERS,
         "default_regions": DEFAULT_REGIONS,
+    }
+
+
+@app.get("/api/debug/auth-status", operation_id="getAuthStatus")
+async def auth_status():
+    return {
+        "action_api_key_configured": bool(get_configured_action_key()),
+        "accepted_headers": ["X-API-Key", "Authorization: Bearer"],
+        "auth_dependency_loaded": True,
     }
 
 

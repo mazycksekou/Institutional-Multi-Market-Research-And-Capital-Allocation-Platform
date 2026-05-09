@@ -17,7 +17,7 @@ def check(name, passed, detail=""):
 
 def headers():
     if ACTION_API_KEY:
-        return {"X-Action-Key": ACTION_API_KEY}
+        return {"X-API-Key": ACTION_API_KEY}
     return {}
 
 
