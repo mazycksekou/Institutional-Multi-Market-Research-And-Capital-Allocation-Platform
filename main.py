@@ -766,7 +766,7 @@ def custom_openapi():
     protected_security = [{"ApiKeyAuth": []}]
 
     schema = {
-        "openapi": "3.0.3",
+        "openapi": "3.1.0",
         "info": {
             "title": app.title,
             "description": "Minimal Custom GPT Action schema for betting event lookup.",
@@ -809,6 +809,7 @@ def custom_openapi():
             },
         },
         "components": {
+            "schemas": {},
             "securitySchemes": {
                 "ApiKeyAuth": {
                     "type": "apiKey",
