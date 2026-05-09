@@ -11,7 +11,6 @@ import yfinance as yf
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.openapi.utils import get_openapi
 from pydantic import BaseModel, Field
 
 from quant_engine import (
@@ -740,25 +739,85 @@ async def quant_stock_analysis(payload: StockAnalysisRequest):
 
 
 def custom_openapi():
-    schema = get_openapi(
-        title=app.title,
-        version=app.version,
-        description=(
-            "Custom GPT Action API. Betting endpoints require sport or league, "
-            "never use unrelated sport fallback, never use Kalshi fallback, and "
-            "return no_data when requested odds are missing."
-        ),
-        routes=app.routes,
-    )
-    schema["servers"] = [{"url": API_BASE_URL}]
-    for path_item in schema.get("paths", {}).values():
-        for operation in path_item.values():
-            if isinstance(operation, dict):
-                operation["parameters"] = [
-                    parameter
-                    for parameter in operation.get("parameters", [])
-                    if parameter.get("name", "").lower() not in {"x-api-key", "authorization"}
-                ]
+    if app.openapi_schema:
+        return app.openapi_schema
+
+    generic_object_response = {
+        "description": "Successful Response",
+        "content": {
+            "application/json": {
+                "schema": {
+                    "type": "object",
+                    "additionalProperties": True,
+                }
+            }
+        },
+    }
+    league_parameter = {
+        "name": "league",
+        "in": "query",
+        "required": True,
+        "description": "League code such as mlb, nba, nhl, nfl",
+        "schema": {
+            "type": "string",
+            "example": "mlb",
+        },
+    }
+    protected_security = [{"ApiKeyAuth": []}]
+
+    schema = {
+        "openapi": "3.0.3",
+        "info": {
+            "title": app.title,
+            "description": "Minimal Custom GPT Action schema for betting event lookup.",
+            "version": app.version,
+        },
+        "servers": [{"url": API_BASE_URL}],
+        "paths": {
+            "/health": {
+                "get": {
+                    "operationId": "healthCheck",
+                    "summary": "Health Check",
+                    "responses": {"200": generic_object_response},
+                }
+            },
+            "/api/debug/config": {
+                "get": {
+                    "operationId": "debugConfig",
+                    "summary": "Debug Config",
+                    "security": protected_security,
+                    "responses": {"200": generic_object_response},
+                }
+            },
+            "/api/betting/events/active": {
+                "get": {
+                    "operationId": "getActiveBettingEvents",
+                    "summary": "Get Active Betting Events",
+                    "security": protected_security,
+                    "parameters": [league_parameter],
+                    "responses": {"200": generic_object_response},
+                }
+            },
+            "/api/betting/first-event-odds": {
+                "get": {
+                    "operationId": "getFirstEventOdds",
+                    "summary": "Get First Event Odds",
+                    "security": protected_security,
+                    "parameters": [league_parameter],
+                    "responses": {"200": generic_object_response},
+                }
+            },
+        },
+        "components": {
+            "securitySchemes": {
+                "ApiKeyAuth": {
+                    "type": "apiKey",
+                    "in": "header",
+                    "name": "X-API-Key",
+                }
+            }
+        },
+    }
     app.openapi_schema = schema
     return schema
 
