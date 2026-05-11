@@ -249,6 +249,22 @@ paths:
               additionalProperties: true
       responses:
         "200": *genericResponse
+  /quant/market-pricing:
+    post:
+      operationId: priceMarket
+      summary: Price Market
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: {}
+              additionalProperties: true
+      responses:
+        "200": *genericResponse
   /quant/stock-analysis:
     post:
       operationId: analyzeStock

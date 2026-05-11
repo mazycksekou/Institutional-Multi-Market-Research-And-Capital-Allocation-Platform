@@ -16,15 +16,20 @@ from pydantic import BaseModel, Field
 from betting_providers.base import PREDICTION_MARKET
 from betting_providers.provider_router import ProviderRouter
 from quant_engine import (
+    american_to_implied_probability,
     capm_required_return,
+    build_market_pricing_row,
     classify_bet,
+    classify_edge,
     classify_stock,
     expected_value_dollars,
     expected_value_per_unit,
     exposure_check,
     implied_probability_from_american,
     kelly_fraction,
+    probability_to_fair_american,
     stock_alpha,
+    suggested_stake,
     suggested_bet_size,
     american_to_decimal,
 )
@@ -155,6 +160,21 @@ class BetLogRequest(BaseModel):
     decision: Optional[str] = None
     result: Optional[str] = "pending"
     profit_or_loss: float = 0
+    notes: Optional[str] = None
+
+
+class MarketPricingRequest(BaseModel):
+    event: str
+    provider: str
+    sportsbook: str
+    league: str
+    market: str
+    selection: str
+    american_odds: int
+    true_probability: float = Field(gt=0, lt=1)
+    bankroll: float = Field(ge=0)
+    stake: float = Field(ge=0)
+    correlation_group: Optional[str] = None
     notes: Optional[str] = None
 
 
@@ -501,6 +521,11 @@ async def root():
     return {"ok": True, "service": "betting-stock-api", "message": "API is running."}
 
 
+@app.head("/", include_in_schema=False)
+async def root_head():
+    return {}
+
+
 @app.get("/health", operation_id="healthCheck")
 async def health_check():
     return {"ok": True, "status": "ok", "service": "betting-stock-api"}
@@ -778,6 +803,71 @@ async def quant_bet_analysis(payload: BetAnalysisRequest):
     return {"ok": True, "endpoint": "/quant/bet-analysis", "analysis": analysis, "logbook_row": logbook_row}
 
 
+@app.post("/quant/market-pricing", operation_id="priceMarket", dependencies=[Depends(require_action_key)])
+async def quant_market_pricing(payload: MarketPricingRequest):
+    implied = american_to_implied_probability(payload.american_odds)
+    implied_probability = implied["decimal"]
+    edge = payload.true_probability - implied_probability
+    ev_unit = expected_value_per_unit(payload.american_odds, payload.true_probability)
+    kelly = kelly_fraction(payload.american_odds, payload.true_probability)
+    suggested = suggested_stake(payload.bankroll, payload.american_odds, payload.true_probability)
+    decision = classify_edge(edge * 100, ev_unit)
+    risk_warning = "Stake is within the capped fractional Kelly risk limit."
+
+    if suggested <= 0 and ev_unit <= 0:
+        risk_warning = "This market has no positive expected value at the submitted probability."
+    elif payload.bankroll and payload.stake > payload.bankroll * 0.05:
+        decision = "OVEREXPOSED"
+        risk_warning = "Submitted stake is above the correlation exposure guardrail."
+    elif payload.stake > suggested and suggested >= 0:
+        risk_warning = "Submitted stake is above the capped fractional Kelly recommendation."
+
+    output = {
+        "decimal_odds": round(american_to_decimal(payload.american_odds), 2),
+        "implied_probability": round(implied_probability, 4),
+        "implied_probability_percent": round(implied_probability * 100, 2),
+        "true_probability_percent": round(payload.true_probability * 100, 2),
+        "edge": round(edge, 4),
+        "edge_percent": round(edge * 100, 2),
+        "fair_american_odds": probability_to_fair_american(payload.true_probability),
+        "ev_per_unit": round(ev_unit, 4),
+        "ev_per_100": round(ev_unit * 100, 2),
+        "kelly_fraction": round(kelly, 4),
+        "kelly_percent": round(kelly * 100, 2),
+        "suggested_stake": round(suggested, 2),
+        "decision": decision,
+        "risk_warning": risk_warning,
+    }
+    input_data = payload.model_dump()
+    logbook_row = build_market_pricing_row(input_data, output)
+    return {
+        "ok": True,
+        "event": payload.event,
+        "provider": payload.provider,
+        "sportsbook": payload.sportsbook,
+        "league": payload.league,
+        "market": payload.market,
+        "selection": payload.selection,
+        "american_odds": payload.american_odds,
+        "decimal_odds": output["decimal_odds"],
+        "implied_probability": output["implied_probability"],
+        "implied_probability_percent": output["implied_probability_percent"],
+        "true_probability": payload.true_probability,
+        "true_probability_percent": output["true_probability_percent"],
+        "edge": output["edge"],
+        "edge_percent": output["edge_percent"],
+        "fair_american_odds": output["fair_american_odds"],
+        "ev_per_unit": output["ev_per_unit"],
+        "ev_per_100": output["ev_per_100"],
+        "kelly_fraction": output["kelly_fraction"],
+        "kelly_percent": output["kelly_percent"],
+        "suggested_stake": output["suggested_stake"],
+        "decision": output["decision"],
+        "risk_warning": output["risk_warning"],
+        "logbook_row": logbook_row,
+    }
+
+
 @app.post("/quant/stock-analysis", operation_id="quantStockAnalysis", dependencies=[Depends(require_action_key)])
 async def quant_stock_analysis(payload: StockAnalysisRequest):
     required = capm_required_return(payload.risk_free_rate_pct, payload.beta, payload.expected_market_return_pct)
@@ -1005,6 +1095,15 @@ def custom_openapi():
                 "post": {
                     "operationId": "analyzeBet",
                     "summary": "Analyze Bet",
+                    "security": protected_security,
+                    "requestBody": generic_request_body,
+                    "responses": {"200": generic_object_response},
+                }
+            },
+            "/quant/market-pricing": {
+                "post": {
+                    "operationId": "priceMarket",
+                    "summary": "Price Market",
                     "security": protected_security,
                     "requestBody": generic_request_body,
                     "responses": {"200": generic_object_response},
