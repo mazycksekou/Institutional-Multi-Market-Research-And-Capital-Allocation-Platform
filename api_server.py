@@ -4,7 +4,14 @@ app.openapi = custom_openapi
 
 
 def _verify_runtime_routes() -> None:
-    required_paths = {"/api/betting/events/active", "/quant/market-pricing"}
+    required_paths = {
+        "/api/betting/events/active",
+        "/quant/market-pricing",
+        "/quant/bet-analysis",
+        "/quant/stock-analysis",
+        "/api/betting/events/{event_id}/odds",
+        "/api/betting/first-event-odds",
+    }
     route_paths = {route.path for route in app.routes}
     missing_routes = sorted(required_paths - route_paths)
     if missing_routes:

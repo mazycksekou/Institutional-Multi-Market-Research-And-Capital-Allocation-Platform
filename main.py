@@ -11,6 +11,8 @@ import yfinance as yf
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.utils import get_openapi
+from fastapi.routing import APIRoute
 from pydantic import BaseModel, Field
 
 from betting_providers.base import PREDICTION_MARKET
@@ -536,6 +538,12 @@ async def ping():
     return {"ok": True}
 
 
+@app.get("/debug/routes", include_in_schema=False)
+async def debug_routes():
+    paths = sorted({route.path for route in app.routes if isinstance(route, APIRoute)})
+    return {"ok": True, "paths": paths, "count": len(paths)}
+
+
 @app.get("/api/debug/config", operation_id="debugConfig", dependencies=[Depends(require_action_key)])
 async def debug_config():
     return {
@@ -905,231 +913,57 @@ async def quant_stock_analysis(payload: StockAnalysisRequest):
     return {"ok": True, "endpoint": "/quant/stock-analysis", "analysis": analysis, "logbook_row": logbook_row}
 
 
+PUBLIC_OPENAPI_PATH_METHODS = frozenset({
+    ("/", "get"),
+    ("/health", "get"),
+    ("/ping", "get"),
+    ("/api/debug/auth-status", "get"),
+})
+
+
+def _live_openapi_paths() -> set[str]:
+    return {
+        route.path
+        for route in app.routes
+        if isinstance(route, APIRoute) and route.include_in_schema
+    }
+
+
+def _attach_api_key_openapi_security(schema: dict[str, Any]) -> None:
+    components = schema.setdefault("components", {})
+    schemes = components.setdefault("securitySchemes", {})
+    schemes["ApiKeyAuth"] = {"type": "apiKey", "in": "header", "name": "X-API-Key"}
+    requirement = [{"ApiKeyAuth": []}]
+    for path_key, path_item in schema.get("paths", {}).items():
+        if not isinstance(path_item, dict):
+            continue
+        for method, operation in path_item.items():
+            if method not in {"get", "post", "put", "delete", "patch", "head", "options"}:
+                continue
+            if not isinstance(operation, dict):
+                continue
+            if (path_key, method) in PUBLIC_OPENAPI_PATH_METHODS:
+                continue
+            operation.setdefault("security", requirement)
+
+
 def custom_openapi():
-    if app.openapi_schema:
-        return app.openapi_schema
+    cached = app.openapi_schema
+    live_paths = _live_openapi_paths()
+    if isinstance(cached, dict):
+        cached_paths = set(cached.get("paths", {}))
+        if cached_paths == live_paths:
+            return cached
 
-    generic_object_response = {
-        "description": "Successful Response",
-        "content": {
-            "application/json": {
-                "schema": {
-                    "type": "object",
-                    "properties": {},
-                    "additionalProperties": True,
-                }
-            }
-        },
-    }
-    league_parameter = {
-        "name": "league",
-        "in": "query",
-        "required": False,
-        "description": "League code such as mlb, nba, nhl, nfl",
-        "schema": {
-            "type": "string",
-            "example": "mlb",
-        },
-    }
-    protected_security = [{"ApiKeyAuth": []}]
-    provider_parameter = {
-        "name": "provider",
-        "in": "query",
-        "required": False,
-        "schema": {"type": "string", "example": "the_odds_api"},
-    }
-    sport_parameter = {
-        "name": "sport",
-        "in": "query",
-        "required": False,
-        "schema": {"type": "string", "example": "baseball_mlb"},
-    }
-    event_id_parameter = {
-        "name": "event_id",
-        "in": "path",
-        "required": True,
-        "schema": {"type": "string"},
-    }
-    ticker_parameter = {
-        "name": "ticker",
-        "in": "path",
-        "required": True,
-        "schema": {"type": "string"},
-    }
-    optional_string_query = lambda name: {
-        "name": name,
-        "in": "query",
-        "required": False,
-        "schema": {"type": "string"},
-    }
-    limit_parameter = {
-        "name": "limit",
-        "in": "query",
-        "required": False,
-        "schema": {"type": "integer", "default": 100},
-    }
-    generic_request_body = {
-        "required": True,
-        "content": {
-            "application/json": {
-                "schema": {
-                    "type": "object",
-                    "properties": {},
-                    "additionalProperties": True,
-                }
-            }
-        },
-    }
-
-    schema = {
-        "openapi": "3.1.0",
-        "info": {
-            "title": app.title,
-            "description": "Minimal Custom GPT Action schema for betting event lookup.",
-            "version": app.version,
-        },
-        "servers": [{"url": API_BASE_URL}],
-        "paths": {
-            "/health": {
-                "get": {
-                    "operationId": "healthCheck",
-                    "summary": "Health Check",
-                    "responses": {"200": generic_object_response},
-                }
-            },
-            "/api/debug/config": {
-                "get": {
-                    "operationId": "debugConfig",
-                    "summary": "Debug Config",
-                    "security": protected_security,
-                    "responses": {"200": generic_object_response},
-                }
-            },
-            "/api/betting/providers": {
-                "get": {
-                    "operationId": "getBettingProviders",
-                    "summary": "Get Betting Providers",
-                    "security": protected_security,
-                    "responses": {"200": generic_object_response},
-                }
-            },
-            "/api/betting/sports": {
-                "get": {
-                    "operationId": "getSupportedBettingSports",
-                    "summary": "Get Supported Betting Sports",
-                    "security": protected_security,
-                    "parameters": [provider_parameter],
-                    "responses": {"200": generic_object_response},
-                }
-            },
-            "/api/betting/events/active": {
-                "get": {
-                    "operationId": "getActiveBettingEvents",
-                    "summary": "Get Active Betting Events",
-                    "security": protected_security,
-                    "parameters": [league_parameter, sport_parameter, provider_parameter],
-                    "responses": {"200": generic_object_response},
-                }
-            },
-            "/api/betting/events/{event_id}/odds": {
-                "get": {
-                    "operationId": "getEventOdds",
-                    "summary": "Get Event Odds",
-                    "security": protected_security,
-                    "parameters": [event_id_parameter, league_parameter, sport_parameter, provider_parameter],
-                    "responses": {"200": generic_object_response},
-                }
-            },
-            "/api/betting/first-event-odds": {
-                "get": {
-                    "operationId": "getFirstEventOdds",
-                    "summary": "Get First Event Odds",
-                    "security": protected_security,
-                    "parameters": [league_parameter, sport_parameter, provider_parameter],
-                    "responses": {"200": generic_object_response},
-                }
-            },
-            "/api/markets/providers": {
-                "get": {
-                    "operationId": "getMarketProviders",
-                    "summary": "Get Market Providers",
-                    "security": protected_security,
-                    "responses": {"200": generic_object_response},
-                }
-            },
-            "/api/markets/kalshi/events": {
-                "get": {
-                    "operationId": "getKalshiEvents",
-                    "summary": "Get Kalshi Events",
-                    "security": protected_security,
-                    "parameters": [optional_string_query("status"), optional_string_query("series_ticker"), limit_parameter],
-                    "responses": {"200": generic_object_response},
-                }
-            },
-            "/api/markets/kalshi/markets": {
-                "get": {
-                    "operationId": "getKalshiMarkets",
-                    "summary": "Get Kalshi Markets",
-                    "security": protected_security,
-                    "parameters": [
-                        optional_string_query("query"),
-                        optional_string_query("event_ticker"),
-                        optional_string_query("series_ticker"),
-                        optional_string_query("status"),
-                        limit_parameter,
-                        optional_string_query("cursor"),
-                    ],
-                    "responses": {"200": generic_object_response},
-                }
-            },
-            "/api/markets/kalshi/markets/{ticker}/orderbook": {
-                "get": {
-                    "operationId": "getKalshiOrderbook",
-                    "summary": "Get Kalshi Orderbook",
-                    "security": protected_security,
-                    "parameters": [ticker_parameter],
-                    "responses": {"200": generic_object_response},
-                }
-            },
-            "/quant/bet-analysis": {
-                "post": {
-                    "operationId": "analyzeBet",
-                    "summary": "Analyze Bet",
-                    "security": protected_security,
-                    "requestBody": generic_request_body,
-                    "responses": {"200": generic_object_response},
-                }
-            },
-            "/quant/market-pricing": {
-                "post": {
-                    "operationId": "priceMarket",
-                    "summary": "Price Market",
-                    "security": protected_security,
-                    "requestBody": generic_request_body,
-                    "responses": {"200": generic_object_response},
-                }
-            },
-            "/quant/stock-analysis": {
-                "post": {
-                    "operationId": "analyzeStock",
-                    "summary": "Analyze Stock",
-                    "security": protected_security,
-                    "requestBody": generic_request_body,
-                    "responses": {"200": generic_object_response},
-                }
-            },
-        },
-        "components": {
-            "schemas": {},
-            "securitySchemes": {
-                "ApiKeyAuth": {
-                    "type": "apiKey",
-                    "in": "header",
-                    "name": "X-API-Key",
-                }
-            }
-        },
-    }
+    schema = get_openapi(
+        title=app.title,
+        version=app.version,
+        description=app.description or "",
+        routes=app.routes,
+    )
+    schema["info"]["description"] = "Minimal Custom GPT Action schema for betting event lookup."
+    schema["servers"] = [{"url": API_BASE_URL}]
+    _attach_api_key_openapi_security(schema)
     app.openapi_schema = schema
     return schema
 
