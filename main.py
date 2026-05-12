@@ -1679,18 +1679,68 @@ async def action_analyze_betting_event(payload: AnalyzeEventRequest):
                 "step_failed": None
             }
 
-        # Create evaluate lines request
-        evaluate_lines = []
+        # Filter and validate evaluation_ready_lines before passing to evaluateBettingLines
+        valid_evaluation_lines = []
+        validation_warnings = []
+
         for line in evaluation_ready_lines:
-            evaluate_lines.append({
-                "market": line.get("market"),
-                "selection": line.get("selection"),
+            # Check required fields
+            sportsbook = line.get("sportsbook")
+            market = line.get("market")
+            selection = line.get("selection")
+            odds_american = line.get("odds_american")
+
+            # Skip rows with missing required fields
+            if sportsbook is None or sportsbook == "unknown":
+                validation_warnings.append("Skipped line because sportsbook was missing.")
+                continue
+
+            if odds_american is None:
+                validation_warnings.append("Skipped line because odds_american was missing.")
+                continue
+
+            if market is None or selection is None:
+                validation_warnings.append("Skipped line because market or selection was missing.")
+                continue
+
+            # Create valid evaluation line
+            valid_line = {
+                "sportsbook": sportsbook,
+                "market": market,
+                "selection": selection,
                 "line": line.get("line"),
-                "odds_american": line.get("odds_american"),
+                "odds_american": odds_american,
                 "model_probability": model_response.get("final_probability"),
                 "correlation_group": line.get("correlation_group"),
                 "opening_odds_american": line.get("opening_odds_american")
-            })
+            }
+
+            valid_evaluation_lines.append(valid_line)
+
+        # If no valid lines, return error response
+        if not valid_evaluation_lines:
+            return {
+                "ok": False,
+                "endpoint": endpoint_id,
+                "sport": payload.sport,
+                "league": payload.league,
+                "event_id": payload.event_id,
+                "markets_requested": markets_requested,
+                "probability_type": model_response.get("probability_type", "unknown"),
+                "confirmed_bets": [],
+                "target_lines": [],
+                "no_bets": [],
+                "warnings": validation_warnings,
+                "model_limitations": model_response.get("model_limitations", []),
+                "missing_inputs": model_response.get("missing_inputs", []),
+                "active_inputs": model_response.get("active_inputs", []),
+                "market_summary": price_response.get("market_summary", []),
+                "evaluation_results": [],
+                "log_ready_rows": [],
+                "error": "no_valid_evaluation_lines",
+                "detail": "No valid sportsbook lines were available for evaluation.",
+                "step_failed": "evaluate_lines"
+            }
 
         evaluate_request = EvaluateLinesRequest(
             sport=payload.sport,
@@ -1698,7 +1748,7 @@ async def action_analyze_betting_event(payload: AnalyzeEventRequest):
             bankroll=payload.bankroll,
             unit_size=payload.unit_size,
             risk_profile=payload.risk_profile,
-            lines=evaluate_lines,
+            lines=valid_evaluation_lines,
             max_stake_pct=payload.max_stake_pct
         )
 
@@ -1750,6 +1800,9 @@ async def action_analyze_betting_event(payload: AnalyzeEventRequest):
         # Add warnings for missing inputs
         if model_response.get("missing_inputs"):
             warnings.append(f"Missing model inputs: {', '.join(model_response.get('missing_inputs', []))}")
+
+        # Add validation warnings
+        warnings.extend(validation_warnings)
 
         # Create log-ready rows
         log_ready_rows = []

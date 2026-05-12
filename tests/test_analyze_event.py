@@ -1,4 +1,5 @@
 import unittest
+import asyncio
 from unittest.mock import AsyncMock, patch, MagicMock
 from main import AnalyzeEventRequest, AnalyzeEventResponse
 
@@ -8,7 +9,7 @@ class TestAnalyzeEvent(unittest.TestCase):
         """Test that AnalyzeEventRequest can be instantiated with valid data."""
         request = AnalyzeEventRequest(
             sport="baseball_mlb",
-            league="baseball_mlb", 
+            league="baseball_mlb",
             event_id="test-event-123",
             markets="h2h,spreads,totals",
             provider=None,
@@ -18,7 +19,7 @@ class TestAnalyzeEvent(unittest.TestCase):
             max_stake_pct=0.02,
             independent_inputs=None
         )
-        
+
         self.assertEqual(request.sport, "baseball_mlb")
         self.assertEqual(request.league, "baseball_mlb")
         self.assertEqual(request.event_id, "test-event-123")
@@ -37,7 +38,7 @@ class TestAnalyzeEvent(unittest.TestCase):
             "pitcher_adjustment": 0.02,
             "weather_adjustment": -0.01
         }
-        
+
         request = AnalyzeEventRequest(
             sport="basketball_nba",
             league="basketball_nba",
@@ -49,7 +50,7 @@ class TestAnalyzeEvent(unittest.TestCase):
             max_stake_pct=0.05,
             independent_inputs=independent_inputs
         )
-        
+
         self.assertEqual(request.independent_inputs, independent_inputs)
         self.assertEqual(request.risk_profile, "standard")
         self.assertEqual(request.max_stake_pct, 0.05)
@@ -65,7 +66,7 @@ class TestAnalyzeEvent(unittest.TestCase):
             markets_requested=["h2h", "spreads", "totals"],
             probability_type="blended_market_and_projection"
         )
-        
+
         self.assertTrue(response.ok)
         self.assertEqual(response.endpoint, "analyzeBettingEvent")
         self.assertEqual(response.sport, "baseball_mlb")
@@ -84,10 +85,10 @@ class TestAnalyzeEvent(unittest.TestCase):
     def test_analyze_event_endpoint_import(self):
         """Test that the analyze event endpoint can be imported without errors."""
         from main import AnalyzeEventRequest, AnalyzeEventResponse, action_analyze_betting_event
-        
+
         # Verify the endpoint function exists
         self.assertTrue(callable(action_analyze_betting_event))
-        
+
         # Verify it's async
         import inspect
         self.assertTrue(inspect.iscoroutinefunction(action_analyze_betting_event))
@@ -100,7 +101,7 @@ class TestAnalyzeEvent(unittest.TestCase):
             league="baseball_mlb",
             event_id="test-event-123"
         )
-        
+
         self.assertEqual(request.sport, "baseball_mlb")
         self.assertEqual(request.league, "baseball_mlb")
         self.assertEqual(request.event_id, "test-event-123")
@@ -133,13 +134,253 @@ class TestAnalyzeEvent(unittest.TestCase):
             detail=None,
             step_failed=None
         )
-        
+
         self.assertEqual(len(response.confirmed_bets), 1)
         self.assertEqual(len(response.target_lines), 1)
         self.assertEqual(len(response.no_bets), 1)
         self.assertEqual(len(response.warnings), 1)
         self.assertEqual(response.confirmed_bets[0]["decision"], "BET")
         self.assertEqual(response.probability_type, "market_derived")
+
+    def test_analyze_event_validation_incomplete_rows(self):
+        """Test that incomplete rows without sportsbook are skipped."""
+        from main import action_analyze_betting_event
+
+        # Mock price response with incomplete rows
+        mock_price_response = {
+            "ok": True,
+            "evaluation_ready_lines": [
+                {
+                    "sportsbook": None,  # Missing sportsbook
+                    "market": "h2h",
+                    "selection": "Team A",
+                    "odds_american": -110
+                },
+                {
+                    "sportsbook": "unknown",  # Invalid sportsbook
+                    "market": "h2h",
+                    "selection": "Team B",
+                    "odds_american": +100
+                }
+            ]
+        }
+
+        # Mock model response
+        mock_model_response = {
+            "ok": True,
+            "final_probability": 0.55,
+            "probability_type": "market_derived",
+            "model_limitations": [],
+            "missing_inputs": [],
+            "active_inputs": []
+        }
+
+        # Mock evaluate response (should not be called due to validation failure)
+        mock_evaluate_response = {"ok": True, "results": []}
+
+        with patch('main.action_fetch_event_odds_envelope') as mock_odds, \
+             patch('main.action_price_betting_event', new_callable=AsyncMock) as mock_price, \
+             patch('main.action_calculate_model_probability', new_callable=AsyncMock) as mock_model, \
+             patch('main.action_evaluate_betting_lines', new_callable=AsyncMock) as mock_evaluate:
+
+            mock_odds.return_value = {"ok": True, "markets": []}
+            mock_price.return_value = mock_price_response
+            mock_model.return_value = mock_model_response
+            mock_evaluate.return_value = mock_evaluate_response
+
+            request = AnalyzeEventRequest(
+                sport="baseball_mlb",
+                league="baseball_mlb",
+                event_id="test-event-123"
+            )
+
+            response = asyncio.run(action_analyze_betting_event(request))
+
+            # Should return error due to no valid lines
+            self.assertFalse(response["ok"])
+            self.assertEqual(response["error"], "no_valid_evaluation_lines")
+            self.assertEqual(response["step_failed"], "evaluate_lines")
+            self.assertIn("sportsbook was missing", " ".join(response["warnings"]))
+
+    def test_analyze_event_validation_none_odds(self):
+        """Test that rows with odds_american None are skipped."""
+        from main import action_analyze_betting_event
+
+        mock_price_response = {
+            "ok": True,
+            "evaluation_ready_lines": [
+                {
+                    "sportsbook": "draftkings",
+                    "market": "h2h",
+                    "selection": "Team A",
+                    "odds_american": None  # Missing odds
+                }
+            ]
+        }
+
+        mock_model_response = {
+            "ok": True,
+            "final_probability": 0.55,
+            "probability_type": "market_derived",
+            "model_limitations": [],
+            "missing_inputs": [],
+            "active_inputs": []
+        }
+
+        with patch('main.action_fetch_event_odds_envelope') as mock_odds, \
+             patch('main.action_price_betting_event', new_callable=AsyncMock) as mock_price, \
+             patch('main.action_calculate_model_probability', new_callable=AsyncMock) as mock_model, \
+             patch('main.action_evaluate_betting_lines', new_callable=AsyncMock) as mock_evaluate:
+
+            mock_odds.return_value = {"ok": True, "markets": []}
+            mock_price.return_value = mock_price_response
+            mock_model.return_value = mock_model_response
+            mock_evaluate.return_value = {"ok": True, "results": []}
+
+            request = AnalyzeEventRequest(
+                sport="baseball_mlb",
+                league="baseball_mlb",
+                event_id="test-event-123"
+            )
+
+            response = asyncio.run(action_analyze_betting_event(request))
+
+            # Should return error due to no valid lines
+            self.assertFalse(response["ok"])
+            self.assertEqual(response["error"], "no_valid_evaluation_lines")
+            self.assertIn("odds_american was missing", " ".join(response["warnings"]))
+
+    def test_analyze_event_validation_valid_rows(self):
+        """Test that valid rows are passed to evaluateBettingLines."""
+        from main import action_analyze_betting_event
+
+        mock_price_response = {
+            "ok": True,
+            "evaluation_ready_lines": [
+                {
+                    "sportsbook": "draftkings",
+                    "market": "h2h",
+                    "selection": "Team A",
+                    "odds_american": -110,
+                    "line": None,
+                    "correlation_group": "h2h_group"
+                }
+            ]
+        }
+
+        mock_model_response = {
+            "ok": True,
+            "final_probability": 0.55,
+            "probability_type": "blended_market_and_projection",
+            "model_limitations": [],
+            "missing_inputs": [],
+            "active_inputs": ["projection_probability"]
+        }
+
+        mock_evaluate_response = {
+            "ok": True,
+            "results": [{
+                "market": "h2h",
+                "selection": "Team A",
+                "decision": "BET",
+                "stake": 25,
+                "expected_value": 0.05,
+                "odds_american": -110
+            }]
+        }
+
+        with patch('main.action_fetch_event_odds_envelope') as mock_odds, \
+             patch('main.action_price_betting_event', new_callable=AsyncMock) as mock_price, \
+             patch('main.action_calculate_model_probability', new_callable=AsyncMock) as mock_model, \
+             patch('main.action_evaluate_betting_lines', new_callable=AsyncMock) as mock_evaluate:
+
+            mock_odds.return_value = {"ok": True, "markets": []}
+            mock_price.return_value = mock_price_response
+            mock_model.return_value = mock_model_response
+            mock_evaluate.return_value = mock_evaluate_response
+
+            request = AnalyzeEventRequest(
+                sport="baseball_mlb",
+                league="baseball_mlb",
+                event_id="test-event-123"
+            )
+
+            response = asyncio.run(action_analyze_betting_event(request))
+
+            # Should succeed with valid lines
+            self.assertTrue(response["ok"])
+            self.assertEqual(response["probability_type"], "blended_market_and_projection")
+            self.assertEqual(len(response["confirmed_bets"]), 1)
+            self.assertEqual(response["confirmed_bets"][0]["decision"], "BET")
+
+            # Verify evaluateBettingLines was called with valid lines
+            mock_evaluate.assert_called_once()
+            call_args = mock_evaluate.call_args[0][0]  # First positional argument (EvaluateLinesRequest)
+            self.assertEqual(len(call_args.lines), 1)
+            self.assertEqual(call_args.lines[0].sportsbook, "draftkings")
+            self.assertEqual(call_args.lines[0].odds_american, -110)
+
+    def test_analyze_event_model_probability_missing(self):
+        """Test that missing model_probability doesn't crash the pipeline."""
+        from main import action_analyze_betting_event
+
+        mock_price_response = {
+            "ok": True,
+            "evaluation_ready_lines": [
+                {
+                    "sportsbook": "draftkings",
+                    "market": "h2h",
+                    "selection": "Team A",
+                    "odds_american": -110
+                }
+            ]
+        }
+
+        # Model response with None final_probability
+        mock_model_response = {
+            "ok": True,
+            "final_probability": None,  # Missing probability
+            "probability_type": "market_derived",
+            "model_limitations": ["Model probability missing"],
+            "missing_inputs": ["projection_probability"],
+            "active_inputs": ["market_probability"]
+        }
+
+        mock_evaluate_response = {
+            "ok": True,
+            "results": [{
+                "market": "h2h",
+                "selection": "Team A",
+                "decision": "no_bet_model_missing",  # Expected when model_probability is None
+                "stake": 0,
+                "expected_value": 0.0
+            }]
+        }
+
+        with patch('main.action_fetch_event_odds_envelope') as mock_odds, \
+             patch('main.action_price_betting_event', new_callable=AsyncMock) as mock_price, \
+             patch('main.action_calculate_model_probability', new_callable=AsyncMock) as mock_model, \
+             patch('main.action_evaluate_betting_lines', new_callable=AsyncMock) as mock_evaluate:
+
+            mock_odds.return_value = {"ok": True, "markets": []}
+            mock_price.return_value = mock_price_response
+            mock_model.return_value = mock_model_response
+            mock_evaluate.return_value = mock_evaluate_response
+
+            request = AnalyzeEventRequest(
+                sport="baseball_mlb",
+                league="baseball_mlb",
+                event_id="test-event-123"
+            )
+
+            response = asyncio.run(action_analyze_betting_event(request))
+
+            # Should succeed but with no bets due to missing model probability
+            self.assertTrue(response["ok"])
+            self.assertEqual(response["probability_type"], "market_derived")
+            self.assertEqual(len(response["confirmed_bets"]), 0)
+            self.assertEqual(len(response["no_bets"]), 1)
+            self.assertEqual(response["no_bets"][0]["decision"], "no_bet_model_missing")
 
     def test_analyze_event_request_defaults(self):
         """Test AnalyzeEventRequest with default values."""
@@ -148,7 +389,7 @@ class TestAnalyzeEvent(unittest.TestCase):
             league="baseball_mlb",
             event_id="test-event-123"
         )
-        
+
         # Check default values
         self.assertEqual(request.markets, "h2h,spreads,totals")
         self.assertEqual(request.bankroll, 1000)
@@ -173,7 +414,7 @@ class TestAnalyzeEvent(unittest.TestCase):
             missing_inputs=["projection_probability"],
             active_inputs=["market_probability"]
         )
-        
+
         self.assertEqual(response.probability_type, "market_derived")
         self.assertEqual(len(response.warnings), 1)
         self.assertIn("market-derived probabilities", response.warnings[0])
