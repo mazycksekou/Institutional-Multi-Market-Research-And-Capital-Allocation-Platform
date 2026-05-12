@@ -19,6 +19,7 @@ from betting_providers import aliases as betting_aliases
 from betting_providers.base import PREDICTION_MARKET
 from betting_providers.provider_router import ProviderRouter
 import bet_decision_engine
+import market_pricing
 from quant_engine import (
     american_to_implied_probability,
     capm_required_return,
@@ -496,6 +497,18 @@ class EvaluateLinesRequest(BaseModel):
     risk_profile: str = "standard"
     lines: list[EvaluateLineIn] = Field(min_length=1)
     max_stake_pct: float = Field(default=0.02, gt=0, le=0.25)
+
+
+class PriceEventRequest(BaseModel):
+    sport: str
+    event_id: str
+    league: str
+    markets: str = "h2h,spreads,totals"
+    provider: Optional[str] = None
+    bankroll: float = Field(default=1000, ge=0)
+    unit_size: float = Field(default=25, gt=0)
+    risk_profile: str = "conservative"
+    model_probabilities: Optional[dict[str, Any]] = None
 
 
 def utc_now() -> str:
@@ -1130,6 +1143,123 @@ async def action_evaluate_betting_lines(payload: EvaluateLinesRequest):
             "error": "REQUEST_ERROR",
             "detail": str(exc),
             "results": [],
+        }
+
+
+@app.post("/api/actions/betting/price-event", operation_id="priceBettingEvent", dependencies=[Depends(require_action_key)])
+async def action_price_betting_event(payload: PriceEventRequest):
+    endpoint_id = "priceBettingEvent"
+    markets_requested = _parse_markets_requested(payload.markets)
+
+    try:
+        # Fetch event odds using the same Action safe odds logic
+        odds_response = await action_fetch_event_odds_envelope(
+            event_id=payload.event_id,
+            league=payload.league,
+            provider=payload.provider,
+            markets_csv=payload.markets,
+            bookmakers_csv=DEFAULT_BOOKMAKERS,
+        )
+
+        if not odds_response.get("ok"):
+            return {
+                "ok": False,
+                "endpoint": endpoint_id,
+                "sport": payload.sport,
+                "league": payload.league,
+                "event_id": payload.event_id,
+                "markets_requested": markets_requested,
+                "market_summary": [],
+                "best_prices": [],
+                "evaluation_ready_lines": [],
+                "warnings": [],
+                "error": odds_response.get("error", "ODDS_FETCH_FAILED"),
+                "detail": odds_response.get("detail", "Failed to fetch event odds"),
+            }
+
+        # Extract flat odds from markets
+        flat_odds = []
+        for market_block in odds_response.get("markets", []):
+            for line in market_block.get("lines", []):
+                flat_odds.append(line)
+
+        if not flat_odds:
+            return {
+                "ok": False,
+                "endpoint": endpoint_id,
+                "sport": payload.sport,
+                "league": payload.league,
+                "event_id": payload.event_id,
+                "markets_requested": markets_requested,
+                "market_summary": [],
+                "best_prices": [],
+                "evaluation_ready_lines": [],
+                "warnings": ["No odds data found for event"],
+                "error": "NO_ODDS_DATA",
+                "detail": "No odds data available for the requested event",
+            }
+
+        # Create evaluation-ready lines with optional model probabilities
+        evaluation_lines = market_pricing.create_evaluation_ready_lines(
+            flat_odds,
+            payload.model_probabilities
+        )
+
+        # Create market summary
+        market_summary = market_pricing.create_market_summary(evaluation_lines)
+
+        # Extract best prices for the response
+        best_prices = []
+        for summary in market_summary:
+            for selection in summary.get("selections", []):
+                best_prices.append({
+                    "market": summary["market"],
+                    "line": summary["line"],
+                    "selection": selection["selection"],
+                    "best_odds_american": selection["best_odds"],
+                    "consensus_probability": selection["consensus_probability"],
+                    "fair_odds_american": selection["fair_odds"]
+                })
+
+        # Check for warnings
+        warnings = []
+        if not evaluation_lines:
+            warnings.append("No evaluation-ready lines created")
+
+        # Check for stale lines
+        stale_count = sum(1 for line in evaluation_lines if line.get("stale_line_flag", False))
+        if stale_count > 0:
+            warnings.append(f"{stale_count} lines flagged as potentially stale")
+
+        return {
+            "ok": True,
+            "endpoint": endpoint_id,
+            "sport": payload.sport,
+            "league": payload.league,
+            "event_id": payload.event_id,
+            "markets_requested": markets_requested,
+            "market_summary": market_summary,
+            "best_prices": best_prices,
+            "evaluation_ready_lines": evaluation_lines,
+            "warnings": warnings,
+            "error": None,
+            "detail": None,
+        }
+
+    except Exception as exc:
+        return {
+            "ok": False,
+            "endpoint": endpoint_id,
+            "sport": payload.sport,
+            "league": payload.league,
+            "event_id": payload.event_id,
+            "markets_requested": markets_requested,
+            "market_summary": [],
+            "best_prices": [],
+            "evaluation_ready_lines": [],
+            "warnings": [],
+            "error": "UNEXPECTED_ERROR",
+            "detail": str(exc),
         }
 
 
