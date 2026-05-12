@@ -501,6 +501,8 @@ class EvaluateLinesRequest(BaseModel):
 
 
 class PriceEventRequest(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
+
     sport: str = Field(..., description="Sport key (e.g., 'baseball_mlb', 'basketball_nba')")
     event_id: str = Field(..., description="Unique event identifier")
     league: str = Field(..., description="League or sport key (e.g., 'mlb', 'baseball_mlb')")
@@ -594,6 +596,8 @@ class PriceEventResponse(BaseModel):
 
 
 class ModelProbabilityResponse(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
+
     ok: bool
     endpoint: str
     final_probability: Optional[float] = None
@@ -626,6 +630,8 @@ class EvaluateLinesResponse(BaseModel):
 
 
 class AnalyzeEventResponse(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
+
     ok: bool
     endpoint: str
     sport: str
