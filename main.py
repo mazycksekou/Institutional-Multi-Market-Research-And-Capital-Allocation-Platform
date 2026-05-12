@@ -513,7 +513,7 @@ class PriceEventRequest(BaseModel):
 
 
 class ModelProbabilityRequest(BaseModel):
-    market_probability: float = Field(gt=0, lt=1)
+    market_probability: Optional[float] = Field(None, gt=0, lt=1)
     projection_probability: Optional[float] = Field(None, gt=0, lt=1)
     pitcher_adjustment: Optional[float] = Field(None, ge=-0.1, le=0.1)
     weather_adjustment: Optional[float] = Field(None, ge=-0.1, le=0.1)
@@ -525,6 +525,7 @@ class ModelProbabilityRequest(BaseModel):
     player_prop_projection: Optional[float] = Field(None, gt=0, lt=1)
     sharp_market_probability: Optional[float] = Field(None, gt=0, lt=1)
     closing_line_projection: Optional[float] = Field(None, gt=0, lt=1)
+    priced_rows: Optional[list[dict[str, Any]]] = None
 
 
 def utc_now() -> str:
@@ -1281,31 +1282,108 @@ async def action_price_betting_event(payload: PriceEventRequest):
 
 @app.post("/api/actions/betting/model-probability", operation_id="estimateModelProbability", dependencies=[Depends(require_action_key)])
 async def action_calculate_model_probability(payload: ModelProbabilityRequest):
-    endpoint_id = "calculateModelProbability"
+    endpoint_id = "estimateModelProbability"
 
     try:
-        # Create independent inputs from request
-        inputs = model_probability.IndependentInputs(
-            projection_probability=payload.projection_probability,
-            pitcher_adjustment=payload.pitcher_adjustment,
-            weather_adjustment=payload.weather_adjustment,
-            lineup_adjustment=payload.lineup_adjustment,
-            bullpen_adjustment=payload.bullpen_adjustment,
-            injury_adjustment=payload.injury_adjustment,
-            park_factor_adjustment=payload.park_factor_adjustment,
-            umpire_adjustment=payload.umpire_adjustment,
-            player_prop_projection=payload.player_prop_projection,
-            sharp_market_probability=payload.sharp_market_probability,
-            closing_line_projection=payload.closing_line_projection,
-        )
+        # If no top-level market_probability provided, try to infer from priced_rows
+        if payload.market_probability is None:
+            if not payload.priced_rows or len(payload.priced_rows) == 0:
+                return {
+                    "ok": False,
+                    "endpoint": endpoint_id,
+                    "error": "missing_market_probability",
+                    "detail": "market_probability was not provided and no priced rows were available",
+                    "final_probability": None,
+                    "probability_type": None,
+                    "market_probability": None,
+                    "active_inputs": [],
+                    "missing_inputs": [],
+                    "applied_adjustments": {},
+                    "adjustment_cap_warnings": [],
+                    "model_limitations": [],
+                    "data_quality_score": None,
+                    "confidence": None,
+                    "confidence_grade": None,
+                    "provider_status": {}
+                }
 
-        # Create probability response
-        response = model_probability.create_probability_response(
-            market_probability=payload.market_probability,
-            inputs=inputs
-        )
+            # Process each priced row individually
+            results = []
+            for row in payload.priced_rows:
+                # Infer market probability from row with priority: no_vig -> consensus -> implied
+                market_prob = None
+                if "no_vig_probability" in row and row["no_vig_probability"] is not None:
+                    market_prob = row["no_vig_probability"]
+                elif "consensus_probability" in row and row["consensus_probability"] is not None:
+                    market_prob = row["consensus_probability"]
+                elif "implied_probability" in row and row["implied_probability"] is not None:
+                    market_prob = row["implied_probability"]
 
-        return response
+                if market_prob is None:
+                    # Skip this row with warning
+                    results.append({
+                        "ok": False,
+                        "row": row,
+                        "error": "missing_probability_in_row",
+                        "detail": "Row does not contain no_vig_probability, consensus_probability, or implied_probability"
+                    })
+                    continue
+
+                # Create independent inputs from request
+                inputs = model_probability.IndependentInputs(
+                    projection_probability=payload.projection_probability,
+                    pitcher_adjustment=payload.pitcher_adjustment,
+                    weather_adjustment=payload.weather_adjustment,
+                    lineup_adjustment=payload.lineup_adjustment,
+                    bullpen_adjustment=payload.bullpen_adjustment,
+                    injury_adjustment=payload.injury_adjustment,
+                    park_factor_adjustment=payload.park_factor_adjustment,
+                    umpire_adjustment=payload.umpire_adjustment,
+                    player_prop_projection=payload.player_prop_projection,
+                    sharp_market_probability=payload.sharp_market_probability,
+                    closing_line_projection=payload.closing_line_projection,
+                )
+
+                # Create probability response for this row
+                response = model_probability.create_probability_response(
+                    market_probability=market_prob,
+                    inputs=inputs
+                )
+                response["row"] = row
+                results.append(response)
+
+            return {
+                "ok": True,
+                "endpoint": endpoint_id,
+                "results": results,
+                "processed_rows": len(payload.priced_rows),
+                "successful_rows": len([r for r in results if r.get("ok", False)]),
+                "failed_rows": len([r for r in results if not r.get("ok", False)])
+            }
+
+        else:
+            # Use provided market_probability (fallback behavior)
+            inputs = model_probability.IndependentInputs(
+                projection_probability=payload.projection_probability,
+                pitcher_adjustment=payload.pitcher_adjustment,
+                weather_adjustment=payload.weather_adjustment,
+                lineup_adjustment=payload.lineup_adjustment,
+                bullpen_adjustment=payload.bullpen_adjustment,
+                injury_adjustment=payload.injury_adjustment,
+                park_factor_adjustment=payload.park_factor_adjustment,
+                umpire_adjustment=payload.umpire_adjustment,
+                player_prop_projection=payload.player_prop_projection,
+                sharp_market_probability=payload.sharp_market_probability,
+                closing_line_projection=payload.closing_line_projection,
+            )
+
+            # Create probability response
+            response = model_probability.create_probability_response(
+                market_probability=payload.market_probability,
+                inputs=inputs
+            )
+
+            return response
 
     except Exception as exc:
         return {
@@ -1639,4 +1717,4 @@ def custom_openapi():
     return schema
 
 
-app.openapi = custom_openapi
+app.openapi = custom_openapi;

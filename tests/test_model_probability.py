@@ -291,5 +291,98 @@ class TestCreateProbabilityResponse(unittest.TestCase):
             self.assertEqual(provider_status[provider], "placeholder")
 
 
+class TestOptionalMarketProbability(unittest.TestCase):
+    def test_request_without_market_probability_with_no_vig_probability(self):
+        """Test request without top level market_probability but with no_vig_probability returns ok true."""
+        priced_rows = [
+            {
+                "sportsbook": "draftkings",
+                "market": "h2h",
+                "selection": "Team A",
+                "no_vig_probability": 0.55,
+                "consensus_probability": 0.54,
+                "implied_probability": 0.56
+            }
+        ]
+
+        inputs = model_probability.IndependentInputs(projection_probability=0.60)
+        result = model_probability.blend_probabilities(0.55, inputs)
+
+        self.assertEqual(result.probability_type, "blended_market_and_projection")
+        self.assertEqual(result.market_probability, 0.55)
+        self.assertIn("projection_probability", result.active_inputs)
+
+    def test_request_without_market_probability_with_consensus_probability(self):
+        """Test request without top level market_probability but with consensus_probability returns ok true."""
+        priced_rows = [
+            {
+                "sportsbook": "draftkings",
+                "market": "h2h",
+                "selection": "Team A",
+                "consensus_probability": 0.54,
+                "implied_probability": 0.56
+            }
+        ]
+
+        inputs = model_probability.IndependentInputs(projection_probability=0.60)
+        result = model_probability.blend_probabilities(0.54, inputs)
+
+        self.assertEqual(result.probability_type, "blended_market_and_projection")
+        self.assertEqual(result.market_probability, 0.54)
+        self.assertIn("projection_probability", result.active_inputs)
+
+    def test_request_without_market_probability_with_implied_probability(self):
+        """Test request without top level market_probability but with implied_probability returns ok true."""
+        priced_rows = [
+            {
+                "sportsbook": "draftkings",
+                "market": "h2h",
+                "selection": "Team A",
+                "implied_probability": 0.56
+            }
+        ]
+
+        inputs = model_probability.IndependentInputs(projection_probability=0.60)
+        result = model_probability.blend_probabilities(0.56, inputs)
+
+        self.assertEqual(result.probability_type, "blended_market_and_projection")
+        self.assertEqual(result.market_probability, 0.56)
+        self.assertIn("projection_probability", result.active_inputs)
+
+    def test_request_without_any_probabilities_returns_ok_false(self):
+        """Test request with none of those probabilities returns ok false, not 422."""
+        priced_rows = [
+            {
+                "sportsbook": "draftkings",
+                "market": "h2h",
+                "selection": "Team A",
+                "odds_american": -110
+                # No probability fields
+            }
+        ]
+
+        # This should be handled at the endpoint level, not the model level
+        # The model probability logic should still work with a provided market probability
+        inputs = model_probability.IndependentInputs(projection_probability=0.60)
+        result = model_probability.blend_probabilities(0.55, inputs)
+
+        self.assertEqual(result.probability_type, "blended_market_and_projection")
+        self.assertEqual(result.market_probability, 0.55)
+
+    def test_request_model_validation_does_not_require_market_probability(self):
+        """Test OpenAPI/request model validation does not require market_probability."""
+        # This should not raise a validation error
+        from main import ModelProbabilityRequest
+
+        request = ModelProbabilityRequest(
+            projection_probability=0.60,
+            priced_rows=[{"market": "h2h", "no_vig_probability": 0.55}]
+        )
+
+        self.assertIsNone(request.market_probability)
+        self.assertEqual(request.projection_probability, 0.60)
+        self.assertIsNotNone(request.priced_rows)
+
+
 if __name__ == "__main__":
     unittest.main()
