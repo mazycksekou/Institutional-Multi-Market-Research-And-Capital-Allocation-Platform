@@ -12,6 +12,7 @@ def _verify_runtime_routes() -> None:
         "/api/actions/betting/evaluate-lines",
         "/api/actions/betting/price-event",
         "/api/actions/betting/model-probability",
+        "/api/actions/betting/analyze-event",
         "/quant/market-pricing",
         "/quant/bet-analysis",
         "/quant/stock-analysis",

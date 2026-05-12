@@ -491,41 +491,161 @@ class EvaluateLineIn(BaseModel):
 
 
 class EvaluateLinesRequest(BaseModel):
-    sport: str
-    event: str
-    bankroll: float = Field(gt=0)
-    unit_size: float = Field(gt=0)
-    risk_profile: str = "standard"
-    lines: list[EvaluateLineIn] = Field(min_length=1)
-    max_stake_pct: float = Field(default=0.02, gt=0, le=0.25)
+    sport: str = Field(..., description="Sport key (e.g., 'baseball_mlb', 'basketball_nba')")
+    event: str = Field(..., description="Event description or identifier")
+    bankroll: float = Field(..., gt=0, description="Total bankroll amount for stake calculations")
+    unit_size: float = Field(..., gt=0, description="Base betting unit size")
+    risk_profile: str = Field(default="standard", description="Risk profile: 'conservative', 'standard', or 'aggressive'")
+    lines: list[EvaluateLineIn] = Field(..., min_length=1, description="List of betting lines to evaluate")
+    max_stake_pct: float = Field(default=0.02, gt=0, le=0.25, description="Maximum stake percentage of bankroll per bet")
 
 
 class PriceEventRequest(BaseModel):
-    sport: str
-    event_id: str
-    league: str
-    markets: str = "h2h,spreads,totals"
-    provider: Optional[str] = None
-    bankroll: float = Field(default=1000, ge=0)
-    unit_size: float = Field(default=25, gt=0)
-    risk_profile: str = "conservative"
-    model_probabilities: Optional[dict[str, Any]] = None
+    sport: str = Field(..., description="Sport key (e.g., 'baseball_mlb', 'basketball_nba')")
+    event_id: str = Field(..., description="Unique event identifier")
+    league: str = Field(..., description="League or sport key (e.g., 'mlb', 'baseball_mlb')")
+    markets: str = Field(default="h2h,spreads,totals", description="Comma-separated list of markets to price")
+    provider: Optional[str] = Field(None, description="Odds provider to use (defaults to configured provider)")
+    bankroll: float = Field(default=1000, ge=0, description="Total bankroll amount for stake calculations")
+    unit_size: float = Field(default=25, gt=0, description="Base betting unit size")
+    risk_profile: str = Field(default="conservative", description="Risk profile: 'conservative', 'standard', or 'aggressive'")
+    model_probabilities: Optional[dict[str, Any]] = Field(None, description="Optional model probabilities for pricing calculations")
 
 
 class ModelProbabilityRequest(BaseModel):
-    market_probability: Optional[float] = Field(None, gt=0, lt=1)
-    projection_probability: Optional[float] = Field(None, gt=0, lt=1)
-    pitcher_adjustment: Optional[float] = Field(None, ge=-0.1, le=0.1)
-    weather_adjustment: Optional[float] = Field(None, ge=-0.1, le=0.1)
-    lineup_adjustment: Optional[float] = Field(None, ge=-0.1, le=0.1)
-    bullpen_adjustment: Optional[float] = Field(None, ge=-0.1, le=0.1)
-    injury_adjustment: Optional[float] = Field(None, ge=-0.1, le=0.1)
-    park_factor_adjustment: Optional[float] = Field(None, ge=-0.1, le=0.1)
-    umpire_adjustment: Optional[float] = Field(None, ge=-0.1, le=0.1)
-    player_prop_projection: Optional[float] = Field(None, gt=0, lt=1)
-    sharp_market_probability: Optional[float] = Field(None, gt=0, lt=1)
-    closing_line_projection: Optional[float] = Field(None, gt=0, lt=1)
-    priced_rows: Optional[list[dict[str, Any]]] = None
+    market_probability: Optional[float] = Field(None, gt=0, lt=1, description="Market probability (0-1), inferred from priced_rows if not provided")
+    projection_probability: Optional[float] = Field(None, gt=0, lt=1, description="Model projection probability (0-1)")
+    pitcher_adjustment: Optional[float] = Field(None, ge=-0.1, le=0.1, description="Pitcher-related probability adjustment (-0.1 to 0.1)")
+    weather_adjustment: Optional[float] = Field(None, ge=-0.1, le=0.1, description="Weather-related probability adjustment (-0.1 to 0.1)")
+    lineup_adjustment: Optional[float] = Field(None, ge=-0.1, le=0.1, description="Lineup-related probability adjustment (-0.1 to 0.1)")
+    bullpen_adjustment: Optional[float] = Field(None, ge=-0.1, le=0.1, description="Bullpen-related probability adjustment (-0.1 to 0.1)")
+    injury_adjustment: Optional[float] = Field(None, ge=-0.1, le=0.1, description="Injury-related probability adjustment (-0.1 to 0.1)")
+    park_factor_adjustment: Optional[float] = Field(None, ge=-0.1, le=0.1, description="Park factor probability adjustment (-0.1 to 0.1)")
+    umpire_adjustment: Optional[float] = Field(None, ge=-0.1, le=0.1, description="Umpire-related probability adjustment (-0.1 to 0.1)")
+    player_prop_projection: Optional[float] = Field(None, gt=0, lt=1, description="Player prop projection probability (0-1)")
+    sharp_market_probability: Optional[float] = Field(None, gt=0, lt=1, description="Sharp market probability (0-1)")
+    closing_line_projection: Optional[float] = Field(None, gt=0, lt=1, description="Closing line projection probability (0-1)")
+    priced_rows: Optional[list[dict[str, Any]]] = Field(None, description="List of priced rows with probability data for inference")
+
+
+class AnalyzeEventRequest(BaseModel):
+    sport: str = Field(..., description="Sport key (e.g., 'baseball_mlb', 'basketball_nba')")
+    league: str = Field(..., description="League or sport key (e.g., 'mlb', 'baseball_mlb')")
+    event_id: str = Field(..., description="Unique event identifier")
+    markets: str = Field(default="h2h,spreads,totals", description="Comma-separated list of markets to analyze")
+    provider: Optional[str] = Field(None, description="Odds provider to use (defaults to configured provider)")
+    bankroll: float = Field(default=1000, ge=0, description="Total bankroll amount for stake calculations")
+    unit_size: float = Field(default=25, gt=0, description="Base betting unit size")
+    risk_profile: str = Field(default="conservative", description="Risk profile: 'conservative', 'standard', or 'aggressive'")
+    max_stake_pct: float = Field(default=0.02, gt=0, le=0.25, description="Maximum stake percentage of bankroll per bet")
+    independent_inputs: Optional[dict[str, Any]] = Field(None, description="Optional independent inputs for model probability calculations")
+
+
+# Response Models for Action Endpoints
+class ActiveEventsResponse(BaseModel):
+    ok: bool
+    endpoint: str
+    league: str
+    provider: str
+    count: int
+    events: list[dict[str, Any]]
+    error: Optional[str] = None
+    detail: Optional[str] = None
+
+
+class EventOddsResponse(BaseModel):
+    ok: bool
+    endpoint: str
+    event_id: str
+    league: str
+    provider: str
+    markets_requested: list[str]
+    markets: list[dict[str, Any]]
+    bookmakers: list[str]
+    error: Optional[str] = None
+    detail: Optional[str] = None
+
+
+class FirstEventOddsResponse(BaseModel):
+    ok: bool
+    endpoint: str
+    event_id: str
+    league: str
+    provider: str
+    markets_requested: list[str]
+    markets: list[dict[str, Any]]
+    bookmakers: list[str]
+    error: Optional[str] = None
+    detail: Optional[str] = None
+
+
+class PriceEventResponse(BaseModel):
+    ok: bool
+    endpoint: str
+    event_id: str
+    league: str
+    provider: str
+    markets_requested: list[str]
+    markets: list[dict[str, Any]]
+    bookmakers: list[str]
+    pricing: list[dict[str, Any]]
+    error: Optional[str] = None
+    detail: Optional[str] = None
+
+
+class ModelProbabilityResponse(BaseModel):
+    ok: bool
+    endpoint: str
+    final_probability: Optional[float] = None
+    probability_type: Optional[str] = None
+    market_probability: Optional[float] = None
+    active_inputs: list[str] = []
+    missing_inputs: list[str] = []
+    applied_adjustments: dict[str, float] = {}
+    adjustment_cap_warnings: list[str] = []
+    model_limitations: list[str] = []
+    data_quality_score: Optional[float] = None
+    confidence: Optional[str] = None
+    confidence_grade: Optional[str] = None
+    provider_status: dict[str, str] = {}
+    results: Optional[list[dict[str, Any]]] = None
+    processed_rows: Optional[int] = None
+    successful_rows: Optional[int] = None
+    failed_rows: Optional[int] = None
+    error: Optional[str] = None
+    detail: Optional[str] = None
+
+
+class EvaluateLinesResponse(BaseModel):
+    ok: bool
+    endpoint: str
+    results: list[dict[str, Any]]
+    summary: dict[str, Any]
+    error: Optional[str] = None
+    detail: Optional[str] = None
+
+
+class AnalyzeEventResponse(BaseModel):
+    ok: bool
+    endpoint: str
+    sport: str
+    league: str
+    event_id: str
+    markets_requested: list[str]
+    probability_type: Optional[str] = None
+    confirmed_bets: list[dict[str, Any]] = []
+    target_lines: list[dict[str, Any]] = []
+    no_bets: list[dict[str, Any]] = []
+    warnings: list[str] = []
+    model_limitations: list[str] = []
+    missing_inputs: list[str] = []
+    active_inputs: list[str] = []
+    market_summary: list[dict[str, Any]] = []
+    evaluation_results: list[dict[str, Any]] = []
+    log_ready_rows: list[dict[str, Any]] = []
+    error: Optional[str] = None
+    detail: Optional[str] = None
+    step_failed: Optional[str] = None
 
 
 def utc_now() -> str:
@@ -961,11 +1081,11 @@ async def get_active_betting_events(
     )
 
 
-@app.get("/api/actions/betting/events/active", operation_id="getActiveBettingEvents", dependencies=[Depends(require_action_key)])
+@app.get("/api/actions/betting/events/active", operation_id="getActiveBettingEvents", dependencies=[Depends(require_action_key)], summary="Get Active Betting Events", description="Retrieve active betting events for a specific league and provider with optional filtering.")
 async def action_get_active_betting_events(
     league: str = Query(default="baseball_mlb", description="League or sport key (e.g. mlb, baseball_mlb)."),
-    provider: Optional[str] = None,
-    limit: int = Query(default=10, ge=1, le=100),
+    provider: Optional[str] = Query(None, description="Odds provider to use (defaults to configured provider)"),
+    limit: int = Query(default=10, ge=1, le=100, description="Maximum number of events to return"),
 ):
     return await action_fetch_active_events_envelope(league, provider, limit)
 
@@ -989,12 +1109,12 @@ async def get_event_odds_endpoint(
     )
 
 
-@app.get("/api/actions/betting/events/{event_id}/odds", operation_id="getEventOdds", dependencies=[Depends(require_action_key)])
+@app.get("/api/actions/betting/events/{event_id}/odds", operation_id="getEventOdds", dependencies=[Depends(require_action_key)], summary="Get Event Odds", description="Retrieve betting odds for a specific event across specified markets and bookmakers.")
 async def action_get_event_odds(
     event_id: str,
     league: str = Query(default="baseball_mlb", description="League or sport key (e.g. mlb, baseball_mlb)."),
-    provider: Optional[str] = None,
-    markets: str = Query(default=DEFAULT_MARKETS),
+    provider: Optional[str] = Query(None, description="Odds provider to use (defaults to configured provider)"),
+    markets: str = Query(default=DEFAULT_MARKETS, description="Comma-separated list of markets to retrieve"),
 ):
     return await action_fetch_event_odds_envelope(
         event_id,
@@ -1030,11 +1150,11 @@ async def get_first_event_odds(
     )
 
 
-@app.get("/api/actions/betting/first-event-odds", operation_id="getFirstEventOdds", dependencies=[Depends(require_action_key)])
+@app.get("/api/actions/betting/first-event-odds", operation_id="getFirstEventOdds", dependencies=[Depends(require_action_key)], summary="Get First Event Odds", description="Retrieve odds for the first available event in a league across specified markets and bookmakers.")
 async def action_get_first_event_odds(
     league: str = Query(default="baseball_mlb", description="League or sport key (e.g. mlb, baseball_mlb)."),
-    provider: Optional[str] = None,
-    markets: str = Query(default=DEFAULT_MARKETS),
+    provider: Optional[str] = Query(None, description="Odds provider to use (defaults to configured provider)"),
+    markets: str = Query(default=DEFAULT_MARKETS, description="Comma-separated list of markets to retrieve"),
 ):
     endpoint_id = "getFirstEventOdds"
     league_param = _normalize_action_league_input(league)
@@ -1137,7 +1257,7 @@ async def action_get_first_event_odds(
         }
 
 
-@app.post("/api/actions/betting/evaluate-lines", operation_id="evaluateBettingLines", dependencies=[Depends(require_action_key)])
+@app.post("/api/actions/betting/evaluate-lines", operation_id="evaluateBettingLines", dependencies=[Depends(require_action_key)], summary="Evaluate Betting Lines", description="Evaluate betting lines with stake recommendations based on bankroll, risk profile, and model probabilities.")
 async def action_evaluate_betting_lines(payload: EvaluateLinesRequest):
     try:
         out = bet_decision_engine.evaluate_lines_payload(payload.model_dump())
@@ -1163,7 +1283,7 @@ async def action_evaluate_betting_lines(payload: EvaluateLinesRequest):
         }
 
 
-@app.post("/api/actions/betting/price-event", operation_id="priceBettingEvent", dependencies=[Depends(require_action_key)])
+@app.post("/api/actions/betting/price-event", operation_id="priceBettingEvent", dependencies=[Depends(require_action_key)], summary="Price Betting Event", description="Price a betting event with stake recommendations based on bankroll, risk profile, and optional model probabilities.")
 async def action_price_betting_event(payload: PriceEventRequest):
     endpoint_id = "priceBettingEvent"
     markets_requested = _parse_markets_requested(payload.markets)
@@ -1280,7 +1400,7 @@ async def action_price_betting_event(payload: PriceEventRequest):
         }
 
 
-@app.post("/api/actions/betting/model-probability", operation_id="estimateModelProbability", dependencies=[Depends(require_action_key)])
+@app.post("/api/actions/betting/model-probability", operation_id="estimateModelProbability", dependencies=[Depends(require_action_key)], summary="Estimate Model Probability", description="Calculate blended probabilities with adjustments, confidence scoring, and transparency outputs for betting decisions.")
 async def action_calculate_model_probability(payload: ModelProbabilityRequest):
     endpoint_id = "estimateModelProbability"
 
@@ -1403,6 +1523,302 @@ async def action_calculate_model_probability(payload: ModelProbabilityRequest):
             "confidence": None,
             "confidence_grade": None,
             "provider_status": {}
+        }
+
+
+@app.post("/api/actions/betting/analyze-event", operation_id="analyzeBettingEvent", dependencies=[Depends(require_action_key)], summary="Analyze Betting Event", description="Complete betting analysis pipeline: fetch odds, price event, estimate probabilities, and evaluate lines.")
+async def action_analyze_betting_event(payload: AnalyzeEventRequest):
+    endpoint_id = "analyzeBettingEvent"
+    markets_requested = _parse_markets_requested(payload.markets)
+
+    try:
+        # Step 1: Fetch odds using Action safe odds logic
+        step = "fetch_odds"
+        odds_response = await action_fetch_event_odds_envelope(
+            event_id=payload.event_id,
+            league=payload.league,
+            provider=payload.provider,
+            markets_csv=payload.markets,
+            bookmakers_csv=DEFAULT_BOOKMAKERS,
+        )
+
+        if not odds_response.get("ok"):
+            return {
+                "ok": False,
+                "endpoint": endpoint_id,
+                "sport": payload.sport,
+                "league": payload.league,
+                "event_id": payload.event_id,
+                "markets_requested": markets_requested,
+                "probability_type": None,
+                "confirmed_bets": [],
+                "target_lines": [],
+                "no_bets": [],
+                "warnings": [f"Failed to fetch odds: {odds_response.get('detail', 'Unknown error')}"],
+                "model_limitations": [],
+                "missing_inputs": [],
+                "active_inputs": [],
+                "market_summary": [],
+                "evaluation_results": [],
+                "log_ready_rows": [],
+                "error": odds_response.get("error", "ODDS_FETCH_FAILED"),
+                "detail": odds_response.get("detail", "Failed to fetch event odds"),
+                "step_failed": step
+            }
+
+        # Step 2: Price the event using priceBettingEvent logic
+        step = "price_event"
+        price_request = PriceEventRequest(
+            sport=payload.sport,
+            event_id=payload.event_id,
+            league=payload.league,
+            markets=payload.markets,
+            provider=payload.provider,
+            bankroll=payload.bankroll,
+            unit_size=payload.unit_size,
+            risk_profile=payload.risk_profile,
+            model_probabilities=None  # Will be set after model probability step
+        )
+
+        # Create a mock price response since we need model probabilities first
+        price_response = await action_price_betting_event(price_request)
+
+        if not price_response.get("ok"):
+            return {
+                "ok": False,
+                "endpoint": endpoint_id,
+                "sport": payload.sport,
+                "league": payload.league,
+                "event_id": payload.event_id,
+                "markets_requested": markets_requested,
+                "probability_type": None,
+                "confirmed_bets": [],
+                "target_lines": [],
+                "no_bets": [],
+                "warnings": [f"Failed to price event: {price_response.get('detail', 'Unknown error')}"],
+                "model_limitations": [],
+                "missing_inputs": [],
+                "active_inputs": [],
+                "market_summary": price_response.get("market_summary", []),
+                "evaluation_results": [],
+                "log_ready_rows": [],
+                "error": price_response.get("error", "EVENT_PRICING_FAILED"),
+                "detail": price_response.get("detail", "Failed to price betting event"),
+                "step_failed": step
+            }
+
+        # Step 3: Estimate model probabilities
+        step = "estimate_probabilities"
+        model_request = ModelProbabilityRequest(
+            market_probability=None,
+            projection_probability=payload.independent_inputs.get("projection_probability") if payload.independent_inputs else None,
+            pitcher_adjustment=payload.independent_inputs.get("pitcher_adjustment") if payload.independent_inputs else None,
+            weather_adjustment=payload.independent_inputs.get("weather_adjustment") if payload.independent_inputs else None,
+            lineup_adjustment=payload.independent_inputs.get("lineup_adjustment") if payload.independent_inputs else None,
+            bullpen_adjustment=payload.independent_inputs.get("bullpen_adjustment") if payload.independent_inputs else None,
+            injury_adjustment=payload.independent_inputs.get("injury_adjustment") if payload.independent_inputs else None,
+            park_factor_adjustment=payload.independent_inputs.get("park_factor_adjustment") if payload.independent_inputs else None,
+            umpire_adjustment=payload.independent_inputs.get("umpire_adjustment") if payload.independent_inputs else None,
+            player_prop_projection=payload.independent_inputs.get("player_prop_projection") if payload.independent_inputs else None,
+            sharp_market_probability=payload.independent_inputs.get("sharp_market_probability") if payload.independent_inputs else None,
+            closing_line_projection=payload.independent_inputs.get("closing_line_projection") if payload.independent_inputs else None,
+            priced_rows=price_response.get("evaluation_ready_lines", [])
+        )
+
+        model_response = await action_calculate_model_probability(model_request)
+
+        if not model_response.get("ok"):
+            return {
+                "ok": False,
+                "endpoint": endpoint_id,
+                "sport": payload.sport,
+                "league": payload.league,
+                "event_id": payload.event_id,
+                "markets_requested": markets_requested,
+                "probability_type": None,
+                "confirmed_bets": [],
+                "target_lines": [],
+                "no_bets": [],
+                "warnings": [f"Failed to estimate probabilities: {model_response.get('detail', 'Unknown error')}"],
+                "model_limitations": model_response.get("model_limitations", []),
+                "missing_inputs": model_response.get("missing_inputs", []),
+                "active_inputs": model_response.get("active_inputs", []),
+                "market_summary": price_response.get("market_summary", []),
+                "evaluation_results": [],
+                "log_ready_rows": [],
+                "error": model_response.get("error", "PROBABILITY_ESTIMATION_FAILED"),
+                "detail": model_response.get("detail", "Failed to estimate model probabilities"),
+                "step_failed": step
+            }
+
+        # Step 4: Evaluate lines using evaluateBettingLines logic
+        step = "evaluate_lines"
+        evaluation_ready_lines = price_response.get("evaluation_ready_lines", [])
+
+        if not evaluation_ready_lines:
+            return {
+                "ok": True,
+                "endpoint": endpoint_id,
+                "sport": payload.sport,
+                "league": payload.league,
+                "event_id": payload.event_id,
+                "markets_requested": markets_requested,
+                "probability_type": model_response.get("probability_type", "unknown"),
+                "confirmed_bets": [],
+                "target_lines": [],
+                "no_bets": [{"reason": "No evaluation-ready lines available", "lines": []}],
+                "warnings": ["No lines available for evaluation"],
+                "model_limitations": model_response.get("model_limitations", []),
+                "missing_inputs": model_response.get("missing_inputs", []),
+                "active_inputs": model_response.get("active_inputs", []),
+                "market_summary": price_response.get("market_summary", []),
+                "evaluation_results": [],
+                "log_ready_rows": [],
+                "error": None,
+                "detail": "Analysis completed but no lines available for evaluation",
+                "step_failed": None
+            }
+
+        # Create evaluate lines request
+        evaluate_lines = []
+        for line in evaluation_ready_lines:
+            evaluate_lines.append({
+                "market": line.get("market"),
+                "selection": line.get("selection"),
+                "line": line.get("line"),
+                "odds_american": line.get("odds_american"),
+                "model_probability": model_response.get("final_probability"),
+                "correlation_group": line.get("correlation_group"),
+                "opening_odds_american": line.get("opening_odds_american")
+            })
+
+        evaluate_request = EvaluateLinesRequest(
+            sport=payload.sport,
+            event=f"{payload.league} - {payload.event_id}",
+            bankroll=payload.bankroll,
+            unit_size=payload.unit_size,
+            risk_profile=payload.risk_profile,
+            lines=evaluate_lines,
+            max_stake_pct=payload.max_stake_pct
+        )
+
+        evaluate_response = await action_evaluate_betting_lines(evaluate_request)
+
+        if not evaluate_response.get("ok"):
+            return {
+                "ok": False,
+                "endpoint": endpoint_id,
+                "sport": payload.sport,
+                "league": payload.league,
+                "event_id": payload.event_id,
+                "markets_requested": markets_requested,
+                "probability_type": model_response.get("probability_type", "unknown"),
+                "confirmed_bets": [],
+                "target_lines": [],
+                "no_bets": [],
+                "warnings": [f"Failed to evaluate lines: {evaluate_response.get('detail', 'Unknown error')}"],
+                "model_limitations": model_response.get("model_limitations", []),
+                "missing_inputs": model_response.get("missing_inputs", []),
+                "active_inputs": model_response.get("active_inputs", []),
+                "market_summary": price_response.get("market_summary", []),
+                "evaluation_results": [],
+                "log_ready_rows": [],
+                "error": evaluate_response.get("error", "LINE_EVALUATION_FAILED"),
+                "detail": evaluate_response.get("detail", "Failed to evaluate betting lines"),
+                "step_failed": step
+            }
+
+        # Step 5: Process results and categorize bets
+        evaluation_results = evaluate_response.get("results", [])
+        confirmed_bets = []
+        target_lines = []
+        no_bets = []
+        warnings = []
+
+        for result in evaluation_results:
+            if result.get("decision") == "BET":
+                confirmed_bets.append(result)
+            elif result.get("decision") in ["TARGET", "WATCH"]:
+                target_lines.append(result)
+            else:
+                no_bets.append(result)
+
+        # Add warnings for market-derived probabilities
+        if model_response.get("probability_type") == "market_derived":
+            warnings.append("Analysis based on market-derived probabilities only - no independent model inputs provided")
+
+        # Add warnings for missing inputs
+        if model_response.get("missing_inputs"):
+            warnings.append(f"Missing model inputs: {', '.join(model_response.get('missing_inputs', []))}")
+
+        # Create log-ready rows
+        log_ready_rows = []
+        for result in evaluation_results:
+            log_row = {
+                "timestamp": utc_now(),
+                "sport": payload.sport,
+                "league": payload.league,
+                "event_id": payload.event_id,
+                "market": result.get("market"),
+                "selection": result.get("selection"),
+                "line": result.get("line"),
+                "odds_american": result.get("odds_american"),
+                "decision": result.get("decision"),
+                "stake": result.get("stake"),
+                "expected_value": result.get("expected_value"),
+                "probability_type": model_response.get("probability_type"),
+                "final_probability": model_response.get("final_probability"),
+                "risk_profile": payload.risk_profile,
+                "bankroll": payload.bankroll,
+                "unit_size": payload.unit_size
+            }
+            log_ready_rows.append(log_row)
+
+        return {
+            "ok": True,
+            "endpoint": endpoint_id,
+            "sport": payload.sport,
+            "league": payload.league,
+            "event_id": payload.event_id,
+            "markets_requested": markets_requested,
+            "probability_type": model_response.get("probability_type", "unknown"),
+            "confirmed_bets": confirmed_bets,
+            "target_lines": target_lines,
+            "no_bets": no_bets,
+            "warnings": warnings,
+            "model_limitations": model_response.get("model_limitations", []),
+            "missing_inputs": model_response.get("missing_inputs", []),
+            "active_inputs": model_response.get("active_inputs", []),
+            "market_summary": price_response.get("market_summary", []),
+            "evaluation_results": evaluation_results,
+            "log_ready_rows": log_ready_rows,
+            "error": None,
+            "detail": None,
+            "step_failed": None
+        }
+
+    except Exception as exc:
+        return {
+            "ok": False,
+            "endpoint": endpoint_id,
+            "sport": payload.sport,
+            "league": payload.league,
+            "event_id": payload.event_id,
+            "markets_requested": markets_requested,
+            "probability_type": None,
+            "confirmed_bets": [],
+            "target_lines": [],
+            "no_bets": [],
+            "warnings": [f"Unexpected error during analysis: {str(exc)}"],
+            "model_limitations": [],
+            "missing_inputs": [],
+            "active_inputs": [],
+            "market_summary": [],
+            "evaluation_results": [],
+            "log_ready_rows": [],
+            "error": "UNEXPECTED_ERROR",
+            "detail": str(exc),
+            "step_failed": "unknown"
         }
 
 
