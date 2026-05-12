@@ -13,11 +13,12 @@ from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.routing import APIRoute
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from betting_providers import aliases as betting_aliases
 from betting_providers.base import PREDICTION_MARKET
 from betting_providers.provider_router import ProviderRouter
+import bet_decision_engine
 from quant_engine import (
     american_to_implied_probability,
     capm_required_return,
@@ -472,6 +473,29 @@ class MarketPricingRequest(BaseModel):
     stake: float = Field(ge=0)
     correlation_group: Optional[str] = None
     notes: Optional[str] = None
+
+
+class EvaluateLineIn(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
+
+    sportsbook: str
+    market: str
+    selection: str
+    line: Optional[float] = None
+    odds_american: int
+    model_probability: Optional[float] = None
+    correlation_group: Optional[str] = None
+    opening_odds_american: Optional[int] = None
+
+
+class EvaluateLinesRequest(BaseModel):
+    sport: str
+    event: str
+    bankroll: float = Field(gt=0)
+    unit_size: float = Field(gt=0)
+    risk_profile: str = "standard"
+    lines: list[EvaluateLineIn] = Field(min_length=1)
+    max_stake_pct: float = Field(default=0.02, gt=0, le=0.25)
 
 
 def utc_now() -> str:
@@ -1080,6 +1104,32 @@ async def action_get_first_event_odds(
             "odds": {},
             "error": "UNEXPECTED_ERROR",
             "detail": "First-event odds request failed.",
+        }
+
+
+@app.post("/api/actions/betting/evaluate-lines", operation_id="evaluateBettingLines", dependencies=[Depends(require_action_key)])
+async def action_evaluate_betting_lines(payload: EvaluateLinesRequest):
+    try:
+        out = bet_decision_engine.evaluate_lines_payload(payload.model_dump())
+        ok = bool(out.get("ok", True))
+        return {
+            "ok": ok,
+            "sport": out.get("sport"),
+            "event": out.get("event"),
+            "risk_profile": out.get("risk_profile"),
+            "error": out.get("error"),
+            "detail": out.get("detail"),
+            "results": out.get("results") or [],
+        }
+    except Exception as exc:
+        return {
+            "ok": False,
+            "sport": getattr(payload, "sport", None),
+            "event": getattr(payload, "event", None),
+            "risk_profile": getattr(payload, "risk_profile", None),
+            "error": "REQUEST_ERROR",
+            "detail": str(exc),
+            "results": [],
         }
 
 

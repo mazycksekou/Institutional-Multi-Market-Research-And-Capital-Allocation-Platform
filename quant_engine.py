@@ -191,3 +191,121 @@ def exposure_check(
         "allowed_stake": round(allowed_stake if not approved else suggested_stake, 2),
         "message": "Exposure acceptable" if approved else "Exposure cap exceeded",
     }
+
+
+# --- Extended quant primitives (betting evaluation engine) ---
+
+
+def decimal_to_implied_probability(decimal_odds: float) -> float:
+    d = float(decimal_odds)
+    if d <= 1:
+        raise ValueError("Decimal odds must be greater than 1.")
+    return 1 / d
+
+
+def break_even_probability_american(odds: int | float) -> float:
+    """Minimum win rate to break even betting at these odds (equals implied prob)."""
+    return implied_probability_from_american(odds)
+
+
+def book_hold_two_way(implied_a: float, implied_b: float) -> float:
+    """Overround / vig as implied_a + implied_b - 1."""
+    return float(implied_a) + float(implied_b) - 1
+
+
+def no_vig_probabilities_two_way(implied_a: float, implied_b: float) -> tuple[float, float]:
+    s = implied_a + implied_b
+    if s <= 0:
+        raise ValueError("Implied probabilities must sum to a positive value.")
+    return implied_a / s, implied_b / s
+
+
+def no_vig_probabilities_three_way(p1: float, p2: float, p3: float) -> tuple[float, float, float]:
+    s = p1 + p2 + p3
+    if s <= 0:
+        raise ValueError("Implied probabilities must sum to a positive value.")
+    return p1 / s, p2 / s, p3 / s
+
+
+def no_vig_probabilities_n_way(implied: list[float]) -> list[float]:
+    s = sum(implied)
+    if s <= 0:
+        raise ValueError("Implied probabilities must sum to a positive value.")
+    return [p / s for p in implied]
+
+
+def fair_odds_american_from_probability(probability: float) -> int:
+    return probability_to_fair_american(probability)
+
+
+def edge_percentage(true_probability: float, implied_probability: float) -> float:
+    return (float(true_probability) - float(implied_probability)) * 100
+
+
+def expected_value_per_100(odds: int | float, true_probability: float) -> float:
+    return expected_value_per_unit(odds, true_probability) * 100
+
+
+def kelly_half(odds: int | float, true_probability: float) -> float:
+    return kelly_fraction(odds, true_probability) * 0.5
+
+
+def kelly_quarter(odds: int | float, true_probability: float) -> float:
+    return kelly_fraction(odds, true_probability) * 0.25
+
+
+def kelly_capped_fraction(odds: int | float, true_probability: float, max_kelly: float = 0.05) -> float:
+    """Full Kelly fraction capped at max_kelly (e.g. 0.05 = 5% of bankroll max Kelly stake)."""
+    return min(kelly_fraction(odds, true_probability), float(max_kelly))
+
+
+def suggested_unit_size(
+    bankroll: float,
+    unit_size: float,
+    kelly_fractional: float,
+    american_odds: int | float,
+    true_probability: float,
+    max_bankroll_pct: float = 0.02,
+) -> float:
+    """Suggested stake in units (unit_size dollars per unit)."""
+    stake_dollars = suggested_stake(bankroll, american_odds, true_probability, fractional_kelly=kelly_fractional, max_bankroll_pct=max_bankroll_pct)
+    if unit_size <= 0:
+        return 0
+    return round(stake_dollars / unit_size, 2)
+
+
+def confidence_adjusted_stake(base_stake: float, confidence_0_100: float) -> float:
+    c = max(0, min(100, float(confidence_0_100))) / 100
+    return max(0, float(base_stake) * c)
+
+
+def risk_adjusted_stake(base_stake: float, risk_multiplier: float) -> float:
+    """risk_multiplier in (0, 1] reduces stake for higher perceived risk."""
+    m = max(0, min(1, float(risk_multiplier)))
+    return max(0, float(base_stake) * m)
+
+
+def book_hold_n_way(implied_probabilities: list[float]) -> float:
+    """Total overround / vig for N outcomes: sum(implied) - 1."""
+    return float(sum(implied_probabilities)) - 1
+
+
+def implied_probability_from_decimal(decimal_odds: float) -> float:
+    return decimal_to_implied_probability(decimal_odds)
+
+
+def break_even_probability_decimal(decimal_odds: float) -> float:
+    return implied_probability_from_decimal(decimal_odds)
+
+
+def expected_value_per_dollar(odds: int | float, true_probability: float) -> float:
+    return expected_value_per_unit(odds, true_probability)
+
+
+def full_kelly_fraction(odds: int | float, true_probability: float) -> float:
+    return kelly_fraction(odds, true_probability)
+
+
+def fair_decimal_odds_from_probability(probability: float) -> float:
+    p = _validate_probability(probability)
+    return 1 / p
