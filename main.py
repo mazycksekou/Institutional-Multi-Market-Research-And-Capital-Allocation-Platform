@@ -15,6 +15,7 @@ from fastapi.openapi.utils import get_openapi
 from fastapi.routing import APIRoute
 from pydantic import BaseModel, Field
 
+from betting_providers import aliases as betting_aliases
 from betting_providers.base import PREDICTION_MARKET
 from betting_providers.provider_router import ProviderRouter
 from quant_engine import (
@@ -97,6 +98,49 @@ SPORT_LABELS = {
 
 LINE_SNAPSHOTS: dict[str, dict[str, Any]] = {}
 PROVIDER_ROUTER = ProviderRouter()
+
+ACTION_SAFE_EVENT_KEYS: frozenset[str] = frozenset({
+    "provider",
+    "provider_type",
+    "provider_event_id",
+    "event_id",
+    "id",
+    "sport_key",
+    "league",
+    "commence_time",
+    "home_team",
+    "away_team",
+    "event_ticker",
+    "series_ticker",
+    "title",
+    "category",
+    "status",
+})
+
+
+def _normalize_action_league_input(league: str) -> str:
+    raw = (league or "").strip() or "baseball_mlb"
+    if raw.lower().replace("-", "_") == "mlb":
+        return "baseball_mlb"
+    return raw
+
+
+def _slim_events_for_action(events: Any, limit: int) -> list[dict[str, Any]]:
+    if not isinstance(events, list):
+        return []
+    cap = max(0, min(int(limit), 100))
+    out: list[dict[str, Any]] = []
+    for ev in events[:cap]:
+        if not isinstance(ev, dict):
+            continue
+        row = {k: ev[k] for k in ACTION_SAFE_EVENT_KEYS if k in ev}
+        if not row:
+            pid = ev.get("id") or ev.get("event_id") or ev.get("provider_event_id")
+            if pid is not None:
+                row = {"provider_event_id": pid, "event_id": pid, "id": pid}
+        out.append(row)
+    return out
+
 
 app = FastAPI(
     title="Betting Stock API",
@@ -592,7 +636,7 @@ async def get_supported_betting_sports(provider: Optional[str] = None):
     return await PROVIDER_ROUTER.get_supported_sports(provider)
 
 
-@app.get("/api/betting/events/active", operation_id="getActiveBettingEvents", dependencies=[Depends(require_action_key)])
+@app.get("/api/betting/events/active", operation_id="getActiveBettingEventsRaw", dependencies=[Depends(require_action_key)])
 async def get_active_betting_events(
     sport: Optional[str] = Query(default=None, description="Required if league is not supplied."),
     league: Optional[str] = Query(default=None, description="Required if sport is not supplied."),
@@ -611,6 +655,92 @@ async def get_active_betting_events(
         away_team=away_team,
         date=date,
     )
+
+
+@app.get("/api/actions/betting/events/active", operation_id="getActiveBettingEvents", dependencies=[Depends(require_action_key)])
+async def action_get_active_betting_events(
+    league: str = Query(default="baseball_mlb", description="League or sport key (e.g. mlb, baseball_mlb)."),
+    provider: Optional[str] = None,
+    limit: int = Query(default=10, ge=1, le=100),
+):
+    endpoint_id = "getActiveBettingEvents"
+    league_param = _normalize_action_league_input(league)
+    provider_used = (provider or "").strip() or None
+    default_provider = PROVIDER_ROUTER.default_betting_provider()
+    resolved_provider = provider_used or default_provider
+    sport_key_out: Optional[str] = None
+
+    try:
+        sport_key, _label, resolve_err = betting_aliases.resolve_sport_key(None, league_param)
+        if resolve_err:
+            return {
+                "ok": False,
+                "endpoint": endpoint_id,
+                "league": league_param,
+                "provider": resolved_provider,
+                "count": 0,
+                "events": [],
+                "error": str(resolve_err.get("error_type") or "UNKNOWN_SPORT"),
+                "detail": str(resolve_err.get("message") or "Unknown sport or league."),
+            }
+        sport_key_out = sport_key
+
+        payload = await PROVIDER_ROUTER.get_active_events(provider_used, None, league_param)
+
+        if not isinstance(payload, dict):
+            return {
+                "ok": False,
+                "endpoint": endpoint_id,
+                "league": sport_key_out,
+                "provider": resolved_provider,
+                "count": 0,
+                "events": [],
+                "error": "INVALID_RESPONSE",
+                "detail": "Provider returned an unexpected payload.",
+            }
+
+        if not payload.get("ok"):
+            return {
+                "ok": False,
+                "endpoint": endpoint_id,
+                "league": str(payload.get("sport_key") or sport_key_out or league_param),
+                "provider": str(payload.get("provider") or resolved_provider),
+                "count": 0,
+                "events": [],
+                "error": str(payload.get("error_type") or "PROVIDER_ERROR"),
+                "detail": str(payload.get("message") or "Provider request failed."),
+            }
+
+        events_src = payload.get("events")
+        if not isinstance(events_src, list) and isinstance(payload.get("data"), list):
+            events_src = payload["data"]
+        if not isinstance(events_src, list):
+            events_src = []
+
+        slim = _slim_events_for_action(events_src, limit)
+        league_out = str(payload.get("sport_key") or sport_key_out or league_param)
+
+        return {
+            "ok": True,
+            "endpoint": endpoint_id,
+            "league": league_out,
+            "provider": str(payload.get("provider") or resolved_provider),
+            "count": len(slim),
+            "events": slim,
+            "error": None,
+            "detail": None,
+        }
+    except Exception:
+        return {
+            "ok": False,
+            "endpoint": endpoint_id,
+            "league": str(sport_key_out or league_param),
+            "provider": str(provider_used or default_provider),
+            "count": 0,
+            "events": [],
+            "error": "UNEXPECTED_ERROR",
+            "detail": "Active events request failed.",
+        }
 
 
 @app.get("/api/betting/events/{event_id}/odds", operation_id="getEventOdds", dependencies=[Depends(require_action_key)])

@@ -6,6 +6,7 @@ app.openapi = custom_openapi
 def _verify_runtime_routes() -> None:
     required_paths = {
         "/api/betting/events/active",
+        "/api/actions/betting/events/active",
         "/quant/market-pricing",
         "/quant/bet-analysis",
         "/quant/stock-analysis",
