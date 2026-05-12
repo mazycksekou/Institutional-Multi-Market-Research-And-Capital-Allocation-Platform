@@ -20,6 +20,7 @@ from betting_providers.base import PREDICTION_MARKET
 from betting_providers.provider_router import ProviderRouter
 import bet_decision_engine
 import market_pricing
+import model_probability
 from quant_engine import (
     american_to_implied_probability,
     capm_required_return,
@@ -509,6 +510,21 @@ class PriceEventRequest(BaseModel):
     unit_size: float = Field(default=25, gt=0)
     risk_profile: str = "conservative"
     model_probabilities: Optional[dict[str, Any]] = None
+
+
+class ModelProbabilityRequest(BaseModel):
+    market_probability: float = Field(gt=0, lt=1)
+    projection_probability: Optional[float] = Field(None, gt=0, lt=1)
+    pitcher_adjustment: Optional[float] = Field(None, ge=-0.1, le=0.1)
+    weather_adjustment: Optional[float] = Field(None, ge=-0.1, le=0.1)
+    lineup_adjustment: Optional[float] = Field(None, ge=-0.1, le=0.1)
+    bullpen_adjustment: Optional[float] = Field(None, ge=-0.1, le=0.1)
+    injury_adjustment: Optional[float] = Field(None, ge=-0.1, le=0.1)
+    park_factor_adjustment: Optional[float] = Field(None, ge=-0.1, le=0.1)
+    umpire_adjustment: Optional[float] = Field(None, ge=-0.1, le=0.1)
+    player_prop_projection: Optional[float] = Field(None, gt=0, lt=1)
+    sharp_market_probability: Optional[float] = Field(None, gt=0, lt=1)
+    closing_line_projection: Optional[float] = Field(None, gt=0, lt=1)
 
 
 def utc_now() -> str:
@@ -1260,6 +1276,55 @@ async def action_price_betting_event(payload: PriceEventRequest):
             "warnings": [],
             "error": "UNEXPECTED_ERROR",
             "detail": str(exc),
+        }
+
+
+@app.post("/api/actions/betting/model-probability", operation_id="estimateModelProbability", dependencies=[Depends(require_action_key)])
+async def action_calculate_model_probability(payload: ModelProbabilityRequest):
+    endpoint_id = "calculateModelProbability"
+
+    try:
+        # Create independent inputs from request
+        inputs = model_probability.IndependentInputs(
+            projection_probability=payload.projection_probability,
+            pitcher_adjustment=payload.pitcher_adjustment,
+            weather_adjustment=payload.weather_adjustment,
+            lineup_adjustment=payload.lineup_adjustment,
+            bullpen_adjustment=payload.bullpen_adjustment,
+            injury_adjustment=payload.injury_adjustment,
+            park_factor_adjustment=payload.park_factor_adjustment,
+            umpire_adjustment=payload.umpire_adjustment,
+            player_prop_projection=payload.player_prop_projection,
+            sharp_market_probability=payload.sharp_market_probability,
+            closing_line_projection=payload.closing_line_projection,
+        )
+
+        # Create probability response
+        response = model_probability.create_probability_response(
+            market_probability=payload.market_probability,
+            inputs=inputs
+        )
+
+        return response
+
+    except Exception as exc:
+        return {
+            "ok": False,
+            "endpoint": endpoint_id,
+            "error": "UNEXPECTED_ERROR",
+            "detail": str(exc),
+            "final_probability": None,
+            "probability_type": None,
+            "market_probability": None,
+            "active_inputs": [],
+            "missing_inputs": [],
+            "applied_adjustments": {},
+            "adjustment_cap_warnings": [],
+            "model_limitations": [],
+            "data_quality_score": None,
+            "confidence": None,
+            "confidence_grade": None,
+            "provider_status": {}
         }
 
 
