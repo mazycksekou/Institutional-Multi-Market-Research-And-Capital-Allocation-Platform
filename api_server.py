@@ -7,6 +7,8 @@ def _verify_runtime_routes() -> None:
     required_paths = {
         "/api/betting/events/active",
         "/api/actions/betting/events/active",
+        "/api/actions/betting/events/{event_id}/odds",
+        "/api/actions/betting/first-event-odds",
         "/quant/market-pricing",
         "/quant/bet-analysis",
         "/quant/stock-analysis",
