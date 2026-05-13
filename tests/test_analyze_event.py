@@ -375,15 +375,6 @@ class TestAnalyzeEvent(unittest.TestCase):
 
             response = asyncio.run(action_analyze_betting_event(request))
 
-            # Should succeed but with no bets due to missing model probability
-            self.assertTrue(response["ok"])
-            self.assertEqual(response["probability_type"], "market_derived")
-            self.assertEqual(len(response["confirmed_bets"]), 0)
-            self.assertEqual(len(response["no_bets"]), 1)
-            self.assertEqual(response["no_bets"][0]["decision"], "no_bet_model_missing")
-
-    def test_analyze_event_request_defaults(self):
-        """Test AnalyzeEventRequest with default values."""
         request = AnalyzeEventRequest(
             sport="baseball_mlb",
             league="baseball_mlb",

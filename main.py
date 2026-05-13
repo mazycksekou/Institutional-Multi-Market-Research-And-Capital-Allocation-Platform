@@ -1657,6 +1657,47 @@ async def action_analyze_betting_event(payload: AnalyzeEventRequest):
                 "step_failed": step
             }
 
+        # Extract model probability results for matching
+        model_results = model_response.get("results", [])
+        if not model_results:
+            return {
+                "ok": False,
+                "endpoint": endpoint_id,
+                "sport": payload.sport,
+                "league": payload.league,
+                "event_id": payload.event_id,
+                "markets_requested": markets_requested,
+                "probability_type": None,
+                "confirmed_bets": [],
+                "target_lines": [],
+                "no_bets": [],
+                "warnings": ["Model probabilities were generated but could not be matched to evaluation lines."],
+                "model_limitations": model_response.get("model_limitations", []),
+                "missing_inputs": model_response.get("missing_inputs", []),
+                "active_inputs": model_response.get("active_inputs", []),
+                "market_summary": price_response.get("market_summary", []),
+                "evaluation_results": [],
+                "log_ready_rows": [],
+                "error": "model_probability_handoff_failed",
+                "detail": "Model probabilities were generated but could not be matched to evaluation lines.",
+                "step_failed": step
+            }
+
+        # Create a mapping key for matching model results to evaluation lines
+        model_probability_map = {}
+        for result in model_results:
+            if result.get("ok", False) and "row" in result:
+                row = result["row"]
+                # Create matching key using sportsbook, market, selection, line, odds_american
+                match_key = (
+                    row.get("sportsbook"),
+                    row.get("market"),
+                    row.get("selection"),
+                    row.get("line"),
+                    row.get("odds_american")
+                )
+                model_probability_map[match_key] = result
+
         # Step 4: Evaluate lines using evaluateBettingLines logic
         step = "evaluate_lines"
         evaluation_ready_lines = price_response.get("evaluation_ready_lines", [])
@@ -1709,14 +1750,29 @@ async def action_analyze_betting_event(payload: AnalyzeEventRequest):
                 validation_warnings.append("Skipped line because market or selection was missing.")
                 continue
 
-            # Create valid evaluation line
+            # Create matching key for this evaluation line
+            match_key = (
+                sportsbook,
+                market,
+                selection,
+                line.get("line"),
+                odds_american
+            )
+
+            # Find matching model probability result
+            model_result = model_probability_map.get(match_key)
+
+            # Create valid evaluation line with matched model probability
             valid_line = {
                 "sportsbook": sportsbook,
                 "market": market,
                 "selection": selection,
                 "line": line.get("line"),
                 "odds_american": odds_american,
-                "model_probability": model_response.get("final_probability"),
+                "model_probability": model_result.get("final_probability") if model_result else None,
+                "no_vig_probability": line.get("no_vig_probability"),
+                "consensus_probability": line.get("consensus_probability"),
+                "implied_probability": line.get("implied_probability"),
                 "correlation_group": line.get("correlation_group"),
                 "opening_odds_american": line.get("opening_odds_american")
             }
@@ -1800,15 +1856,45 @@ async def action_analyze_betting_event(payload: AnalyzeEventRequest):
                 no_bets.append(result)
 
         # Add warnings for market-derived probabilities
-        if model_response.get("probability_type") == "market_derived":
-            warnings.append("Analysis based on market-derived probabilities only - no independent model inputs provided")
+        probability_type = None
+        if model_results:
+            # Get probability type from first successful model result
+            for result in model_results:
+                if result.get("ok", False):
+                    probability_type = result.get("probability_type")
+                    break
+
+        if probability_type == "market_derived":
+            warnings.append("Using market-derived probability only; no independent projection data was provided.")
+            warnings.append("Line evaluated with market-derived probability only; not a confirmed betting recommendation.")
+        elif probability_type == "market_derived_only":
+            warnings.append("Using market-derived probability only; no independent projection data was provided.")
+            warnings.append("Line evaluated with market-derived probability only; not a confirmed betting recommendation.")
 
         # Add warnings for missing inputs
-        if model_response.get("missing_inputs"):
-            warnings.append(f"Missing model inputs: {', '.join(model_response.get('missing_inputs', []))}")
+        if model_results:
+            # Get missing inputs from first successful model result
+            for result in model_results:
+                if result.get("ok", False):
+                    missing_inputs = result.get("missing_inputs", [])
+                    if missing_inputs:
+                        warnings.append(f"Missing model inputs: {', '.join(missing_inputs)}")
+                    break
 
         # Add validation warnings
         warnings.extend(validation_warnings)
+
+        # Get model data from first successful result
+        model_limitations = []
+        missing_inputs = []
+        active_inputs = []
+        if model_results:
+            for result in model_results:
+                if result.get("ok", False):
+                    model_limitations = result.get("model_limitations", [])
+                    missing_inputs = result.get("missing_inputs", [])
+                    active_inputs = result.get("active_inputs", [])
+                    break
 
         # Create log-ready rows
         log_ready_rows = []
@@ -1825,8 +1911,8 @@ async def action_analyze_betting_event(payload: AnalyzeEventRequest):
                 "decision": result.get("decision"),
                 "stake": result.get("stake"),
                 "expected_value": result.get("expected_value"),
-                "probability_type": model_response.get("probability_type"),
-                "final_probability": model_response.get("final_probability"),
+                "probability_type": probability_type,
+                "final_probability": result.get("model_probability"),
                 "risk_profile": payload.risk_profile,
                 "bankroll": payload.bankroll,
                 "unit_size": payload.unit_size
@@ -1840,14 +1926,14 @@ async def action_analyze_betting_event(payload: AnalyzeEventRequest):
             "league": payload.league,
             "event_id": payload.event_id,
             "markets_requested": markets_requested,
-            "probability_type": model_response.get("probability_type", "unknown"),
+            "probability_type": probability_type,
             "confirmed_bets": confirmed_bets,
             "target_lines": target_lines,
             "no_bets": no_bets,
             "warnings": warnings,
-            "model_limitations": model_response.get("model_limitations", []),
-            "missing_inputs": model_response.get("missing_inputs", []),
-            "active_inputs": model_response.get("active_inputs", []),
+            "model_limitations": model_limitations,
+            "missing_inputs": missing_inputs,
+            "active_inputs": active_inputs,
             "market_summary": price_response.get("market_summary", []),
             "evaluation_results": evaluation_results,
             "log_ready_rows": log_ready_rows,
