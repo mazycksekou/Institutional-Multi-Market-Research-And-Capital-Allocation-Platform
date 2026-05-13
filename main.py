@@ -1659,7 +1659,14 @@ async def action_analyze_betting_event(payload: AnalyzeEventRequest):
 
         # Extract model probability results for matching
         model_results = model_response.get("results", [])
-        if not model_results:
+        probability_type = model_response.get("probability_type")
+        if model_results:
+            for result in model_results:
+                if result.get("ok", False):
+                    probability_type = result.get("probability_type", probability_type)
+                    break
+
+        if not model_results and probability_type != "market_derived":
             return {
                 "ok": False,
                 "endpoint": endpoint_id,
@@ -1667,7 +1674,7 @@ async def action_analyze_betting_event(payload: AnalyzeEventRequest):
                 "league": payload.league,
                 "event_id": payload.event_id,
                 "markets_requested": markets_requested,
-                "probability_type": None,
+                "probability_type": probability_type,
                 "confirmed_bets": [],
                 "target_lines": [],
                 "no_bets": [],
@@ -1762,6 +1769,30 @@ async def action_analyze_betting_event(payload: AnalyzeEventRequest):
             # Find matching model probability result
             model_result = model_probability_map.get(match_key)
 
+            # Determine model_probability based on probability type and line data.
+            # Market-derived analysis must use the probability from this same line.
+            if probability_type == "market_derived":
+                model_probability = (
+                    line.get("no_vig_probability")
+                    if line.get("no_vig_probability") is not None
+                    else line.get("consensus_probability")
+                    if line.get("consensus_probability") is not None
+                    else line.get("implied_probability")
+                )
+            elif model_result:
+                model_probability = model_result.get("final_probability")
+            else:
+                model_probability = None
+
+            # Validate model_probability
+            if (
+                model_probability is None
+                or model_probability <= 0
+                or model_probability >= 1
+            ):
+                validation_warnings.append("Skipped line because model_probability was invalid for evaluation.")
+                continue
+
             # Create valid evaluation line with matched model probability
             valid_line = {
                 "sportsbook": sportsbook,
@@ -1769,7 +1800,7 @@ async def action_analyze_betting_event(payload: AnalyzeEventRequest):
                 "selection": selection,
                 "line": line.get("line"),
                 "odds_american": odds_american,
-                "model_probability": model_result.get("final_probability") if model_result else None,
+                "model_probability": model_probability,
                 "no_vig_probability": line.get("no_vig_probability"),
                 "consensus_probability": line.get("consensus_probability"),
                 "implied_probability": line.get("implied_probability"),
@@ -1848,21 +1879,30 @@ async def action_analyze_betting_event(payload: AnalyzeEventRequest):
         warnings = []
 
         for result in evaluation_results:
-            if result.get("decision") == "BET":
-                confirmed_bets.append(result)
-            elif result.get("decision") in ["TARGET", "WATCH"]:
-                target_lines.append(result)
-            else:
-                no_bets.append(result)
+            decision = result.get("decision")
 
-        # Add warnings for market-derived probabilities
-        probability_type = None
-        if model_results:
-            # Get probability type from first successful model result
-            for result in model_results:
-                if result.get("ok", False):
-                    probability_type = result.get("probability_type")
-                    break
+            # If probability_type is market_derived, reclassify bets as target_lines
+            if probability_type == "market_derived":
+                # Check if decision is bet-like (should not be confirmed for market-derived)
+                normalized_decision = decision.lower().strip() if isinstance(decision, str) else ""
+                bet_like_decisions = {"bet", "strong_bet", "strong bet"}
+                is_bet_like = normalized_decision in bet_like_decisions
+
+                if is_bet_like:
+                    result["decision"] = "target_market_derived"
+                    result["market_derived_only"] = True
+                    target_lines.append(result)
+                elif decision in ["TARGET", "WATCH"]:
+                    target_lines.append(result)
+                else:
+                    no_bets.append(result)
+            else:
+                if decision == "BET":
+                    confirmed_bets.append(result)
+                elif decision in ["TARGET", "WATCH"]:
+                    target_lines.append(result)
+                else:
+                    no_bets.append(result)
 
         if probability_type == "market_derived":
             warnings.append("Using market-derived probability only; no independent projection data was provided.")
