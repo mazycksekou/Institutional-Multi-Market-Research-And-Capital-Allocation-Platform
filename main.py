@@ -20,6 +20,7 @@ from betting_providers.base import PREDICTION_MARKET
 from betting_providers.provider_router import ProviderRouter
 import bet_decision_engine
 import market_pricing
+import multi_sport_model_registry
 import model_probability
 from quant_engine import (
     american_to_implied_probability,
@@ -654,6 +655,43 @@ class AnalyzeEventResponse(BaseModel):
     step_failed: Optional[str] = None
 
 
+class SportModelConfigResponse(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
+
+    sport_key: str = Field(..., description="Canonical registry sport key used by Action-safe betting routes and governance checks.")
+    display_name: str = Field(..., description="Human-readable sport or league name.")
+    status: str = Field(..., description="Current build status for this sport's model pipeline.")
+    model_level: str = Field(..., description="Model maturity level: not_built, market_derived_only, projection_ready, blended_ready, or fully_independent.")
+    confirmed_bets_allowed: bool = Field(..., description="Whether analyze-event may place qualifying results in confirmed_bets for this sport.")
+    supported_markets: list[str] = Field(..., description="Markets the registry recognizes for this sport, such as h2h, spreads, totals, or outrights.")
+    supported_props: list[str] = Field(..., description="Prop markets supported by this sport model; empty when props are not connected.")
+    required_independent_inputs: list[str] = Field(..., description="Independent data inputs required before this sport can be promoted for confirmed bets.")
+    optional_independent_inputs: list[str] = Field(..., description="Additional independent inputs that can improve model quality but are not mandatory.")
+    provider_needs: list[str] = Field(..., description="Provider capabilities still needed for market data, projections, injuries, history, and backtesting.")
+    recommended_providers: list[str] = Field(..., description="Configured or recommended provider IDs; empty when no provider has been selected.")
+    model_components: list[str] = Field(..., description="Pipeline components currently represented by the sport model configuration.")
+    risk_notes: list[str] = Field(..., description="Sport-specific limitations and governance notes.")
+    correlation_rules: list[str] = Field(..., description="Rules for grouping correlated exposure within this sport.")
+    log_fields_required: list[str] = Field(..., description="Fields that must be present in logs before model promotion or bet governance review.")
+
+
+class SportsModelRegistrySummaryResponse(BaseModel):
+    total_sports: int = Field(..., description="Total number of sport configurations returned by the registry.")
+    confirmed_bet_enabled_sports: int = Field(..., description="Count of sports currently allowed to produce confirmed_bets.")
+    market_derived_only_sports: int = Field(..., description="Count of sports using only market-derived probabilities.")
+    not_built_sports: int = Field(..., description="Count of sports that are registered but not built.")
+
+
+class SportsModelRegistryResponse(BaseModel):
+    ok: bool = Field(..., description="True when the registry response was generated successfully.")
+    endpoint: str = Field(..., description="Stable Action operation identifier for this registry response.")
+    sports: list[SportModelConfigResponse] = Field(..., description="Ordered list of sport model registry configurations.")
+    summary: SportsModelRegistrySummaryResponse = Field(..., description="Aggregate counts by eligibility and model level.")
+    global_rules: list[str] = Field(..., description="Governance rules that apply to every sport in the registry.")
+    error: Optional[str] = Field(None, description="Machine-readable error code, or null on success.")
+    detail: Optional[str] = Field(None, description="Human-readable error detail, or null on success.")
+
+
 def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
@@ -1094,6 +1132,21 @@ async def action_get_active_betting_events(
     limit: int = Query(default=10, ge=1, le=100, description="Maximum number of events to return"),
 ):
     return await action_fetch_active_events_envelope(league, provider, limit)
+
+
+@app.get(
+    "/api/actions/models/sports-registry",
+    operation_id="getSportsModelRegistry",
+    dependencies=[Depends(require_action_key)],
+    response_model=SportsModelRegistryResponse,
+    summary="Get Sports Model Registry",
+    description=(
+        "Return the multi-sport model registry, including model maturity, required independent inputs, "
+        "provider needs, market support, logging requirements, and confirmed-bet governance eligibility."
+    ),
+)
+async def action_get_sports_model_registry():
+    return multi_sport_model_registry.get_sports_model_registry_response()
 
 
 @app.get("/api/betting/events/{event_id}/odds", operation_id="getEventOddsRaw", dependencies=[Depends(require_action_key)])
@@ -1877,21 +1930,33 @@ async def action_analyze_betting_event(payload: AnalyzeEventRequest):
         target_lines = []
         no_bets = []
         warnings = []
+        registry_sport_key = payload.sport
+        if not multi_sport_model_registry.is_supported_sport(registry_sport_key):
+            registry_sport_key = payload.league
+        sport_confirmed_bets_allowed = multi_sport_model_registry.confirmed_bets_allowed(registry_sport_key)
+        sport_model_level = multi_sport_model_registry.classify_model_level(registry_sport_key)
+        confirmed_bet_blocked_count = 0
 
         for result in evaluation_results:
             decision = result.get("decision")
+            normalized_decision = decision.lower().strip() if isinstance(decision, str) else ""
+            bet_like_decisions = {"bet", "strong_bet", "strong bet"}
+            is_bet_like = normalized_decision in bet_like_decisions
 
-            # If probability_type is market_derived, reclassify bets as target_lines
-            if probability_type == "market_derived":
-                # Check if decision is bet-like (should not be confirmed for market-derived)
-                normalized_decision = decision.lower().strip() if isinstance(decision, str) else ""
-                bet_like_decisions = {"bet", "strong_bet", "strong bet"}
-                is_bet_like = normalized_decision in bet_like_decisions
+            # Market-derived or registry-blocked sports cannot produce confirmed bets.
+            if probability_type in {"market_derived", "market_derived_only"} or not sport_confirmed_bets_allowed:
 
                 if is_bet_like:
-                    result["decision"] = "target_market_derived"
-                    result["market_derived_only"] = True
+                    result["decision"] = (
+                        "target_market_derived"
+                        if probability_type in {"market_derived", "market_derived_only"}
+                        else "target_registry_blocked"
+                    )
+                    result["market_derived_only"] = probability_type in {"market_derived", "market_derived_only"}
+                    result["confirmed_bets_allowed"] = False
+                    result["model_level"] = sport_model_level
                     target_lines.append(result)
+                    confirmed_bet_blocked_count += 1
                 elif decision in ["TARGET", "WATCH"]:
                     target_lines.append(result)
                 else:
@@ -1910,6 +1975,11 @@ async def action_analyze_betting_event(payload: AnalyzeEventRequest):
         elif probability_type == "market_derived_only":
             warnings.append("Using market-derived probability only; no independent projection data was provided.")
             warnings.append("Line evaluated with market-derived probability only; not a confirmed betting recommendation.")
+
+        if confirmed_bet_blocked_count and not sport_confirmed_bets_allowed:
+            warnings.append(
+                "Confirmed bets are disabled for this sport in the model registry until independent projection inputs are connected."
+            )
 
         # Add warnings for missing inputs
         if model_results:
