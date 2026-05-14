@@ -6,6 +6,7 @@ import unittest
 from pathlib import Path
 
 import bet_log
+from main import ActionBetLogRequest
 
 
 def _entry(**extra):
@@ -30,6 +31,11 @@ def _entry(**extra):
     return bet_log.create_bet_log_entry(payload)
 
 
+def _request_entry(**extra):
+    payload = ActionBetLogRequest(**extra)
+    return bet_log.create_bet_log_entry(payload.model_dump(exclude_none=True))
+
+
 class TestBetLog(unittest.TestCase):
     def test_log_bet_creates_a_bet_id(self):
         entry = _entry()
@@ -46,6 +52,31 @@ class TestBetLog(unittest.TestCase):
             self.assertTrue(path.exists())
             rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
             self.assertEqual(rows[0]["bet_id"], entry["bet_id"])
+
+    def test_log_bet_accepts_numeric_confidence(self):
+        entry = _request_entry(confidence=40)
+
+        self.assertEqual(entry["confidence"], 40.0)
+
+    def test_log_bet_accepts_float_confidence(self):
+        entry = _request_entry(confidence=40.0)
+
+        self.assertEqual(entry["confidence"], 40.0)
+
+    def test_log_bet_accepts_string_confidence(self):
+        entry = _request_entry(confidence="40")
+
+        self.assertEqual(entry["confidence"], 40.0)
+
+    def test_log_bet_accepts_missing_confidence(self):
+        entry = _request_entry()
+
+        self.assertIsNone(entry["confidence"])
+
+    def test_log_bet_accepts_null_confidence(self):
+        entry = _request_entry(confidence=None)
+
+        self.assertIsNone(entry["confidence"])
 
     def test_no_bet_user_placement_marks_ignored_no_bet(self):
         entry = _entry(decision="no_bet", user_action="bet_placed")

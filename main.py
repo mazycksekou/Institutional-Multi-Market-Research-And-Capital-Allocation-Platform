@@ -576,7 +576,7 @@ class ActionBetLogRequest(BaseModel):
     result: Optional[str] = "pending"
     status: Optional[str] = None
     risk_profile: Optional[str] = None
-    confidence: Optional[str] = None
+    confidence: Optional[float | str] = None
     correlation_group: Optional[str] = None
     user_action: Optional[str] = None
     manual_override: bool = False

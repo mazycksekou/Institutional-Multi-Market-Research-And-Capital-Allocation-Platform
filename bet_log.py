@@ -75,6 +75,12 @@ def _to_int(value: Any) -> int | None:
         return None
 
 
+def _normalize_confidence(value: Any) -> float | None:
+    if value is None or value == "":
+        return None
+    return _to_float(value)
+
+
 def _american_to_decimal(odds: Any) -> float | None:
     odds_int = _to_int(odds)
     if odds_int is None or odds_int == 0:
@@ -150,6 +156,7 @@ def create_bet_log_entry(payload: dict[str, Any]) -> dict[str, Any]:
     entry["odds_american"] = entry.get("odds_american", entry.get("actual_odds_taken"))
     entry["result"] = entry.get("result") or "pending"
     entry["status"] = entry.get("status") or "open"
+    entry["confidence"] = _normalize_confidence(entry.get("confidence"))
 
     implied = _implied_probability(entry.get("actual_odds_taken"))
     if entry.get("implied_probability") is None and implied is not None:
