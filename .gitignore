@@ -55,6 +55,9 @@ htmlcov/
 .ipynb_checkpoints/
 
 # Local data outputs
+data/*.jsonl
+data/*.csv
+data/*.db
 *.csv
 *.xlsx
 *.json

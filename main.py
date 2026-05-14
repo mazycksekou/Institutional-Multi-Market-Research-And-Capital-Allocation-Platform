@@ -18,6 +18,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from betting_providers import aliases as betting_aliases
 from betting_providers.base import PREDICTION_MARKET
 from betting_providers.provider_router import ProviderRouter
+import bet_log
 import bet_decision_engine
 import market_pricing
 import multi_sport_model_registry
@@ -542,6 +543,51 @@ class AnalyzeEventRequest(BaseModel):
     risk_profile: str = Field(default="conservative", description="Risk profile: 'conservative', 'standard', or 'aggressive'")
     max_stake_pct: float = Field(default=0.02, gt=0, le=0.25, description="Maximum stake percentage of bankroll per bet")
     independent_inputs: Optional[dict[str, Any]] = Field(None, description="Optional independent inputs for model probability calculations")
+
+
+class ActionBetLogRequest(BaseModel):
+    model_config = ConfigDict(extra="allow", protected_namespaces=())
+
+    sport_key: Optional[str] = None
+    event_id: Optional[str] = None
+    event: Optional[str] = None
+    sportsbook: Optional[str] = None
+    market: Optional[str] = None
+    selection: Optional[str] = None
+    line: Optional[float] = None
+    odds_american: Optional[int] = None
+    stake: float = 0
+    unit_size: Optional[float] = None
+    bankroll_at_bet: Optional[float] = None
+    model_level: Optional[str] = None
+    probability_type: Optional[str] = None
+    model_probability: Optional[float] = None
+    market_probability: Optional[float] = None
+    final_probability: Optional[float] = None
+    implied_probability: Optional[float] = None
+    edge_percent: Optional[float] = None
+    ev_per_100: Optional[float] = None
+    kelly_percent: Optional[float] = None
+    suggested_stake: Optional[float] = None
+    decision: Optional[str] = None
+    minimum_playable_odds: Optional[int] = None
+    actual_odds_taken: Optional[int] = None
+    closing_odds: Optional[int] = None
+    result: Optional[str] = "pending"
+    status: Optional[str] = None
+    risk_profile: Optional[str] = None
+    confidence: Optional[str] = None
+    correlation_group: Optional[str] = None
+    user_action: Optional[str] = None
+    manual_override: bool = False
+    confirmed_bets_allowed: Optional[bool] = None
+    notes: Optional[str] = None
+
+
+class ActionBetResultRequest(BaseModel):
+    bet_id: str
+    result: str
+    closing_odds: Optional[int] = None
 
 
 # Response Models for Action Endpoints
@@ -1147,6 +1193,104 @@ async def action_get_active_betting_events(
 )
 async def action_get_sports_model_registry():
     return multi_sport_model_registry.get_sports_model_registry_response()
+
+
+@app.post(
+    "/api/actions/betting/log-bet",
+    operation_id="logBet",
+    dependencies=[Depends(require_action_key)],
+    summary="Log Bet",
+    description="Create and append a Sharpsbook-style betting log entry.",
+)
+async def action_log_bet(payload: ActionBetLogRequest):
+    entry = bet_log.create_bet_log_entry(payload.model_dump(exclude_none=True))
+    bet_log.append_bet_log_entry(entry)
+    return {"ok": True, "endpoint": "logBet", "bet": entry}
+
+
+@app.post(
+    "/api/actions/betting/log-result",
+    operation_id="logBetResult",
+    dependencies=[Depends(require_action_key)],
+    summary="Log Bet Result",
+    description="Update an existing logged bet with its result and calculated profit/loss.",
+)
+async def action_log_bet_result(payload: ActionBetResultRequest):
+    updated = bet_log.update_bet_result(
+        bet_id=payload.bet_id,
+        result=payload.result,
+        closing_odds=payload.closing_odds,
+    )
+    if updated is None:
+        return {
+            "ok": False,
+            "endpoint": "logBetResult",
+            "error": "BET_NOT_FOUND",
+            "detail": f"No bet log entry found for bet_id {payload.bet_id}.",
+        }
+    return {"ok": True, "endpoint": "logBetResult", "bet": updated}
+
+
+@app.get(
+    "/api/actions/betting/logs",
+    operation_id="getBetLogs",
+    dependencies=[Depends(require_action_key)],
+    summary="Get Bet Logs",
+    description="Read Sharpsbook-style betting log entries.",
+)
+async def action_get_bet_logs(limit: int = Query(default=100, ge=1, le=1000)):
+    entries = bet_log.read_bet_log_entries()
+    return {
+        "ok": True,
+        "endpoint": "getBetLogs",
+        "count": len(entries),
+        "logs": entries[-limit:],
+    }
+
+
+@app.get(
+    "/api/actions/betting/performance-summary",
+    operation_id="getPerformanceSummary",
+    dependencies=[Depends(require_action_key)],
+    summary="Get Performance Summary",
+    description="Summarize betting performance, ROI, yield, CLV, and error counts.",
+)
+async def action_get_performance_summary():
+    return {
+        "ok": True,
+        "endpoint": "getPerformanceSummary",
+        "summary": bet_log.get_performance_summary(),
+    }
+
+
+@app.get(
+    "/api/actions/betting/bankroll-summary",
+    operation_id="getBankrollSummary",
+    dependencies=[Depends(require_action_key)],
+    summary="Get Bankroll Summary",
+    description="Summarize bankroll movement from logged bets.",
+)
+async def action_get_bankroll_summary():
+    return {
+        "ok": True,
+        "endpoint": "getBankrollSummary",
+        "summary": bet_log.get_bankroll_summary(),
+    }
+
+
+@app.get(
+    "/api/actions/betting/clv-report",
+    operation_id="getCLVReport",
+    dependencies=[Depends(require_action_key)],
+    summary="Get CLV Report",
+    description="Compare actual odds taken against closing odds when available.",
+)
+async def action_get_clv_report():
+    return {
+        "ok": True,
+        "endpoint": "getCLVReport",
+        "report": bet_log.get_clv_report(),
+    }
 
 
 @app.get("/api/betting/events/{event_id}/odds", operation_id="getEventOddsRaw", dependencies=[Depends(require_action_key)])
@@ -2143,7 +2287,7 @@ async def analyze(ticker: str = "NVDA", league: Optional[str] = None, sport: Opt
     return {"ok": True, "ticker": ticker.upper(), "stock_data": stock, "odds_data": odds}
 
 
-@app.post("/api/bets/log", operation_id="logBet", dependencies=[Depends(require_action_key)])
+@app.post("/api/bets/log", operation_id="logBetCsv", dependencies=[Depends(require_action_key)])
 async def log_bet(payload: BetLogRequest):
     row = payload.model_dump()
     row["date"] = row["date"] or date.today().isoformat()

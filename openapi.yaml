@@ -281,6 +281,70 @@ paths:
               additionalProperties: true
       responses:
         "200": *genericResponse
+  /api/actions/betting/log-bet:
+    post:
+      operationId: logBet
+      summary: Log Bet
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: {}
+              additionalProperties: true
+      responses:
+        "200": *genericResponse
+  /api/actions/betting/log-result:
+    post:
+      operationId: logBetResult
+      summary: Log Bet Result
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: {}
+              additionalProperties: true
+      responses:
+        "200": *genericResponse
+  /api/actions/betting/logs:
+    get:
+      operationId: getBetLogs
+      summary: Get Bet Logs
+      security:
+        - ApiKeyAuth: []
+      responses:
+        "200": *genericResponse
+  /api/actions/betting/performance-summary:
+    get:
+      operationId: getPerformanceSummary
+      summary: Get Performance Summary
+      security:
+        - ApiKeyAuth: []
+      responses:
+        "200": *genericResponse
+  /api/actions/betting/bankroll-summary:
+    get:
+      operationId: getBankrollSummary
+      summary: Get Bankroll Summary
+      security:
+        - ApiKeyAuth: []
+      responses:
+        "200": *genericResponse
+  /api/actions/betting/clv-report:
+    get:
+      operationId: getCLVReport
+      summary: Get CLV Report
+      security:
+        - ApiKeyAuth: []
+      responses:
+        "200": *genericResponse
 components:
   schemas: {}
   securitySchemes:
