@@ -345,6 +345,57 @@ paths:
         - ApiKeyAuth: []
       responses:
         "200": *genericResponse
+  /api/actions/models/sport-analysis:
+    post:
+      operationId: analyzeSportModel
+      summary: Analyze Sport Model
+      description: Return registered sport-model architecture without live provider calls or automated bet placement.
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - sport
+                - market
+              properties:
+                sport:
+                  type: string
+                  example: basketball_nba
+                league:
+                  type: string
+                market:
+                  type: string
+                  example: moneyline
+                event_id:
+                  type: string
+                home_team:
+                  type: string
+                away_team:
+                  type: string
+                player_name:
+                  type: string
+                odds_american:
+                  type: integer
+                  example: -110
+                line:
+                  type: number
+                input_stats:
+                  type: object
+                  additionalProperties: true
+                risk_profile:
+                  type: string
+                  example: conservative
+                bankroll:
+                  type: number
+                unit_size:
+                  type: number
+              additionalProperties: true
+      responses:
+        "200": *genericResponse
 components:
   schemas: {}
   securitySchemes:

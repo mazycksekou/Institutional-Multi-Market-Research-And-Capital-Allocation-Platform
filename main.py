@@ -545,6 +545,24 @@ class AnalyzeEventRequest(BaseModel):
     independent_inputs: Optional[dict[str, Any]] = Field(None, description="Optional independent inputs for model probability calculations")
 
 
+class SportAnalysisRequest(BaseModel):
+    model_config = ConfigDict(extra="allow", protected_namespaces=())
+
+    sport: str = Field(..., description="Official sport key. egaming is accepted as a backward-compatible alias for esports.")
+    league: Optional[str] = Field(None, description="Optional league key.")
+    market: str = Field(..., description="Market to analyze.")
+    event_id: Optional[str] = Field(None, description="Optional event identifier.")
+    home_team: Optional[str] = Field(None, description="Optional home team.")
+    away_team: Optional[str] = Field(None, description="Optional away team.")
+    player_name: Optional[str] = Field(None, description="Optional player name for prop analysis.")
+    odds_american: Optional[int] = Field(None, description="Optional American odds.")
+    line: Optional[float] = Field(None, description="Optional market line.")
+    input_stats: Optional[dict[str, Any]] = Field(None, description="Optional model inputs. Missing required inputs force inactive_missing_data.")
+    risk_profile: Optional[str] = Field("conservative", description="Risk profile: conservative, standard, or aggressive.")
+    bankroll: Optional[float] = Field(None, ge=0, description="Optional bankroll.")
+    unit_size: Optional[float] = Field(None, ge=0, description="Optional base unit size.")
+
+
 class ActionBetLogRequest(BaseModel):
     model_config = ConfigDict(extra="allow", protected_namespaces=())
 
@@ -736,6 +754,36 @@ class SportsModelRegistryResponse(BaseModel):
     global_rules: list[str] = Field(..., description="Governance rules that apply to every sport in the registry.")
     error: Optional[str] = Field(None, description="Machine-readable error code, or null on success.")
     detail: Optional[str] = Field(None, description="Human-readable error detail, or null on success.")
+
+
+class SportAnalysisResponse(BaseModel):
+    model_config = ConfigDict(extra="allow", protected_namespaces=())
+
+    sport: str
+    model_used: Optional[str] = None
+    model_family: Optional[str] = None
+    market: Optional[str] = None
+    projected_score: Optional[Any] = None
+    true_probability: Optional[float] = None
+    implied_probability: Optional[float] = None
+    edge: Optional[float] = None
+    confidence: Optional[Any] = None
+    risk_level: str
+    recommended_unit_size: float
+    no_bet_flags: list[str]
+    correlation_notes: list[str]
+    model_components: list[str]
+    missing_inputs: list[str]
+    backtest_status: str
+    calibration_status: str
+    logbook_ready_row: dict[str, Any]
+    component_statuses: dict[str, Any]
+    advanced_edge_components: dict[str, Any]
+    provider_needs: list[str]
+    risk_controller: dict[str, Any]
+    wee_willie_market_weakness_detector: dict[str, Any]
+    manual_ticket_preview: Optional[dict[str, Any]] = None
+    full_board_preview: dict[str, Any]
 
 
 def utc_now() -> str:
@@ -1193,6 +1241,22 @@ async def action_get_active_betting_events(
 )
 async def action_get_sports_model_registry():
     return multi_sport_model_registry.get_sports_model_registry_response()
+
+
+@app.post(
+    "/api/actions/models/sport-analysis",
+    operation_id="analyzeSportModel",
+    dependencies=[Depends(require_action_key)],
+    response_model=SportAnalysisResponse,
+    summary="Analyze Sport Model",
+    description=(
+        "Return the registered sport-model architecture foundation for a sport and market. "
+        "This endpoint does not connect live providers and cannot create confirmed bets without required inputs, "
+        "backtest proof, risk approval, and clear no-bet flags."
+    ),
+)
+async def action_analyze_sport_model(payload: SportAnalysisRequest):
+    return multi_sport_model_registry.analyze_sport_model(payload.model_dump(exclude_none=True))
 
 
 @app.post(

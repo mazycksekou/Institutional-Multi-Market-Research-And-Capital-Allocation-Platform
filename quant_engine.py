@@ -309,3 +309,72 @@ def full_kelly_fraction(odds: int | float, true_probability: float) -> float:
 def fair_decimal_odds_from_probability(probability: float) -> float:
     p = _validate_probability(probability)
     return 1 / p
+
+
+def full_kelly_percent(odds: int | float, true_probability: float) -> float:
+    return round(full_kelly_fraction(odds, true_probability) * 100, 4)
+
+
+def fractional_kelly_percent(odds: int | float, true_probability: float, fraction: float = 0.25) -> float:
+    return round(full_kelly_fraction(odds, true_probability) * max(0, float(fraction)) * 100, 4)
+
+
+def risk_profile_settings(risk_profile: str | None = "standard") -> dict[str, float | str]:
+    profiles = {
+        "conservative": {"risk_profile": "conservative", "kelly_fraction": 0.125, "max_bankroll_pct": 0.01, "confidence_multiplier": 0.75},
+        "standard": {"risk_profile": "standard", "kelly_fraction": 0.25, "max_bankroll_pct": 0.02, "confidence_multiplier": 1.0},
+        "aggressive": {"risk_profile": "aggressive", "kelly_fraction": 0.5, "max_bankroll_pct": 0.03, "confidence_multiplier": 1.15},
+    }
+    return profiles.get((risk_profile or "standard").strip().lower(), profiles["standard"]).copy()
+
+
+def suggested_stake_with_risk_controls(
+    bankroll: float,
+    american_odds: int | float,
+    true_probability: float,
+    risk_profile: str | None = "standard",
+    confidence_0_100: float | None = None,
+) -> float:
+    profile = risk_profile_settings(risk_profile)
+    stake = suggested_stake(
+        bankroll,
+        american_odds,
+        true_probability,
+        fractional_kelly=float(profile["kelly_fraction"]),
+        max_bankroll_pct=float(profile["max_bankroll_pct"]),
+    )
+    if confidence_0_100 is not None:
+        stake = confidence_adjusted_stake(stake, confidence_0_100)
+    return round(stake, 2)
+
+
+def quant_engine_component_foundation() -> dict[str, Any]:
+    return {
+        "component_name": "quant_engine_foundation",
+        "component_status": "research_mode_not_bettable",
+        "required_inputs": ["american_odds", "true_probability", "bankroll", "risk_profile"],
+        "optional_inputs": ["unit_size", "confidence", "max_stake_cap", "current_exposure"],
+        "missing_inputs": [],
+        "data_provider_needs": ["sportsbook odds", "independent model probability", "risk ledger"],
+        "backtest_requirements": ["settled outcomes", "closing-line history", "probability calibration buckets"],
+        "calibration_requirements": ["edge bucket calibration", "Kelly drawdown review", "confidence calibration"],
+        "no_bet_flags": ["missing required input", "negative EV", "risk cap exceeded", "low confidence", "no backtest proof"],
+        "output_fields": [
+            "decimal_odds",
+            "implied_probability",
+            "fair_american_odds",
+            "edge",
+            "ev_per_100",
+            "full_kelly_percent",
+            "fractional_kelly_percent",
+            "suggested_stake",
+            "bankroll_cap",
+            "risk_profile",
+            "confidence",
+            "no_bet_flags",
+        ],
+        "notes": [
+            "Includes American odds conversion, implied probability, fair odds, edge, EV, Kelly, bankroll caps, risk profile handling, confidence handling, and no-bet flags.",
+            "This component is math-only and does not create confirmed bets.",
+        ],
+    }

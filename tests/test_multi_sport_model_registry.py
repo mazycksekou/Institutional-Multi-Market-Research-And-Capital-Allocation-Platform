@@ -6,12 +6,12 @@ from main import action_get_sports_model_registry, app
 
 
 EXPECTED_SPORT_KEYS = [
-    "americanfootball_nfl",
-    "americanfootball_ncaaf",
+    "baseball_mlb",
     "basketball_nba",
     "basketball_wnba",
     "basketball_ncaab",
-    "baseball_mlb",
+    "americanfootball_nfl",
+    "americanfootball_ncaaf",
     "soccer",
     "icehockey_nhl",
     "tennis",
@@ -20,13 +20,14 @@ EXPECTED_SPORT_KEYS = [
     "golf",
     "formula1",
     "cricket",
+    "esports",
 ]
 
 
 class TestMultiSportModelRegistry(unittest.TestCase):
-    def test_all_14_sports_are_present(self):
+    def test_all_15_sports_are_present(self):
         sports = registry.get_sports_model_registry_response()["sports"]
-        self.assertEqual(len(sports), 14)
+        self.assertEqual(len(sports), 15)
         self.assertEqual([sport["sport_key"] for sport in sports], EXPECTED_SPORT_KEYS)
 
     def test_mlb_is_market_derived_only(self):
@@ -52,16 +53,16 @@ class TestMultiSportModelRegistry(unittest.TestCase):
         self.assertFalse(registry.confirmed_bets_allowed("baseball_mlb"))
         self.assertEqual(registry.classify_model_level("baseball_mlb"), "market_derived_only")
         self.assertIsInstance(registry.get_required_inputs("baseball_mlb"), list)
-        self.assertIn("h2h", registry.get_supported_markets("baseball_mlb"))
+        self.assertIn("moneyline", registry.get_supported_markets("baseball_mlb"))
 
     def test_endpoint_model_response_shape_validates(self):
         response = asyncio.run(action_get_sports_model_registry())
         self.assertTrue(response["ok"])
         self.assertEqual(response["endpoint"], "getSportsModelRegistry")
-        self.assertEqual(response["summary"]["total_sports"], 14)
+        self.assertEqual(response["summary"]["total_sports"], 15)
         self.assertEqual(response["summary"]["confirmed_bet_enabled_sports"], 0)
         self.assertEqual(response["summary"]["market_derived_only_sports"], 1)
-        self.assertEqual(response["summary"]["not_built_sports"], 13)
+        self.assertEqual(response["summary"]["not_built_sports"], 14)
         self.assertEqual(response["error"], None)
         self.assertEqual(response["detail"], None)
 

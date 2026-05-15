@@ -1,0 +1,85 @@
+import unittest
+
+import multi_sport_model_registry as registry
+
+
+class TestSportModelRouting(unittest.TestCase):
+    def test_all_15_official_sports_route(self):
+        for sport in registry.OFFICIAL_SPORT_KEYS:
+            config = registry.get_sport_model_config(sport)
+            self.assertIsNotNone(config, sport)
+            for field in [
+                "sport",
+                "display_name",
+                "model_used",
+                "model_family",
+                "primary_model_type",
+                "supported_markets",
+                "supported_prop_categories",
+                "required_inputs",
+                "optional_inputs",
+                "model_components",
+                "simulation_method",
+                "correlation_notes",
+                "backtest_requirements",
+                "calibration_requirements",
+                "no_bet_rules",
+            ]:
+                self.assertIn(field, config)
+
+    def test_esports_and_egaming_alias_route_to_esports(self):
+        self.assertEqual(registry.get_sport_model_config("esports")["sport"], "esports")
+        self.assertEqual(registry.get_sport_model_config("egaming")["sport"], "esports")
+        self.assertTrue(registry.is_supported_sport("egaming"))
+
+    def test_primary_model_type_constraints(self):
+        for sport in ["basketball_nba", "basketball_wnba", "basketball_ncaab", "americanfootball_nfl", "americanfootball_ncaaf", "mma_mixed_martial_arts", "boxing", "golf", "formula1", "cricket", "esports"]:
+            self.assertNotEqual(registry.get_sport_model_config(sport)["primary_model_type"], "poisson")
+        self.assertIn("Negative Binomial", registry.get_sport_model_config("baseball_mlb")["model_family"])
+        self.assertIn("Poisson", registry.get_sport_model_config("soccer")["model_family"])
+        self.assertIn("Dixon Coles", " ".join(registry.get_sport_model_config("soccer")["model_components"]))
+        self.assertIn("Bivariate Poisson", " ".join(registry.get_sport_model_config("soccer")["model_components"]))
+
+    def test_sport_specific_component_requirements(self):
+        hockey = registry.get_sport_model_config("icehockey_nhl")
+        self.assertIn("goalie adjustment", hockey["model_components"])
+        self.assertIn("special teams adjustment", hockey["model_components"])
+        self.assertEqual(registry.get_sport_model_config("tennis")["primary_model_type"], "point_game_set_simulation")
+        self.assertEqual(registry.get_sport_model_config("mma_mixed_martial_arts")["model_family"], "Combat classification model family")
+        self.assertEqual(registry.get_sport_model_config("boxing")["model_family"], "Combat classification model family")
+        self.assertEqual(registry.get_sport_model_config("golf")["model_family"], "Strokes gained simulation")
+        self.assertEqual(registry.get_sport_model_config("formula1")["model_family"], "Race simulation")
+        self.assertEqual(registry.get_sport_model_config("cricket")["model_family"], "Pitch toss innings model family")
+        self.assertIn("game title routing placeholder", registry.get_sport_model_config("esports")["model_components"])
+
+    def test_wnba_uses_wnba_specific_parameters_not_nba_copy(self):
+        nba = registry.get_sport_model_config("basketball_nba")
+        wnba = registry.get_sport_model_config("basketball_wnba")
+        self.assertNotEqual(nba["sport_parameters"], wnba["sport_parameters"])
+        self.assertIn("WNBA specific pace baseline", wnba["sport_parameters"]["pace_assumption"])
+        self.assertIn("WNBA specific usage distribution", wnba["sport_parameters"]["usage_distribution"])
+
+    def test_architecture_components_registered(self):
+        components = registry.get_registered_architecture_components()
+        self.assertIn("wee_willie_market_weakness_detector", components)
+        self.assertIn("provider_abstractions", components)
+        self.assertIn("risk_controller", components)
+        self.assertIn("alt_line_ladder_registry", components)
+        self.assertTrue(all(provider["status"] == "not_configured" for provider in components["provider_abstractions"]))
+        self.assertTrue(all(provider["missing_credentials_flag"] for provider in components["provider_abstractions"]))
+
+    def test_manual_ticket_and_provider_foundation_do_not_place_bets(self):
+        response = registry.analyze_sport_model({"sport": "basketball_nba", "market": "moneyline"})
+        self.assertEqual(response["confirmed_bets"], [])
+        self.assertEqual(response["manual_ticket_preview"]["status"], "manual_review_required")
+        self.assertNotIn("place_bet", response["manual_ticket_preview"])
+
+    def test_unsupported_sport_returns_safe_no_bet_response(self):
+        response = registry.analyze_sport_model({"sport": "rugby_union", "market": "moneyline"})
+        self.assertFalse(response["ok"])
+        self.assertEqual(response["confirmed_bets"], [])
+        self.assertIn("unsupported sport", response["no_bet_flags"])
+
+
+if __name__ == "__main__":
+    unittest.main()
