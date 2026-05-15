@@ -32,6 +32,25 @@ class TestSportModelRouting(unittest.TestCase):
         self.assertEqual(registry.get_sport_model_config("egaming")["sport"], "esports")
         self.assertTrue(registry.is_supported_sport("egaming"))
 
+    def test_common_sport_aliases_route_to_internal_keys(self):
+        expected = {
+            "nba": "basketball_nba",
+            "wnba": "basketball_wnba",
+            "ncaab": "basketball_ncaab",
+            "nfl": "americanfootball_nfl",
+            "cfb": "americanfootball_ncaaf",
+            "mlb": "baseball_mlb",
+            "nhl": "icehockey_nhl",
+            "epl": "soccer",
+            "ucl": "soccer",
+            "valorant": "esports",
+            "csgo": "esports",
+            "lol": "esports",
+        }
+        for alias, sport_key in expected.items():
+            self.assertEqual(registry.normalize_sport_key(alias), sport_key)
+            self.assertEqual(registry.get_sport_model_config(alias)["sport"], sport_key)
+
     def test_primary_model_type_constraints(self):
         for sport in ["basketball_nba", "basketball_wnba", "basketball_ncaab", "americanfootball_nfl", "americanfootball_ncaaf", "mma_mixed_martial_arts", "boxing", "golf", "formula1", "cricket", "esports"]:
             self.assertNotEqual(registry.get_sport_model_config(sport)["primary_model_type"], "poisson")
@@ -102,6 +121,9 @@ class TestSportModelRouting(unittest.TestCase):
         self.assertFalse(response["ok"])
         self.assertEqual(response["confirmed_bets"], [])
         self.assertIn("unsupported sport", response["no_bet_flags"])
+        self.assertEqual(response["error"], "UNSUPPORTED_SPORT")
+        self.assertIn("supported_sport_keys", response)
+        self.assertIn("basketball_nba", response["supported_sport_keys"])
 
 
 if __name__ == "__main__":

@@ -548,19 +548,19 @@ class AnalyzeEventRequest(BaseModel):
 class SportAnalysisRequest(BaseModel):
     model_config = ConfigDict(extra="allow", protected_namespaces=())
 
-    sport: str = Field(..., description="Official sport key. egaming is accepted as a backward-compatible alias for esports.")
+    sport: Optional[Any] = Field(None, description="Official sport key. egaming is accepted as a backward-compatible alias for esports.")
     league: Optional[str] = Field(None, description="Optional league key.")
-    market: str = Field(..., description="Market to analyze.")
+    market: Optional[Any] = Field(None, description="Market to analyze.")
     event_id: Optional[str] = Field(None, description="Optional event identifier.")
     home_team: Optional[str] = Field(None, description="Optional home team.")
     away_team: Optional[str] = Field(None, description="Optional away team.")
     player_name: Optional[str] = Field(None, description="Optional player name for prop analysis.")
-    odds_american: Optional[int] = Field(None, description="Optional American odds.")
-    line: Optional[float] = Field(None, description="Optional market line.")
-    input_stats: Optional[dict[str, Any]] = Field(None, description="Optional model inputs. Missing required inputs force inactive_missing_data.")
+    odds_american: Optional[Any] = Field(None, description="Optional American odds.")
+    line: Optional[Any] = Field(None, description="Optional market line.")
+    input_stats: Optional[Any] = Field(None, description="Optional model inputs. Missing required inputs force inactive_missing_data.")
     risk_profile: Optional[str] = Field("conservative", description="Risk profile: conservative, standard, or aggressive.")
-    bankroll: Optional[float] = Field(None, ge=0, description="Optional bankroll.")
-    unit_size: Optional[float] = Field(None, ge=0, description="Optional base unit size.")
+    bankroll: Optional[Any] = Field(None, description="Optional bankroll.")
+    unit_size: Optional[Any] = Field(None, description="Optional base unit size.")
 
 
 class ActionBetLogRequest(BaseModel):
@@ -570,7 +570,7 @@ class ActionBetLogRequest(BaseModel):
     event_id: Optional[str] = None
     event: Optional[str] = None
     sportsbook: Optional[str] = None
-    market: Optional[str] = None
+    market: Optional[Any] = None
     selection: Optional[str] = None
     line: Optional[float] = None
     odds_american: Optional[int] = None
@@ -759,7 +759,11 @@ class SportsModelRegistryResponse(BaseModel):
 class SportAnalysisResponse(BaseModel):
     model_config = ConfigDict(extra="allow", protected_namespaces=())
 
-    sport: str
+    ok: bool = False
+    endpoint: str = "analyzeSportModel"
+    error: Optional[str] = None
+    detail: Optional[str] = None
+    sport: Optional[Any] = None
     model_used: Optional[str] = None
     model_family: Optional[str] = None
     market: Optional[str] = None
@@ -791,6 +795,9 @@ class SportAnalysisResponse(BaseModel):
     sentiment_calibration_status: str
     crowd_signal_calibration_status: str
     sentiment_no_bet_flags: list[str]
+    confirmed_bets: list[dict[str, Any]] = []
+    target_lines: list[dict[str, Any]] = []
+    no_bets: list[dict[str, Any]] = []
     manual_ticket_preview: Optional[dict[str, Any]] = None
     full_board_preview: dict[str, Any]
 
@@ -1265,7 +1272,18 @@ async def action_get_sports_model_registry():
     ),
 )
 async def action_analyze_sport_model(payload: SportAnalysisRequest):
-    return multi_sport_model_registry.analyze_sport_model(payload.model_dump(exclude_none=True))
+    try:
+        return multi_sport_model_registry.analyze_sport_model(payload.model_dump(exclude_none=True))
+    except Exception as exc:
+        sport = None
+        try:
+            sport = payload.model_dump(exclude_none=True).get("sport")
+        except Exception:
+            sport = None
+        return multi_sport_model_registry.sport_analysis_failed_response(
+            sport=sport,
+            detail=f"Sport analysis failed safely: {type(exc).__name__}",
+        )
 
 
 @app.post(

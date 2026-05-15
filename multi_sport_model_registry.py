@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from datetime import datetime, timezone
+import re
 from typing import Any, Optional
 
 from quant_engine import (
@@ -56,7 +57,21 @@ OFFICIAL_SPORT_KEYS = [
     "esports",
 ]
 
-SPORT_ALIASES = {"egaming": "esports"}
+SPORT_ALIASES = {
+    "egaming": "esports",
+    "nba": "basketball_nba",
+    "wnba": "basketball_wnba",
+    "ncaab": "basketball_ncaab",
+    "nfl": "americanfootball_nfl",
+    "cfb": "americanfootball_ncaaf",
+    "mlb": "baseball_mlb",
+    "nhl": "icehockey_nhl",
+    "epl": "soccer",
+    "ucl": "soccer",
+    "valorant": "esports",
+    "csgo": "esports",
+    "lol": "esports",
+}
 
 GLOBAL_MODEL_REGISTRY_RULES = [
     "Market-derived-only probabilities cannot create confirmed bets.",
@@ -188,6 +203,20 @@ SOCIAL_CROWD_NO_BET_FLAGS = [
     "social signal not backtested",
     "crowd signal not calibrated",
 ]
+
+SOCIAL_CROWD_TEXT_SCORES = {
+    "low": 30,
+    "medium": 60,
+    "high": 90,
+    "heavy public lean": 85,
+    "public lean": 70,
+    "neutral": 50,
+    "sharp lean": 35,
+    "hyped public side": 85,
+    "quiet": 30,
+    "weak": 25,
+    "unknown": 0,
+}
 
 SPORT_PROP_INPUTS = {
     "baseball_mlb": ["player projection", "lineup status", "opponent matchup", "park factor", "weather"],
@@ -673,7 +702,7 @@ BACKTESTING_CALIBRATION_FOUNDATION = {
 
 
 def normalize_sport_key(sport_key: str) -> str:
-    raw = (sport_key or "").strip()
+    raw = (sport_key or "").strip().lower().replace("-", "_")
     return SPORT_ALIASES.get(raw, raw)
 
 
@@ -772,8 +801,8 @@ def build_risk_controller(
     unit_size: Optional[float] = None,
     risk_profile: str = "conservative",
 ) -> dict[str, Any]:
-    bankroll_value = float(bankroll or 0)
-    unit_value = float(unit_size or 0)
+    bankroll_value = _safe_float(bankroll, 0) or 0
+    unit_value = _safe_float(unit_size, 0) or 0
     profile = risk_profile_settings(risk_profile)
     recommended_unit = unit_value if unit_value > 0 else round(bankroll_value * 0.01, 2) if bankroll_value else 0
     return {
@@ -820,6 +849,40 @@ def _first_present(input_stats: dict[str, Any], *keys: str) -> Any:
     return None
 
 
+def _parse_number(value: Any) -> Optional[float]:
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        return 1.0 if value else 0.0
+    if isinstance(value, (int, float)):
+        return float(value)
+    match = re.search(r"-?\d+(?:\.\d+)?", str(value).replace(",", ""))
+    return float(match.group(0)) if match else None
+
+
+def _safe_float(value: Any, default: Optional[float] = None) -> Optional[float]:
+    parsed = _parse_number(value)
+    return default if parsed is None else parsed
+
+
+def _social_crowd_score(value: Any, default: float = 0) -> float:
+    parsed = _parse_number(value)
+    if parsed is not None:
+        return parsed
+    text = str(value or "").strip().lower()
+    return float(SOCIAL_CROWD_TEXT_SCORES.get(text, default))
+
+
+def _safe_payload_dict(payload: Any) -> dict[str, Any]:
+    return payload if isinstance(payload, dict) else {}
+
+
+def _normalize_input_stats(value: Any) -> tuple[dict[str, Any], list[str]]:
+    if isinstance(value, dict):
+        return dict(value), []
+    return {}, ["input_stats_missing_or_invalid"]
+
+
 def _is_truthy_signal(value: Any) -> bool:
     if isinstance(value, bool):
         return value
@@ -839,7 +902,7 @@ def _is_confirmed(value: Any) -> bool:
 
 
 def _normalize_social_crowd_input_stats(input_stats: dict[str, Any]) -> dict[str, Any]:
-    normalized = dict(input_stats)
+    normalized = dict(input_stats) if isinstance(input_stats, dict) else {}
     alias_map = {
         "social media sentiment score": ("social media sentiment score", "social_sentiment"),
         "crowd consensus percentage": ("crowd consensus percentage", "crowd_consensus"),
@@ -860,6 +923,19 @@ def _normalize_social_crowd_input_stats(input_stats: dict[str, Any]) -> dict[str
     }
     for canonical, aliases in alias_map.items():
         normalized[canonical] = _first_present(normalized, *aliases)
+    for numeric_field in (
+        "social media sentiment score",
+        "crowd consensus percentage",
+        "public betting percentage",
+        "money percentage",
+        "sharp money percentage",
+        "news velocity score",
+        "media hype score",
+        "sentiment source quality",
+        "sample_size",
+    ):
+        if normalized.get(numeric_field) is not None:
+            normalized[numeric_field] = _social_crowd_score(normalized.get(numeric_field))
     normalized["social_signal_present"] = normalized.get("social media sentiment score") is not None
     normalized["crowd_signal_present"] = normalized.get("crowd consensus percentage") is not None
     normalized["rumor_signal_present"] = (
@@ -887,7 +963,8 @@ def build_social_crowd_calibration_layer(input_stats: dict[str, Any]) -> dict[st
     if crowd_consensus is None:
         flags.append("crowdsourced signal unavailable")
     source_quality = input_stats.get("sentiment source quality")
-    if source_quality is not None and str(source_quality).strip().lower() in {"low", "weak", "poor", "untrusted"}:
+    source_quality_score = _social_crowd_score(source_quality, 0) if source_quality is not None else None
+    if source_quality_score is not None and source_quality_score <= 30:
         flags.append("sentiment source quality too low")
     if not input_stats.get("social_signal_backtested"):
         flags.append("social signal not backtested")
@@ -897,22 +974,30 @@ def build_social_crowd_calibration_layer(input_stats: dict[str, Any]) -> dict[st
     if _is_truthy_signal(rumor_risk) or _is_truthy_signal(input_stats.get("injury rumor flag")) or _is_truthy_signal(input_stats.get("lineup rumor flag")):
         if not _is_confirmed(input_stats.get("rumor_verified")):
             flags.append("rumor not confirmed")
-    if news_velocity is not None and float(news_velocity) >= 80 and not _is_confirmed(input_stats.get("verified_news_source")):
+    news_velocity_value = _social_crowd_score(news_velocity, 0) if news_velocity is not None else None
+    if news_velocity_value is not None and news_velocity_value >= 80 and not _is_confirmed(input_stats.get("verified_news_source")):
         flags.append("news velocity spike without verified source")
     sharp_or_money_pct = sharp_money_pct if sharp_money_pct is not None else money_pct
-    if public_pct is not None and sharp_or_money_pct is not None and float(public_pct) >= 70 and float(sharp_or_money_pct) < float(public_pct):
+    public_pct_value = _social_crowd_score(public_pct, 0) if public_pct is not None else None
+    sharp_or_money_pct_value = _social_crowd_score(sharp_or_money_pct, 0) if sharp_or_money_pct is not None else None
+    if public_pct_value is not None and sharp_or_money_pct_value is not None and public_pct_value >= 70 and sharp_or_money_pct_value < public_pct_value:
         flags.append("public bias likely inflated price")
     if crowd_consensus is not None and source_quality is not None:
-        crowd_value = float(crowd_consensus)
+        crowd_value = _social_crowd_score(crowd_consensus, 0)
         strong_crowd = crowd_value >= 70 if crowd_value > 1 else crowd_value >= 0.7
-        if strong_crowd and str(source_quality).strip().lower() in {"low", "weak", "poor", "untrusted"}:
+        if strong_crowd and source_quality_score is not None and source_quality_score <= 30:
             if "sentiment source quality too low" not in flags:
                 flags.append("sentiment source quality too low")
-    if sentiment_score is not None and edge is not None and abs(float(sentiment_score)) >= 80 and float(edge) < 2:
+    sentiment_score_value = _social_crowd_score(sentiment_score, 0) if sentiment_score is not None else None
+    edge_value = _safe_float(edge)
+    if sentiment_score_value is not None and edge_value is not None and abs(sentiment_score_value) >= 80 and edge_value < 2:
         flags.append("social sentiment is extreme but model edge is weak")
     if crowd_consensus is not None and model_probability is not None:
-        crowd_probability = float(crowd_consensus) / 100 if float(crowd_consensus) > 1 else float(crowd_consensus)
-        if abs(crowd_probability - float(model_probability)) >= 0.12:
+        crowd_value = _social_crowd_score(crowd_consensus, 0)
+        model_probability_value = _safe_float(model_probability)
+        crowd_probability = None
+        crowd_probability = crowd_value / 100 if crowd_value > 1 else crowd_value
+        if crowd_probability is not None and model_probability_value is not None and abs(crowd_probability - model_probability_value) >= 0.12:
             flags.append("crowd consensus conflicts with model probability")
 
     if any(flag in flags for flag in [
@@ -965,6 +1050,68 @@ def build_social_crowd_calibration_layer(input_stats: dict[str, Any]) -> dict[st
         "crowd_signal_calibration_status": "not_calibrated" if "crowd signal not calibrated" in flags else "calibration_check_available",
         "sentiment_no_bet_flags": flags,
         "social_crowd_signal_explanation": explanation,
+    }
+
+
+def sport_analysis_failed_response(sport: Any = None, detail: str = "Sport analysis failed safely.") -> dict[str, Any]:
+    social_layer = build_social_crowd_calibration_layer({})
+    risk_controller = build_risk_controller()
+    return {
+        "ok": False,
+        "endpoint": "analyzeSportModel",
+        "error": "sport_analysis_failed",
+        "detail": str(detail)[:300],
+        "sport": sport,
+        "model_used": None,
+        "model_family": None,
+        "market": None,
+        "projected_score": None,
+        "true_probability": None,
+        "implied_probability": None,
+        "edge": None,
+        "confidence": None,
+        "risk_level": "conservative",
+        "recommended_unit_size": 0,
+        "confirmed_bets": [],
+        "target_lines": [],
+        "no_bets": [],
+        "no_bet_flags": ["internal_error_handled"],
+        "supported_sport_keys": list(OFFICIAL_SPORT_KEYS),
+        "correlation_notes": [],
+        "model_components": [],
+        "missing_inputs": [],
+        "backtest_status": "not_started",
+        "calibration_status": "not_started",
+        "logbook_ready_row": {},
+        "component_statuses": {},
+        "advanced_edge_components": deepcopy(ADVANCED_EDGE_COMPONENTS),
+        "provider_needs": list(STANDARD_PROVIDER_NEEDS),
+        "risk_controller": risk_controller,
+        "wee_willie_market_weakness_detector": build_wee_willie_market_weakness_detector({}),
+        "social_sentiment_engine": social_layer["social_sentiment_engine"],
+        "crowdsourced_signal_engine": social_layer["crowdsourced_signal_engine"],
+        "public_bias_detector": social_layer["public_bias_detector"],
+        "news_velocity_detector": social_layer["news_velocity_detector"],
+        "rumor_risk_filter": social_layer["rumor_risk_filter"],
+        "market_narrative_tracker": social_layer["market_narrative_tracker"],
+        "sentiment_calibration_status": social_layer["sentiment_calibration_status"],
+        "crowd_signal_calibration_status": social_layer["crowd_signal_calibration_status"],
+        "sentiment_no_bet_flags": social_layer["sentiment_no_bet_flags"],
+        "social_crowd_signal_explanation": social_layer["social_crowd_signal_explanation"],
+        "manual_ticket_preview": None,
+        "full_board_preview": {
+            "confirmed_bets": [],
+            "target_lines": [],
+            "target_props": [],
+            "target_alt_lines": [],
+            "no_bets": [],
+            "best_correlated_parlay": None,
+            "value_ranking": [],
+            "risk_ranking": [],
+            "missing_inputs": [],
+            "manual_review_required": [],
+            "logbook_ready_rows": [],
+        },
     }
 
 
@@ -1117,108 +1264,130 @@ def _component_status(required_inputs: list[str], input_stats: dict[str, Any]) -
 
 
 def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
-    sport = normalize_sport_key(payload.get("sport", ""))
-    config = get_sport_model_config(sport)
-    market = payload.get("market")
-    input_stats = payload.get("input_stats") or {}
-    if not config:
-        return _unsupported_sport_response(payload)
+    try:
+        payload = _safe_payload_dict(payload)
+        sport = normalize_sport_key(str(payload.get("sport", "") or ""))
+        config = get_sport_model_config(sport)
+        market = payload.get("market")
+        input_stats, input_stats_flags = _normalize_input_stats(payload.get("input_stats"))
+        odds_american = _safe_float(payload.get("odds_american"))
+        bankroll = _safe_float(payload.get("bankroll"), 0) or 0
+        unit_size = _safe_float(payload.get("unit_size"), 0) or 0
+        if not config:
+            response = _unsupported_sport_response(payload)
+            if input_stats_flags:
+                response["no_bet_flags"] = list(dict.fromkeys(response["no_bet_flags"] + input_stats_flags))
+            return response
 
-    component_status, missing_inputs = _component_status(config["required_inputs"], input_stats)
-    backtest_status = "passed" if input_stats.get("backtest_proof") else "not_started"
-    calibration_status = "passed" if input_stats.get("calibration_proof") else "not_started"
-    implied_probability = None
-    true_probability = input_stats.get("true_probability") or input_stats.get("sport_model_probability")
-    edge = None
-    suggested = 0.0
-    no_bet_flags = list(config["no_bet_rules"])
-    if payload.get("odds_american") is not None:
-        implied_probability = implied_probability_from_american(payload["odds_american"])
-    if implied_probability is not None and true_probability is not None:
-        edge = edge_percentage(float(true_probability), implied_probability)
-        suggested = suggested_stake_with_risk_controls(
-            bankroll=float(payload.get("bankroll") or 0),
-            american_odds=payload["odds_american"],
-            true_probability=float(true_probability),
-            risk_profile=payload.get("risk_profile") or "conservative",
-        )
-    if missing_inputs:
-        no_bet_flags = ["required inputs missing", "confirmed bets disabled"] + missing_inputs
-    elif component_status == COMPONENT_STATUS_RESEARCH:
-        no_bet_flags = ["no backtest proof", "research mode only", "confirmed bets disabled"]
+        component_status, missing_inputs = _component_status(config["required_inputs"], input_stats)
+        backtest_status = "passed" if input_stats.get("backtest_proof") else "not_started"
+        calibration_status = "passed" if input_stats.get("calibration_proof") else "not_started"
+        implied_probability = None
+        true_probability = _safe_float(input_stats.get("true_probability") or input_stats.get("sport_model_probability"))
+        edge = None
+        suggested = 0.0
+        no_bet_flags = list(config["no_bet_rules"])
+        if odds_american is not None:
+            implied_probability = implied_probability_from_american(odds_american)
+        if implied_probability is not None and true_probability is not None and odds_american is not None:
+            edge = edge_percentage(true_probability, implied_probability)
+            suggested = suggested_stake_with_risk_controls(
+                bankroll=bankroll,
+                american_odds=odds_american,
+                true_probability=true_probability,
+                risk_profile=payload.get("risk_profile") or "conservative",
+            )
+        if missing_inputs:
+            no_bet_flags = ["required inputs missing", "confirmed bets disabled"] + missing_inputs
+        elif component_status == COMPONENT_STATUS_RESEARCH:
+            no_bet_flags = ["no backtest proof", "research mode only", "confirmed bets disabled"]
+        if input_stats_flags:
+            no_bet_flags = list(dict.fromkeys(no_bet_flags + input_stats_flags))
 
-    social_input_stats = dict(input_stats)
-    social_input_stats["edge"] = edge
-    social_layer = build_social_crowd_calibration_layer(social_input_stats)
-    if social_layer["sentiment_no_bet_flags"]:
-        no_bet_flags = list(dict.fromkeys(no_bet_flags + social_layer["sentiment_no_bet_flags"]))
+        social_input_stats = dict(input_stats)
+        social_input_stats["edge"] = edge
+        social_layer = build_social_crowd_calibration_layer(social_input_stats)
+        if social_layer["sentiment_no_bet_flags"]:
+            no_bet_flags = list(dict.fromkeys(no_bet_flags + social_layer["sentiment_no_bet_flags"]))
 
-    risk_controller = build_risk_controller(payload.get("bankroll"), payload.get("unit_size"), payload.get("risk_profile") or "conservative")
-    detector_payload = dict(payload)
-    detector_payload.update({
-        "sport_model_probability": true_probability,
-        "implied_probability": implied_probability,
-        "edge": edge,
-        "risk_level": payload.get("risk_profile") or "conservative",
-        "selection": payload.get("selection") or payload.get("player_name") or payload.get("home_team"),
-    })
-    wee_willie = build_wee_willie_market_weakness_detector(detector_payload)
-    manual_ticket = build_manual_ticket(detector_payload, suggested)
-    full_board = {
+        risk_controller = build_risk_controller(bankroll, unit_size, payload.get("risk_profile") or "conservative")
+        detector_payload = dict(payload)
+        detector_payload.update({
+            "odds_american": odds_american,
+            "bankroll": bankroll,
+            "unit_size": unit_size,
+            "sport_model_probability": true_probability,
+            "implied_probability": implied_probability,
+            "edge": edge,
+            "risk_level": payload.get("risk_profile") or "conservative",
+            "selection": payload.get("selection") or payload.get("player_name") or payload.get("home_team"),
+        })
+        wee_willie = build_wee_willie_market_weakness_detector(detector_payload)
+        manual_ticket = build_manual_ticket(detector_payload, suggested)
+        full_board = {
+            "confirmed_bets": [],
+            "target_lines": [] if component_status == COMPONENT_STATUS_INACTIVE else [{"market": market, "target_price": odds_american}],
+            "target_props": [],
+            "target_alt_lines": [],
+            "no_bets": [{"reason": flag} for flag in no_bet_flags],
+            "best_correlated_parlay": None,
+            "value_ranking": [],
+            "risk_ranking": [],
+            "missing_inputs": missing_inputs,
+            "manual_review_required": [manual_ticket],
+            "logbook_ready_rows": [manual_ticket["logbook_ready_row"]],
+        }
+        return {
+            "ok": True,
+            "endpoint": "analyzeSportModel",
+            "sport": sport,
+            "model_used": config["model_used"],
+            "model_family": config["model_family"],
+            "market": market,
+            "projected_score": input_stats.get("projected_score"),
+            "true_probability": true_probability,
+            "implied_probability": implied_probability,
+            "edge": edge,
+            "confidence": input_stats.get("confidence"),
+            "risk_level": payload.get("risk_profile") or "conservative",
+            "recommended_unit_size": risk_controller["recommended_unit_size"],
+            "no_bet_flags": no_bet_flags,
+            "correlation_notes": config["correlation_notes"],
+            "model_components": config["model_components"],
+            "missing_inputs": missing_inputs,
+            "backtest_status": backtest_status,
+            "calibration_status": calibration_status,
+            "logbook_ready_row": manual_ticket["logbook_ready_row"],
+            "component_statuses": {config["model_used"]: component_status},
+            "advanced_edge_components": deepcopy(ADVANCED_EDGE_COMPONENTS),
+            "provider_needs": config["provider_needs"],
+            "risk_controller": risk_controller,
+            "wee_willie_market_weakness_detector": wee_willie,
+            "social_sentiment_engine": social_layer["social_sentiment_engine"],
+            "crowdsourced_signal_engine": social_layer["crowdsourced_signal_engine"],
+            "public_bias_detector": social_layer["public_bias_detector"],
+            "news_velocity_detector": social_layer["news_velocity_detector"],
+            "rumor_risk_filter": social_layer["rumor_risk_filter"],
+            "market_narrative_tracker": social_layer["market_narrative_tracker"],
+            "sentiment_calibration_status": social_layer["sentiment_calibration_status"],
+            "crowd_signal_calibration_status": social_layer["crowd_signal_calibration_status"],
+            "sentiment_no_bet_flags": social_layer["sentiment_no_bet_flags"],
+            "social_crowd_signal_explanation": social_layer["social_crowd_signal_explanation"],
+            "manual_ticket_preview": manual_ticket,
+            "full_board_preview": full_board,
         "confirmed_bets": [],
-        "target_lines": [] if component_status == COMPONENT_STATUS_INACTIVE else [{"market": market, "target_price": payload.get("odds_american")}],
-        "target_props": [],
-        "target_alt_lines": [],
-        "no_bets": [{"reason": flag} for flag in no_bet_flags],
-        "best_correlated_parlay": None,
-        "value_ranking": [],
-        "risk_ranking": [],
-        "missing_inputs": missing_inputs,
-        "manual_review_required": [manual_ticket],
-        "logbook_ready_rows": [manual_ticket["logbook_ready_row"]],
-    }
-    return {
-        "ok": True,
-        "endpoint": "analyzeSportModel",
-        "sport": sport,
-        "model_used": config["model_used"],
-        "model_family": config["model_family"],
-        "market": market,
-        "projected_score": input_stats.get("projected_score"),
-        "true_probability": true_probability,
-        "implied_probability": implied_probability,
-        "edge": edge,
-        "confidence": input_stats.get("confidence"),
-        "risk_level": payload.get("risk_profile") or "conservative",
-        "recommended_unit_size": risk_controller["recommended_unit_size"],
-        "no_bet_flags": no_bet_flags,
-        "correlation_notes": config["correlation_notes"],
-        "model_components": config["model_components"],
-        "missing_inputs": missing_inputs,
-        "backtest_status": backtest_status,
-        "calibration_status": calibration_status,
-        "logbook_ready_row": manual_ticket["logbook_ready_row"],
-        "component_statuses": {config["model_used"]: component_status},
-        "advanced_edge_components": deepcopy(ADVANCED_EDGE_COMPONENTS),
-        "provider_needs": config["provider_needs"],
-        "risk_controller": risk_controller,
-        "wee_willie_market_weakness_detector": wee_willie,
-        "social_sentiment_engine": social_layer["social_sentiment_engine"],
-        "crowdsourced_signal_engine": social_layer["crowdsourced_signal_engine"],
-        "public_bias_detector": social_layer["public_bias_detector"],
-        "news_velocity_detector": social_layer["news_velocity_detector"],
-        "rumor_risk_filter": social_layer["rumor_risk_filter"],
-        "market_narrative_tracker": social_layer["market_narrative_tracker"],
-        "sentiment_calibration_status": social_layer["sentiment_calibration_status"],
-        "crowd_signal_calibration_status": social_layer["crowd_signal_calibration_status"],
-        "sentiment_no_bet_flags": social_layer["sentiment_no_bet_flags"],
-        "social_crowd_signal_explanation": social_layer["social_crowd_signal_explanation"],
-        "manual_ticket_preview": manual_ticket,
-        "full_board_preview": full_board,
-        "confirmed_bets": [],
+        "target_lines": full_board["target_lines"],
+        "no_bets": full_board["no_bets"],
+        "supported_sport_keys": list(OFFICIAL_SPORT_KEYS),
         "error": None,
         "detail": None,
-    }
+        }
+    except Exception as exc:
+        sport = payload.get("sport") if isinstance(payload, dict) else None
+        return sport_analysis_failed_response(
+            sport=sport,
+            detail=f"Sport analysis failed safely: {type(exc).__name__}",
+        )
 
 
 def _unsupported_sport_response(payload: dict[str, Any]) -> dict[str, Any]:
@@ -1240,6 +1409,7 @@ def _unsupported_sport_response(payload: dict[str, Any]) -> dict[str, Any]:
         "risk_level": payload.get("risk_profile") or "conservative",
         "recommended_unit_size": risk_controller["recommended_unit_size"],
         "no_bet_flags": ["unsupported sport", "confirmed bets disabled"],
+        "supported_sport_keys": list(OFFICIAL_SPORT_KEYS),
         "correlation_notes": [],
         "model_components": [],
         "missing_inputs": [],
@@ -1276,8 +1446,10 @@ def _unsupported_sport_response(payload: dict[str, Any]) -> dict[str, Any]:
             "logbook_ready_rows": [],
         },
         "confirmed_bets": [],
+        "target_lines": [],
+        "no_bets": [{"reason": "unsupported sport"}],
         "error": "UNSUPPORTED_SPORT",
-        "detail": f"Unsupported sport key: {sport}",
+        "detail": f"Unsupported sport key: {sport}. Supported sport keys: {', '.join(OFFICIAL_SPORT_KEYS)}",
     }
 
 
