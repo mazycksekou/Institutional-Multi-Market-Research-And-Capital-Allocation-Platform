@@ -205,6 +205,10 @@ SOCIAL_CROWD_NO_BET_FLAGS = [
 ]
 
 SOCIAL_CROWD_TEXT_SCORES = {
+    "strong": 90,
+    "verified": 90,
+    "trusted": 90,
+    "reliable": 85,
     "low": 30,
     "medium": 60,
     "high": 90,
@@ -215,6 +219,7 @@ SOCIAL_CROWD_TEXT_SCORES = {
     "hyped public side": 85,
     "quiet": 30,
     "weak": 25,
+    "unverified": 20,
     "unknown": 0,
 }
 
@@ -1000,14 +1005,35 @@ def build_social_crowd_calibration_layer(input_stats: dict[str, Any]) -> dict[st
         if crowd_probability is not None and model_probability_value is not None and abs(crowd_probability - model_probability_value) >= 0.12:
             flags.append("crowd consensus conflicts with model probability")
 
+    manual_review_flags = {
+        "sentiment data unavailable",
+        "crowdsourced signal unavailable",
+        "sentiment source quality too low",
+        "rumor not confirmed",
+        "news velocity spike without verified source",
+        "social signal not backtested",
+        "crowd signal not calibrated",
+    }
+    neutral_social = sentiment_score is not None and sentiment_score_value is not None and 40 <= sentiment_score_value <= 60
+    neutral_crowd = crowd_consensus is not None and _social_crowd_score(crowd_consensus, 0) >= 40 and _social_crowd_score(crowd_consensus, 0) <= 60
+    verified_news = _is_confirmed(input_stats.get("verified_news_source"))
+    trusted_source = source_quality_score is not None and source_quality_score >= 80
+    no_rumor = not _is_truthy_signal(rumor_risk) and not _is_truthy_signal(input_stats.get("injury rumor flag")) and not _is_truthy_signal(input_stats.get("lineup rumor flag"))
+    neutral_verified_social = neutral_social and neutral_crowd and verified_news and trusted_source and no_rumor
+
+    if neutral_verified_social:
+        flags = [flag for flag in flags if flag not in {"social signal not backtested", "crowd signal not calibrated"}]
+
     if any(flag in flags for flag in [
         "crowd consensus conflicts with model probability",
         "public bias likely inflated price",
         "social sentiment is extreme but model edge is weak",
     ]):
         support_status = "conflicts_with_model"
-    elif flags:
+    elif any(flag in manual_review_flags for flag in flags):
         support_status = "requires_manual_review"
+    elif neutral_verified_social:
+        support_status = "neutral_calibrated"
     else:
         support_status = "supports_model"
 
@@ -1018,6 +1044,8 @@ def build_social_crowd_calibration_layer(input_stats: dict[str, Any]) -> dict[st
             if support_status == "conflicts_with_model"
             else "Social and crowd data require manual review before any promotion."
             if support_status == "requires_manual_review"
+            else "Social and crowd data are neutral, verified, and do not create a manual-review flag."
+            if support_status == "neutral_calibrated"
             else "Social and crowd data are available and do not create a calibration red flag."
         ),
         "standalone_bet_reason_allowed": False,

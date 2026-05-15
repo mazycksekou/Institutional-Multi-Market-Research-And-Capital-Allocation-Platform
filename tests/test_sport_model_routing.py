@@ -51,6 +51,10 @@ class TestSportModelRouting(unittest.TestCase):
             self.assertEqual(registry.normalize_sport_key(alias), sport_key)
             self.assertEqual(registry.get_sport_model_config(alias)["sport"], sport_key)
 
+    def test_nba_and_mlb_aliases_route(self):
+        self.assertEqual(registry.get_sport_model_config("nba")["sport"], "basketball_nba")
+        self.assertEqual(registry.get_sport_model_config("mlb")["sport"], "baseball_mlb")
+
     def test_primary_model_type_constraints(self):
         for sport in ["basketball_nba", "basketball_wnba", "basketball_ncaab", "americanfootball_nfl", "americanfootball_ncaaf", "mma_mixed_martial_arts", "boxing", "golf", "formula1", "cricket", "esports"]:
             self.assertNotEqual(registry.get_sport_model_config(sport)["primary_model_type"], "poisson")

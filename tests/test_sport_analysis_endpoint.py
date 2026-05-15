@@ -214,6 +214,61 @@ class TestSportAnalysisEndpoint(unittest.TestCase):
         self.assertIn("sentiment source quality too low", response["sentiment_no_bet_flags"])
         self.assertEqual(response["confirmed_bets"], [])
 
+    def test_source_quality_strong_maps_to_90(self):
+        response = asyncio.run(action_analyze_sport_model(SportAnalysisRequest(
+            sport="basketball_nba",
+            market="moneyline",
+            input_stats={
+                "social_sentiment": "neutral",
+                "crowd_consensus": "neutral",
+                "source_quality": "strong",
+                "verified_news_source": True,
+            },
+        )))
+        self.assertEqual(
+            response["social_crowd_signal_explanation"]["detected_inputs"]["source_quality"],
+            90,
+        )
+
+    def test_neutral_crowd_verified_source_does_not_require_manual_review(self):
+        response = asyncio.run(action_analyze_sport_model(SportAnalysisRequest(
+            sport="basketball_nba",
+            market="moneyline",
+            input_stats={
+                "social_sentiment": "neutral",
+                "crowd_consensus": "neutral",
+                "news_velocity": "medium",
+                "source_quality": "strong",
+                "verified_news_source": True,
+            },
+        )))
+        self.assertEqual(
+            response["social_crowd_signal_explanation"]["support_status"],
+            "neutral_calibrated",
+        )
+        self.assertNotIn("social signal not backtested", response["sentiment_no_bet_flags"])
+        self.assertNotIn("crowd signal not calibrated", response["sentiment_no_bet_flags"])
+        self.assertNotIn("sentiment data unavailable", response["sentiment_no_bet_flags"])
+        self.assertNotIn("crowdsourced signal unavailable", response["sentiment_no_bet_flags"])
+        self.assertEqual(response["confirmed_bets"], [])
+
+    def test_heavy_public_lean_weak_source_requires_manual_review(self):
+        response = asyncio.run(action_analyze_sport_model(SportAnalysisRequest(
+            sport="basketball_nba",
+            market="moneyline",
+            input_stats={
+                "social_sentiment": "hyped public side",
+                "crowd_consensus": "heavy public lean",
+                "source_quality": "weak",
+            },
+        )))
+        self.assertEqual(
+            response["social_crowd_signal_explanation"]["support_status"],
+            "requires_manual_review",
+        )
+        self.assertIn("sentiment source quality too low", response["sentiment_no_bet_flags"])
+        self.assertEqual(response["confirmed_bets"], [])
+
     def test_missing_social_data_still_returns_inactive_missing_data(self):
         response = asyncio.run(action_analyze_sport_model(SportAnalysisRequest(
             sport="basketball_nba",
