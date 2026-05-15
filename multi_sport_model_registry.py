@@ -137,17 +137,34 @@ STANDARD_NO_BET_RULES = [
 
 SOCIAL_CROWD_OPTIONAL_INPUTS = [
     "social media sentiment score",
+    "social_sentiment",
     "crowd consensus percentage",
+    "crowd_consensus",
     "public betting percentage",
+    "public_betting_percent",
     "money percentage",
+    "public_money_percent",
+    "sharp_money_percent",
     "news velocity score",
+    "news_velocity",
     "injury rumor flag",
+    "injury_rumor",
     "lineup rumor flag",
     "beat writer signal",
+    "beat_writer_signal",
     "Reddit or forum sentiment",
+    "reddit_signal",
+    "forum_signal",
     "Discord or community signal",
+    "discord_signal",
     "Google Trends style interest score",
     "media hype score",
+    "rumor_risk",
+    "market_narrative",
+    "line_movement_reason",
+    "source_quality",
+    "sample_size",
+    "timestamp",
 ]
 
 SOCIAL_CROWD_MODEL_COMPONENTS = [
@@ -796,11 +813,70 @@ def _calibration_component(name: str, input_stats: dict[str, Any], required_inpu
     }
 
 
+def _first_present(input_stats: dict[str, Any], *keys: str) -> Any:
+    for key in keys:
+        if input_stats.get(key) is not None:
+            return input_stats.get(key)
+    return None
+
+
+def _is_truthy_signal(value: Any) -> bool:
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return False
+    if isinstance(value, (int, float)):
+        return value > 0
+    return str(value).strip().lower() in {"true", "yes", "y", "1", "high", "elevated", "unconfirmed", "rumor", "present"}
+
+
+def _is_confirmed(value: Any) -> bool:
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return False
+    return str(value).strip().lower() in {"true", "yes", "y", "1", "confirmed", "verified"}
+
+
+def _normalize_social_crowd_input_stats(input_stats: dict[str, Any]) -> dict[str, Any]:
+    normalized = dict(input_stats)
+    alias_map = {
+        "social media sentiment score": ("social media sentiment score", "social_sentiment"),
+        "crowd consensus percentage": ("crowd consensus percentage", "crowd_consensus"),
+        "public betting percentage": ("public betting percentage", "public_betting_percent"),
+        "money percentage": ("money percentage", "public_money_percent", "sharp_money_percent"),
+        "sharp money percentage": ("sharp money percentage", "sharp_money_percent"),
+        "news velocity score": ("news velocity score", "news_velocity"),
+        "injury rumor flag": ("injury rumor flag", "injury_rumor"),
+        "lineup rumor flag": ("lineup rumor flag",),
+        "beat writer signal": ("beat writer signal", "beat_writer_signal"),
+        "Reddit or forum sentiment": ("Reddit or forum sentiment", "reddit_signal", "forum_signal"),
+        "Discord or community signal": ("Discord or community signal", "discord_signal"),
+        "media hype score": ("media hype score", "market_narrative"),
+        "sentiment source quality": ("sentiment source quality", "source_quality"),
+        "rumor risk": ("rumor risk", "rumor_risk"),
+        "rumor signal": ("rumor signal", "rumor_risk", "injury_rumor", "lineup rumor flag"),
+        "line movement reason": ("line movement reason", "line_movement_reason"),
+    }
+    for canonical, aliases in alias_map.items():
+        normalized[canonical] = _first_present(normalized, *aliases)
+    normalized["social_signal_present"] = normalized.get("social media sentiment score") is not None
+    normalized["crowd_signal_present"] = normalized.get("crowd consensus percentage") is not None
+    normalized["rumor_signal_present"] = (
+        normalized.get("rumor risk") is not None
+        or normalized.get("injury rumor flag") is not None
+        or normalized.get("lineup rumor flag") is not None
+    )
+    return normalized
+
+
 def build_social_crowd_calibration_layer(input_stats: dict[str, Any]) -> dict[str, Any]:
+    input_stats = _normalize_social_crowd_input_stats(input_stats)
     sentiment_score = input_stats.get("social media sentiment score")
     crowd_consensus = input_stats.get("crowd consensus percentage")
     public_pct = input_stats.get("public betting percentage")
     money_pct = input_stats.get("money percentage")
+    sharp_money_pct = input_stats.get("sharp money percentage")
     news_velocity = input_stats.get("news velocity score")
     model_probability = input_stats.get("sport_model_probability") or input_stats.get("true_probability")
     edge = input_stats.get("edge")
@@ -810,19 +886,28 @@ def build_social_crowd_calibration_layer(input_stats: dict[str, Any]) -> dict[st
         flags.append("sentiment data unavailable")
     if crowd_consensus is None:
         flags.append("crowdsourced signal unavailable")
-    if input_stats.get("sentiment source quality") == "low":
+    source_quality = input_stats.get("sentiment source quality")
+    if source_quality is not None and str(source_quality).strip().lower() in {"low", "weak", "poor", "untrusted"}:
         flags.append("sentiment source quality too low")
     if not input_stats.get("social_signal_backtested"):
         flags.append("social signal not backtested")
     if not input_stats.get("crowd_signal_calibrated"):
         flags.append("crowd signal not calibrated")
-    if input_stats.get("injury rumor flag") or input_stats.get("lineup rumor flag"):
-        if not input_stats.get("rumor_verified"):
+    rumor_risk = input_stats.get("rumor risk")
+    if _is_truthy_signal(rumor_risk) or _is_truthy_signal(input_stats.get("injury rumor flag")) or _is_truthy_signal(input_stats.get("lineup rumor flag")):
+        if not _is_confirmed(input_stats.get("rumor_verified")):
             flags.append("rumor not confirmed")
-    if news_velocity is not None and float(news_velocity) >= 80 and not input_stats.get("verified_news_source"):
+    if news_velocity is not None and float(news_velocity) >= 80 and not _is_confirmed(input_stats.get("verified_news_source")):
         flags.append("news velocity spike without verified source")
-    if public_pct is not None and money_pct is not None and float(public_pct) >= 70 and float(money_pct) < float(public_pct):
+    sharp_or_money_pct = sharp_money_pct if sharp_money_pct is not None else money_pct
+    if public_pct is not None and sharp_or_money_pct is not None and float(public_pct) >= 70 and float(sharp_or_money_pct) < float(public_pct):
         flags.append("public bias likely inflated price")
+    if crowd_consensus is not None and source_quality is not None:
+        crowd_value = float(crowd_consensus)
+        strong_crowd = crowd_value >= 70 if crowd_value > 1 else crowd_value >= 0.7
+        if strong_crowd and str(source_quality).strip().lower() in {"low", "weak", "poor", "untrusted"}:
+            if "sentiment source quality too low" not in flags:
+                flags.append("sentiment source quality too low")
     if sentiment_score is not None and edge is not None and abs(float(sentiment_score)) >= 80 and float(edge) < 2:
         flags.append("social sentiment is extreme but model edge is weak")
     if crowd_consensus is not None and model_probability is not None:
@@ -851,14 +936,24 @@ def build_social_crowd_calibration_layer(input_stats: dict[str, Any]) -> dict[st
             else "Social and crowd data are available and do not create a calibration red flag."
         ),
         "standalone_bet_reason_allowed": False,
+        "detected_inputs": {
+            "social_sentiment": sentiment_score,
+            "crowd_consensus": crowd_consensus,
+            "public_betting_percent": public_pct,
+            "public_money_percent": money_pct,
+            "sharp_money_percent": sharp_money_pct,
+            "news_velocity": news_velocity,
+            "rumor_risk": rumor_risk,
+            "source_quality": source_quality,
+        },
     }
 
     components = {
         "social_sentiment_engine": _calibration_component("social_sentiment_engine", input_stats, ["social media sentiment score"]),
         "crowdsourced_signal_engine": _calibration_component("crowdsourced_signal_engine", input_stats, ["crowd consensus percentage"]),
-        "public_bias_detector": _calibration_component("public_bias_detector", input_stats, ["public betting percentage", "money percentage"]),
-        "news_velocity_detector": _calibration_component("news_velocity_detector", input_stats, ["news velocity score", "verified_news_source"]),
-        "rumor_risk_filter": _calibration_component("rumor_risk_filter", input_stats, ["injury rumor flag", "lineup rumor flag", "rumor_verified"]),
+        "public_bias_detector": _calibration_component("public_bias_detector", input_stats, ["public betting percentage", "sharp money percentage"]),
+        "news_velocity_detector": _calibration_component("news_velocity_detector", input_stats, ["news velocity score"]),
+        "rumor_risk_filter": _calibration_component("rumor_risk_filter", input_stats, ["rumor signal"]),
         "market_narrative_tracker": _calibration_component("market_narrative_tracker", input_stats, ["media hype score", "beat writer signal"]),
     }
     for component in components.values():

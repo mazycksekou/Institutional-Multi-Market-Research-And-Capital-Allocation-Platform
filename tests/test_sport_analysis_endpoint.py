@@ -89,16 +89,16 @@ class TestSportAnalysisEndpoint(unittest.TestCase):
             "minutes projection": {},
             "injury report": {},
             "sport_model_probability": 0.57,
-            "social media sentiment score": 95,
-            "crowd consensus percentage": 0.35,
-            "public betting percentage": 82,
-            "money percentage": 45,
-            "news velocity score": 90,
-            "injury rumor flag": True,
-            "lineup rumor flag": False,
-            "media hype score": 88,
-            "beat writer signal": "unverified",
-            "sentiment source quality": "low",
+            "social_sentiment": 95,
+            "crowd_consensus": 0.35,
+            "public_betting_percent": 82,
+            "sharp_money_percent": 45,
+            "news_velocity": 90,
+            "rumor_risk": "unconfirmed",
+            "injury_rumor": True,
+            "market_narrative": 88,
+            "beat_writer_signal": "unverified",
+            "source_quality": "low",
         }
         response = asyncio.run(action_analyze_sport_model(SportAnalysisRequest(
             sport="basketball_nba",
@@ -113,6 +113,16 @@ class TestSportAnalysisEndpoint(unittest.TestCase):
         self.assertIn("public bias likely inflated price", response["sentiment_no_bet_flags"])
         self.assertIn("news velocity spike without verified source", response["sentiment_no_bet_flags"])
         self.assertIn("rumor not confirmed", response["sentiment_no_bet_flags"])
+        self.assertEqual(response["social_sentiment_engine"]["component_status"], "research_mode_not_bettable")
+        self.assertEqual(response["crowdsourced_signal_engine"]["component_status"], "research_mode_not_bettable")
+        self.assertEqual(
+            response["social_crowd_signal_explanation"]["detected_inputs"]["social_sentiment"],
+            95,
+        )
+        self.assertEqual(
+            response["social_crowd_signal_explanation"]["detected_inputs"]["crowd_consensus"],
+            0.35,
+        )
         self.assertEqual(
             response["social_sentiment_engine"]["signal_explanation"]["standalone_bet_reason_allowed"],
             False,
@@ -123,9 +133,77 @@ class TestSportAnalysisEndpoint(unittest.TestCase):
             "supports_model",
         })
 
+    def test_social_sentiment_from_input_stats_is_detected(self):
+        response = asyncio.run(action_analyze_sport_model(SportAnalysisRequest(
+            sport="basketball_nba",
+            market="moneyline",
+            input_stats={"social_sentiment": 61},
+        )))
+        self.assertEqual(response["social_sentiment_engine"]["component_status"], "research_mode_not_bettable")
+        self.assertNotIn("sentiment data unavailable", response["sentiment_no_bet_flags"])
+        self.assertEqual(response["confirmed_bets"], [])
+
+    def test_crowd_consensus_from_input_stats_is_detected(self):
+        response = asyncio.run(action_analyze_sport_model(SportAnalysisRequest(
+            sport="basketball_nba",
+            market="moneyline",
+            input_stats={"crowd_consensus": 0.64},
+        )))
+        self.assertEqual(response["crowdsourced_signal_engine"]["component_status"], "research_mode_not_bettable")
+        self.assertNotIn("crowdsourced signal unavailable", response["sentiment_no_bet_flags"])
+        self.assertEqual(response["confirmed_bets"], [])
+
+    def test_rumor_risk_creates_no_bet_flag(self):
+        response = asyncio.run(action_analyze_sport_model(SportAnalysisRequest(
+            sport="basketball_nba",
+            market="moneyline",
+            input_stats={"rumor_risk": "unconfirmed"},
+        )))
+        self.assertIn("rumor not confirmed", response["sentiment_no_bet_flags"])
+        self.assertIn("rumor not confirmed", response["no_bet_flags"])
+        self.assertEqual(response["confirmed_bets"], [])
+
+    def test_public_bias_creates_no_bet_flag(self):
+        response = asyncio.run(action_analyze_sport_model(SportAnalysisRequest(
+            sport="basketball_nba",
+            market="moneyline",
+            input_stats={"public_betting_percent": 82, "sharp_money_percent": 44},
+        )))
+        self.assertIn("public bias likely inflated price", response["sentiment_no_bet_flags"])
+        self.assertEqual(response["confirmed_bets"], [])
+
+    def test_weak_source_quality_creates_no_bet_flag_with_strong_crowd(self):
+        response = asyncio.run(action_analyze_sport_model(SportAnalysisRequest(
+            sport="basketball_nba",
+            market="moneyline",
+            input_stats={"crowd_consensus": 84, "source_quality": "weak"},
+        )))
+        self.assertIn("sentiment source quality too low", response["sentiment_no_bet_flags"])
+        self.assertEqual(response["confirmed_bets"], [])
+
+    def test_missing_social_data_still_returns_inactive_missing_data(self):
+        response = asyncio.run(action_analyze_sport_model(SportAnalysisRequest(
+            sport="basketball_nba",
+            market="moneyline",
+            input_stats={},
+        )))
+        self.assertEqual(response["social_sentiment_engine"]["component_status"], "inactive_missing_data")
+        self.assertIn("sentiment data unavailable", response["sentiment_no_bet_flags"])
+        self.assertIn("crowdsourced signal unavailable", response["sentiment_no_bet_flags"])
+
     def test_egaming_alias_endpoint_returns_esports(self):
         response = asyncio.run(action_analyze_sport_model(SportAnalysisRequest(sport="egaming", market="match winner")))
         self.assertEqual(response["sport"], "esports")
+        self.assertEqual(response["confirmed_bets"], [])
+
+    def test_sport_analysis_still_works_for_esports(self):
+        response = asyncio.run(action_analyze_sport_model(SportAnalysisRequest(
+            sport="esports",
+            market="match winner",
+            input_stats={"social_sentiment": 52, "crowd_consensus": 0.58},
+        )))
+        self.assertEqual(response["sport"], "esports")
+        self.assertEqual(response["model_used"], "game_specific_esports_router")
         self.assertEqual(response["confirmed_bets"], [])
 
     def test_route_is_in_openapi(self):
