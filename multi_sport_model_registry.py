@@ -116,6 +116,15 @@ STANDARD_CALIBRATION_REQUIREMENTS = [
     "probability calibration by confidence bucket",
     "sport-specific baseline validation",
     "market-specific error tracking",
+    "social sentiment calibration",
+    "crowdsourced signal calibration",
+    "public bias adjustment",
+    "rumor risk review",
+    "news velocity check",
+    "market narrative check",
+    "sentiment versus odds movement comparison",
+    "sentiment versus model probability comparison",
+    "crowd consensus versus sharp market comparison",
 ]
 
 STANDARD_NO_BET_RULES = [
@@ -124,6 +133,43 @@ STANDARD_NO_BET_RULES = [
     "no backtest proof",
     "risk controller rejects exposure",
     "correlation check fails",
+]
+
+SOCIAL_CROWD_OPTIONAL_INPUTS = [
+    "social media sentiment score",
+    "crowd consensus percentage",
+    "public betting percentage",
+    "money percentage",
+    "news velocity score",
+    "injury rumor flag",
+    "lineup rumor flag",
+    "beat writer signal",
+    "Reddit or forum sentiment",
+    "Discord or community signal",
+    "Google Trends style interest score",
+    "media hype score",
+]
+
+SOCIAL_CROWD_MODEL_COMPONENTS = [
+    "social_sentiment_engine",
+    "crowdsourced_signal_engine",
+    "public_bias_detector",
+    "news_velocity_detector",
+    "rumor_risk_filter",
+    "market_narrative_tracker",
+]
+
+SOCIAL_CROWD_NO_BET_FLAGS = [
+    "social sentiment is extreme but model edge is weak",
+    "crowd consensus conflicts with model probability",
+    "rumor not confirmed",
+    "news velocity spike without verified source",
+    "public bias likely inflated price",
+    "sentiment data unavailable",
+    "crowdsourced signal unavailable",
+    "sentiment source quality too low",
+    "social signal not backtested",
+    "crowd signal not calibrated",
 ]
 
 SPORT_PROP_INPUTS = {
@@ -218,19 +264,19 @@ def _sport(
         "supported_prop_categories": list(supported_prop_categories),
         "required_inputs": list(required_inputs),
         "required_independent_inputs": list(required_inputs),
-        "optional_inputs": list(optional_inputs),
-        "optional_independent_inputs": list(optional_inputs),
+        "optional_inputs": list(optional_inputs) + list(SOCIAL_CROWD_OPTIONAL_INPUTS),
+        "optional_independent_inputs": list(optional_inputs) + list(SOCIAL_CROWD_OPTIONAL_INPUTS),
         "missing_inputs": list(required_inputs),
         "data_provider_needs": list(STANDARD_PROVIDER_NEEDS),
         "provider_needs": list(STANDARD_PROVIDER_NEEDS),
         "recommended_providers": [],
-        "model_components": list(model_components),
+        "model_components": list(model_components) + list(SOCIAL_CROWD_MODEL_COMPONENTS),
         "simulation_method": simulation_method,
         "correlation_notes": list(correlation_notes),
         "correlation_rules": list(correlation_notes),
         "backtest_requirements": list(STANDARD_BACKTEST_REQUIREMENTS),
         "calibration_requirements": list(STANDARD_CALIBRATION_REQUIREMENTS),
-        "no_bet_rules": list(STANDARD_NO_BET_RULES),
+        "no_bet_rules": list(STANDARD_NO_BET_RULES) + list(SOCIAL_CROWD_NO_BET_FLAGS),
         "risk_notes": [
             "Confirmed bets disabled until independent inputs, backtests, calibration, and risk approval exist."
         ],
@@ -673,6 +719,7 @@ def classify_model_level(sport_key: str) -> Optional[str]:
 def get_registered_architecture_components() -> dict[str, Any]:
     return {
         "advanced_edge_components": deepcopy(ADVANCED_EDGE_COMPONENTS),
+        "social_crowd_calibration_components": build_social_crowd_calibration_layer({}),
         "provider_abstractions": deepcopy(PROVIDER_ABSTRACTIONS),
         "risk_controller": build_risk_controller(),
         "correlation_sgp": deepcopy(CORRELATION_SGP_FOUNDATION),
@@ -726,6 +773,103 @@ def build_risk_controller(
         "risk_flags": ["risk controller foundation only", "no exposure ledger connected"],
         "manual_override_flag": False,
         "no_bet_if_over_limit": True,
+    }
+
+
+def _calibration_component(name: str, input_stats: dict[str, Any], required_inputs: list[str]) -> dict[str, Any]:
+    missing = [field for field in required_inputs if input_stats.get(field) is None]
+    status = COMPONENT_STATUS_INACTIVE if missing else COMPONENT_STATUS_RESEARCH
+    return _component(
+        name,
+        required_inputs,
+        optional_inputs=SOCIAL_CROWD_OPTIONAL_INPUTS,
+        output_fields=["signal_status", "signal_summary", "calibration_status", "no_bet_flags", "manual_review_required"],
+        notes=[
+            "Calibration check and balance only.",
+            "Social sentiment and crowdsourcing cannot independently create confirmed bets.",
+        ],
+        status=status,
+    ) | {
+        "missing_inputs": missing,
+        "signal_status": "manual_review_required" if missing else "available_for_calibration_only",
+        "calibration_status": "not_calibrated",
+    }
+
+
+def build_social_crowd_calibration_layer(input_stats: dict[str, Any]) -> dict[str, Any]:
+    sentiment_score = input_stats.get("social media sentiment score")
+    crowd_consensus = input_stats.get("crowd consensus percentage")
+    public_pct = input_stats.get("public betting percentage")
+    money_pct = input_stats.get("money percentage")
+    news_velocity = input_stats.get("news velocity score")
+    model_probability = input_stats.get("sport_model_probability") or input_stats.get("true_probability")
+    edge = input_stats.get("edge")
+    flags: list[str] = []
+
+    if sentiment_score is None:
+        flags.append("sentiment data unavailable")
+    if crowd_consensus is None:
+        flags.append("crowdsourced signal unavailable")
+    if input_stats.get("sentiment source quality") == "low":
+        flags.append("sentiment source quality too low")
+    if not input_stats.get("social_signal_backtested"):
+        flags.append("social signal not backtested")
+    if not input_stats.get("crowd_signal_calibrated"):
+        flags.append("crowd signal not calibrated")
+    if input_stats.get("injury rumor flag") or input_stats.get("lineup rumor flag"):
+        if not input_stats.get("rumor_verified"):
+            flags.append("rumor not confirmed")
+    if news_velocity is not None and float(news_velocity) >= 80 and not input_stats.get("verified_news_source"):
+        flags.append("news velocity spike without verified source")
+    if public_pct is not None and money_pct is not None and float(public_pct) >= 70 and float(money_pct) < float(public_pct):
+        flags.append("public bias likely inflated price")
+    if sentiment_score is not None and edge is not None and abs(float(sentiment_score)) >= 80 and float(edge) < 2:
+        flags.append("social sentiment is extreme but model edge is weak")
+    if crowd_consensus is not None and model_probability is not None:
+        crowd_probability = float(crowd_consensus) / 100 if float(crowd_consensus) > 1 else float(crowd_consensus)
+        if abs(crowd_probability - float(model_probability)) >= 0.12:
+            flags.append("crowd consensus conflicts with model probability")
+
+    if any(flag in flags for flag in [
+        "crowd consensus conflicts with model probability",
+        "public bias likely inflated price",
+        "social sentiment is extreme but model edge is weak",
+    ]):
+        support_status = "conflicts_with_model"
+    elif flags:
+        support_status = "requires_manual_review"
+    else:
+        support_status = "supports_model"
+
+    explanation = {
+        "support_status": support_status,
+        "summary": (
+            "Social and crowd data conflict with model/risk assumptions."
+            if support_status == "conflicts_with_model"
+            else "Social and crowd data require manual review before any promotion."
+            if support_status == "requires_manual_review"
+            else "Social and crowd data are available and do not create a calibration red flag."
+        ),
+        "standalone_bet_reason_allowed": False,
+    }
+
+    components = {
+        "social_sentiment_engine": _calibration_component("social_sentiment_engine", input_stats, ["social media sentiment score"]),
+        "crowdsourced_signal_engine": _calibration_component("crowdsourced_signal_engine", input_stats, ["crowd consensus percentage"]),
+        "public_bias_detector": _calibration_component("public_bias_detector", input_stats, ["public betting percentage", "money percentage"]),
+        "news_velocity_detector": _calibration_component("news_velocity_detector", input_stats, ["news velocity score", "verified_news_source"]),
+        "rumor_risk_filter": _calibration_component("rumor_risk_filter", input_stats, ["injury rumor flag", "lineup rumor flag", "rumor_verified"]),
+        "market_narrative_tracker": _calibration_component("market_narrative_tracker", input_stats, ["media hype score", "beat writer signal"]),
+    }
+    for component in components.values():
+        component["signal_explanation"] = explanation
+        component["no_bet_flags"] = list(flags)
+    return {
+        **components,
+        "sentiment_calibration_status": "not_calibrated" if "social signal not backtested" in flags else "calibration_check_available",
+        "crowd_signal_calibration_status": "not_calibrated" if "crowd signal not calibrated" in flags else "calibration_check_available",
+        "sentiment_no_bet_flags": flags,
+        "social_crowd_signal_explanation": explanation,
     }
 
 
@@ -908,6 +1052,12 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
     elif component_status == COMPONENT_STATUS_RESEARCH:
         no_bet_flags = ["no backtest proof", "research mode only", "confirmed bets disabled"]
 
+    social_input_stats = dict(input_stats)
+    social_input_stats["edge"] = edge
+    social_layer = build_social_crowd_calibration_layer(social_input_stats)
+    if social_layer["sentiment_no_bet_flags"]:
+        no_bet_flags = list(dict.fromkeys(no_bet_flags + social_layer["sentiment_no_bet_flags"]))
+
     risk_controller = build_risk_controller(payload.get("bankroll"), payload.get("unit_size"), payload.get("risk_profile") or "conservative")
     detector_payload = dict(payload)
     detector_payload.update({
@@ -958,6 +1108,16 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         "provider_needs": config["provider_needs"],
         "risk_controller": risk_controller,
         "wee_willie_market_weakness_detector": wee_willie,
+        "social_sentiment_engine": social_layer["social_sentiment_engine"],
+        "crowdsourced_signal_engine": social_layer["crowdsourced_signal_engine"],
+        "public_bias_detector": social_layer["public_bias_detector"],
+        "news_velocity_detector": social_layer["news_velocity_detector"],
+        "rumor_risk_filter": social_layer["rumor_risk_filter"],
+        "market_narrative_tracker": social_layer["market_narrative_tracker"],
+        "sentiment_calibration_status": social_layer["sentiment_calibration_status"],
+        "crowd_signal_calibration_status": social_layer["crowd_signal_calibration_status"],
+        "sentiment_no_bet_flags": social_layer["sentiment_no_bet_flags"],
+        "social_crowd_signal_explanation": social_layer["social_crowd_signal_explanation"],
         "manual_ticket_preview": manual_ticket,
         "full_board_preview": full_board,
         "confirmed_bets": [],
@@ -969,6 +1129,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
 def _unsupported_sport_response(payload: dict[str, Any]) -> dict[str, Any]:
     sport = payload.get("sport")
     risk_controller = build_risk_controller(payload.get("bankroll"), payload.get("unit_size"), payload.get("risk_profile") or "conservative")
+    social_layer = build_social_crowd_calibration_layer({})
     return {
         "ok": False,
         "endpoint": "analyzeSportModel",
@@ -995,6 +1156,16 @@ def _unsupported_sport_response(payload: dict[str, Any]) -> dict[str, Any]:
         "provider_needs": list(STANDARD_PROVIDER_NEEDS),
         "risk_controller": risk_controller,
         "wee_willie_market_weakness_detector": build_wee_willie_market_weakness_detector({}),
+        "social_sentiment_engine": social_layer["social_sentiment_engine"],
+        "crowdsourced_signal_engine": social_layer["crowdsourced_signal_engine"],
+        "public_bias_detector": social_layer["public_bias_detector"],
+        "news_velocity_detector": social_layer["news_velocity_detector"],
+        "rumor_risk_filter": social_layer["rumor_risk_filter"],
+        "market_narrative_tracker": social_layer["market_narrative_tracker"],
+        "sentiment_calibration_status": social_layer["sentiment_calibration_status"],
+        "crowd_signal_calibration_status": social_layer["crowd_signal_calibration_status"],
+        "sentiment_no_bet_flags": social_layer["sentiment_no_bet_flags"],
+        "social_crowd_signal_explanation": social_layer["social_crowd_signal_explanation"],
         "manual_ticket_preview": None,
         "full_board_preview": {
             "confirmed_bets": [],

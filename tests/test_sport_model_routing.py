@@ -62,11 +62,34 @@ class TestSportModelRouting(unittest.TestCase):
     def test_architecture_components_registered(self):
         components = registry.get_registered_architecture_components()
         self.assertIn("wee_willie_market_weakness_detector", components)
+        self.assertIn("social_crowd_calibration_components", components)
         self.assertIn("provider_abstractions", components)
         self.assertIn("risk_controller", components)
         self.assertIn("alt_line_ladder_registry", components)
         self.assertTrue(all(provider["status"] == "not_configured" for provider in components["provider_abstractions"]))
         self.assertTrue(all(provider["missing_credentials_flag"] for provider in components["provider_abstractions"]))
+
+    def test_every_sport_has_social_crowd_calibration_requirements(self):
+        for sport in registry.OFFICIAL_SPORT_KEYS:
+            config = registry.get_sport_model_config(sport)
+            for component in registry.SOCIAL_CROWD_MODEL_COMPONENTS:
+                self.assertIn(component, config["model_components"])
+            for optional_input in registry.SOCIAL_CROWD_OPTIONAL_INPUTS:
+                self.assertIn(optional_input, config["optional_inputs"])
+            for calibration_requirement in [
+                "social sentiment calibration",
+                "crowdsourced signal calibration",
+                "public bias adjustment",
+                "rumor risk review",
+                "news velocity check",
+                "market narrative check",
+                "sentiment versus odds movement comparison",
+                "sentiment versus model probability comparison",
+                "crowd consensus versus sharp market comparison",
+            ]:
+                self.assertIn(calibration_requirement, config["calibration_requirements"])
+            for no_bet_flag in registry.SOCIAL_CROWD_NO_BET_FLAGS:
+                self.assertIn(no_bet_flag, config["no_bet_rules"])
 
     def test_manual_ticket_and_provider_foundation_do_not_place_bets(self):
         response = registry.analyze_sport_model({"sport": "basketball_nba", "market": "moneyline"})

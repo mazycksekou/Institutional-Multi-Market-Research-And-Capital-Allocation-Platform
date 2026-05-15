@@ -782,6 +782,15 @@ class SportAnalysisResponse(BaseModel):
     provider_needs: list[str]
     risk_controller: dict[str, Any]
     wee_willie_market_weakness_detector: dict[str, Any]
+    social_sentiment_engine: dict[str, Any]
+    crowdsourced_signal_engine: dict[str, Any]
+    public_bias_detector: dict[str, Any]
+    news_velocity_detector: dict[str, Any]
+    rumor_risk_filter: dict[str, Any]
+    market_narrative_tracker: dict[str, Any]
+    sentiment_calibration_status: str
+    crowd_signal_calibration_status: str
+    sentiment_no_bet_flags: list[str]
     manual_ticket_preview: Optional[dict[str, Any]] = None
     full_board_preview: dict[str, Any]
 

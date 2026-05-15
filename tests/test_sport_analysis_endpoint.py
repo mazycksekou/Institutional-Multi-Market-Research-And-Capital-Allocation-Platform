@@ -40,6 +40,15 @@ class TestSportAnalysisEndpoint(unittest.TestCase):
             "provider_needs",
             "risk_controller",
             "wee_willie_market_weakness_detector",
+            "social_sentiment_engine",
+            "crowdsourced_signal_engine",
+            "public_bias_detector",
+            "news_velocity_detector",
+            "rumor_risk_filter",
+            "market_narrative_tracker",
+            "sentiment_calibration_status",
+            "crowd_signal_calibration_status",
+            "sentiment_no_bet_flags",
             "manual_ticket_preview",
             "full_board_preview",
         ]:
@@ -69,6 +78,50 @@ class TestSportAnalysisEndpoint(unittest.TestCase):
         self.assertEqual(response["component_statuses"]["possession_expected_score_model"], "research_mode_not_bettable")
         self.assertIn("no backtest proof", response["no_bet_flags"])
         self.assertEqual(response["confirmed_bets"], [])
+
+    def test_social_and_crowd_conflicts_are_no_bet_calibration_flags(self):
+        input_stats = {
+            "pace": 99,
+            "offensive rating": 116,
+            "defensive rating": 112,
+            "Four Factors": {},
+            "player usage": {},
+            "minutes projection": {},
+            "injury report": {},
+            "sport_model_probability": 0.57,
+            "social media sentiment score": 95,
+            "crowd consensus percentage": 0.35,
+            "public betting percentage": 82,
+            "money percentage": 45,
+            "news velocity score": 90,
+            "injury rumor flag": True,
+            "lineup rumor flag": False,
+            "media hype score": 88,
+            "beat writer signal": "unverified",
+            "sentiment source quality": "low",
+        }
+        response = asyncio.run(action_analyze_sport_model(SportAnalysisRequest(
+            sport="basketball_nba",
+            market="moneyline",
+            odds_american=-110,
+            input_stats=input_stats,
+            bankroll=1000,
+            unit_size=25,
+        )))
+        self.assertEqual(response["confirmed_bets"], [])
+        self.assertIn("crowd consensus conflicts with model probability", response["sentiment_no_bet_flags"])
+        self.assertIn("public bias likely inflated price", response["sentiment_no_bet_flags"])
+        self.assertIn("news velocity spike without verified source", response["sentiment_no_bet_flags"])
+        self.assertIn("rumor not confirmed", response["sentiment_no_bet_flags"])
+        self.assertEqual(
+            response["social_sentiment_engine"]["signal_explanation"]["standalone_bet_reason_allowed"],
+            False,
+        )
+        self.assertIn(response["social_sentiment_engine"]["signal_explanation"]["support_status"], {
+            "conflicts_with_model",
+            "requires_manual_review",
+            "supports_model",
+        })
 
     def test_egaming_alias_endpoint_returns_esports(self):
         response = asyncio.run(action_analyze_sport_model(SportAnalysisRequest(sport="egaming", market="match winner")))
