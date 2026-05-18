@@ -23,6 +23,7 @@ import bet_decision_engine
 import market_pricing
 import multi_sport_model_registry
 import model_probability
+import screenshot_intake
 from quant_engine import (
     american_to_implied_probability,
     capm_required_return,
@@ -563,6 +564,30 @@ class SportAnalysisRequest(BaseModel):
     unit_size: Optional[Any] = Field(None, description="Optional base unit size.")
 
 
+class ScreenshotAnalysisRequest(BaseModel):
+    model_config = ConfigDict(extra="allow", protected_namespaces=())
+
+    source_type: Optional[str] = Field(None, description="parsed_fields, screenshot_text, ocr_text, or image_metadata.")
+    sport: Optional[Any] = None
+    league: Optional[Any] = None
+    event: Optional[str] = None
+    teams: Optional[list[str]] = None
+    market: Optional[Any] = None
+    selection: Optional[str] = None
+    odds_american: Optional[Any] = None
+    line: Optional[Any] = None
+    total_line: Optional[Any] = None
+    book: Optional[str] = None
+    screenshot_text: Optional[str] = None
+    visible_markets: Optional[list[Any]] = None
+    visible_props: Optional[list[Any]] = None
+    visible_alt_lines: Optional[list[Any]] = None
+    bankroll: Optional[Any] = None
+    unit_size: Optional[Any] = None
+    risk_profile: Optional[str] = "conservative"
+    input_stats: Optional[dict[str, Any]] = None
+
+
 class ActionBetLogRequest(BaseModel):
     model_config = ConfigDict(extra="allow", protected_namespaces=())
 
@@ -800,6 +825,22 @@ class SportAnalysisResponse(BaseModel):
     no_bets: list[dict[str, Any]] = []
     manual_ticket_preview: Optional[dict[str, Any]] = None
     full_board_preview: dict[str, Any]
+
+
+class ScreenshotAnalysisResponse(BaseModel):
+    model_config = ConfigDict(extra="allow", protected_namespaces=())
+
+    ok: bool
+    endpoint: str
+    partial_model_mode: bool
+    parsed_ticket: dict[str, Any]
+    provider_enrichment: dict[str, Any]
+    model_analysis: dict[str, Any]
+    full_board_preview: dict[str, Any]
+    missing_inputs: list[Any]
+    no_bets: list[dict[str, Any]]
+    confirmed_bets: list[dict[str, Any]]
+    logbook_ready_rows: list[dict[str, Any]]
 
 
 def utc_now() -> str:
@@ -1284,6 +1325,48 @@ async def action_analyze_sport_model(payload: SportAnalysisRequest):
             sport=sport,
             detail=f"Sport analysis failed safely: {type(exc).__name__}",
         )
+
+
+@app.post(
+    "/api/actions/ticket/screenshot-analysis",
+    operation_id="analyzeTicketScreenshot",
+    dependencies=[Depends(require_action_key)],
+    response_model=ScreenshotAnalysisResponse,
+    summary="Analyze Ticket Screenshot",
+    description=(
+        "Analyze sportsbook ticket fields parsed from a screenshot or OCR text. "
+        "OCR is optional; ChatGPT may send structured parsed fields directly."
+    ),
+)
+async def action_analyze_ticket_screenshot(payload: ScreenshotAnalysisRequest):
+    try:
+        return screenshot_intake.analyze_screenshot_ticket(payload.model_dump(exclude_none=True))
+    except Exception as exc:
+        return {
+            "ok": True,
+            "endpoint": "ticketScreenshotAnalysis",
+            "partial_model_mode": True,
+            "parsed_ticket": {},
+            "provider_enrichment": {},
+            "model_analysis": {},
+            "full_board_preview": {
+                "confirmed_bets": [],
+                "target_lines": [],
+                "target_props": [],
+                "target_alt_lines": [],
+                "no_bets": [{"reason": "screenshot_analysis_failed_safely"}],
+                "best_correlated_parlay": None,
+                "value_ranking": [],
+                "risk_ranking": [],
+                "missing_inputs": [],
+                "manual_review_required": ["Manual review required after handled error."],
+                "logbook_ready_rows": [],
+            },
+            "missing_inputs": ["screenshot_analysis_failed"],
+            "no_bets": [{"reason": "screenshot_analysis_failed_safely", "detail": type(exc).__name__}],
+            "confirmed_bets": [],
+            "logbook_ready_rows": [],
+        }
 
 
 @app.post(

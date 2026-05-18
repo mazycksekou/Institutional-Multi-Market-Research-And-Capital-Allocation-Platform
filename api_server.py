@@ -21,6 +21,7 @@ def _verify_runtime_routes() -> None:
         "/api/actions/betting/clv-report",
         "/api/actions/models/sports-registry",
         "/api/actions/models/sport-analysis",
+        "/api/actions/ticket/screenshot-analysis",
         "/quant/market-pricing",
         "/quant/bet-analysis",
         "/quant/stock-analysis",
