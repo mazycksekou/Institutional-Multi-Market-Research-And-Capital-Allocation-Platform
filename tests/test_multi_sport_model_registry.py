@@ -30,21 +30,22 @@ class TestMultiSportModelRegistry(unittest.TestCase):
         self.assertEqual(len(sports), 15)
         self.assertEqual([sport["sport_key"] for sport in sports], EXPECTED_SPORT_KEYS)
 
-    def test_mlb_is_market_derived_only(self):
+    def test_mlb_is_projection_ready(self):
         mlb = registry.get_sport_model_config("baseball_mlb")
         self.assertIsNotNone(mlb)
-        self.assertEqual(mlb["model_level"], "market_derived_only")
+        self.assertEqual(mlb["model_level"], "projection_ready")
 
-    def test_only_activated_nba_and_nfl_allow_confirmed_bets(self):
+    def test_only_activated_nba_nfl_and_mlb_allow_confirmed_bets(self):
         sports = registry.get_sports_model_registry_response()["sports"]
         enabled = [sport["sport_key"] for sport in sports if sport["confirmed_bets_allowed"]]
-        self.assertEqual(enabled, ["basketball_nba", "americanfootball_nfl"])
+        self.assertEqual(enabled, ["baseball_mlb", "basketball_nba", "americanfootball_nfl"])
+        self.assertTrue(registry.confirmed_bets_allowed("baseball_mlb"))
         self.assertTrue(registry.confirmed_bets_allowed("basketball_nba"))
         self.assertTrue(registry.confirmed_bets_allowed("americanfootball_nfl"))
         self.assertTrue(all(
             not registry.confirmed_bets_allowed(sport["sport_key"])
             for sport in sports
-            if sport["sport_key"] not in {"basketball_nba", "americanfootball_nfl"}
+            if sport["sport_key"] not in {"baseball_mlb", "basketball_nba", "americanfootball_nfl"}
         ))
 
     def test_unsupported_sport_helper_behavior_is_clean(self):
@@ -57,8 +58,8 @@ class TestMultiSportModelRegistry(unittest.TestCase):
 
     def test_required_helper_functions_work(self):
         self.assertTrue(registry.is_supported_sport("baseball_mlb"))
-        self.assertFalse(registry.confirmed_bets_allowed("baseball_mlb"))
-        self.assertEqual(registry.classify_model_level("baseball_mlb"), "market_derived_only")
+        self.assertTrue(registry.confirmed_bets_allowed("baseball_mlb"))
+        self.assertEqual(registry.classify_model_level("baseball_mlb"), "projection_ready")
         self.assertIsInstance(registry.get_required_inputs("baseball_mlb"), list)
         self.assertIn("moneyline", registry.get_supported_markets("baseball_mlb"))
 
@@ -67,8 +68,8 @@ class TestMultiSportModelRegistry(unittest.TestCase):
         self.assertTrue(response["ok"])
         self.assertEqual(response["endpoint"], "getSportsModelRegistry")
         self.assertEqual(response["summary"]["total_sports"], 15)
-        self.assertEqual(response["summary"]["confirmed_bet_enabled_sports"], 2)
-        self.assertEqual(response["summary"]["market_derived_only_sports"], 1)
+        self.assertEqual(response["summary"]["confirmed_bet_enabled_sports"], 3)
+        self.assertEqual(response["summary"]["market_derived_only_sports"], 0)
         self.assertEqual(response["summary"]["not_built_sports"], 12)
         self.assertEqual(response["error"], None)
         self.assertEqual(response["detail"], None)
@@ -110,9 +111,9 @@ class TestMultiSportModelRegistry(unittest.TestCase):
 
     def test_officials_module_uses_sport_specific_official_type(self):
         expected = {
-            "basketball_nba": ("referees", "moderate"),
+            "basketball_nba": ("referee crew", "moderate"),
             "americanfootball_nfl": ("referee crew", "moderate"),
-            "baseball_mlb": ("umpire", "moderate"),
+            "baseball_mlb": ("umpire crew", "moderate"),
             "icehockey_nhl": ("referees/linesmen", "moderate"),
             "soccer": ("referee", "moderate"),
             "mma_mixed_martial_arts": ("referee and judges", "moderate"),

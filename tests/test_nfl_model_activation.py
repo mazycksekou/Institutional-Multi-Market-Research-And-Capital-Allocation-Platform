@@ -358,6 +358,52 @@ class TestNflModelActivation(unittest.TestCase):
         self.assertIn("total_line", response["missing_inputs"])
         self.assertEqual(response["confirmed_bets"], [])
 
+    def test_nfl_team_total_requires_team_total_line(self):
+        response = self._sport(market="team_total", selection="Over Bills", input_stats=nfl_full_inputs(market_type="team_total"))
+        self.assertTrue(response["partial_model_mode"])
+        self.assertIn("team_total_line", response["missing_inputs"])
+        self.assertEqual(response["confirmed_bets"], [])
+
+    def test_nfl_player_prop_missing_inputs_does_not_crash(self):
+        response = self._sport(market="player_prop", input_stats=nfl_full_inputs(market_type="player_prop"))
+        for field in ["player_name", "prop_type", "prop_line", "player_projection", "player_minutes_or_snap_projection"]:
+            self.assertIn(field, response["missing_inputs"])
+
+    def test_nfl_complete_player_prop_returns_clean_result(self):
+        response = self._sport(
+            market="player_prop",
+            selection="Josh Allen passing yards over",
+            odds_american=-105,
+            input_stats=nfl_full_inputs(
+                market_type="player_prop",
+                selection="Josh Allen passing yards over",
+                player_name="Josh Allen",
+                prop_type="passing_yards",
+                prop_line=255.5,
+                player_projection=268.0,
+                player_minutes_or_snap_projection=64,
+            ),
+        )
+        self.assertIn(response["decision"], {"NO_BET", "CONFIRMED_BET"})
+        self.assertIn("target_props", response["full_board_preview"])
+
+    def test_nfl_first_quarter_and_first_half_use_period_logic(self):
+        first_quarter = self._sport(market="first_quarter", input_stats=nfl_full_inputs(market_type="first_quarter"))
+        first_half = self._sport(market="first_half", input_stats=nfl_full_inputs(market_type="first_half"))
+        moneyline = self._sport()
+        self.assertNotEqual(first_quarter["estimated_true_probability"], moneyline["estimated_true_probability"])
+        self.assertNotEqual(first_half["estimated_true_probability"], moneyline["estimated_true_probability"])
+
+    def test_nfl_weather_affects_total_confidence(self):
+        calm = self._sport(market="total", selection="Over", total_line=46.5, input_stats=nfl_full_inputs(market_type="total", total_line=46.5, weather_wind_mph=5))
+        windy = self._sport(market="total", selection="Over", total_line=46.5, input_stats=nfl_full_inputs(market_type="total", total_line=46.5, weather_wind_mph=24))
+        self.assertLess(windy["confidence"], calm["confidence"])
+
+    def test_nfl_qb_uncertainty_lowers_confidence(self):
+        healthy = self._sport()
+        uncertain = self._sport(input_stats=nfl_full_inputs(qb_status="questionable"))
+        self.assertLess(uncertain["confidence"], healthy["confidence"])
+
     def test_nfl_officiating_data_cannot_create_confirmed_bet_when_base_missing(self):
         response = self._sport(input_stats={
             "referee_crew": "Crew A",

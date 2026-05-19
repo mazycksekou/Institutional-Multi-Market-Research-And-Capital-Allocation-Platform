@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from datetime import datetime, timezone
+import math
 import re
 from typing import Any, Optional
 
@@ -251,8 +252,14 @@ NBA_REQUIRED_MARKET_SPECIFIC_INPUTS = {
     "moneyline": [],
     "spread": ["line"],
     "total": ["total_line"],
-    "team_total": ["total_line"],
-    "player_prop": ["player_name", "prop_type", "prop_line", "player_projection"],
+    "team_total": ["team_total_line"],
+    "first_half": [],
+    "second_half": [],
+    "first_quarter": [],
+    "first_quarter_moneyline": [],
+    "first_quarter_spread": ["line"],
+    "first_quarter_total": ["total_line"],
+    "player_prop": ["player_name", "prop_type", "prop_line", "player_projection", "player_minutes_projection"],
     "alt_line": ["line"],
     "live": ["live_game", "live_period", "live_clock", "live_score_team", "live_score_opponent"],
 }
@@ -263,12 +270,32 @@ NBA_OPTIONAL_ENRICHMENT_INPUTS = [
     "opponent_recent_net_rating_5",
     "team_recent_net_rating_10",
     "opponent_recent_net_rating_10",
+    "rest_days",
     "team_rest_days",
     "opponent_rest_days",
+    "back_to_back",
     "team_back_to_back",
     "opponent_back_to_back",
+    "travel_distance_miles",
     "team_travel_distance_miles",
     "opponent_travel_distance_miles",
+    "altitude_spot",
+    "team_home_net_rating",
+    "opponent_away_net_rating",
+    "team_clutch_net_rating",
+    "opponent_clutch_net_rating",
+    "team_three_point_rate",
+    "opponent_three_point_rate",
+    "team_three_point_allowed_rate",
+    "opponent_three_point_allowed_rate",
+    "team_rim_rate",
+    "opponent_rim_rate",
+    "team_rim_allowed_rate",
+    "opponent_rim_allowed_rate",
+    "team_free_throw_attempt_rate",
+    "opponent_free_throw_attempt_rate",
+    "projected_starters_confirmed",
+    "minutes_volatility",
     "team_projected_points",
     "opponent_projected_points",
     "projected_margin",
@@ -289,8 +316,14 @@ NBA_OPTIONAL_ENRICHMENT_INPUTS = [
 
 NBA_PROVIDER_ENRICHMENT_INPUTS = [
     "opening_odds",
+    "current_odds",
     "best_available_odds",
     "consensus_odds",
+    "opening_line",
+    "current_line",
+    "opening_total",
+    "current_total",
+    "book_count",
     "no_vig_market_probability",
     "kalshi_event_ticker",
     "kalshi_market_type",
@@ -302,10 +335,21 @@ NBA_PROVIDER_ENRICHMENT_INPUTS = [
 ]
 
 NBA_REFEREE_INPUTS = [
+    "official_name",
     "referee_name",
+    "crew_names",
+    "official_sample_size",
+    "official_data_source",
+    "official_data_quality",
     "foul_rate_per_game",
     "free_throw_rate_allowed",
     "home_foul_differential",
+    "technical_foul_rate",
+    "ejection_rate",
+    "over_rate_with_ref",
+    "under_rate_with_ref",
+    "favorite_cover_rate_with_ref",
+    "underdog_cover_rate_with_ref",
     "referee_sample_size",
     "referee_data_quality",
 ]
@@ -393,7 +437,12 @@ NFL_REQUIRED_MARKET_SPECIFIC_INPUTS = {
     "team_total": ["team_total_line"],
     "player_prop": ["player_name", "prop_type", "prop_line", "player_projection", "player_minutes_or_snap_projection"],
     "first_half": [],
+    "second_half": [],
+    "first_half_spread": ["line"],
+    "first_half_total": ["total_line"],
     "first_quarter": [],
+    "first_quarter_spread": ["line"],
+    "first_quarter_total": ["total_line"],
     "live": ["live_game", "live_period", "live_clock", "live_score_team", "live_score_opponent"],
     "alt_line": ["line"],
 }
@@ -470,7 +519,26 @@ NFL_PROVIDER_ENRICHMENT_INPUTS = [
     "book_count",
 ]
 
-NFL_OFFICIATING_INPUTS = ["referee crew", "penalty rate", "holding rate", "defensive pass interference rate"]
+NFL_OFFICIATING_INPUTS = [
+    "official name",
+    "referee name",
+    "crew names",
+    "official sample size",
+    "official data source",
+    "official data quality",
+    "referee crew",
+    "penalty rate",
+    "penalty rate per game",
+    "holding rate",
+    "offensive holding rate",
+    "defensive pass interference rate",
+    "roughing passer rate",
+    "home penalty differential",
+    "over rate with ref",
+    "under rate with ref",
+    "favorite cover rate with ref",
+    "underdog cover rate with ref",
+]
 
 NFL_SOCIAL_CROWD_INPUTS = [
     "public_betting_percent",
@@ -508,6 +576,178 @@ NFL_INPUT_CONTRACT = {
     "live_betting_inputs": NFL_LIVE_BETTING_INPUTS,
 }
 
+MLB_REQUIRED_CORE_INPUTS = [
+    "team",
+    "opponent",
+    "selection",
+    "home_away",
+    "market",
+    "team_projected_runs",
+    "opponent_projected_runs",
+    "team_starting_pitcher",
+    "opponent_starting_pitcher",
+    "team_starting_pitcher_era",
+    "opponent_starting_pitcher_era",
+    "team_starting_pitcher_fip",
+    "opponent_starting_pitcher_fip",
+    "team_starting_pitcher_xfip",
+    "opponent_starting_pitcher_xfip",
+    "team_starting_pitcher_k_rate",
+    "opponent_starting_pitcher_k_rate",
+    "team_starting_pitcher_bb_rate",
+    "opponent_starting_pitcher_bb_rate",
+    "team_starting_pitcher_hr_rate",
+    "opponent_starting_pitcher_hr_rate",
+    "team_starting_pitcher_innings_projection",
+    "opponent_starting_pitcher_innings_projection",
+    "team_bullpen_era",
+    "opponent_bullpen_era",
+    "team_bullpen_fip",
+    "opponent_bullpen_fip",
+    "team_bullpen_recent_usage",
+    "opponent_bullpen_recent_usage",
+    "team_bullpen_rest_status",
+    "opponent_bullpen_rest_status",
+    "team_woba",
+    "opponent_woba",
+    "team_xwoba",
+    "opponent_xwoba",
+    "team_wrc_plus",
+    "opponent_wrc_plus",
+    "team_iso",
+    "opponent_iso",
+    "team_k_rate",
+    "opponent_k_rate",
+    "team_bb_rate",
+    "opponent_bb_rate",
+    "park_factor_runs",
+    "park_factor_home_runs",
+    "weather_temperature",
+    "weather_wind_mph",
+    "weather_wind_direction",
+    "roof_status",
+    "injury_report_status",
+    "lineup_status",
+]
+
+MLB_REQUIRED_MARKET_SPECIFIC_INPUTS = {
+    "moneyline": ["odds_american"],
+    "runline": ["line", "odds_american"],
+    "total": ["total_line", "odds_american"],
+    "team_total": ["team_total_line", "odds_american"],
+    "first_5_moneyline": ["odds_american"],
+    "first_5_runline": ["line", "odds_american"],
+    "first_5_total": ["total_line", "odds_american"],
+    "player_prop": ["player_name", "prop_type", "prop_line", "player_projection", "player_starting_status"],
+    "live": ["live_game", "live_inning", "live_score_team", "live_score_opponent", "odds_american"],
+    "alt_line": ["line", "odds_american"],
+}
+
+MLB_OPTIONAL_ENRICHMENT_INPUTS = [
+    "team_recent_woba_14",
+    "opponent_recent_woba_14",
+    "team_recent_wrc_plus_14",
+    "opponent_recent_wrc_plus_14",
+    "team_vs_pitcher_handedness_woba",
+    "opponent_vs_pitcher_handedness_woba",
+    "team_vs_pitcher_handedness_k_rate",
+    "opponent_vs_pitcher_handedness_k_rate",
+    "team_base_running_score",
+    "opponent_base_running_score",
+    "team_defensive_runs_saved",
+    "opponent_defensive_runs_saved",
+    "team_fielding_error_rate",
+    "opponent_fielding_error_rate",
+    "catcher_framing_score",
+    "opponent_catcher_framing_score",
+    "umpire_name",
+    "umpire_called_strike_rate",
+    "umpire_walk_rate_impact",
+    "umpire_strikeout_rate_impact",
+    "umpire_over_rate",
+    "umpire_under_rate",
+    "official_sample_size",
+    "official_data_source",
+    "official_data_quality",
+    "opening_odds",
+    "current_odds",
+    "best_available_odds",
+    "consensus_odds",
+    "opening_line",
+    "current_line",
+    "opening_total",
+    "current_total",
+    "no_vig_market_probability",
+    "book_count",
+    "public_betting_percent",
+    "public_money_percent",
+    "sharp_money_percent",
+    "team_run_dispersion",
+    "opponent_run_dispersion",
+    "pitch_count_projection",
+]
+
+MLB_PROVIDER_ENRICHMENT_INPUTS = [
+    "opening_odds",
+    "current_odds",
+    "best_available_odds",
+    "consensus_odds",
+    "opening_line",
+    "current_line",
+    "opening_total",
+    "current_total",
+    "no_vig_market_probability",
+    "book_count",
+]
+
+MLB_OFFICIATING_INPUTS = [
+    "official name",
+    "umpire name",
+    "umpire crew",
+    "official sample size",
+    "official data source",
+    "official data quality",
+    "umpire called strike rate",
+    "umpire walk rate impact",
+    "umpire strikeout rate impact",
+    "umpire over rate",
+    "umpire under rate",
+]
+
+MLB_SOCIAL_CROWD_INPUTS = [
+    "public_betting_percent",
+    "public_money_percent",
+    "sharp_money_percent",
+    "social_sentiment",
+    "crowd_consensus",
+    "rumor_risk",
+    "news_velocity",
+    "source_quality",
+]
+
+MLB_LIVE_BETTING_INPUTS = [
+    "live_game",
+    "live_inning",
+    "live_score_team",
+    "live_score_opponent",
+    "live_base_state",
+    "live_outs",
+    "live_pitcher_status",
+    "live_win_probability",
+]
+
+MLB_INPUT_CONTRACT = {
+    "required_core_inputs": MLB_REQUIRED_CORE_INPUTS,
+    "required_market_specific_inputs": MLB_REQUIRED_MARKET_SPECIFIC_INPUTS,
+    "optional_enrichment_inputs": MLB_OPTIONAL_ENRICHMENT_INPUTS,
+    "provider_enrichment_inputs": MLB_PROVIDER_ENRICHMENT_INPUTS,
+    "officiating_inputs": MLB_OFFICIATING_INPUTS,
+    "umpire_inputs": MLB_OFFICIATING_INPUTS,
+    "referee_inputs": MLB_OFFICIATING_INPUTS,
+    "social_crowd_inputs": MLB_SOCIAL_CROWD_INPUTS,
+    "live_betting_inputs": MLB_LIVE_BETTING_INPUTS,
+}
+
 SPORT_PROP_INPUTS = {
     "baseball_mlb": ["player projection", "lineup status", "opponent matchup", "park factor", "weather"],
     "basketball_nba": ["minutes projection", "usage", "pace", "defensive matchup", "injury report"],
@@ -528,13 +768,13 @@ SPORT_PROP_INPUTS = {
 
 OFFICIALS_MODULE_BY_SPORT = {
     "baseball_mlb": {
-        "official_type": "umpire",
-        "official_inputs": ["umpire assignment", "plate umpire strike zone profile", "umpire run environment"],
+        "official_type": "umpire crew",
+        "official_inputs": MLB_OFFICIATING_INPUTS,
         "betting_edge_strength": "moderate",
         "notes": "Umpire context can matter for strike zone, run environment, pitcher props, and totals.",
     },
     "basketball_nba": {
-        "official_type": "referees",
+        "official_type": "referee crew",
         "official_inputs": NBA_REFEREE_INPUTS,
         "betting_edge_strength": "moderate",
         "notes": "Referee context can matter for foul rate, free throw rate, home differential, totals, and player props.",
@@ -553,7 +793,7 @@ OFFICIALS_MODULE_BY_SPORT = {
     },
     "americanfootball_nfl": {
         "official_type": "referee crew",
-        "official_inputs": ["referee crew", "penalty rate", "holding rate", "defensive pass interference rate"],
+        "official_inputs": NFL_OFFICIATING_INPUTS,
         "betting_edge_strength": "moderate",
         "notes": "Crew context can matter for penalties, pace interruptions, totals, and derivative props.",
     },
@@ -924,14 +1164,16 @@ SPORT_MODEL_REGISTRY = [
         "negative_binomial_run_model",
         "Negative Binomial run model family",
         "negative_binomial",
-        ["moneyline", "run line", "totals", "team totals", "first 5 moneyline", "first 5 run line", "first 5 totals"],
+        ["moneyline", "runline", "total", "team_total", "first_5_moneyline", "first_5_runline", "first_5_total", "player_prop", "live", "alt_line"],
         ["pitcher strikeouts", "pitcher outs recorded", "pitcher earned runs", "hits allowed", "batter hits", "total bases", "RBIs", "runs", "home runs", "stolen bases"],
-        ["team run distribution", "probable pitchers", "bullpen usage", "park factor", "weather", "lineups"],
-        ["umpire assignment", "Markov run expectancy", "bat tracking", "pitch physics"],
+        MLB_REQUIRED_CORE_INPUTS,
+        MLB_OPTIONAL_ENRICHMENT_INPUTS,
         ["first 5 model", "full game model", "pitcher adjustment", "bullpen adjustment", "park factor", "weather adjustment", "lineup adjustment", "umpire adjustment placeholder", "optional Markov run expectancy later"],
         "negative binomial run simulation",
         ["Correlate pitcher strikeouts with opponent team total and first 5 markets."],
-        model_level=MODEL_LEVEL_MARKET_DERIVED_ONLY,
+        component_status=COMPONENT_STATUS_ACTIVE,
+        model_level=MODEL_LEVEL_PROJECTION_READY,
+        confirmed_bets_allowed=True,
     ),
     _sport(
         "basketball_nba",
@@ -939,7 +1181,7 @@ SPORT_MODEL_REGISTRY = [
         "possession_expected_score_model",
         "Possession based expected score model",
         "possession_expected_score",
-        ["moneyline", "spread", "totals", "team totals", "first half", "first quarter", "live markets"],
+        ["moneyline", "spread", "total", "team_total", "first_half", "second_half", "first_quarter", "first_quarter_moneyline", "first_quarter_spread", "first_quarter_total", "player_prop", "live", "alt_line"],
         ["points", "rebounds", "assists", "PRA", "threes", "steals", "blocks", "turnovers", "double double", "triple double"],
         ["pace", "offensive rating", "defensive rating", "Four Factors", "player usage", "minutes projection", "injury report"],
         ["on off adjustment", "shot quality", "fatigue", "rest", "travel"],
@@ -1957,6 +2199,19 @@ def _normal_market_key(value: Any) -> str:
         "alternate_line": "alt_line",
         "alternate_spread": "alt_line",
         "alternate_total": "alt_line",
+        "run_line": "runline",
+        "run_line_spread": "runline",
+        "first_5": "first_5_moneyline",
+        "f5": "first_5_moneyline",
+        "first_5_run_line": "first_5_runline",
+        "f5_runline": "first_5_runline",
+        "first_5_total": "first_5_total",
+        "f5_total": "first_5_total",
+        "first_half_spread": "first_half_spread",
+        "first_half_total": "first_half_total",
+        "first_quarter_moneyline": "first_quarter_moneyline",
+        "first_quarter_spread": "first_quarter_spread",
+        "first_quarter_total": "first_quarter_total",
         "in_play": "live",
     }
     return aliases.get(text, text or "moneyline")
@@ -1968,7 +2223,7 @@ def _nba_market_specific_missing(market: Any, input_stats: dict[str, Any], paylo
     missing = []
     for field in required:
         value = input_stats.get(field)
-        if value is None and field in {"line", "total_line"}:
+        if value is None and field in {"line", "total_line", "team_total_line"}:
             value = payload.get(field)
         if value is None:
             missing.append(field)
@@ -1985,7 +2240,33 @@ def _nfl_market_specific_missing(market: Any, input_stats: dict[str, Any], paylo
     missing = []
     for field in required:
         value = input_stats.get(field)
-        if value is None and field in {"line", "total_line", "team_total_line"}:
+        if value is None and field == "player_minutes_or_snap_projection":
+            value = input_stats.get("player_snap_projection")
+        if value is None and field in {"line", "total_line", "team_total_line", "odds_american"}:
+            value = payload.get(field)
+        if value is None:
+            missing.append(field)
+    return missing
+
+
+def _mlb_full_inputs_missing(input_stats: dict[str, Any], payload: dict[str, Any]) -> list[str]:
+    missing = []
+    for field in MLB_REQUIRED_CORE_INPUTS:
+        value = input_stats.get(field)
+        if value is None and field == "market":
+            value = payload.get("market")
+        if value is None:
+            missing.append(field)
+    return missing
+
+
+def _mlb_market_specific_missing(market: Any, input_stats: dict[str, Any], payload: dict[str, Any]) -> list[str]:
+    market_key = _normal_market_key(input_stats.get("market_type") or market)
+    required = MLB_REQUIRED_MARKET_SPECIFIC_INPUTS.get(market_key, [])
+    missing = []
+    for field in required:
+        value = input_stats.get(field)
+        if value is None and field in {"line", "total_line", "team_total_line", "odds_american"}:
             value = payload.get(field)
         if value is None:
             missing.append(field)
@@ -2005,6 +2286,165 @@ def _nfl_thresholds(risk_profile: Any) -> tuple[float, float]:
 
 def _logistic_probability(value: float, scale: float) -> float:
     return max(0.03, min(0.97, 1 / (1 + 2.718281828 ** (-(value / scale)))))
+
+
+def american_odds_to_implied_probability(odds: Optional[float]) -> Optional[float]:
+    return implied_probability_from_american(odds) if odds is not None else None
+
+
+def negative_binomial_pmf(k: int, mean: float, dispersion: float = 8.0) -> float:
+    if k < 0:
+        return 0.0
+    mean = max(0.05, float(mean))
+    dispersion = max(0.5, float(dispersion or 8.0))
+    p = dispersion / (dispersion + mean)
+    log_coeff = math.lgamma(k + dispersion) - math.lgamma(dispersion) - math.lgamma(k + 1)
+    return math.exp(log_coeff + dispersion * math.log(p) + k * math.log(1 - p))
+
+
+def negative_binomial_cdf(k: int, mean: float, dispersion: float = 8.0) -> float:
+    if k < 0:
+        return 0.0
+    return min(1.0, sum(negative_binomial_pmf(i, mean, dispersion) for i in range(k + 1)))
+
+
+def estimate_run_distribution(mean_runs: float, dispersion: float = 8.0, max_runs: int = 20) -> list[float]:
+    probabilities = [negative_binomial_pmf(i, mean_runs, dispersion) for i in range(max_runs)]
+    probabilities.append(max(0.0, 1.0 - sum(probabilities)))
+    total = sum(probabilities) or 1.0
+    return [p / total for p in probabilities]
+
+
+def estimate_moneyline_probability_from_runs(team_dist: list[float], opponent_dist: list[float]) -> float:
+    win = 0.0
+    tie = 0.0
+    for team_runs, team_prob in enumerate(team_dist):
+        for opponent_runs, opponent_prob in enumerate(opponent_dist):
+            probability = team_prob * opponent_prob
+            if team_runs > opponent_runs:
+                win += probability
+            elif team_runs == opponent_runs:
+                tie += probability
+    return max(0.03, min(0.97, win + tie * 0.5))
+
+
+def estimate_runline_cover_probability(team_dist: list[float], opponent_dist: list[float], line: float) -> float:
+    cover = 0.0
+    for team_runs, team_prob in enumerate(team_dist):
+        for opponent_runs, opponent_prob in enumerate(opponent_dist):
+            if (team_runs - opponent_runs) + line > 0:
+                cover += team_prob * opponent_prob
+    return max(0.03, min(0.97, cover))
+
+
+def estimate_total_probability(team_dist: list[float], opponent_dist: list[float], total_line: float, selection: Any) -> float:
+    over_probability = 0.0
+    under_probability = 0.0
+    push_probability = 0.0
+    for team_runs, team_prob in enumerate(team_dist):
+        for opponent_runs, opponent_prob in enumerate(opponent_dist):
+            total = team_runs + opponent_runs
+            probability = team_prob * opponent_prob
+            if total > total_line:
+                over_probability += probability
+            elif total < total_line:
+                under_probability += probability
+            else:
+                push_probability += probability
+    probability = under_probability if "under" in str(selection or "").lower() else over_probability
+    return max(0.03, min(0.97, probability + push_probability * 0.5))
+
+
+def estimate_team_total_probability(team_dist: list[float], team_total_line: float, selection: Any) -> float:
+    over_probability = 0.0
+    under_probability = 0.0
+    push_probability = 0.0
+    for runs, probability in enumerate(team_dist):
+        if runs > team_total_line:
+            over_probability += probability
+        elif runs < team_total_line:
+            under_probability += probability
+        else:
+            push_probability += probability
+    probability = under_probability if "under" in str(selection or "").lower() else over_probability
+    return max(0.03, min(0.97, probability + push_probability * 0.5))
+
+
+def calibrate_mlb_probability(
+    *,
+    raw_probability: float,
+    market_anchor_probability: float,
+    market_anchor_is_no_vig: bool,
+    projected_run_differential: float,
+    input_confidence_hint: float,
+) -> dict[str, Any]:
+    flags: list[str] = []
+    if raw_probability >= 0.88 or raw_probability <= 0.12:
+        flags.append("raw probability extreme")
+
+    abs_diff = abs(projected_run_differential)
+    high_quality_extreme = abs_diff >= 2.0 and input_confidence_hint >= 78
+    if (raw_probability >= 0.88 or raw_probability <= 0.12) and not high_quality_extreme:
+        model_floor = 0.62 if raw_probability >= 0.88 else 0.38
+        anchor_weight = 0.85 if market_anchor_is_no_vig else 0.05
+        calibrated = (model_floor * (1 - anchor_weight)) + (market_anchor_probability * anchor_weight)
+    else:
+        anchor_weight = 0.25 if market_anchor_is_no_vig else 0.05
+        calibrated = (raw_probability * (1 - anchor_weight)) + (market_anchor_probability * anchor_weight)
+    if abs(calibrated - raw_probability) >= 0.025:
+        flags.append("probability calibration applied")
+
+    if high_quality_extreme:
+        lower_cap, upper_cap = 0.18, 0.86
+    elif abs_diff >= 1.5:
+        lower_cap, upper_cap = 0.22, 0.78
+    elif abs_diff >= 1.0:
+        lower_cap, upper_cap = 0.28, 0.72
+    elif abs_diff >= 0.5:
+        lower_cap, upper_cap = 0.35, 0.65
+    else:
+        lower_cap, upper_cap = 0.42, 0.58
+
+    final_probability = max(lower_cap, min(upper_cap, calibrated))
+    if final_probability != calibrated:
+        flags.append("probability capped by projected run differential")
+        flags.append("probability calibration applied")
+    return {
+        "raw_model_probability": raw_probability,
+        "calibrated_model_probability": calibrated,
+        "final_probability": final_probability,
+        "market_anchor_probability": market_anchor_probability,
+        "probability_calibration_applied": bool(flags),
+        "probability_sanity_flags": list(dict.fromkeys(flags)),
+        "probability_cap_reason": f"projected run differential {round(projected_run_differential, 2)} runs",
+    }
+
+
+def calculate_edge_percent(true_probability: Optional[float], implied_probability: Optional[float]) -> Optional[float]:
+    return edge_percentage(true_probability, implied_probability) if true_probability is not None and implied_probability is not None else None
+
+
+def calculate_confidence(base: float, *adjustments: float) -> float:
+    return max(1, min(95, round(base + sum(adjustments), 2)))
+
+
+def calculate_suggested_stake(
+    *,
+    bankroll: float,
+    american_odds: Optional[float],
+    true_probability: Optional[float],
+    risk_profile: str,
+    confidence: float,
+) -> float:
+    if american_odds is None or true_probability is None:
+        return 0.0
+    return suggested_stake_with_risk_controls(
+        bankroll=bankroll,
+        american_odds=american_odds,
+        true_probability=true_probability,
+        risk_profile="standard" if str(risk_profile or "").lower() == "moderate" else risk_profile,
+        confidence_0_100=confidence,
+    )
 
 
 def _calibrate_nfl_probability(
@@ -2061,6 +2501,225 @@ def _calibrate_nfl_probability(
             if high_quality_extreme
             else f"projected margin {round(projected_margin, 2)} points"
         ),
+    }
+
+
+def _estimate_mlb_negative_binomial_model(
+    input_stats: dict[str, Any],
+    payload: dict[str, Any],
+    market: Any,
+    odds_american: Optional[float],
+    bankroll: float,
+    risk_profile: str,
+) -> Optional[dict[str, Any]]:
+    core_missing = _mlb_full_inputs_missing(input_stats, payload)
+    market_missing = _mlb_market_specific_missing(market, input_stats, payload)
+    if core_missing or market_missing:
+        return None
+
+    def number(key: str, default: float = 0) -> float:
+        return _safe_float(input_stats.get(key), default) or default
+
+    market_key = _normal_market_key(input_stats.get("market_type") or market)
+    optional_present = [field for field in MLB_OPTIONAL_ENRICHMENT_INPUTS if input_stats.get(field) is not None]
+    provider_present = [field for field in MLB_PROVIDER_ENRICHMENT_INPUTS if input_stats.get(field) is not None]
+    officiating_present = _official_inputs_present(input_stats, MLB_OFFICIATING_INPUTS)
+    social_present = [field for field in MLB_SOCIAL_CROWD_INPUTS if input_stats.get(field) is not None]
+    live_present = [field for field in MLB_LIVE_BETTING_INPUTS if input_stats.get(field) is not None]
+
+    team_runs = number("team_projected_runs")
+    opponent_runs = number("opponent_projected_runs")
+    team_starter_quality = ((4.2 - number("opponent_starting_pitcher_fip", 4.2)) + (4.2 - number("opponent_starting_pitcher_xfip", 4.2))) * 0.10
+    opponent_starter_quality = ((4.2 - number("team_starting_pitcher_fip", 4.2)) + (4.2 - number("team_starting_pitcher_xfip", 4.2))) * 0.10
+    offense_adjustment = (
+        (number("team_woba", 0.320) - number("opponent_woba", 0.320)) * 2.2
+        + (number("team_xwoba", 0.320) - number("opponent_xwoba", 0.320)) * 1.8
+        + (number("team_wrc_plus", 100) - number("opponent_wrc_plus", 100)) * 0.012
+        + (number("team_iso", 0.160) - number("opponent_iso", 0.160)) * 1.2
+    )
+    bullpen_adjustment = (
+        (number("opponent_bullpen_fip", 4.1) - number("team_bullpen_fip", 4.1)) * 0.10
+        + (number("opponent_bullpen_era", 4.1) - number("team_bullpen_era", 4.1)) * 0.06
+    )
+    usage_adjustment = (number("opponent_bullpen_recent_usage") - number("team_bullpen_recent_usage")) * 0.04
+    park_adjustment = (number("park_factor_runs", 1.0) - 1.0) * 1.5
+    weather_adjustment = 0.0
+    roof_status = str(input_stats.get("roof_status") or "").strip().lower()
+    if roof_status not in {"closed", "dome"}:
+        weather_adjustment += max(-0.35, min(0.35, (number("weather_temperature", 72) - 72) * 0.01))
+        wind = number("weather_wind_mph")
+        direction = str(input_stats.get("weather_wind_direction") or "").lower()
+        if wind >= 12:
+            weather_adjustment += 0.25 if "out" in direction else -0.15 if "in" in direction else 0.05
+    if str(input_stats.get("lineup_status") or "").strip().lower() not in {"confirmed", "posted", "official"}:
+        team_runs -= 0.18
+        opponent_runs -= 0.10
+    if str(input_stats.get("injury_report_status") or "").strip().lower() not in {"clean", "clear", "healthy", "normal", "available"}:
+        team_runs -= 0.12
+
+    team_runs += team_starter_quality + offense_adjustment * 0.55 + bullpen_adjustment * 0.55 + usage_adjustment + park_adjustment + weather_adjustment
+    opponent_runs += opponent_starter_quality - offense_adjustment * 0.45 - bullpen_adjustment * 0.45 - usage_adjustment + park_adjustment + weather_adjustment
+
+    if input_stats.get("team_recent_woba_14") is not None and input_stats.get("opponent_recent_woba_14") is not None:
+        team_runs += (number("team_recent_woba_14", 0.320) - number("opponent_recent_woba_14", 0.320)) * 1.1
+    if input_stats.get("team_vs_pitcher_handedness_woba") is not None:
+        team_runs += (number("team_vs_pitcher_handedness_woba", 0.320) - 0.320) * 1.0
+    if input_stats.get("opponent_vs_pitcher_handedness_woba") is not None:
+        opponent_runs += (number("opponent_vs_pitcher_handedness_woba", 0.320) - 0.320) * 1.0
+    team_runs += number("team_defensive_runs_saved") * 0.005 - number("opponent_defensive_runs_saved") * 0.003
+    opponent_runs += number("opponent_defensive_runs_saved") * 0.005 - number("team_defensive_runs_saved") * 0.003
+    if officiating_present:
+        umpire_over = number("umpire_over_rate", 0.5)
+        strike_impact = number("umpire_strikeout_rate_impact", 0)
+        run_env_adjustment = (umpire_over - 0.5) * 0.30 - strike_impact * 0.10
+        team_runs += run_env_adjustment
+        opponent_runs += run_env_adjustment
+
+    team_runs = max(1.8, min(8.5, team_runs))
+    opponent_runs = max(1.8, min(8.5, opponent_runs))
+    if market_key.startswith("first_5"):
+        team_starter_ip = max(1.0, min(6.0, number("team_starting_pitcher_innings_projection", 5.2)))
+        opponent_starter_ip = max(1.0, min(6.0, number("opponent_starting_pitcher_innings_projection", 5.2)))
+        team_runs = max(0.8, min(5.0, team_runs * 0.52 + (6.0 - opponent_starter_ip) * 0.05))
+        opponent_runs = max(0.8, min(5.0, opponent_runs * 0.52 + (6.0 - team_starter_ip) * 0.05))
+
+    team_dispersion = number("team_run_dispersion", 8.0)
+    opponent_dispersion = number("opponent_run_dispersion", 8.0)
+    team_dist = estimate_run_distribution(team_runs, team_dispersion)
+    opponent_dist = estimate_run_distribution(opponent_runs, opponent_dispersion)
+    selection = payload.get("selection") or input_stats.get("selection")
+
+    if market_key in {"moneyline", "first_5_moneyline"}:
+        raw_model_probability = estimate_moneyline_probability_from_runs(team_dist, opponent_dist)
+    elif market_key in {"runline", "first_5_runline", "alt_line"}:
+        line = _safe_float(input_stats.get("line") if input_stats.get("line") is not None else payload.get("line"), 0) or 0
+        raw_model_probability = estimate_runline_cover_probability(team_dist, opponent_dist, line)
+    elif market_key in {"total", "first_5_total"}:
+        total_line = _safe_float(input_stats.get("total_line") if input_stats.get("total_line") is not None else payload.get("total_line"), 0) or 0
+        raw_model_probability = estimate_total_probability(team_dist, opponent_dist, total_line, selection)
+    elif market_key == "team_total":
+        team_total_line = _safe_float(input_stats.get("team_total_line") if input_stats.get("team_total_line") is not None else payload.get("team_total_line"), 0) or 0
+        raw_model_probability = estimate_team_total_probability(team_dist, team_total_line, selection)
+    elif market_key == "player_prop":
+        projection = number("player_projection")
+        prop_line = number("prop_line")
+        scale = max(0.75, abs(prop_line) * 0.22)
+        raw_model_probability = _logistic_probability(projection - prop_line, scale)
+    else:
+        raw_model_probability = estimate_moneyline_probability_from_runs(team_dist, opponent_dist)
+
+    implied_probability = american_odds_to_implied_probability(odds_american)
+    market_probability = _safe_probability(input_stats.get("no_vig_market_probability"))
+    market_anchor_probability = market_probability if market_probability is not None else implied_probability if implied_probability is not None else 0.5
+    projected_run_differential = team_runs - opponent_runs
+    calibration = calibrate_mlb_probability(
+        raw_probability=raw_model_probability,
+        market_anchor_probability=market_anchor_probability,
+        market_anchor_is_no_vig=market_probability is not None,
+        projected_run_differential=projected_run_differential,
+        input_confidence_hint=68,
+    )
+    true_probability = calibration["final_probability"]
+
+    confidence_adjustments: list[float] = [min(8, len(optional_present) * 0.18), min(4, len(provider_present) * 0.5)]
+    pitcher_status = str(input_stats.get("team_starting_pitcher_status") or input_stats.get("starting_pitcher_status") or "confirmed").lower()
+    lineup_status = str(input_stats.get("lineup_status") or "").lower()
+    team_bullpen_rest = str(input_stats.get("team_bullpen_rest_status") or "").lower()
+    if pitcher_status in {"scratched", "unknown", "unconfirmed"}:
+        confidence_adjustments.append(-20)
+    if lineup_status not in {"confirmed", "posted", "official"}:
+        confidence_adjustments.append(-6)
+    if team_bullpen_rest in {"tired", "thin", "overworked"} or number("team_bullpen_recent_usage") >= 4:
+        confidence_adjustments.append(-5)
+    if roof_status not in {"closed", "dome"} and number("weather_wind_mph") >= 15:
+        confidence_adjustments.append(-4 if market_key in {"total", "first_5_total", "team_total"} else -2)
+    book_count = _safe_float(input_stats.get("book_count"))
+    if book_count is not None and book_count < 5:
+        confidence_adjustments.append(-4)
+    if input_stats.get("best_available_odds") is None:
+        confidence_adjustments.append(-3)
+    current_odds = _safe_float(input_stats.get("current_odds"))
+    consensus_odds = _safe_float(input_stats.get("consensus_odds"))
+    risk = "medium"
+    if current_odds is not None and consensus_odds is not None and abs(current_odds - consensus_odds) >= 25:
+        risk = "high"
+        confidence_adjustments.append(-3)
+    if market_key == "player_prop" and str(input_stats.get("player_starting_status") or "").lower() not in {"confirmed", "starting", "active"}:
+        confidence_adjustments.append(-10)
+    if calibration["probability_sanity_flags"]:
+        confidence_adjustments.append(-min(8, 2 * len(calibration["probability_sanity_flags"])))
+    confidence = calculate_confidence(68, *confidence_adjustments)
+
+    edge = calculate_edge_percent(true_probability, implied_probability)
+    edge_threshold, confidence_threshold = _nfl_thresholds(risk_profile)
+    no_bet_flags: list[str] = []
+    if pitcher_status in {"scratched", "unknown", "unconfirmed"}:
+        no_bet_flags.append("starting pitcher uncertainty")
+    if edge is None:
+        no_bet_flags.append("edge missing")
+    elif edge <= 0:
+        no_bet_flags.append("negative edge")
+        risk = "high"
+    elif edge < edge_threshold:
+        no_bet_flags.append("edge too small")
+    if confidence < confidence_threshold:
+        no_bet_flags.append("low confidence")
+        risk = "high"
+    if market_key == "player_prop" and str(input_stats.get("player_starting_status") or "").lower() not in {"confirmed", "starting", "active"}:
+        no_bet_flags.append("player starting status unconfirmed")
+    if current_odds is not None and consensus_odds is not None and abs(current_odds - consensus_odds) >= 35:
+        no_bet_flags.append("market disagreement too high")
+
+    suggested = 0.0
+    if not no_bet_flags:
+        suggested = calculate_suggested_stake(
+            bankroll=bankroll,
+            american_odds=odds_american,
+            true_probability=true_probability,
+            risk_profile=risk_profile,
+            confidence=confidence,
+        )
+        risk = "low" if edge is not None and edge >= 5 else risk
+
+    return {
+        "model_status": "active",
+        "estimated_true_probability": true_probability,
+        "true_probability": true_probability,
+        "final_probability": true_probability,
+        "model_probability": true_probability,
+        "implied_probability": implied_probability,
+        "edge": edge,
+        "confidence": confidence,
+        "risk": risk,
+        "suggested_stake": suggested,
+        "raw_model_probability": calibration["raw_model_probability"],
+        "calibrated_model_probability": calibration["calibrated_model_probability"],
+        "probability_calibration_applied": calibration["probability_calibration_applied"],
+        "probability_sanity_flags": calibration["probability_sanity_flags"],
+        "probability_cap_reason": calibration["probability_cap_reason"],
+        "market_anchor_probability": calibration["market_anchor_probability"],
+        "projected_team_runs": round(team_runs, 2),
+        "projected_opponent_runs": round(opponent_runs, 2),
+        "projected_total_runs": round(team_runs + opponent_runs, 2),
+        "projected_run_differential": round(projected_run_differential, 2),
+        "mlb_input_contract": deepcopy(MLB_INPUT_CONTRACT),
+        "input_coverage": {
+            "required_core_present": list(MLB_REQUIRED_CORE_INPUTS),
+            "required_market_specific_present": MLB_REQUIRED_MARKET_SPECIFIC_INPUTS.get(market_key, []),
+            "optional_enrichment_present": optional_present,
+            "optional_enrichment_missing": [field for field in MLB_OPTIONAL_ENRICHMENT_INPUTS if input_stats.get(field) is None],
+            "provider_enrichment_present": provider_present,
+            "officiating_present": officiating_present,
+            "umpire_present": officiating_present,
+            "referee_present": officiating_present,
+            "social_crowd_present": social_present,
+            "live_betting_present": live_present,
+        },
+        "provider_enrichment": {
+            "provider_enrichment_present": provider_present,
+            "provider_status": "available" if provider_present else "not_provided",
+        },
+        "no_bet_flags": no_bet_flags,
     }
 
 
@@ -2149,12 +2808,14 @@ def _estimate_nfl_drive_model(
     implied_probability = implied_probability_from_american(odds_american) if odds_american is not None else None
 
     market_key = _normal_market_key(input_stats.get("market_type") or market)
-    if market_key == "spread":
+    if market_key in {"spread", "first_half_spread", "first_quarter_spread"}:
         line = _safe_float(input_stats.get("line") if input_stats.get("line") is not None else payload.get("line"), 0) or 0
-        raw_model_probability = _logistic_probability(projected_margin + line, 9.5)
-    elif market_key == "total":
+        period_scale = 0.50 if market_key == "first_half_spread" else 0.24 if market_key == "first_quarter_spread" else 1.0
+        raw_model_probability = _logistic_probability((projected_margin * period_scale) + line, 9.5 * max(0.45, period_scale))
+    elif market_key in {"total", "first_half_total", "first_quarter_total"}:
         total_line = _safe_float(input_stats.get("total_line") if input_stats.get("total_line") is not None else payload.get("total_line"), 0) or 0
-        over_probability = _logistic_probability(projected_total - total_line, 8.5)
+        period_scale = 0.50 if market_key == "first_half_total" else 0.24 if market_key == "first_quarter_total" else 1.0
+        over_probability = _logistic_probability((projected_total * period_scale) - total_line, 8.5 * max(0.45, period_scale))
         selection = str(payload.get("selection") or input_stats.get("selection") or "").lower()
         raw_model_probability = 1 - over_probability if "under" in selection else over_probability
     elif market_key == "team_total":
@@ -2166,6 +2827,10 @@ def _estimate_nfl_drive_model(
         projection = number("player_projection")
         prop_line = number("prop_line")
         raw_model_probability = _logistic_probability(projection - prop_line, max(1.0, abs(prop_line) * 0.18))
+    elif market_key == "first_half":
+        raw_model_probability = _logistic_probability(projected_margin * 0.50, 6.0)
+    elif market_key == "first_quarter":
+        raw_model_probability = _logistic_probability(projected_margin * 0.24, 4.5)
     else:
         raw_model_probability = _logistic_probability(projected_margin, 8.0)
 
@@ -2371,7 +3036,35 @@ def _estimate_nba_possession_model(
     ref_quality = str(input_stats.get("referee_data_quality") or "").strip().lower()
     if ref_quality in {"strong", "high"}:
         estimated_margin += max(-0.5, min(0.5, (_safe_float(input_stats.get("home_foul_differential"), 0) or 0) * 0.15))
-    true_probability = 1 / (1 + 2.718281828 ** (-(estimated_margin / 11.0)))
+    projected_total = _safe_float(input_stats.get("projected_total"))
+    if projected_total is None:
+        projected_total = ((team_expected_per_100 + opponent_expected_per_100) * pace / 100)
+    projected_team_score = (projected_total / 2) + (estimated_margin / 2)
+    projected_opponent_score = projected_total - projected_team_score
+
+    market_key = _normal_market_key(input_stats.get("market_type") or market)
+    if market_key in {"spread", "first_quarter_spread"}:
+        line = _safe_float(input_stats.get("line") if input_stats.get("line") is not None else payload.get("line"), 0) or 0
+        true_probability = _logistic_probability(estimated_margin + line, 12.0)
+    elif market_key in {"total", "first_quarter_total"}:
+        total_line = _safe_float(input_stats.get("total_line") if input_stats.get("total_line") is not None else payload.get("total_line"), 0) or 0
+        scaled_total = projected_total * (0.24 if market_key == "first_quarter_total" else 1.0)
+        over_probability = _logistic_probability(scaled_total - total_line, 15.0 if market_key == "total" else 5.0)
+        true_probability = 1 - over_probability if "under" in str(payload.get("selection") or input_stats.get("selection") or "").lower() else over_probability
+    elif market_key == "team_total":
+        team_total_line = _safe_float(input_stats.get("team_total_line") if input_stats.get("team_total_line") is not None else payload.get("team_total_line"), 0) or 0
+        over_probability = _logistic_probability(projected_team_score - team_total_line, 8.0)
+        true_probability = 1 - over_probability if "under" in str(payload.get("selection") or input_stats.get("selection") or "").lower() else over_probability
+    elif market_key == "first_half":
+        true_probability = _logistic_probability(estimated_margin * 0.49, 7.5)
+    elif market_key in {"first_quarter", "first_quarter_moneyline"}:
+        true_probability = _logistic_probability(estimated_margin * 0.24, 5.5)
+    elif market_key == "player_prop":
+        projection = _safe_float(input_stats.get("player_projection"), 0) or 0
+        prop_line = _safe_float(input_stats.get("prop_line"), 0) or 0
+        true_probability = _logistic_probability(projection - prop_line, max(1.0, abs(prop_line) * 0.18))
+    else:
+        true_probability = 1 / (1 + 2.718281828 ** (-(estimated_margin / 11.0)))
     true_probability = max(0.03, min(0.97, true_probability))
 
     implied_probability = implied_probability_from_american(odds_american) if odds_american is not None else None
@@ -2401,6 +3094,11 @@ def _estimate_nba_possession_model(
         confidence -= 8
     if input_stats.get("live_game") is True:
         confidence += 4 if len(live_present) >= 5 else -10
+    if market_key == "player_prop":
+        if input_stats.get("player_minutes_projection") is None:
+            confidence -= 10
+        if not _truthy_available(input_stats.get("minutes_projection_available")):
+            confidence -= 6
     confidence = max(1, min(95, confidence))
 
     no_bet_flags: list[str] = []
@@ -2450,8 +3148,8 @@ def _estimate_nba_possession_model(
             "live_betting_present": live_present,
         },
         "projected_score": {
-            "team": round(team_expected_per_100 * pace / 100, 2),
-            "opponent": round(opponent_expected_per_100 * pace / 100, 2),
+            "team": round(projected_team_score, 2),
+            "opponent": round(projected_opponent_score, 2),
             "estimated_margin": round(estimated_margin, 2),
         },
         "no_bet_flags": no_bet_flags,
@@ -2476,6 +3174,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
 
         nba_model = None
         nfl_model = None
+        mlb_model = None
         if sport == "basketball_nba":
             nba_model = _estimate_nba_possession_model(
                 input_stats=input_stats,
@@ -2494,10 +3193,21 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
                 bankroll=bankroll,
                 risk_profile=payload.get("risk_profile") or "moderate",
             )
+        elif sport == "baseball_mlb":
+            mlb_model = _estimate_mlb_negative_binomial_model(
+                input_stats=input_stats,
+                payload=payload,
+                market=market,
+                odds_american=odds_american,
+                bankroll=bankroll,
+                risk_profile=payload.get("risk_profile") or "moderate",
+            )
 
         if nba_model:
             component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
         elif nfl_model:
+            component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
+        elif mlb_model:
             component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
         elif sport == "basketball_nba":
             component_status = COMPONENT_STATUS_INACTIVE
@@ -2505,6 +3215,9 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         elif sport == "americanfootball_nfl":
             component_status = COMPONENT_STATUS_INACTIVE
             missing_inputs = _nfl_full_inputs_missing(input_stats) + _nfl_market_specific_missing(market, input_stats, payload)
+        elif sport == "baseball_mlb":
+            component_status = COMPONENT_STATUS_INACTIVE
+            missing_inputs = _mlb_full_inputs_missing(input_stats, payload) + _mlb_market_specific_missing(market, input_stats, payload)
         else:
             component_status, missing_inputs = _component_status(config["required_inputs"], input_stats)
         backtest_status = "passed" if input_stats.get("backtest_proof") else "not_started"
@@ -2528,9 +3241,15 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             edge = nfl_model["edge"]
             suggested = nfl_model["suggested_stake"]
             no_bet_flags = list(nfl_model["no_bet_flags"])
+        elif mlb_model:
+            true_probability = mlb_model["true_probability"]
+            implied_probability = mlb_model["implied_probability"]
+            edge = mlb_model["edge"]
+            suggested = mlb_model["suggested_stake"]
+            no_bet_flags = list(mlb_model["no_bet_flags"])
         if implied_probability is not None and true_probability is not None and odds_american is not None:
             edge = edge_percentage(true_probability, implied_probability)
-            if not nba_model:
+            if not (nba_model or nfl_model or mlb_model):
                 suggested = suggested_stake_with_risk_controls(
                     bankroll=bankroll,
                     american_odds=odds_american,
@@ -2547,7 +3266,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         social_input_stats = dict(input_stats)
         social_input_stats["edge"] = edge
         social_layer = build_social_crowd_calibration_layer(social_input_stats)
-        if social_layer["sentiment_no_bet_flags"] and not (nba_model or nfl_model):
+        if social_layer["sentiment_no_bet_flags"] and not (nba_model or nfl_model or mlb_model):
             no_bet_flags = list(dict.fromkeys(no_bet_flags + social_layer["sentiment_no_bet_flags"]))
 
         risk_controller = build_risk_controller(bankroll, unit_size, payload.get("risk_profile") or "conservative")
@@ -2564,7 +3283,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         })
         wee_willie = build_wee_willie_market_weakness_detector(detector_payload)
         manual_ticket = build_manual_ticket(detector_payload, suggested)
-        active_model = nba_model or nfl_model
+        active_model = nba_model or nfl_model or mlb_model
         confidence = active_model["confidence"] if active_model else input_stats.get("confidence")
         risk = active_model["risk"] if active_model else payload.get("risk_profile") or "conservative"
         model_status = active_model["model_status"] if active_model else component_status
@@ -2582,9 +3301,9 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             and config.get("confirmed_bets_allowed")
             and not no_bet_flags
             and edge is not None
-            and edge >= (_nfl_thresholds(payload.get("risk_profile") or "moderate")[0] if nfl_model else 2.5)
+            and edge >= (_nfl_thresholds(payload.get("risk_profile") or "moderate")[0] if (nfl_model or mlb_model) else 2.5)
             and confidence is not None
-            and float(confidence) >= (_nfl_thresholds(payload.get("risk_profile") or "moderate")[1] if nfl_model else 70)
+            and float(confidence) >= (_nfl_thresholds(payload.get("risk_profile") or "moderate")[1] if (nfl_model or mlb_model) else 70)
             and suggested > 0
         ):
             confirmed_bets = [{
@@ -2633,6 +3352,14 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         manual_ticket["status"] = evaluated_status
         logbook_ready_row = manual_ticket["logbook_ready_row"]
         logbook_ready_row.update({
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "sport_key": sport,
+            "sportsbook": payload.get("sportsbook"),
+            "line": payload.get("line") if payload.get("line") is not None else input_stats.get("line"),
+            "total_line": payload.get("total_line") if payload.get("total_line") is not None else input_stats.get("total_line"),
+            "team_total_line": payload.get("team_total_line") if payload.get("team_total_line") is not None else input_stats.get("team_total_line"),
+            "model_name": config["model_used"],
+            "model_status": model_status,
             "final_probability": true_probability,
             "model_probability": true_probability,
             "implied_probability": implied_probability,
@@ -2644,13 +3371,39 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             "status": evaluated_status,
             **officiating_analysis["officiating_logbook_fields"],
         })
+        probability_model = nfl_model or mlb_model
+        if probability_model:
+            logbook_ready_row.update({
+                "raw_model_probability": probability_model["raw_model_probability"],
+                "calibrated_model_probability": probability_model["calibrated_model_probability"],
+                "probability_calibration_applied": probability_model["probability_calibration_applied"],
+                "probability_sanity_flags": probability_model["probability_sanity_flags"],
+                "market_anchor_probability": probability_model["market_anchor_probability"],
+            })
+        if mlb_model:
+            logbook_ready_row.update({
+                "projected_team_runs": mlb_model["projected_team_runs"],
+                "projected_opponent_runs": mlb_model["projected_opponent_runs"],
+                "projected_total_runs": mlb_model["projected_total_runs"],
+                "projected_run_differential": mlb_model["projected_run_differential"],
+            })
         if nfl_model:
             logbook_ready_row.update({
-                "raw_model_probability": nfl_model["raw_model_probability"],
-                "calibrated_model_probability": nfl_model["calibrated_model_probability"],
-                "probability_calibration_applied": nfl_model["probability_calibration_applied"],
-                "probability_sanity_flags": nfl_model["probability_sanity_flags"],
-                "market_anchor_probability": nfl_model["market_anchor_probability"],
+                "projected_margin": nfl_model["projected_margin"],
+                "projected_total": nfl_model["projected_total"],
+                "projected_team_points": nfl_model["projected_team_points"],
+                "projected_opponent_points": nfl_model["projected_opponent_points"],
+            })
+        if nba_model:
+            logbook_ready_row.update({
+                "projected_team_score": nba_model["projected_score"]["team"],
+                "projected_opponent_score": nba_model["projected_score"]["opponent"],
+                "projected_total": round(nba_model["projected_score"]["team"] + nba_model["projected_score"]["opponent"], 2),
+                "projected_margin": nba_model["projected_score"]["estimated_margin"],
+                "raw_model_probability": true_probability,
+                "calibrated_model_probability": true_probability,
+                "probability_calibration_applied": False,
+                "probability_sanity_flags": [],
             })
         officiating_fields = {key: officiating_analysis[key] for key in [
             "officiating_module_status",
@@ -2677,16 +3430,20 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             "projected_total": nfl_model["projected_total"] if nfl_model else input_stats.get("projected_total"),
             "projected_team_points": nfl_model["projected_team_points"] if nfl_model else None,
             "projected_opponent_points": nfl_model["projected_opponent_points"] if nfl_model else None,
+            "projected_team_runs": mlb_model["projected_team_runs"] if mlb_model else None,
+            "projected_opponent_runs": mlb_model["projected_opponent_runs"] if mlb_model else None,
+            "projected_total_runs": mlb_model["projected_total_runs"] if mlb_model else None,
+            "projected_run_differential": mlb_model["projected_run_differential"] if mlb_model else None,
             "true_probability": true_probability,
             "estimated_true_probability": true_probability,
             "final_probability": true_probability,
             "model_probability": true_probability,
-            "raw_model_probability": nfl_model["raw_model_probability"] if nfl_model else true_probability,
-            "calibrated_model_probability": nfl_model["calibrated_model_probability"] if nfl_model else true_probability,
-            "probability_calibration_applied": nfl_model["probability_calibration_applied"] if nfl_model else False,
-            "probability_sanity_flags": nfl_model["probability_sanity_flags"] if nfl_model else [],
-            "probability_cap_reason": nfl_model["probability_cap_reason"] if nfl_model else None,
-            "market_anchor_probability": nfl_model["market_anchor_probability"] if nfl_model else implied_probability,
+            "raw_model_probability": probability_model["raw_model_probability"] if probability_model else true_probability,
+            "calibrated_model_probability": probability_model["calibrated_model_probability"] if probability_model else true_probability,
+            "probability_calibration_applied": probability_model["probability_calibration_applied"] if probability_model else False,
+            "probability_sanity_flags": probability_model["probability_sanity_flags"] if probability_model else [],
+            "probability_cap_reason": probability_model["probability_cap_reason"] if probability_model else None,
+            "market_anchor_probability": probability_model["market_anchor_probability"] if probability_model else implied_probability,
             "implied_probability": implied_probability,
             "edge": edge,
             "edge_percent": edge,
@@ -2699,6 +3456,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             "partial_model_mode": bool(missing_inputs or true_probability is None),
             "nba_input_contract": deepcopy(NBA_INPUT_CONTRACT) if sport == "basketball_nba" else None,
             "nfl_input_contract": deepcopy(NFL_INPUT_CONTRACT) if sport == "americanfootball_nfl" else None,
+            "mlb_input_contract": deepcopy(MLB_INPUT_CONTRACT) if sport == "baseball_mlb" else None,
             "input_coverage": active_model.get("input_coverage") if active_model else None,
             "suggested_stake": suggested if confirmed_bets else 0,
             "recommended_unit_size": risk_controller["recommended_unit_size"],

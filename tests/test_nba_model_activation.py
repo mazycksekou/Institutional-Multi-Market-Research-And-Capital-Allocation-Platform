@@ -1,5 +1,6 @@
 import asyncio
 import unittest
+from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
@@ -205,6 +206,65 @@ class TestNbaModelActivation(unittest.TestCase):
         response = self._sport(market="spread", input_stats=nba_full_inputs(market_type="spread"))
         self.assertEqual(response["model_status"], "inactive_missing_data")
         self.assertIn("line", response["missing_inputs"])
+
+    def test_nba_total_and_team_total_require_lines(self):
+        total = self._sport(market="total", selection="Over", input_stats=nba_full_inputs(market_type="total"))
+        team_total = self._sport(market="team_total", selection="Over Celtics", input_stats=nba_full_inputs(market_type="team_total"))
+        self.assertIn("total_line", total["missing_inputs"])
+        self.assertIn("team_total_line", team_total["missing_inputs"])
+
+    def test_nba_moneyline_odds_stability_across_prices(self):
+        responses = {odds: self._sport(odds_american=odds) for odds in (-130, 100, 120)}
+        probabilities = [responses[odds]["final_probability"] for odds in (-130, 100, 120)]
+        implied = [responses[odds]["implied_probability"] for odds in (-130, 100, 120)]
+        edges = [responses[odds]["edge_percent"] for odds in (-130, 100, 120)]
+        self.assertLess(max(probabilities) - min(probabilities), 0.03)
+        self.assertGreater(implied[0], implied[1])
+        self.assertGreater(implied[1], implied[2])
+        self.assertLess(edges[0], edges[1])
+        self.assertLess(edges[1], edges[2])
+
+    def test_nba_player_prop_missing_inputs_does_not_crash(self):
+        response = self._sport(market="player_prop", input_stats=nba_full_inputs(market_type="player_prop"))
+        for field in ["player_name", "prop_type", "prop_line", "player_projection", "player_minutes_projection"]:
+            self.assertIn(field, response["missing_inputs"])
+
+    def test_nba_complete_player_prop_returns_clean_result(self):
+        response = self._sport(
+            market="player_prop",
+            selection="Jayson Tatum points over",
+            odds_american=-105,
+            input_stats=nba_full_inputs(
+                market_type="player_prop",
+                selection="Jayson Tatum points over",
+                player_name="Jayson Tatum",
+                prop_type="points",
+                prop_line=27.5,
+                player_projection=29.0,
+                player_minutes_projection=36,
+            ),
+        )
+        self.assertIn(response["decision"], {"NO_BET", "CONFIRMED_BET"})
+        self.assertIn("target_props", response["full_board_preview"])
+
+    def test_nba_first_quarter_and_first_half_use_period_logic(self):
+        first_quarter = self._sport(market="first_quarter", input_stats=nba_full_inputs(market_type="first_quarter"))
+        first_half = self._sport(market="first_half", input_stats=nba_full_inputs(market_type="first_half"))
+        moneyline = self._sport()
+        self.assertNotEqual(first_quarter["estimated_true_probability"], moneyline["estimated_true_probability"])
+        self.assertNotEqual(first_half["estimated_true_probability"], moneyline["estimated_true_probability"])
+
+    def test_nba_officiating_cannot_create_bet_without_active_base_model(self):
+        response = self._sport(input_stats={"referee_name": "Crew A", "foul_rate_per_game": 44})
+        self.assertEqual(response["confirmed_bets"], [])
+        self.assertEqual(response["officiating_module_status"], "inactive_base_model")
+
+    def test_nba_provider_failure_does_not_create_top_level_error(self):
+        with patch("screenshot_intake.enrich_ticket", side_effect=RuntimeError("provider down")):
+            response = self._screenshot()
+        self.assertTrue(response["ok"])
+        self.assertIsNone(response.get("error"))
+        self.assertEqual(response["provider_enrichment"]["provider_status"], "error")
 
     def test_nba_no_edge_returns_no_bet_and_zero_stake(self):
         response = self._sport(odds_american=-400)

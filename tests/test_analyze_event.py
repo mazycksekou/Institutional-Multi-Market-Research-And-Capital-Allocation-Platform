@@ -311,10 +311,9 @@ class TestAnalyzeEvent(unittest.TestCase):
 
         self.assertTrue(response["ok"])
         self.assertEqual(response["probability_type"], "blended_market_and_projection")
-        self.assertEqual(response["confirmed_bets"], [])
-        self.assertEqual(len(response["target_lines"]), 1)
-        self.assertEqual(response["target_lines"][0]["decision"], "target_registry_blocked")
-        self.assertFalse(response["target_lines"][0]["confirmed_bets_allowed"])
+        self.assertEqual(len(response["confirmed_bets"]), 1)
+        self.assertEqual(response["confirmed_bets"][0]["selection"], "Team A")
+        self.assertEqual(response["target_lines"], [])
         call_args = mock_evaluate.call_args[0][0]
         self.assertEqual(len(call_args.lines), 1)
         self.assertEqual(call_args.lines[0].sportsbook, "draftkings")
