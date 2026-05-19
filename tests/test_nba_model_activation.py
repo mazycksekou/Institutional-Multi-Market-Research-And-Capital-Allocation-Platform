@@ -3,6 +3,7 @@ import unittest
 
 from fastapi.testclient import TestClient
 
+from full_board_engine import build_full_board_preview
 from main import (
     ScreenshotAnalysisRequest,
     SportAnalysisRequest,
@@ -80,6 +81,29 @@ def sport_payload(**extra):
     }
     payload.update(extra)
     return payload
+
+
+def nba_lakers_balanced_inputs(**extra):
+    data = nba_full_inputs(
+        team="Lakers",
+        opponent="Nuggets",
+        selection="Lakers",
+        team_offensive_rating=115,
+        opponent_offensive_rating=116,
+        team_defensive_rating=114,
+        opponent_defensive_rating=113,
+        team_efg_percent=0.54,
+        opponent_efg_percent=0.545,
+        team_turnover_percent=0.155,
+        opponent_turnover_percent=0.125,
+        team_offensive_rebound_percent=0.25,
+        opponent_offensive_rebound_percent=0.26,
+        team_free_throw_rate=0.21,
+        opponent_free_throw_rate=0.23,
+        home_away="home",
+    )
+    data.update(extra)
+    return data
 
 
 class TestNbaModelActivation(unittest.TestCase):
@@ -256,6 +280,100 @@ class TestNbaModelActivation(unittest.TestCase):
         self.assertEqual(low_confidence["confirmed_bets"], [])
         if "low confidence" in low_confidence["no_bet_flags"]:
             self.assertEqual(low_confidence["logbook_ready_row"]["status"], "evaluated_no_bet_low_confidence")
+
+    def test_nba_plus_100_confirmed_bet_has_no_contradictory_no_bets_entry(self):
+        response = self._screenshot(
+            event="Nuggets at Lakers",
+            teams=["Nuggets", "Lakers"],
+            selection="Lakers",
+            odds_american=100,
+            bankroll=500,
+            input_stats=nba_lakers_balanced_inputs(),
+        )
+        self.assertEqual(response["logbook_ready_rows"][0]["status"], "confirmed_bet")
+        self.assertEqual(response["logbook_ready_rows"][0]["decision"], "CONFIRMED_BET")
+        self.assertEqual(response["logbook_ready_rows"][0]["stake"], 8.8)
+        self.assertFalse(any(
+            no_bet.get("reason") == "confirmed bet rules not satisfied"
+            for no_bet in response["full_board_preview"]["no_bets"]
+        ))
+
+    def test_nba_plus_100_confirmed_bet_keeps_confirmed_bets_populated(self):
+        response = self._screenshot(
+            event="Nuggets at Lakers",
+            teams=["Nuggets", "Lakers"],
+            selection="Lakers",
+            odds_american=100,
+            bankroll=500,
+            input_stats=nba_lakers_balanced_inputs(),
+        )
+        self.assertTrue(response["full_board_preview"]["confirmed_bets"])
+        confirmed = response["full_board_preview"]["confirmed_bets"][0]
+        self.assertEqual(confirmed["selection"], "Lakers")
+        self.assertEqual(confirmed["market"], "moneyline")
+
+    def test_nba_minus_120_negative_edge_keeps_no_bets_and_no_confirmed_bets(self):
+        response = self._sport(
+            event_id="Nuggets at Lakers",
+            selection="Lakers",
+            odds_american=-120,
+            bankroll=500,
+            input_stats=nba_lakers_balanced_inputs(),
+        )
+        self.assertEqual(response["confirmed_bets"], [])
+        self.assertEqual(response["no_bets"], [{"reason": "negative edge"}])
+        self.assertEqual(response["logbook_ready_row"]["status"], "evaluated_no_bet")
+        self.assertFalse(response["full_board_preview"]["manual_review_required"])
+
+    def test_full_board_preview_never_returns_confirmed_and_no_bet_for_same_selection(self):
+        confirmed = {
+            "sport": "basketball_nba",
+            "event": "Nuggets at Lakers",
+            "market": "moneyline",
+            "selection": "Lakers",
+        }
+        board = build_full_board_preview(
+            ticket={"sport": "basketball_nba", "event": "Nuggets at Lakers", "market": "moneyline", "selection": "Lakers"},
+            model_analysis={
+                "confirmed_bets": [confirmed],
+                "full_board_preview": {
+                    "confirmed_bets": [confirmed],
+                    "no_bets": [
+                        {
+                            "sport": "basketball_nba",
+                            "event": "Nuggets at Lakers",
+                            "market": "moneyline",
+                            "selection": "Lakers",
+                            "reason": "confirmed bet rules not satisfied",
+                        },
+                        {
+                            "sport": "basketball_nba",
+                            "event": "Nuggets at Lakers",
+                            "market": "spread",
+                            "selection": "Lakers -4.5",
+                            "reason": "separate market warning",
+                        },
+                    ],
+                },
+            },
+            provider_enrichment={"odds_provider": {"provider_status": "available"}},
+        )
+        confirmed_keys = {
+            (bet.get("sport"), bet.get("event"), bet.get("market"), bet.get("selection"))
+            for bet in board["confirmed_bets"]
+        }
+        no_bet_keys = {
+            (bet.get("sport"), bet.get("event"), bet.get("market"), bet.get("selection"))
+            for bet in board["no_bets"]
+        }
+        self.assertFalse(confirmed_keys & no_bet_keys)
+        self.assertEqual(board["no_bets"], [{
+            "sport": "basketball_nba",
+            "event": "Nuggets at Lakers",
+            "market": "spread",
+            "selection": "Lakers -4.5",
+            "reason": "separate market warning",
+        }])
 
     def test_screenshot_analysis_passes_nba_full_inputs_to_sport_model(self):
         response = self._screenshot()

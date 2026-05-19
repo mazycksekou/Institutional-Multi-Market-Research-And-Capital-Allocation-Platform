@@ -18,6 +18,37 @@ FULL_BOARD_EMPTY = {
 }
 
 
+def _identity(value: dict[str, Any]) -> tuple[str, str, str, str]:
+    return (
+        str(value.get("sport") or value.get("sport_key") or "").strip().lower(),
+        str(value.get("event") or value.get("event_id") or "").strip().lower(),
+        str(value.get("market") or "").strip().lower(),
+        str(value.get("selection") or "").strip().lower(),
+    )
+
+
+def _same_market_selection(left: dict[str, Any], right: dict[str, Any]) -> bool:
+    left_identity = _identity(left)
+    right_identity = _identity(right)
+    return bool(all(left_identity) and left_identity == right_identity)
+
+
+def _remove_confirmed_selection_no_bets(
+    no_bets: list[dict[str, Any]],
+    confirmed_bets: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    if not confirmed_bets:
+        return no_bets
+    filtered = []
+    for no_bet in no_bets:
+        if no_bet.get("reason") == "confirmed bet rules not satisfied":
+            continue
+        if any(_same_market_selection(no_bet, confirmed) for confirmed in confirmed_bets):
+            continue
+        filtered.append(no_bet)
+    return filtered
+
+
 def build_full_board_preview(ticket: dict[str, Any], model_analysis: dict[str, Any], provider_enrichment: dict[str, Any]) -> dict[str, Any]:
     board = dict(FULL_BOARD_EMPTY)
     model_board = model_analysis.get("full_board_preview") if isinstance(model_analysis, dict) else None
@@ -48,5 +79,7 @@ def build_full_board_preview(ticket: dict[str, Any], model_analysis: dict[str, A
         board["target_alt_lines"] = [{"market": a, "status": "visible_only"} for a in visible_alt_lines]
 
     board["confirmed_bets"] = list(model_analysis.get("confirmed_bets") or [])
-    board["no_bets"] = board["no_bets"] or [{"reason": "confirmed bet rules not satisfied"}]
+    board["no_bets"] = _remove_confirmed_selection_no_bets(list(board["no_bets"] or []), board["confirmed_bets"])
+    if not board["no_bets"] and not board["confirmed_bets"]:
+        board["no_bets"] = [{"reason": "confirmed bet rules not satisfied"}]
     return board
