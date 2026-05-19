@@ -1303,6 +1303,33 @@ def build_manual_ticket(payload: dict[str, Any], suggested_stake: Optional[float
     }
 
 
+def _evaluated_ticket_status(
+    *,
+    component_status: str,
+    missing_inputs: list[str],
+    confirmed_bets: list[dict[str, Any]],
+    no_bet_flags: list[str],
+    edge: Optional[float],
+    confidence: Any,
+) -> str:
+    if missing_inputs or component_status != COMPONENT_STATUS_ACTIVE:
+        return "manual_review_required"
+    if confirmed_bets:
+        return "confirmed_bet"
+    if edge is not None and edge <= 0:
+        return "evaluated_no_bet"
+    if "edge too small" in no_bet_flags:
+        return "evaluated_no_bet_edge_too_small"
+    if "low confidence" in no_bet_flags:
+        return "evaluated_no_bet_low_confidence"
+    confidence_value = _safe_float(confidence)
+    if confidence_value is not None and confidence_value < 70:
+        return "evaluated_no_bet_low_confidence"
+    if "risk too high" in no_bet_flags:
+        return "evaluated_no_bet_risk_too_high"
+    return "evaluated_no_bet"
+
+
 def build_wee_willie_market_weakness_detector(payload: dict[str, Any]) -> dict[str, Any]:
     required = [
         "sportsbook odds",
@@ -1749,9 +1776,22 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
                 "suggested_stake": suggested,
                 "decision": "CONFIRMED_BET",
             }]
+        if nba_model and not no_bet_flags and not confirmed_bets and suggested <= 0:
+            no_bet_flags = ["risk too high"]
         no_bets = [{"reason": flag} for flag in no_bet_flags]
         if nba_model and not no_bet_flags and not confirmed_bets:
             no_bets = [{"reason": "confirmed bet thresholds not satisfied"}]
+        evaluated_status = _evaluated_ticket_status(
+            component_status=component_status,
+            missing_inputs=missing_inputs,
+            confirmed_bets=confirmed_bets,
+            no_bet_flags=no_bet_flags,
+            edge=edge,
+            confidence=confidence,
+        )
+        manual_review_flags: bool | list[Any] = False
+        if missing_inputs or component_status != COMPONENT_STATUS_ACTIVE:
+            manual_review_flags = [manual_ticket]
         full_board = {
             "confirmed_bets": confirmed_bets,
             "target_lines": [] if component_status == COMPONENT_STATUS_INACTIVE else [{"market": market, "target_price": odds_american}],
@@ -1762,9 +1802,10 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             "value_ranking": [],
             "risk_ranking": [{"selection": payload.get("selection") or input_stats.get("selection"), "risk": risk}] if nba_model else [],
             "missing_inputs": missing_inputs,
-            "manual_review_required": [manual_ticket],
+            "manual_review_required": manual_review_flags,
             "logbook_ready_rows": [manual_ticket["logbook_ready_row"]],
         }
+        manual_ticket["status"] = evaluated_status
         logbook_ready_row = manual_ticket["logbook_ready_row"]
         logbook_ready_row.update({
             "final_probability": true_probability,
@@ -1775,6 +1816,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             "suggested_stake": suggested,
             "stake": suggested if confirmed_bets else 0,
             "decision": "CONFIRMED_BET" if confirmed_bets else "NO_BET",
+            "status": evaluated_status,
         })
         return {
             "ok": True,

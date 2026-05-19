@@ -183,10 +183,37 @@ class TestNbaModelActivation(unittest.TestCase):
         self.assertIn("line", response["missing_inputs"])
 
     def test_nba_no_edge_returns_no_bet_and_zero_stake(self):
-        response = self._sport(odds_american=-300)
+        response = self._sport(odds_american=-400)
         self.assertEqual(response["confirmed_bets"], [])
         self.assertEqual(response["suggested_stake"], 0)
         self.assertTrue(response["no_bets"])
+
+    def test_nba_full_inputs_negative_edge_returns_evaluated_no_bet_status(self):
+        response = self._sport(odds_american=-400)
+        self.assertLess(response["edge"], 0)
+        self.assertEqual(response["logbook_ready_row"]["status"], "evaluated_no_bet")
+        self.assertEqual(response["manual_ticket_preview"]["status"], "evaluated_no_bet")
+        self.assertEqual(response["no_bets"], [{"reason": "negative edge"}])
+
+    def test_nba_full_inputs_negative_edge_has_no_manual_review_required(self):
+        response = self._sport(odds_american=-400)
+        self.assertEqual(response["missing_inputs"], [])
+        self.assertFalse(response["full_board_preview"]["manual_review_required"])
+
+    def test_nba_missing_inputs_still_returns_manual_review_required_status(self):
+        response = self._sport(input_stats={})
+        self.assertEqual(response["confirmed_bets"], [])
+        self.assertTrue(response["missing_inputs"])
+        self.assertEqual(response["logbook_ready_row"]["status"], "manual_review_required")
+        self.assertEqual(response["manual_ticket_preview"]["status"], "manual_review_required")
+
+    def test_nba_positive_edge_below_threshold_returns_edge_too_small_status(self):
+        response = self._sport(odds_american=-300)
+        self.assertGreater(response["edge"], 0)
+        self.assertLess(response["edge"], 2.5)
+        self.assertEqual(response["confirmed_bets"], [])
+        self.assertEqual(response["logbook_ready_row"]["status"], "evaluated_no_bet_edge_too_small")
+        self.assertEqual(response["no_bets"], [{"reason": "edge too small"}])
 
     def test_nba_positive_edge_only_confirms_if_confidence_threshold_passes(self):
         strong = self._sport()
@@ -205,6 +232,30 @@ class TestNbaModelActivation(unittest.TestCase):
             self.assertLess(low_confidence["confidence"], 70)
         self.assertEqual(low_confidence["confirmed_bets"], [])
         self.assertEqual(low_confidence["suggested_stake"], 0)
+
+    def test_nba_confirmed_bet_requires_all_bet_rules_to_pass(self):
+        strong = self._sport()
+        self.assertGreaterEqual(strong["edge"], 2.5)
+        self.assertGreaterEqual(strong["confidence"], 70)
+        self.assertNotIn("negative edge", strong["no_bet_flags"])
+        self.assertNotIn("edge too small", strong["no_bet_flags"])
+        self.assertNotIn("low confidence", strong["no_bet_flags"])
+        self.assertTrue(strong["confirmed_bets"])
+        self.assertEqual(strong["logbook_ready_row"]["status"], "confirmed_bet")
+
+        negative_edge = self._sport(odds_american=-400)
+        self.assertEqual(negative_edge["confirmed_bets"], [])
+        self.assertEqual(negative_edge["logbook_ready_row"]["status"], "evaluated_no_bet")
+
+        low_confidence = self._sport(input_stats=nba_full_inputs(
+            home_away="neutral",
+            key_player_usage_available=False,
+            minutes_projection_available=False,
+            injury_report_status="questionable",
+        ))
+        self.assertEqual(low_confidence["confirmed_bets"], [])
+        if "low confidence" in low_confidence["no_bet_flags"]:
+            self.assertEqual(low_confidence["logbook_ready_row"]["status"], "evaluated_no_bet_low_confidence")
 
     def test_screenshot_analysis_passes_nba_full_inputs_to_sport_model(self):
         response = self._screenshot()

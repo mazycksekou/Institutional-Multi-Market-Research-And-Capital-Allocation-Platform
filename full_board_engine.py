@@ -33,7 +33,10 @@ def build_full_board_preview(ticket: dict[str, Any], model_analysis: dict[str, A
         if isinstance(block, dict)
     )
     if only_visible:
-        board["manual_review_required"] = list(board["manual_review_required"]) + [
+        existing_review = board["manual_review_required"]
+        if existing_review is False:
+            existing_review = []
+        board["manual_review_required"] = list(existing_review or []) + [
             "Only visible markets were analyzed. Additional markets require provider enrichment."
         ]
 
