@@ -821,6 +821,17 @@ class SportAnalysisResponse(BaseModel):
     sentiment_calibration_status: str
     crowd_signal_calibration_status: str
     sentiment_no_bet_flags: list[str]
+    officiating_analysis: dict[str, Any] = {}
+    officiating_module_status: Optional[str] = None
+    officiating_edge_detected: bool = False
+    officiating_adjustment_probability_points: float = 0
+    adjusted_true_probability: Optional[float] = None
+    affected_markets: list[str] = []
+    officiating_confidence: Optional[Any] = None
+    officiating_risk_flags: list[str] = []
+    officiating_summary: Optional[str] = None
+    officiating_no_bet_reason: Optional[str] = None
+    officiating_logbook_fields: dict[str, Any] = {}
     confirmed_bets: list[dict[str, Any]] = []
     target_lines: list[dict[str, Any]] = []
     no_bets: list[dict[str, Any]] = []

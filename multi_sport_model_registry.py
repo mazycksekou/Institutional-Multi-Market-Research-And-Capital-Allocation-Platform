@@ -515,6 +515,183 @@ def _officials_module(sport: str) -> dict[str, Any]:
     }
 
 
+def _official_input_value(input_stats: dict[str, Any], label: str) -> Any:
+    key = label.strip().lower().replace("/", " ").replace("-", " ")
+    snake = re.sub(r"\s+", "_", key)
+    candidates = [
+        label,
+        key,
+        snake,
+        f"official_{snake}",
+        f"officials_{snake}",
+        f"officiating_{snake}",
+    ]
+    if "referee" in snake:
+        candidates.extend([snake.replace("referee", "ref"), snake.replace("referee", "referee")])
+    if "umpire" in snake:
+        candidates.append(snake.replace("umpire", "ump"))
+    for candidate in candidates:
+        if candidate in input_stats and input_stats.get(candidate) is not None:
+            return input_stats.get(candidate)
+    return None
+
+
+def _official_inputs_present(input_stats: dict[str, Any], official_inputs: list[str]) -> list[str]:
+    return [label for label in official_inputs if _official_input_value(input_stats, label) is not None]
+
+
+def _official_affected_markets(sport: str, market: Any) -> list[str]:
+    market_text = str(market or "").strip()
+    by_sport = {
+        "baseball_mlb": ["totals", "team totals", "pitcher strikeouts", "walks"],
+        "basketball_nba": ["spread", "totals", "team totals", "player props"],
+        "basketball_wnba": ["spread", "totals", "team totals", "player props"],
+        "basketball_ncaab": ["spread", "totals", "team totals"],
+        "americanfootball_nfl": ["spread", "totals", "penalty-sensitive props"],
+        "americanfootball_ncaaf": ["spread", "totals", "penalty-sensitive props"],
+        "soccer": ["cards", "penalties", "totals", "both teams to score"],
+        "icehockey_nhl": ["totals", "power play props", "penalty props"],
+        "tennis": ["live markets", "game spread", "total games"],
+        "mma_mixed_martial_arts": ["method", "goes distance", "round props"],
+        "boxing": ["method", "goes distance", "round props", "decision"],
+        "golf": ["outrights", "matchups"],
+        "formula1": ["race winner", "podium", "points finish", "driver head to head"],
+        "cricket": ["match winner", "innings runs", "player props"],
+        "esports": ["match winner", "map winner", "round totals", "live markets"],
+    }
+    markets = list(by_sport.get(sport, []))
+    if market_text and market_text not in markets:
+        markets.insert(0, market_text)
+    return markets
+
+
+def _officiating_cap(edge_strength: str) -> float:
+    return {
+        "moderate": 1.5,
+        "weak_to_moderate": 0.75,
+        "weak": 0.35,
+        "situational": 0.5,
+    }.get(edge_strength, 0.5)
+
+
+def _explicit_officiating_adjustment(input_stats: dict[str, Any]) -> Optional[float]:
+    for key in [
+        "officiating_adjustment_probability_points",
+        "official_adjustment_probability_points",
+        "officials_adjustment_probability_points",
+        "referee_adjustment_probability_points",
+        "umpire_adjustment_probability_points",
+        "stewards_adjustment_probability_points",
+        "race_control_adjustment_probability_points",
+        "judge_adjustment_probability_points",
+    ]:
+        value = _safe_float(input_stats.get(key))
+        if value is not None:
+            return value
+    return None
+
+
+def build_officiating_analysis(
+    *,
+    sport: str,
+    market: Any,
+    input_stats: dict[str, Any],
+    true_probability: Optional[float],
+    base_model_active: bool,
+    base_confidence: Any,
+) -> dict[str, Any]:
+    module = _officials_module(sport)
+    official_inputs = list(module["official_inputs"])
+    present_inputs = _official_inputs_present(input_stats, official_inputs)
+    risk_flags: list[str] = []
+    no_bet_reason = None
+    adjustment_points = 0.0
+    status = "no_adjustment"
+
+    if not base_model_active or true_probability is None:
+        status = "inactive_base_model"
+        no_bet_reason = "base model inactive; officiating data cannot create confirmed bets"
+        if present_inputs:
+            risk_flags.append("officiating data present without active base model")
+    elif not present_inputs:
+        no_bet_reason = "no officiating adjustment"
+    else:
+        explicit_adjustment = _explicit_officiating_adjustment(input_stats)
+        if explicit_adjustment is not None:
+            adjustment_points = explicit_adjustment
+        elif sport == "basketball_nba":
+            quality = str(input_stats.get("referee_data_quality") or "").strip().lower()
+            if quality in {"strong", "high"}:
+                adjustment_points = (_safe_float(input_stats.get("home_foul_differential"), 0) or 0) * 0.15
+        elif sport == "baseball_mlb":
+            adjustment_points = (_safe_float(input_stats.get("umpire_run_environment"), 0) or 0) * 0.25
+        elif sport in {"americanfootball_nfl", "americanfootball_ncaaf"}:
+            adjustment_points = (_safe_float(input_stats.get("penalty_rate"), 0) or 0) * 0.05
+        elif sport == "soccer":
+            adjustment_points = (_safe_float(input_stats.get("penalty_awarded_rate"), 0) or 0) * 0.2
+        elif sport == "icehockey_nhl":
+            adjustment_points = (_safe_float(input_stats.get("penalty_rate"), 0) or 0) * 0.05
+        elif sport in {"mma_mixed_martial_arts", "boxing"}:
+            adjustment_points = (_safe_float(input_stats.get("decision_scoring_profile"), 0) or 0) * 0.15
+        elif sport == "formula1":
+            adjustment_points = (_safe_float(input_stats.get("penalty_tendency"), 0) or 0) * -0.15
+        adjustment_points = max(-_officiating_cap(module["betting_edge_strength"]), min(_officiating_cap(module["betting_edge_strength"]), adjustment_points))
+        status = "active_adjustment" if abs(adjustment_points) > 0 else "active_no_adjustment"
+        if str(input_stats.get("referee_data_quality") or input_stats.get("official_data_quality") or "").strip().lower() in {"low", "weak", "unknown"}:
+            risk_flags.append("officiating data quality low")
+        if status == "active_no_adjustment":
+            no_bet_reason = "officiating data present but no directional adjustment"
+
+    adjusted_true_probability = true_probability
+    if true_probability is not None and base_model_active:
+        adjusted_true_probability = max(0.01, min(0.99, true_probability + (adjustment_points / 100)))
+
+    confidence_value = _safe_float(base_confidence)
+    if confidence_value is None:
+        confidence_value = 0
+    if status == "active_adjustment":
+        confidence_value += min(3, len(present_inputs))
+    elif status == "inactive_base_model":
+        confidence_value = 0
+    elif not present_inputs:
+        confidence_value = max(0, confidence_value - 2)
+    officiating_confidence = max(0, min(100, round(confidence_value, 2)))
+
+    if not present_inputs:
+        risk_flags.append("officiating data unavailable")
+    summary = (
+        f"{module['official_type']} produced a {round(adjustment_points, 3)} probability-point adjustment."
+        if status == "active_adjustment"
+        else f"{module['official_type']} returned {status}."
+    )
+    logbook_fields = {
+        "officiating_module_status": status,
+        "officiating_official_type": module["official_type"],
+        "officiating_edge_detected": status == "active_adjustment",
+        "officiating_adjustment_probability_points": round(adjustment_points, 4),
+        "officiating_confidence": officiating_confidence,
+        "officiating_risk_flags": list(risk_flags),
+        "officiating_no_bet_reason": no_bet_reason,
+    }
+    return {
+        "officiating_module_status": status,
+        "officiating_edge_detected": status == "active_adjustment",
+        "officiating_adjustment_probability_points": round(adjustment_points, 4),
+        "adjusted_true_probability": adjusted_true_probability,
+        "affected_markets": _official_affected_markets(sport, market),
+        "officiating_confidence": officiating_confidence,
+        "officiating_risk_flags": risk_flags,
+        "officiating_summary": summary,
+        "officiating_no_bet_reason": no_bet_reason,
+        "officiating_logbook_fields": logbook_fields,
+        "official_type": module["official_type"],
+        "official_inputs_present": present_inputs,
+        "officials_module": module,
+        "referee_inputs_present": present_inputs,
+        "referee_adjustment_probability_points": round(adjustment_points, 4),
+    }
+
+
 def _sport(
     sport: str,
     display_name: str,
@@ -1328,6 +1505,18 @@ def build_social_crowd_calibration_layer(input_stats: dict[str, Any]) -> dict[st
 def sport_analysis_failed_response(sport: Any = None, detail: str = "Sport analysis failed safely.") -> dict[str, Any]:
     social_layer = build_social_crowd_calibration_layer({})
     risk_controller = build_risk_controller()
+    officiating_analysis = {
+        "officiating_module_status": "no_adjustment",
+        "officiating_edge_detected": False,
+        "officiating_adjustment_probability_points": 0.0,
+        "adjusted_true_probability": None,
+        "affected_markets": [],
+        "officiating_confidence": 0,
+        "officiating_risk_flags": ["internal error handled"],
+        "officiating_summary": "officiating layer skipped after handled error",
+        "officiating_no_bet_reason": "sport analysis failed safely",
+        "officiating_logbook_fields": {},
+    }
     return {
         "ok": False,
         "endpoint": "analyzeSportModel",
@@ -1370,6 +1559,19 @@ def sport_analysis_failed_response(sport: Any = None, detail: str = "Sport analy
         "crowd_signal_calibration_status": social_layer["crowd_signal_calibration_status"],
         "sentiment_no_bet_flags": social_layer["sentiment_no_bet_flags"],
         "social_crowd_signal_explanation": social_layer["social_crowd_signal_explanation"],
+        "officiating_analysis": officiating_analysis,
+        **{key: officiating_analysis[key] for key in [
+            "officiating_module_status",
+            "officiating_edge_detected",
+            "officiating_adjustment_probability_points",
+            "adjusted_true_probability",
+            "affected_markets",
+            "officiating_confidence",
+            "officiating_risk_flags",
+            "officiating_summary",
+            "officiating_no_bet_reason",
+            "officiating_logbook_fields",
+        ]},
         "manual_ticket_preview": None,
         "full_board_preview": {
             "confirmed_bets": [],
@@ -1862,6 +2064,14 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         confidence = nba_model["confidence"] if nba_model else input_stats.get("confidence")
         risk = nba_model["risk"] if nba_model else payload.get("risk_profile") or "conservative"
         model_status = nba_model["model_status"] if nba_model else component_status
+        officiating_analysis = build_officiating_analysis(
+            sport=sport,
+            market=market,
+            input_stats=input_stats,
+            true_probability=true_probability,
+            base_model_active=component_status == COMPONENT_STATUS_ACTIVE and true_probability is not None,
+            base_confidence=confidence,
+        )
         confirmed_bets = []
         if (
             nba_model
@@ -1928,7 +2138,20 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             "stake": suggested if confirmed_bets else 0,
             "decision": "CONFIRMED_BET" if confirmed_bets else "NO_BET",
             "status": evaluated_status,
+            **officiating_analysis["officiating_logbook_fields"],
         })
+        officiating_fields = {key: officiating_analysis[key] for key in [
+            "officiating_module_status",
+            "officiating_edge_detected",
+            "officiating_adjustment_probability_points",
+            "adjusted_true_probability",
+            "affected_markets",
+            "officiating_confidence",
+            "officiating_risk_flags",
+            "officiating_summary",
+            "officiating_no_bet_reason",
+            "officiating_logbook_fields",
+        ]}
         return {
             "ok": True,
             "endpoint": "analyzeSportModel",
@@ -1971,6 +2194,8 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             "crowd_signal_calibration_status": social_layer["crowd_signal_calibration_status"],
             "sentiment_no_bet_flags": social_layer["sentiment_no_bet_flags"],
             "social_crowd_signal_explanation": social_layer["social_crowd_signal_explanation"],
+            "officiating_analysis": officiating_analysis,
+            **officiating_fields,
             "manual_ticket_preview": manual_ticket,
             "full_board_preview": full_board,
         "confirmed_bets": confirmed_bets,
@@ -1993,6 +2218,18 @@ def _unsupported_sport_response(payload: dict[str, Any]) -> dict[str, Any]:
     sport = payload.get("sport")
     risk_controller = build_risk_controller(payload.get("bankroll"), payload.get("unit_size"), payload.get("risk_profile") or "conservative")
     social_layer = build_social_crowd_calibration_layer({})
+    officiating_analysis = {
+        "officiating_module_status": "no_adjustment",
+        "officiating_edge_detected": False,
+        "officiating_adjustment_probability_points": 0.0,
+        "adjusted_true_probability": None,
+        "affected_markets": [],
+        "officiating_confidence": 0,
+        "officiating_risk_flags": ["unsupported sport"],
+        "officiating_summary": "officiating layer skipped for unsupported sport",
+        "officiating_no_bet_reason": "unsupported sport",
+        "officiating_logbook_fields": {},
+    }
     return {
         "ok": False,
         "endpoint": "analyzeSportModel",
@@ -2030,6 +2267,19 @@ def _unsupported_sport_response(payload: dict[str, Any]) -> dict[str, Any]:
         "crowd_signal_calibration_status": social_layer["crowd_signal_calibration_status"],
         "sentiment_no_bet_flags": social_layer["sentiment_no_bet_flags"],
         "social_crowd_signal_explanation": social_layer["social_crowd_signal_explanation"],
+        "officiating_analysis": officiating_analysis,
+        **{key: officiating_analysis[key] for key in [
+            "officiating_module_status",
+            "officiating_edge_detected",
+            "officiating_adjustment_probability_points",
+            "adjusted_true_probability",
+            "affected_markets",
+            "officiating_confidence",
+            "officiating_risk_flags",
+            "officiating_summary",
+            "officiating_no_bet_reason",
+            "officiating_logbook_fields",
+        ]},
         "manual_ticket_preview": None,
         "full_board_preview": {
             "confirmed_bets": [],

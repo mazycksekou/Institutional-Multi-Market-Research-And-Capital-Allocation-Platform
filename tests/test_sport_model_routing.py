@@ -131,6 +131,141 @@ class TestSportModelRouting(unittest.TestCase):
         self.assertEqual(response["manual_ticket_preview"]["status"], "manual_review_required")
         self.assertNotIn("place_bet", response["manual_ticket_preview"])
 
+    def test_officiating_analysis_returns_clean_status_for_representative_sports(self):
+        samples = {
+            "basketball_nba": {"referee_name": "Crew A", "referee_data_quality": "strong", "referee_sample_size": 40},
+            "americanfootball_nfl": {"referee_crew": "Crew A", "penalty_rate": 1.5},
+            "baseball_mlb": {"umpire_assignment": "Ump A", "umpire_run_environment": 0.4},
+            "icehockey_nhl": {"referees": "Ref A/Ref B", "linesmen": "Line A/Line B", "penalty_rate": 1.2},
+            "soccer": {"referee": "Ref A", "penalty_awarded_rate": 0.7},
+            "mma_mixed_martial_arts": {"referee": "Ref A", "judge_panel": "Panel A", "decision_scoring_profile": 0.5},
+            "boxing": {"referee": "Ref A", "judge_panel": "Panel A", "decision_scoring_profile": 0.5},
+            "tennis": {"chair_umpire": "Chair A", "time_violation_tendency": 0.2},
+            "golf": {"rules_officials": "Rules A", "course_ruling_environment": "normal"},
+            "formula1": {"stewards": "Panel A", "race_control": "Race Control", "penalty_tendency": 0.6},
+            "cricket": {"on_field_umpires": "Ump A/Ump B", "third_umpire": "Ump C"},
+            "esports": {"tournament_admin": "Admin A", "map_admin": "Map Admin", "server_admin": "Server Admin"},
+        }
+        for sport, official_inputs in samples.items():
+            response = registry.analyze_sport_model({
+                "sport": sport,
+                "market": "moneyline",
+                "input_stats": official_inputs,
+            })
+            self.assertTrue(response["ok"], sport)
+            analysis = response["officiating_analysis"]
+            self.assertIn(analysis["officiating_module_status"], {"inactive_base_model", "no_adjustment", "active_no_adjustment", "active_adjustment"})
+            self.assertIn("officiating_summary", analysis)
+            self.assertIn("officiating_logbook_fields", analysis)
+            self.assertEqual(response["confirmed_bets"], [])
+
+    def test_missing_officiating_inputs_do_not_create_500(self):
+        for sport in registry.OFFICIAL_SPORT_KEYS:
+            response = registry.analyze_sport_model({"sport": sport, "market": "moneyline", "input_stats": {}})
+            self.assertIn("officiating_analysis", response)
+            self.assertIn(response["officiating_module_status"], {"inactive_base_model", "no_adjustment"})
+            self.assertNotEqual(response.get("error"), "sport_analysis_failed")
+
+    def test_officiating_data_cannot_create_bet_by_itself(self):
+        response = registry.analyze_sport_model({
+            "sport": "basketball_nba",
+            "market": "moneyline",
+            "odds_american": 100,
+            "bankroll": 500,
+            "input_stats": {
+                "referee_name": "Crew A",
+                "home_foul_differential": 3.0,
+                "referee_sample_size": 80,
+                "referee_data_quality": "strong",
+                "referee_adjustment_probability_points": 1.5,
+            },
+        })
+        self.assertEqual(response["officiating_module_status"], "inactive_base_model")
+        self.assertEqual(response["confirmed_bets"], [])
+        self.assertTrue(response["missing_inputs"])
+        self.assertIn("base model inactive", response["officiating_no_bet_reason"])
+
+    def test_active_nba_officiating_adjustment_is_reported_without_overriding_decision(self):
+        input_stats = {
+            "team": "Lakers",
+            "opponent": "Nuggets",
+            "selection": "Lakers",
+            "home_away": "home",
+            "team_pace": 101.5,
+            "opponent_pace": 98.2,
+            "team_offensive_rating": 115,
+            "opponent_offensive_rating": 116,
+            "team_defensive_rating": 114,
+            "opponent_defensive_rating": 113,
+            "team_efg_percent": 0.54,
+            "opponent_efg_percent": 0.545,
+            "team_turnover_percent": 0.155,
+            "opponent_turnover_percent": 0.125,
+            "team_offensive_rebound_percent": 0.25,
+            "opponent_offensive_rebound_percent": 0.26,
+            "team_free_throw_rate": 0.21,
+            "opponent_free_throw_rate": 0.23,
+            "key_player_usage_available": True,
+            "minutes_projection_available": True,
+            "injury_report_status": "clean",
+            "referee_name": "Crew A",
+            "home_foul_differential": 2.0,
+            "referee_sample_size": 60,
+            "referee_data_quality": "strong",
+        }
+        response = registry.analyze_sport_model({
+            "sport": "basketball_nba",
+            "event_id": "Nuggets at Lakers",
+            "market": "moneyline",
+            "selection": "Lakers",
+            "odds_american": -120,
+            "bankroll": 500,
+            "input_stats": input_stats,
+        })
+        self.assertEqual(response["officiating_module_status"], "active_adjustment")
+        self.assertTrue(response["officiating_edge_detected"])
+        self.assertNotEqual(response["adjusted_true_probability"], response["true_probability"])
+        self.assertEqual(response["confirmed_bets"], [])
+        self.assertTrue(response["no_bets"])
+
+    def test_officiating_does_not_break_confirmed_no_bet_mutual_exclusion(self):
+        response = registry.analyze_sport_model({
+            "sport": "basketball_nba",
+            "event_id": "Nuggets at Lakers",
+            "market": "moneyline",
+            "selection": "Lakers",
+            "odds_american": 100,
+            "bankroll": 500,
+            "input_stats": {
+                "team": "Lakers",
+                "opponent": "Nuggets",
+                "selection": "Lakers",
+                "home_away": "home",
+                "team_pace": 101.5,
+                "opponent_pace": 98.2,
+                "team_offensive_rating": 115,
+                "opponent_offensive_rating": 116,
+                "team_defensive_rating": 114,
+                "opponent_defensive_rating": 113,
+                "team_efg_percent": 0.54,
+                "opponent_efg_percent": 0.545,
+                "team_turnover_percent": 0.155,
+                "opponent_turnover_percent": 0.125,
+                "team_offensive_rebound_percent": 0.25,
+                "opponent_offensive_rebound_percent": 0.26,
+                "team_free_throw_rate": 0.21,
+                "opponent_free_throw_rate": 0.23,
+                "key_player_usage_available": True,
+                "minutes_projection_available": True,
+                "injury_report_status": "clean",
+                "referee_name": "Crew A",
+                "referee_adjustment_probability_points": -1.5,
+            },
+        })
+        self.assertTrue(response["confirmed_bets"])
+        self.assertEqual(response["no_bets"], [])
+        self.assertEqual(response["full_board_preview"]["no_bets"], [])
+
     def test_unsupported_sport_returns_safe_no_bet_response(self):
         response = registry.analyze_sport_model({"sport": "rugby_union", "market": "moneyline"})
         self.assertFalse(response["ok"])
