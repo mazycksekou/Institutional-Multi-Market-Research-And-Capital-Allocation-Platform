@@ -107,6 +107,27 @@ class TestMultiSportModelRegistry(unittest.TestCase):
         self.assertEqual(response["global_rules"], registry.GLOBAL_MODEL_REGISTRY_RULES)
         self.assertIn("Market-derived-only probabilities cannot create confirmed bets.", response["global_rules"])
 
+    def test_officials_module_uses_sport_specific_official_type(self):
+        expected = {
+            "basketball_nba": ("referees", "moderate"),
+            "americanfootball_nfl": ("referee crew", "moderate"),
+            "baseball_mlb": ("umpire", "moderate"),
+            "icehockey_nhl": ("referees/linesmen", "moderate"),
+            "soccer": ("referee", "moderate"),
+            "mma_mixed_martial_arts": ("referee and judges", "moderate"),
+            "boxing": ("referee and judges", "moderate"),
+            "tennis": ("chair umpire", "weak_to_moderate"),
+            "golf": ("rules officials", "weak"),
+            "formula1": ("stewards/race control", "situational"),
+            "esports": ("tournament admin/map/server/rule enforcement", "weak"),
+        }
+        for sport_key, (official_type, edge_strength) in expected.items():
+            module = registry.get_sport_model_config(sport_key)["officials_module"]
+            self.assertEqual(module["module_name"], "officials_context_module")
+            self.assertTrue(module["same_module_for_all_sports"])
+            self.assertEqual(module["official_type"], official_type)
+            self.assertEqual(module["betting_edge_strength"], edge_strength)
+
     def test_route_is_in_openapi_with_descriptions(self):
         schema = app.openapi()
         operation = schema["paths"]["/api/actions/models/sports-registry"]["get"]
@@ -114,6 +135,7 @@ class TestMultiSportModelRegistry(unittest.TestCase):
         sports_schema = schema["components"]["schemas"]["SportModelConfigResponse"]["properties"]
         self.assertIn("description", sports_schema["model_level"])
         self.assertIn("description", sports_schema["confirmed_bets_allowed"])
+        self.assertIn("description", sports_schema["officials_module"])
 
 
 if __name__ == "__main__":

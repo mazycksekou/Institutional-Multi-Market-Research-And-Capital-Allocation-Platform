@@ -19,6 +19,7 @@ class TestSportModelRouting(unittest.TestCase):
                 "required_inputs",
                 "optional_inputs",
                 "model_components",
+                "officials_module",
                 "simulation_method",
                 "correlation_notes",
                 "backtest_requirements",
@@ -74,6 +75,16 @@ class TestSportModelRouting(unittest.TestCase):
         self.assertEqual(registry.get_sport_model_config("formula1")["model_family"], "Race simulation")
         self.assertEqual(registry.get_sport_model_config("cricket")["model_family"], "Pitch toss innings model family")
         self.assertIn("game title routing placeholder", registry.get_sport_model_config("esports")["model_components"])
+
+    def test_every_sport_uses_shared_officials_module_with_specific_type(self):
+        for sport in registry.OFFICIAL_SPORT_KEYS:
+            config = registry.get_sport_model_config(sport)
+            module = config["officials_module"]
+            self.assertEqual(module["module_name"], "officials_context_module")
+            self.assertIn("officials_context_module", config["model_components"])
+            self.assertTrue(module["official_type"])
+            self.assertTrue(module["official_inputs"])
+            self.assertIn(module["betting_edge_strength"], {"moderate", "weak_to_moderate", "weak", "situational"})
 
     def test_wnba_uses_wnba_specific_parameters_not_nba_copy(self):
         nba = registry.get_sport_model_config("basketball_nba")

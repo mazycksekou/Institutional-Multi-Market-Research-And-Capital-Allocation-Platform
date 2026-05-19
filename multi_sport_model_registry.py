@@ -370,6 +370,99 @@ SPORT_PROP_INPUTS = {
     "esports": ["game title", "player rating", "team rating", "map pool", "patch or meta version"],
 }
 
+OFFICIALS_MODULE_BY_SPORT = {
+    "baseball_mlb": {
+        "official_type": "umpire",
+        "official_inputs": ["umpire assignment", "plate umpire strike zone profile", "umpire run environment"],
+        "betting_edge_strength": "moderate",
+        "notes": "Umpire context can matter for strike zone, run environment, pitcher props, and totals.",
+    },
+    "basketball_nba": {
+        "official_type": "referees",
+        "official_inputs": NBA_REFEREE_INPUTS,
+        "betting_edge_strength": "moderate",
+        "notes": "Referee context can matter for foul rate, free throw rate, home differential, totals, and player props.",
+    },
+    "basketball_wnba": {
+        "official_type": "referees",
+        "official_inputs": ["referee crew", "foul rate", "free throw rate", "home foul differential"],
+        "betting_edge_strength": "moderate",
+        "notes": "Same officials module as basketball, with WNBA-specific calibration required.",
+    },
+    "basketball_ncaab": {
+        "official_type": "referees",
+        "official_inputs": ["referee crew", "foul rate", "free throw rate", "conference officiating profile"],
+        "betting_edge_strength": "moderate",
+        "notes": "College officiating context is conference-sensitive and needs stronger shrinkage.",
+    },
+    "americanfootball_nfl": {
+        "official_type": "referee crew",
+        "official_inputs": ["referee crew", "penalty rate", "holding rate", "defensive pass interference rate"],
+        "betting_edge_strength": "moderate",
+        "notes": "Crew context can matter for penalties, pace interruptions, totals, and derivative props.",
+    },
+    "americanfootball_ncaaf": {
+        "official_type": "referee crew",
+        "official_inputs": ["referee crew", "penalty rate", "conference officiating profile"],
+        "betting_edge_strength": "moderate",
+        "notes": "College football crew context needs conference and crew-level shrinkage.",
+    },
+    "soccer": {
+        "official_type": "referee",
+        "official_inputs": ["referee", "card rate", "foul rate", "penalty awarded rate", "VAR tendency"],
+        "betting_edge_strength": "moderate",
+        "notes": "Referee context can matter for cards, penalties, match flow, and totals.",
+    },
+    "icehockey_nhl": {
+        "official_type": "referees/linesmen",
+        "official_inputs": ["referees", "linesmen", "penalty rate", "faceoff violation tendency"],
+        "betting_edge_strength": "moderate",
+        "notes": "Referees and linesmen can affect penalties, special teams exposure, and stoppage profile.",
+    },
+    "tennis": {
+        "official_type": "chair umpire",
+        "official_inputs": ["chair umpire", "code violation tendency", "time violation tendency", "surface event context"],
+        "betting_edge_strength": "weak_to_moderate",
+        "notes": "Chair umpire context is usually secondary to serve, return, surface, and player form.",
+    },
+    "mma_mixed_martial_arts": {
+        "official_type": "referee and judges",
+        "official_inputs": ["referee", "judge panel", "stand-up tendency", "point deduction tendency", "decision scoring profile"],
+        "betting_edge_strength": "moderate",
+        "notes": "Referee and judges can matter for finish, goes-distance, decision, and round props.",
+    },
+    "boxing": {
+        "official_type": "referee and judges",
+        "official_inputs": ["referee", "judge panel", "point deduction tendency", "stoppage tendency", "decision scoring profile"],
+        "betting_edge_strength": "moderate",
+        "notes": "Referee and judges are relevant to stoppage, decision, draw, and method markets.",
+    },
+    "golf": {
+        "official_type": "rules officials",
+        "official_inputs": ["rules officials", "course ruling environment", "weather delay procedures"],
+        "betting_edge_strength": "weak",
+        "notes": "Rules officials are tracked, but officials context is a weaker betting edge than course fit, strokes gained, and weather.",
+    },
+    "formula1": {
+        "official_type": "stewards/race control",
+        "official_inputs": ["stewards", "race control", "safety car procedure", "track limits enforcement", "penalty tendency"],
+        "betting_edge_strength": "situational",
+        "notes": "Formula 1 uses stewards and race control rather than traditional referees.",
+    },
+    "cricket": {
+        "official_type": "umpires/match referee",
+        "official_inputs": ["on-field umpires", "third umpire", "match referee", "DRS environment"],
+        "betting_edge_strength": "weak_to_moderate",
+        "notes": "Cricket official context is tracked but usually sits behind pitch, toss, venue, and lineup inputs.",
+    },
+    "esports": {
+        "official_type": "tournament admin/map/server/rule enforcement",
+        "official_inputs": ["tournament admin", "map admin", "server admin", "rule enforcement", "pause/remake policy"],
+        "betting_edge_strength": "weak",
+        "notes": "Esports enforcement context is usually a weak edge compared with game title, roster, patch, map pool, and server conditions.",
+    },
+}
+
 
 def _component(
     name: str,
@@ -405,6 +498,20 @@ def _props_registry_entry(sport: str, categories: list[str]) -> dict[str, Any]:
         "missing_data_flags": list(SPORT_PROP_INPUTS[sport]),
         "component_status": COMPONENT_STATUS_INACTIVE,
         "notes": "Prop registry is defined, but individual prop models are not activated.",
+    }
+
+
+def _officials_module(sport: str) -> dict[str, Any]:
+    config = OFFICIALS_MODULE_BY_SPORT[sport]
+    return {
+        "module_name": "officials_context_module",
+        "component_name": "officials_context_module",
+        "component_status": COMPONENT_STATUS_INACTIVE,
+        "official_type": config["official_type"],
+        "official_inputs": list(config["official_inputs"]),
+        "betting_edge_strength": config["betting_edge_strength"],
+        "same_module_for_all_sports": True,
+        "notes": config["notes"],
     }
 
 
@@ -451,7 +558,7 @@ def _sport(
         "data_provider_needs": list(STANDARD_PROVIDER_NEEDS),
         "provider_needs": list(STANDARD_PROVIDER_NEEDS),
         "recommended_providers": [],
-        "model_components": list(model_components) + list(SOCIAL_CROWD_MODEL_COMPONENTS),
+        "model_components": list(dict.fromkeys(list(model_components) + ["officials_context_module"] + list(SOCIAL_CROWD_MODEL_COMPONENTS))),
         "simulation_method": simulation_method,
         "correlation_notes": list(correlation_notes),
         "correlation_rules": list(correlation_notes),
@@ -470,6 +577,7 @@ def _sport(
             "manual_review_required",
         ],
         "props_registry": _props_registry_entry(sport, supported_prop_categories),
+        "officials_module": _officials_module(sport),
         "sport_parameters": deepcopy(sport_parameters or {}),
         "supported_game_titles": list(supported_game_titles or []),
         "log_fields_required": list(BASE_LOG_FIELDS_REQUIRED),
@@ -866,9 +974,12 @@ def _validate_registry() -> None:
             "backtest_requirements",
             "calibration_requirements",
             "no_bet_rules",
+            "officials_module",
         ):
             if required_field not in sport:
                 raise ValueError(f"{sport.get('sport_key')} is missing {required_field}")
+        if sport["officials_module"]["module_name"] != "officials_context_module":
+            raise ValueError(f"{sport.get('sport_key')} has unsupported officials module")
 
 
 def get_sport_model_config(sport_key: str) -> Optional[dict[str, Any]]:

@@ -759,6 +759,7 @@ class SportModelConfigResponse(BaseModel):
     provider_needs: list[str] = Field(..., description="Provider capabilities still needed for market data, projections, injuries, history, and backtesting.")
     recommended_providers: list[str] = Field(..., description="Configured or recommended provider IDs; empty when no provider has been selected.")
     model_components: list[str] = Field(..., description="Pipeline components currently represented by the sport model configuration.")
+    officials_module: dict[str, Any] = Field(..., description="Shared officials-context module with the sport-specific official type and betting-edge strength.")
     risk_notes: list[str] = Field(..., description="Sport-specific limitations and governance notes.")
     correlation_rules: list[str] = Field(..., description="Rules for grouping correlated exposure within this sport.")
     log_fields_required: list[str] = Field(..., description="Fields that must be present in logs before model promotion or bet governance review.")
