@@ -2011,6 +2011,7 @@ def _calibrate_nfl_probability(
     *,
     raw_probability: float,
     market_anchor_probability: float,
+    market_anchor_is_no_vig: bool,
     projected_margin: float,
     input_confidence_hint: float,
 ) -> dict[str, Any]:
@@ -2021,9 +2022,14 @@ def _calibrate_nfl_probability(
     abs_margin = abs(projected_margin)
     high_quality_extreme = abs_margin >= 14 and input_confidence_hint >= 80
     if (raw_probability >= 0.90 or raw_probability <= 0.10) and not high_quality_extreme:
-        calibrated = (raw_probability * 0.03) + (market_anchor_probability * 0.97)
+        if market_anchor_is_no_vig:
+            calibrated = (raw_probability * 0.10) + (market_anchor_probability * 0.90)
+        else:
+            model_floor = 0.58 if raw_probability >= 0.90 else 0.42
+            calibrated = (model_floor * 0.95) + (market_anchor_probability * 0.05)
     else:
-        calibrated = (raw_probability * 0.65) + (market_anchor_probability * 0.35)
+        anchor_weight = 0.25 if market_anchor_is_no_vig else 0.05
+        calibrated = (raw_probability * (1 - anchor_weight)) + (market_anchor_probability * anchor_weight)
     if abs(calibrated - raw_probability) >= 0.025:
         flags.append("probability calibration applied")
 
@@ -2199,6 +2205,7 @@ def _estimate_nfl_drive_model(
         calibration = _calibrate_nfl_probability(
             raw_probability=raw_model_probability,
             market_anchor_probability=market_anchor_probability,
+            market_anchor_is_no_vig=market_probability is not None,
             projected_margin=projected_margin,
             input_confidence_hint=confidence,
         )

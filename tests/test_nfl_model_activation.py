@@ -247,6 +247,38 @@ class TestNflModelActivation(unittest.TestCase):
         self.assertEqual(response["suggested_stake"], 0)
         self.assertEqual(response["confirmed_bets"], [])
 
+    def test_nfl_same_stats_keep_probability_stable_as_odds_change(self):
+        responses = {
+            odds: self._sport(
+                event_id="Chiefs vs Ravens",
+                selection="Chiefs",
+                odds_american=odds,
+                input_stats=chiefs_ravens_extreme_raw_inputs(),
+            )
+            for odds in (-130, 100, 120)
+        }
+        probabilities = [responses[odds]["final_probability"] for odds in (-130, 100, 120)]
+        implied = [responses[odds]["implied_probability"] for odds in (-130, 100, 120)]
+        edges = [responses[odds]["edge_percent"] for odds in (-130, 100, 120)]
+
+        self.assertLess(max(probabilities) - min(probabilities), 0.03)
+        self.assertGreater(implied[0], implied[1])
+        self.assertGreater(implied[1], implied[2])
+        self.assertLess(edges[0], edges[1])
+        self.assertLess(edges[1], edges[2])
+
+        minus_130 = responses[-130]
+        plus_120 = responses[120]
+        self.assertEqual(minus_130["decision"], "NO_BET")
+        self.assertEqual(minus_130["status"], "evaluated_no_bet_edge_too_small")
+        self.assertEqual(minus_130["suggested_stake"], 0)
+        self.assertEqual(plus_120["decision"], "CONFIRMED_BET")
+        self.assertEqual(plus_120["status"], "confirmed_bet")
+        self.assertGreaterEqual(plus_120["edge_percent"], 2.0)
+        self.assertGreaterEqual(plus_120["confidence"], 65)
+        self.assertEqual(plus_120["suggested_stake"], plus_120["confirmed_bets"][0]["suggested_stake"])
+        self.assertEqual(plus_120["confirmed_bets"][0]["estimated_true_probability"], plus_120["final_probability"])
+
     def test_nfl_extreme_favorite_can_return_higher_probability_with_reason(self):
         response = self._sport(odds_american=-400, input_stats=nfl_full_inputs(
             team_offensive_epa_per_play=1.4,
