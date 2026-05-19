@@ -75,9 +75,12 @@ def analyze_screenshot_ticket(payload: dict[str, Any]) -> dict[str, Any]:
 
     full_board_preview = build_full_board_preview(ticket, model_analysis, provider_enrichment)
     row = build_logbook_ready_row(ticket, model_analysis)
+    row.update(model_analysis.get("logbook_ready_row") or {})
     log_rows = [row]
     full_board_preview["logbook_ready_rows"] = log_rows
     implied_probability = model_analysis.get("implied_probability")
+    confirmed_bets = list(model_analysis.get("confirmed_bets") or [])
+    suggested_stake = model_analysis.get("suggested_stake") if confirmed_bets else 0
 
     return {
         "ok": True,
@@ -89,8 +92,8 @@ def analyze_screenshot_ticket(payload: dict[str, Any]) -> dict[str, Any]:
         "full_board_preview": full_board_preview,
         "missing_inputs": missing_inputs,
         "no_bets": no_bets,
-        "confirmed_bets": [],
-        "suggested_stake": 0,
+        "confirmed_bets": confirmed_bets,
+        "suggested_stake": suggested_stake or 0,
         "implied_probability": implied_probability,
         "logbook_ready_rows": log_rows,
     }

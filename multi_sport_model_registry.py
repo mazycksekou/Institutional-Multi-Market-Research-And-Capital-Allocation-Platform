@@ -223,6 +223,135 @@ SOCIAL_CROWD_TEXT_SCORES = {
     "unknown": 0,
 }
 
+NBA_REQUIRED_CORE_INPUTS = [
+    "team",
+    "opponent",
+    "selection",
+    "home_away",
+    "team_pace",
+    "opponent_pace",
+    "team_offensive_rating",
+    "opponent_offensive_rating",
+    "team_defensive_rating",
+    "opponent_defensive_rating",
+    "team_efg_percent",
+    "opponent_efg_percent",
+    "team_turnover_percent",
+    "opponent_turnover_percent",
+    "team_offensive_rebound_percent",
+    "opponent_offensive_rebound_percent",
+    "team_free_throw_rate",
+    "opponent_free_throw_rate",
+    "key_player_usage_available",
+    "minutes_projection_available",
+    "injury_report_status",
+]
+
+NBA_REQUIRED_MARKET_SPECIFIC_INPUTS = {
+    "moneyline": [],
+    "spread": ["line"],
+    "total": ["total_line"],
+    "team_total": ["total_line"],
+    "player_prop": ["player_name", "prop_type", "prop_line", "player_projection"],
+    "alt_line": ["line"],
+    "live": ["live_game", "live_period", "live_clock", "live_score_team", "live_score_opponent"],
+}
+
+NBA_OPTIONAL_ENRICHMENT_INPUTS = [
+    "projected_game_pace",
+    "team_recent_net_rating_5",
+    "opponent_recent_net_rating_5",
+    "team_recent_net_rating_10",
+    "opponent_recent_net_rating_10",
+    "team_rest_days",
+    "opponent_rest_days",
+    "team_back_to_back",
+    "opponent_back_to_back",
+    "team_travel_distance_miles",
+    "opponent_travel_distance_miles",
+    "team_projected_points",
+    "opponent_projected_points",
+    "projected_margin",
+    "projected_total",
+    "team_projected_starting_lineup",
+    "opponent_projected_starting_lineup",
+    "team_starter_minutes_projection",
+    "opponent_starter_minutes_projection",
+    "team_key_players_out",
+    "opponent_key_players_out",
+    "team_usage_missing_percent",
+    "opponent_usage_missing_percent",
+    "team_star_player_usage_rate",
+    "opponent_star_player_usage_rate",
+    "team_star_player_on_off_net",
+    "opponent_star_player_on_off_net",
+]
+
+NBA_PROVIDER_ENRICHMENT_INPUTS = [
+    "opening_odds",
+    "best_available_odds",
+    "consensus_odds",
+    "no_vig_market_probability",
+    "kalshi_event_ticker",
+    "kalshi_market_type",
+    "kalshi_yes_bid",
+    "kalshi_yes_ask",
+    "kalshi_mid_probability",
+    "kalshi_liquidity",
+    "kalshi_volume",
+]
+
+NBA_REFEREE_INPUTS = [
+    "referee_name",
+    "foul_rate_per_game",
+    "free_throw_rate_allowed",
+    "home_foul_differential",
+    "referee_sample_size",
+    "referee_data_quality",
+]
+
+NBA_SOCIAL_CROWD_INPUTS = [
+    "public_betting_percent",
+    "public_money_percent",
+    "sharp_money_percent",
+    "ticket_count_percent",
+    "handle_percent",
+    "line_movement",
+    "steam_move_flag",
+    "reverse_line_movement_flag",
+    "market_consensus",
+    "social_sentiment",
+    "crowd_consensus",
+    "rumor_risk",
+    "news_velocity",
+    "verified_news_source",
+    "source_quality",
+]
+
+NBA_LIVE_BETTING_INPUTS = [
+    "live_game",
+    "live_period",
+    "live_clock",
+    "live_score_team",
+    "live_score_opponent",
+    "live_foul_count_team",
+    "live_foul_count_opponent",
+    "live_timeout_count_team",
+    "live_timeout_count_opponent",
+    "live_win_probability",
+    "live_expected_possessions_remaining",
+]
+
+NBA_INPUT_CONTRACT = {
+    "required_core_inputs": NBA_REQUIRED_CORE_INPUTS,
+    "required_market_specific_inputs": NBA_REQUIRED_MARKET_SPECIFIC_INPUTS,
+    "optional_enrichment_inputs": NBA_OPTIONAL_ENRICHMENT_INPUTS,
+    "provider_enrichment_inputs": NBA_PROVIDER_ENRICHMENT_INPUTS,
+    "referee_inputs": NBA_REFEREE_INPUTS,
+    "social_crowd_inputs": NBA_SOCIAL_CROWD_INPUTS,
+    "live_betting_inputs": NBA_LIVE_BETTING_INPUTS,
+}
+
 SPORT_PROP_INPUTS = {
     "baseball_mlb": ["player projection", "lineup status", "opponent matchup", "park factor", "weather"],
     "basketball_nba": ["minutes projection", "usage", "pace", "defensive matchup", "injury report"],
@@ -298,6 +427,7 @@ def _sport(
     component_status: str = COMPONENT_STATUS_INACTIVE,
     sport_parameters: Optional[dict[str, Any]] = None,
     supported_game_titles: Optional[list[str]] = None,
+    confirmed_bets_allowed: bool = False,
 ) -> dict[str, Any]:
     return {
         "sport_key": sport,
@@ -306,7 +436,7 @@ def _sport(
         "status": status,
         "model_level": model_level,
         "component_status": component_status,
-        "confirmed_bets_allowed": False,
+        "confirmed_bets_allowed": confirmed_bets_allowed,
         "model_used": model_used,
         "model_family": model_family,
         "primary_model_type": primary_model_type,
@@ -376,6 +506,9 @@ SPORT_MODEL_REGISTRY = [
         "possession simulation",
         ["Correlate player PRA, team totals, pace, and same-game spread scripts."],
         sport_parameters={"league_baseline": "NBA", "pace_assumption": "NBA specific", "rotation_assumption": "NBA rotation depth"},
+        component_status=COMPONENT_STATUS_ACTIVE,
+        model_level=MODEL_LEVEL_PROJECTION_READY,
+        confirmed_bets_allowed=True,
     ),
     _sport(
         "basketball_wnba",
@@ -788,7 +921,7 @@ def get_sports_model_registry_response() -> dict[str, Any]:
         "sports": sports,
         "summary": {
             "total_sports": len(sports),
-            "confirmed_bet_enabled_sports": 0,
+            "confirmed_bet_enabled_sports": sum(1 for sport in sports if sport.get("confirmed_bets_allowed")),
             "market_derived_only_sports": sum(
                 1 for sport in sports if sport["model_level"] == MODEL_LEVEL_MARKET_DERIVED_ONLY
             ),
@@ -1291,6 +1424,218 @@ def _component_status(required_inputs: list[str], input_stats: dict[str, Any]) -
     return COMPONENT_STATUS_ACTIVE, []
 
 
+def _safe_probability(value: Any) -> Optional[float]:
+    number = _safe_float(value)
+    if number is None:
+        return None
+    if number > 1:
+        number = number / 100
+    return max(0.01, min(0.99, number))
+
+
+def _truthy_available(value: Any) -> bool:
+    if isinstance(value, bool):
+        return value
+    text = str(value or "").strip().lower()
+    return text in {"1", "true", "yes", "y", "available", "active", "cleared", "confirmed", "full"}
+
+
+def _nba_full_inputs_missing(input_stats: dict[str, Any]) -> list[str]:
+    return [field for field in NBA_REQUIRED_CORE_INPUTS if input_stats.get(field) is None]
+
+
+def _normal_market_key(value: Any) -> str:
+    text = str(value or "").strip().lower().replace("-", "_").replace(" ", "_")
+    aliases = {
+        "h2h": "moneyline",
+        "ml": "moneyline",
+        "spreads": "spread",
+        "totals": "total",
+        "over_under": "total",
+        "team_totals": "team_total",
+        "props": "player_prop",
+        "prop": "player_prop",
+        "alternate_line": "alt_line",
+        "alternate_spread": "alt_line",
+        "alternate_total": "alt_line",
+        "in_play": "live",
+    }
+    return aliases.get(text, text or "moneyline")
+
+
+def _nba_market_specific_missing(market: Any, input_stats: dict[str, Any], payload: dict[str, Any]) -> list[str]:
+    market_key = _normal_market_key(input_stats.get("market_type") or market)
+    required = NBA_REQUIRED_MARKET_SPECIFIC_INPUTS.get(market_key, [])
+    missing = []
+    for field in required:
+        value = input_stats.get(field)
+        if value is None and field in {"line", "total_line"}:
+            value = payload.get(field)
+        if value is None:
+            missing.append(field)
+    return missing
+
+
+def _estimate_nba_possession_model(
+    input_stats: dict[str, Any],
+    payload: dict[str, Any],
+    market: Any,
+    odds_american: Optional[float],
+    bankroll: float,
+    risk_profile: str,
+) -> Optional[dict[str, Any]]:
+    core_missing = _nba_full_inputs_missing(input_stats)
+    market_missing = _nba_market_specific_missing(market, input_stats, payload)
+    if core_missing or market_missing:
+        return None
+
+    team_pace = _safe_float(input_stats.get("team_pace"), 0) or 0
+    opponent_pace = _safe_float(input_stats.get("opponent_pace"), 0) or 0
+    team_off = _safe_float(input_stats.get("team_offensive_rating"), 0) or 0
+    opponent_off = _safe_float(input_stats.get("opponent_offensive_rating"), 0) or 0
+    team_def = _safe_float(input_stats.get("team_defensive_rating"), 0) or 0
+    opponent_def = _safe_float(input_stats.get("opponent_defensive_rating"), 0) or 0
+
+    team_efg = _safe_probability(input_stats.get("team_efg_percent")) or 0.5
+    opponent_efg = _safe_probability(input_stats.get("opponent_efg_percent")) or 0.5
+    team_tov = _safe_probability(input_stats.get("team_turnover_percent")) or 0.13
+    opponent_tov = _safe_probability(input_stats.get("opponent_turnover_percent")) or 0.13
+    team_oreb = _safe_probability(input_stats.get("team_offensive_rebound_percent")) or 0.25
+    opponent_oreb = _safe_probability(input_stats.get("opponent_offensive_rebound_percent")) or 0.25
+    team_ftr = _safe_probability(input_stats.get("team_free_throw_rate")) or 0.22
+    opponent_ftr = _safe_probability(input_stats.get("opponent_free_throw_rate")) or 0.22
+
+    pace = (team_pace + opponent_pace) / 2
+    team_expected_per_100 = (team_off * 0.55) + (opponent_def * 0.45)
+    opponent_expected_per_100 = (opponent_off * 0.55) + (team_def * 0.45)
+    four_factor_margin = (
+        ((team_efg - opponent_efg) * 40)
+        + ((opponent_tov - team_tov) * 18)
+        + ((team_oreb - opponent_oreb) * 12)
+        + ((team_ftr - opponent_ftr) * 8)
+    )
+    home_away = str(input_stats.get("home_away") or "").strip().lower()
+    home_adjustment = 1.8 if home_away == "home" else -1.0 if home_away == "away" else 0.0
+    usage_adjustment = 0.8 if _truthy_available(input_stats.get("key_player_usage_available")) else -1.5
+    minutes_adjustment = 0.6 if _truthy_available(input_stats.get("minutes_projection_available")) else -1.5
+    injury_status = str(input_stats.get("injury_report_status") or "").strip().lower()
+    injury_adjustment = 0.6 if injury_status in {"clean", "clear", "available", "normal", "healthy"} else -1.2
+
+    optional_present = [field for field in NBA_OPTIONAL_ENRICHMENT_INPUTS if input_stats.get(field) is not None]
+    provider_present = [field for field in NBA_PROVIDER_ENRICHMENT_INPUTS if input_stats.get(field) is not None]
+    referee_present = [field for field in NBA_REFEREE_INPUTS if input_stats.get(field) is not None]
+    social_present = [field for field in NBA_SOCIAL_CROWD_INPUTS if input_stats.get(field) is not None]
+    live_present = [field for field in NBA_LIVE_BETTING_INPUTS if input_stats.get(field) is not None]
+
+    raw_margin_per_100 = team_expected_per_100 - opponent_expected_per_100
+    estimated_margin = (raw_margin_per_100 * (pace / 100)) + four_factor_margin + home_adjustment + usage_adjustment + minutes_adjustment + injury_adjustment
+    projected_margin = _safe_float(input_stats.get("projected_margin"))
+    if projected_margin is not None:
+        estimated_margin = (estimated_margin * 0.7) + (projected_margin * 0.3)
+    recent_margin = None
+    team_recent_5 = _safe_float(input_stats.get("team_recent_net_rating_5"))
+    opponent_recent_5 = _safe_float(input_stats.get("opponent_recent_net_rating_5"))
+    if team_recent_5 is not None and opponent_recent_5 is not None:
+        recent_margin = (team_recent_5 - opponent_recent_5) * 0.08
+        estimated_margin += recent_margin
+    rest_edge = (_safe_float(input_stats.get("team_rest_days"), 0) or 0) - (_safe_float(input_stats.get("opponent_rest_days"), 0) or 0)
+    estimated_margin += max(-1.0, min(1.0, rest_edge * 0.25))
+    if input_stats.get("team_back_to_back") is True:
+        estimated_margin -= 0.7
+    if input_stats.get("opponent_back_to_back") is True:
+        estimated_margin += 0.7
+    travel_edge = ((_safe_float(input_stats.get("opponent_travel_distance_miles"), 0) or 0) - (_safe_float(input_stats.get("team_travel_distance_miles"), 0) or 0)) / 1000
+    estimated_margin += max(-0.8, min(0.8, travel_edge * 0.25))
+    ref_quality = str(input_stats.get("referee_data_quality") or "").strip().lower()
+    if ref_quality in {"strong", "high"}:
+        estimated_margin += max(-0.5, min(0.5, (_safe_float(input_stats.get("home_foul_differential"), 0) or 0) * 0.15))
+    true_probability = 1 / (1 + 2.718281828 ** (-(estimated_margin / 11.0)))
+    true_probability = max(0.03, min(0.97, true_probability))
+
+    implied_probability = implied_probability_from_american(odds_american) if odds_american is not None else None
+    edge = edge_percentage(true_probability, implied_probability) if implied_probability is not None else None
+    confidence = 72
+    if injury_status in {"clean", "clear", "available", "normal", "healthy"}:
+        confidence += 6
+    else:
+        confidence -= 8
+    if _truthy_available(input_stats.get("key_player_usage_available")):
+        confidence += 5
+    else:
+        confidence -= 6
+    if _truthy_available(input_stats.get("minutes_projection_available")):
+        confidence += 5
+    else:
+        confidence -= 6
+    if abs(estimated_margin) < 1.5:
+        confidence -= 8
+    confidence += min(10, len(optional_present) * 0.35)
+    confidence += min(4, len(provider_present) * 0.5)
+    if ref_quality in {"strong", "high"} and (_safe_float(input_stats.get("referee_sample_size"), 0) or 0) >= 30:
+        confidence += 4
+    if social_present:
+        confidence += min(3, len(social_present) * 0.25)
+    if str(input_stats.get("rumor_risk") or "").strip().lower() not in {"", "none", "low"}:
+        confidence -= 8
+    if input_stats.get("live_game") is True:
+        confidence += 4 if len(live_present) >= 5 else -10
+    confidence = max(1, min(95, confidence))
+
+    no_bet_flags: list[str] = []
+    suggested = 0.0
+    risk = "standard"
+    if edge is None:
+        no_bet_flags.append("edge missing")
+    elif edge <= 0:
+        no_bet_flags.append("negative edge")
+        risk = "high"
+    elif edge < 2.5:
+        no_bet_flags.append("edge too small")
+        risk = "medium"
+    if confidence < 70:
+        no_bet_flags.append("low confidence")
+        risk = "high"
+    if odds_american is None:
+        no_bet_flags.append("odds missing")
+    if not no_bet_flags and odds_american is not None:
+        suggested = suggested_stake_with_risk_controls(
+            bankroll=bankroll,
+            american_odds=odds_american,
+            true_probability=true_probability,
+            risk_profile=risk_profile,
+            confidence_0_100=confidence,
+        )
+        risk = "low" if edge is not None and edge >= 5 else "medium"
+
+    return {
+        "model_status": "active",
+        "estimated_true_probability": true_probability,
+        "true_probability": true_probability,
+        "implied_probability": implied_probability,
+        "edge": edge,
+        "confidence": confidence,
+        "risk": risk,
+        "suggested_stake": suggested,
+        "nba_input_contract": deepcopy(NBA_INPUT_CONTRACT),
+        "input_coverage": {
+            "required_core_present": list(NBA_REQUIRED_CORE_INPUTS),
+            "required_market_specific_present": NBA_REQUIRED_MARKET_SPECIFIC_INPUTS.get(_normal_market_key(input_stats.get("market_type") or market), []),
+            "optional_enrichment_present": optional_present,
+            "optional_enrichment_missing": [field for field in NBA_OPTIONAL_ENRICHMENT_INPUTS if input_stats.get(field) is None],
+            "provider_enrichment_present": provider_present,
+            "referee_present": referee_present,
+            "social_crowd_present": social_present,
+            "live_betting_present": live_present,
+        },
+        "projected_score": {
+            "team": round(team_expected_per_100 * pace / 100, 2),
+            "opponent": round(opponent_expected_per_100 * pace / 100, 2),
+            "estimated_margin": round(estimated_margin, 2),
+        },
+        "no_bet_flags": no_bet_flags,
+    }
+
+
 def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
     try:
         payload = _safe_payload_dict(payload)
@@ -1307,7 +1652,24 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
                 response["no_bet_flags"] = list(dict.fromkeys(response["no_bet_flags"] + input_stats_flags))
             return response
 
-        component_status, missing_inputs = _component_status(config["required_inputs"], input_stats)
+        nba_model = None
+        if sport == "basketball_nba":
+            nba_model = _estimate_nba_possession_model(
+                input_stats=input_stats,
+                payload=payload,
+                market=market,
+                odds_american=odds_american,
+                bankroll=bankroll,
+                risk_profile=payload.get("risk_profile") or "conservative",
+            )
+
+        if nba_model:
+            component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
+        elif sport == "basketball_nba":
+            component_status = COMPONENT_STATUS_INACTIVE
+            missing_inputs = _nba_full_inputs_missing(input_stats) + _nba_market_specific_missing(market, input_stats, payload)
+        else:
+            component_status, missing_inputs = _component_status(config["required_inputs"], input_stats)
         backtest_status = "passed" if input_stats.get("backtest_proof") else "not_started"
         calibration_status = "passed" if input_stats.get("calibration_proof") else "not_started"
         implied_probability = None
@@ -1317,14 +1679,21 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         no_bet_flags = list(config["no_bet_rules"])
         if odds_american is not None:
             implied_probability = implied_probability_from_american(odds_american)
+        if nba_model:
+            true_probability = nba_model["true_probability"]
+            implied_probability = nba_model["implied_probability"]
+            edge = nba_model["edge"]
+            suggested = nba_model["suggested_stake"]
+            no_bet_flags = list(nba_model["no_bet_flags"])
         if implied_probability is not None and true_probability is not None and odds_american is not None:
             edge = edge_percentage(true_probability, implied_probability)
-            suggested = suggested_stake_with_risk_controls(
-                bankroll=bankroll,
-                american_odds=odds_american,
-                true_probability=true_probability,
-                risk_profile=payload.get("risk_profile") or "conservative",
-            )
+            if not nba_model:
+                suggested = suggested_stake_with_risk_controls(
+                    bankroll=bankroll,
+                    american_odds=odds_american,
+                    true_probability=true_probability,
+                    risk_profile=payload.get("risk_profile") or "conservative",
+                )
         if missing_inputs:
             no_bet_flags = ["required inputs missing", "confirmed bets disabled"] + missing_inputs
         elif component_status == COMPONENT_STATUS_RESEARCH:
@@ -1335,7 +1704,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         social_input_stats = dict(input_stats)
         social_input_stats["edge"] = edge
         social_layer = build_social_crowd_calibration_layer(social_input_stats)
-        if social_layer["sentiment_no_bet_flags"]:
+        if social_layer["sentiment_no_bet_flags"] and not nba_model:
             no_bet_flags = list(dict.fromkeys(no_bet_flags + social_layer["sentiment_no_bet_flags"]))
 
         risk_controller = build_risk_controller(bankroll, unit_size, payload.get("risk_profile") or "conservative")
@@ -1352,19 +1721,61 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         })
         wee_willie = build_wee_willie_market_weakness_detector(detector_payload)
         manual_ticket = build_manual_ticket(detector_payload, suggested)
+        confidence = nba_model["confidence"] if nba_model else input_stats.get("confidence")
+        risk = nba_model["risk"] if nba_model else payload.get("risk_profile") or "conservative"
+        model_status = nba_model["model_status"] if nba_model else component_status
+        confirmed_bets = []
+        if (
+            nba_model
+            and config.get("confirmed_bets_allowed")
+            and not no_bet_flags
+            and edge is not None
+            and edge >= 2.5
+            and confidence is not None
+            and float(confidence) >= 70
+            and suggested > 0
+        ):
+            confirmed_bets = [{
+                "sport": sport,
+                "event": payload.get("event_id"),
+                "market": market,
+                "selection": payload.get("selection") or input_stats.get("selection"),
+                "odds_american": odds_american,
+                "estimated_true_probability": true_probability,
+                "implied_probability": implied_probability,
+                "edge": edge,
+                "confidence": confidence,
+                "risk": risk,
+                "suggested_stake": suggested,
+                "decision": "CONFIRMED_BET",
+            }]
+        no_bets = [{"reason": flag} for flag in no_bet_flags]
+        if nba_model and not no_bet_flags and not confirmed_bets:
+            no_bets = [{"reason": "confirmed bet thresholds not satisfied"}]
         full_board = {
-            "confirmed_bets": [],
+            "confirmed_bets": confirmed_bets,
             "target_lines": [] if component_status == COMPONENT_STATUS_INACTIVE else [{"market": market, "target_price": odds_american}],
             "target_props": [],
             "target_alt_lines": [],
-            "no_bets": [{"reason": flag} for flag in no_bet_flags],
+            "no_bets": no_bets,
             "best_correlated_parlay": None,
             "value_ranking": [],
-            "risk_ranking": [],
+            "risk_ranking": [{"selection": payload.get("selection") or input_stats.get("selection"), "risk": risk}] if nba_model else [],
             "missing_inputs": missing_inputs,
             "manual_review_required": [manual_ticket],
             "logbook_ready_rows": [manual_ticket["logbook_ready_row"]],
         }
+        logbook_ready_row = manual_ticket["logbook_ready_row"]
+        logbook_ready_row.update({
+            "final_probability": true_probability,
+            "model_probability": true_probability,
+            "implied_probability": implied_probability,
+            "edge_percent": edge,
+            "confidence": confidence,
+            "suggested_stake": suggested,
+            "stake": suggested if confirmed_bets else 0,
+            "decision": "CONFIRMED_BET" if confirmed_bets else "NO_BET",
+        })
         return {
             "ok": True,
             "endpoint": "analyzeSportModel",
@@ -1372,12 +1783,18 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             "model_used": config["model_used"],
             "model_family": config["model_family"],
             "market": market,
-            "projected_score": input_stats.get("projected_score"),
+            "projected_score": nba_model["projected_score"] if nba_model else input_stats.get("projected_score"),
             "true_probability": true_probability,
+            "estimated_true_probability": true_probability,
             "implied_probability": implied_probability,
             "edge": edge,
-            "confidence": input_stats.get("confidence"),
-            "risk_level": payload.get("risk_profile") or "conservative",
+            "confidence": confidence,
+            "risk": risk,
+            "risk_level": risk,
+            "model_status": model_status,
+            "nba_input_contract": deepcopy(NBA_INPUT_CONTRACT) if sport == "basketball_nba" else None,
+            "input_coverage": nba_model.get("input_coverage") if nba_model else None,
+            "suggested_stake": suggested if confirmed_bets else 0,
             "recommended_unit_size": risk_controller["recommended_unit_size"],
             "no_bet_flags": no_bet_flags,
             "correlation_notes": config["correlation_notes"],
@@ -1385,7 +1802,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             "missing_inputs": missing_inputs,
             "backtest_status": backtest_status,
             "calibration_status": calibration_status,
-            "logbook_ready_row": manual_ticket["logbook_ready_row"],
+            "logbook_ready_row": logbook_ready_row,
             "component_statuses": {config["model_used"]: component_status},
             "advanced_edge_components": deepcopy(ADVANCED_EDGE_COMPONENTS),
             "provider_needs": config["provider_needs"],
@@ -1403,9 +1820,10 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             "social_crowd_signal_explanation": social_layer["social_crowd_signal_explanation"],
             "manual_ticket_preview": manual_ticket,
             "full_board_preview": full_board,
-        "confirmed_bets": [],
+        "confirmed_bets": confirmed_bets,
         "target_lines": full_board["target_lines"],
-        "no_bets": full_board["no_bets"],
+        "no_bets": no_bets,
+        "logbook_ready_rows": [logbook_ready_row],
         "supported_sport_keys": list(OFFICIAL_SPORT_KEYS),
         "error": None,
         "detail": None,

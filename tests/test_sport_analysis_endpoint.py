@@ -59,7 +59,7 @@ class TestSportAnalysisEndpoint(unittest.TestCase):
         self.assertEqual(response["confirmed_bets"], [])
         self.assertIn("required inputs missing", response["no_bet_flags"])
 
-    def test_required_inputs_without_backtest_are_research_only(self):
+    def test_legacy_nba_inputs_without_modern_core_are_inactive_missing_data(self):
         input_stats = {
             "pace": 99,
             "offensive rating": 116,
@@ -78,8 +78,9 @@ class TestSportAnalysisEndpoint(unittest.TestCase):
             bankroll=1000,
             unit_size=25,
         )))
-        self.assertEqual(response["component_statuses"]["possession_expected_score_model"], "research_mode_not_bettable")
-        self.assertIn("no backtest proof", response["no_bet_flags"])
+        self.assertEqual(response["component_statuses"]["possession_expected_score_model"], "inactive_missing_data")
+        self.assertIn("team", response["missing_inputs"])
+        self.assertIn("required inputs missing", response["no_bet_flags"])
         self.assertEqual(response["confirmed_bets"], [])
 
     def test_social_and_crowd_conflicts_are_no_bet_calibration_flags(self):

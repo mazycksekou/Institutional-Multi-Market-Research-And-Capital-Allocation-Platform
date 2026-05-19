@@ -44,7 +44,6 @@ def build_full_board_preview(ticket: dict[str, Any], model_analysis: dict[str, A
     if visible_alt_lines:
         board["target_alt_lines"] = [{"market": a, "status": "visible_only"} for a in visible_alt_lines]
 
-    board["confirmed_bets"] = []
+    board["confirmed_bets"] = list(model_analysis.get("confirmed_bets") or [])
     board["no_bets"] = board["no_bets"] or [{"reason": "confirmed bet rules not satisfied"}]
     return board
-
