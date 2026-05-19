@@ -2007,6 +2007,54 @@ def _logistic_probability(value: float, scale: float) -> float:
     return max(0.03, min(0.97, 1 / (1 + 2.718281828 ** (-(value / scale)))))
 
 
+def _calibrate_nfl_probability(
+    *,
+    raw_probability: float,
+    market_anchor_probability: float,
+    projected_margin: float,
+    input_confidence_hint: float,
+) -> dict[str, Any]:
+    flags: list[str] = []
+    if raw_probability >= 0.90 or raw_probability <= 0.10:
+        flags.append("raw probability extreme")
+
+    calibrated = (raw_probability * 0.65) + (market_anchor_probability * 0.35)
+    if abs(calibrated - raw_probability) >= 0.025:
+        flags.append("probability calibration applied")
+
+    abs_margin = abs(projected_margin)
+    high_quality_extreme = abs_margin >= 14 and input_confidence_hint >= 78
+    if high_quality_extreme:
+        lower_cap, upper_cap = 0.08, 0.92
+    elif abs_margin >= 10:
+        lower_cap, upper_cap = 0.15, 0.85
+    elif abs_margin >= 7:
+        lower_cap, upper_cap = 0.18, 0.82
+    elif abs_margin >= 4:
+        lower_cap, upper_cap = 0.25, 0.75
+    else:
+        lower_cap, upper_cap = 0.38, 0.62
+
+    final_probability = max(lower_cap, min(upper_cap, calibrated))
+    if final_probability != calibrated:
+        flags.append("probability capped by projected margin")
+        flags.append("probability calibration applied")
+
+    return {
+        "raw_model_probability": raw_probability,
+        "calibrated_model_probability": calibrated,
+        "final_probability": final_probability,
+        "market_anchor_probability": market_anchor_probability,
+        "probability_calibration_applied": bool(flags),
+        "probability_sanity_flags": list(dict.fromkeys(flags)),
+        "probability_cap_reason": (
+            "extreme projected margin with high input confidence"
+            if high_quality_extreme
+            else f"projected margin {round(projected_margin, 2)} points"
+        ),
+    }
+
+
 def _estimate_nfl_drive_model(
     input_stats: dict[str, Any],
     payload: dict[str, Any],
@@ -2089,35 +2137,30 @@ def _estimate_nfl_drive_model(
     projected_total = max(28.0, min(64.0, projected_total))
     projected_team_points = (projected_total / 2) + (projected_margin / 2)
     projected_opponent_points = projected_total - projected_team_points
+    implied_probability = implied_probability_from_american(odds_american) if odds_american is not None else None
 
     market_key = _normal_market_key(input_stats.get("market_type") or market)
     if market_key == "spread":
         line = _safe_float(input_stats.get("line") if input_stats.get("line") is not None else payload.get("line"), 0) or 0
-        true_probability = _logistic_probability(projected_margin + line, 9.5)
+        raw_model_probability = _logistic_probability(projected_margin + line, 9.5)
     elif market_key == "total":
         total_line = _safe_float(input_stats.get("total_line") if input_stats.get("total_line") is not None else payload.get("total_line"), 0) or 0
         over_probability = _logistic_probability(projected_total - total_line, 8.5)
         selection = str(payload.get("selection") or input_stats.get("selection") or "").lower()
-        true_probability = 1 - over_probability if "under" in selection else over_probability
+        raw_model_probability = 1 - over_probability if "under" in selection else over_probability
     elif market_key == "team_total":
         team_total_line = _safe_float(input_stats.get("team_total_line") if input_stats.get("team_total_line") is not None else payload.get("team_total_line"), 0) or 0
         over_probability = _logistic_probability(projected_team_points - team_total_line, 6.0)
         selection = str(payload.get("selection") or input_stats.get("selection") or "").lower()
-        true_probability = 1 - over_probability if "under" in selection else over_probability
+        raw_model_probability = 1 - over_probability if "under" in selection else over_probability
     elif market_key == "player_prop":
         projection = number("player_projection")
         prop_line = number("prop_line")
-        true_probability = _logistic_probability(projection - prop_line, max(1.0, abs(prop_line) * 0.18))
+        raw_model_probability = _logistic_probability(projection - prop_line, max(1.0, abs(prop_line) * 0.18))
     else:
-        true_probability = _logistic_probability(projected_margin, 8.0)
+        raw_model_probability = _logistic_probability(projected_margin, 8.0)
 
     market_probability = _safe_probability(input_stats.get("no_vig_market_probability"))
-    if market_probability is not None:
-        true_probability = (true_probability * 0.85) + (market_probability * 0.15)
-    true_probability = max(0.03, min(0.97, true_probability))
-    implied_probability = implied_probability_from_american(odds_american) if odds_american is not None else None
-    edge = edge_percentage(true_probability, implied_probability) if implied_probability is not None else None
-
     confidence = 68
     confidence += min(8, len(optional_present) * 0.18)
     confidence += min(4, len(provider_present) * 0.5)
@@ -2147,6 +2190,34 @@ def _estimate_nfl_drive_model(
     if live_present and input_stats.get("live_game") is True:
         confidence += 3 if len(live_present) >= 5 else -8
     confidence = max(1, min(95, round(confidence, 2)))
+
+    market_anchor_probability = market_probability if market_probability is not None else implied_probability if implied_probability is not None else 0.5
+    if market_key == "moneyline":
+        calibration = _calibrate_nfl_probability(
+            raw_probability=raw_model_probability,
+            market_anchor_probability=market_anchor_probability,
+            projected_margin=projected_margin,
+            input_confidence_hint=confidence,
+        )
+        true_probability = calibration["final_probability"]
+    else:
+        calibrated_probability = (raw_model_probability * 0.85) + (market_anchor_probability * 0.15)
+        true_probability = max(0.03, min(0.97, calibrated_probability))
+        calibration = {
+            "raw_model_probability": raw_model_probability,
+            "calibrated_model_probability": calibrated_probability,
+            "final_probability": true_probability,
+            "market_anchor_probability": market_anchor_probability,
+            "probability_calibration_applied": abs(calibrated_probability - raw_model_probability) >= 0.025,
+            "probability_sanity_flags": ["probability calibration applied"] if abs(calibrated_probability - raw_model_probability) >= 0.025 else [],
+            "probability_cap_reason": None,
+        }
+    if calibration["probability_sanity_flags"]:
+        confidence = max(1, round(confidence - min(8, 2 * len(calibration["probability_sanity_flags"])), 2))
+        if "probability calibration applied" not in calibration["probability_sanity_flags"]:
+            calibration["probability_sanity_flags"].append("probability calibration applied")
+
+    edge = edge_percentage(true_probability, implied_probability) if implied_probability is not None else None
 
     edge_threshold, confidence_threshold = _nfl_thresholds(risk_profile)
     no_bet_flags: list[str] = []
@@ -2185,6 +2256,12 @@ def _estimate_nfl_drive_model(
         "confidence": confidence,
         "risk": risk,
         "suggested_stake": suggested,
+        "raw_model_probability": calibration["raw_model_probability"],
+        "calibrated_model_probability": calibration["calibrated_model_probability"],
+        "probability_calibration_applied": calibration["probability_calibration_applied"],
+        "probability_sanity_flags": calibration["probability_sanity_flags"],
+        "probability_cap_reason": calibration["probability_cap_reason"],
+        "market_anchor_probability": calibration["market_anchor_probability"],
         "projected_margin": round(projected_margin, 2),
         "projected_total": round(projected_total, 2),
         "projected_team_points": round(projected_team_points, 2),
@@ -2555,6 +2632,14 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             "status": evaluated_status,
             **officiating_analysis["officiating_logbook_fields"],
         })
+        if nfl_model:
+            logbook_ready_row.update({
+                "raw_model_probability": nfl_model["raw_model_probability"],
+                "calibrated_model_probability": nfl_model["calibrated_model_probability"],
+                "probability_calibration_applied": nfl_model["probability_calibration_applied"],
+                "probability_sanity_flags": nfl_model["probability_sanity_flags"],
+                "market_anchor_probability": nfl_model["market_anchor_probability"],
+            })
         officiating_fields = {key: officiating_analysis[key] for key in [
             "officiating_module_status",
             "officiating_edge_detected",
@@ -2582,6 +2667,12 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             "projected_opponent_points": nfl_model["projected_opponent_points"] if nfl_model else None,
             "true_probability": true_probability,
             "estimated_true_probability": true_probability,
+            "raw_model_probability": nfl_model["raw_model_probability"] if nfl_model else true_probability,
+            "calibrated_model_probability": nfl_model["calibrated_model_probability"] if nfl_model else true_probability,
+            "probability_calibration_applied": nfl_model["probability_calibration_applied"] if nfl_model else False,
+            "probability_sanity_flags": nfl_model["probability_sanity_flags"] if nfl_model else [],
+            "probability_cap_reason": nfl_model["probability_cap_reason"] if nfl_model else None,
+            "market_anchor_probability": nfl_model["market_anchor_probability"] if nfl_model else implied_probability,
             "implied_probability": implied_probability,
             "edge": edge,
             "edge_percent": edge,

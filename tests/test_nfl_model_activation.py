@@ -151,6 +151,10 @@ class TestNflModelActivation(unittest.TestCase):
         self.assertIsNotNone(response["estimated_true_probability"])
         self.assertGreater(response["estimated_true_probability"], 0)
         self.assertLess(response["estimated_true_probability"], 1)
+        self.assertLess(response["estimated_true_probability"], 0.90)
+        self.assertIn("raw_model_probability", response)
+        self.assertIn("calibrated_model_probability", response)
+        self.assertIn("market_anchor_probability", response)
 
     def test_nfl_full_moneyline_inputs_return_edge(self):
         response = self._sport()
@@ -167,7 +171,7 @@ class TestNflModelActivation(unittest.TestCase):
         self.assertFalse(response["full_board_preview"]["manual_review_required"])
 
     def test_nfl_positive_edge_below_threshold_returns_edge_too_small(self):
-        response = self._sport(odds_american=-140)
+        response = self._sport(odds_american=-130)
         self.assertGreater(response["edge"], 0)
         self.assertLess(response["edge"], 2.0)
         self.assertEqual(response["confirmed_bets"], [])
@@ -175,7 +179,7 @@ class TestNflModelActivation(unittest.TestCase):
         self.assertEqual(response["no_bets"], [{"reason": "edge too small"}])
 
     def test_nfl_positive_edge_with_confidence_passing_returns_confirmed_bet(self):
-        response = self._sport(odds_american=-130)
+        response = self._sport(odds_american=-120)
         self.assertGreaterEqual(response["edge"], 2.0)
         self.assertGreaterEqual(response["confidence"], 65)
         self.assertTrue(response["confirmed_bets"])
@@ -183,6 +187,38 @@ class TestNflModelActivation(unittest.TestCase):
         self.assertEqual(response["logbook_ready_row"]["decision"], "CONFIRMED_BET")
         self.assertGreater(response["suggested_stake"], 0)
         self.assertEqual(response["no_bets"], [])
+
+    def test_nfl_extreme_favorite_can_return_higher_probability_with_reason(self):
+        response = self._sport(odds_american=-400, input_stats=nfl_full_inputs(
+            team_offensive_epa_per_play=1.4,
+            opponent_offensive_epa_per_play=-0.6,
+            team_defensive_epa_per_play=-0.6,
+            opponent_defensive_epa_per_play=0.8,
+            team_success_rate=0.70,
+            opponent_success_rate=0.25,
+            team_defensive_success_rate_allowed=0.25,
+            opponent_defensive_success_rate_allowed=0.70,
+            team_explosive_play_rate=0.28,
+            opponent_explosive_play_rate=0.03,
+            team_explosive_play_rate_allowed=0.03,
+            opponent_explosive_play_rate_allowed=0.28,
+            team_pressure_rate_allowed=0.08,
+            opponent_pressure_rate_allowed=0.55,
+            team_pressure_rate_generated=0.60,
+            opponent_pressure_rate_generated=0.08,
+            team_red_zone_td_rate=0.90,
+            opponent_red_zone_td_rate=0.20,
+            team_red_zone_td_rate_allowed=0.20,
+            opponent_red_zone_td_rate_allowed=0.90,
+            team_recent_epa_per_play_3=0.50,
+            opponent_recent_epa_per_play_3=-0.30,
+            team_special_teams_epa=0.20,
+            opponent_special_teams_epa=-0.20,
+        ))
+        self.assertGreaterEqual(response["projected_margin"], 10)
+        self.assertGreaterEqual(response["estimated_true_probability"], 0.80)
+        self.assertLessEqual(response["estimated_true_probability"], 0.85)
+        self.assertIn("projected margin", response["probability_cap_reason"])
 
     def test_nfl_low_confidence_returns_low_confidence_status(self):
         response = self._sport(odds_american=150, input_stats=nfl_full_inputs(
@@ -252,7 +288,7 @@ class TestNflModelActivation(unittest.TestCase):
         self.assertTrue(response["logbook_ready_rows"])
 
     def test_nfl_confirmed_bets_and_no_bets_are_mutually_exclusive(self):
-        response = self._sport(odds_american=-130)
+        response = self._sport(odds_american=-120)
         confirmed_keys = {
             (bet.get("sport"), bet.get("event"), bet.get("market"), bet.get("selection"))
             for bet in response["full_board_preview"]["confirmed_bets"]
