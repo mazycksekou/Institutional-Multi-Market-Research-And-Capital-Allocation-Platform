@@ -790,15 +790,24 @@ class SportAnalysisResponse(BaseModel):
     error: Optional[str] = None
     detail: Optional[str] = None
     sport: Optional[Any] = None
+    model_name: Optional[str] = None
     model_used: Optional[str] = None
     model_family: Optional[str] = None
     market: Optional[str] = None
     projected_score: Optional[Any] = None
+    projected_margin: Optional[Any] = None
+    projected_total: Optional[Any] = None
+    projected_team_points: Optional[Any] = None
+    projected_opponent_points: Optional[Any] = None
     true_probability: Optional[float] = None
     implied_probability: Optional[float] = None
     edge: Optional[float] = None
+    edge_percent: Optional[float] = None
     confidence: Optional[Any] = None
+    risk: Optional[Any] = None
     risk_level: str
+    model_status: Optional[Any] = None
+    partial_model_mode: bool = False
     recommended_unit_size: float
     no_bet_flags: list[str]
     correlation_notes: list[str]
@@ -834,7 +843,14 @@ class SportAnalysisResponse(BaseModel):
     officiating_logbook_fields: dict[str, Any] = {}
     confirmed_bets: list[dict[str, Any]] = []
     target_lines: list[dict[str, Any]] = []
+    target_props: list[dict[str, Any]] = []
+    target_alt_lines: list[dict[str, Any]] = []
     no_bets: list[dict[str, Any]] = []
+    best_correlated_parlay: Optional[Any] = None
+    value_ranking: list[Any] = []
+    risk_ranking: list[Any] = []
+    provider_enrichment: dict[str, Any] = {}
+    manual_review_required: Optional[Any] = None
     manual_ticket_preview: Optional[dict[str, Any]] = None
     full_board_preview: dict[str, Any]
 

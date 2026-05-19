@@ -49,7 +49,13 @@ def analyze_screenshot_ticket(payload: dict[str, Any]) -> dict[str, Any]:
     if not _present(ticket.get("event")) and not _present(ticket.get("teams")):
         missing_ticket.append("event_or_teams")
 
-    provider_enrichment = enrich_ticket(ticket)
+    try:
+        provider_enrichment = enrich_ticket(ticket)
+    except Exception as exc:
+        provider_enrichment = {
+            "provider_status": "error",
+            "provider_notes": f"Provider enrichment failed safely: {type(exc).__name__}",
+        }
     model_payload = {
         "sport": ticket.get("sport"),
         "league": ticket.get("league"),

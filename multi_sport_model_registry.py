@@ -352,6 +352,162 @@ NBA_INPUT_CONTRACT = {
     "live_betting_inputs": NBA_LIVE_BETTING_INPUTS,
 }
 
+NFL_REQUIRED_CORE_INPUTS = [
+    "team",
+    "opponent",
+    "selection",
+    "home_away",
+    "team_offensive_epa_per_play",
+    "opponent_offensive_epa_per_play",
+    "team_defensive_epa_per_play",
+    "opponent_defensive_epa_per_play",
+    "team_success_rate",
+    "opponent_success_rate",
+    "team_defensive_success_rate_allowed",
+    "opponent_defensive_success_rate_allowed",
+    "team_explosive_play_rate",
+    "opponent_explosive_play_rate",
+    "team_explosive_play_rate_allowed",
+    "opponent_explosive_play_rate_allowed",
+    "team_turnover_rate",
+    "opponent_turnover_rate",
+    "team_pressure_rate_allowed",
+    "opponent_pressure_rate_allowed",
+    "team_pressure_rate_generated",
+    "opponent_pressure_rate_generated",
+    "team_red_zone_td_rate",
+    "opponent_red_zone_td_rate",
+    "team_red_zone_td_rate_allowed",
+    "opponent_red_zone_td_rate_allowed",
+    "team_pace_seconds_per_play",
+    "opponent_pace_seconds_per_play",
+    "qb_status",
+    "offensive_line_health",
+    "injury_report_status",
+]
+
+NFL_REQUIRED_MARKET_SPECIFIC_INPUTS = {
+    "moneyline": [],
+    "spread": ["line"],
+    "total": ["total_line"],
+    "team_total": ["team_total_line"],
+    "player_prop": ["player_name", "prop_type", "prop_line", "player_projection", "player_minutes_or_snap_projection"],
+    "first_half": [],
+    "first_quarter": [],
+    "live": ["live_game", "live_period", "live_clock", "live_score_team", "live_score_opponent"],
+    "alt_line": ["line"],
+}
+
+NFL_OPTIONAL_ENRICHMENT_INPUTS = [
+    "team_recent_epa_per_play_3",
+    "opponent_recent_epa_per_play_3",
+    "team_recent_success_rate_3",
+    "opponent_recent_success_rate_3",
+    "team_yards_per_play",
+    "opponent_yards_per_play",
+    "team_yards_per_play_allowed",
+    "opponent_yards_per_play_allowed",
+    "team_third_down_rate",
+    "opponent_third_down_rate",
+    "team_third_down_rate_allowed",
+    "opponent_third_down_rate_allowed",
+    "team_fourth_down_aggression",
+    "opponent_fourth_down_aggression",
+    "team_sack_rate_allowed",
+    "opponent_sack_rate_allowed",
+    "team_sack_rate_generated",
+    "opponent_sack_rate_generated",
+    "team_run_block_win_rate",
+    "opponent_run_block_win_rate",
+    "team_pass_block_win_rate",
+    "opponent_pass_block_win_rate",
+    "team_pass_rush_win_rate",
+    "opponent_pass_rush_win_rate",
+    "team_coverage_grade",
+    "opponent_coverage_grade",
+    "team_rush_defense_grade",
+    "opponent_rush_defense_grade",
+    "team_special_teams_epa",
+    "opponent_special_teams_epa",
+    "team_kicker_quality",
+    "opponent_kicker_quality",
+    "team_rest_days",
+    "opponent_rest_days",
+    "team_travel_distance_miles",
+    "opponent_travel_distance_miles",
+    "team_short_week",
+    "opponent_short_week",
+    "weather_wind_mph",
+    "weather_precipitation",
+    "weather_temperature",
+    "dome_game",
+    "surface_type",
+    "public_betting_percent",
+    "public_money_percent",
+    "sharp_money_percent",
+    "opening_odds",
+    "current_odds",
+    "best_available_odds",
+    "consensus_odds",
+    "opening_line",
+    "current_line",
+    "opening_total",
+    "current_total",
+    "no_vig_market_probability",
+    "book_count",
+]
+
+NFL_PROVIDER_ENRICHMENT_INPUTS = [
+    "opening_odds",
+    "current_odds",
+    "best_available_odds",
+    "consensus_odds",
+    "opening_line",
+    "current_line",
+    "opening_total",
+    "current_total",
+    "no_vig_market_probability",
+    "book_count",
+]
+
+NFL_OFFICIATING_INPUTS = ["referee crew", "penalty rate", "holding rate", "defensive pass interference rate"]
+
+NFL_SOCIAL_CROWD_INPUTS = [
+    "public_betting_percent",
+    "public_money_percent",
+    "sharp_money_percent",
+    "social_sentiment",
+    "crowd_consensus",
+    "rumor_risk",
+    "news_velocity",
+    "source_quality",
+]
+
+NFL_LIVE_BETTING_INPUTS = [
+    "live_game",
+    "live_period",
+    "live_clock",
+    "live_score_team",
+    "live_score_opponent",
+    "live_down",
+    "live_distance",
+    "live_field_position",
+    "live_timeouts_team",
+    "live_timeouts_opponent",
+    "live_win_probability",
+]
+
+NFL_INPUT_CONTRACT = {
+    "required_core_inputs": NFL_REQUIRED_CORE_INPUTS,
+    "required_market_specific_inputs": NFL_REQUIRED_MARKET_SPECIFIC_INPUTS,
+    "optional_enrichment_inputs": NFL_OPTIONAL_ENRICHMENT_INPUTS,
+    "provider_enrichment_inputs": NFL_PROVIDER_ENRICHMENT_INPUTS,
+    "officiating_inputs": NFL_OFFICIATING_INPUTS,
+    "referee_inputs": NFL_OFFICIATING_INPUTS,
+    "social_crowd_inputs": NFL_SOCIAL_CROWD_INPUTS,
+    "live_betting_inputs": NFL_LIVE_BETTING_INPUTS,
+}
+
 SPORT_PROP_INPUTS = {
     "baseball_mlb": ["player projection", "lineup status", "opponent matchup", "park factor", "weather"],
     "basketball_nba": ["minutes projection", "usage", "pace", "defensive matchup", "injury report"],
@@ -838,13 +994,16 @@ SPORT_MODEL_REGISTRY = [
         "drive_expected_points_model",
         "Drive based expected points model",
         "drive_expected_points",
-        ["moneyline", "spread", "totals", "team totals", "first half", "first quarter", "live markets"],
+        ["moneyline", "spread", "total", "team_total", "player_prop", "first_half", "first_quarter", "live", "alt_line"],
         ["passing yards", "passing touchdowns", "interceptions", "completions", "attempts", "rushing yards", "rushing attempts", "receiving yards", "receptions", "anytime touchdown", "first touchdown", "sacks", "kicking points"],
-        ["EPA", "success rate", "pace", "QB adjustment", "red zone efficiency", "weather", "injuries"],
-        ["garbage time filtering", "offensive line adjustment", "defensive line adjustment"],
+        NFL_REQUIRED_CORE_INPUTS,
+        NFL_OPTIONAL_ENRICHMENT_INPUTS,
         ["EPA", "success rate", "pace", "QB adjustment", "red zone efficiency", "weather", "injuries", "garbage time filtering", "offensive line adjustment registered now", "defensive line adjustment registered now", "football trench engine registered now"],
         "drive simulation",
         ["QB passing over with WR receiving over; bad offensive line with opposing sacks over."],
+        component_status=COMPONENT_STATUS_ACTIVE,
+        model_level=MODEL_LEVEL_PROJECTION_READY,
+        confirmed_bets_allowed=True,
     ),
     _sport(
         "americanfootball_ncaaf",
@@ -1816,6 +1975,240 @@ def _nba_market_specific_missing(market: Any, input_stats: dict[str, Any], paylo
     return missing
 
 
+def _nfl_full_inputs_missing(input_stats: dict[str, Any]) -> list[str]:
+    return [field for field in NFL_REQUIRED_CORE_INPUTS if input_stats.get(field) is None]
+
+
+def _nfl_market_specific_missing(market: Any, input_stats: dict[str, Any], payload: dict[str, Any]) -> list[str]:
+    market_key = _normal_market_key(input_stats.get("market_type") or market)
+    required = NFL_REQUIRED_MARKET_SPECIFIC_INPUTS.get(market_key, [])
+    missing = []
+    for field in required:
+        value = input_stats.get(field)
+        if value is None and field in {"line", "total_line", "team_total_line"}:
+            value = payload.get(field)
+        if value is None:
+            missing.append(field)
+    return missing
+
+
+def _nfl_thresholds(risk_profile: Any) -> tuple[float, float]:
+    profile = str(risk_profile or "moderate").strip().lower()
+    if profile == "standard":
+        profile = "moderate"
+    if profile == "aggressive":
+        return 1.5, 60
+    if profile == "conservative":
+        return 3.0, 75
+    return 2.0, 65
+
+
+def _logistic_probability(value: float, scale: float) -> float:
+    return max(0.03, min(0.97, 1 / (1 + 2.718281828 ** (-(value / scale)))))
+
+
+def _estimate_nfl_drive_model(
+    input_stats: dict[str, Any],
+    payload: dict[str, Any],
+    market: Any,
+    odds_american: Optional[float],
+    bankroll: float,
+    risk_profile: str,
+) -> Optional[dict[str, Any]]:
+    core_missing = _nfl_full_inputs_missing(input_stats)
+    market_missing = _nfl_market_specific_missing(market, input_stats, payload)
+    if core_missing or market_missing:
+        return None
+
+    def number(key: str, default: float = 0) -> float:
+        return _safe_float(input_stats.get(key), default) or default
+
+    optional_present = [field for field in NFL_OPTIONAL_ENRICHMENT_INPUTS if input_stats.get(field) is not None]
+    provider_present = [field for field in NFL_PROVIDER_ENRICHMENT_INPUTS if input_stats.get(field) is not None]
+    officiating_present = _official_inputs_present(input_stats, NFL_OFFICIATING_INPUTS)
+    social_present = [field for field in NFL_SOCIAL_CROWD_INPUTS if input_stats.get(field) is not None]
+    live_present = [field for field in NFL_LIVE_BETTING_INPUTS if input_stats.get(field) is not None]
+
+    team_drive = (
+        (number("team_offensive_epa_per_play") - number("opponent_defensive_epa_per_play")) * 18
+        + (number("team_success_rate") - number("opponent_defensive_success_rate_allowed")) * 14
+        + (number("team_explosive_play_rate") - number("opponent_explosive_play_rate_allowed")) * 16
+        + (number("team_pressure_rate_allowed") - number("opponent_pressure_rate_generated")) * -8
+        + (number("team_red_zone_td_rate") - number("opponent_red_zone_td_rate_allowed")) * 8
+        + (number("opponent_turnover_rate") - number("team_turnover_rate")) * 10
+    )
+    opponent_drive = (
+        (number("opponent_offensive_epa_per_play") - number("team_defensive_epa_per_play")) * 18
+        + (number("opponent_success_rate") - number("team_defensive_success_rate_allowed")) * 14
+        + (number("opponent_explosive_play_rate") - number("team_explosive_play_rate_allowed")) * 16
+        + (number("opponent_pressure_rate_allowed") - number("team_pressure_rate_generated")) * -8
+        + (number("opponent_red_zone_td_rate") - number("team_red_zone_td_rate_allowed")) * 8
+        + (number("team_turnover_rate") - number("opponent_turnover_rate")) * 10
+    )
+    pace = max(24.0, min(34.0, (number("team_pace_seconds_per_play", 28) + number("opponent_pace_seconds_per_play", 28)) / 2))
+    pace_boost = (28.5 - pace) * 0.35
+    home_away = str(input_stats.get("home_away") or "").strip().lower()
+    home_adjustment = 1.4 if home_away == "home" else -1.0 if home_away == "away" else 0
+    projected_margin = (team_drive - opponent_drive) + home_adjustment
+    projected_total = 44 + ((team_drive + opponent_drive) * 0.9) + pace_boost
+
+    if input_stats.get("team_recent_epa_per_play_3") is not None and input_stats.get("opponent_recent_epa_per_play_3") is not None:
+        projected_margin += (number("team_recent_epa_per_play_3") - number("opponent_recent_epa_per_play_3")) * 6
+    if input_stats.get("team_special_teams_epa") is not None and input_stats.get("opponent_special_teams_epa") is not None:
+        projected_margin += (number("team_special_teams_epa") - number("opponent_special_teams_epa")) * 4
+    rest_edge = number("team_rest_days", 0) - number("opponent_rest_days", 0)
+    projected_margin += max(-1.0, min(1.0, rest_edge * 0.2))
+    travel_edge = (number("opponent_travel_distance_miles", 0) - number("team_travel_distance_miles", 0)) / 1000
+    projected_margin += max(-0.8, min(0.8, travel_edge * 0.2))
+    if input_stats.get("team_short_week") is True:
+        projected_margin -= 0.8
+    if input_stats.get("opponent_short_week") is True:
+        projected_margin += 0.8
+
+    qb_status = str(input_stats.get("qb_status") or "").strip().lower()
+    offensive_line_health = str(input_stats.get("offensive_line_health") or "").strip().lower()
+    injury_status = str(input_stats.get("injury_report_status") or "").strip().lower()
+    if qb_status in {"out", "backup", "doubtful"}:
+        projected_margin -= 3.5
+        projected_total -= 2.5
+    elif qb_status in {"questionable", "uncertain", "limited"}:
+        projected_margin -= 1.4
+        projected_total -= 1.0
+    if offensive_line_health in {"poor", "bad", "thin", "injured"}:
+        projected_margin -= 1.2
+        projected_total -= 1.0
+    if injury_status not in {"clean", "clear", "healthy", "normal", "available"}:
+        projected_margin -= 0.8
+        projected_total -= 0.6
+
+    wind = number("weather_wind_mph", 0)
+    if wind >= 15 and not input_stats.get("dome_game"):
+        projected_total -= min(5.0, (wind - 12) * 0.35)
+    if _truthy_available(input_stats.get("weather_precipitation")) and not input_stats.get("dome_game"):
+        projected_total -= 1.5
+    projected_total = max(28.0, min(64.0, projected_total))
+    projected_team_points = (projected_total / 2) + (projected_margin / 2)
+    projected_opponent_points = projected_total - projected_team_points
+
+    market_key = _normal_market_key(input_stats.get("market_type") or market)
+    if market_key == "spread":
+        line = _safe_float(input_stats.get("line") if input_stats.get("line") is not None else payload.get("line"), 0) or 0
+        true_probability = _logistic_probability(projected_margin + line, 9.5)
+    elif market_key == "total":
+        total_line = _safe_float(input_stats.get("total_line") if input_stats.get("total_line") is not None else payload.get("total_line"), 0) or 0
+        over_probability = _logistic_probability(projected_total - total_line, 8.5)
+        selection = str(payload.get("selection") or input_stats.get("selection") or "").lower()
+        true_probability = 1 - over_probability if "under" in selection else over_probability
+    elif market_key == "team_total":
+        team_total_line = _safe_float(input_stats.get("team_total_line") if input_stats.get("team_total_line") is not None else payload.get("team_total_line"), 0) or 0
+        over_probability = _logistic_probability(projected_team_points - team_total_line, 6.0)
+        selection = str(payload.get("selection") or input_stats.get("selection") or "").lower()
+        true_probability = 1 - over_probability if "under" in selection else over_probability
+    elif market_key == "player_prop":
+        projection = number("player_projection")
+        prop_line = number("prop_line")
+        true_probability = _logistic_probability(projection - prop_line, max(1.0, abs(prop_line) * 0.18))
+    else:
+        true_probability = _logistic_probability(projected_margin, 8.0)
+
+    market_probability = _safe_probability(input_stats.get("no_vig_market_probability"))
+    if market_probability is not None:
+        true_probability = (true_probability * 0.85) + (market_probability * 0.15)
+    true_probability = max(0.03, min(0.97, true_probability))
+    implied_probability = implied_probability_from_american(odds_american) if odds_american is not None else None
+    edge = edge_percentage(true_probability, implied_probability) if implied_probability is not None else None
+
+    confidence = 68
+    confidence += min(8, len(optional_present) * 0.18)
+    confidence += min(4, len(provider_present) * 0.5)
+    if qb_status in {"out", "questionable", "uncertain", "limited", "backup", "doubtful"}:
+        confidence -= 10 if qb_status == "out" else 6
+    if offensive_line_health in {"poor", "bad", "thin", "injured"}:
+        confidence -= 6
+    if injury_status not in {"clean", "clear", "healthy", "normal", "available"}:
+        confidence -= 5
+    if wind >= 15:
+        confidence -= 5 if market_key in {"total", "player_prop"} else 2
+    book_count = _safe_float(input_stats.get("book_count"))
+    if book_count is not None and book_count < 5:
+        confidence -= 4
+    if input_stats.get("best_available_odds") is None:
+        confidence -= 3
+    current_odds = _safe_float(input_stats.get("current_odds"))
+    consensus_odds = _safe_float(input_stats.get("consensus_odds"))
+    risk = "medium"
+    if current_odds is not None and consensus_odds is not None and abs(current_odds - consensus_odds) >= 25:
+        risk = "high"
+        confidence -= 3
+    if officiating_present:
+        confidence += min(2, len(officiating_present) * 0.5)
+    if social_present:
+        confidence += min(2, len(social_present) * 0.2)
+    if live_present and input_stats.get("live_game") is True:
+        confidence += 3 if len(live_present) >= 5 else -8
+    confidence = max(1, min(95, round(confidence, 2)))
+
+    edge_threshold, confidence_threshold = _nfl_thresholds(risk_profile)
+    no_bet_flags: list[str] = []
+    if edge is None:
+        no_bet_flags.append("edge missing")
+    elif edge <= 0:
+        no_bet_flags.append("negative edge")
+        risk = "high"
+    elif edge < edge_threshold:
+        no_bet_flags.append("edge too small")
+    if confidence < confidence_threshold:
+        no_bet_flags.append("low confidence")
+        risk = "high"
+    if odds_american is None:
+        no_bet_flags.append("odds missing")
+    if current_odds is not None and consensus_odds is not None and abs(current_odds - consensus_odds) >= 35:
+        no_bet_flags.append("market disagreement too high")
+
+    suggested = 0.0
+    if not no_bet_flags and odds_american is not None:
+        suggested = suggested_stake_with_risk_controls(
+            bankroll=bankroll,
+            american_odds=odds_american,
+            true_probability=true_probability,
+            risk_profile="standard" if str(risk_profile or "").lower() == "moderate" else risk_profile,
+            confidence_0_100=confidence,
+        )
+        risk = "low" if edge is not None and edge >= 5 else risk
+
+    return {
+        "model_status": "active",
+        "estimated_true_probability": true_probability,
+        "true_probability": true_probability,
+        "implied_probability": implied_probability,
+        "edge": edge,
+        "confidence": confidence,
+        "risk": risk,
+        "suggested_stake": suggested,
+        "projected_margin": round(projected_margin, 2),
+        "projected_total": round(projected_total, 2),
+        "projected_team_points": round(projected_team_points, 2),
+        "projected_opponent_points": round(projected_opponent_points, 2),
+        "nfl_input_contract": deepcopy(NFL_INPUT_CONTRACT),
+        "input_coverage": {
+            "required_core_present": list(NFL_REQUIRED_CORE_INPUTS),
+            "required_market_specific_present": NFL_REQUIRED_MARKET_SPECIFIC_INPUTS.get(market_key, []),
+            "optional_enrichment_present": optional_present,
+            "optional_enrichment_missing": [field for field in NFL_OPTIONAL_ENRICHMENT_INPUTS if input_stats.get(field) is None],
+            "provider_enrichment_present": provider_present,
+            "officiating_present": officiating_present,
+            "referee_present": officiating_present,
+            "social_crowd_present": social_present,
+            "live_betting_present": live_present,
+        },
+        "provider_enrichment": {
+            "provider_enrichment_present": provider_present,
+            "provider_status": "available" if provider_present else "not_provided",
+        },
+        "no_bet_flags": no_bet_flags,
+    }
+
+
 def _estimate_nba_possession_model(
     input_stats: dict[str, Any],
     payload: dict[str, Any],
@@ -1993,6 +2386,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             return response
 
         nba_model = None
+        nfl_model = None
         if sport == "basketball_nba":
             nba_model = _estimate_nba_possession_model(
                 input_stats=input_stats,
@@ -2002,12 +2396,26 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
                 bankroll=bankroll,
                 risk_profile=payload.get("risk_profile") or "conservative",
             )
+        elif sport == "americanfootball_nfl":
+            nfl_model = _estimate_nfl_drive_model(
+                input_stats=input_stats,
+                payload=payload,
+                market=market,
+                odds_american=odds_american,
+                bankroll=bankroll,
+                risk_profile=payload.get("risk_profile") or "moderate",
+            )
 
         if nba_model:
+            component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
+        elif nfl_model:
             component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
         elif sport == "basketball_nba":
             component_status = COMPONENT_STATUS_INACTIVE
             missing_inputs = _nba_full_inputs_missing(input_stats) + _nba_market_specific_missing(market, input_stats, payload)
+        elif sport == "americanfootball_nfl":
+            component_status = COMPONENT_STATUS_INACTIVE
+            missing_inputs = _nfl_full_inputs_missing(input_stats) + _nfl_market_specific_missing(market, input_stats, payload)
         else:
             component_status, missing_inputs = _component_status(config["required_inputs"], input_stats)
         backtest_status = "passed" if input_stats.get("backtest_proof") else "not_started"
@@ -2025,6 +2433,12 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             edge = nba_model["edge"]
             suggested = nba_model["suggested_stake"]
             no_bet_flags = list(nba_model["no_bet_flags"])
+        elif nfl_model:
+            true_probability = nfl_model["true_probability"]
+            implied_probability = nfl_model["implied_probability"]
+            edge = nfl_model["edge"]
+            suggested = nfl_model["suggested_stake"]
+            no_bet_flags = list(nfl_model["no_bet_flags"])
         if implied_probability is not None and true_probability is not None and odds_american is not None:
             edge = edge_percentage(true_probability, implied_probability)
             if not nba_model:
@@ -2044,7 +2458,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         social_input_stats = dict(input_stats)
         social_input_stats["edge"] = edge
         social_layer = build_social_crowd_calibration_layer(social_input_stats)
-        if social_layer["sentiment_no_bet_flags"] and not nba_model:
+        if social_layer["sentiment_no_bet_flags"] and not (nba_model or nfl_model):
             no_bet_flags = list(dict.fromkeys(no_bet_flags + social_layer["sentiment_no_bet_flags"]))
 
         risk_controller = build_risk_controller(bankroll, unit_size, payload.get("risk_profile") or "conservative")
@@ -2061,9 +2475,10 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         })
         wee_willie = build_wee_willie_market_weakness_detector(detector_payload)
         manual_ticket = build_manual_ticket(detector_payload, suggested)
-        confidence = nba_model["confidence"] if nba_model else input_stats.get("confidence")
-        risk = nba_model["risk"] if nba_model else payload.get("risk_profile") or "conservative"
-        model_status = nba_model["model_status"] if nba_model else component_status
+        active_model = nba_model or nfl_model
+        confidence = active_model["confidence"] if active_model else input_stats.get("confidence")
+        risk = active_model["risk"] if active_model else payload.get("risk_profile") or "conservative"
+        model_status = active_model["model_status"] if active_model else component_status
         officiating_analysis = build_officiating_analysis(
             sport=sport,
             market=market,
@@ -2074,13 +2489,13 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         )
         confirmed_bets = []
         if (
-            nba_model
+            active_model
             and config.get("confirmed_bets_allowed")
             and not no_bet_flags
             and edge is not None
-            and edge >= 2.5
+            and edge >= (_nfl_thresholds(payload.get("risk_profile") or "moderate")[0] if nfl_model else 2.5)
             and confidence is not None
-            and float(confidence) >= 70
+            and float(confidence) >= (_nfl_thresholds(payload.get("risk_profile") or "moderate")[1] if nfl_model else 70)
             and suggested > 0
         ):
             confirmed_bets = [{
@@ -2097,10 +2512,10 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
                 "suggested_stake": suggested,
                 "decision": "CONFIRMED_BET",
             }]
-        if nba_model and not no_bet_flags and not confirmed_bets and suggested <= 0:
+        if active_model and not no_bet_flags and not confirmed_bets and suggested <= 0:
             no_bet_flags = ["risk too high"]
         no_bets = [{"reason": flag} for flag in no_bet_flags]
-        if nba_model and not no_bet_flags and not confirmed_bets:
+        if active_model and not no_bet_flags and not confirmed_bets:
             no_bets = [{"reason": "confirmed bet thresholds not satisfied"}]
         evaluated_status = _evaluated_ticket_status(
             component_status=component_status,
@@ -2116,12 +2531,12 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         full_board = {
             "confirmed_bets": confirmed_bets,
             "target_lines": [] if component_status == COMPONENT_STATUS_INACTIVE else [{"market": market, "target_price": odds_american}],
-            "target_props": [],
-            "target_alt_lines": [],
+            "target_props": [{"market": market, "selection": payload.get("selection") or input_stats.get("selection")}] if _normal_market_key(market) == "player_prop" else [],
+            "target_alt_lines": [{"market": market, "target_price": odds_american}] if _normal_market_key(market) == "alt_line" and component_status != COMPONENT_STATUS_INACTIVE else [],
             "no_bets": no_bets,
             "best_correlated_parlay": None,
             "value_ranking": [],
-            "risk_ranking": [{"selection": payload.get("selection") or input_stats.get("selection"), "risk": risk}] if nba_model else [],
+            "risk_ranking": [{"selection": payload.get("selection") or input_stats.get("selection"), "risk": risk}] if active_model else [],
             "missing_inputs": missing_inputs,
             "manual_review_required": manual_review_flags,
             "logbook_ready_rows": [manual_ticket["logbook_ready_row"]],
@@ -2156,20 +2571,28 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             "ok": True,
             "endpoint": "analyzeSportModel",
             "sport": sport,
+            "model_name": config["model_used"],
             "model_used": config["model_used"],
             "model_family": config["model_family"],
             "market": market,
             "projected_score": nba_model["projected_score"] if nba_model else input_stats.get("projected_score"),
+            "projected_margin": nfl_model["projected_margin"] if nfl_model else (nba_model["projected_score"]["estimated_margin"] if nba_model else input_stats.get("projected_margin")),
+            "projected_total": nfl_model["projected_total"] if nfl_model else input_stats.get("projected_total"),
+            "projected_team_points": nfl_model["projected_team_points"] if nfl_model else None,
+            "projected_opponent_points": nfl_model["projected_opponent_points"] if nfl_model else None,
             "true_probability": true_probability,
             "estimated_true_probability": true_probability,
             "implied_probability": implied_probability,
             "edge": edge,
+            "edge_percent": edge,
             "confidence": confidence,
             "risk": risk,
             "risk_level": risk,
             "model_status": model_status,
+            "partial_model_mode": bool(missing_inputs or true_probability is None),
             "nba_input_contract": deepcopy(NBA_INPUT_CONTRACT) if sport == "basketball_nba" else None,
-            "input_coverage": nba_model.get("input_coverage") if nba_model else None,
+            "nfl_input_contract": deepcopy(NFL_INPUT_CONTRACT) if sport == "americanfootball_nfl" else None,
+            "input_coverage": active_model.get("input_coverage") if active_model else None,
             "suggested_stake": suggested if confirmed_bets else 0,
             "recommended_unit_size": risk_controller["recommended_unit_size"],
             "no_bet_flags": no_bet_flags,
@@ -2196,11 +2619,18 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             "social_crowd_signal_explanation": social_layer["social_crowd_signal_explanation"],
             "officiating_analysis": officiating_analysis,
             **officiating_fields,
+            "provider_enrichment": active_model.get("provider_enrichment") if active_model else {"provider_status": "not_provided", "provider_enrichment_present": []},
             "manual_ticket_preview": manual_ticket,
+            "manual_review_required": manual_review_flags,
             "full_board_preview": full_board,
         "confirmed_bets": confirmed_bets,
         "target_lines": full_board["target_lines"],
+        "target_props": full_board["target_props"],
+        "target_alt_lines": full_board["target_alt_lines"],
         "no_bets": no_bets,
+        "best_correlated_parlay": full_board["best_correlated_parlay"],
+        "value_ranking": full_board["value_ranking"],
+        "risk_ranking": full_board["risk_ranking"],
         "logbook_ready_rows": [logbook_ready_row],
         "supported_sport_keys": list(OFFICIAL_SPORT_KEYS),
         "error": None,

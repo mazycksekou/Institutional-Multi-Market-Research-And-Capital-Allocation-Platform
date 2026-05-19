@@ -35,15 +35,16 @@ class TestMultiSportModelRegistry(unittest.TestCase):
         self.assertIsNotNone(mlb)
         self.assertEqual(mlb["model_level"], "market_derived_only")
 
-    def test_only_activated_nba_allows_confirmed_bets(self):
+    def test_only_activated_nba_and_nfl_allow_confirmed_bets(self):
         sports = registry.get_sports_model_registry_response()["sports"]
         enabled = [sport["sport_key"] for sport in sports if sport["confirmed_bets_allowed"]]
-        self.assertEqual(enabled, ["basketball_nba"])
+        self.assertEqual(enabled, ["basketball_nba", "americanfootball_nfl"])
         self.assertTrue(registry.confirmed_bets_allowed("basketball_nba"))
+        self.assertTrue(registry.confirmed_bets_allowed("americanfootball_nfl"))
         self.assertTrue(all(
             not registry.confirmed_bets_allowed(sport["sport_key"])
             for sport in sports
-            if sport["sport_key"] != "basketball_nba"
+            if sport["sport_key"] not in {"basketball_nba", "americanfootball_nfl"}
         ))
 
     def test_unsupported_sport_helper_behavior_is_clean(self):
@@ -66,9 +67,9 @@ class TestMultiSportModelRegistry(unittest.TestCase):
         self.assertTrue(response["ok"])
         self.assertEqual(response["endpoint"], "getSportsModelRegistry")
         self.assertEqual(response["summary"]["total_sports"], 15)
-        self.assertEqual(response["summary"]["confirmed_bet_enabled_sports"], 1)
+        self.assertEqual(response["summary"]["confirmed_bet_enabled_sports"], 2)
         self.assertEqual(response["summary"]["market_derived_only_sports"], 1)
-        self.assertEqual(response["summary"]["not_built_sports"], 13)
+        self.assertEqual(response["summary"]["not_built_sports"], 12)
         self.assertEqual(response["error"], None)
         self.assertEqual(response["detail"], None)
 
