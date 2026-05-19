@@ -8,11 +8,10 @@ from .sharp_provider import enrich_with_sharp
 
 def enrich_ticket(ticket: dict[str, Any]) -> dict[str, Any]:
     return {
-        "sharp_api": enrich_with_sharp(ticket),
+        "sharp": enrich_with_sharp(ticket),
         "kalshi": enrich_with_kalshi(ticket),
         "notes": [
             "Provider data is enrichment only.",
             "Kalshi is treated as prediction market context, not sportsbook odds.",
         ],
     }
-

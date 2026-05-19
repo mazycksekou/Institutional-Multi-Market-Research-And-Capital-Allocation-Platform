@@ -1,405 +1,282 @@
 openapi: 3.1.0
 info:
-  title: Betting Stock API
-  description: Minimal Custom GPT Action schema for betting and prediction market data.
-  version: 2.0.0
+  title: Betting Stock API Custom GPT Actions
+  description: Custom GPT Action schema for sport-model analysis and sportsbook screenshot ticket analysis.
+  version: 2.1.0
 servers:
   - url: https://betting-stock-api-code-integration.onrender.com
-paths:
-  /health:
-    get:
-      operationId: healthCheck
-      summary: Health Check
-      responses:
-        "200":
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                type: object
-                properties: {}
-                additionalProperties: true
-  /api/debug/config:
-    get:
-      operationId: debugConfig
-      summary: Debug Config
-      security:
-        - ApiKeyAuth: []
-      responses:
-        "200": &genericResponse
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                type: object
-                properties: {}
-                additionalProperties: true
-  /api/betting/providers:
-    get:
-      operationId: getBettingProviders
-      summary: Get Betting Providers
-      security:
-        - ApiKeyAuth: []
-      responses:
-        "200": *genericResponse
-  /api/betting/sports:
-    get:
-      operationId: getSupportedBettingSports
-      summary: Get Supported Betting Sports
-      security:
-        - ApiKeyAuth: []
-      parameters:
-        - name: provider
-          in: query
-          required: false
-          schema:
-            type: string
-            example: the_odds_api
-      responses:
-        "200": *genericResponse
-  /api/betting/events/active:
-    get:
-      operationId: getActiveBettingEvents
-      summary: Get Active Betting Events
-      security:
-        - ApiKeyAuth: []
-      parameters:
-        - name: league
-          in: query
-          required: false
-          description: League code such as mlb, nba, nhl, nfl
-          schema:
-            type: string
-            example: mlb
-        - name: sport
-          in: query
-          required: false
-          schema:
-            type: string
-            example: baseball_mlb
-        - name: provider
-          in: query
-          required: false
-          schema:
-            type: string
-            example: the_odds_api
-      responses:
-        "200": *genericResponse
-  /api/betting/events/{event_id}/odds:
-    get:
-      operationId: getEventOdds
-      summary: Get Event Odds
-      security:
-        - ApiKeyAuth: []
-      parameters:
-        - name: event_id
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: league
-          in: query
-          required: false
-          description: League code such as mlb, nba, nhl, nfl
-          schema:
-            type: string
-            example: mlb
-        - name: sport
-          in: query
-          required: false
-          schema:
-            type: string
-            example: baseball_mlb
-        - name: provider
-          in: query
-          required: false
-          schema:
-            type: string
-            example: the_odds_api
-      responses:
-        "200": *genericResponse
-  /api/betting/first-event-odds:
-    get:
-      operationId: getFirstEventOdds
-      summary: Get First Event Odds
-      security:
-        - ApiKeyAuth: []
-      parameters:
-        - name: league
-          in: query
-          required: false
-          description: League code such as mlb, nba, nhl, nfl
-          schema:
-            type: string
-            example: mlb
-        - name: sport
-          in: query
-          required: false
-          schema:
-            type: string
-            example: baseball_mlb
-        - name: provider
-          in: query
-          required: false
-          schema:
-            type: string
-            example: the_odds_api
-      responses:
-        "200": *genericResponse
-  /api/markets/providers:
-    get:
-      operationId: getMarketProviders
-      summary: Get Market Providers
-      security:
-        - ApiKeyAuth: []
-      responses:
-        "200": *genericResponse
-  /api/markets/kalshi/events:
-    get:
-      operationId: getKalshiEvents
-      summary: Get Kalshi Events
-      security:
-        - ApiKeyAuth: []
-      parameters:
-        - name: status
-          in: query
-          required: false
-          schema:
-            type: string
-        - name: series_ticker
-          in: query
-          required: false
-          schema:
-            type: string
-        - name: limit
-          in: query
-          required: false
-          schema:
-            type: integer
-            default: 100
-      responses:
-        "200": *genericResponse
-  /api/markets/kalshi/markets:
-    get:
-      operationId: getKalshiMarkets
-      summary: Get Kalshi Markets
-      security:
-        - ApiKeyAuth: []
-      parameters:
-        - name: query
-          in: query
-          required: false
-          schema:
-            type: string
-        - name: event_ticker
-          in: query
-          required: false
-          schema:
-            type: string
-        - name: series_ticker
-          in: query
-          required: false
-          schema:
-            type: string
-        - name: status
-          in: query
-          required: false
-          schema:
-            type: string
-        - name: limit
-          in: query
-          required: false
-          schema:
-            type: integer
-            default: 100
-        - name: cursor
-          in: query
-          required: false
-          schema:
-            type: string
-      responses:
-        "200": *genericResponse
-  /api/markets/kalshi/markets/{ticker}/orderbook:
-    get:
-      operationId: getKalshiOrderbook
-      summary: Get Kalshi Orderbook
-      security:
-        - ApiKeyAuth: []
-      parameters:
-        - name: ticker
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200": *genericResponse
-  /quant/bet-analysis:
-    post:
-      operationId: analyzeBet
-      summary: Analyze Bet
-      security:
-        - ApiKeyAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties: {}
-              additionalProperties: true
-      responses:
-        "200": *genericResponse
-  /quant/market-pricing:
-    post:
-      operationId: priceMarket
-      summary: Price Market
-      security:
-        - ApiKeyAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties: {}
-              additionalProperties: true
-      responses:
-        "200": *genericResponse
-  /quant/stock-analysis:
-    post:
-      operationId: analyzeStock
-      summary: Analyze Stock
-      security:
-        - ApiKeyAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties: {}
-              additionalProperties: true
-      responses:
-        "200": *genericResponse
-  /api/actions/betting/log-bet:
-    post:
-      operationId: logBet
-      summary: Log Bet
-      security:
-        - ApiKeyAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties: {}
-              additionalProperties: true
-      responses:
-        "200": *genericResponse
-  /api/actions/betting/log-result:
-    post:
-      operationId: logBetResult
-      summary: Log Bet Result
-      security:
-        - ApiKeyAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties: {}
-              additionalProperties: true
-      responses:
-        "200": *genericResponse
-  /api/actions/betting/logs:
-    get:
-      operationId: getBetLogs
-      summary: Get Bet Logs
-      security:
-        - ApiKeyAuth: []
-      responses:
-        "200": *genericResponse
-  /api/actions/betting/performance-summary:
-    get:
-      operationId: getPerformanceSummary
-      summary: Get Performance Summary
-      security:
-        - ApiKeyAuth: []
-      responses:
-        "200": *genericResponse
-  /api/actions/betting/bankroll-summary:
-    get:
-      operationId: getBankrollSummary
-      summary: Get Bankroll Summary
-      security:
-        - ApiKeyAuth: []
-      responses:
-        "200": *genericResponse
-  /api/actions/betting/clv-report:
-    get:
-      operationId: getCLVReport
-      summary: Get CLV Report
-      security:
-        - ApiKeyAuth: []
-      responses:
-        "200": *genericResponse
-  /api/actions/models/sport-analysis:
-    post:
-      operationId: analyzeSportModel
-      summary: Analyze Sport Model
-      description: Return registered sport-model architecture without live provider calls or automated bet placement.
-      security:
-        - ApiKeyAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - sport
-                - market
-              properties:
-                sport:
-                  type: string
-                  example: basketball_nba
-                league:
-                  type: string
-                market:
-                  type: string
-                  example: moneyline
-                event_id:
-                  type: string
-                home_team:
-                  type: string
-                away_team:
-                  type: string
-                player_name:
-                  type: string
-                odds_american:
-                  type: integer
-                  example: -110
-                line:
-                  type: number
-                input_stats:
-                  type: object
-                  additionalProperties: true
-                risk_profile:
-                  type: string
-                  example: conservative
-                bankroll:
-                  type: number
-                unit_size:
-                  type: number
-              additionalProperties: true
-      responses:
-        "200": *genericResponse
 components:
-  schemas: {}
   securitySchemes:
     ApiKeyAuth:
       type: apiKey
       in: header
       name: X-API-Key
+  schemas:
+    FlexibleObject:
+      type: object
+      additionalProperties: true
+    SportAnalysisRequest:
+      type: object
+      additionalProperties: true
+      properties:
+        sport:
+          description: Official sport key or common alias, such as nba, nfl, mlb, nhl, soccer, boxing, or esports.
+          type:
+            - string
+            - "null"
+        league:
+          description: Optional league or sport key.
+          type:
+            - string
+            - "null"
+        market:
+          description: Market to analyze, such as moneyline, spread, total, player_prop, live, or alt_line.
+          type:
+            - string
+            - "null"
+        event_id:
+          description: Optional event identifier or event label.
+          type:
+            - string
+            - "null"
+        home_team:
+          type:
+            - string
+            - "null"
+        away_team:
+          type:
+            - string
+            - "null"
+        player_name:
+          type:
+            - string
+            - "null"
+        odds_american:
+          description: American odds for the selected market.
+          type:
+            - integer
+            - number
+            - string
+            - "null"
+        line:
+          description: Spread, total, prop, or alternate line value.
+          type:
+            - integer
+            - number
+            - string
+            - "null"
+        input_stats:
+          description: Optional independent model inputs. Missing required inputs should return partial or inactive model status, not a server error.
+          type:
+            - object
+            - "null"
+          additionalProperties: true
+        risk_profile:
+          type:
+            - string
+            - "null"
+          enum:
+            - conservative
+            - standard
+            - aggressive
+            - null
+        bankroll:
+          type:
+            - integer
+            - number
+            - string
+            - "null"
+        unit_size:
+          type:
+            - integer
+            - number
+            - string
+            - "null"
+    ScreenshotAnalysisRequest:
+      type: object
+      additionalProperties: true
+      properties:
+        source_type:
+          description: Source mode, such as chatgpt_parsed, parsed_fields, screenshot_text, ocr_text, or image_metadata.
+          type:
+            - string
+            - "null"
+        sport:
+          description: Sport key or alias, such as nba, nfl, mlb, nhl, soccer, boxing, ufc, mma, valorant, csgo, or lol.
+          type:
+            - string
+            - "null"
+        league:
+          description: League key or alias, such as nba, nfl, mlb, nhl, epl, ucl, or cfb.
+          type:
+            - string
+            - "null"
+        event:
+          description: Event or game name visible in the screenshot.
+          type:
+            - string
+            - "null"
+        teams:
+          description: Teams visible in the screenshot.
+          type:
+            - array
+            - "null"
+          items:
+            type: string
+        market:
+          description: Market type, such as moneyline, spread, total, team_total, player_prop, first_half, first_quarter, first_5_innings, live, alt_line, or kalshi_prediction_market.
+          type:
+            - string
+            - "null"
+        selection:
+          description: Team, player, side, over/under, or outcome selected.
+          type:
+            - string
+            - "null"
+        odds_american:
+          description: American odds visible on the ticket.
+          type:
+            - integer
+            - number
+            - string
+            - "null"
+        line:
+          description: Spread, prop, or alternate line value.
+          type:
+            - integer
+            - number
+            - string
+            - "null"
+        total_line:
+          description: Total points/runs/goals line when the market is a total.
+          type:
+            - integer
+            - number
+            - string
+            - "null"
+        book:
+          description: Sportsbook name visible in the screenshot.
+          type:
+            - string
+            - "null"
+        screenshot_text:
+          description: Text read from the screenshot by ChatGPT or OCR. OCR is optional.
+          type:
+            - string
+            - "null"
+        visible_markets:
+          description: Markets visible in the screenshot.
+          type:
+            - array
+            - "null"
+          items:
+            type:
+              - string
+              - object
+            additionalProperties: true
+        visible_props:
+          description: Player props visible in the screenshot.
+          type:
+            - array
+            - "null"
+          items:
+            type:
+              - string
+              - object
+            additionalProperties: true
+        visible_alt_lines:
+          description: Alternate lines visible in the screenshot.
+          type:
+            - array
+            - "null"
+          items:
+            type:
+              - string
+              - object
+            additionalProperties: true
+        bankroll:
+          type:
+            - integer
+            - number
+            - string
+            - "null"
+        unit_size:
+          type:
+            - integer
+            - number
+            - string
+            - "null"
+        risk_profile:
+          type:
+            - string
+            - "null"
+          enum:
+            - conservative
+            - standard
+            - aggressive
+            - null
+        input_stats:
+          description: Optional independent model inputs. Missing required inputs should return partial_model_mode.
+          type:
+            - object
+            - "null"
+          additionalProperties: true
+security:
+  - ApiKeyAuth: []
+paths:
+  /api/actions/models/sport-analysis:
+    post:
+      operationId: analyzeSportModel
+      summary: Analyze Sport Model
+      description: Return sport-model analysis, no-bet flags, missing inputs, and model governance status. Missing model data should return inactive or partial status rather than a server error.
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SportAnalysisRequest"
+      responses:
+        "200":
+          description: Sport model analysis response.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        default:
+          description: Error response.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+  /api/actions/ticket/screenshot-analysis:
+    post:
+      operationId: analyzeTicketScreenshot
+      summary: Analyze Ticket Screenshot
+      description: Analyze sportsbook ticket fields parsed from a screenshot or OCR text. OCR is optional; ChatGPT may send structured parsed fields directly.
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScreenshotAnalysisRequest"
+      responses:
+        "200":
+          description: Screenshot ticket analysis response. The object is intentionally flexible for Custom GPT compatibility.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        default:
+          description: Error response.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true

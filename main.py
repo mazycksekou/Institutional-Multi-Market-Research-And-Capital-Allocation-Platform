@@ -840,7 +840,11 @@ class ScreenshotAnalysisResponse(BaseModel):
     missing_inputs: list[Any]
     no_bets: list[dict[str, Any]]
     confirmed_bets: list[dict[str, Any]]
+    suggested_stake: Optional[Any] = None
+    implied_probability: Optional[Any] = None
     logbook_ready_rows: list[dict[str, Any]]
+    error: Optional[str] = None
+    detail: Optional[str] = None
 
 
 def utc_now() -> str:
@@ -1343,7 +1347,7 @@ async def action_analyze_ticket_screenshot(payload: ScreenshotAnalysisRequest):
         return screenshot_intake.analyze_screenshot_ticket(payload.model_dump(exclude_none=True))
     except Exception as exc:
         return {
-            "ok": True,
+            "ok": False,
             "endpoint": "ticketScreenshotAnalysis",
             "partial_model_mode": True,
             "parsed_ticket": {},
@@ -1365,7 +1369,11 @@ async def action_analyze_ticket_screenshot(payload: ScreenshotAnalysisRequest):
             "missing_inputs": ["screenshot_analysis_failed"],
             "no_bets": [{"reason": "screenshot_analysis_failed_safely", "detail": type(exc).__name__}],
             "confirmed_bets": [],
+            "suggested_stake": 0,
+            "implied_probability": None,
             "logbook_ready_rows": [],
+            "error": "screenshot_analysis_failed",
+            "detail": f"Screenshot analysis failed safely: {type(exc).__name__}",
         }
 
 

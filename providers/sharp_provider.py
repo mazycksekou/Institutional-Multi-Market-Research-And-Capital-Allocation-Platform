@@ -12,7 +12,7 @@ def enrich_with_sharp(ticket: dict[str, Any]) -> dict[str, Any]:
     api_key = os.getenv("SHARP_API_KEY", "").strip()
     base_url = os.getenv("SHARP_API_BASE_URL", "").strip().rstrip("/")
     if not api_key or not base_url:
-        return unavailable("sharp_api")
+        return unavailable("sharp")
 
     params = {
         "sport": ticket.get("sport"),
@@ -31,8 +31,11 @@ def enrich_with_sharp(ticket: dict[str, Any]) -> dict[str, Any]:
         response.raise_for_status()
         raw = response.json()
     except Exception as exc:
-        return provider_error("sharp_api", f"Sharp API call failed: {type(exc).__name__}")
+        return provider_error(
+            "sharp",
+            f"Sharp API call failed: {type(exc).__name__}",
+            ["Sharp provider failed but analysis continued"],
+        )
 
     data = raw.get("data") if isinstance(raw, dict) else raw
-    return available("sharp_api", data or [], source="sharp_api")
-
+    return available("sharp", data or [], source="sharp")

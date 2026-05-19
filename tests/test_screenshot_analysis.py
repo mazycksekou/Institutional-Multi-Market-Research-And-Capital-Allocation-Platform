@@ -9,6 +9,9 @@ from main import ScreenshotAnalysisRequest, action_analyze_ticket_screenshot, ap
 from providers.kalshi_provider import normalize_kalshi_probability_market
 
 
+ClientResponseError = type("ClientResponseError", (Exception,), {})
+
+
 def _payload(**extra):
     payload = {
         "source_type": "chatgpt_parsed",
@@ -49,14 +52,18 @@ class TestScreenshotAnalysis(unittest.TestCase):
     @patch.dict(os.environ, {}, clear=True)
     def test_sharp_api_unavailable(self):
         response = self._run(_payload())
-        self.assertEqual(response["provider_enrichment"]["sharp_api"]["provider_status"], "unavailable")
+        self.assertEqual(response["provider_enrichment"]["sharp"]["provider_status"], "unavailable")
 
     @patch.dict(os.environ, {"SHARP_API_KEY": "key", "SHARP_API_BASE_URL": "https://sharp.example"}, clear=True)
     @patch("providers.sharp_provider.requests.get")
     def test_sharp_api_error(self, mock_get):
         mock_get.side_effect = RuntimeError("boom")
         response = self._run(_payload())
-        self.assertEqual(response["provider_enrichment"]["sharp_api"]["provider_status"], "error")
+        self.assertEqual(response["provider_enrichment"]["sharp"]["provider_status"], "error")
+        self.assertEqual(
+            response["provider_enrichment"]["sharp"]["provider_notes"],
+            ["Sharp provider failed but analysis continued"],
+        )
         self.assertEqual(response["confirmed_bets"], [])
 
     @patch.dict(os.environ, {}, clear=True)
@@ -70,6 +77,10 @@ class TestScreenshotAnalysis(unittest.TestCase):
         mock_get.side_effect = RuntimeError("boom")
         response = self._run(_payload())
         self.assertEqual(response["provider_enrichment"]["kalshi"]["provider_status"], "error")
+        self.assertEqual(
+            response["provider_enrichment"]["kalshi"]["provider_notes"],
+            ["Kalshi provider failed but analysis continued"],
+        )
         self.assertEqual(response["confirmed_bets"], [])
 
     def test_kalshi_probability_normalization(self):
@@ -142,6 +153,7 @@ class TestScreenshotAnalysis(unittest.TestCase):
         self.assertTrue(body["ok"])
         self.assertTrue(body["partial_model_mode"])
         self.assertEqual(body["confirmed_bets"], [])
+        self.assertEqual(body["suggested_stake"], 0)
 
     @patch.dict(os.environ, {"KALSHI_ENABLED": "true", "KALSHI_BASE_URL": "https://kalshi.example"}, clear=True)
     @patch("providers.kalshi_provider.requests.get")
@@ -154,3 +166,84 @@ class TestScreenshotAnalysis(unittest.TestCase):
         self.assertEqual(response["provider_enrichment"]["kalshi"]["provider_status"], "available")
         self.assertEqual(response["confirmed_bets"], [])
 
+    @patch.dict(os.environ, {"SHARP_API_KEY": "key", "SHARP_API_BASE_URL": "https://sharp.example"}, clear=True)
+    @patch("providers.sharp_provider.requests.get")
+    def test_sharp_client_response_error_still_returns_ok_true(self, mock_get):
+        mock_get.side_effect = ClientResponseError("sharp failed")
+        response = self._run(_payload())
+        self.assertTrue(response["ok"])
+        self.assertTrue(response["partial_model_mode"])
+        self.assertNotIn("error", response)
+        self.assertEqual(response["provider_enrichment"]["sharp"]["provider_status"], "error")
+        self.assertEqual(
+            response["provider_enrichment"]["sharp"]["provider_notes"],
+            ["Sharp provider failed but analysis continued"],
+        )
+        self.assertEqual(response["confirmed_bets"], [])
+        self.assertEqual(response["suggested_stake"], 0)
+        self.assertIsNotNone(response["implied_probability"])
+        self.assertTrue(response["missing_inputs"])
+        self.assertTrue(response["no_bets"])
+        self.assertTrue(response["logbook_ready_rows"])
+
+    @patch.dict(os.environ, {"KALSHI_ENABLED": "true", "KALSHI_BASE_URL": "https://kalshi.example"}, clear=True)
+    @patch("providers.kalshi_provider.requests.get")
+    def test_kalshi_client_response_error_still_returns_ok_true(self, mock_get):
+        mock_get.side_effect = ClientResponseError("kalshi failed")
+        response = self._run(_payload())
+        self.assertTrue(response["ok"])
+        self.assertTrue(response["partial_model_mode"])
+        self.assertNotIn("error", response)
+        self.assertEqual(response["provider_enrichment"]["kalshi"]["provider_status"], "error")
+        self.assertEqual(
+            response["provider_enrichment"]["kalshi"]["provider_notes"],
+            ["Kalshi provider failed but analysis continued"],
+        )
+        self.assertEqual(response["confirmed_bets"], [])
+        self.assertEqual(response["suggested_stake"], 0)
+        self.assertIsNotNone(response["implied_probability"])
+        self.assertTrue(response["missing_inputs"])
+        self.assertTrue(response["no_bets"])
+        self.assertTrue(response["logbook_ready_rows"])
+
+    @patch.dict(
+        os.environ,
+        {
+            "SHARP_API_KEY": "key",
+            "SHARP_API_BASE_URL": "https://sharp.example",
+            "KALSHI_ENABLED": "true",
+            "KALSHI_BASE_URL": "https://kalshi.example",
+        },
+        clear=True,
+    )
+    @patch("providers.kalshi_provider.requests.get")
+    @patch("providers.sharp_provider.requests.get")
+    def test_provider_error_does_not_stop_screenshot_analysis(self, mock_sharp_get, mock_kalshi_get):
+        mock_sharp_get.side_effect = ClientResponseError("sharp failed")
+        mock_kalshi_get.side_effect = ClientResponseError("kalshi failed")
+        response = self._run(_payload())
+        self.assertTrue(response["ok"])
+        self.assertTrue(response["partial_model_mode"])
+        self.assertNotIn("error", response)
+        self.assertEqual(response["provider_enrichment"]["sharp"]["provider_status"], "error")
+        self.assertEqual(response["provider_enrichment"]["kalshi"]["provider_status"], "error")
+        self.assertEqual(response["confirmed_bets"], [])
+        self.assertEqual(response["suggested_stake"], 0)
+
+    def test_top_level_error_only_appears_when_route_itself_fails(self):
+        with patch("main.screenshot_intake.analyze_screenshot_ticket", side_effect=RuntimeError("route failed")):
+            response = self._run(_payload())
+        self.assertFalse(response["ok"])
+        self.assertEqual(response["error"], "screenshot_analysis_failed")
+        self.assertEqual(response["confirmed_bets"], [])
+        self.assertEqual(response["suggested_stake"], 0)
+
+    @patch.dict(os.environ, {"SHARP_API_KEY": "key", "SHARP_API_BASE_URL": "https://sharp.example"}, clear=True)
+    @patch("providers.sharp_provider.requests.get")
+    def test_no_confirmed_bet_from_provider_failure_or_missing_data(self, mock_get):
+        mock_get.side_effect = ClientResponseError("sharp failed")
+        response = self._run(_payload(selection=None, odds_american=None, event=None, teams=[]))
+        self.assertTrue(response["ok"])
+        self.assertEqual(response["confirmed_bets"], [])
+        self.assertEqual(response["suggested_stake"], 0)
+        self.assertTrue(response["missing_inputs"])

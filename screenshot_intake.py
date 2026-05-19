@@ -77,6 +77,7 @@ def analyze_screenshot_ticket(payload: dict[str, Any]) -> dict[str, Any]:
     row = build_logbook_ready_row(ticket, model_analysis)
     log_rows = [row]
     full_board_preview["logbook_ready_rows"] = log_rows
+    implied_probability = model_analysis.get("implied_probability")
 
     return {
         "ok": True,
@@ -89,6 +90,7 @@ def analyze_screenshot_ticket(payload: dict[str, Any]) -> dict[str, Any]:
         "missing_inputs": missing_inputs,
         "no_bets": no_bets,
         "confirmed_bets": [],
+        "suggested_stake": 0,
+        "implied_probability": implied_probability,
         "logbook_ready_rows": log_rows,
     }
-

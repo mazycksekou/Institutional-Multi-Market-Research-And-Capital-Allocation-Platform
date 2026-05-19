@@ -67,11 +67,14 @@ def enrich_with_kalshi(ticket: dict[str, Any]) -> dict[str, Any]:
         response.raise_for_status()
         raw = response.json()
     except Exception as exc:
-        return provider_error("kalshi", f"Kalshi API call failed: {type(exc).__name__}")
+        return provider_error(
+            "kalshi",
+            f"Kalshi API call failed: {type(exc).__name__}",
+            ["Kalshi provider failed but analysis continued"],
+        )
 
     markets = raw.get("markets") if isinstance(raw, dict) else raw
     if not isinstance(markets, list):
         markets = []
     normalized = [normalize_kalshi_probability_market(m) for m in markets if isinstance(m, dict)]
     return available("kalshi", normalized, source="kalshi")
-

@@ -12,11 +12,12 @@ def unavailable(provider: str, reason: str = "missing_environment") -> dict[str,
     }
 
 
-def provider_error(provider: str, message: str) -> dict[str, Any]:
+def provider_error(provider: str, message: str, provider_notes: list[str] | None = None) -> dict[str, Any]:
     return {
         "provider": provider,
         "provider_status": "error",
         "message": message,
+        "provider_notes": provider_notes or [],
         "data": [],
     }
 
@@ -28,4 +29,3 @@ def available(provider: str, data: Any, **extra: Any) -> dict[str, Any]:
         "data": data,
         **extra,
     }
-
