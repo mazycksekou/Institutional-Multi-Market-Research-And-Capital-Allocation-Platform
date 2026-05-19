@@ -2018,20 +2018,23 @@ def _calibrate_nfl_probability(
     if raw_probability >= 0.90 or raw_probability <= 0.10:
         flags.append("raw probability extreme")
 
-    calibrated = (raw_probability * 0.65) + (market_anchor_probability * 0.35)
+    abs_margin = abs(projected_margin)
+    high_quality_extreme = abs_margin >= 14 and input_confidence_hint >= 80
+    if (raw_probability >= 0.90 or raw_probability <= 0.10) and not high_quality_extreme:
+        calibrated = (raw_probability * 0.03) + (market_anchor_probability * 0.97)
+    else:
+        calibrated = (raw_probability * 0.65) + (market_anchor_probability * 0.35)
     if abs(calibrated - raw_probability) >= 0.025:
         flags.append("probability calibration applied")
 
-    abs_margin = abs(projected_margin)
-    high_quality_extreme = abs_margin >= 14 and input_confidence_hint >= 78
     if high_quality_extreme:
         lower_cap, upper_cap = 0.08, 0.92
     elif abs_margin >= 10:
         lower_cap, upper_cap = 0.15, 0.85
     elif abs_margin >= 7:
-        lower_cap, upper_cap = 0.18, 0.82
+        lower_cap, upper_cap = 0.22, 0.78
     elif abs_margin >= 4:
-        lower_cap, upper_cap = 0.25, 0.75
+        lower_cap, upper_cap = 0.30, 0.70
     else:
         lower_cap, upper_cap = 0.38, 0.62
 
@@ -2251,6 +2254,8 @@ def _estimate_nfl_drive_model(
         "model_status": "active",
         "estimated_true_probability": true_probability,
         "true_probability": true_probability,
+        "final_probability": true_probability,
+        "model_probability": true_probability,
         "implied_probability": implied_probability,
         "edge": edge,
         "confidence": confidence,
@@ -2626,7 +2631,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             "implied_probability": implied_probability,
             "edge_percent": edge,
             "confidence": confidence,
-            "suggested_stake": suggested,
+            "suggested_stake": suggested if confirmed_bets else 0,
             "stake": suggested if confirmed_bets else 0,
             "decision": "CONFIRMED_BET" if confirmed_bets else "NO_BET",
             "status": evaluated_status,
@@ -2667,6 +2672,8 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             "projected_opponent_points": nfl_model["projected_opponent_points"] if nfl_model else None,
             "true_probability": true_probability,
             "estimated_true_probability": true_probability,
+            "final_probability": true_probability,
+            "model_probability": true_probability,
             "raw_model_probability": nfl_model["raw_model_probability"] if nfl_model else true_probability,
             "calibrated_model_probability": nfl_model["calibrated_model_probability"] if nfl_model else true_probability,
             "probability_calibration_applied": nfl_model["probability_calibration_applied"] if nfl_model else False,
@@ -2680,6 +2687,8 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             "risk": risk,
             "risk_level": risk,
             "model_status": model_status,
+            "status": evaluated_status,
+            "decision": "CONFIRMED_BET" if confirmed_bets else "NO_BET",
             "partial_model_mode": bool(missing_inputs or true_probability is None),
             "nba_input_contract": deepcopy(NBA_INPUT_CONTRACT) if sport == "basketball_nba" else None,
             "nfl_input_contract": deepcopy(NFL_INPUT_CONTRACT) if sport == "americanfootball_nfl" else None,

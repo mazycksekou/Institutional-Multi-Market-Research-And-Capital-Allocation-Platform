@@ -104,6 +104,38 @@ def sport_payload(**extra):
     return payload
 
 
+def chiefs_ravens_extreme_raw_inputs():
+    return nfl_full_inputs(
+        team="Chiefs",
+        opponent="Ravens",
+        selection="Chiefs",
+        team_offensive_epa_per_play=2.8,
+        opponent_offensive_epa_per_play=-1.2,
+        team_defensive_epa_per_play=-1.2,
+        opponent_defensive_epa_per_play=1.6,
+        team_success_rate=0.70,
+        opponent_success_rate=0.25,
+        team_defensive_success_rate_allowed=0.25,
+        opponent_defensive_success_rate_allowed=0.70,
+        team_explosive_play_rate=0.28,
+        opponent_explosive_play_rate=0.03,
+        team_explosive_play_rate_allowed=0.03,
+        opponent_explosive_play_rate_allowed=0.28,
+        team_pressure_rate_allowed=0.08,
+        opponent_pressure_rate_allowed=0.55,
+        team_pressure_rate_generated=0.60,
+        opponent_pressure_rate_generated=0.08,
+        team_red_zone_td_rate=0.90,
+        opponent_red_zone_td_rate=0.20,
+        team_red_zone_td_rate_allowed=0.20,
+        opponent_red_zone_td_rate_allowed=0.90,
+        team_recent_epa_per_play_3=0.50,
+        opponent_recent_epa_per_play_3=-0.30,
+        team_special_teams_epa=0.20,
+        opponent_special_teams_epa=-0.20,
+    )
+
+
 class TestNflModelActivation(unittest.TestCase):
     def _sport(self, **extra):
         return asyncio.run(action_analyze_sport_model(SportAnalysisRequest(**sport_payload(**extra))))
@@ -155,6 +187,8 @@ class TestNflModelActivation(unittest.TestCase):
         self.assertIn("raw_model_probability", response)
         self.assertIn("calibrated_model_probability", response)
         self.assertIn("market_anchor_probability", response)
+        self.assertIn("final_probability", response)
+        self.assertIn("model_probability", response)
 
     def test_nfl_full_moneyline_inputs_return_edge(self):
         response = self._sport()
@@ -188,6 +222,31 @@ class TestNflModelActivation(unittest.TestCase):
         self.assertGreater(response["suggested_stake"], 0)
         self.assertEqual(response["no_bets"], [])
 
+    def test_nfl_plus_100_calibrated_example_can_confirm_when_gates_pass(self):
+        response = self._sport(odds_american=100)
+        self.assertGreaterEqual(response["estimated_true_probability"], 0.555)
+        self.assertLessEqual(response["estimated_true_probability"], 0.59)
+        self.assertGreater(response["edge"], 2.0)
+        self.assertTrue(response["confirmed_bets"])
+        self.assertEqual(response["logbook_ready_row"]["status"], "confirmed_bet")
+
+    def test_nfl_chiefs_ravens_live_minus_130_calibrates_to_no_bet(self):
+        response = self._sport(
+            event_id="Chiefs vs Ravens",
+            selection="Chiefs",
+            odds_american=-130,
+            input_stats=chiefs_ravens_extreme_raw_inputs(),
+        )
+        self.assertGreaterEqual(response["raw_model_probability"], 0.90)
+        self.assertTrue(response["probability_calibration_applied"])
+        self.assertIn("raw probability extreme", response["probability_sanity_flags"])
+        self.assertLess(response["final_probability"], 0.62)
+        self.assertLess(response["edge_percent"], 3.0)
+        self.assertEqual(response["decision"], "NO_BET")
+        self.assertEqual(response["logbook_ready_row"]["status"], "evaluated_no_bet_edge_too_small")
+        self.assertEqual(response["suggested_stake"], 0)
+        self.assertEqual(response["confirmed_bets"], [])
+
     def test_nfl_extreme_favorite_can_return_higher_probability_with_reason(self):
         response = self._sport(odds_american=-400, input_stats=nfl_full_inputs(
             team_offensive_epa_per_play=1.4,
@@ -214,6 +273,28 @@ class TestNflModelActivation(unittest.TestCase):
             opponent_recent_epa_per_play_3=-0.30,
             team_special_teams_epa=0.20,
             opponent_special_teams_epa=-0.20,
+            team_recent_success_rate_3=0.66,
+            opponent_recent_success_rate_3=0.28,
+            team_yards_per_play=7.2,
+            opponent_yards_per_play=4.2,
+            team_yards_per_play_allowed=4.1,
+            opponent_yards_per_play_allowed=6.9,
+            team_third_down_rate=0.54,
+            opponent_third_down_rate=0.29,
+            team_third_down_rate_allowed=0.28,
+            opponent_third_down_rate_allowed=0.53,
+            team_pass_block_win_rate=0.74,
+            opponent_pass_block_win_rate=0.42,
+            team_pass_rush_win_rate=0.62,
+            opponent_pass_rush_win_rate=0.35,
+            team_coverage_grade=86,
+            opponent_coverage_grade=55,
+            no_vig_market_probability=0.80,
+            opening_odds=-360,
+            current_odds=-400,
+            consensus_odds=-395,
+            best_available_odds=-390,
+            book_count=10,
         ))
         self.assertGreaterEqual(response["projected_margin"], 10)
         self.assertGreaterEqual(response["estimated_true_probability"], 0.80)

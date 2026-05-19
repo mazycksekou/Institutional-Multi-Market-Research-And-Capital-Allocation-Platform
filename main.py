@@ -800,6 +800,15 @@ class SportAnalysisResponse(BaseModel):
     projected_team_points: Optional[Any] = None
     projected_opponent_points: Optional[Any] = None
     true_probability: Optional[float] = None
+    estimated_true_probability: Optional[float] = None
+    final_probability: Optional[float] = None
+    model_probability: Optional[float] = None
+    raw_model_probability: Optional[float] = None
+    calibrated_model_probability: Optional[float] = None
+    market_anchor_probability: Optional[float] = None
+    probability_calibration_applied: bool = False
+    probability_sanity_flags: list[str] = []
+    probability_cap_reason: Optional[str] = None
     implied_probability: Optional[float] = None
     edge: Optional[float] = None
     edge_percent: Optional[float] = None
@@ -807,6 +816,8 @@ class SportAnalysisResponse(BaseModel):
     risk: Optional[Any] = None
     risk_level: str
     model_status: Optional[Any] = None
+    status: Optional[str] = None
+    decision: Optional[str] = None
     partial_model_mode: bool = False
     recommended_unit_size: float
     no_bet_flags: list[str]
