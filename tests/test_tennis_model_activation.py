@@ -21,7 +21,7 @@ TENNIS_MISSING_INPUTS = [
     "player_return_points_won_percent", "opponent_return_points_won_percent",
     "player_ace_rate", "opponent_ace_rate", "player_double_fault_rate", "opponent_double_fault_rate",
     "player_recent_form_wins", "opponent_recent_form_wins", "player_recent_form_losses", "opponent_recent_form_losses",
-    "player_fatigue_index", "opponent_fatigue_index", "player_injury_status", "opponent_injury_status",
+    "player_fatigue_index", "opponent_fatigue_index",
 ]
 
 
@@ -121,8 +121,8 @@ def tennis_exact_live_alias_only_inputs(**extra):
         "match_date": "2026-05-20",
         "surface": "grass",
         "best_of_sets": 3,
-        "player_ranking": 2,
-        "opponent_ranking": 3,
+        "player_rank": 2,
+        "opponent_rank": 3,
         "player_elo": 2200,
         "opponent_elo": 2075,
         "player_recent_win_percent": 70,
@@ -133,14 +133,10 @@ def tennis_exact_live_alias_only_inputs(**extra):
         "opponent_days_rest": 2,
         "player_serve_hold_percent": 86,
         "opponent_serve_hold_percent": 82,
-        "player_break_percent": 28,
-        "opponent_break_percent": 24,
         "player_first_serve_percent": 65,
         "opponent_first_serve_percent": 63,
         "player_surface_win_percent": 78,
         "opponent_surface_win_percent": 70,
-        "player_injury_status": "healthy",
-        "opponent_injury_status": "healthy",
     }
     data.update(extra)
     return data

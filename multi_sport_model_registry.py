@@ -2906,6 +2906,8 @@ def _tennis_recent_win_percent_to_record(value: Any) -> tuple[Optional[int], Opt
 def _normalize_tennis_input_aliases(input_stats: dict[str, Any]) -> dict[str, Any]:
     normalized = dict(input_stats)
     alias_pairs = {
+        "player_ranking": ("player_rank", _safe_float),
+        "opponent_ranking": ("opponent_rank", _safe_float),
         "player_fatigue_index": ("player_fatigue_rating", _tennis_fatigue_rating_to_index),
         "opponent_fatigue_index": ("opponent_fatigue_rating", _tennis_fatigue_rating_to_index),
         "player_rest_days": ("player_days_rest", _safe_float),
@@ -2930,6 +2932,14 @@ def _normalize_tennis_input_aliases(input_stats: dict[str, Any]) -> dict[str, An
             normalized[wins_key] = wins
         if normalized.get(losses_key) is None:
             normalized[losses_key] = losses
+    player_hold = _safe_float(normalized.get("player_hold_percent"))
+    opponent_hold = _safe_float(normalized.get("opponent_hold_percent"))
+    if normalized.get("player_break_percent") is None and opponent_hold is not None:
+        normalized["player_break_percent"] = round(max(0, min(100, 100 - opponent_hold)), 2)
+    if normalized.get("opponent_break_percent") is None and player_hold is not None:
+        normalized["opponent_break_percent"] = round(max(0, min(100, 100 - player_hold)), 2)
+    normalized.setdefault("player_injury_status", "healthy")
+    normalized.setdefault("opponent_injury_status", "healthy")
     for prefix in ("player", "opponent"):
         hold = _safe_float(normalized.get(f"{prefix}_hold_percent"))
         break_percent = _safe_float(normalized.get(f"{prefix}_break_percent"))
