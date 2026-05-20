@@ -69,6 +69,10 @@ SPORT_ALIASES = {
     "nhl": "icehockey_nhl",
     "hockey": "icehockey_nhl",
     "ice_hockey": "icehockey_nhl",
+    "atp": "tennis",
+    "wta": "tennis",
+    "tennis_atp": "tennis",
+    "tennis_wta": "tennis",
     "epl": "soccer",
     "ucl": "soccer",
     "football": "soccer",
@@ -1158,6 +1162,81 @@ NHL_INPUT_CONTRACT = {
     "live_betting_inputs": NHL_LIVE_BETTING_INPUTS,
 }
 
+TENNIS_REQUIRED_CORE_INPUTS = [
+    "player", "opponent", "selection", "market", "league", "tournament", "match_date", "surface", "best_of_sets",
+    "player_ranking", "opponent_ranking", "player_elo", "opponent_elo", "player_surface_elo", "opponent_surface_elo",
+    "player_hold_percent", "opponent_hold_percent", "player_break_percent", "opponent_break_percent",
+    "player_first_serve_in_percent", "opponent_first_serve_in_percent",
+    "player_first_serve_points_won_percent", "opponent_first_serve_points_won_percent",
+    "player_second_serve_points_won_percent", "opponent_second_serve_points_won_percent",
+    "player_return_points_won_percent", "opponent_return_points_won_percent",
+    "player_ace_rate", "opponent_ace_rate", "player_double_fault_rate", "opponent_double_fault_rate",
+    "player_recent_form_wins", "opponent_recent_form_wins", "player_recent_form_losses", "opponent_recent_form_losses",
+    "player_fatigue_index", "opponent_fatigue_index", "player_injury_status", "opponent_injury_status",
+]
+
+TENNIS_REQUIRED_MARKET_SPECIFIC_INPUTS = {
+    "moneyline": ["odds_american"],
+    "match_winner": ["odds_american"],
+    "set_handicap": ["line", "odds_american"],
+    "game_handicap": ["line", "odds_american"],
+    "total_games": ["total_line", "odds_american"],
+    "first_set_moneyline": ["odds_american"],
+    "first_set_total_games": ["total_line", "odds_american"],
+    "correct_score": ["correct_score_selection", "odds_american"],
+    "player_prop": ["player_name", "prop_type", "prop_line", "player_projection", "player_starting_status"],
+    "aces": ["player_name", "prop_line", "player_projection", "odds_american"],
+    "double_faults": ["player_name", "prop_line", "player_projection", "odds_american"],
+    "break_points": ["player_name", "prop_line", "player_projection", "odds_american"],
+    "service_games_won": ["player_name", "prop_line", "player_projection", "odds_american"],
+    "return_games_won": ["player_name", "prop_line", "player_projection", "odds_american"],
+}
+
+TENNIS_OPTIONAL_ENRICHMENT_INPUTS = [
+    "player_last_10_hold_percent", "opponent_last_10_hold_percent", "player_last_10_break_percent", "opponent_last_10_break_percent",
+    "player_last_10_first_serve_points_won", "opponent_last_10_first_serve_points_won",
+    "player_last_10_second_serve_points_won", "opponent_last_10_second_serve_points_won",
+    "player_surface_win_percent", "opponent_surface_win_percent", "player_surface_hold_percent", "opponent_surface_hold_percent",
+    "player_surface_break_percent", "opponent_surface_break_percent", "player_head_to_head_wins", "opponent_head_to_head_wins",
+    "player_head_to_head_surface_wins", "opponent_head_to_head_surface_wins", "player_tiebreak_win_percent",
+    "opponent_tiebreak_win_percent", "player_deciding_set_win_percent", "opponent_deciding_set_win_percent",
+    "player_retirement_risk", "opponent_retirement_risk", "player_travel_fatigue", "opponent_travel_fatigue",
+    "player_rest_days", "opponent_rest_days", "indoor_outdoor", "altitude_factor", "court_speed",
+    "weather_wind_mph", "weather_temperature", "public_betting_percent", "public_money_percent", "sharp_money_percent",
+    "opening_odds", "current_odds", "best_available_odds", "consensus_odds", "opening_line", "current_line",
+    "opening_total", "current_total", "no_vig_market_probability", "book_count",
+]
+
+TENNIS_PROVIDER_ENRICHMENT_INPUTS = [
+    "opening_odds", "current_odds", "best_available_odds", "consensus_odds", "opening_line", "current_line",
+    "opening_total", "current_total", "no_vig_market_probability", "book_count",
+]
+
+TENNIS_OFFICIATING_INPUTS = [
+    "official_name", "chair_umpire", "umpire_name", "official_sample_size", "official_data_source",
+    "official_data_quality", "code_violation_tendency", "time_violation_tendency", "surface_event_context",
+]
+
+TENNIS_SOCIAL_CROWD_INPUTS = [
+    "public_betting_percent", "public_money_percent", "sharp_money_percent", "social_sentiment",
+    "crowd_consensus", "rumor_risk", "news_velocity", "source_quality",
+]
+
+TENNIS_LIVE_BETTING_INPUTS = [
+    "live_match", "live_set", "live_game_score", "live_point_score", "live_server", "live_break_points",
+]
+
+TENNIS_INPUT_CONTRACT = {
+    "required_core_inputs": TENNIS_REQUIRED_CORE_INPUTS,
+    "required_market_specific_inputs": TENNIS_REQUIRED_MARKET_SPECIFIC_INPUTS,
+    "optional_enrichment_inputs": TENNIS_OPTIONAL_ENRICHMENT_INPUTS,
+    "provider_enrichment_inputs": TENNIS_PROVIDER_ENRICHMENT_INPUTS,
+    "officiating_inputs": TENNIS_OFFICIATING_INPUTS,
+    "referee_inputs": TENNIS_OFFICIATING_INPUTS,
+    "social_crowd_inputs": TENNIS_SOCIAL_CROWD_INPUTS,
+    "live_betting_inputs": TENNIS_LIVE_BETTING_INPUTS,
+}
+
 SPORT_PROP_INPUTS = {
     "baseball_mlb": ["player projection", "lineup status", "opponent matchup", "park factor", "weather"],
     "basketball_nba": ["minutes projection", "usage", "pace", "defensive matchup", "injury report"],
@@ -1227,7 +1306,7 @@ OFFICIALS_MODULE_BY_SPORT = {
     },
     "tennis": {
         "official_type": "chair umpire",
-        "official_inputs": ["chair umpire", "code violation tendency", "time violation tendency", "surface event context"],
+        "official_inputs": TENNIS_OFFICIATING_INPUTS,
         "betting_edge_strength": "weak_to_moderate",
         "notes": "Chair umpire context is usually secondary to serve, return, surface, and player form.",
     },
@@ -1708,16 +1787,19 @@ SPORT_MODEL_REGISTRY = [
     _sport(
         "tennis",
         "Tennis",
-        "serve_return_point_simulation",
-        "Serve return model",
+        "elo_serve_return_markov_tennis_model",
+        "Elo serve return Markov tennis model",
         "point_game_set_simulation",
-        ["moneyline", "game spread", "total games", "set betting", "first set winner", "live markets"],
-        ["aces", "double faults", "total games", "player games", "set handicap", "break points where available"],
-        ["serve hold percentage", "return points won", "surface", "fatigue", "Elo", "recent form"],
-        ["tournament context", "weather where relevant"],
+        ["moneyline", "match_winner", "set_handicap", "game_handicap", "total_games", "first_set_moneyline", "first_set_total_games", "correct_score", "player_prop", "aces", "double_faults", "break_points", "service_games_won", "return_games_won", "live"],
+        ["aces", "double faults", "break points", "service games won", "return games won", "total games played", "sets played"],
+        TENNIS_REQUIRED_CORE_INPUTS,
+        TENNIS_OPTIONAL_ENRICHMENT_INPUTS,
         ["serve return model", "point game set simulation", "surface adjustment", "fatigue adjustment", "Elo", "player form", "tournament context"],
         "point game set simulation",
         ["Aces, service holds, and total games are strongly related."],
+        component_status=COMPONENT_STATUS_ACTIVE,
+        model_level=MODEL_LEVEL_PROJECTION_READY,
+        confirmed_bets_allowed=True,
     ),
     _sport(
         "mma_mixed_martial_arts",
@@ -2630,6 +2712,14 @@ def _normal_market_key(value: Any) -> str:
         "second_period_ml": "second_period_moneyline",
         "third_period": "third_period_moneyline",
         "third_period_ml": "third_period_moneyline",
+        "match_winner": "match_winner",
+        "game_spread": "game_handicap",
+        "games_spread": "game_handicap",
+        "set_spread": "set_handicap",
+        "set_betting": "correct_score",
+        "first_set_winner": "first_set_moneyline",
+        "first_set_total": "first_set_total_games",
+        "total_games_played": "total_games",
         "run_line": "runline",
         "run_line_spread": "runline",
         "first_5": "first_5_moneyline",
@@ -2771,6 +2861,32 @@ def _nhl_market_specific_missing(market: Any, input_stats: dict[str, Any], paylo
             "team_total_line",
             "odds_american",
         }:
+            value = payload.get(field)
+        if value is None:
+            missing.append(field)
+    return missing
+
+
+def _tennis_full_inputs_missing(input_stats: dict[str, Any], payload: dict[str, Any]) -> list[str]:
+    missing = []
+    for field in TENNIS_REQUIRED_CORE_INPUTS:
+        value = input_stats.get(field)
+        if value is None and field == "market":
+            value = payload.get("market")
+        if value is None and field == "league":
+            value = payload.get("league")
+        if value is None:
+            missing.append(field)
+    return missing
+
+
+def _tennis_market_specific_missing(market: Any, input_stats: dict[str, Any], payload: dict[str, Any]) -> list[str]:
+    market_key = _normal_market_key(input_stats.get("market_type") or market)
+    required = TENNIS_REQUIRED_MARKET_SPECIFIC_INPUTS.get(market_key, [])
+    missing = []
+    for field in required:
+        value = input_stats.get(field)
+        if value is None and field in {"line", "total_line", "correct_score_selection", "odds_american"}:
             value = payload.get(field)
         if value is None:
             missing.append(field)
@@ -3203,6 +3319,167 @@ def calibrate_nhl_probability(
         "probability_calibration_applied": bool(flags),
         "probability_sanity_flags": list(dict.fromkeys(flags)),
         "probability_cap_reason": f"projected goal differential {round(projected_goal_differential, 2)} goals",
+    }
+
+
+def tennis_logistic(value: float, scale: float = 1.0) -> float:
+    return max(0.01, min(0.99, 1 / (1 + math.exp(-value / max(0.05, scale)))))
+
+
+def estimate_tennis_base_strength(input_stats: dict[str, Any]) -> dict[str, float]:
+    player_elo = _safe_float(input_stats.get("player_elo"), 1500) or 1500
+    opponent_elo = _safe_float(input_stats.get("opponent_elo"), 1500) or 1500
+    player_surface_elo = _safe_float(input_stats.get("player_surface_elo"), player_elo) or player_elo
+    opponent_surface_elo = _safe_float(input_stats.get("opponent_surface_elo"), opponent_elo) or opponent_elo
+    player_rank = _safe_float(input_stats.get("player_ranking"), 100) or 100
+    opponent_rank = _safe_float(input_stats.get("opponent_ranking"), 100) or 100
+    form_edge = (
+        (_safe_float(input_stats.get("player_recent_form_wins"), 0) or 0)
+        - (_safe_float(input_stats.get("player_recent_form_losses"), 0) or 0)
+        - (_safe_float(input_stats.get("opponent_recent_form_wins"), 0) or 0)
+        + (_safe_float(input_stats.get("opponent_recent_form_losses"), 0) or 0)
+    ) * 4.0
+    rank_edge = max(-55, min(55, (opponent_rank - player_rank) * 0.6))
+    player_strength = player_elo * 0.45 + player_surface_elo * 0.45 + rank_edge + form_edge
+    opponent_strength = opponent_elo * 0.45 + opponent_surface_elo * 0.45
+    return {
+        "player_strength_rating": round(player_strength, 2),
+        "opponent_strength_rating": round(opponent_strength, 2),
+        "player_surface_edge": round(player_surface_elo - opponent_surface_elo, 2),
+    }
+
+
+def estimate_tennis_serve_point_probability(input_stats: dict[str, Any], prefix: str) -> float:
+    opponent_prefix = "opponent" if prefix == "player" else "player"
+    first_in = (_safe_float(input_stats.get(f"{prefix}_first_serve_in_percent"), 62) or 62) / 100
+    first_won = (_safe_float(input_stats.get(f"{prefix}_first_serve_points_won_percent"), 70) or 70) / 100
+    second_won = (_safe_float(input_stats.get(f"{prefix}_second_serve_points_won_percent"), 52) or 52) / 100
+    ace_rate = (_safe_float(input_stats.get(f"{prefix}_ace_rate"), 7) or 7) / 100
+    df_rate = (_safe_float(input_stats.get(f"{prefix}_double_fault_rate"), 3) or 3) / 100
+    opponent_return = (_safe_float(input_stats.get(f"{opponent_prefix}_return_points_won_percent"), 38) or 38) / 100
+    point_probability = first_in * first_won + (1 - first_in) * second_won + ace_rate * 0.25 - df_rate * 0.35
+    point_probability = point_probability * 0.86 + (1 - opponent_return) * 0.14
+    return max(0.42, min(0.75, point_probability))
+
+
+def estimate_tennis_hold_probability_from_points(point_probability: float) -> float:
+    p = max(0.35, min(0.80, point_probability))
+    q = 1 - p
+    pre_deuce = p**4 * (1 + 4 * q + 10 * q**2)
+    deuce = 20 * p**3 * q**3
+    win_from_deuce = p * p / max(0.01, 1 - 2 * p * q)
+    return max(0.45, min(0.95, pre_deuce + deuce * win_from_deuce))
+
+
+def estimate_tennis_tiebreak_probability(player_serve_point: float, opponent_serve_point: float, input_stats: dict[str, Any]) -> float:
+    base = 0.5 + (player_serve_point - opponent_serve_point) * 0.75
+    tb_edge = ((_safe_float(input_stats.get("player_tiebreak_win_percent"), 50) or 50) - (_safe_float(input_stats.get("opponent_tiebreak_win_percent"), 50) or 50)) / 100
+    return max(0.30, min(0.70, base + tb_edge * 0.12))
+
+
+def estimate_tennis_set_probability(player_hold: float, opponent_hold: float, tiebreak_probability: float) -> float:
+    service_edge = (player_hold - opponent_hold)
+    raw = 0.5 + service_edge * 1.15 + (tiebreak_probability - 0.5) * 0.18
+    return max(0.20, min(0.80, raw))
+
+
+def estimate_tennis_match_probability(set_probability: float, best_of_sets: int) -> float:
+    p = max(0.05, min(0.95, set_probability))
+    if int(best_of_sets or 3) >= 5:
+        return p**3 + 3 * p**3 * (1 - p) + 6 * p**3 * (1 - p) ** 2
+    return p * p + 2 * p * p * (1 - p)
+
+
+def estimate_tennis_set_score_distribution(set_probability: float, best_of_sets: int) -> dict[str, float]:
+    p = max(0.05, min(0.95, set_probability))
+    if int(best_of_sets or 3) >= 5:
+        return {
+            "3-0": p**3,
+            "3-1": 3 * p**3 * (1 - p),
+            "3-2": 6 * p**3 * (1 - p) ** 2,
+            "0-3": (1 - p) ** 3,
+            "1-3": 3 * (1 - p) ** 3 * p,
+            "2-3": 6 * (1 - p) ** 3 * p**2,
+        }
+    return {
+        "2-0": p**2,
+        "2-1": 2 * p**2 * (1 - p),
+        "0-2": (1 - p) ** 2,
+        "1-2": 2 * (1 - p) ** 2 * p,
+    }
+
+
+def estimate_tennis_game_margin_distribution(match_probability: float, set_probability: float, best_of_sets: int) -> dict[str, float]:
+    expected_sets = 3.0 if int(best_of_sets or 3) >= 5 else 2.35
+    if abs(set_probability - 0.5) < 0.045:
+        expected_sets += 0.35
+    mean_margin = (match_probability - 0.5) * (10 if int(best_of_sets or 3) >= 5 else 7)
+    expected_total = expected_sets * (9.6 + (1 - abs(set_probability - 0.5)) * 1.8)
+    return {"mean_margin": mean_margin, "expected_total_games": expected_total, "volatility": 5.5 if int(best_of_sets or 3) >= 5 else 4.0}
+
+
+def estimate_tennis_total_games_probability(total_line: float, selection: Any, game_distribution: dict[str, float]) -> float:
+    raw = tennis_logistic(game_distribution["expected_total_games"] - total_line, game_distribution["volatility"])
+    return 1 - raw if "under" in str(selection or "").lower() else raw
+
+
+def estimate_tennis_first_set_total_probability(total_line: float, selection: Any, set_probability: float) -> float:
+    expected = 9.2 + (1 - abs(set_probability - 0.5)) * 2.3
+    raw = tennis_logistic(expected - total_line, 2.2)
+    return 1 - raw if "under" in str(selection or "").lower() else raw
+
+
+def estimate_tennis_correct_score_probability(distribution: dict[str, float], correct_score_selection: Any) -> float:
+    text = str(correct_score_selection or "").strip()
+    return max(0.03, min(0.65, distribution.get(text, 0.03)))
+
+
+def estimate_tennis_player_prop_probability(projection: float, prop_line: float) -> float:
+    return max(0.03, min(0.82, tennis_logistic(projection - prop_line, max(0.55, abs(prop_line) * 0.22))))
+
+
+def calibrate_tennis_probability(
+    *,
+    raw_probability: float,
+    market_anchor_probability: float,
+    market_anchor_is_no_vig: bool,
+    elo_gap: float,
+    surface_edge: float,
+    market_key: str,
+    input_confidence_hint: float,
+) -> dict[str, Any]:
+    flags: list[str] = []
+    if raw_probability >= 0.88 or raw_probability <= 0.12:
+        flags.append("raw probability extreme")
+    anchor_weight = 0.25 if market_anchor_is_no_vig else 0.05
+    calibrated = raw_probability * (1 - anchor_weight) + market_anchor_probability * anchor_weight
+    if abs(calibrated - raw_probability) >= 0.025:
+        flags.append("probability calibration applied")
+    edge_size = abs(elo_gap) * 0.75 + abs(surface_edge) * 0.25
+    if market_key in {"correct_score"}:
+        lower_cap, upper_cap = 0.03, 0.45
+    elif market_key in {"first_set_moneyline", "first_set_total_games", "player_prop", "aces", "double_faults", "break_points", "service_games_won", "return_games_won"}:
+        lower_cap, upper_cap = 0.14, 0.75
+    elif edge_size >= 220 and input_confidence_hint >= 78:
+        lower_cap, upper_cap = 0.12, 0.88
+    elif edge_size >= 140:
+        lower_cap, upper_cap = 0.18, 0.82
+    elif edge_size >= 70:
+        lower_cap, upper_cap = 0.22, 0.78
+    else:
+        lower_cap, upper_cap = 0.25, 0.75
+    final_probability = max(lower_cap, min(upper_cap, calibrated))
+    if final_probability != calibrated:
+        flags.append("probability capped by tennis strength edge")
+        flags.append("probability calibration applied")
+    return {
+        "raw_model_probability": raw_probability,
+        "calibrated_model_probability": calibrated,
+        "final_probability": final_probability,
+        "market_anchor_probability": market_anchor_probability,
+        "probability_calibration_applied": bool(flags),
+        "probability_sanity_flags": list(dict.fromkeys(flags)),
+        "probability_cap_reason": f"elo gap {round(elo_gap, 1)}, surface edge {round(surface_edge, 1)}",
     }
 
 
@@ -3940,6 +4217,221 @@ def _estimate_nhl_goal_model(
     }
 
 
+def _estimate_tennis_markov_model(
+    input_stats: dict[str, Any],
+    payload: dict[str, Any],
+    market: Any,
+    odds_american: Optional[float],
+    bankroll: float,
+    risk_profile: str,
+) -> Optional[dict[str, Any]]:
+    core_missing = _tennis_full_inputs_missing(input_stats, payload)
+    market_missing = _tennis_market_specific_missing(market, input_stats, payload)
+    if core_missing or market_missing:
+        return None
+
+    def number(key: str, default: float = 0) -> float:
+        return _safe_float(input_stats.get(key), default) or default
+
+    market_key = _normal_market_key(input_stats.get("market_type") or market)
+    optional_present = [field for field in TENNIS_OPTIONAL_ENRICHMENT_INPUTS if input_stats.get(field) is not None]
+    provider_present = [field for field in TENNIS_PROVIDER_ENRICHMENT_INPUTS if input_stats.get(field) is not None]
+    officiating_present = _official_inputs_present(input_stats, TENNIS_OFFICIATING_INPUTS)
+    social_present = [field for field in TENNIS_SOCIAL_CROWD_INPUTS if input_stats.get(field) is not None]
+    live_present = [field for field in TENNIS_LIVE_BETTING_INPUTS if input_stats.get(field) is not None]
+
+    best_of_sets = int(max(3, min(5, number("best_of_sets", 3))))
+    strength = estimate_tennis_base_strength(input_stats)
+    player_serve_point = estimate_tennis_serve_point_probability(input_stats, "player")
+    opponent_serve_point = estimate_tennis_serve_point_probability(input_stats, "opponent")
+    player_hold = estimate_tennis_hold_probability_from_points(player_serve_point)
+    opponent_hold = estimate_tennis_hold_probability_from_points(opponent_serve_point)
+    player_break = max(0.05, min(0.55, 1 - opponent_hold))
+    opponent_break = max(0.05, min(0.55, 1 - player_hold))
+    serve_edge = player_hold - opponent_hold
+    return_edge = player_break - opponent_break
+    tiebreak_probability = estimate_tennis_tiebreak_probability(player_serve_point, opponent_serve_point, input_stats)
+    set_probability = estimate_tennis_set_probability(player_hold, opponent_hold, tiebreak_probability)
+    elo_gap = strength["player_strength_rating"] - strength["opponent_strength_rating"]
+    set_probability = max(0.18, min(0.82, set_probability + max(-0.06, min(0.06, elo_gap / 2800))))
+
+    surface_adjustment_applied = True
+    fatigue_adjustment_applied = input_stats.get("player_fatigue_index") is not None or input_stats.get("opponent_fatigue_index") is not None
+    injury_adjustment_applied = input_stats.get("player_injury_status") is not None or input_stats.get("opponent_injury_status") is not None
+    weather_adjustment_applied = input_stats.get("weather_wind_mph") is not None or input_stats.get("weather_temperature") is not None
+    fatigue_edge = number("opponent_fatigue_index") - number("player_fatigue_index")
+    set_probability += max(-0.035, min(0.035, fatigue_edge * 0.02))
+    player_injury_status = str(input_stats.get("player_injury_status") or "").lower()
+    opponent_injury_status = str(input_stats.get("opponent_injury_status") or "").lower()
+    if any(word in player_injury_status for word in ["questionable", "injured", "limited"]):
+        set_probability -= 0.045
+    if any(word in opponent_injury_status for word in ["questionable", "injured", "limited"]):
+        set_probability += 0.035
+    if input_stats.get("player_surface_win_percent") is not None:
+        set_probability += max(-0.035, min(0.035, ((number("player_surface_win_percent", 50) - number("opponent_surface_win_percent", 50)) / 100) * 0.08))
+    set_probability = max(0.18, min(0.82, set_probability))
+    match_probability = estimate_tennis_match_probability(set_probability, best_of_sets)
+    first_set_probability = max(0.18, min(0.82, set_probability * 0.92 + 0.04))
+    score_distribution = estimate_tennis_set_score_distribution(set_probability, best_of_sets)
+    game_distribution = estimate_tennis_game_margin_distribution(match_probability, set_probability, best_of_sets)
+
+    selection = str(payload.get("selection") or input_stats.get("selection") or input_stats.get("player") or "").lower()
+    opponent_text = str(input_stats.get("opponent") or "").lower()
+    if market_key in {"moneyline", "match_winner"}:
+        raw_model_probability = 1 - match_probability if opponent_text and opponent_text in selection else match_probability
+    elif market_key == "first_set_moneyline":
+        raw_model_probability = 1 - first_set_probability if opponent_text and opponent_text in selection else first_set_probability
+    elif market_key == "set_handicap":
+        line = _safe_float(input_stats.get("line") if input_stats.get("line") is not None else payload.get("line"), 0) or 0
+        expected_set_margin = (set_probability - 0.5) * (best_of_sets if best_of_sets >= 5 else 2.2)
+        raw_model_probability = tennis_logistic(expected_set_margin + line, 0.85)
+    elif market_key == "game_handicap":
+        line = _safe_float(input_stats.get("line") if input_stats.get("line") is not None else payload.get("line"), 0) or 0
+        raw_model_probability = tennis_logistic(game_distribution["mean_margin"] + line, game_distribution["volatility"])
+    elif market_key == "total_games":
+        total_line = _safe_float(input_stats.get("total_line") if input_stats.get("total_line") is not None else payload.get("total_line"), 0) or 0
+        raw_model_probability = estimate_tennis_total_games_probability(total_line, selection, game_distribution)
+    elif market_key == "first_set_total_games":
+        total_line = _safe_float(input_stats.get("total_line") if input_stats.get("total_line") is not None else payload.get("total_line"), 0) or 0
+        raw_model_probability = estimate_tennis_first_set_total_probability(total_line, selection, set_probability)
+    elif market_key == "correct_score":
+        raw_model_probability = estimate_tennis_correct_score_probability(score_distribution, input_stats.get("correct_score_selection") or payload.get("correct_score_selection"))
+    elif market_key in {"player_prop", "aces", "double_faults", "break_points", "service_games_won", "return_games_won"}:
+        raw_model_probability = estimate_tennis_player_prop_probability(number("player_projection"), number("prop_line"))
+    else:
+        raw_model_probability = match_probability
+
+    implied_probability = american_odds_to_implied_probability(odds_american)
+    market_probability = _safe_probability(input_stats.get("no_vig_market_probability"))
+    market_anchor_probability = market_probability if market_probability is not None else implied_probability if implied_probability is not None else 0.5
+    confidence_hint = calculate_confidence(68, min(7, len(optional_present) * 0.15), min(4, len(provider_present) * 0.5))
+    calibration = calibrate_tennis_probability(
+        raw_probability=raw_model_probability,
+        market_anchor_probability=market_anchor_probability,
+        market_anchor_is_no_vig=market_probability is not None,
+        elo_gap=elo_gap,
+        surface_edge=strength["player_surface_edge"],
+        market_key=market_key,
+        input_confidence_hint=confidence_hint,
+    )
+    true_probability = calibration["final_probability"]
+
+    confidence_adjustments: list[float] = [min(7, len(optional_present) * 0.15), min(4, len(provider_present) * 0.5)]
+    risk = "medium"
+    no_bet_flags: list[str] = []
+    if any(word in player_injury_status for word in ["questionable", "injured", "limited"]):
+        confidence_adjustments.append(-9)
+        no_bet_flags.append("injury risk")
+    if number("player_retirement_risk") >= 0.25:
+        confidence_adjustments.append(-10)
+        no_bet_flags.append("retirement risk")
+    if number("player_fatigue_index") >= 0.70:
+        confidence_adjustments.append(-5)
+        no_bet_flags.append("fatigue risk")
+    if input_stats.get("best_available_odds") is None:
+        confidence_adjustments.append(-3)
+    book_count = _safe_float(input_stats.get("book_count"))
+    if book_count is not None and book_count < 5:
+        confidence_adjustments.append(-4)
+    current_odds = _safe_float(input_stats.get("current_odds"))
+    consensus_odds = _safe_float(input_stats.get("consensus_odds"))
+    if current_odds is not None and consensus_odds is not None and abs(current_odds - consensus_odds) >= 25:
+        confidence_adjustments.append(-3)
+        risk = "high"
+        no_bet_flags.append("market disagreement")
+    if weather_adjustment_applied and number("weather_wind_mph") >= 18 and market_key in {"aces", "player_prop", "service_games_won"}:
+        confidence_adjustments.append(-5)
+        no_bet_flags.append("weather risk for serve props")
+    if market_key == "correct_score":
+        confidence_adjustments.append(-8)
+        risk = "high"
+    if market_key in {"player_prop", "aces", "double_faults", "break_points", "service_games_won", "return_games_won"} and str(input_stats.get("player_starting_status") or "").lower() not in {"confirmed", "active", "starting"}:
+        confidence_adjustments.append(-12)
+        no_bet_flags.append("player starting status unconfirmed")
+    if calibration["probability_sanity_flags"]:
+        confidence_adjustments.append(-min(6, len(calibration["probability_sanity_flags"]) * 2))
+    confidence = calculate_confidence(68, *confidence_adjustments)
+    edge = calculate_edge_percent(true_probability, implied_probability)
+    edge_threshold, confidence_threshold = _nfl_thresholds(risk_profile)
+    if edge is None:
+        no_bet_flags.append("edge missing")
+    elif edge <= 0:
+        no_bet_flags.append("negative edge")
+        risk = "high"
+    elif edge < edge_threshold:
+        no_bet_flags.append("edge too small")
+    if confidence < confidence_threshold:
+        no_bet_flags.append("low confidence")
+        risk = "high"
+    if market_key == "correct_score" and edge is not None and edge < 8:
+        no_bet_flags.append("correct score high variance")
+
+    suggested = 0.0
+    if not no_bet_flags:
+        suggested = calculate_suggested_stake(
+            bankroll=bankroll,
+            american_odds=odds_american,
+            true_probability=true_probability,
+            risk_profile=risk_profile,
+            confidence=confidence,
+        )
+        risk = "low" if edge is not None and edge >= 5 else risk
+
+    return {
+        "model_status": "active",
+        "estimated_true_probability": true_probability,
+        "true_probability": true_probability,
+        "final_probability": true_probability,
+        "model_probability": true_probability,
+        "implied_probability": implied_probability,
+        "edge": edge,
+        "confidence": confidence,
+        "risk": risk,
+        "suggested_stake": suggested,
+        "raw_model_probability": calibration["raw_model_probability"],
+        "calibrated_model_probability": calibration["calibrated_model_probability"],
+        "probability_calibration_applied": calibration["probability_calibration_applied"],
+        "probability_sanity_flags": calibration["probability_sanity_flags"],
+        "probability_cap_reason": calibration["probability_cap_reason"],
+        "market_anchor_probability": calibration["market_anchor_probability"],
+        "player_strength_rating": strength["player_strength_rating"],
+        "opponent_strength_rating": strength["opponent_strength_rating"],
+        "player_surface_edge": strength["player_surface_edge"],
+        "serve_edge": serve_edge,
+        "return_edge": return_edge,
+        "player_hold_probability": player_hold,
+        "opponent_hold_probability": opponent_hold,
+        "player_break_probability": player_break,
+        "opponent_break_probability": opponent_break,
+        "player_set_probability": set_probability,
+        "player_match_probability": match_probability,
+        "first_set_probability": first_set_probability,
+        "tiebreak_probability": tiebreak_probability,
+        "markov_model_applied": True,
+        "surface_adjustment_applied": surface_adjustment_applied,
+        "fatigue_adjustment_applied": fatigue_adjustment_applied,
+        "injury_adjustment_applied": injury_adjustment_applied,
+        "weather_adjustment_applied": weather_adjustment_applied,
+        "tennis_input_contract": deepcopy(TENNIS_INPUT_CONTRACT),
+        "input_coverage": {
+            "required_core_present": list(TENNIS_REQUIRED_CORE_INPUTS),
+            "required_market_specific_present": TENNIS_REQUIRED_MARKET_SPECIFIC_INPUTS.get(market_key, []),
+            "optional_enrichment_present": optional_present,
+            "optional_enrichment_missing": [field for field in TENNIS_OPTIONAL_ENRICHMENT_INPUTS if input_stats.get(field) is None],
+            "provider_enrichment_present": provider_present,
+            "officiating_present": officiating_present,
+            "referee_present": officiating_present,
+            "social_crowd_present": social_present,
+            "live_betting_present": live_present,
+        },
+        "provider_enrichment": {
+            "provider_enrichment_present": provider_present,
+            "provider_status": "available" if provider_present else "not_provided",
+        },
+        "no_bet_flags": list(dict.fromkeys(no_bet_flags)),
+    }
+
+
 def _estimate_mlb_negative_binomial_model(
     input_stats: dict[str, Any],
     payload: dict[str, Any],
@@ -4613,6 +5105,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         mlb_model = None
         soccer_model = None
         nhl_model = None
+        tennis_model = None
         if sport == "basketball_nba":
             nba_model = _estimate_nba_possession_model(
                 input_stats=input_stats,
@@ -4658,6 +5151,15 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
                 bankroll=bankroll,
                 risk_profile=payload.get("risk_profile") or "moderate",
             )
+        elif sport == "tennis":
+            tennis_model = _estimate_tennis_markov_model(
+                input_stats=input_stats,
+                payload=payload,
+                market=market,
+                odds_american=odds_american,
+                bankroll=bankroll,
+                risk_profile=payload.get("risk_profile") or "moderate",
+            )
 
         if nba_model:
             component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
@@ -4668,6 +5170,8 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         elif soccer_model:
             component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
         elif nhl_model:
+            component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
+        elif tennis_model:
             component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
         elif sport == "basketball_nba":
             component_status = COMPONENT_STATUS_INACTIVE
@@ -4684,6 +5188,9 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         elif sport == "icehockey_nhl":
             component_status = COMPONENT_STATUS_INACTIVE
             missing_inputs = _nhl_full_inputs_missing(input_stats, payload) + _nhl_market_specific_missing(market, input_stats, payload)
+        elif sport == "tennis":
+            component_status = COMPONENT_STATUS_INACTIVE
+            missing_inputs = _tennis_full_inputs_missing(input_stats, payload) + _tennis_market_specific_missing(market, input_stats, payload)
         else:
             component_status, missing_inputs = _component_status(config["required_inputs"], input_stats)
         backtest_status = "passed" if input_stats.get("backtest_proof") else "not_started"
@@ -4725,9 +5232,15 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             edge = nhl_model["edge"]
             suggested = nhl_model["suggested_stake"]
             no_bet_flags = list(nhl_model["no_bet_flags"])
+        elif tennis_model:
+            true_probability = tennis_model["true_probability"]
+            implied_probability = tennis_model["implied_probability"]
+            edge = tennis_model["edge"]
+            suggested = tennis_model["suggested_stake"]
+            no_bet_flags = list(tennis_model["no_bet_flags"])
         if implied_probability is not None and true_probability is not None and odds_american is not None:
             edge = edge_percentage(true_probability, implied_probability)
-            if not (nba_model or nfl_model or mlb_model or soccer_model or nhl_model):
+            if not (nba_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model):
                 suggested = suggested_stake_with_risk_controls(
                     bankroll=bankroll,
                     american_odds=odds_american,
@@ -4744,7 +5257,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         social_input_stats = dict(input_stats)
         social_input_stats["edge"] = edge
         social_layer = build_social_crowd_calibration_layer(social_input_stats)
-        if social_layer["sentiment_no_bet_flags"] and not (nba_model or nfl_model or mlb_model or soccer_model or nhl_model):
+        if social_layer["sentiment_no_bet_flags"] and not (nba_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model):
             no_bet_flags = list(dict.fromkeys(no_bet_flags + social_layer["sentiment_no_bet_flags"]))
 
         risk_controller = build_risk_controller(bankroll, unit_size, payload.get("risk_profile") or "conservative")
@@ -4761,7 +5274,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         })
         wee_willie = build_wee_willie_market_weakness_detector(detector_payload)
         manual_ticket = build_manual_ticket(detector_payload, suggested)
-        active_model = nba_model or nfl_model or mlb_model or soccer_model or nhl_model
+        active_model = nba_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model
         confidence = active_model["confidence"] if active_model else input_stats.get("confidence")
         risk = active_model["risk"] if active_model else payload.get("risk_profile") or "conservative"
         model_status = active_model["model_status"] if active_model else component_status
@@ -4779,9 +5292,9 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             and config.get("confirmed_bets_allowed")
             and not no_bet_flags
             and edge is not None
-            and edge >= (_nfl_thresholds(payload.get("risk_profile") or "moderate")[0] if (nfl_model or mlb_model or soccer_model or nhl_model) else 2.5)
+            and edge >= (_nfl_thresholds(payload.get("risk_profile") or "moderate")[0] if (nfl_model or mlb_model or soccer_model or nhl_model or tennis_model) else 2.5)
             and confidence is not None
-            and float(confidence) >= (_nfl_thresholds(payload.get("risk_profile") or "moderate")[1] if (nfl_model or mlb_model or soccer_model or nhl_model) else 70)
+            and float(confidence) >= (_nfl_thresholds(payload.get("risk_profile") or "moderate")[1] if (nfl_model or mlb_model or soccer_model or nhl_model or tennis_model) else 70)
             and suggested > 0
         ):
             confirmed_bets = [{
@@ -4849,7 +5362,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             "status": evaluated_status,
             **officiating_analysis["officiating_logbook_fields"],
         })
-        probability_model = nfl_model or mlb_model or soccer_model or nhl_model
+        probability_model = nfl_model or mlb_model or soccer_model or nhl_model or tennis_model
         if probability_model:
             logbook_ready_row.update({
                 "raw_model_probability": probability_model["raw_model_probability"],
@@ -4898,6 +5411,30 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
                 "special_teams_adjustment_applied": nhl_model["special_teams_adjustment_applied"],
                 "period_lambda_adjustment_applied": nhl_model["period_lambda_adjustment_applied"],
                 "time_decay_applied": nhl_model["time_decay_applied"],
+            })
+        if tennis_model:
+            logbook_ready_row.update({
+                "league": payload.get("league") or input_stats.get("league"),
+                "tournament": input_stats.get("tournament"),
+                "surface": input_stats.get("surface"),
+                "player_strength_rating": tennis_model["player_strength_rating"],
+                "opponent_strength_rating": tennis_model["opponent_strength_rating"],
+                "player_surface_edge": tennis_model["player_surface_edge"],
+                "serve_edge": tennis_model["serve_edge"],
+                "return_edge": tennis_model["return_edge"],
+                "player_hold_probability": tennis_model["player_hold_probability"],
+                "opponent_hold_probability": tennis_model["opponent_hold_probability"],
+                "player_break_probability": tennis_model["player_break_probability"],
+                "opponent_break_probability": tennis_model["opponent_break_probability"],
+                "player_set_probability": tennis_model["player_set_probability"],
+                "player_match_probability": tennis_model["player_match_probability"],
+                "first_set_probability": tennis_model["first_set_probability"],
+                "tiebreak_probability": tennis_model["tiebreak_probability"],
+                "markov_model_applied": tennis_model["markov_model_applied"],
+                "surface_adjustment_applied": tennis_model["surface_adjustment_applied"],
+                "fatigue_adjustment_applied": tennis_model["fatigue_adjustment_applied"],
+                "injury_adjustment_applied": tennis_model["injury_adjustment_applied"],
+                "weather_adjustment_applied": tennis_model["weather_adjustment_applied"],
             })
         if nfl_model:
             logbook_ready_row.update({
@@ -4964,6 +5501,24 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             "special_teams_adjustment_applied": nhl_model["special_teams_adjustment_applied"] if nhl_model else False,
             "period_lambda_adjustment_applied": nhl_model["period_lambda_adjustment_applied"] if nhl_model else False,
             "time_decay_applied": (soccer_model or nhl_model)["time_decay_applied"] if (soccer_model or nhl_model) else False,
+            "player_strength_rating": tennis_model["player_strength_rating"] if tennis_model else None,
+            "opponent_strength_rating": tennis_model["opponent_strength_rating"] if tennis_model else None,
+            "player_surface_edge": tennis_model["player_surface_edge"] if tennis_model else None,
+            "serve_edge": tennis_model["serve_edge"] if tennis_model else None,
+            "return_edge": tennis_model["return_edge"] if tennis_model else None,
+            "player_hold_probability": tennis_model["player_hold_probability"] if tennis_model else None,
+            "opponent_hold_probability": tennis_model["opponent_hold_probability"] if tennis_model else None,
+            "player_break_probability": tennis_model["player_break_probability"] if tennis_model else None,
+            "opponent_break_probability": tennis_model["opponent_break_probability"] if tennis_model else None,
+            "player_set_probability": tennis_model["player_set_probability"] if tennis_model else None,
+            "player_match_probability": tennis_model["player_match_probability"] if tennis_model else None,
+            "first_set_probability": tennis_model["first_set_probability"] if tennis_model else None,
+            "tiebreak_probability": tennis_model["tiebreak_probability"] if tennis_model else None,
+            "markov_model_applied": tennis_model["markov_model_applied"] if tennis_model else False,
+            "surface_adjustment_applied": tennis_model["surface_adjustment_applied"] if tennis_model else False,
+            "fatigue_adjustment_applied": tennis_model["fatigue_adjustment_applied"] if tennis_model else False,
+            "injury_adjustment_applied": tennis_model["injury_adjustment_applied"] if tennis_model else False,
+            "weather_adjustment_applied": tennis_model["weather_adjustment_applied"] if tennis_model else False,
             "true_probability": true_probability,
             "estimated_true_probability": true_probability,
             "final_probability": true_probability,
@@ -4989,6 +5544,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             "mlb_input_contract": deepcopy(MLB_INPUT_CONTRACT) if sport == "baseball_mlb" else None,
             "soccer_input_contract": deepcopy(SOCCER_INPUT_CONTRACT) if sport == "soccer" else None,
             "nhl_input_contract": deepcopy(NHL_INPUT_CONTRACT) if sport == "icehockey_nhl" else None,
+            "tennis_input_contract": deepcopy(TENNIS_INPUT_CONTRACT) if sport == "tennis" else None,
             "input_coverage": active_model.get("input_coverage") if active_model else None,
             "suggested_stake": suggested if confirmed_bets else 0,
             "recommended_unit_size": risk_controller["recommended_unit_size"],
