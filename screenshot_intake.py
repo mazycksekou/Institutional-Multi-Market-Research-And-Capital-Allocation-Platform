@@ -38,6 +38,9 @@ def parse_ticket(payload: dict[str, Any]) -> dict[str, Any]:
     if isinstance(teams, list) and len(teams) >= 2:
         ticket.setdefault("away_team", teams[0])
         ticket.setdefault("home_team", teams[1])
+    input_stats = ticket.get("input_stats") or {}
+    if multi_sport_model_registry.normalize_sport_key(str(ticket.get("sport") or "")) == "tennis":
+        input_stats = multi_sport_model_registry._normalize_tennis_input_aliases(input_stats)
     return {
         "source_type": ticket.get("source_type") or "parsed_fields",
         "sport": ticket.get("sport"),
@@ -57,7 +60,7 @@ def parse_ticket(payload: dict[str, Any]) -> dict[str, Any]:
         "bankroll": ticket.get("bankroll"),
         "unit_size": ticket.get("unit_size"),
         "risk_profile": ticket.get("risk_profile") or "conservative",
-        "input_stats": ticket.get("input_stats") or {},
+        "input_stats": input_stats,
     }
 
 

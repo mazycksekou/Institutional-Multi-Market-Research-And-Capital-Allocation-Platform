@@ -2909,6 +2909,10 @@ def _normalize_tennis_input_aliases(input_stats: dict[str, Any]) -> dict[str, An
         "opponent_fatigue_index": ("opponent_fatigue_rating", _tennis_fatigue_rating_to_index),
         "player_rest_days": ("player_days_rest", _safe_float),
         "opponent_rest_days": ("opponent_days_rest", _safe_float),
+        "player_hold_percent": ("player_serve_hold_percent", _safe_float),
+        "opponent_hold_percent": ("opponent_serve_hold_percent", _safe_float),
+        "player_first_serve_in_percent": ("player_first_serve_percent", _safe_float),
+        "opponent_first_serve_in_percent": ("opponent_first_serve_percent", _safe_float),
     }
     for canonical, (alias, normalizer) in alias_pairs.items():
         if normalized.get(canonical) is None and normalized.get(alias) is not None:
@@ -2925,6 +2929,23 @@ def _normalize_tennis_input_aliases(input_stats: dict[str, Any]) -> dict[str, An
             normalized[wins_key] = wins
         if normalized.get(losses_key) is None:
             normalized[losses_key] = losses
+    for prefix in ("player", "opponent"):
+        hold = _safe_float(normalized.get(f"{prefix}_hold_percent"))
+        break_percent = _safe_float(normalized.get(f"{prefix}_break_percent"))
+        first_in = _safe_float(normalized.get(f"{prefix}_first_serve_in_percent"))
+        if normalized.get(f"{prefix}_first_serve_points_won_percent") is None and hold is not None:
+            normalized[f"{prefix}_first_serve_points_won_percent"] = round(max(58, min(82, hold * 0.72 + 10)), 2)
+        if normalized.get(f"{prefix}_second_serve_points_won_percent") is None:
+            first_won = _safe_float(normalized.get(f"{prefix}_first_serve_points_won_percent"))
+            if first_won is not None:
+                normalized[f"{prefix}_second_serve_points_won_percent"] = round(max(38, min(62, first_won - 16)), 2)
+        if normalized.get(f"{prefix}_return_points_won_percent") is None and break_percent is not None:
+            normalized[f"{prefix}_return_points_won_percent"] = round(max(28, min(48, break_percent * 0.55 + 25)), 2)
+        if normalized.get(f"{prefix}_ace_rate") is None and (hold is not None or first_in is not None):
+            serve_strength = ((hold or 78) - 72) * 0.12 + ((first_in or 63) - 60) * 0.05
+            normalized[f"{prefix}_ace_rate"] = round(max(2.0, min(12.0, 5.0 + serve_strength)), 2)
+        if normalized.get(f"{prefix}_double_fault_rate") is None and first_in is not None:
+            normalized[f"{prefix}_double_fault_rate"] = round(max(1.5, min(6.0, 4.0 - ((first_in or 63) - 60) * 0.06)), 2)
     return normalized
 
 
