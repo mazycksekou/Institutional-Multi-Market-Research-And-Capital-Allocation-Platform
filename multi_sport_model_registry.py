@@ -69,6 +69,15 @@ SPORT_ALIASES = {
     "nhl": "icehockey_nhl",
     "epl": "soccer",
     "ucl": "soccer",
+    "football": "soccer",
+    "soccer_epl": "soccer",
+    "soccer_uefa_champs_league": "soccer",
+    "soccer_spain_la_liga": "soccer",
+    "soccer_italy_serie_a": "soccer",
+    "soccer_germany_bundesliga": "soccer",
+    "soccer_france_ligue_one": "soccer",
+    "soccer_usa_mls": "soccer",
+    "soccer_international": "soccer",
     "valorant": "esports",
     "csgo": "esports",
     "lol": "esports",
@@ -748,6 +757,206 @@ MLB_INPUT_CONTRACT = {
     "live_betting_inputs": MLB_LIVE_BETTING_INPUTS,
 }
 
+SOCCER_REQUIRED_CORE_INPUTS = [
+    "team",
+    "opponent",
+    "selection",
+    "home_away",
+    "market",
+    "league",
+    "match_date",
+    "team_expected_goals",
+    "opponent_expected_goals",
+    "team_xg_for",
+    "opponent_xg_for",
+    "team_xg_against",
+    "opponent_xg_against",
+    "team_goals_for_per_match",
+    "opponent_goals_for_per_match",
+    "team_goals_against_per_match",
+    "opponent_goals_against_per_match",
+    "team_shots_per_match",
+    "opponent_shots_per_match",
+    "team_shots_allowed_per_match",
+    "opponent_shots_allowed_per_match",
+    "team_shots_on_target_per_match",
+    "opponent_shots_on_target_per_match",
+    "team_shots_on_target_allowed_per_match",
+    "opponent_shots_on_target_allowed_per_match",
+    "team_big_chances_per_match",
+    "opponent_big_chances_per_match",
+    "team_big_chances_allowed_per_match",
+    "opponent_big_chances_allowed_per_match",
+    "team_possession_percent",
+    "opponent_possession_percent",
+    "team_recent_form_points",
+    "opponent_recent_form_points",
+    "team_rest_days",
+    "opponent_rest_days",
+    "injury_report_status",
+    "lineup_status",
+]
+
+SOCCER_REQUIRED_MARKET_SPECIFIC_INPUTS = {
+    "moneyline": ["odds_american"],
+    "three_way_moneyline": ["odds_american"],
+    "home_draw_away": ["odds_american"],
+    "draw_no_bet": ["odds_american"],
+    "double_chance": ["odds_american"],
+    "asian_handicap": ["line", "odds_american"],
+    "spread": ["line", "odds_american"],
+    "total": ["total_line", "odds_american"],
+    "team_total": ["team_total_line", "odds_american"],
+    "both_teams_to_score": ["odds_american"],
+    "correct_score": ["correct_score_selection", "odds_american"],
+    "first_half_moneyline": ["odds_american"],
+    "first_half_total": ["total_line", "odds_american"],
+    "first_half_team_total": ["team_total_line", "odds_american"],
+    "second_half_moneyline": ["odds_american"],
+    "second_half_total": ["total_line", "odds_american"],
+    "corners": ["corner_line", "odds_american"],
+    "team_corners": ["team_corner_line", "odds_american"],
+    "cards": ["card_line", "odds_american"],
+    "team_cards": ["team_card_line", "odds_american"],
+    "player_prop": ["player_name", "prop_type", "prop_line", "player_projection", "player_starting_status", "player_minutes_projection"],
+    "anytime_goal_scorer": ["player_name", "player_goal_projection", "player_starting_status", "player_minutes_projection", "odds_american"],
+    "first_goal_scorer": ["player_name", "player_first_goal_projection", "player_starting_status", "player_minutes_projection", "odds_american"],
+    "live": ["live_game", "live_minute", "live_score_team", "live_score_opponent", "odds_american"],
+    "alt_line": ["line", "odds_american"],
+}
+
+SOCCER_OPTIONAL_ENRICHMENT_INPUTS = [
+    "team_recent_xg_for_5",
+    "opponent_recent_xg_for_5",
+    "team_recent_xg_against_5",
+    "opponent_recent_xg_against_5",
+    "team_recent_goals_for_5",
+    "opponent_recent_goals_for_5",
+    "team_recent_goals_against_5",
+    "opponent_recent_goals_against_5",
+    "team_home_xg_for",
+    "team_home_xg_against",
+    "opponent_away_xg_for",
+    "opponent_away_xg_against",
+    "team_set_piece_xg",
+    "opponent_set_piece_xg",
+    "team_set_piece_xg_allowed",
+    "opponent_set_piece_xg_allowed",
+    "team_counter_attack_xg",
+    "opponent_counter_attack_xg",
+    "team_pressing_intensity",
+    "opponent_pressing_intensity",
+    "team_ppda",
+    "opponent_ppda",
+    "team_keeper_save_percent",
+    "opponent_keeper_save_percent",
+    "team_keeper_psxg_minus_goals",
+    "opponent_keeper_psxg_minus_goals",
+    "team_defensive_line_height",
+    "opponent_defensive_line_height",
+    "team_crosses_per_match",
+    "opponent_crosses_per_match",
+    "team_corner_rate",
+    "opponent_corner_rate",
+    "team_cards_per_match",
+    "opponent_cards_per_match",
+    "team_fouls_per_match",
+    "opponent_fouls_per_match",
+    "opponent_fouls_drawn_per_match",
+    "team_fouls_drawn_per_match",
+    "referee_name",
+    "official_sample_size",
+    "official_data_source",
+    "official_data_quality",
+    "referee_fouls_per_match",
+    "referee_cards_per_match",
+    "referee_penalty_rate",
+    "referee_home_bias_index",
+    "referee_over_rate",
+    "referee_under_rate",
+    "referee_btts_rate",
+    "public_betting_percent",
+    "public_money_percent",
+    "sharp_money_percent",
+    "opening_odds",
+    "current_odds",
+    "best_available_odds",
+    "consensus_odds",
+    "opening_line",
+    "current_line",
+    "opening_total",
+    "current_total",
+    "no_vig_market_probability",
+    "book_count",
+    "first_half_goal_share",
+    "dixon_coles_rho",
+    "goal_correlation",
+    "shared_intensity",
+    "weather_severity",
+]
+
+SOCCER_PROVIDER_ENRICHMENT_INPUTS = [
+    "opening_odds",
+    "current_odds",
+    "best_available_odds",
+    "consensus_odds",
+    "opening_line",
+    "current_line",
+    "opening_total",
+    "current_total",
+    "no_vig_market_probability",
+    "book_count",
+]
+
+SOCCER_OFFICIATING_INPUTS = [
+    "referee",
+    "referee name",
+    "official name",
+    "official sample size",
+    "official data source",
+    "official data quality",
+    "referee fouls per match",
+    "referee cards per match",
+    "referee penalty rate",
+    "referee home bias index",
+    "referee over rate",
+    "referee under rate",
+    "referee btts rate",
+]
+
+SOCCER_SOCIAL_CROWD_INPUTS = [
+    "public_betting_percent",
+    "public_money_percent",
+    "sharp_money_percent",
+    "social_sentiment",
+    "crowd_consensus",
+    "rumor_risk",
+    "news_velocity",
+    "source_quality",
+]
+
+SOCCER_LIVE_BETTING_INPUTS = [
+    "live_game",
+    "live_minute",
+    "live_score_team",
+    "live_score_opponent",
+    "live_red_cards_team",
+    "live_red_cards_opponent",
+    "live_xg_team",
+    "live_xg_opponent",
+]
+
+SOCCER_INPUT_CONTRACT = {
+    "required_core_inputs": SOCCER_REQUIRED_CORE_INPUTS,
+    "required_market_specific_inputs": SOCCER_REQUIRED_MARKET_SPECIFIC_INPUTS,
+    "optional_enrichment_inputs": SOCCER_OPTIONAL_ENRICHMENT_INPUTS,
+    "provider_enrichment_inputs": SOCCER_PROVIDER_ENRICHMENT_INPUTS,
+    "officiating_inputs": SOCCER_OFFICIATING_INPUTS,
+    "referee_inputs": SOCCER_OFFICIATING_INPUTS,
+    "social_crowd_inputs": SOCCER_SOCIAL_CROWD_INPUTS,
+    "live_betting_inputs": SOCCER_LIVE_BETTING_INPUTS,
+}
+
 SPORT_PROP_INPUTS = {
     "baseball_mlb": ["player projection", "lineup status", "opponent matchup", "park factor", "weather"],
     "basketball_nba": ["minutes projection", "usage", "pace", "defensive matchup", "injury report"],
@@ -805,7 +1014,7 @@ OFFICIALS_MODULE_BY_SPORT = {
     },
     "soccer": {
         "official_type": "referee",
-        "official_inputs": ["referee", "card rate", "foul rate", "penalty awarded rate", "VAR tendency"],
+        "official_inputs": SOCCER_OFFICIATING_INPUTS,
         "betting_edge_strength": "moderate",
         "notes": "Referee context can matter for cards, penalties, match flow, and totals.",
     },
@@ -1264,16 +1473,19 @@ SPORT_MODEL_REGISTRY = [
     _sport(
         "soccer",
         "Soccer",
-        "dixon_coles_bivariate_poisson_model",
+        "poisson_dixon_coles_bivariate_goal_model",
         "Poisson with Dixon Coles and Bivariate Poisson components",
         "poisson_with_score_dependence",
-        ["1x2", "moneyline where applicable", "draw no bet", "double chance", "Asian handicap", "totals", "team totals", "both teams to score", "correct score", "next goal", "live markets"],
+        ["moneyline", "three_way_moneyline", "home_draw_away", "draw_no_bet", "double_chance", "asian_handicap", "spread", "total", "team_total", "both_teams_to_score", "correct_score", "first_half_moneyline", "first_half_total", "first_half_team_total", "second_half_moneyline", "second_half_total", "corners", "team_corners", "cards", "team_cards", "player_prop", "anytime_goal_scorer", "first_goal_scorer", "live", "alt_line"],
         ["anytime scorer", "first goal scorer", "shots", "shots on target", "assists", "cards", "corners", "saves"],
-        ["team attack strength", "team defense strength", "time decay weights", "league baseline"],
-        ["xG adjustment", "field tilt", "post shot xG"],
+        SOCCER_REQUIRED_CORE_INPUTS,
+        SOCCER_OPTIONAL_ENRICHMENT_INPUTS,
         ["Poisson baseline", "Dixon Coles low score correction", "Bivariate Poisson score dependence", "time decay weighting", "optional xG adjustment", "field tilt engine registered now", "post shot xG engine registered now", "Monte Carlo simulation"],
-        "Monte Carlo simulation",
+        "correlated_poisson",
         ["Field tilt with soccer corners; xG pressure with team total and next goal markets."],
+        component_status=COMPONENT_STATUS_ACTIVE,
+        model_level=MODEL_LEVEL_PROJECTION_READY,
+        confirmed_bets_allowed=True,
     ),
     _sport(
         "icehockey_nhl",
@@ -2207,6 +2419,16 @@ def _normal_market_key(value: Any) -> str:
         "f5_runline": "first_5_runline",
         "first_5_total": "first_5_total",
         "f5_total": "first_5_total",
+        "1x2": "three_way_moneyline",
+        "home_draw_away": "home_draw_away",
+        "draw_no_action": "draw_no_bet",
+        "dnb": "draw_no_bet",
+        "asian_spread": "asian_handicap",
+        "handicap": "asian_handicap",
+        "btts": "both_teams_to_score",
+        "both_teams_score": "both_teams_to_score",
+        "anytime_scorer": "anytime_goal_scorer",
+        "first_scorer": "first_goal_scorer",
         "first_half_spread": "first_half_spread",
         "first_half_total": "first_half_total",
         "first_quarter_moneyline": "first_quarter_moneyline",
@@ -2267,6 +2489,40 @@ def _mlb_market_specific_missing(market: Any, input_stats: dict[str, Any], paylo
     for field in required:
         value = input_stats.get(field)
         if value is None and field in {"line", "total_line", "team_total_line", "odds_american"}:
+            value = payload.get(field)
+        if value is None:
+            missing.append(field)
+    return missing
+
+
+def _soccer_full_inputs_missing(input_stats: dict[str, Any], payload: dict[str, Any]) -> list[str]:
+    missing = []
+    for field in SOCCER_REQUIRED_CORE_INPUTS:
+        value = input_stats.get(field)
+        if value is None and field in {"market", "league"}:
+            value = payload.get(field)
+        if value is None:
+            missing.append(field)
+    return missing
+
+
+def _soccer_market_specific_missing(market: Any, input_stats: dict[str, Any], payload: dict[str, Any]) -> list[str]:
+    market_key = _normal_market_key(input_stats.get("market_type") or market)
+    required = SOCCER_REQUIRED_MARKET_SPECIFIC_INPUTS.get(market_key, [])
+    missing = []
+    for field in required:
+        value = input_stats.get(field)
+        if value is None and field in {
+            "line",
+            "total_line",
+            "team_total_line",
+            "corner_line",
+            "team_corner_line",
+            "card_line",
+            "team_card_line",
+            "correct_score_selection",
+            "odds_american",
+        }:
             value = payload.get(field)
         if value is None:
             missing.append(field)
@@ -2368,6 +2624,204 @@ def estimate_team_total_probability(team_dist: list[float], team_total_line: flo
             push_probability += probability
     probability = under_probability if "under" in str(selection or "").lower() else over_probability
     return max(0.03, min(0.97, probability + push_probability * 0.5))
+
+
+def poisson_pmf(k: int, lam: float) -> float:
+    if k < 0:
+        return 0.0
+    lam = max(0.05, min(5.5, float(lam or 0.05)))
+    return math.exp(-lam + k * math.log(lam) - math.lgamma(k + 1))
+
+
+def build_soccer_score_matrix(team_lambda: float, opponent_lambda: float, max_goals: int = 8) -> list[list[float]]:
+    team_probs = [poisson_pmf(i, team_lambda) for i in range(max_goals)]
+    opponent_probs = [poisson_pmf(i, opponent_lambda) for i in range(max_goals)]
+    team_probs.append(max(0.0, 1.0 - sum(team_probs)))
+    opponent_probs.append(max(0.0, 1.0 - sum(opponent_probs)))
+    matrix = [[team_probs[i] * opponent_probs[j] for j in range(max_goals + 1)] for i in range(max_goals + 1)]
+    total = sum(sum(row) for row in matrix) or 1.0
+    return [[cell / total for cell in row] for row in matrix]
+
+
+def _normalize_score_matrix(matrix: list[list[float]]) -> list[list[float]]:
+    total = sum(sum(row) for row in matrix) or 1.0
+    return [[max(0.0, cell) / total for cell in row] for row in matrix]
+
+
+def apply_dixon_coles_adjustment(matrix: list[list[float]], team_lambda: float, opponent_lambda: float, rho: float = -0.08) -> list[list[float]]:
+    adjusted = [row[:] for row in matrix]
+    rho = max(-0.18, min(0.12, float(rho or -0.08)))
+    corrections = {
+        (0, 0): 1 - (team_lambda * opponent_lambda * rho),
+        (1, 0): 1 + (team_lambda * rho),
+        (0, 1): 1 + (opponent_lambda * rho),
+        (1, 1): 1 - rho,
+    }
+    for (team_goals, opponent_goals), factor in corrections.items():
+        adjusted[team_goals][opponent_goals] *= max(0.5, min(1.5, factor))
+    return _normalize_score_matrix(adjusted)
+
+
+def apply_bivariate_poisson_adjustment(matrix: list[list[float]], shared_intensity: float = 0.05) -> list[list[float]]:
+    adjusted = [row[:] for row in matrix]
+    shared_intensity = max(0.0, min(0.18, float(shared_intensity or 0.0)))
+    if shared_intensity <= 0:
+        return adjusted
+    for team_goals, row in enumerate(adjusted):
+        for opponent_goals, _ in enumerate(row):
+            if team_goals == opponent_goals:
+                adjusted[team_goals][opponent_goals] *= 1 + shared_intensity
+            elif abs(team_goals - opponent_goals) >= 3:
+                adjusted[team_goals][opponent_goals] *= 1 - shared_intensity * 0.35
+    return _normalize_score_matrix(adjusted)
+
+
+def estimate_three_way_probability(matrix: list[list[float]], selection: Any, team: Any, opponent: Any) -> float:
+    team_win = sum(matrix[i][j] for i in range(len(matrix)) for j in range(len(matrix[i])) if i > j)
+    draw = sum(matrix[i][i] for i in range(len(matrix)))
+    opponent_win = max(0.0, 1.0 - team_win - draw)
+    text = str(selection or "").strip().lower()
+    team_text = str(team or "").strip().lower()
+    opponent_text = str(opponent or "").strip().lower()
+    if text in {"draw", "x"}:
+        return draw
+    if text in {"away", "opponent", "2"} or (opponent_text and opponent_text in text):
+        return opponent_win
+    return team_win if text in {"home", "team", "1"} or (team_text and team_text in text) else team_win
+
+
+def estimate_draw_no_bet_probability(matrix: list[list[float]], selection: Any, team: Any, opponent: Any) -> float:
+    team_win = sum(matrix[i][j] for i in range(len(matrix)) for j in range(len(matrix[i])) if i > j)
+    opponent_win = sum(matrix[i][j] for i in range(len(matrix)) for j in range(len(matrix[i])) if i < j)
+    denominator = max(0.01, team_win + opponent_win)
+    text = str(selection or "").strip().lower()
+    opponent_text = str(opponent or "").strip().lower()
+    return opponent_win / denominator if opponent_text and opponent_text in text else team_win / denominator
+
+
+def estimate_double_chance_probability(matrix: list[list[float]], selection: Any, team: Any, opponent: Any) -> float:
+    team_win = sum(matrix[i][j] for i in range(len(matrix)) for j in range(len(matrix[i])) if i > j)
+    draw = sum(matrix[i][i] for i in range(len(matrix)))
+    opponent_win = max(0.0, 1.0 - team_win - draw)
+    text = str(selection or "").strip().lower().replace(" ", "_")
+    if text in {"1x", "team_or_draw"} or str(team or "").lower() in text and "draw" in text:
+        return team_win + draw
+    if text in {"x2", "opponent_or_draw"} or str(opponent or "").lower() in text and "draw" in text:
+        return opponent_win + draw
+    if text in {"12", "team_or_opponent", "no_draw"}:
+        return team_win + opponent_win
+    return team_win + draw
+
+
+def estimate_handicap_probability(matrix: list[list[float]], line: float) -> float:
+    cover = 0.0
+    push = 0.0
+    for team_goals, row in enumerate(matrix):
+        for opponent_goals, probability in enumerate(row):
+            result = (team_goals - opponent_goals) + line
+            if result > 0:
+                cover += probability
+            elif result == 0:
+                push += probability
+    return max(0.03, min(0.97, cover + push * 0.5))
+
+
+def estimate_total_probability_from_score_matrix(matrix: list[list[float]], total_line: float, selection: Any) -> float:
+    over = 0.0
+    under = 0.0
+    push = 0.0
+    for team_goals, row in enumerate(matrix):
+        for opponent_goals, probability in enumerate(row):
+            total = team_goals + opponent_goals
+            if total > total_line:
+                over += probability
+            elif total < total_line:
+                under += probability
+            else:
+                push += probability
+    probability = under if "under" in str(selection or "").lower() else over
+    return max(0.03, min(0.97, probability + push * 0.5))
+
+
+def estimate_team_total_probability_from_score_matrix(matrix: list[list[float]], team_total_line: float, selection: Any) -> float:
+    over = 0.0
+    under = 0.0
+    push = 0.0
+    for team_goals, row in enumerate(matrix):
+        probability = sum(row)
+        if team_goals > team_total_line:
+            over += probability
+        elif team_goals < team_total_line:
+            under += probability
+        else:
+            push += probability
+    probability = under if "under" in str(selection or "").lower() else over
+    return max(0.03, min(0.97, probability + push * 0.5))
+
+
+def estimate_btts_probability(matrix: list[list[float]], selection: Any) -> float:
+    yes = sum(matrix[i][j] for i in range(1, len(matrix)) for j in range(1, len(matrix[i])))
+    return max(0.03, min(0.97, 1 - yes if "no" in str(selection or "").lower() else yes))
+
+
+def estimate_correct_score_probability(matrix: list[list[float]], correct_score_selection: Any) -> float:
+    numbers = [int(part) for part in re.findall(r"\d+", str(correct_score_selection or ""))[:2]]
+    if len(numbers) != 2:
+        return 0.03
+    team_goals, opponent_goals = numbers
+    if team_goals >= len(matrix) or opponent_goals >= len(matrix[0]):
+        return 0.03
+    return max(0.03, min(0.97, matrix[team_goals][opponent_goals]))
+
+
+def estimate_first_half_lambdas(team_lambda: float, opponent_lambda: float, share: Optional[float] = None) -> tuple[float, float]:
+    first_half_share = max(0.38, min(0.50, float(share) if share is not None else 0.45))
+    return team_lambda * first_half_share, opponent_lambda * first_half_share
+
+
+def calibrate_soccer_probability(
+    *,
+    raw_probability: float,
+    market_anchor_probability: float,
+    market_anchor_is_no_vig: bool,
+    projected_goal_differential: float,
+    market_key: str,
+    input_confidence_hint: float,
+) -> dict[str, Any]:
+    flags: list[str] = []
+    if raw_probability >= 0.90 or raw_probability <= 0.05:
+        flags.append("raw probability extreme")
+    anchor_weight = 0.25 if market_anchor_is_no_vig else 0.05
+    calibrated = (raw_probability * (1 - anchor_weight)) + (market_anchor_probability * anchor_weight)
+    if abs(calibrated - raw_probability) >= 0.025:
+        flags.append("probability calibration applied")
+
+    abs_diff = abs(projected_goal_differential)
+    if market_key in {"draw_no_bet", "double_chance", "both_teams_to_score"}:
+        lower_cap, upper_cap = 0.18, 0.86
+    elif market_key in {"correct_score", "first_goal_scorer"}:
+        lower_cap, upper_cap = 0.03, 0.32
+    elif abs_diff >= 1.0 and input_confidence_hint >= 75:
+        lower_cap, upper_cap = 0.12, 0.75
+    elif abs_diff >= 0.60:
+        lower_cap, upper_cap = 0.15, 0.70
+    elif abs_diff >= 0.25:
+        lower_cap, upper_cap = 0.20, 0.60
+    else:
+        lower_cap, upper_cap = 0.25, 0.50
+    final_probability = max(lower_cap, min(upper_cap, calibrated))
+    if final_probability != calibrated:
+        flags.append("probability capped by projected goal differential")
+        flags.append("probability calibration applied")
+    return {
+        "raw_model_probability": raw_probability,
+        "calibrated_model_probability": calibrated,
+        "final_probability": final_probability,
+        "market_anchor_probability": market_anchor_probability,
+        "probability_calibration_applied": bool(flags),
+        "probability_sanity_flags": list(dict.fromkeys(flags)),
+        "probability_cap_reason": f"projected goal differential {round(projected_goal_differential, 2)} goals",
+    }
 
 
 def calibrate_mlb_probability(
@@ -2501,6 +2955,296 @@ def _calibrate_nfl_probability(
             if high_quality_extreme
             else f"projected margin {round(projected_margin, 2)} points"
         ),
+    }
+
+
+def _estimate_soccer_goal_model(
+    input_stats: dict[str, Any],
+    payload: dict[str, Any],
+    market: Any,
+    odds_american: Optional[float],
+    bankroll: float,
+    risk_profile: str,
+) -> Optional[dict[str, Any]]:
+    core_missing = _soccer_full_inputs_missing(input_stats, payload)
+    market_missing = _soccer_market_specific_missing(market, input_stats, payload)
+    if core_missing or market_missing:
+        return None
+
+    def number(key: str, default: float = 0) -> float:
+        return _safe_float(input_stats.get(key), default) or default
+
+    market_key = _normal_market_key(input_stats.get("market_type") or market)
+    optional_present = [field for field in SOCCER_OPTIONAL_ENRICHMENT_INPUTS if input_stats.get(field) is not None]
+    provider_present = [field for field in SOCCER_PROVIDER_ENRICHMENT_INPUTS if input_stats.get(field) is not None]
+    officiating_present = _official_inputs_present(input_stats, SOCCER_OFFICIATING_INPUTS)
+    social_present = [field for field in SOCCER_SOCIAL_CROWD_INPUTS if input_stats.get(field) is not None]
+    live_present = [field for field in SOCCER_LIVE_BETTING_INPUTS if input_stats.get(field) is not None]
+
+    team_lambda = (
+        number("team_expected_goals") * 0.35
+        + ((number("team_xg_for") + number("opponent_xg_against")) / 2) * 0.35
+        + ((number("team_goals_for_per_match") + number("opponent_goals_against_per_match")) / 2) * 0.15
+        + ((number("team_shots_on_target_per_match") + number("opponent_shots_on_target_allowed_per_match")) / 9) * 0.15
+    )
+    opponent_lambda = (
+        number("opponent_expected_goals") * 0.35
+        + ((number("opponent_xg_for") + number("team_xg_against")) / 2) * 0.35
+        + ((number("opponent_goals_for_per_match") + number("team_goals_against_per_match")) / 2) * 0.15
+        + ((number("opponent_shots_on_target_per_match") + number("team_shots_on_target_allowed_per_match")) / 9) * 0.15
+    )
+    time_decay_applied = False
+    if input_stats.get("team_recent_xg_for_5") is not None and input_stats.get("opponent_recent_xg_for_5") is not None:
+        team_lambda = team_lambda * 0.75 + number("team_recent_xg_for_5") * 0.25
+        opponent_lambda = opponent_lambda * 0.75 + number("opponent_recent_xg_for_5") * 0.25
+        time_decay_applied = True
+    if input_stats.get("team_home_xg_for") is not None and str(input_stats.get("home_away") or "").lower() == "home":
+        team_lambda = team_lambda * 0.85 + number("team_home_xg_for") * 0.15
+    if input_stats.get("opponent_away_xg_for") is not None:
+        opponent_lambda = opponent_lambda * 0.85 + number("opponent_away_xg_for") * 0.15
+    team_lambda += (number("team_big_chances_per_match") - number("opponent_big_chances_allowed_per_match")) * 0.035
+    opponent_lambda += (number("opponent_big_chances_per_match") - number("team_big_chances_allowed_per_match")) * 0.035
+    possession_edge = (number("team_possession_percent") - number("opponent_possession_percent")) / 100
+    team_lambda += max(-0.08, min(0.08, possession_edge * 0.18))
+    opponent_lambda -= max(-0.08, min(0.08, possession_edge * 0.12))
+    rest_edge = number("team_rest_days") - number("opponent_rest_days")
+    team_lambda += max(-0.08, min(0.08, rest_edge * 0.025))
+    opponent_lambda -= max(-0.06, min(0.06, rest_edge * 0.015))
+
+    injury_status = str(input_stats.get("injury_report_status") or "").lower()
+    lineup_status = str(input_stats.get("lineup_status") or "").lower()
+    if "attacker" in injury_status or "forward" in injury_status:
+        team_lambda -= 0.18
+    if "defender" in injury_status:
+        opponent_lambda += 0.15
+    if "goalkeeper" in injury_status or "keeper" in injury_status:
+        opponent_lambda += 0.20
+    if lineup_status not in {"confirmed", "posted", "official"}:
+        team_lambda -= 0.08
+        opponent_lambda -= 0.03
+    if str(input_stats.get("weather_severity") or "").lower() in {"severe", "high", "wind", "storm"}:
+        team_lambda -= 0.08
+        opponent_lambda -= 0.08
+    if officiating_present:
+        team_lambda += (number("referee_penalty_rate", 0.10) - 0.10) * 0.25
+        opponent_lambda += (number("referee_penalty_rate", 0.10) - 0.10) * 0.20
+
+    probability_sanity_flags: list[str] = []
+    uncapped_team_lambda = team_lambda
+    uncapped_opponent_lambda = opponent_lambda
+    team_lambda = max(0.20, min(3.8, team_lambda))
+    opponent_lambda = max(0.20, min(3.8, opponent_lambda))
+    if team_lambda != uncapped_team_lambda or opponent_lambda != uncapped_opponent_lambda:
+        probability_sanity_flags.append("lambda capped")
+
+    rho = _safe_float(input_stats.get("dixon_coles_rho"), -0.08)
+    score_matrix = build_soccer_score_matrix(team_lambda, opponent_lambda)
+    score_matrix = apply_dixon_coles_adjustment(score_matrix, team_lambda, opponent_lambda, rho if rho is not None else -0.08)
+    shared_intensity = _safe_float(input_stats.get("shared_intensity"))
+    if shared_intensity is None:
+        goal_correlation = _safe_float(input_stats.get("goal_correlation"), 0.05) or 0.05
+        shared_intensity = max(0.02, min(0.10, goal_correlation))
+    score_matrix = apply_bivariate_poisson_adjustment(score_matrix, shared_intensity)
+    first_half_lambdas = estimate_first_half_lambdas(team_lambda, opponent_lambda, _safe_float(input_stats.get("first_half_goal_share")))
+    first_half_matrix = apply_bivariate_poisson_adjustment(
+        apply_dixon_coles_adjustment(build_soccer_score_matrix(*first_half_lambdas), *first_half_lambdas, rho if rho is not None else -0.08),
+        min(0.08, shared_intensity),
+    )
+
+    selection = payload.get("selection") or input_stats.get("selection")
+    team = input_stats.get("team")
+    opponent = input_stats.get("opponent")
+    if market_key in {"moneyline", "three_way_moneyline", "home_draw_away"}:
+        if market_key == "moneyline" and input_stats.get("two_way_market") is True:
+            raw_model_probability = estimate_draw_no_bet_probability(score_matrix, selection, team, opponent)
+        elif market_key == "moneyline" and input_stats.get("two_way_market") is None:
+            raw_model_probability = estimate_three_way_probability(score_matrix, selection, team, opponent)
+        else:
+            raw_model_probability = estimate_three_way_probability(score_matrix, selection, team, opponent)
+    elif market_key == "draw_no_bet":
+        raw_model_probability = estimate_draw_no_bet_probability(score_matrix, selection, team, opponent)
+    elif market_key == "double_chance":
+        raw_model_probability = estimate_double_chance_probability(score_matrix, selection, team, opponent)
+    elif market_key in {"asian_handicap", "spread", "alt_line"}:
+        line = _safe_float(input_stats.get("line") if input_stats.get("line") is not None else payload.get("line"), 0) or 0
+        raw_model_probability = estimate_handicap_probability(score_matrix, line)
+    elif market_key in {"total", "second_half_total"}:
+        total_line = _safe_float(input_stats.get("total_line") if input_stats.get("total_line") is not None else payload.get("total_line"), 0) or 0
+        raw_model_probability = estimate_total_probability_from_score_matrix(score_matrix, total_line, selection)
+    elif market_key == "team_total":
+        team_total_line = _safe_float(input_stats.get("team_total_line") if input_stats.get("team_total_line") is not None else payload.get("team_total_line"), 0) or 0
+        raw_model_probability = estimate_team_total_probability_from_score_matrix(score_matrix, team_total_line, selection)
+    elif market_key == "both_teams_to_score":
+        raw_model_probability = estimate_btts_probability(score_matrix, selection)
+    elif market_key == "correct_score":
+        raw_model_probability = estimate_correct_score_probability(score_matrix, input_stats.get("correct_score_selection") or payload.get("correct_score_selection"))
+    elif market_key == "first_half_moneyline":
+        raw_model_probability = estimate_three_way_probability(first_half_matrix, selection, team, opponent)
+    elif market_key == "first_half_total":
+        total_line = _safe_float(input_stats.get("total_line") if input_stats.get("total_line") is not None else payload.get("total_line"), 0) or 0
+        raw_model_probability = estimate_total_probability_from_score_matrix(first_half_matrix, total_line, selection)
+    elif market_key == "first_half_team_total":
+        team_total_line = _safe_float(input_stats.get("team_total_line") if input_stats.get("team_total_line") is not None else payload.get("team_total_line"), 0) or 0
+        raw_model_probability = estimate_team_total_probability_from_score_matrix(first_half_matrix, team_total_line, selection)
+    elif market_key in {"corners", "team_corners"}:
+        line_key = "team_corner_line" if market_key == "team_corners" else "corner_line"
+        projection = number("team_corner_rate", 5.0) if market_key == "team_corners" else number("team_corner_rate", 5.0) + number("opponent_corner_rate", 4.8)
+        line = _safe_float(input_stats.get(line_key) if input_stats.get(line_key) is not None else payload.get(line_key), 0) or 0
+        raw_model_probability = _logistic_probability(projection - line, 2.0)
+    elif market_key in {"cards", "team_cards"}:
+        line_key = "team_card_line" if market_key == "team_cards" else "card_line"
+        projection = number("team_cards_per_match", 2.0) if market_key == "team_cards" else number("team_cards_per_match", 2.0) + number("opponent_cards_per_match", 2.0)
+        if officiating_present:
+            projection = projection * 0.85 + number("referee_cards_per_match", projection) * 0.15
+        line = _safe_float(input_stats.get(line_key) if input_stats.get(line_key) is not None else payload.get(line_key), 0) or 0
+        raw_model_probability = _logistic_probability(projection - line, 1.4)
+    elif market_key == "anytime_goal_scorer":
+        goal_projection = number("player_goal_projection")
+        minutes = max(1, number("player_minutes_projection", 75))
+        raw_model_probability = max(0.03, min(0.75, 1 - math.exp(-goal_projection * minutes / 90)))
+    elif market_key == "first_goal_scorer":
+        raw_model_probability = max(0.03, min(0.35, number("player_first_goal_projection")))
+    elif market_key == "player_prop":
+        projection = number("player_projection")
+        prop_line = number("prop_line")
+        raw_model_probability = _logistic_probability(projection - prop_line, max(0.75, abs(prop_line) * 0.22))
+    else:
+        raw_model_probability = estimate_three_way_probability(score_matrix, selection, team, opponent)
+
+    implied_probability = american_odds_to_implied_probability(odds_american)
+    market_probability = _safe_probability(input_stats.get("no_vig_market_probability"))
+    market_anchor_probability = market_probability if market_probability is not None else implied_probability if implied_probability is not None else 0.5
+    projected_goal_differential = team_lambda - opponent_lambda
+
+    confidence_base = 68
+    confidence_hint = calculate_confidence(confidence_base, min(7, len(optional_present) * 0.15), min(4, len(provider_present) * 0.5))
+    calibration = calibrate_soccer_probability(
+        raw_probability=raw_model_probability,
+        market_anchor_probability=market_anchor_probability,
+        market_anchor_is_no_vig=market_probability is not None,
+        projected_goal_differential=projected_goal_differential,
+        market_key=market_key,
+        input_confidence_hint=confidence_hint,
+    )
+    if probability_sanity_flags:
+        calibration["probability_sanity_flags"] = list(dict.fromkeys(calibration["probability_sanity_flags"] + probability_sanity_flags))
+        calibration["probability_calibration_applied"] = True
+    true_probability = calibration["final_probability"]
+
+    confidence_adjustments: list[float] = [min(7, len(optional_present) * 0.15), min(4, len(provider_present) * 0.5)]
+    if lineup_status not in {"confirmed", "posted", "official"}:
+        confidence_adjustments.append(-7)
+    if "goalkeeper" in injury_status or "keeper" in injury_status:
+        confidence_adjustments.append(-7)
+    if abs(rest_edge) >= 3:
+        confidence_adjustments.append(-3)
+    if str(input_stats.get("weather_severity") or "").lower() in {"severe", "high", "wind", "storm"}:
+        confidence_adjustments.append(-5)
+    if input_stats.get("best_available_odds") is None:
+        confidence_adjustments.append(-3)
+    book_count = _safe_float(input_stats.get("book_count"))
+    if book_count is not None and book_count < 5:
+        confidence_adjustments.append(-4)
+    current_odds = _safe_float(input_stats.get("current_odds"))
+    consensus_odds = _safe_float(input_stats.get("consensus_odds"))
+    risk = "medium"
+    if current_odds is not None and consensus_odds is not None and abs(current_odds - consensus_odds) >= 25:
+        risk = "high"
+        confidence_adjustments.append(-3)
+    if officiating_present and number("official_sample_size") and number("official_sample_size") < 20:
+        confidence_adjustments.append(-2)
+    if market_key in {"correct_score", "first_goal_scorer"}:
+        risk = "high"
+        confidence_adjustments.append(-8)
+    if market_key in {"player_prop", "anytime_goal_scorer", "first_goal_scorer"}:
+        if str(input_stats.get("player_starting_status") or "").lower() not in {"confirmed", "starting", "active"}:
+            confidence_adjustments.append(-12)
+        if number("player_minutes_projection") < 60:
+            confidence_adjustments.append(-6)
+    if calibration["probability_sanity_flags"]:
+        confidence_adjustments.append(-min(6, len(calibration["probability_sanity_flags"]) * 2))
+    confidence = calculate_confidence(confidence_base, *confidence_adjustments)
+
+    edge = calculate_edge_percent(true_probability, implied_probability)
+    edge_threshold, confidence_threshold = _nfl_thresholds(risk_profile)
+    no_bet_flags: list[str] = []
+    if edge is None:
+        no_bet_flags.append("edge missing")
+    elif edge <= 0:
+        no_bet_flags.append("negative edge")
+        risk = "high"
+    elif edge < edge_threshold:
+        no_bet_flags.append("edge too small")
+    if confidence < confidence_threshold:
+        no_bet_flags.append("low confidence")
+        risk = "high"
+    if lineup_status not in {"confirmed", "posted", "official"}:
+        no_bet_flags.append("lineup not confirmed")
+    if market_key in {"player_prop", "anytime_goal_scorer", "first_goal_scorer"} and str(input_stats.get("player_starting_status") or "").lower() not in {"confirmed", "starting", "active"}:
+        no_bet_flags.append("player starting status unconfirmed")
+    if market_key in {"correct_score", "first_goal_scorer"} and edge is not None and edge < 8:
+        no_bet_flags.append("high variance market")
+    if current_odds is not None and consensus_odds is not None and abs(current_odds - consensus_odds) >= 35:
+        no_bet_flags.append("market disagreement too high")
+
+    suggested = 0.0
+    if not no_bet_flags:
+        suggested = calculate_suggested_stake(
+            bankroll=bankroll,
+            american_odds=odds_american,
+            true_probability=true_probability,
+            risk_profile=risk_profile,
+            confidence=confidence,
+        )
+        risk = "low" if edge is not None and edge >= 5 else risk
+
+    draw_probability = sum(score_matrix[i][i] for i in range(len(score_matrix)))
+    btts_probability = estimate_btts_probability(score_matrix, "yes")
+    return {
+        "model_status": "active",
+        "estimated_true_probability": true_probability,
+        "true_probability": true_probability,
+        "final_probability": true_probability,
+        "model_probability": true_probability,
+        "implied_probability": implied_probability,
+        "edge": edge,
+        "confidence": confidence,
+        "risk": risk,
+        "suggested_stake": suggested,
+        "raw_model_probability": calibration["raw_model_probability"],
+        "calibrated_model_probability": calibration["calibrated_model_probability"],
+        "probability_calibration_applied": calibration["probability_calibration_applied"],
+        "probability_sanity_flags": calibration["probability_sanity_flags"],
+        "probability_cap_reason": calibration["probability_cap_reason"],
+        "market_anchor_probability": calibration["market_anchor_probability"],
+        "team_lambda": round(team_lambda, 3),
+        "opponent_lambda": round(opponent_lambda, 3),
+        "projected_team_goals": round(team_lambda, 3),
+        "projected_opponent_goals": round(opponent_lambda, 3),
+        "projected_total_goals": round(team_lambda + opponent_lambda, 3),
+        "projected_goal_differential": round(projected_goal_differential, 3),
+        "draw_probability": draw_probability,
+        "btts_probability": btts_probability,
+        "dixon_coles_adjustment_applied": True,
+        "bivariate_poisson_adjustment_applied": shared_intensity > 0,
+        "time_decay_applied": time_decay_applied,
+        "soccer_input_contract": deepcopy(SOCCER_INPUT_CONTRACT),
+        "input_coverage": {
+            "required_core_present": list(SOCCER_REQUIRED_CORE_INPUTS),
+            "required_market_specific_present": SOCCER_REQUIRED_MARKET_SPECIFIC_INPUTS.get(market_key, []),
+            "optional_enrichment_present": optional_present,
+            "optional_enrichment_missing": [field for field in SOCCER_OPTIONAL_ENRICHMENT_INPUTS if input_stats.get(field) is None],
+            "provider_enrichment_present": provider_present,
+            "officiating_present": officiating_present,
+            "referee_present": officiating_present,
+            "social_crowd_present": social_present,
+            "live_betting_present": live_present,
+        },
+        "provider_enrichment": {
+            "provider_enrichment_present": provider_present,
+            "provider_status": "available" if provider_present else "not_provided",
+        },
+        "no_bet_flags": no_bet_flags,
     }
 
 
@@ -3175,6 +3919,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         nba_model = None
         nfl_model = None
         mlb_model = None
+        soccer_model = None
         if sport == "basketball_nba":
             nba_model = _estimate_nba_possession_model(
                 input_stats=input_stats,
@@ -3202,12 +3947,23 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
                 bankroll=bankroll,
                 risk_profile=payload.get("risk_profile") or "moderate",
             )
+        elif sport == "soccer":
+            soccer_model = _estimate_soccer_goal_model(
+                input_stats=input_stats,
+                payload=payload,
+                market=market,
+                odds_american=odds_american,
+                bankroll=bankroll,
+                risk_profile=payload.get("risk_profile") or "moderate",
+            )
 
         if nba_model:
             component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
         elif nfl_model:
             component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
         elif mlb_model:
+            component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
+        elif soccer_model:
             component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
         elif sport == "basketball_nba":
             component_status = COMPONENT_STATUS_INACTIVE
@@ -3218,6 +3974,9 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         elif sport == "baseball_mlb":
             component_status = COMPONENT_STATUS_INACTIVE
             missing_inputs = _mlb_full_inputs_missing(input_stats, payload) + _mlb_market_specific_missing(market, input_stats, payload)
+        elif sport == "soccer":
+            component_status = COMPONENT_STATUS_INACTIVE
+            missing_inputs = _soccer_full_inputs_missing(input_stats, payload) + _soccer_market_specific_missing(market, input_stats, payload)
         else:
             component_status, missing_inputs = _component_status(config["required_inputs"], input_stats)
         backtest_status = "passed" if input_stats.get("backtest_proof") else "not_started"
@@ -3247,9 +4006,15 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             edge = mlb_model["edge"]
             suggested = mlb_model["suggested_stake"]
             no_bet_flags = list(mlb_model["no_bet_flags"])
+        elif soccer_model:
+            true_probability = soccer_model["true_probability"]
+            implied_probability = soccer_model["implied_probability"]
+            edge = soccer_model["edge"]
+            suggested = soccer_model["suggested_stake"]
+            no_bet_flags = list(soccer_model["no_bet_flags"])
         if implied_probability is not None and true_probability is not None and odds_american is not None:
             edge = edge_percentage(true_probability, implied_probability)
-            if not (nba_model or nfl_model or mlb_model):
+            if not (nba_model or nfl_model or mlb_model or soccer_model):
                 suggested = suggested_stake_with_risk_controls(
                     bankroll=bankroll,
                     american_odds=odds_american,
@@ -3266,7 +4031,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         social_input_stats = dict(input_stats)
         social_input_stats["edge"] = edge
         social_layer = build_social_crowd_calibration_layer(social_input_stats)
-        if social_layer["sentiment_no_bet_flags"] and not (nba_model or nfl_model or mlb_model):
+        if social_layer["sentiment_no_bet_flags"] and not (nba_model or nfl_model or mlb_model or soccer_model):
             no_bet_flags = list(dict.fromkeys(no_bet_flags + social_layer["sentiment_no_bet_flags"]))
 
         risk_controller = build_risk_controller(bankroll, unit_size, payload.get("risk_profile") or "conservative")
@@ -3283,7 +4048,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         })
         wee_willie = build_wee_willie_market_weakness_detector(detector_payload)
         manual_ticket = build_manual_ticket(detector_payload, suggested)
-        active_model = nba_model or nfl_model or mlb_model
+        active_model = nba_model or nfl_model or mlb_model or soccer_model
         confidence = active_model["confidence"] if active_model else input_stats.get("confidence")
         risk = active_model["risk"] if active_model else payload.get("risk_profile") or "conservative"
         model_status = active_model["model_status"] if active_model else component_status
@@ -3301,9 +4066,9 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             and config.get("confirmed_bets_allowed")
             and not no_bet_flags
             and edge is not None
-            and edge >= (_nfl_thresholds(payload.get("risk_profile") or "moderate")[0] if (nfl_model or mlb_model) else 2.5)
+            and edge >= (_nfl_thresholds(payload.get("risk_profile") or "moderate")[0] if (nfl_model or mlb_model or soccer_model) else 2.5)
             and confidence is not None
-            and float(confidence) >= (_nfl_thresholds(payload.get("risk_profile") or "moderate")[1] if (nfl_model or mlb_model) else 70)
+            and float(confidence) >= (_nfl_thresholds(payload.get("risk_profile") or "moderate")[1] if (nfl_model or mlb_model or soccer_model) else 70)
             and suggested > 0
         ):
             confirmed_bets = [{
@@ -3371,7 +4136,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             "status": evaluated_status,
             **officiating_analysis["officiating_logbook_fields"],
         })
-        probability_model = nfl_model or mlb_model
+        probability_model = nfl_model or mlb_model or soccer_model
         if probability_model:
             logbook_ready_row.update({
                 "raw_model_probability": probability_model["raw_model_probability"],
@@ -3386,6 +4151,21 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
                 "projected_opponent_runs": mlb_model["projected_opponent_runs"],
                 "projected_total_runs": mlb_model["projected_total_runs"],
                 "projected_run_differential": mlb_model["projected_run_differential"],
+            })
+        if soccer_model:
+            logbook_ready_row.update({
+                "league": payload.get("league") or input_stats.get("league"),
+                "team_lambda": soccer_model["team_lambda"],
+                "opponent_lambda": soccer_model["opponent_lambda"],
+                "projected_team_goals": soccer_model["projected_team_goals"],
+                "projected_opponent_goals": soccer_model["projected_opponent_goals"],
+                "projected_total_goals": soccer_model["projected_total_goals"],
+                "projected_goal_differential": soccer_model["projected_goal_differential"],
+                "draw_probability": soccer_model["draw_probability"],
+                "btts_probability": soccer_model["btts_probability"],
+                "dixon_coles_adjustment_applied": soccer_model["dixon_coles_adjustment_applied"],
+                "bivariate_poisson_adjustment_applied": soccer_model["bivariate_poisson_adjustment_applied"],
+                "time_decay_applied": soccer_model["time_decay_applied"],
             })
         if nfl_model:
             logbook_ready_row.update({
@@ -3434,6 +4214,17 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             "projected_opponent_runs": mlb_model["projected_opponent_runs"] if mlb_model else None,
             "projected_total_runs": mlb_model["projected_total_runs"] if mlb_model else None,
             "projected_run_differential": mlb_model["projected_run_differential"] if mlb_model else None,
+            "team_lambda": soccer_model["team_lambda"] if soccer_model else None,
+            "opponent_lambda": soccer_model["opponent_lambda"] if soccer_model else None,
+            "projected_team_goals": soccer_model["projected_team_goals"] if soccer_model else None,
+            "projected_opponent_goals": soccer_model["projected_opponent_goals"] if soccer_model else None,
+            "projected_total_goals": soccer_model["projected_total_goals"] if soccer_model else None,
+            "projected_goal_differential": soccer_model["projected_goal_differential"] if soccer_model else None,
+            "draw_probability": soccer_model["draw_probability"] if soccer_model else None,
+            "btts_probability": soccer_model["btts_probability"] if soccer_model else None,
+            "dixon_coles_adjustment_applied": soccer_model["dixon_coles_adjustment_applied"] if soccer_model else False,
+            "bivariate_poisson_adjustment_applied": soccer_model["bivariate_poisson_adjustment_applied"] if soccer_model else False,
+            "time_decay_applied": soccer_model["time_decay_applied"] if soccer_model else False,
             "true_probability": true_probability,
             "estimated_true_probability": true_probability,
             "final_probability": true_probability,
@@ -3457,6 +4248,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             "nba_input_contract": deepcopy(NBA_INPUT_CONTRACT) if sport == "basketball_nba" else None,
             "nfl_input_contract": deepcopy(NFL_INPUT_CONTRACT) if sport == "americanfootball_nfl" else None,
             "mlb_input_contract": deepcopy(MLB_INPUT_CONTRACT) if sport == "baseball_mlb" else None,
+            "soccer_input_contract": deepcopy(SOCCER_INPUT_CONTRACT) if sport == "soccer" else None,
             "input_coverage": active_model.get("input_coverage") if active_model else None,
             "suggested_stake": suggested if confirmed_bets else 0,
             "recommended_unit_size": risk_controller["recommended_unit_size"],
