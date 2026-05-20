@@ -1196,6 +1196,7 @@ TENNIS_OPTIONAL_ENRICHMENT_INPUTS = [
     "player_last_10_hold_percent", "opponent_last_10_hold_percent", "player_last_10_break_percent", "opponent_last_10_break_percent",
     "player_last_10_first_serve_points_won", "opponent_last_10_first_serve_points_won",
     "player_last_10_second_serve_points_won", "opponent_last_10_second_serve_points_won",
+    "player_surface_elo", "opponent_surface_elo",
     "player_surface_win_percent", "opponent_surface_win_percent", "player_surface_hold_percent", "opponent_surface_hold_percent",
     "player_surface_break_percent", "opponent_surface_break_percent", "player_head_to_head_wins", "opponent_head_to_head_wins",
     "player_head_to_head_surface_wins", "opponent_head_to_head_surface_wins", "player_tiebreak_win_percent",

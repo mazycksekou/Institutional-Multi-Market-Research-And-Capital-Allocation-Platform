@@ -22,8 +22,42 @@ def _identity(value: dict[str, Any]) -> tuple[str, str, str, str]:
     )
 
 
-def _remove_confirmed_selection_no_bets(no_bets: list[dict[str, Any]], confirmed_bets: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    confirmed_identities = [_identity(bet) for bet in confirmed_bets]
+def _confirmed_logbook_row(row: dict[str, Any]) -> bool:
+    return (
+        str(row.get("decision") or "").strip().upper() == "CONFIRMED_BET"
+        and str(row.get("status") or "").strip().lower() == "confirmed_bet"
+    )
+
+
+def _collect_confirmed_rows(response: dict[str, Any]) -> list[dict[str, Any]]:
+    confirmed_rows: list[dict[str, Any]] = []
+
+    def collect_from_container(container: Any) -> None:
+        if not isinstance(container, dict):
+            return
+        for bet in container.get("confirmed_bets") or []:
+            if isinstance(bet, dict):
+                confirmed_rows.append(bet)
+
+    collect_from_container(response)
+    collect_from_container(response.get("full_board_preview"))
+    collect_from_container(response.get("full_board"))
+
+    model_analysis = response.get("model_analysis")
+    collect_from_container(model_analysis)
+    if isinstance(model_analysis, dict):
+        collect_from_container(model_analysis.get("full_board_preview"))
+        collect_from_container(model_analysis.get("full_board"))
+
+    for row in response.get("logbook_ready_rows") or []:
+        if isinstance(row, dict) and _confirmed_logbook_row(row):
+            confirmed_rows.append(row)
+
+    return confirmed_rows
+
+
+def _remove_confirmed_selection_no_bets(no_bets: list[dict[str, Any]], confirmed_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    confirmed_identities = [_identity(bet) for bet in confirmed_rows if isinstance(bet, dict)]
     confirmed_keys = {identity for identity in confirmed_identities if all(identity)}
     if not confirmed_keys:
         return no_bets
@@ -64,21 +98,44 @@ def _remove_confirmed_selection_no_bets(no_bets: list[dict[str, Any]], confirmed
     return filtered
 
 
+def _remove_stale_no_bet_logbook_rows(rows: list[dict[str, Any]], confirmed_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    confirmed_keys = {_identity(row) for row in confirmed_rows if isinstance(row, dict) and all(_identity(row))}
+    if not confirmed_keys:
+        return rows
+    filtered = []
+    for row in rows:
+        if not isinstance(row, dict):
+            filtered.append(row)
+            continue
+        if _identity(row) in confirmed_keys and not _confirmed_logbook_row(row):
+            continue
+        filtered.append(row)
+    return filtered
+
+
 def _cleanup_confirmed_selection_no_bets(response: dict[str, Any]) -> dict[str, Any]:
-    confirmed_bets = list(response.get("confirmed_bets") or [])
-    if not confirmed_bets:
+    confirmed_rows = _collect_confirmed_rows(response)
+    if not confirmed_rows:
         return response
-    response["no_bets"] = _remove_confirmed_selection_no_bets(list(response.get("no_bets") or []), confirmed_bets)
+    response["no_bets"] = _remove_confirmed_selection_no_bets(list(response.get("no_bets") or []), confirmed_rows)
+    response["logbook_ready_rows"] = _remove_stale_no_bet_logbook_rows(list(response.get("logbook_ready_rows") or []), confirmed_rows)
     for board_key in ("full_board_preview", "full_board"):
         board = response.get(board_key)
         if isinstance(board, dict):
-            board["no_bets"] = _remove_confirmed_selection_no_bets(list(board.get("no_bets") or []), confirmed_bets)
+            board["no_bets"] = _remove_confirmed_selection_no_bets(list(board.get("no_bets") or []), confirmed_rows)
+            if "logbook_ready_rows" in board:
+                board["logbook_ready_rows"] = _remove_stale_no_bet_logbook_rows(list(board.get("logbook_ready_rows") or []), confirmed_rows)
     model_analysis = response.get("model_analysis")
     if isinstance(model_analysis, dict):
-        model_analysis["no_bets"] = _remove_confirmed_selection_no_bets(list(model_analysis.get("no_bets") or []), confirmed_bets)
-        model_board = model_analysis.get("full_board_preview")
-        if isinstance(model_board, dict):
-            model_board["no_bets"] = _remove_confirmed_selection_no_bets(list(model_board.get("no_bets") or []), confirmed_bets)
+        model_analysis["no_bets"] = _remove_confirmed_selection_no_bets(list(model_analysis.get("no_bets") or []), confirmed_rows)
+        if "logbook_ready_rows" in model_analysis:
+            model_analysis["logbook_ready_rows"] = _remove_stale_no_bet_logbook_rows(list(model_analysis.get("logbook_ready_rows") or []), confirmed_rows)
+        for board_key in ("full_board_preview", "full_board"):
+            model_board = model_analysis.get(board_key)
+            if isinstance(model_board, dict):
+                model_board["no_bets"] = _remove_confirmed_selection_no_bets(list(model_board.get("no_bets") or []), confirmed_rows)
+                if "logbook_ready_rows" in model_board:
+                    model_board["logbook_ready_rows"] = _remove_stale_no_bet_logbook_rows(list(model_board.get("logbook_ready_rows") or []), confirmed_rows)
     return response
 
 

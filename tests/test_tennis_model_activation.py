@@ -2,6 +2,7 @@ import asyncio
 import unittest
 from unittest.mock import patch
 
+import screenshot_intake
 from main import (
     ScreenshotAnalysisRequest,
     SportAnalysisRequest,
@@ -163,6 +164,25 @@ def sport_payload(**extra):
 
 
 class TestTennisModelActivation(unittest.TestCase):
+    def _key(self, value):
+        return (
+            str(value.get("sport") or value.get("sport_key") or "").strip().lower(),
+            str(value.get("event") or value.get("event_id") or "").strip().lower(),
+            str(value.get("market") or "").strip().lower(),
+            str(value.get("selection") or "").strip().lower(),
+        )
+
+    def _same_selection_no_bets(self, response, confirmed_key):
+        containers = [
+            response.get("no_bets") or [],
+            (response.get("full_board_preview") or {}).get("no_bets") or [],
+            (response.get("full_board") or {}).get("no_bets") or [],
+            (response.get("model_analysis") or {}).get("no_bets") or [],
+            ((response.get("model_analysis") or {}).get("full_board_preview") or {}).get("no_bets") or [],
+            ((response.get("model_analysis") or {}).get("full_board") or {}).get("no_bets") or [],
+        ]
+        return [bet for no_bets in containers for bet in no_bets if self._key(bet) == confirmed_key]
+
     def _sport(self, **extra):
         return asyncio.run(action_analyze_sport_model(SportAnalysisRequest(**sport_payload(**extra))))
 
@@ -491,15 +511,63 @@ class TestTennisModelActivation(unittest.TestCase):
         self.assertGreater(row.get("stake") or row.get("suggested_stake"), 0)
         self.assertGreater(response["suggested_stake"], 0)
         self.assertGreaterEqual(len(response["full_board_preview"]["confirmed_bets"]), 1)
-        confirmed_keys = {
-            (bet.get("sport"), bet.get("event"), bet.get("market"), bet.get("selection"))
-            for bet in response["full_board_preview"]["confirmed_bets"]
+        self.assertEqual(response["missing_inputs"], [])
+        self.assertNotIn("player_surface_elo", response["missing_inputs"])
+        self.assertNotIn("opponent_surface_elo", response["missing_inputs"])
+        confirmed_key = self._key(response["full_board_preview"]["confirmed_bets"][0])
+        self.assertFalse(self._same_selection_no_bets(response, confirmed_key))
+        stale_logbook_rows = [
+            log_row
+            for log_row in response["logbook_ready_rows"]
+            if self._key(log_row) == confirmed_key and log_row.get("decision") == "NO_BET"
+        ]
+        self.assertEqual(stale_logbook_rows, [])
+
+    def test_tennis_final_cleanup_removes_stale_nested_same_selection_no_bets_and_log_rows(self):
+        confirmed = {
+            "sport": "tennis",
+            "event": "Novak Djokovic vs Carlos Alcaraz",
+            "market": "moneyline",
+            "selection": "Novak Djokovic",
+            "decision": "CONFIRMED_BET",
+            "status": "confirmed_bet",
         }
-        no_bet_keys = {
-            (bet.get("sport"), bet.get("event"), bet.get("market"), bet.get("selection"))
-            for bet in response["full_board_preview"]["no_bets"]
+        stale = {
+            "sport": "tennis",
+            "event": "Novak Djokovic vs Carlos Alcaraz",
+            "market": "moneyline",
+            "selection": "Novak Djokovic",
+            "reason": "required inputs missing",
+            "missing_inputs": ["player_surface_elo", "opponent_surface_elo"],
         }
-        self.assertFalse(confirmed_keys & no_bet_keys)
+        unrelated = {
+            "sport": "tennis",
+            "event": "Novak Djokovic vs Carlos Alcaraz",
+            "market": "moneyline",
+            "selection": "Carlos Alcaraz",
+            "reason": "negative edge",
+        }
+        response = {
+            "confirmed_bets": [confirmed.copy()],
+            "no_bets": [stale.copy(), unrelated.copy()],
+            "full_board_preview": {"confirmed_bets": [], "no_bets": [stale.copy()]},
+            "full_board": {"confirmed_bets": [], "no_bets": [stale.copy()]},
+            "model_analysis": {
+                "confirmed_bets": [],
+                "no_bets": [stale.copy()],
+                "full_board_preview": {"confirmed_bets": [], "no_bets": [stale.copy()]},
+                "full_board": {"confirmed_bets": [], "no_bets": [stale.copy()]},
+            },
+            "logbook_ready_rows": [
+                confirmed.copy(),
+                {**stale, "decision": "NO_BET", "status": "manual_review_required"},
+            ],
+        }
+        cleaned = screenshot_intake._cleanup_confirmed_selection_no_bets(response)
+        confirmed_key = self._key(confirmed)
+        self.assertFalse(self._same_selection_no_bets(cleaned, confirmed_key))
+        self.assertEqual(cleaned["no_bets"], [unrelated])
+        self.assertEqual(cleaned["logbook_ready_rows"], [confirmed])
 
     def test_tennis_true_missing_core_inputs_still_inactive_with_zero_stake(self):
         response = self._screenshot(
