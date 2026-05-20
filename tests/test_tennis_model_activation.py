@@ -80,6 +80,35 @@ def tennis_full_inputs(**extra):
     return data
 
 
+def tennis_live_alias_inputs(**extra):
+    data = tennis_full_inputs(
+        player="Novak Djokovic",
+        opponent="Carlos Alcaraz",
+        selection="Novak Djokovic",
+        league="ATP",
+        tournament="ATP Finals",
+        player_recent_win_percent=80,
+        opponent_recent_win_percent=60,
+        player_fatigue_rating=2.2,
+        opponent_fatigue_rating=3.4,
+        player_days_rest=2,
+        opponent_days_rest=1,
+    )
+    for field in [
+        "player_recent_form_wins",
+        "opponent_recent_form_wins",
+        "player_recent_form_losses",
+        "opponent_recent_form_losses",
+        "player_fatigue_index",
+        "opponent_fatigue_index",
+        "player_rest_days",
+        "opponent_rest_days",
+    ]:
+        data.pop(field, None)
+    data.update(extra)
+    return data
+
+
 def sport_payload(**extra):
     payload = {
         "sport": "wta",
@@ -351,6 +380,41 @@ class TestTennisModelActivation(unittest.TestCase):
         }
         self.assertFalse(confirmed_keys & board_no_bet_keys)
         self.assertFalse(confirmed_keys & top_no_bet_keys)
+
+    def test_tennis_live_screenshot_alias_payload_activates_and_confirms(self):
+        response = self._screenshot(
+            sport="tennis",
+            league="ATP",
+            event="Novak Djokovic vs Carlos Alcaraz",
+            teams=["Novak Djokovic", "Carlos Alcaraz"],
+            market="moneyline",
+            selection="Novak Djokovic",
+            odds_american=100,
+            screenshot_text="Novak Djokovic vs Carlos Alcaraz moneyline Djokovic +100",
+            risk_profile="moderate",
+            bankroll=1000,
+            unit_size=25,
+            input_stats=tennis_live_alias_inputs(book_count=8),
+        )
+        row = response["logbook_ready_rows"][0]
+        self.assertTrue(response["ok"])
+        self.assertEqual(response["model_analysis"]["model_status"], "active")
+        self.assertIsNotNone(response["model_analysis"]["final_probability"])
+        self.assertIsInstance(row["confidence"], (int, float))
+        self.assertGreaterEqual(row["confidence"], 65)
+        self.assertEqual(row["decision"], "CONFIRMED_BET")
+        self.assertEqual(row["status"], "confirmed_bet")
+        self.assertGreater(row.get("stake") or row.get("suggested_stake"), 0)
+        self.assertGreaterEqual(len(response["full_board_preview"]["confirmed_bets"]), 1)
+        confirmed_keys = {
+            (bet.get("sport"), bet.get("event"), bet.get("market"), bet.get("selection"))
+            for bet in response["full_board_preview"]["confirmed_bets"]
+        }
+        no_bet_keys = {
+            (bet.get("sport"), bet.get("event"), bet.get("market"), bet.get("selection"))
+            for bet in response["full_board_preview"]["no_bets"]
+        }
+        self.assertFalse(confirmed_keys & no_bet_keys)
 
     def test_tennis_confirmed_bets_and_no_bets_are_mutually_exclusive(self):
         response = self._sport(odds_american=100)

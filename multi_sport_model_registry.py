@@ -2881,6 +2881,53 @@ def _tennis_full_inputs_missing(input_stats: dict[str, Any], payload: dict[str, 
     return missing
 
 
+def _tennis_fatigue_rating_to_index(value: Any) -> Optional[float]:
+    rating = _safe_float(value)
+    if rating is None:
+        return None
+    if rating > 10:
+        return max(0.0, min(1.0, rating / 100))
+    if rating > 1:
+        return max(0.0, min(1.0, rating / 10))
+    return max(0.0, min(1.0, rating))
+
+
+def _tennis_recent_win_percent_to_record(value: Any) -> tuple[Optional[int], Optional[int]]:
+    percent = _safe_float(value)
+    if percent is None:
+        return None, None
+    win_rate = percent / 100 if percent > 1 else percent
+    win_rate = max(0.0, min(1.0, win_rate))
+    wins = int(round(win_rate * 10))
+    return wins, max(0, 10 - wins)
+
+
+def _normalize_tennis_input_aliases(input_stats: dict[str, Any]) -> dict[str, Any]:
+    normalized = dict(input_stats)
+    alias_pairs = {
+        "player_fatigue_index": ("player_fatigue_rating", _tennis_fatigue_rating_to_index),
+        "opponent_fatigue_index": ("opponent_fatigue_rating", _tennis_fatigue_rating_to_index),
+        "player_rest_days": ("player_days_rest", _safe_float),
+        "opponent_rest_days": ("opponent_days_rest", _safe_float),
+    }
+    for canonical, (alias, normalizer) in alias_pairs.items():
+        if normalized.get(canonical) is None and normalized.get(alias) is not None:
+            normalized[canonical] = normalizer(normalized.get(alias))
+    recent_aliases = (
+        ("player_recent_win_percent", "player_recent_form_wins", "player_recent_form_losses"),
+        ("opponent_recent_win_percent", "opponent_recent_form_wins", "opponent_recent_form_losses"),
+    )
+    for alias, wins_key, losses_key in recent_aliases:
+        if normalized.get(alias) is None:
+            continue
+        wins, losses = _tennis_recent_win_percent_to_record(normalized.get(alias))
+        if normalized.get(wins_key) is None:
+            normalized[wins_key] = wins
+        if normalized.get(losses_key) is None:
+            normalized[losses_key] = losses
+    return normalized
+
+
 def _tennis_market_specific_missing(market: Any, input_stats: dict[str, Any], payload: dict[str, Any]) -> list[str]:
     market_key = _normal_market_key(input_stats.get("market_type") or market)
     required = TENNIS_REQUIRED_MARKET_SPECIFIC_INPUTS.get(market_key, [])
@@ -5092,6 +5139,8 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         config = get_sport_model_config(sport)
         market = payload.get("market")
         input_stats, input_stats_flags = _normalize_input_stats(payload.get("input_stats"))
+        if sport == "tennis":
+            input_stats = _normalize_tennis_input_aliases(input_stats)
         odds_american = _safe_float(payload.get("odds_american"))
         bankroll = _safe_float(payload.get("bankroll"), 0) or 0
         unit_size = _safe_float(payload.get("unit_size"), 0) or 0
