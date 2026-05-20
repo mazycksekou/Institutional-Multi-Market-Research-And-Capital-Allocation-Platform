@@ -300,6 +300,58 @@ class TestTennisModelActivation(unittest.TestCase):
         }
         self.assertFalse(confirmed_keys & no_bet_keys)
 
+    def test_tennis_live_screenshot_fixture_confidence_65_6_confirms_at_moderate_gate(self):
+        required = set(__import__("multi_sport_model_registry").TENNIS_INPUT_CONTRACT["required_core_inputs"])
+        input_stats = {
+            key: value
+            for key, value in tennis_full_inputs(
+                player="Novak Djokovic",
+                opponent="Carlos Alcaraz",
+                selection="Novak Djokovic",
+                league="ATP",
+                tournament="ATP Finals",
+                book_count=8,
+            ).items()
+            if key in required or key in {"book_count", "market"}
+        }
+        response = self._screenshot(
+            sport="tennis",
+            league="ATP",
+            event="Novak Djokovic vs Carlos Alcaraz",
+            teams=["Novak Djokovic", "Carlos Alcaraz"],
+            market="moneyline",
+            selection="Novak Djokovic",
+            odds_american=100,
+            screenshot_text="Novak Djokovic vs Carlos Alcaraz moneyline Djokovic +100",
+            risk_profile="moderate",
+            bankroll=1000,
+            unit_size=25,
+            input_stats=input_stats,
+        )
+        row = response["logbook_ready_rows"][0]
+        self.assertTrue(response["ok"])
+        self.assertEqual(row["selection"], "Novak Djokovic")
+        self.assertGreaterEqual(row["confidence"], 65)
+        self.assertLess(row["confidence"], 66)
+        self.assertEqual(row["decision"], "CONFIRMED_BET")
+        self.assertEqual(row["status"], "confirmed_bet")
+        self.assertGreater(row.get("stake") or row.get("suggested_stake"), 0)
+        self.assertGreaterEqual(len(response["full_board_preview"]["confirmed_bets"]), 1)
+        confirmed_keys = {
+            (bet.get("sport"), bet.get("event"), bet.get("market"), bet.get("selection"))
+            for bet in response["full_board_preview"]["confirmed_bets"]
+        }
+        board_no_bet_keys = {
+            (bet.get("sport"), bet.get("event"), bet.get("market"), bet.get("selection"))
+            for bet in response["full_board_preview"]["no_bets"]
+        }
+        top_no_bet_keys = {
+            (bet.get("sport"), bet.get("event"), bet.get("market"), bet.get("selection"))
+            for bet in response["no_bets"]
+        }
+        self.assertFalse(confirmed_keys & board_no_bet_keys)
+        self.assertFalse(confirmed_keys & top_no_bet_keys)
+
     def test_tennis_confirmed_bets_and_no_bets_are_mutually_exclusive(self):
         response = self._sport(odds_american=100)
         confirmed_keys = {(bet.get("sport"), bet.get("event"), bet.get("market"), bet.get("selection")) for bet in response["full_board_preview"]["confirmed_bets"]}

@@ -13,6 +13,25 @@ def _present(value: Any) -> bool:
     return value not in (None, "", [], {})
 
 
+def _identity(value: dict[str, Any]) -> tuple[str, str, str, str]:
+    return (
+        str(value.get("sport") or value.get("sport_key") or "").strip().lower(),
+        str(value.get("event") or value.get("event_id") or "").strip().lower(),
+        str(value.get("market") or "").strip().lower(),
+        str(value.get("selection") or "").strip().lower(),
+    )
+
+
+def _remove_confirmed_selection_no_bets(no_bets: list[dict[str, Any]], confirmed_bets: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    confirmed_keys = {_identity(bet) for bet in confirmed_bets if all(_identity(bet))}
+    if not confirmed_keys:
+        return no_bets
+    return [
+        no_bet for no_bet in no_bets
+        if _identity(no_bet) not in confirmed_keys and no_bet.get("reason") != "confirmed bet rules not satisfied"
+    ]
+
+
 def parse_ticket(payload: dict[str, Any]) -> dict[str, Any]:
     ticket = normalize_ticket_fields(payload)
     teams = ticket.get("teams")
@@ -96,6 +115,8 @@ def analyze_screenshot_ticket(payload: dict[str, Any]) -> dict[str, Any]:
     full_board_preview["logbook_ready_rows"] = log_rows
     implied_probability = model_analysis.get("implied_probability")
     confirmed_bets = list(model_analysis.get("confirmed_bets") or [])
+    no_bets = _remove_confirmed_selection_no_bets(no_bets, confirmed_bets)
+    full_board_preview["no_bets"] = _remove_confirmed_selection_no_bets(list(full_board_preview.get("no_bets") or []), confirmed_bets)
     suggested_stake = model_analysis.get("suggested_stake") if confirmed_bets else 0
     if not confirmed_bets and status == "evaluated_no_bet_low_confidence" and not any(
         no_bet.get("reason") == "low confidence" for no_bet in no_bets if isinstance(no_bet, dict)

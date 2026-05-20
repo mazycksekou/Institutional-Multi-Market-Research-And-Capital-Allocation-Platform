@@ -5300,6 +5300,32 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             base_model_active=component_status == COMPONENT_STATUS_ACTIVE and true_probability is not None,
             base_confidence=confidence,
         )
+        if tennis_model:
+            confidence_value = _safe_float(confidence)
+            if confidence_value is not None:
+                if confidence_value >= confidence_threshold:
+                    no_bet_flags = [flag for flag in no_bet_flags if flag != "low confidence"]
+                elif "low confidence" not in no_bet_flags:
+                    no_bet_flags.append("low confidence")
+            if edge is not None and edge >= edge_threshold:
+                no_bet_flags = [flag for flag in no_bet_flags if flag != "edge too small"]
+            if edge is not None and edge > 0:
+                no_bet_flags = [flag for flag in no_bet_flags if flag != "negative edge"]
+            if (
+                edge is not None
+                and edge >= edge_threshold
+                and confidence_value is not None
+                and confidence_value >= confidence_threshold
+                and suggested <= 0
+            ):
+                suggested = calculate_suggested_stake(
+                    bankroll=bankroll,
+                    american_odds=odds_american,
+                    true_probability=true_probability,
+                    risk_profile=payload.get("risk_profile") or "moderate",
+                    confidence=confidence_value,
+                )
+                tennis_model["suggested_stake"] = suggested
         confirmed_bets = []
         if (
             active_model
