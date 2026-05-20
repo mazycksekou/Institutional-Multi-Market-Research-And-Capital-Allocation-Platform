@@ -256,6 +256,50 @@ class TestTennisModelActivation(unittest.TestCase):
         self.assertEqual(response["model_analysis"]["sport"], "tennis")
         self.assertEqual(response["model_analysis"]["model_name"], "elo_serve_return_markov_tennis_model")
 
+    def test_tennis_live_screenshot_fixture_promotes_confidence_and_decision(self):
+        response = self._screenshot(
+            sport="tennis",
+            league="ATP",
+            event="Novak Djokovic vs Carlos Alcaraz",
+            teams=["Novak Djokovic", "Carlos Alcaraz"],
+            market="moneyline",
+            selection="Novak Djokovic",
+            odds_american=100,
+            screenshot_text="Novak Djokovic vs Carlos Alcaraz moneyline Djokovic +100",
+            risk_profile="moderate",
+            bankroll=1000,
+            unit_size=25,
+            input_stats=tennis_full_inputs(
+                player="Novak Djokovic",
+                opponent="Carlos Alcaraz",
+                selection="Novak Djokovic",
+                league="ATP",
+                tournament="ATP Finals",
+            ),
+        )
+        self.assertIsNotNone(response["confidence"])
+        self.assertIsInstance(response["confidence"], (int, float))
+        if response["confidence"] < 65:
+            self.assertEqual(response["decision"], "NO_BET")
+            self.assertEqual(response["status"], "evaluated_no_bet_low_confidence")
+            self.assertEqual(response["suggested_stake"], 0)
+            self.assertIn("low confidence", [bet["reason"] for bet in response["no_bets"]])
+        else:
+            self.assertEqual(response["decision"], "CONFIRMED_BET")
+            self.assertEqual(response["status"], "confirmed_bet")
+            self.assertGreater(response["suggested_stake"], 0)
+        self.assertEqual(response["logbook_ready_rows"][0]["confidence"], response["confidence"])
+        self.assertEqual(response["full_board_preview"]["logbook_ready_rows"][0]["confidence"], response["confidence"])
+        confirmed_keys = {
+            (bet.get("sport"), bet.get("event"), bet.get("market"), bet.get("selection"))
+            for bet in response["full_board_preview"]["confirmed_bets"]
+        }
+        no_bet_keys = {
+            (bet.get("sport"), bet.get("event"), bet.get("market"), bet.get("selection"))
+            for bet in response["full_board_preview"]["no_bets"]
+        }
+        self.assertFalse(confirmed_keys & no_bet_keys)
+
     def test_tennis_confirmed_bets_and_no_bets_are_mutually_exclusive(self):
         response = self._sport(odds_american=100)
         confirmed_keys = {(bet.get("sport"), bet.get("event"), bet.get("market"), bet.get("selection")) for bet in response["full_board_preview"]["confirmed_bets"]}

@@ -5277,6 +5277,12 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         manual_ticket = build_manual_ticket(detector_payload, suggested)
         active_model = nba_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model
         confidence = active_model["confidence"] if active_model else input_stats.get("confidence")
+        if tennis_model and _safe_float(confidence) is None:
+            confidence = 0.0
+            tennis_model["confidence"] = confidence
+            if "low confidence" not in no_bet_flags:
+                no_bet_flags.append("low confidence")
+            suggested = 0
         risk = active_model["risk"] if active_model else payload.get("risk_profile") or "conservative"
         model_status = active_model["model_status"] if active_model else component_status
         edge_threshold, confidence_threshold = (

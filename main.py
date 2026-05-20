@@ -880,7 +880,11 @@ class ScreenshotAnalysisResponse(BaseModel):
     no_bets: list[dict[str, Any]]
     confirmed_bets: list[dict[str, Any]]
     suggested_stake: Optional[Any] = None
+    stake: Optional[Any] = None
     implied_probability: Optional[Any] = None
+    confidence: Optional[Any] = None
+    decision: Optional[str] = None
+    status: Optional[str] = None
     logbook_ready_rows: list[dict[str, Any]]
     error: Optional[str] = None
     detail: Optional[str] = None

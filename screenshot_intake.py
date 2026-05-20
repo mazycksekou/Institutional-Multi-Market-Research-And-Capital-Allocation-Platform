@@ -76,17 +76,40 @@ def analyze_screenshot_ticket(payload: dict[str, Any]) -> dict[str, Any]:
 
     partial_model_mode = bool(missing_inputs or not model_analysis.get("true_probability"))
     no_bets = list(model_analysis.get("no_bets") or [])
+    confidence = model_analysis.get("confidence")
+    decision = model_analysis.get("decision")
+    status = model_analysis.get("status")
     if partial_model_mode:
-        no_bets.append({"reason": "partial_model_mode", "missing_inputs": missing_inputs})
+        no_bets.append({
+            "reason": "partial_model_mode",
+            "missing_inputs": missing_inputs,
+            "confidence": confidence,
+        })
 
     full_board_preview = build_full_board_preview(ticket, model_analysis, provider_enrichment)
     row = build_logbook_ready_row(ticket, model_analysis)
     row.update(model_analysis.get("logbook_ready_row") or {})
+    row.setdefault("confidence", confidence)
+    row.setdefault("decision", decision or "NO_BET")
+    row.setdefault("status", status or "manual_review_required")
     log_rows = [row]
     full_board_preview["logbook_ready_rows"] = log_rows
     implied_probability = model_analysis.get("implied_probability")
     confirmed_bets = list(model_analysis.get("confirmed_bets") or [])
     suggested_stake = model_analysis.get("suggested_stake") if confirmed_bets else 0
+    if not confirmed_bets and status == "evaluated_no_bet_low_confidence" and not any(
+        no_bet.get("reason") == "low confidence" for no_bet in no_bets if isinstance(no_bet, dict)
+    ):
+        no_bets.append({
+            "sport": model_analysis.get("sport") or ticket.get("sport"),
+            "event": ticket.get("event"),
+            "market": ticket.get("market"),
+            "selection": ticket.get("selection"),
+            "reason": "low confidence",
+            "no_bet_reason": "low confidence",
+            "confidence": confidence,
+            "edge_percent": model_analysis.get("edge_percent") or model_analysis.get("edge"),
+        })
 
     return {
         "ok": True,
@@ -101,5 +124,9 @@ def analyze_screenshot_ticket(payload: dict[str, Any]) -> dict[str, Any]:
         "confirmed_bets": confirmed_bets,
         "suggested_stake": suggested_stake or 0,
         "implied_probability": implied_probability,
+        "confidence": confidence,
+        "decision": decision,
+        "status": status,
+        "stake": suggested_stake or 0,
         "logbook_ready_rows": log_rows,
     }
