@@ -1164,7 +1164,7 @@ NHL_INPUT_CONTRACT = {
 
 TENNIS_REQUIRED_CORE_INPUTS = [
     "player", "opponent", "selection", "market", "league", "tournament", "match_date", "surface", "best_of_sets",
-    "player_ranking", "opponent_ranking", "player_elo", "opponent_elo", "player_surface_elo", "opponent_surface_elo",
+    "player_ranking", "opponent_ranking", "player_elo", "opponent_elo",
     "player_hold_percent", "opponent_hold_percent", "player_break_percent", "opponent_break_percent",
     "player_first_serve_in_percent", "opponent_first_serve_in_percent",
     "player_first_serve_points_won_percent", "opponent_first_serve_points_won_percent",

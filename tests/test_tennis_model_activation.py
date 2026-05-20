@@ -12,7 +12,7 @@ from main import (
 
 TENNIS_MISSING_INPUTS = [
     "player", "opponent", "selection", "tournament", "match_date", "surface", "best_of_sets",
-    "player_ranking", "opponent_ranking", "player_elo", "opponent_elo", "player_surface_elo", "opponent_surface_elo",
+    "player_ranking", "opponent_ranking", "player_elo", "opponent_elo",
     "player_hold_percent", "opponent_hold_percent", "player_break_percent", "opponent_break_percent",
     "player_first_serve_in_percent", "opponent_first_serve_in_percent",
     "player_first_serve_points_won_percent", "opponent_first_serve_points_won_percent",
@@ -124,8 +124,6 @@ def tennis_exact_live_alias_only_inputs(**extra):
         "opponent_ranking": 3,
         "player_elo": 2200,
         "opponent_elo": 2075,
-        "player_surface_elo": 2200,
-        "opponent_surface_elo": 2075,
         "player_recent_win_percent": 70,
         "opponent_recent_win_percent": 60,
         "player_fatigue_rating": 15,
@@ -438,6 +436,8 @@ class TestTennisModelActivation(unittest.TestCase):
         self.assertTrue(response["ok"])
         self.assertEqual(response["model_analysis"]["model_status"], "active")
         self.assertIsNotNone(response["model_analysis"]["final_probability"])
+        self.assertNotIn("player_surface_elo", response["missing_inputs"])
+        self.assertNotIn("opponent_surface_elo", response["missing_inputs"])
         self.assertIsInstance(row["confidence"], (int, float))
         self.assertGreaterEqual(row["confidence"], 65)
         self.assertEqual(row["decision"], "CONFIRMED_BET")
@@ -452,7 +452,18 @@ class TestTennisModelActivation(unittest.TestCase):
             (bet.get("sport"), bet.get("event"), bet.get("market"), bet.get("selection"))
             for bet in response["full_board_preview"]["no_bets"]
         }
+        top_no_bet_keys = {
+            (bet.get("sport"), bet.get("event"), bet.get("market"), bet.get("selection"))
+            for bet in response["no_bets"]
+        }
         self.assertFalse(confirmed_keys & no_bet_keys)
+        self.assertFalse(confirmed_keys & top_no_bet_keys)
+        if "full_board" in response:
+            full_board_no_bet_keys = {
+                (bet.get("sport"), bet.get("event"), bet.get("market"), bet.get("selection"))
+                for bet in response["full_board"]["no_bets"]
+            }
+            self.assertFalse(confirmed_keys & full_board_no_bet_keys)
 
     def test_tennis_exact_live_alias_only_screenshot_payload_activates_and_confirms(self):
         response = self._screenshot(

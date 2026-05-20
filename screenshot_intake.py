@@ -23,13 +23,63 @@ def _identity(value: dict[str, Any]) -> tuple[str, str, str, str]:
 
 
 def _remove_confirmed_selection_no_bets(no_bets: list[dict[str, Any]], confirmed_bets: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    confirmed_keys = {_identity(bet) for bet in confirmed_bets if all(_identity(bet))}
+    confirmed_identities = [_identity(bet) for bet in confirmed_bets]
+    confirmed_keys = {identity for identity in confirmed_identities if all(identity)}
     if not confirmed_keys:
         return no_bets
-    return [
-        no_bet for no_bet in no_bets
-        if _identity(no_bet) not in confirmed_keys and no_bet.get("reason") != "confirmed bet rules not satisfied"
-    ]
+    stale_reasons = {
+        "required inputs missing",
+        "confirmed bets disabled",
+        "manual_review_required",
+        "inactive_missing_data",
+        "evaluated_no_bet",
+        "evaluated_no_bet_low_confidence",
+        "evaluated_no_bet_edge_too_small",
+        "confirmed bet rules not satisfied",
+        "sentiment data unavailable",
+        "crowdsourced signal unavailable",
+        "social signal not backtested",
+        "crowd signal not calibrated",
+    }
+
+    def same_confirmed_selection(no_bet: dict[str, Any]) -> bool:
+        sport, event, market, selection = _identity(no_bet)
+        for confirmed_sport, confirmed_event, confirmed_market, confirmed_selection in confirmed_identities:
+            if market != confirmed_market or selection != confirmed_selection:
+                continue
+            sport_matches = not sport or sport == confirmed_sport
+            event_matches = not event or event == confirmed_event
+            if sport_matches and event_matches:
+                return True
+        return False
+
+    filtered = []
+    for no_bet in no_bets:
+        if _identity(no_bet) in confirmed_keys:
+            continue
+        reason = str(no_bet.get("reason") or no_bet.get("status") or "").strip()
+        if same_confirmed_selection(no_bet) and (reason in stale_reasons or reason):
+            continue
+        filtered.append(no_bet)
+    return filtered
+
+
+def _cleanup_confirmed_selection_no_bets(response: dict[str, Any]) -> dict[str, Any]:
+    confirmed_bets = list(response.get("confirmed_bets") or [])
+    if not confirmed_bets:
+        return response
+    response["no_bets"] = _remove_confirmed_selection_no_bets(list(response.get("no_bets") or []), confirmed_bets)
+    for board_key in ("full_board_preview", "full_board"):
+        board = response.get(board_key)
+        if isinstance(board, dict):
+            board["no_bets"] = _remove_confirmed_selection_no_bets(list(board.get("no_bets") or []), confirmed_bets)
+    model_analysis = response.get("model_analysis")
+    if isinstance(model_analysis, dict):
+        model_analysis["no_bets"] = _remove_confirmed_selection_no_bets(list(model_analysis.get("no_bets") or []), confirmed_bets)
+        model_board = model_analysis.get("full_board_preview")
+        if isinstance(model_board, dict):
+            model_board["no_bets"] = _remove_confirmed_selection_no_bets(list(model_board.get("no_bets") or []), confirmed_bets)
+    return response
 
 
 def parse_ticket(payload: dict[str, Any]) -> dict[str, Any]:
@@ -135,7 +185,7 @@ def analyze_screenshot_ticket(payload: dict[str, Any]) -> dict[str, Any]:
             "edge_percent": model_analysis.get("edge_percent") or model_analysis.get("edge"),
         })
 
-    return {
+    response = {
         "ok": True,
         "endpoint": "ticketScreenshotAnalysis",
         "partial_model_mode": partial_model_mode,
@@ -154,3 +204,4 @@ def analyze_screenshot_ticket(payload: dict[str, Any]) -> dict[str, Any]:
         "stake": suggested_stake or 0,
         "logbook_ready_rows": log_rows,
     }
+    return _cleanup_confirmed_selection_no_bets(response)
