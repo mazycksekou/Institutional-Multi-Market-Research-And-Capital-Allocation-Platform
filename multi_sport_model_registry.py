@@ -2523,6 +2523,7 @@ def _evaluated_ticket_status(
     no_bet_flags: list[str],
     edge: Optional[float],
     confidence: Any,
+    confidence_threshold: float = 70,
 ) -> str:
     if missing_inputs or component_status != COMPONENT_STATUS_ACTIVE:
         return "manual_review_required"
@@ -2535,7 +2536,7 @@ def _evaluated_ticket_status(
     if "low confidence" in no_bet_flags:
         return "evaluated_no_bet_low_confidence"
     confidence_value = _safe_float(confidence)
-    if confidence_value is not None and confidence_value < 70:
+    if confidence_value is not None and confidence_value < confidence_threshold:
         return "evaluated_no_bet_low_confidence"
     if "risk too high" in no_bet_flags:
         return "evaluated_no_bet_risk_too_high"
@@ -5278,6 +5279,13 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         confidence = active_model["confidence"] if active_model else input_stats.get("confidence")
         risk = active_model["risk"] if active_model else payload.get("risk_profile") or "conservative"
         model_status = active_model["model_status"] if active_model else component_status
+        edge_threshold, confidence_threshold = (
+            _nfl_thresholds(payload.get("risk_profile") or "moderate")
+            if (nfl_model or mlb_model or soccer_model or nhl_model or tennis_model)
+            else (2.5, 70)
+        )
+        event_value = payload.get("event_id") or payload.get("event") or input_stats.get("event")
+        selection_value = payload.get("selection") or input_stats.get("selection")
         officiating_analysis = build_officiating_analysis(
             sport=sport,
             market=market,
@@ -5292,16 +5300,16 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             and config.get("confirmed_bets_allowed")
             and not no_bet_flags
             and edge is not None
-            and edge >= (_nfl_thresholds(payload.get("risk_profile") or "moderate")[0] if (nfl_model or mlb_model or soccer_model or nhl_model or tennis_model) else 2.5)
+            and edge >= edge_threshold
             and confidence is not None
-            and float(confidence) >= (_nfl_thresholds(payload.get("risk_profile") or "moderate")[1] if (nfl_model or mlb_model or soccer_model or nhl_model or tennis_model) else 70)
+            and float(confidence) >= confidence_threshold
             and suggested > 0
         ):
             confirmed_bets = [{
                 "sport": sport,
-                "event": payload.get("event_id"),
+                "event": event_value,
                 "market": market,
-                "selection": payload.get("selection") or input_stats.get("selection"),
+                "selection": selection_value,
                 "odds_american": odds_american,
                 "estimated_true_probability": true_probability,
                 "implied_probability": implied_probability,
@@ -5313,9 +5321,29 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             }]
         if active_model and not no_bet_flags and not confirmed_bets and suggested <= 0:
             no_bet_flags = ["risk too high"]
-        no_bets = [{"reason": flag} for flag in no_bet_flags]
+        simple_no_bets = [{"reason": flag} for flag in no_bet_flags]
+        no_bets = [{
+            "sport": sport,
+            "event": event_value,
+            "market": market,
+            "selection": selection_value,
+            "reason": flag,
+            "no_bet_reason": flag,
+            "confidence": confidence,
+            "edge_percent": edge,
+        } for flag in no_bet_flags]
         if active_model and not no_bet_flags and not confirmed_bets:
-            no_bets = [{"reason": "confirmed bet thresholds not satisfied"}]
+            simple_no_bets = [{"reason": "confirmed bet thresholds not satisfied"}]
+            no_bets = [{
+                "sport": sport,
+                "event": event_value,
+                "market": market,
+                "selection": selection_value,
+                "reason": "confirmed bet thresholds not satisfied",
+                "no_bet_reason": "confirmed bet thresholds not satisfied",
+                "confidence": confidence,
+                "edge_percent": edge,
+            }]
         evaluated_status = _evaluated_ticket_status(
             component_status=component_status,
             missing_inputs=missing_inputs,
@@ -5323,19 +5351,40 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             no_bet_flags=no_bet_flags,
             edge=edge,
             confidence=confidence,
+            confidence_threshold=confidence_threshold,
         )
         manual_review_flags: bool | list[Any] = False
         if missing_inputs or component_status != COMPONENT_STATUS_ACTIVE:
             manual_review_flags = [manual_ticket]
         full_board = {
             "confirmed_bets": confirmed_bets,
-            "target_lines": [] if component_status == COMPONENT_STATUS_INACTIVE else [{"market": market, "target_price": odds_american}],
-            "target_props": [{"market": market, "selection": payload.get("selection") or input_stats.get("selection")}] if _normal_market_key(market) == "player_prop" else [],
-            "target_alt_lines": [{"market": market, "target_price": odds_american}] if _normal_market_key(market) == "alt_line" and component_status != COMPONENT_STATUS_INACTIVE else [],
+            "target_lines": [] if component_status == COMPONENT_STATUS_INACTIVE else [{
+                "sport": sport,
+                "event": event_value,
+                "market": market,
+                "selection": selection_value,
+                "target_price": odds_american,
+                "confidence": confidence,
+            }],
+            "target_props": [{
+                "sport": sport,
+                "event": event_value,
+                "market": market,
+                "selection": selection_value,
+                "confidence": confidence,
+            }] if _normal_market_key(market) == "player_prop" else [],
+            "target_alt_lines": [{
+                "sport": sport,
+                "event": event_value,
+                "market": market,
+                "selection": selection_value,
+                "target_price": odds_american,
+                "confidence": confidence,
+            }] if _normal_market_key(market) == "alt_line" and component_status != COMPONENT_STATUS_INACTIVE else [],
             "no_bets": no_bets,
             "best_correlated_parlay": None,
             "value_ranking": [],
-            "risk_ranking": [{"selection": payload.get("selection") or input_stats.get("selection"), "risk": risk}] if active_model else [],
+            "risk_ranking": [{"selection": selection_value, "risk": risk, "confidence": confidence}] if active_model else [],
             "missing_inputs": missing_inputs,
             "manual_review_required": manual_review_flags,
             "logbook_ready_rows": [manual_ticket["logbook_ready_row"]],
@@ -5580,7 +5629,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         "target_lines": full_board["target_lines"],
         "target_props": full_board["target_props"],
         "target_alt_lines": full_board["target_alt_lines"],
-        "no_bets": no_bets,
+        "no_bets": no_bets if tennis_model else simple_no_bets,
         "best_correlated_parlay": full_board["best_correlated_parlay"],
         "value_ranking": full_board["value_ranking"],
         "risk_ranking": full_board["risk_ranking"],

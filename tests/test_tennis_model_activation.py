@@ -129,6 +129,7 @@ class TestTennisModelActivation(unittest.TestCase):
         response = self._sport(input_stats={})
         self.assertEqual(response["confirmed_bets"], [])
         self.assertEqual(response["suggested_stake"], 0)
+        self.assertIn("confidence", response["logbook_ready_rows"][0])
 
     def test_tennis_full_moneyline_inputs_activate_model(self):
         response = self._sport()
@@ -159,8 +160,43 @@ class TestTennisModelActivation(unittest.TestCase):
         response = self._sport(odds_american=100)
         self.assertGreaterEqual(response["edge"], 2.0)
         self.assertGreaterEqual(response["confidence"], 65)
+        self.assertIsInstance(response["confidence"], (int, float))
         self.assertTrue(response["confirmed_bets"])
+        self.assertEqual(response["decision"], "CONFIRMED_BET")
         self.assertEqual(response["status"], "confirmed_bet")
+        self.assertGreater(response["suggested_stake"], 0)
+        self.assertEqual(response["logbook_ready_rows"][0]["confidence"], response["confidence"])
+        self.assertGreaterEqual(response["logbook_ready_rows"][0]["confidence"], 65)
+        self.assertEqual(response["full_board_preview"]["confirmed_bets"][0]["confidence"], response["confidence"])
+        confirmed_key = (
+            response["sport"],
+            response["event_id"] if "event_id" in response else "Swiatek vs Sabalenka",
+            response["market"],
+            response["confirmed_bets"][0]["selection"],
+        )
+        no_bet_keys = {
+            (bet.get("sport"), bet.get("event"), bet.get("market"), bet.get("selection"))
+            for bet in response["full_board_preview"]["no_bets"]
+        }
+        self.assertNotIn(confirmed_key, no_bet_keys)
+
+    def test_tennis_intentional_low_confidence_returns_numeric_low_confidence(self):
+        response = self._sport(
+            odds_american=100,
+            input_stats=tennis_full_inputs(
+                player_injury_status="questionable",
+                player_retirement_risk=0.35,
+                player_fatigue_index=0.91,
+                book_count=3,
+            ),
+        )
+        self.assertEqual(response["confirmed_bets"], [])
+        self.assertEqual(response["suggested_stake"], 0)
+        self.assertIsInstance(response["confidence"], (int, float))
+        self.assertLess(response["confidence"], 65)
+        self.assertEqual(response["status"], "evaluated_no_bet_low_confidence")
+        self.assertIn("low confidence", [bet["reason"] for bet in response["no_bets"]])
+        self.assertEqual(response["logbook_ready_rows"][0]["confidence"], response["confidence"])
 
     def test_tennis_best_of_3_and_best_of_5_are_handled_separately(self):
         best3 = self._sport(input_stats=tennis_full_inputs(best_of_sets=3))
