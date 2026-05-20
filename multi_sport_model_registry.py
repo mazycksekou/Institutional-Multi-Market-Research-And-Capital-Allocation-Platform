@@ -67,6 +67,8 @@ SPORT_ALIASES = {
     "cfb": "americanfootball_ncaaf",
     "mlb": "baseball_mlb",
     "nhl": "icehockey_nhl",
+    "hockey": "icehockey_nhl",
+    "ice_hockey": "icehockey_nhl",
     "epl": "soccer",
     "ucl": "soccer",
     "football": "soccer",
@@ -957,6 +959,205 @@ SOCCER_INPUT_CONTRACT = {
     "live_betting_inputs": SOCCER_LIVE_BETTING_INPUTS,
 }
 
+NHL_REQUIRED_CORE_INPUTS = [
+    "team",
+    "opponent",
+    "selection",
+    "home_away",
+    "market",
+    "league",
+    "game_date",
+    "team_projected_goals",
+    "opponent_projected_goals",
+    "team_xg_for_per_game",
+    "opponent_xg_for_per_game",
+    "team_xg_against_per_game",
+    "opponent_xg_against_per_game",
+    "team_goals_for_per_game",
+    "opponent_goals_for_per_game",
+    "team_goals_against_per_game",
+    "opponent_goals_against_per_game",
+    "team_shots_for_per_game",
+    "opponent_shots_for_per_game",
+    "team_shots_against_per_game",
+    "opponent_shots_against_per_game",
+    "team_scoring_chances_for_per_game",
+    "opponent_scoring_chances_for_per_game",
+    "team_scoring_chances_against_per_game",
+    "opponent_scoring_chances_against_per_game",
+    "team_high_danger_chances_for_per_game",
+    "opponent_high_danger_chances_for_per_game",
+    "team_high_danger_chances_against_per_game",
+    "opponent_high_danger_chances_against_per_game",
+    "team_power_play_percent",
+    "opponent_power_play_percent",
+    "team_penalty_kill_percent",
+    "opponent_penalty_kill_percent",
+    "team_recent_form_points",
+    "opponent_recent_form_points",
+    "team_rest_days",
+    "opponent_rest_days",
+    "team_goalie_confirmed",
+    "opponent_goalie_confirmed",
+    "team_starting_goalie_save_percent",
+    "opponent_starting_goalie_save_percent",
+    "team_starting_goalie_gsaax",
+    "opponent_starting_goalie_gsaax",
+    "injury_report_status",
+    "lineup_status",
+]
+
+NHL_REQUIRED_MARKET_SPECIFIC_INPUTS = {
+    "moneyline": ["odds_american"],
+    "three_way_moneyline": ["odds_american"],
+    "regulation_moneyline": ["odds_american"],
+    "draw_no_bet": ["odds_american"],
+    "puckline": ["line", "odds_american"],
+    "spread": ["line", "odds_american"],
+    "alternate_puckline": ["line", "odds_american"],
+    "total": ["total_line", "odds_american"],
+    "alternate_total": ["total_line", "odds_american"],
+    "team_total": ["team_total_line", "odds_american"],
+    "first_period_moneyline": ["odds_american"],
+    "first_period_total": ["total_line", "odds_american"],
+    "first_period_team_total": ["team_total_line", "odds_american"],
+    "second_period_moneyline": ["odds_american"],
+    "second_period_total": ["total_line", "odds_american"],
+    "third_period_moneyline": ["odds_american"],
+    "third_period_total": ["total_line", "odds_american"],
+    "player_prop": ["player_name", "prop_type", "prop_line", "player_projection", "player_starting_status", "player_minutes_projection"],
+    "anytime_goal_scorer": ["player_name", "player_goal_projection", "player_starting_status", "player_minutes_projection", "odds_american"],
+    "first_goal_scorer": ["player_name", "player_first_goal_projection", "player_starting_status", "player_minutes_projection", "odds_american"],
+}
+
+NHL_OPTIONAL_ENRICHMENT_INPUTS = [
+    "team_recent_xg_for_5",
+    "opponent_recent_xg_for_5",
+    "team_recent_xg_against_5",
+    "opponent_recent_xg_against_5",
+    "team_recent_goals_for_5",
+    "opponent_recent_goals_for_5",
+    "team_recent_goals_against_5",
+    "opponent_recent_goals_against_5",
+    "team_home_xg_for",
+    "team_home_xg_against",
+    "opponent_away_xg_for",
+    "opponent_away_xg_against",
+    "team_corsi_for_percent",
+    "opponent_corsi_for_percent",
+    "team_fenwick_for_percent",
+    "opponent_fenwick_for_percent",
+    "team_faceoff_win_percent",
+    "opponent_faceoff_win_percent",
+    "team_blocked_shots_per_game",
+    "opponent_blocked_shots_per_game",
+    "team_hits_per_game",
+    "opponent_hits_per_game",
+    "team_takeaways_per_game",
+    "opponent_takeaways_per_game",
+    "team_giveaways_per_game",
+    "opponent_giveaways_per_game",
+    "team_penalties_taken_per_game",
+    "opponent_penalties_taken_per_game",
+    "team_penalties_drawn_per_game",
+    "opponent_penalties_drawn_per_game",
+    "team_back_to_back",
+    "opponent_back_to_back",
+    "travel_distance",
+    "altitude_factor",
+    "rink_factor",
+    "expected_goalie_status",
+    "goalie_fatigue_index",
+    "backup_goalie_expected",
+    "referee_crew",
+    "official_sample_size",
+    "official_data_source",
+    "official_data_quality",
+    "referee_penalties_per_game",
+    "referee_power_play_rate",
+    "referee_home_bias_index",
+    "referee_over_rate",
+    "referee_under_rate",
+    "public_betting_percent",
+    "public_money_percent",
+    "sharp_money_percent",
+    "opening_odds",
+    "current_odds",
+    "best_available_odds",
+    "consensus_odds",
+    "opening_line",
+    "current_line",
+    "opening_total",
+    "current_total",
+    "no_vig_market_probability",
+    "book_count",
+]
+
+NHL_PROVIDER_ENRICHMENT_INPUTS = [
+    "opening_odds",
+    "current_odds",
+    "best_available_odds",
+    "consensus_odds",
+    "opening_line",
+    "current_line",
+    "opening_total",
+    "current_total",
+    "no_vig_market_probability",
+    "book_count",
+]
+
+NHL_OFFICIATING_INPUTS = [
+    "official_name",
+    "referee_name",
+    "referee_crew",
+    "crew_names",
+    "referees",
+    "linesmen",
+    "official_sample_size",
+    "official_data_source",
+    "official_data_quality",
+    "referee_penalties_per_game",
+    "referee_power_play_rate",
+    "referee_home_bias_index",
+    "referee_over_rate",
+    "referee_under_rate",
+    "penalty_rate",
+    "faceoff_violation_tendency",
+]
+
+NHL_SOCIAL_CROWD_INPUTS = [
+    "public_betting_percent",
+    "public_money_percent",
+    "sharp_money_percent",
+    "social_sentiment",
+    "crowd_consensus",
+    "rumor_risk",
+    "news_velocity",
+    "source_quality",
+]
+
+NHL_LIVE_BETTING_INPUTS = [
+    "live_game",
+    "live_period",
+    "live_time_remaining",
+    "live_score_team",
+    "live_score_opponent",
+    "live_shots_team",
+    "live_shots_opponent",
+    "live_power_play_state",
+]
+
+NHL_INPUT_CONTRACT = {
+    "required_core_inputs": NHL_REQUIRED_CORE_INPUTS,
+    "required_market_specific_inputs": NHL_REQUIRED_MARKET_SPECIFIC_INPUTS,
+    "optional_enrichment_inputs": NHL_OPTIONAL_ENRICHMENT_INPUTS,
+    "provider_enrichment_inputs": NHL_PROVIDER_ENRICHMENT_INPUTS,
+    "officiating_inputs": NHL_OFFICIATING_INPUTS,
+    "referee_inputs": NHL_OFFICIATING_INPUTS,
+    "social_crowd_inputs": NHL_SOCIAL_CROWD_INPUTS,
+    "live_betting_inputs": NHL_LIVE_BETTING_INPUTS,
+}
+
 SPORT_PROP_INPUTS = {
     "baseball_mlb": ["player projection", "lineup status", "opponent matchup", "park factor", "weather"],
     "basketball_nba": ["minutes projection", "usage", "pace", "defensive matchup", "injury report"],
@@ -1019,8 +1220,8 @@ OFFICIALS_MODULE_BY_SPORT = {
         "notes": "Referee context can matter for cards, penalties, match flow, and totals.",
     },
     "icehockey_nhl": {
-        "official_type": "referees/linesmen",
-        "official_inputs": ["referees", "linesmen", "penalty rate", "faceoff violation tendency"],
+        "official_type": "referees and linesmen",
+        "official_inputs": NHL_OFFICIATING_INPUTS,
         "betting_edge_strength": "moderate",
         "notes": "Referees and linesmen can affect penalties, special teams exposure, and stoppage profile.",
     },
@@ -1490,16 +1691,19 @@ SPORT_MODEL_REGISTRY = [
     _sport(
         "icehockey_nhl",
         "NHL",
-        "correlated_goal_model",
-        "Poisson or correlated Poisson goal model",
+        "poisson_bivariate_goalie_special_teams_model",
+        "Poisson with bivariate goalie and special teams components",
         "correlated_poisson",
-        ["moneyline", "puck line", "totals", "team totals", "periods", "live markets"],
+        ["moneyline", "three_way_moneyline", "puckline", "spread", "total", "team_total", "first_period_moneyline", "first_period_total", "first_period_team_total", "second_period_moneyline", "second_period_total", "third_period_moneyline", "third_period_total", "regulation_moneyline", "draw_no_bet", "alternate_puckline", "alternate_total", "player_prop", "anytime_goal_scorer", "first_goal_scorer", "live"],
         ["goals", "assists", "points", "shots on goal", "blocked shots", "goalie saves", "anytime goal scorer", "first goal scorer"],
-        ["team goal rates", "goalie starter", "special teams", "period lambdas", "time decay weights"],
-        ["Royal Road pass data", "pre shot movement", "goalie stress"],
+        NHL_REQUIRED_CORE_INPUTS,
+        NHL_OPTIONAL_ENRICHMENT_INPUTS,
         ["Poisson or correlated Poisson goal model", "Bivariate Poisson or correlated goal dependence", "goalie adjustment", "special teams adjustment", "period specific lambdas", "time decay weighting", "Royal Road and pre shot movement engine registered now", "Monte Carlo simulation"],
         "Monte Carlo simulation",
         ["Royal Road offense with NHL team total over and player shots."],
+        component_status=COMPONENT_STATUS_ACTIVE,
+        model_level=MODEL_LEVEL_PROJECTION_READY,
+        confirmed_bets_allowed=True,
     ),
     _sport(
         "tennis",
@@ -2410,7 +2614,22 @@ def _normal_market_key(value: Any) -> str:
         "prop": "player_prop",
         "alternate_line": "alt_line",
         "alternate_spread": "alt_line",
-        "alternate_total": "alt_line",
+        "alternate_total": "alternate_total",
+        "puck_line": "puckline",
+        "puck_line_spread": "puckline",
+        "alternate_puck_line": "alternate_puckline",
+        "alt_puckline": "alternate_puckline",
+        "alt_total": "alternate_total",
+        "regulation_ml": "regulation_moneyline",
+        "regulation_money_line": "regulation_moneyline",
+        "first_period": "first_period_moneyline",
+        "1st_period": "first_period_moneyline",
+        "first_period_ml": "first_period_moneyline",
+        "first_period_team_totals": "first_period_team_total",
+        "second_period": "second_period_moneyline",
+        "second_period_ml": "second_period_moneyline",
+        "third_period": "third_period_moneyline",
+        "third_period_ml": "third_period_moneyline",
         "run_line": "runline",
         "run_line_spread": "runline",
         "first_5": "first_5_moneyline",
@@ -2521,6 +2740,35 @@ def _soccer_market_specific_missing(market: Any, input_stats: dict[str, Any], pa
             "card_line",
             "team_card_line",
             "correct_score_selection",
+            "odds_american",
+        }:
+            value = payload.get(field)
+        if value is None:
+            missing.append(field)
+    return missing
+
+
+def _nhl_full_inputs_missing(input_stats: dict[str, Any], payload: dict[str, Any]) -> list[str]:
+    missing = []
+    for field in NHL_REQUIRED_CORE_INPUTS:
+        value = input_stats.get(field)
+        if value is None and field in {"market", "league"}:
+            value = payload.get(field)
+        if value is None:
+            missing.append(field)
+    return missing
+
+
+def _nhl_market_specific_missing(market: Any, input_stats: dict[str, Any], payload: dict[str, Any]) -> list[str]:
+    market_key = _normal_market_key(input_stats.get("market_type") or market)
+    required = NHL_REQUIRED_MARKET_SPECIFIC_INPUTS.get(market_key, [])
+    missing = []
+    for field in required:
+        value = input_stats.get(field)
+        if value is None and field in {
+            "line",
+            "total_line",
+            "team_total_line",
             "odds_american",
         }:
             value = payload.get(field)
@@ -2809,6 +3057,140 @@ def calibrate_soccer_probability(
         lower_cap, upper_cap = 0.20, 0.60
     else:
         lower_cap, upper_cap = 0.25, 0.50
+    final_probability = max(lower_cap, min(upper_cap, calibrated))
+    if final_probability != calibrated:
+        flags.append("probability capped by projected goal differential")
+        flags.append("probability calibration applied")
+    return {
+        "raw_model_probability": raw_probability,
+        "calibrated_model_probability": calibrated,
+        "final_probability": final_probability,
+        "market_anchor_probability": market_anchor_probability,
+        "probability_calibration_applied": bool(flags),
+        "probability_sanity_flags": list(dict.fromkeys(flags)),
+        "probability_cap_reason": f"projected goal differential {round(projected_goal_differential, 2)} goals",
+    }
+
+
+def build_nhl_score_matrix(team_lambda: float, opponent_lambda: float, max_goals: int = 9) -> list[list[float]]:
+    team_probs = [poisson_pmf(i, max(0.10, min(6.5, team_lambda))) for i in range(max_goals)]
+    opponent_probs = [poisson_pmf(i, max(0.10, min(6.5, opponent_lambda))) for i in range(max_goals)]
+    team_probs.append(max(0.0, 1.0 - sum(team_probs)))
+    opponent_probs.append(max(0.0, 1.0 - sum(opponent_probs)))
+    return _normalize_score_matrix([[team_probs[i] * opponent_probs[j] for j in range(max_goals + 1)] for i in range(max_goals + 1)])
+
+
+def apply_bivariate_hockey_adjustment(matrix: list[list[float]], shared_intensity: float = 0.04) -> list[list[float]]:
+    adjusted = [row[:] for row in matrix]
+    shared_intensity = max(0.0, min(0.14, float(shared_intensity or 0.0)))
+    if shared_intensity <= 0:
+        return adjusted
+    for team_goals, row in enumerate(adjusted):
+        for opponent_goals, _ in enumerate(row):
+            if team_goals == opponent_goals:
+                adjusted[team_goals][opponent_goals] *= 1 + shared_intensity
+            elif team_goals + opponent_goals >= 7:
+                adjusted[team_goals][opponent_goals] *= 1 + shared_intensity * 0.25
+            elif abs(team_goals - opponent_goals) >= 4:
+                adjusted[team_goals][opponent_goals] *= 1 - shared_intensity * 0.30
+    return _normalize_score_matrix(adjusted)
+
+
+def estimate_nhl_three_way_probability(matrix: list[list[float]], selection: Any, team: Any, opponent: Any) -> float:
+    return estimate_three_way_probability(matrix, selection, team, opponent)
+
+
+def estimate_nhl_regulation_moneyline_probability(matrix: list[list[float]], selection: Any, team: Any, opponent: Any) -> float:
+    return estimate_three_way_probability(matrix, selection, team, opponent)
+
+
+def _nhl_matrix_parts(matrix: list[list[float]]) -> tuple[float, float, float]:
+    team_win = sum(matrix[i][j] for i in range(len(matrix)) for j in range(len(matrix[i])) if i > j)
+    draw = sum(matrix[i][i] for i in range(len(matrix)))
+    opponent_win = max(0.0, 1.0 - team_win - draw)
+    return team_win, draw, opponent_win
+
+
+def estimate_nhl_moneyline_probability(matrix: list[list[float]], selection: Any, team: Any, opponent: Any, shootout_edge: float = 0.0) -> float:
+    team_win, draw, opponent_win = _nhl_matrix_parts(matrix)
+    text = str(selection or "").strip().lower()
+    opponent_text = str(opponent or "").strip().lower()
+    team_ot_share = max(0.42, min(0.58, 0.50 + shootout_edge))
+    if opponent_text and opponent_text in text:
+        return max(0.03, min(0.97, opponent_win + draw * (1 - team_ot_share)))
+    return max(0.03, min(0.97, team_win + draw * team_ot_share))
+
+
+def estimate_nhl_draw_no_bet_probability(matrix: list[list[float]], selection: Any, team: Any, opponent: Any) -> float:
+    return estimate_draw_no_bet_probability(matrix, selection, team, opponent)
+
+
+def estimate_nhl_puckline_probability(matrix: list[list[float]], line: float) -> float:
+    return estimate_handicap_probability(matrix, line)
+
+
+def estimate_nhl_total_probability_from_score_matrix(matrix: list[list[float]], total_line: float, selection: Any) -> float:
+    return estimate_total_probability_from_score_matrix(matrix, total_line, selection)
+
+
+def estimate_nhl_team_total_probability_from_score_matrix(matrix: list[list[float]], team_total_line: float, selection: Any) -> float:
+    return estimate_team_total_probability_from_score_matrix(matrix, team_total_line, selection)
+
+
+def estimate_nhl_period_lambdas(team_lambda: float, opponent_lambda: float, period: str, share: Optional[float] = None) -> tuple[float, float]:
+    default_shares = {
+        "first": 0.305,
+        "second": 0.345,
+        "third": 0.350,
+    }
+    share_value = max(0.24, min(0.42, float(share) if share is not None else default_shares.get(period, 0.33)))
+    return team_lambda * share_value, opponent_lambda * share_value
+
+
+def estimate_nhl_player_prop_probability(projection: float, prop_line: float) -> float:
+    return _logistic_probability(projection - prop_line, max(0.55, abs(prop_line) * 0.25))
+
+
+def calibrate_nhl_probability(
+    *,
+    raw_probability: float,
+    market_anchor_probability: float,
+    market_anchor_is_no_vig: bool,
+    projected_goal_differential: float,
+    market_key: str,
+    input_confidence_hint: float,
+    goalie_edge_quality: float,
+) -> dict[str, Any]:
+    flags: list[str] = []
+    if raw_probability >= 0.88 or raw_probability <= 0.10:
+        flags.append("raw probability extreme")
+    anchor_weight = 0.25 if market_anchor_is_no_vig else 0.05
+    calibrated = raw_probability * (1 - anchor_weight) + market_anchor_probability * anchor_weight
+    if abs(calibrated - raw_probability) >= 0.025:
+        flags.append("probability calibration applied")
+
+    abs_diff = abs(projected_goal_differential)
+    if market_key in {"three_way_moneyline", "regulation_moneyline"}:
+        lower_cap, upper_cap = 0.14, 0.68
+    elif market_key == "draw_no_bet":
+        lower_cap, upper_cap = 0.22, 0.82
+    elif market_key in {"puckline", "spread", "alternate_puckline", "total", "alternate_total", "team_total"}:
+        lower_cap, upper_cap = 0.25, 0.76
+    elif market_key in {"first_goal_scorer"}:
+        lower_cap, upper_cap = 0.03, 0.32
+    elif market_key in {"player_prop", "anytime_goal_scorer"}:
+        lower_cap, upper_cap = 0.08, 0.78
+    elif abs_diff >= 1.25 and input_confidence_hint >= 78 and goalie_edge_quality >= 0.4:
+        lower_cap, upper_cap = 0.20, 0.82
+    elif abs_diff >= 0.90:
+        lower_cap, upper_cap = 0.30, 0.75
+    elif abs_diff >= 0.50:
+        lower_cap, upper_cap = 0.32, 0.70
+    elif abs_diff >= 0.20:
+        lower_cap, upper_cap = 0.38, 0.64
+    else:
+        lower_cap, upper_cap = 0.42, 0.58
+
     final_probability = max(lower_cap, min(upper_cap, calibrated))
     if final_probability != calibrated:
         flags.append("probability capped by projected goal differential")
@@ -3234,6 +3616,316 @@ def _estimate_soccer_goal_model(
             "required_market_specific_present": SOCCER_REQUIRED_MARKET_SPECIFIC_INPUTS.get(market_key, []),
             "optional_enrichment_present": optional_present,
             "optional_enrichment_missing": [field for field in SOCCER_OPTIONAL_ENRICHMENT_INPUTS if input_stats.get(field) is None],
+            "provider_enrichment_present": provider_present,
+            "officiating_present": officiating_present,
+            "referee_present": officiating_present,
+            "social_crowd_present": social_present,
+            "live_betting_present": live_present,
+        },
+        "provider_enrichment": {
+            "provider_enrichment_present": provider_present,
+            "provider_status": "available" if provider_present else "not_provided",
+        },
+        "no_bet_flags": no_bet_flags,
+    }
+
+
+def _estimate_nhl_goal_model(
+    input_stats: dict[str, Any],
+    payload: dict[str, Any],
+    market: Any,
+    odds_american: Optional[float],
+    bankroll: float,
+    risk_profile: str,
+) -> Optional[dict[str, Any]]:
+    core_missing = _nhl_full_inputs_missing(input_stats, payload)
+    market_missing = _nhl_market_specific_missing(market, input_stats, payload)
+    if core_missing or market_missing:
+        return None
+
+    def number(key: str, default: float = 0) -> float:
+        return _safe_float(input_stats.get(key), default) or default
+
+    def truthy(key: str) -> bool:
+        return _truthy_available(input_stats.get(key))
+
+    market_key = _normal_market_key(input_stats.get("market_type") or market)
+    optional_present = [field for field in NHL_OPTIONAL_ENRICHMENT_INPUTS if input_stats.get(field) is not None]
+    provider_present = [field for field in NHL_PROVIDER_ENRICHMENT_INPUTS if input_stats.get(field) is not None]
+    officiating_present = _official_inputs_present(input_stats, NHL_OFFICIATING_INPUTS)
+    social_present = [field for field in NHL_SOCIAL_CROWD_INPUTS if input_stats.get(field) is not None]
+    live_present = [field for field in NHL_LIVE_BETTING_INPUTS if input_stats.get(field) is not None]
+
+    team_lambda = (
+        number("team_projected_goals") * 0.30
+        + ((number("team_xg_for_per_game") + number("opponent_xg_against_per_game")) / 2) * 0.35
+        + ((number("team_goals_for_per_game") + number("opponent_goals_against_per_game")) / 2) * 0.15
+        + ((number("team_high_danger_chances_for_per_game") + number("opponent_high_danger_chances_against_per_game")) / 18) * 0.12
+        + ((number("team_shots_for_per_game") + number("opponent_shots_against_per_game")) / 62) * 0.08
+    )
+    opponent_lambda = (
+        number("opponent_projected_goals") * 0.30
+        + ((number("opponent_xg_for_per_game") + number("team_xg_against_per_game")) / 2) * 0.35
+        + ((number("opponent_goals_for_per_game") + number("team_goals_against_per_game")) / 2) * 0.15
+        + ((number("opponent_high_danger_chances_for_per_game") + number("team_high_danger_chances_against_per_game")) / 18) * 0.12
+        + ((number("opponent_shots_for_per_game") + number("team_shots_against_per_game")) / 62) * 0.08
+    )
+
+    time_decay_applied = False
+    if input_stats.get("team_recent_xg_for_5") is not None and input_stats.get("opponent_recent_xg_for_5") is not None:
+        team_lambda = team_lambda * 0.75 + number("team_recent_xg_for_5") * 0.25
+        opponent_lambda = opponent_lambda * 0.75 + number("opponent_recent_xg_for_5") * 0.25
+        time_decay_applied = True
+    if input_stats.get("team_home_xg_for") is not None and str(input_stats.get("home_away") or "").lower() == "home":
+        team_lambda = team_lambda * 0.88 + number("team_home_xg_for") * 0.12
+    if input_stats.get("opponent_away_xg_for") is not None:
+        opponent_lambda = opponent_lambda * 0.88 + number("opponent_away_xg_for") * 0.12
+
+    goalie_risk_flags: list[str] = []
+    goalie_adjustment_applied = True
+    team_goalie_confirmed = truthy("team_goalie_confirmed")
+    opponent_goalie_confirmed = truthy("opponent_goalie_confirmed")
+    if not team_goalie_confirmed:
+        goalie_risk_flags.append("team goalie unconfirmed")
+        opponent_lambda += 0.12
+    if not opponent_goalie_confirmed:
+        goalie_risk_flags.append("opponent goalie unconfirmed")
+        team_lambda += 0.12
+    if _truthy_available(input_stats.get("backup_goalie_expected")):
+        goalie_risk_flags.append("backup goalie risk")
+        opponent_lambda += 0.18
+    goalie_fatigue = number("goalie_fatigue_index")
+    if goalie_fatigue >= 0.70:
+        goalie_risk_flags.append("goalie fatigue")
+        opponent_lambda += 0.08
+    team_goalie_gsaax = number("team_starting_goalie_gsaax")
+    opponent_goalie_gsaax = number("opponent_starting_goalie_gsaax")
+    opponent_lambda += max(-0.18, min(0.18, -team_goalie_gsaax * 0.015))
+    team_lambda += max(-0.18, min(0.18, -opponent_goalie_gsaax * 0.015))
+    team_save = number("team_starting_goalie_save_percent", 0.910)
+    opponent_save = number("opponent_starting_goalie_save_percent", 0.910)
+    opponent_lambda += max(-0.12, min(0.12, (0.910 - team_save) * 5.0))
+    team_lambda += max(-0.12, min(0.12, (0.910 - opponent_save) * 5.0))
+
+    special_teams_adjustment_applied = True
+    team_power_play_edge = (number("team_power_play_percent", 21) - (100 - number("opponent_penalty_kill_percent", 79))) / 100
+    opponent_power_play_edge = (number("opponent_power_play_percent", 21) - (100 - number("team_penalty_kill_percent", 79))) / 100
+    team_lambda += max(-0.12, min(0.12, team_power_play_edge * 0.8))
+    opponent_lambda += max(-0.12, min(0.12, opponent_power_play_edge * 0.8))
+    team_lambda += max(-0.08, min(0.08, (number("team_penalties_drawn_per_game", 3) - number("opponent_penalties_taken_per_game", 3)) * 0.025))
+    opponent_lambda += max(-0.08, min(0.08, (number("opponent_penalties_drawn_per_game", 3) - number("team_penalties_taken_per_game", 3)) * 0.025))
+    if officiating_present:
+        pp_rate = number("referee_power_play_rate", 3.0)
+        team_lambda += max(-0.08, min(0.08, (pp_rate - 3.0) * 0.025))
+        opponent_lambda += max(-0.08, min(0.08, (pp_rate - 3.0) * 0.025))
+
+    rest_edge = number("team_rest_days") - number("opponent_rest_days")
+    team_lambda += max(-0.08, min(0.08, rest_edge * 0.025))
+    opponent_lambda -= max(-0.06, min(0.06, rest_edge * 0.018))
+    if _truthy_available(input_stats.get("team_back_to_back")):
+        team_lambda -= 0.08
+        goalie_risk_flags.append("team back to back fatigue")
+    if _truthy_available(input_stats.get("opponent_back_to_back")):
+        opponent_lambda -= 0.08
+    injury_status = str(input_stats.get("injury_report_status") or "").lower()
+    lineup_status = str(input_stats.get("lineup_status") or "").lower()
+    if "scorer" in injury_status or "forward" in injury_status:
+        team_lambda -= 0.15
+    if "defense" in injury_status or "defender" in injury_status:
+        opponent_lambda += 0.12
+    if lineup_status not in {"confirmed", "posted", "official"}:
+        team_lambda -= 0.06
+        opponent_lambda -= 0.04
+
+    probability_sanity_flags: list[str] = []
+    uncapped_team_lambda = team_lambda
+    uncapped_opponent_lambda = opponent_lambda
+    team_lambda = max(0.40, min(5.6, team_lambda))
+    opponent_lambda = max(0.40, min(5.6, opponent_lambda))
+    if team_lambda != uncapped_team_lambda or opponent_lambda != uncapped_opponent_lambda:
+        probability_sanity_flags.append("lambda capped")
+
+    shared_intensity = _safe_float(input_stats.get("shared_intensity"))
+    if shared_intensity is None:
+        tempo = (number("team_shots_for_per_game") + number("opponent_shots_for_per_game")) / 64
+        goalie_volatility = min(0.08, abs(team_save - opponent_save) * 0.8 + abs(team_goalie_gsaax - opponent_goalie_gsaax) * 0.006)
+        shared_intensity = max(0.02, min(0.10, 0.035 + (tempo - 1.0) * 0.04 + goalie_volatility))
+    score_matrix = apply_bivariate_hockey_adjustment(build_nhl_score_matrix(team_lambda, opponent_lambda), shared_intensity)
+    first_period_matrix = apply_bivariate_hockey_adjustment(build_nhl_score_matrix(*estimate_nhl_period_lambdas(team_lambda, opponent_lambda, "first", _safe_float(input_stats.get("first_period_goal_share")))), min(0.08, shared_intensity))
+    second_period_matrix = apply_bivariate_hockey_adjustment(build_nhl_score_matrix(*estimate_nhl_period_lambdas(team_lambda, opponent_lambda, "second", _safe_float(input_stats.get("second_period_goal_share")))), min(0.08, shared_intensity))
+    third_period_matrix = apply_bivariate_hockey_adjustment(build_nhl_score_matrix(*estimate_nhl_period_lambdas(team_lambda, opponent_lambda, "third", _safe_float(input_stats.get("third_period_goal_share")))), min(0.08, shared_intensity))
+
+    selection = payload.get("selection") or input_stats.get("selection")
+    team = input_stats.get("team")
+    opponent = input_stats.get("opponent")
+    shootout_edge = max(-0.06, min(0.06, (team_goalie_gsaax - opponent_goalie_gsaax) * 0.006))
+    matrix_for_market = score_matrix
+    period_lambda_adjustment_applied = market_key.startswith(("first_period", "second_period", "third_period"))
+    if market_key.startswith("first_period"):
+        matrix_for_market = first_period_matrix
+    elif market_key.startswith("second_period"):
+        matrix_for_market = second_period_matrix
+    elif market_key.startswith("third_period"):
+        matrix_for_market = third_period_matrix
+
+    if market_key == "moneyline":
+        raw_model_probability = estimate_nhl_moneyline_probability(score_matrix, selection, team, opponent, shootout_edge)
+    elif market_key == "three_way_moneyline":
+        raw_model_probability = estimate_nhl_three_way_probability(score_matrix, selection, team, opponent)
+    elif market_key == "regulation_moneyline":
+        raw_model_probability = estimate_nhl_regulation_moneyline_probability(score_matrix, selection, team, opponent)
+    elif market_key == "draw_no_bet":
+        raw_model_probability = estimate_nhl_draw_no_bet_probability(score_matrix, selection, team, opponent)
+    elif market_key in {"puckline", "spread", "alternate_puckline"}:
+        line = _safe_float(input_stats.get("line") if input_stats.get("line") is not None else payload.get("line"), 0) or 0
+        raw_model_probability = estimate_nhl_puckline_probability(score_matrix, line)
+    elif market_key in {"total", "alternate_total", "first_period_total", "second_period_total", "third_period_total"}:
+        total_line = _safe_float(input_stats.get("total_line") if input_stats.get("total_line") is not None else payload.get("total_line"), 0) or 0
+        raw_model_probability = estimate_nhl_total_probability_from_score_matrix(matrix_for_market, total_line, selection)
+    elif market_key in {"team_total", "first_period_team_total"}:
+        team_total_line = _safe_float(input_stats.get("team_total_line") if input_stats.get("team_total_line") is not None else payload.get("team_total_line"), 0) or 0
+        raw_model_probability = estimate_nhl_team_total_probability_from_score_matrix(matrix_for_market, team_total_line, selection)
+    elif market_key in {"first_period_moneyline", "second_period_moneyline", "third_period_moneyline"}:
+        raw_model_probability = estimate_nhl_three_way_probability(matrix_for_market, selection, team, opponent)
+    elif market_key == "anytime_goal_scorer":
+        goal_projection = number("player_goal_projection")
+        minutes = max(1, number("player_minutes_projection", 15))
+        raw_model_probability = max(0.03, min(0.75, 1 - math.exp(-goal_projection * minutes / 18)))
+    elif market_key == "first_goal_scorer":
+        raw_model_probability = max(0.03, min(0.32, number("player_first_goal_projection")))
+    elif market_key == "player_prop":
+        raw_model_probability = estimate_nhl_player_prop_probability(number("player_projection"), number("prop_line"))
+    else:
+        raw_model_probability = estimate_nhl_moneyline_probability(score_matrix, selection, team, opponent, shootout_edge)
+
+    implied_probability = american_odds_to_implied_probability(odds_american)
+    market_probability = _safe_probability(input_stats.get("no_vig_market_probability"))
+    market_anchor_probability = market_probability if market_probability is not None else implied_probability if implied_probability is not None else 0.5
+    projected_goal_differential = team_lambda - opponent_lambda
+    confidence_hint = calculate_confidence(68, min(7, len(optional_present) * 0.15), min(4, len(provider_present) * 0.5))
+    goalie_edge_quality = 0.6 if team_goalie_confirmed and opponent_goalie_confirmed and abs(team_goalie_gsaax - opponent_goalie_gsaax) >= 4 else 0.2
+    calibration = calibrate_nhl_probability(
+        raw_probability=raw_model_probability,
+        market_anchor_probability=market_anchor_probability,
+        market_anchor_is_no_vig=market_probability is not None,
+        projected_goal_differential=projected_goal_differential,
+        market_key=market_key,
+        input_confidence_hint=confidence_hint,
+        goalie_edge_quality=goalie_edge_quality,
+    )
+    if probability_sanity_flags:
+        calibration["probability_sanity_flags"] = list(dict.fromkeys(calibration["probability_sanity_flags"] + probability_sanity_flags))
+        calibration["probability_calibration_applied"] = True
+    true_probability = calibration["final_probability"]
+
+    confidence_adjustments: list[float] = [min(7, len(optional_present) * 0.15), min(4, len(provider_present) * 0.5)]
+    if goalie_risk_flags:
+        confidence_adjustments.append(-min(10, len(goalie_risk_flags) * 3))
+    if lineup_status not in {"confirmed", "posted", "official"}:
+        confidence_adjustments.append(-7)
+    if abs(rest_edge) >= 2:
+        confidence_adjustments.append(-3)
+    if input_stats.get("best_available_odds") is None:
+        confidence_adjustments.append(-3)
+    book_count = _safe_float(input_stats.get("book_count"))
+    if book_count is not None and book_count < 5:
+        confidence_adjustments.append(-4)
+    current_odds = _safe_float(input_stats.get("current_odds"))
+    consensus_odds = _safe_float(input_stats.get("consensus_odds"))
+    risk = "medium"
+    if current_odds is not None and consensus_odds is not None and abs(current_odds - consensus_odds) >= 25:
+        risk = "high"
+        confidence_adjustments.append(-3)
+    if officiating_present and number("official_sample_size") and number("official_sample_size") < 20:
+        confidence_adjustments.append(-2)
+    if market_key == "first_goal_scorer":
+        risk = "high"
+        confidence_adjustments.append(-8)
+    if market_key in {"player_prop", "anytime_goal_scorer", "first_goal_scorer"}:
+        if str(input_stats.get("player_starting_status") or "").lower() not in {"confirmed", "starting", "active"}:
+            confidence_adjustments.append(-12)
+        if number("player_minutes_projection") < 10:
+            confidence_adjustments.append(-6)
+    if calibration["probability_sanity_flags"]:
+        confidence_adjustments.append(-min(6, len(calibration["probability_sanity_flags"]) * 2))
+    confidence = calculate_confidence(68, *confidence_adjustments)
+
+    edge = calculate_edge_percent(true_probability, implied_probability)
+    edge_threshold, confidence_threshold = _nfl_thresholds(risk_profile)
+    no_bet_flags: list[str] = []
+    if edge is None:
+        no_bet_flags.append("edge missing")
+    elif edge <= 0:
+        no_bet_flags.append("negative edge")
+        risk = "high"
+    elif edge < edge_threshold:
+        no_bet_flags.append("edge too small")
+    if confidence < confidence_threshold:
+        no_bet_flags.append("low confidence")
+        risk = "high"
+    if lineup_status not in {"confirmed", "posted", "official"}:
+        no_bet_flags.append("lineup not confirmed")
+    if goalie_risk_flags and market_key not in {"total", "alternate_total"}:
+        no_bet_flags.append(goalie_risk_flags[0])
+    if market_key in {"player_prop", "anytime_goal_scorer", "first_goal_scorer"} and str(input_stats.get("player_starting_status") or "").lower() not in {"confirmed", "starting", "active"}:
+        no_bet_flags.append("player starting status unconfirmed")
+    if market_key == "first_goal_scorer" and edge is not None and edge < 8:
+        no_bet_flags.append("high variance market")
+    if current_odds is not None and consensus_odds is not None and abs(current_odds - consensus_odds) >= 35:
+        no_bet_flags.append("market disagreement too high")
+
+    suggested = 0.0
+    if not no_bet_flags:
+        suggested = calculate_suggested_stake(
+            bankroll=bankroll,
+            american_odds=odds_american,
+            true_probability=true_probability,
+            risk_profile=risk_profile,
+            confidence=confidence,
+        )
+        risk = "low" if edge is not None and edge >= 5 else risk
+
+    regulation_team_win, regulation_draw_probability, regulation_opponent_win = _nhl_matrix_parts(score_matrix)
+    overtime_probability = regulation_draw_probability
+    shootout_adjustment_probability = overtime_probability * (0.50 + shootout_edge)
+    return {
+        "model_status": "active",
+        "estimated_true_probability": true_probability,
+        "true_probability": true_probability,
+        "final_probability": true_probability,
+        "model_probability": true_probability,
+        "implied_probability": implied_probability,
+        "edge": edge,
+        "confidence": confidence,
+        "risk": risk,
+        "suggested_stake": suggested,
+        "raw_model_probability": calibration["raw_model_probability"],
+        "calibrated_model_probability": calibration["calibrated_model_probability"],
+        "probability_calibration_applied": calibration["probability_calibration_applied"],
+        "probability_sanity_flags": calibration["probability_sanity_flags"],
+        "probability_cap_reason": calibration["probability_cap_reason"],
+        "market_anchor_probability": calibration["market_anchor_probability"],
+        "team_lambda": round(team_lambda, 3),
+        "opponent_lambda": round(opponent_lambda, 3),
+        "projected_team_goals": round(team_lambda, 3),
+        "projected_opponent_goals": round(opponent_lambda, 3),
+        "projected_total_goals": round(team_lambda + opponent_lambda, 3),
+        "projected_goal_differential": round(projected_goal_differential, 3),
+        "regulation_draw_probability": regulation_draw_probability,
+        "overtime_probability": overtime_probability,
+        "shootout_adjustment_probability": shootout_adjustment_probability,
+        "bivariate_poisson_adjustment_applied": shared_intensity > 0,
+        "goalie_adjustment_applied": goalie_adjustment_applied,
+        "goalie_risk_flags": goalie_risk_flags,
+        "special_teams_adjustment_applied": special_teams_adjustment_applied,
+        "period_lambda_adjustment_applied": period_lambda_adjustment_applied,
+        "time_decay_applied": time_decay_applied,
+        "nhl_input_contract": deepcopy(NHL_INPUT_CONTRACT),
+        "input_coverage": {
+            "required_core_present": list(NHL_REQUIRED_CORE_INPUTS),
+            "required_market_specific_present": NHL_REQUIRED_MARKET_SPECIFIC_INPUTS.get(market_key, []),
+            "optional_enrichment_present": optional_present,
+            "optional_enrichment_missing": [field for field in NHL_OPTIONAL_ENRICHMENT_INPUTS if input_stats.get(field) is None],
             "provider_enrichment_present": provider_present,
             "officiating_present": officiating_present,
             "referee_present": officiating_present,
@@ -3920,6 +4612,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         nfl_model = None
         mlb_model = None
         soccer_model = None
+        nhl_model = None
         if sport == "basketball_nba":
             nba_model = _estimate_nba_possession_model(
                 input_stats=input_stats,
@@ -3956,6 +4649,15 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
                 bankroll=bankroll,
                 risk_profile=payload.get("risk_profile") or "moderate",
             )
+        elif sport == "icehockey_nhl":
+            nhl_model = _estimate_nhl_goal_model(
+                input_stats=input_stats,
+                payload=payload,
+                market=market,
+                odds_american=odds_american,
+                bankroll=bankroll,
+                risk_profile=payload.get("risk_profile") or "moderate",
+            )
 
         if nba_model:
             component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
@@ -3964,6 +4666,8 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         elif mlb_model:
             component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
         elif soccer_model:
+            component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
+        elif nhl_model:
             component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
         elif sport == "basketball_nba":
             component_status = COMPONENT_STATUS_INACTIVE
@@ -3977,6 +4681,9 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         elif sport == "soccer":
             component_status = COMPONENT_STATUS_INACTIVE
             missing_inputs = _soccer_full_inputs_missing(input_stats, payload) + _soccer_market_specific_missing(market, input_stats, payload)
+        elif sport == "icehockey_nhl":
+            component_status = COMPONENT_STATUS_INACTIVE
+            missing_inputs = _nhl_full_inputs_missing(input_stats, payload) + _nhl_market_specific_missing(market, input_stats, payload)
         else:
             component_status, missing_inputs = _component_status(config["required_inputs"], input_stats)
         backtest_status = "passed" if input_stats.get("backtest_proof") else "not_started"
@@ -4012,9 +4719,15 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             edge = soccer_model["edge"]
             suggested = soccer_model["suggested_stake"]
             no_bet_flags = list(soccer_model["no_bet_flags"])
+        elif nhl_model:
+            true_probability = nhl_model["true_probability"]
+            implied_probability = nhl_model["implied_probability"]
+            edge = nhl_model["edge"]
+            suggested = nhl_model["suggested_stake"]
+            no_bet_flags = list(nhl_model["no_bet_flags"])
         if implied_probability is not None and true_probability is not None and odds_american is not None:
             edge = edge_percentage(true_probability, implied_probability)
-            if not (nba_model or nfl_model or mlb_model or soccer_model):
+            if not (nba_model or nfl_model or mlb_model or soccer_model or nhl_model):
                 suggested = suggested_stake_with_risk_controls(
                     bankroll=bankroll,
                     american_odds=odds_american,
@@ -4031,7 +4744,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         social_input_stats = dict(input_stats)
         social_input_stats["edge"] = edge
         social_layer = build_social_crowd_calibration_layer(social_input_stats)
-        if social_layer["sentiment_no_bet_flags"] and not (nba_model or nfl_model or mlb_model or soccer_model):
+        if social_layer["sentiment_no_bet_flags"] and not (nba_model or nfl_model or mlb_model or soccer_model or nhl_model):
             no_bet_flags = list(dict.fromkeys(no_bet_flags + social_layer["sentiment_no_bet_flags"]))
 
         risk_controller = build_risk_controller(bankroll, unit_size, payload.get("risk_profile") or "conservative")
@@ -4048,7 +4761,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         })
         wee_willie = build_wee_willie_market_weakness_detector(detector_payload)
         manual_ticket = build_manual_ticket(detector_payload, suggested)
-        active_model = nba_model or nfl_model or mlb_model or soccer_model
+        active_model = nba_model or nfl_model or mlb_model or soccer_model or nhl_model
         confidence = active_model["confidence"] if active_model else input_stats.get("confidence")
         risk = active_model["risk"] if active_model else payload.get("risk_profile") or "conservative"
         model_status = active_model["model_status"] if active_model else component_status
@@ -4066,9 +4779,9 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             and config.get("confirmed_bets_allowed")
             and not no_bet_flags
             and edge is not None
-            and edge >= (_nfl_thresholds(payload.get("risk_profile") or "moderate")[0] if (nfl_model or mlb_model or soccer_model) else 2.5)
+            and edge >= (_nfl_thresholds(payload.get("risk_profile") or "moderate")[0] if (nfl_model or mlb_model or soccer_model or nhl_model) else 2.5)
             and confidence is not None
-            and float(confidence) >= (_nfl_thresholds(payload.get("risk_profile") or "moderate")[1] if (nfl_model or mlb_model or soccer_model) else 70)
+            and float(confidence) >= (_nfl_thresholds(payload.get("risk_profile") or "moderate")[1] if (nfl_model or mlb_model or soccer_model or nhl_model) else 70)
             and suggested > 0
         ):
             confirmed_bets = [{
@@ -4136,7 +4849,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             "status": evaluated_status,
             **officiating_analysis["officiating_logbook_fields"],
         })
-        probability_model = nfl_model or mlb_model or soccer_model
+        probability_model = nfl_model or mlb_model or soccer_model or nhl_model
         if probability_model:
             logbook_ready_row.update({
                 "raw_model_probability": probability_model["raw_model_probability"],
@@ -4166,6 +4879,25 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
                 "dixon_coles_adjustment_applied": soccer_model["dixon_coles_adjustment_applied"],
                 "bivariate_poisson_adjustment_applied": soccer_model["bivariate_poisson_adjustment_applied"],
                 "time_decay_applied": soccer_model["time_decay_applied"],
+            })
+        if nhl_model:
+            logbook_ready_row.update({
+                "league": payload.get("league") or input_stats.get("league"),
+                "team_lambda": nhl_model["team_lambda"],
+                "opponent_lambda": nhl_model["opponent_lambda"],
+                "projected_team_goals": nhl_model["projected_team_goals"],
+                "projected_opponent_goals": nhl_model["projected_opponent_goals"],
+                "projected_total_goals": nhl_model["projected_total_goals"],
+                "projected_goal_differential": nhl_model["projected_goal_differential"],
+                "regulation_draw_probability": nhl_model["regulation_draw_probability"],
+                "overtime_probability": nhl_model["overtime_probability"],
+                "shootout_adjustment_probability": nhl_model["shootout_adjustment_probability"],
+                "bivariate_poisson_adjustment_applied": nhl_model["bivariate_poisson_adjustment_applied"],
+                "goalie_adjustment_applied": nhl_model["goalie_adjustment_applied"],
+                "goalie_risk_flags": nhl_model["goalie_risk_flags"],
+                "special_teams_adjustment_applied": nhl_model["special_teams_adjustment_applied"],
+                "period_lambda_adjustment_applied": nhl_model["period_lambda_adjustment_applied"],
+                "time_decay_applied": nhl_model["time_decay_applied"],
             })
         if nfl_model:
             logbook_ready_row.update({
@@ -4214,17 +4946,24 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             "projected_opponent_runs": mlb_model["projected_opponent_runs"] if mlb_model else None,
             "projected_total_runs": mlb_model["projected_total_runs"] if mlb_model else None,
             "projected_run_differential": mlb_model["projected_run_differential"] if mlb_model else None,
-            "team_lambda": soccer_model["team_lambda"] if soccer_model else None,
-            "opponent_lambda": soccer_model["opponent_lambda"] if soccer_model else None,
-            "projected_team_goals": soccer_model["projected_team_goals"] if soccer_model else None,
-            "projected_opponent_goals": soccer_model["projected_opponent_goals"] if soccer_model else None,
-            "projected_total_goals": soccer_model["projected_total_goals"] if soccer_model else None,
-            "projected_goal_differential": soccer_model["projected_goal_differential"] if soccer_model else None,
+            "team_lambda": (soccer_model or nhl_model)["team_lambda"] if (soccer_model or nhl_model) else None,
+            "opponent_lambda": (soccer_model or nhl_model)["opponent_lambda"] if (soccer_model or nhl_model) else None,
+            "projected_team_goals": (soccer_model or nhl_model)["projected_team_goals"] if (soccer_model or nhl_model) else None,
+            "projected_opponent_goals": (soccer_model or nhl_model)["projected_opponent_goals"] if (soccer_model or nhl_model) else None,
+            "projected_total_goals": (soccer_model or nhl_model)["projected_total_goals"] if (soccer_model or nhl_model) else None,
+            "projected_goal_differential": (soccer_model or nhl_model)["projected_goal_differential"] if (soccer_model or nhl_model) else None,
             "draw_probability": soccer_model["draw_probability"] if soccer_model else None,
             "btts_probability": soccer_model["btts_probability"] if soccer_model else None,
             "dixon_coles_adjustment_applied": soccer_model["dixon_coles_adjustment_applied"] if soccer_model else False,
-            "bivariate_poisson_adjustment_applied": soccer_model["bivariate_poisson_adjustment_applied"] if soccer_model else False,
-            "time_decay_applied": soccer_model["time_decay_applied"] if soccer_model else False,
+            "regulation_draw_probability": nhl_model["regulation_draw_probability"] if nhl_model else None,
+            "overtime_probability": nhl_model["overtime_probability"] if nhl_model else None,
+            "shootout_adjustment_probability": nhl_model["shootout_adjustment_probability"] if nhl_model else None,
+            "bivariate_poisson_adjustment_applied": (soccer_model or nhl_model)["bivariate_poisson_adjustment_applied"] if (soccer_model or nhl_model) else False,
+            "goalie_adjustment_applied": nhl_model["goalie_adjustment_applied"] if nhl_model else False,
+            "goalie_risk_flags": nhl_model["goalie_risk_flags"] if nhl_model else [],
+            "special_teams_adjustment_applied": nhl_model["special_teams_adjustment_applied"] if nhl_model else False,
+            "period_lambda_adjustment_applied": nhl_model["period_lambda_adjustment_applied"] if nhl_model else False,
+            "time_decay_applied": (soccer_model or nhl_model)["time_decay_applied"] if (soccer_model or nhl_model) else False,
             "true_probability": true_probability,
             "estimated_true_probability": true_probability,
             "final_probability": true_probability,
@@ -4249,6 +4988,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             "nfl_input_contract": deepcopy(NFL_INPUT_CONTRACT) if sport == "americanfootball_nfl" else None,
             "mlb_input_contract": deepcopy(MLB_INPUT_CONTRACT) if sport == "baseball_mlb" else None,
             "soccer_input_contract": deepcopy(SOCCER_INPUT_CONTRACT) if sport == "soccer" else None,
+            "nhl_input_contract": deepcopy(NHL_INPUT_CONTRACT) if sport == "icehockey_nhl" else None,
             "input_coverage": active_model.get("input_coverage") if active_model else None,
             "suggested_stake": suggested if confirmed_bets else 0,
             "recommended_unit_size": risk_controller["recommended_unit_size"],
