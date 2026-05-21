@@ -146,8 +146,11 @@ def parse_ticket(payload: dict[str, Any]) -> dict[str, Any]:
         ticket.setdefault("away_team", teams[0])
         ticket.setdefault("home_team", teams[1])
     input_stats = ticket.get("input_stats") or {}
-    if multi_sport_model_registry.normalize_sport_key(str(ticket.get("sport") or "")) == "tennis":
+    sport_key = multi_sport_model_registry.normalize_sport_key(str(ticket.get("sport") or ""))
+    if sport_key == "tennis":
         input_stats = multi_sport_model_registry._normalize_tennis_input_aliases(input_stats)
+    elif sport_key in {"mma_mixed_martial_arts", "boxing"}:
+        input_stats = multi_sport_model_registry._normalize_combat_input_aliases(input_stats, ticket, sport_key)
     return {
         "source_type": ticket.get("source_type") or "parsed_fields",
         "sport": ticket.get("sport"),

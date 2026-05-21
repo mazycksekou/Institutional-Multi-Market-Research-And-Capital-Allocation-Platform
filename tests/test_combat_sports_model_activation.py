@@ -235,6 +235,45 @@ class TestCombatSportsModelActivation(unittest.TestCase):
         self.assertEqual(response["model_analysis"]["model_name"], "fighter_striking_grappling_finish_model")
         self.assertEqual(response["model_analysis"]["model_status"], "active")
 
+    def test_live_smoke_screenshot_alias_inputs_activate_combat_model(self):
+        response = self._screenshot(
+            sport="ufc",
+            market="moneyline",
+            selection="Jon Jones",
+            odds_american=100,
+            event="Jon Jones vs Stipe Miocic",
+            teams=["Jon Jones", "Stipe Miocic"],
+            input_stats={
+                "fighter_name": "Jon Jones",
+                "opponent_name": "Stipe Miocic",
+                "fighter_strikes_landed_per_min": 4.3,
+                "opponent_strikes_landed_per_min": 3.8,
+                "fighter_takedown_average": 1.9,
+                "fighter_submission_average": 0.5,
+                "fighter_reach": 84.5,
+                "fighter_height": 76,
+                "fighter_recent_win_percent": 80,
+                "opponent_recent_win_percent": 60,
+            },
+        )
+        model = response["model_analysis"]
+        self.assertTrue(response["ok"])
+        self.assertEqual(model["sport"], "mma_mixed_martial_arts")
+        self.assertEqual(model["model_name"], "fighter_striking_grappling_finish_model")
+        self.assertEqual(model["model_status"], "active")
+        self.assertEqual(model["missing_inputs"], [])
+        self.assertFalse(response["partial_model_mode"])
+        self.assertIsNotNone(model["final_probability"])
+        self.assertEqual(model["implied_probability"], 0.5)
+        self.assertNotEqual(model["status"], "manual_review_required")
+        if model["decision"] == "NO_BET":
+            self.assertEqual(response["stake"], 0)
+        else:
+            self.assertGreater(response["stake"], 0)
+        confirmed_keys = {(bet.get("sport"), bet.get("event"), bet.get("market"), bet.get("selection")) for bet in response["confirmed_bets"]}
+        no_bet_keys = {(bet.get("sport"), bet.get("event"), bet.get("market"), bet.get("selection")) for bet in response["no_bets"]}
+        self.assertFalse(confirmed_keys & no_bet_keys)
+
     def test_odds_stability_across_prices(self):
         minus_130 = self._sport(odds_american=-130)
         plus_100 = self._sport(odds_american=100)

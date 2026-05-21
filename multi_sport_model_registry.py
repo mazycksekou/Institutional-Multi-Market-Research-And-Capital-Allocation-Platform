@@ -74,6 +74,7 @@ SPORT_ALIASES = {
     "tennis_atp": "tennis",
     "tennis_wta": "tennis",
     "ufc": "mma_mixed_martial_arts",
+    "ufc_mma": "mma_mixed_martial_arts",
     "mma": "mma_mixed_martial_arts",
     "mixed_martial_arts": "mma_mixed_martial_arts",
     "mixed martial arts": "mma_mixed_martial_arts",
@@ -3029,6 +3030,162 @@ def _normalize_tennis_input_aliases(input_stats: dict[str, Any]) -> dict[str, An
     return normalized
 
 
+def _combat_recent_win_percent_to_record(value: Any) -> tuple[Optional[int], Optional[int]]:
+    percent = _safe_float(value)
+    if percent is None:
+        return None, None
+    win_rate = percent / 100 if percent > 1 else percent
+    win_rate = max(0.0, min(1.0, win_rate))
+    wins = int(round(win_rate * 10))
+    return wins, max(0, 10 - wins)
+
+
+def _normalize_combat_input_aliases(input_stats: dict[str, Any], payload: Optional[dict[str, Any]] = None, sport: Optional[str] = None) -> dict[str, Any]:
+    normalized = dict(input_stats or {})
+    payload = payload or {}
+    sport_key = normalize_sport_key(str(sport or payload.get("sport") or payload.get("league") or ""))
+
+    def first_present(*keys: str) -> Any:
+        for key in keys:
+            value = normalized.get(key)
+            if value is not None:
+                return value
+        return None
+
+    def copy_first(target: str, *sources: str, transform: Any = None) -> None:
+        if normalized.get(target) is not None:
+            return
+        for source in sources:
+            value = normalized.get(source)
+            if value is not None:
+                normalized[target] = transform(value) if transform else value
+                return
+
+    two_way_aliases = {
+        "fighter_strikes_landed_per_min": ["fighter_sig_strikes_landed_per_min", "fighter_sig_strikes_landed_pm", "fighter_slpm"],
+        "opponent_strikes_landed_per_min": ["opponent_sig_strikes_landed_per_min", "opponent_sig_strikes_landed_pm", "opponent_slpm"],
+        "fighter_strikes_absorbed_per_min": ["fighter_sig_strikes_absorbed_per_min", "fighter_sig_strikes_absorbed_pm", "fighter_sapm"],
+        "opponent_strikes_absorbed_per_min": ["opponent_sig_strikes_absorbed_per_min", "opponent_sig_strikes_absorbed_pm", "opponent_sapm"],
+        "fighter_striking_accuracy": ["fighter_sig_strike_accuracy", "fighter_sig_striking_accuracy"],
+        "opponent_striking_accuracy": ["opponent_sig_strike_accuracy", "opponent_sig_striking_accuracy"],
+        "fighter_striking_defense": ["fighter_sig_strike_defense", "fighter_sig_striking_defense"],
+        "opponent_striking_defense": ["opponent_sig_strike_defense", "opponent_sig_striking_defense"],
+        "fighter_takedown_average": ["fighter_takedowns_per_15", "fighter_td_avg"],
+        "opponent_takedown_average": ["opponent_takedowns_per_15", "opponent_td_avg"],
+        "fighter_submission_average": ["fighter_submission_attempts_per_15", "fighter_sub_attempts_per_15"],
+        "opponent_submission_average": ["opponent_submission_attempts_per_15", "opponent_sub_attempts_per_15"],
+        "fighter_reach": ["fighter_reach_inches"],
+        "opponent_reach": ["opponent_reach_inches"],
+        "fighter_height": ["fighter_height_inches"],
+        "opponent_height": ["opponent_height_inches"],
+    }
+    for canonical, aliases in two_way_aliases.items():
+        copy_first(canonical, *aliases, transform=_safe_float)
+        for alias in aliases:
+            copy_first(alias, canonical, transform=_safe_float)
+
+    if normalized.get("fighter") is None:
+        normalized["fighter"] = first_present("fighter_name", "participant_name", "competitor_name")
+    if normalized.get("opponent") is None:
+        normalized["opponent"] = first_present("opponent_name", "opposing_fighter", "opponent_fighter")
+    if normalized.get("selection") is None:
+        normalized["selection"] = payload.get("selection") or normalized.get("fighter")
+
+    for percent_key, wins_key, losses_key in (
+        ("fighter_recent_win_percent", "fighter_recent_wins", "fighter_recent_losses"),
+        ("opponent_recent_win_percent", "opponent_recent_wins", "opponent_recent_losses"),
+    ):
+        wins, losses = _combat_recent_win_percent_to_record(normalized.get(percent_key))
+        if wins is not None:
+            normalized.setdefault(wins_key, wins)
+            normalized.setdefault(losses_key, losses)
+            normalized.setdefault(wins_key.replace("_recent_", "_recent_form_"), wins)
+            normalized.setdefault(losses_key.replace("_recent_", "_recent_form_"), losses)
+        elif normalized.get(wins_key) is not None and normalized.get(losses_key) is not None:
+            wins_float = _safe_float(normalized.get(wins_key), 0) or 0
+            losses_float = _safe_float(normalized.get(losses_key), 0) or 0
+            total = wins_float + losses_float
+            if total > 0:
+                normalized[percent_key] = round((wins_float / total) * 100, 2)
+
+    live_quality_fields = {
+        "fighter_sig_strikes_landed_per_min", "fighter_strikes_landed_per_min",
+        "opponent_sig_strikes_landed_per_min", "opponent_strikes_landed_per_min",
+        "fighter_takedowns_per_15", "fighter_takedown_average",
+        "opponent_takedowns_per_15", "opponent_takedown_average",
+        "fighter_submission_attempts_per_15", "fighter_submission_average",
+        "opponent_submission_attempts_per_15", "opponent_submission_average",
+        "fighter_recent_win_percent", "opponent_recent_win_percent",
+        "fighter_elo", "opponent_elo",
+    }
+    has_live_quality = any(normalized.get(field) is not None for field in live_quality_fields)
+    if not has_live_quality:
+        return normalized
+
+    if normalized.get("fighter") is None:
+        normalized["fighter"] = payload.get("selection") or payload.get("fighter")
+    if normalized.get("opponent") is None:
+        normalized["opponent"] = payload.get("opponent")
+    is_boxing = sport_key == "boxing"
+    normalized.setdefault("fighter_injury_status", "healthy")
+    normalized.setdefault("opponent_injury_status", "healthy")
+    if normalized.get("scheduled_rounds") is None:
+        five_round_signal = any(bool(normalized.get(key) or payload.get(key)) for key in (
+            "title_fight", "championship_fight", "main_event", "five_round_fight",
+        ))
+        normalized["scheduled_rounds"] = 5 if five_round_signal else 3
+    if normalized.get("promotion") is None and sport_key in {"mma_mixed_martial_arts", ""}:
+        normalized["promotion"] = "UFC"
+
+    safe_defaults = {
+        "fight_date": payload.get("fight_date") or payload.get("event_date") or "unknown",
+        "weight_class": payload.get("weight_class") or "unknown",
+        "fighter_moneyline": payload.get("odds_american") if payload.get("odds_american") is not None else 0,
+        "fighter_elo": 1500,
+        "opponent_elo": 1500,
+        "fighter_recent_win_percent": 50,
+        "opponent_recent_win_percent": 50,
+        "fighter_finish_rate": 45,
+        "opponent_finish_rate": 45,
+        "fighter_ko_tko_rate": 30 if is_boxing else 25,
+        "opponent_ko_tko_rate": 30 if is_boxing else 25,
+        "fighter_submission_rate": 0 if is_boxing else 15,
+        "opponent_submission_rate": 0 if is_boxing else 15,
+        "fighter_decision_rate": 55 if is_boxing else 35,
+        "opponent_decision_rate": 55 if is_boxing else 35,
+        "fighter_strikes_landed_per_min": 3.0,
+        "opponent_strikes_landed_per_min": 3.0,
+        "fighter_strikes_absorbed_per_min": 3.0,
+        "opponent_strikes_absorbed_per_min": 3.0,
+        "fighter_striking_accuracy": 50,
+        "opponent_striking_accuracy": 50,
+        "fighter_striking_defense": 55,
+        "opponent_striking_defense": 55,
+        "fighter_takedown_average": 0.0 if is_boxing else 1.0,
+        "opponent_takedown_average": 0.0 if is_boxing else 1.0,
+        "fighter_takedown_accuracy": 0 if is_boxing else 35,
+        "opponent_takedown_accuracy": 0 if is_boxing else 35,
+        "fighter_takedown_defense": 0 if is_boxing else 65,
+        "opponent_takedown_defense": 0 if is_boxing else 65,
+        "fighter_submission_average": 0.0 if is_boxing else 0.4,
+        "opponent_submission_average": 0.0 if is_boxing else 0.4,
+        "fighter_age": 30,
+        "opponent_age": 30,
+        "fighter_reach": 72,
+        "opponent_reach": 72,
+        "fighter_height": 70,
+        "opponent_height": 70,
+        "fighter_stance": "orthodox",
+        "opponent_stance": "orthodox",
+        "fighter_days_rest": 90,
+        "opponent_days_rest": 90,
+    }
+    for key, value in safe_defaults.items():
+        if normalized.get(key) is None:
+            normalized[key] = value
+    return normalized
+
+
 def _tennis_market_specific_missing(market: Any, input_stats: dict[str, Any], payload: dict[str, Any]) -> list[str]:
     market_key = _normal_market_key(input_stats.get("market_type") or market)
     required = TENNIS_REQUIRED_MARKET_SPECIFIC_INPUTS.get(market_key, [])
@@ -5551,6 +5708,8 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         input_stats, input_stats_flags = _normalize_input_stats(payload.get("input_stats"))
         if sport == "tennis":
             input_stats = _normalize_tennis_input_aliases(input_stats)
+        elif sport in {"mma_mixed_martial_arts", "boxing"}:
+            input_stats = _normalize_combat_input_aliases(input_stats, payload, sport)
         odds_american = _safe_float(payload.get("odds_american"))
         bankroll = _safe_float(payload.get("bankroll"), 0) or 0
         unit_size = _safe_float(payload.get("unit_size"), 0) or 0
