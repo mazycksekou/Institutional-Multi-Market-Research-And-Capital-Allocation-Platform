@@ -142,6 +142,33 @@ def tennis_exact_live_alias_only_inputs(**extra):
     return data
 
 
+def tennis_live_deployed_alias_inputs(**extra):
+    data = {
+        "player": "Novak Djokovic",
+        "opponent": "Carlos Alcaraz",
+        "tournament": "Wimbledon",
+        "match_date": "2026-05-26",
+        "surface": "grass",
+        "best_of_sets": 3,
+        "player_rank": 2,
+        "opponent_rank": 3,
+        "player_elo": 2200,
+        "opponent_elo": 2075,
+        "player_recent_win_percent": 80,
+        "opponent_recent_win_percent": 70,
+        "player_fatigue_rating": 20,
+        "opponent_fatigue_rating": 35,
+        "player_days_rest": 4,
+        "opponent_days_rest": 3,
+        "player_serve_hold_percent": 86,
+        "opponent_serve_hold_percent": 82,
+        "player_first_serve_percent": 65,
+        "opponent_first_serve_percent": 63,
+    }
+    data.update(extra)
+    return data
+
+
 def sport_payload(**extra):
     payload = {
         "sport": "wta",
@@ -518,6 +545,43 @@ class TestTennisModelActivation(unittest.TestCase):
             if self._key(log_row) == confirmed_key and log_row.get("decision") == "NO_BET"
         ]
         self.assertEqual(stale_logbook_rows, [])
+
+    def test_tennis_live_deployed_alias_payload_activates_with_empty_missing_inputs(self):
+        response = self._screenshot(
+            sport="tennis",
+            league="ATP",
+            event="Novak Djokovic vs Carlos Alcaraz",
+            teams=["Novak Djokovic", "Carlos Alcaraz"],
+            market="moneyline",
+            selection="Novak Djokovic",
+            odds_american=100,
+            screenshot_text="Novak Djokovic vs Carlos Alcaraz moneyline Djokovic +100",
+            risk_profile="moderate",
+            bankroll=1000,
+            unit_size=25,
+            input_stats=tennis_live_deployed_alias_inputs(),
+        )
+        model = response["model_analysis"]
+        print("tennis diagnostics", {
+            "missing_inputs_before_normalization": model.get("missing_inputs_before_normalization"),
+            "missing_inputs_after_normalization": model.get("missing_inputs_after_normalization"),
+            "raw_input_keys": model.get("raw_input_keys"),
+            "normalized_input_keys": model.get("normalized_input_keys"),
+            "normalizer_used": model.get("normalizer_used"),
+        })
+        self.assertEqual(model["normalizer_used"], "tennis_input_normalizer")
+        self.assertEqual(model["missing_inputs_after_normalization"], [])
+        self.assertEqual(model["model_status"], "active")
+        self.assertEqual(model["missing_inputs"], [])
+        self.assertIsNotNone(model["final_probability"])
+        self.assertIsNotNone(model["confidence"])
+        self.assertNotEqual(model["decision"], "manual_review_required")
+        self.assertNotEqual(model["status"], "manual_review_required")
+        if response["confirmed_bets"]:
+            self.assertGreaterEqual(len(response["confirmed_bets"]), 1)
+            self.assertGreater(response["stake"], 0)
+            confirmed_key = self._key(response["confirmed_bets"][0])
+            self.assertFalse(self._same_selection_no_bets(response, confirmed_key))
 
     def test_tennis_final_cleanup_removes_stale_nested_same_selection_no_bets_and_log_rows(self):
         confirmed = {

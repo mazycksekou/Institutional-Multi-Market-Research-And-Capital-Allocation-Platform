@@ -3286,6 +3286,21 @@ def _normalize_tennis_input_aliases(input_stats: dict[str, Any]) -> dict[str, An
             normalized[f"{prefix}_double_fault_rate"] = round(max(1.5, min(6.0, 4.0 - ((first_in or 63) - 60) * 0.06)), 2)
     if normalized.get("tournament") is None:
         normalized["tournament"] = normalized.get("tournament_name") or normalized.get("event")
+    has_tennis_quality = any(
+        normalized.get(field) is not None
+        for field in (
+            "player_elo",
+            "opponent_elo",
+            "player_ranking",
+            "opponent_ranking",
+            "player_hold_percent",
+            "opponent_hold_percent",
+            "player_recent_form_wins",
+            "opponent_recent_form_wins",
+        )
+    )
+    if has_tennis_quality and normalized.get("selection") is None and normalized.get("player") is not None:
+        normalized["selection"] = normalized.get("player")
     return normalized
 
 
