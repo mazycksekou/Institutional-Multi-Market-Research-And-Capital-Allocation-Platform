@@ -246,6 +246,65 @@ class TestCombatSportsModelActivation(unittest.TestCase):
         self.assertLess(minus_130["edge"], plus_100["edge"])
         self.assertLess(plus_100["edge"], plus_120["edge"])
 
+    def test_offered_odds_do_not_drive_combat_final_probability(self):
+        results = {
+            -130: self._sport(odds_american=-130),
+            100: self._sport(odds_american=100),
+            120: self._sport(odds_american=120),
+        }
+        final_probabilities = [result["final_probability"] for result in results.values()]
+        raw_probabilities = [result["raw_model_probability"] for result in results.values()]
+        calibrated_probabilities = [result["calibrated_model_probability"] for result in results.values()]
+        self.assertLess(max(final_probabilities) - min(final_probabilities), 0.03)
+        self.assertLess(max(raw_probabilities) - min(raw_probabilities), 0.000001)
+        self.assertLess(max(calibrated_probabilities) - min(calibrated_probabilities), 0.000001)
+        self.assertIsNone(results[-130]["market_anchor_probability"])
+        self.assertLess(results[-130]["edge"], results[100]["edge"])
+        self.assertLess(results[100]["edge"], results[120]["edge"])
+
+        for response in results.values():
+            confirmed_keys = {(bet.get("sport"), bet.get("event"), bet.get("market"), bet.get("selection")) for bet in response["full_board_preview"]["confirmed_bets"]}
+            no_bet_keys = {(bet.get("sport"), bet.get("event"), bet.get("market"), bet.get("selection")) for bet in response["full_board_preview"]["no_bets"]}
+            self.assertFalse(confirmed_keys & no_bet_keys)
+
+    def test_input_stats_market_odds_fields_do_not_drive_final_probability(self):
+        short_price_inputs = combat_full_inputs(
+            fighter_moneyline=-180,
+            opponent_moneyline=150,
+            current_odds=-180,
+            best_available_odds=-170,
+            opening_odds=-160,
+        )
+        plus_price_inputs = combat_full_inputs(
+            fighter_moneyline=140,
+            opponent_moneyline=-165,
+            current_odds=120,
+            best_available_odds=130,
+            opening_odds=100,
+        )
+        short_price = self._sport(odds_american=-130, input_stats=short_price_inputs)
+        plus_price = self._sport(odds_american=-130, input_stats=plus_price_inputs)
+
+        stable_probability_fields = [
+            "raw_model_probability",
+            "calibrated_model_probability",
+            "final_probability",
+            "fighter_win_probability",
+            "opponent_win_probability",
+            "ko_tko_probability",
+            "submission_probability",
+            "decision_probability",
+            "goes_distance_probability",
+            "does_not_go_distance_probability",
+            "over_rounds_probability",
+            "under_rounds_probability",
+        ]
+        for field in stable_probability_fields:
+            self.assertAlmostEqual(short_price[field], plus_price[field], places=8, msg=field)
+        self.assertEqual(short_price["implied_probability"], plus_price["implied_probability"])
+        self.assertEqual(short_price["edge_percent"], plus_price["edge_percent"])
+        self.assertEqual(short_price["decision"], plus_price["decision"])
+
     def test_confirmed_bets_and_no_bets_are_mutually_exclusive_for_same_selection(self):
         response = self._sport(odds_american=100)
         confirmed_keys = {(bet.get("sport"), bet.get("event"), bet.get("market"), bet.get("selection")) for bet in response["full_board_preview"]["confirmed_bets"]}

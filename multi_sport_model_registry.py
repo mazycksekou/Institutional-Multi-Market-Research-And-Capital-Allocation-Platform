@@ -3871,16 +3871,16 @@ def _estimate_combat_finish_model(
         + opponent_injury_bonus
     )
     raw_win_probability = 1 / (1 + math.exp(-model_score))
-    market_anchor = _safe_float(input_stats.get("no_vig_market_probability"))
-    market_anchor_is_no_vig = market_anchor is not None
-    if market_anchor is None:
-        market_anchor = _safe_float(input_stats.get("prediction_market_probability") or input_stats.get("kalshi_probability"))
-    if market_anchor is None:
-        market_anchor = 0.50
-    if market_anchor > 1:
-        market_anchor = market_anchor / 100
-    market_weight = 0.30 if market_anchor_is_no_vig else 0.10
-    calibrated_win_probability = raw_win_probability * (1 - market_weight) + market_anchor * market_weight
+    no_vig_anchor = _safe_float(input_stats.get("no_vig_market_probability"))
+    if no_vig_anchor is not None and no_vig_anchor > 1:
+        no_vig_anchor = no_vig_anchor / 100
+    market_anchor = max(0.01, min(0.99, no_vig_anchor)) if no_vig_anchor is not None else None
+    market_weight = 0.15 if market_anchor is not None else 0.0
+    calibrated_win_probability = (
+        raw_win_probability * (1 - market_weight) + market_anchor * market_weight
+        if market_anchor is not None
+        else raw_win_probability
+    )
     abs_score = abs(model_score)
     if abs_score < 0.45:
         low_cap, high_cap = 0.36, 0.64
@@ -3999,7 +3999,7 @@ def _estimate_combat_finish_model(
         "no_bet_flags": no_bet_flags,
         "raw_model_probability": raw_win_probability,
         "calibrated_model_probability": calibrated_win_probability,
-        "probability_calibration_applied": True,
+        "probability_calibration_applied": bool(market_anchor is not None or flags),
         "probability_sanity_flags": list(dict.fromkeys(flags)),
         "probability_cap_reason": probability_cap_reason,
         "market_anchor_probability": market_anchor,
