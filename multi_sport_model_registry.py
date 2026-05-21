@@ -45,6 +45,7 @@ OFFICIAL_SPORT_KEYS = [
     "basketball_nba",
     "basketball_wnba",
     "basketball_ncaab",
+    "basketball_ncaawb",
     "americanfootball_nfl",
     "americanfootball_ncaaf",
     "soccer",
@@ -62,7 +63,16 @@ SPORT_ALIASES = {
     "egaming": "esports",
     "nba": "basketball_nba",
     "wnba": "basketball_wnba",
+    "womens_nba": "basketball_wnba",
     "ncaab": "basketball_ncaab",
+    "college_basketball_mens": "basketball_ncaab",
+    "mens_college_basketball": "basketball_ncaab",
+    "ncaa_mens_basketball": "basketball_ncaab",
+    "ncaawb": "basketball_ncaawb",
+    "ncaaw": "basketball_ncaawb",
+    "college_basketball_womens": "basketball_ncaawb",
+    "womens_college_basketball": "basketball_ncaawb",
+    "ncaa_womens_basketball": "basketball_ncaawb",
     "nfl": "americanfootball_nfl",
     "cfb": "americanfootball_ncaaf",
     "mlb": "baseball_mlb",
@@ -428,6 +438,100 @@ NBA_INPUT_CONTRACT = {
     "referee_inputs": NBA_REFEREE_INPUTS,
     "social_crowd_inputs": NBA_SOCIAL_CROWD_INPUTS,
     "live_betting_inputs": NBA_LIVE_BETTING_INPUTS,
+}
+
+BASKETBALL_MODULE_MARKETS = [
+    "moneyline", "spread", "total", "team_total", "first_half_moneyline", "first_half_spread",
+    "first_half_total", "first_quarter_moneyline", "first_quarter_spread", "first_quarter_total",
+    "player_points", "player_rebounds", "player_assists", "player_pra", "player_threes",
+    "player_steals", "player_blocks", "player_turnovers", "double_double", "alt_spread",
+    "alt_total", "alt_team_total",
+]
+
+BASKETBALL_MODULE_PROP_MARKETS = [
+    "player_points", "player_rebounds", "player_assists", "player_pra", "player_threes",
+    "player_steals", "player_blocks", "player_turnovers", "double_double",
+]
+
+BASKETBALL_MODULE_REQUIRED_BASE_INPUTS = [
+    "home_team", "away_team", "team", "opponent", "home_offensive_rating", "home_defensive_rating",
+    "away_offensive_rating", "away_defensive_rating", "home_pace", "away_pace", "home_effective_fg_pct",
+    "away_effective_fg_pct", "home_turnover_rate", "away_turnover_rate", "home_rebound_rate",
+    "away_rebound_rate", "home_free_throw_rate", "away_free_throw_rate", "home_rest_days",
+    "away_rest_days", "home_travel_fatigue", "away_travel_fatigue",
+]
+
+WNBA_REQUIRED_CORE_INPUTS = BASKETBALL_MODULE_REQUIRED_BASE_INPUTS + [
+    "home_injury_adjustment", "away_injury_adjustment",
+]
+
+COLLEGE_BASKETBALL_REQUIRED_CORE_INPUTS = BASKETBALL_MODULE_REQUIRED_BASE_INPUTS + [
+    "home_rank", "away_rank", "home_strength_rating", "away_strength_rating",
+    "home_conference_strength", "away_conference_strength", "home_experience_rating",
+    "away_experience_rating", "home_three_point_rate", "away_three_point_rate",
+    "home_free_throw_pct", "away_free_throw_pct",
+]
+
+BASKETBALL_MODULE_REQUIRED_MARKET_INPUTS = {
+    "moneyline": ["odds_american"],
+    "spread": ["line", "odds_american"],
+    "total": ["total_line", "odds_american"],
+    "team_total": ["total_line", "odds_american"],
+    "first_half_moneyline": ["odds_american"],
+    "first_half_spread": ["line", "odds_american"],
+    "first_half_total": ["total_line", "odds_american"],
+    "first_quarter_moneyline": ["odds_american"],
+    "first_quarter_spread": ["line", "odds_american"],
+    "first_quarter_total": ["total_line", "odds_american"],
+    "alt_spread": ["line", "odds_american"],
+    "alt_total": ["total_line", "odds_american"],
+    "alt_team_total": ["total_line", "odds_american"],
+}
+
+for _basketball_prop_market in BASKETBALL_MODULE_PROP_MARKETS:
+    BASKETBALL_MODULE_REQUIRED_MARKET_INPUTS[_basketball_prop_market] = [
+        "player", "player_team", "player_minutes_projection", "player_usage_rate", "line", "odds_american",
+    ]
+
+BASKETBALL_MODULE_PLAYER_PROP_INPUTS = [
+    "player", "player_team", "opponent", "player_minutes_projection", "player_usage_rate",
+    "player_points_projection", "player_rebounds_projection", "player_assists_projection",
+    "player_pra_projection", "player_threes_projection", "player_steals_projection",
+    "player_blocks_projection", "player_turnovers_projection", "line",
+]
+
+WNBA_OPTIONAL_ENRICHMENT_INPUTS = [
+    "player_minutes_confidence", "rotation_stability", "no_vig_market_probability", "book_count",
+    "current_odds", "best_available_odds", "social_sentiment", "crowd_consensus", "public_betting_percent",
+    "sharp_money_percent", "referee_name", "official_sample_size",
+]
+
+COLLEGE_BASKETBALL_OPTIONAL_ENRICHMENT_INPUTS = [
+    "neutral_court", "tournament_game", "blowout_risk", "foul_variance", "late_game_free_throw_variance",
+    "tempo_volatility", "no_vig_market_probability", "book_count", "current_odds", "best_available_odds",
+    "social_sentiment", "crowd_consensus", "public_betting_percent", "sharp_money_percent",
+    "referee_name", "official_sample_size",
+]
+
+WNBA_INPUT_CONTRACT = {
+    "required_core_inputs": WNBA_REQUIRED_CORE_INPUTS,
+    "required_market_specific_inputs": BASKETBALL_MODULE_REQUIRED_MARKET_INPUTS,
+    "optional_enrichment_inputs": WNBA_OPTIONAL_ENRICHMENT_INPUTS,
+    "player_prop_inputs": BASKETBALL_MODULE_PLAYER_PROP_INPUTS,
+}
+
+MENS_COLLEGE_BASKETBALL_INPUT_CONTRACT = {
+    "required_core_inputs": COLLEGE_BASKETBALL_REQUIRED_CORE_INPUTS,
+    "required_market_specific_inputs": BASKETBALL_MODULE_REQUIRED_MARKET_INPUTS,
+    "optional_enrichment_inputs": COLLEGE_BASKETBALL_OPTIONAL_ENRICHMENT_INPUTS,
+    "player_prop_inputs": BASKETBALL_MODULE_PLAYER_PROP_INPUTS,
+}
+
+WOMENS_COLLEGE_BASKETBALL_INPUT_CONTRACT = {
+    "required_core_inputs": COLLEGE_BASKETBALL_REQUIRED_CORE_INPUTS,
+    "required_market_specific_inputs": BASKETBALL_MODULE_REQUIRED_MARKET_INPUTS,
+    "optional_enrichment_inputs": COLLEGE_BASKETBALL_OPTIONAL_ENRICHMENT_INPUTS,
+    "player_prop_inputs": BASKETBALL_MODULE_PLAYER_PROP_INPUTS,
 }
 
 NFL_REQUIRED_CORE_INPUTS = [
@@ -1369,6 +1473,7 @@ SPORT_PROP_INPUTS = {
     "basketball_nba": ["minutes projection", "usage", "pace", "defensive matchup", "injury report"],
     "basketball_wnba": ["WNBA minutes projection", "WNBA usage baseline", "pace", "defensive matchup", "injury report"],
     "basketball_ncaab": ["player projection where available", "tempo", "team role", "opponent matchup"],
+    "basketball_ncaawb": ["women's college player projection", "tempo", "team role", "opponent matchup"],
     "americanfootball_nfl": ["player projection", "snap share", "pace", "injury report", "trench matchup"],
     "americanfootball_ncaaf": ["player projection where available", "team pace", "depth chart", "matchup"],
     "soccer": ["player role", "expected minutes", "xG or xA", "field tilt", "opponent matchup"],
@@ -1406,6 +1511,12 @@ OFFICIALS_MODULE_BY_SPORT = {
         "official_inputs": ["referee crew", "foul rate", "free throw rate", "conference officiating profile"],
         "betting_edge_strength": "moderate",
         "notes": "College officiating context is conference-sensitive and needs stronger shrinkage.",
+    },
+    "basketball_ncaawb": {
+        "official_type": "referees",
+        "official_inputs": ["referee crew", "foul rate", "free throw rate", "conference officiating profile"],
+        "betting_edge_strength": "moderate",
+        "notes": "Women's college officiating context is conference-sensitive and calibrated separately.",
     },
     "americanfootball_nfl": {
         "official_type": "referee crew",
@@ -1559,6 +1670,7 @@ def _official_affected_markets(sport: str, market: Any) -> list[str]:
         "basketball_nba": ["spread", "totals", "team totals", "player props"],
         "basketball_wnba": ["spread", "totals", "team totals", "player props"],
         "basketball_ncaab": ["spread", "totals", "team totals"],
+        "basketball_ncaawb": ["spread", "totals", "team totals"],
         "americanfootball_nfl": ["spread", "totals", "penalty-sensitive props"],
         "americanfootball_ncaaf": ["spread", "totals", "penalty-sensitive props"],
         "soccer": ["cards", "penalties", "totals", "both teams to score"],
@@ -1816,14 +1928,14 @@ SPORT_MODEL_REGISTRY = [
     _sport(
         "basketball_wnba",
         "WNBA",
-        "wnba_possession_expected_score_model",
-        "Basketball possession based expected score model",
-        "possession_expected_score",
-        ["moneyline", "spread", "totals", "team totals", "first half", "first quarter", "live markets"],
-        ["points", "rebounds", "assists", "PRA", "threes", "steals", "blocks", "turnovers"],
-        ["WNBA pace baseline", "WNBA offensive rating", "WNBA defensive rating", "Four Factors", "WNBA usage distribution", "WNBA minutes projection", "injury report"],
-        ["shot quality", "fatigue", "rest", "travel", "market liquidity"],
-        ["WNBA specific baselines", "WNBA specific pace assumptions", "WNBA specific rotation assumptions", "WNBA specific usage distribution", "WNBA specific injury sensitivity", "WNBA specific prop volatility", "WNBA specific market liquidity flags", "Four Factors", "minutes projection", "shot quality engine registered now"],
+        "wnba_possession_rating_monte_carlo_model",
+        "wnba_possession_rating_monte_carlo_model",
+        "wnba_possession_rating_monte_carlo",
+        BASKETBALL_MODULE_MARKETS,
+        BASKETBALL_MODULE_PROP_MARKETS,
+        WNBA_REQUIRED_CORE_INPUTS,
+        WNBA_OPTIONAL_ENRICHMENT_INPUTS,
+        ["WNBA pace calibration", "WNBA scoring range", "WNBA possession volatility", "WNBA home court adjustment", "WNBA rest adjustment", "WNBA injury sensitivity", "WNBA travel sensitivity", "player minutes confidence"],
         "WNBA possession simulation",
         ["WNBA props require liquidity flags before staking because limits and price quality differ from NBA."],
         sport_parameters={
@@ -1834,21 +1946,47 @@ SPORT_MODEL_REGISTRY = [
             "injury_sensitivity": "WNBA specific injury sensitivity",
             "prop_volatility": "WNBA specific prop volatility",
             "market_liquidity": "WNBA specific market liquidity flags",
+            "league_calibration_applied": "wnba",
         },
+        component_status=COMPONENT_STATUS_ACTIVE,
+        model_level=MODEL_LEVEL_PROJECTION_READY,
+        confirmed_bets_allowed=True,
     ),
     _sport(
         "basketball_ncaab",
-        "College Basketball",
-        "possession_tempo_model",
-        "Possession based tempo model",
-        "possession_tempo",
-        ["moneyline", "spread", "totals", "team totals", "first half", "live markets"],
-        ["points", "rebounds", "assists", "threes where available"],
-        ["tempo", "Four Factors", "home court", "conference strength", "schedule strength", "team experience"],
-        ["Bayesian shrinkage", "travel", "rest"],
-        ["tempo", "Four Factors", "home court", "conference strength", "schedule strength", "Bayesian shrinkage", "team experience", "travel and rest"],
-        "tempo-adjusted possession simulation",
+        "Men's College Basketball",
+        "mens_college_basketball_possession_variance_model",
+        "mens_college_basketball_possession_variance_model",
+        "mens_college_basketball_possession_variance",
+        BASKETBALL_MODULE_MARKETS,
+        BASKETBALL_MODULE_PROP_MARKETS,
+        COLLEGE_BASKETBALL_REQUIRED_CORE_INPUTS,
+        COLLEGE_BASKETBALL_OPTIONAL_ENRICHMENT_INPUTS,
+        ["men's college pace calibration", "ranking and strength adjustment", "conference strength", "blowout risk", "foul variance", "late-game free throw variance", "tempo volatility", "neutral court adjustment"],
+        "men's college possession variance simulation",
         ["Team totals and spreads depend heavily on tempo and conference strength."],
+        sport_parameters={"league_baseline": "NCAAB", "league_calibration_applied": "ncaab"},
+        component_status=COMPONENT_STATUS_ACTIVE,
+        model_level=MODEL_LEVEL_PROJECTION_READY,
+        confirmed_bets_allowed=True,
+    ),
+    _sport(
+        "basketball_ncaawb",
+        "Women's College Basketball",
+        "womens_college_basketball_possession_variance_model",
+        "womens_college_basketball_possession_variance_model",
+        "womens_college_basketball_possession_variance",
+        BASKETBALL_MODULE_MARKETS,
+        BASKETBALL_MODULE_PROP_MARKETS,
+        COLLEGE_BASKETBALL_REQUIRED_CORE_INPUTS,
+        COLLEGE_BASKETBALL_OPTIONAL_ENRICHMENT_INPUTS,
+        ["women's college pace calibration", "women's scoring distribution", "top-team dominance adjustment", "ranking and strength adjustment", "conference strength", "blowout risk", "foul variance", "late-game variance", "tempo volatility", "neutral court adjustment"],
+        "women's college possession variance simulation",
+        ["Top-team dominance and conference imbalance require separate calibration from men's college basketball."],
+        sport_parameters={"league_baseline": "NCAAWB", "league_calibration_applied": "ncaawb"},
+        component_status=COMPONENT_STATUS_ACTIVE,
+        model_level=MODEL_LEVEL_PROJECTION_READY,
+        confirmed_bets_allowed=True,
     ),
     _sport(
         "americanfootball_nfl",
@@ -2033,6 +2171,9 @@ _REGISTRY_BY_KEY = {sport["sport_key"]: sport for sport in SPORT_MODEL_REGISTRY}
 _INPUT_NORMALIZER_BY_SPORT = {
     "baseball_mlb": "mlb_input_normalizer",
     "basketball_nba": "nba_input_normalizer",
+    "basketball_wnba": "wnba_input_normalizer",
+    "basketball_ncaab": "mens_college_basketball_input_normalizer",
+    "basketball_ncaawb": "womens_college_basketball_input_normalizer",
     "americanfootball_nfl": "nfl_input_normalizer",
     "soccer": "soccer_input_normalizer",
     "icehockey_nhl": "nhl_input_normalizer",
@@ -2054,6 +2195,46 @@ _ACTIVE_SCREENSHOT_ALIAS_TEST_PAYLOADS: dict[str, dict[str, Any]] = {
             "team_turnover_percent": 0.118, "opponent_turnover_percent": 0.136, "team_offensive_rebound_percent": 0.285,
             "opponent_offensive_rebound_percent": 0.245, "team_free_throw_rate": 0.235, "opponent_free_throw_rate": 0.205,
             "key_player_usage_available": True, "minutes_projection_available": True, "injury_report_status": "clean",
+        },
+    },
+    "basketball_wnba": {
+        "sport": "wnba", "league": "WNBA", "event": "Aces at Liberty", "teams": ["Aces", "Liberty"],
+        "market": "moneyline", "selection": "Liberty", "odds_american": 100, "bankroll": 1000, "unit_size": 25, "risk_profile": "moderate",
+        "input_stats": {
+            "game": "Aces at Liberty", "home": "Liberty", "away": "Aces", "team_name": "Liberty", "opponent_name": "Aces",
+            "favorite": "Liberty", "home_off_rating": 108.5, "home_def_rating": 96.2, "away_off_rating": 103.1, "away_def_rating": 101.8,
+            "home_pace": 79.4, "away_pace": 77.8, "home_efg": 52.8, "away_efg": 49.6, "home_tov": 13.1, "away_tov": 14.4,
+            "home_oreb": 51.5, "away_oreb": 48.7, "home_ft_rate": 25.5, "away_ft_rate": 22.1, "home_injury_adjustment": 0.2,
+            "away_injury_adjustment": -0.6, "home_rest_days": 3, "away_rest_days": 2, "home_travel_fatigue": 0.1, "away_travel_fatigue": 0.8,
+            "book_count": 8,
+        },
+    },
+    "basketball_ncaab": {
+        "sport": "ncaab", "league": "NCAAB", "event": "Duke vs North Carolina", "teams": ["North Carolina", "Duke"],
+        "market": "moneyline", "selection": "Duke", "odds_american": 100, "bankroll": 1000, "unit_size": 25, "risk_profile": "moderate",
+        "input_stats": {
+            "matchup": "Duke vs North Carolina", "home": "Duke", "away": "North Carolina", "team_name": "Duke", "opponent_name": "North Carolina",
+            "pick": "Duke", "home_off_rating": 116.0, "home_def_rating": 94.5, "away_off_rating": 111.0, "away_def_rating": 99.0,
+            "home_pace": 70.5, "away_pace": 69.1, "home_efg": 54.0, "away_efg": 50.4, "home_tov": 13.0, "away_tov": 15.2,
+            "home_oreb": 53.0, "away_oreb": 49.5, "home_ft_rate": 31.0, "away_ft_rate": 27.5, "home_rest_days": 5,
+            "away_rest_days": 3, "home_travel_fatigue": 0.0, "away_travel_fatigue": 0.4, "home_ap_rank": 4, "away_ap_rank": 16,
+            "home_kenpom_rating": 28.5, "away_kenpom_rating": 20.0, "home_conference_rating": 8.5, "away_conference_rating": 7.8,
+            "home_experience": 6.2, "away_experience": 5.1, "home_3p_rate": 38.5, "away_3p_rate": 34.1, "home_ft_pct": 76.0,
+            "away_ft_pct": 71.5, "book_count": 8,
+        },
+    },
+    "basketball_ncaawb": {
+        "sport": "ncaawb", "league": "NCAAWB", "event": "UConn vs South Carolina", "teams": ["UConn", "South Carolina"],
+        "market": "moneyline", "selection": "South Carolina", "odds_american": 100, "bankroll": 1000, "unit_size": 25, "risk_profile": "moderate",
+        "input_stats": {
+            "matchup": "UConn vs South Carolina", "home": "South Carolina", "away": "UConn", "team_name": "South Carolina", "opponent_name": "UConn",
+            "pick": "South Carolina", "home_off_rating": 114.0, "home_def_rating": 88.0, "away_off_rating": 108.0, "away_def_rating": 94.5,
+            "home_pace": 72.2, "away_pace": 70.4, "home_efg": 53.5, "away_efg": 49.8, "home_tov": 12.5, "away_tov": 14.0,
+            "home_oreb": 56.0, "away_oreb": 50.1, "home_ft_rate": 28.0, "away_ft_rate": 24.4, "home_rest_days": 4,
+            "away_rest_days": 3, "home_travel_fatigue": 0.0, "away_travel_fatigue": 0.3, "home_ap_rank": 1, "away_ap_rank": 7,
+            "home_net_rating": 31.0, "away_net_rating": 23.0, "home_conference_rating": 8.8, "away_conference_rating": 8.1,
+            "home_experience": 6.8, "away_experience": 6.0, "home_3p_rate": 36.5, "away_3p_rate": 33.2, "home_ft_pct": 75.5,
+            "away_ft_pct": 72.0, "book_count": 8,
         },
     },
     "americanfootball_nfl": {
@@ -2217,6 +2398,7 @@ for _sport_config in SPORT_MODEL_REGISTRY:
     if _sport_config.get("confirmed_bets_allowed"):
         _sport_config["input_normalizer"] = _INPUT_NORMALIZER_BY_SPORT.get(_sport_key)
         _sport_config["screenshot_alias_test_payload"] = deepcopy(_ACTIVE_SCREENSHOT_ALIAS_TEST_PAYLOADS.get(_sport_key))
+        _sport_config["league_calibration_applied"] = _sport_config.get("sport_parameters", {}).get("league_calibration_applied")
 
 
 ADVANCED_EDGE_COMPONENTS = {
@@ -3090,6 +3272,36 @@ def _nba_market_specific_missing(market: Any, input_stats: dict[str, Any], paylo
     return missing
 
 
+def _basketball_module_required_inputs(sport: str) -> list[str]:
+    if sport == "basketball_wnba":
+        return WNBA_REQUIRED_CORE_INPUTS
+    return COLLEGE_BASKETBALL_REQUIRED_CORE_INPUTS
+
+
+def _basketball_module_full_inputs_missing(sport: str, input_stats: dict[str, Any], payload: dict[str, Any]) -> list[str]:
+    missing = []
+    for field in _basketball_module_required_inputs(sport):
+        value = input_stats.get(field)
+        if value is None and field in {"event", "league"}:
+            value = payload.get(field) or payload.get("event_id")
+        if value is None:
+            missing.append(field)
+    return missing
+
+
+def _basketball_module_market_specific_missing(market: Any, input_stats: dict[str, Any], payload: dict[str, Any]) -> list[str]:
+    market_key = _normal_market_key(input_stats.get("market_type") or market)
+    required = BASKETBALL_MODULE_REQUIRED_MARKET_INPUTS.get(market_key, ["odds_american"])
+    missing = []
+    for field in required:
+        value = input_stats.get(field)
+        if value is None and field in {"line", "total_line", "odds_american"}:
+            value = payload.get(field)
+        if value is None:
+            missing.append(field)
+    return missing
+
+
 def _nfl_full_inputs_missing(input_stats: dict[str, Any]) -> list[str]:
     return [field for field in NFL_REQUIRED_CORE_INPUTS if input_stats.get(field) is None]
 
@@ -3603,6 +3815,8 @@ def _golf_market_specific_missing(market: Any, input_stats: dict[str, Any], payl
 def _missing_inputs_for_sport(sport: str, market: Any, input_stats: dict[str, Any], payload: dict[str, Any]) -> list[str]:
     if sport == "basketball_nba":
         return _nba_full_inputs_missing(input_stats) + _nba_market_specific_missing(market, input_stats, payload)
+    if sport in {"basketball_wnba", "basketball_ncaab", "basketball_ncaawb"}:
+        return _basketball_module_full_inputs_missing(sport, input_stats, payload) + _basketball_module_market_specific_missing(market, input_stats, payload)
     if sport == "americanfootball_nfl":
         return _nfl_full_inputs_missing(input_stats) + _nfl_market_specific_missing(market, input_stats, payload)
     if sport == "baseball_mlb":
@@ -3683,12 +3897,96 @@ def _normalize_team_sport_input_aliases(input_stats: dict[str, Any], payload: Op
     return normalized
 
 
+def _normalize_basketball_module_input_aliases(input_stats: dict[str, Any], payload: Optional[dict[str, Any]] = None, sport: Optional[str] = None) -> dict[str, Any]:
+    normalized = _normalize_team_sport_input_aliases(input_stats, payload, sport)
+    alias_pairs = {
+        "event": ["game", "matchup"],
+        "selection": ["favorite", "pick"],
+        "line": ["line_value", "spread_line"],
+        "team": ["team_name"],
+        "opponent": ["opponent_name"],
+        "home_team": ["home"],
+        "away_team": ["away"],
+        "home_offensive_rating": ["home_off_rating"],
+        "away_offensive_rating": ["away_off_rating"],
+        "home_defensive_rating": ["home_def_rating"],
+        "away_defensive_rating": ["away_def_rating"],
+        "home_effective_fg_pct": ["home_efg"],
+        "away_effective_fg_pct": ["away_efg"],
+        "home_turnover_rate": ["home_tov"],
+        "away_turnover_rate": ["away_tov"],
+        "home_rebound_rate": ["home_oreb"],
+        "away_rebound_rate": ["away_oreb"],
+        "home_free_throw_rate": ["home_ft_rate"],
+        "away_free_throw_rate": ["away_ft_rate"],
+        "player_minutes_projection": ["player_minutes"],
+        "player_usage_rate": ["usage"],
+        "player_points_projection": ["points_proj"],
+        "player_rebounds_projection": ["rebounds_proj"],
+        "player_assists_projection": ["assists_proj"],
+        "player_pra_projection": ["pra_proj"],
+        "player_threes_projection": ["threes_proj"],
+        "home_rank": ["home_ap_rank"],
+        "away_rank": ["away_ap_rank"],
+        "home_strength_rating": ["home_net_rating", "home_kenpom_rating"],
+        "away_strength_rating": ["away_net_rating", "away_kenpom_rating"],
+        "home_conference_strength": ["home_conference_rating"],
+        "away_conference_strength": ["away_conference_rating"],
+        "home_experience_rating": ["home_experience"],
+        "away_experience_rating": ["away_experience"],
+        "home_three_point_rate": ["home_3p_rate"],
+        "away_three_point_rate": ["away_3p_rate"],
+        "home_free_throw_pct": ["home_ft_pct"],
+        "away_free_throw_pct": ["away_ft_pct"],
+    }
+    for canonical, aliases in alias_pairs.items():
+        _copy_alias_if_missing(normalized, canonical, aliases)
+    teams = payload.get("teams") if isinstance(payload, dict) else None
+    if normalized.get("home_team") is None and isinstance(teams, list) and teams:
+        normalized["home_team"] = teams[-1]
+    if normalized.get("away_team") is None and isinstance(teams, list) and teams:
+        normalized["away_team"] = teams[0]
+    if normalized.get("team") is None and normalized.get("selection") is not None:
+        normalized["team"] = normalized.get("selection")
+    if normalized.get("opponent") is None:
+        if normalized.get("team") == normalized.get("home_team"):
+            normalized["opponent"] = normalized.get("away_team")
+        elif normalized.get("team") == normalized.get("away_team"):
+            normalized["opponent"] = normalized.get("home_team")
+    if normalized.get("selection") is None and normalized.get("team") is not None:
+        normalized["selection"] = normalized.get("team")
+    if normalized.get("player_team") is None and normalized.get("team") is not None:
+        normalized["player_team"] = normalized.get("team")
+    if normalized.get("player_pra_projection") is None:
+        pts = _safe_float(normalized.get("player_points_projection"))
+        reb = _safe_float(normalized.get("player_rebounds_projection"))
+        ast = _safe_float(normalized.get("player_assists_projection"))
+        if pts is not None and reb is not None and ast is not None:
+            normalized["player_pra_projection"] = round(pts + reb + ast, 2)
+    if sport == "basketball_wnba":
+        normalized.setdefault("home_injury_adjustment", 0)
+        normalized.setdefault("away_injury_adjustment", 0)
+    return normalized
+
+
 def _normalize_mlb_input_aliases(input_stats: dict[str, Any], payload: Optional[dict[str, Any]] = None, sport: Optional[str] = None) -> dict[str, Any]:
     return _normalize_team_sport_input_aliases(input_stats, payload, sport)
 
 
 def _normalize_nba_input_aliases(input_stats: dict[str, Any], payload: Optional[dict[str, Any]] = None, sport: Optional[str] = None) -> dict[str, Any]:
     return _normalize_team_sport_input_aliases(input_stats, payload, sport)
+
+
+def _normalize_wnba_input_aliases(input_stats: dict[str, Any], payload: Optional[dict[str, Any]] = None, sport: Optional[str] = None) -> dict[str, Any]:
+    return _normalize_basketball_module_input_aliases(input_stats, payload, sport)
+
+
+def _normalize_mens_college_basketball_input_aliases(input_stats: dict[str, Any], payload: Optional[dict[str, Any]] = None, sport: Optional[str] = None) -> dict[str, Any]:
+    return _normalize_basketball_module_input_aliases(input_stats, payload, sport)
+
+
+def _normalize_womens_college_basketball_input_aliases(input_stats: dict[str, Any], payload: Optional[dict[str, Any]] = None, sport: Optional[str] = None) -> dict[str, Any]:
+    return _normalize_basketball_module_input_aliases(input_stats, payload, sport)
 
 
 def _normalize_nfl_input_aliases(input_stats: dict[str, Any], payload: Optional[dict[str, Any]] = None, sport: Optional[str] = None) -> dict[str, Any]:
@@ -3726,6 +4024,15 @@ def normalize_sport_inputs_for_model(
     if sport_alias_resolved == "basketball_nba":
         normalized = _normalize_nba_input_aliases(normalized, payload, sport_alias_resolved)
         normalizer_used = "nba_input_normalizer"
+    elif sport_alias_resolved == "basketball_wnba":
+        normalized = _normalize_wnba_input_aliases(normalized, payload, sport_alias_resolved)
+        normalizer_used = "wnba_input_normalizer"
+    elif sport_alias_resolved == "basketball_ncaab":
+        normalized = _normalize_mens_college_basketball_input_aliases(normalized, payload, sport_alias_resolved)
+        normalizer_used = "mens_college_basketball_input_normalizer"
+    elif sport_alias_resolved == "basketball_ncaawb":
+        normalized = _normalize_womens_college_basketball_input_aliases(normalized, payload, sport_alias_resolved)
+        normalizer_used = "womens_college_basketball_input_normalizer"
     elif sport_alias_resolved == "americanfootball_nfl":
         normalized = _normalize_nfl_input_aliases(normalized, payload, sport_alias_resolved)
         normalizer_used = "nfl_input_normalizer"
@@ -4962,6 +5269,200 @@ def _estimate_golf_course_fit_model(
         "top_20_probability": place_probs["top_20"],
         "make_cut_probability": place_probs["make_cut"],
         "miss_cut_probability": place_probs["miss_cut"],
+        "risk_flags": risk_flags,
+        "input_coverage": 1.0,
+        "provider_enrichment": {"provider_status": "not_provided", "provider_enrichment_present": []},
+    }
+
+
+def _basketball_module_calibration(sport: str) -> dict[str, Any]:
+    if sport == "basketball_wnba":
+        return {
+            "league_calibration_applied": "wnba",
+            "pace_baseline": 78.5,
+            "home_court": 2.1,
+            "rating_scale": 8.5,
+            "volatility": 11.5,
+            "injury_weight": 0.75,
+            "travel_weight": 0.45,
+            "confidence_base": 74.0,
+        }
+    if sport == "basketball_ncaab":
+        return {
+            "league_calibration_applied": "ncaab",
+            "pace_baseline": 70.5,
+            "home_court": 3.1,
+            "rating_scale": 9.5,
+            "volatility": 13.5,
+            "rank_weight": 0.06,
+            "strength_weight": 0.08,
+            "conference_weight": 0.045,
+            "experience_weight": 0.025,
+            "confidence_base": 72.0,
+        }
+    return {
+        "league_calibration_applied": "ncaawb",
+        "pace_baseline": 72.0,
+        "home_court": 3.4,
+        "rating_scale": 8.8,
+        "volatility": 14.5,
+        "rank_weight": 0.08,
+        "strength_weight": 0.09,
+        "conference_weight": 0.05,
+        "experience_weight": 0.02,
+        "top_team_weight": 0.7,
+        "confidence_base": 71.0,
+    }
+
+
+def _estimate_basketball_module_model(
+    *,
+    sport: str,
+    input_stats: dict[str, Any],
+    payload: dict[str, Any],
+    market: Any,
+    odds_american: Optional[float],
+    bankroll: float,
+    risk_profile: str,
+) -> Optional[dict[str, Any]]:
+    missing = _basketball_module_full_inputs_missing(sport, input_stats, payload) + _basketball_module_market_specific_missing(market, input_stats, payload)
+    if missing:
+        return None
+    implied_probability = implied_probability_from_american(odds_american) if odds_american is not None else None
+    if implied_probability is None:
+        return None
+
+    calibration = _basketball_module_calibration(sport)
+    home_off = _safe_float(input_stats.get("home_offensive_rating"), 100) or 100
+    home_def = _safe_float(input_stats.get("home_defensive_rating"), 100) or 100
+    away_off = _safe_float(input_stats.get("away_offensive_rating"), 100) or 100
+    away_def = _safe_float(input_stats.get("away_defensive_rating"), 100) or 100
+    home_pace = _safe_float(input_stats.get("home_pace"), calibration["pace_baseline"]) or calibration["pace_baseline"]
+    away_pace = _safe_float(input_stats.get("away_pace"), calibration["pace_baseline"]) or calibration["pace_baseline"]
+    possessions = max(58, min(88, (home_pace + away_pace) / 2))
+    home_quality = (home_off - away_def) * 0.42 + (_safe_float(input_stats.get("home_effective_fg_pct"), 50) - _safe_float(input_stats.get("away_effective_fg_pct"), 50)) * 0.11
+    away_quality = (away_off - home_def) * 0.42 + (_safe_float(input_stats.get("away_effective_fg_pct"), 50) - _safe_float(input_stats.get("home_effective_fg_pct"), 50)) * 0.11
+    margin = home_quality - away_quality + calibration["home_court"]
+    margin += (_safe_float(input_stats.get("home_rebound_rate"), 50) - _safe_float(input_stats.get("away_rebound_rate"), 50)) * 0.04
+    margin -= (_safe_float(input_stats.get("home_turnover_rate"), 15) - _safe_float(input_stats.get("away_turnover_rate"), 15)) * 0.09
+    margin += (_safe_float(input_stats.get("home_free_throw_rate"), 25) - _safe_float(input_stats.get("away_free_throw_rate"), 25)) * 0.035
+    margin += (_safe_float(input_stats.get("home_rest_days"), 2) - _safe_float(input_stats.get("away_rest_days"), 2)) * 0.25
+    margin -= (_safe_float(input_stats.get("home_travel_fatigue"), 0) - _safe_float(input_stats.get("away_travel_fatigue"), 0)) * calibration.get("travel_weight", 0.35)
+    if sport == "basketball_wnba":
+        margin += (_safe_float(input_stats.get("home_injury_adjustment"), 0) - _safe_float(input_stats.get("away_injury_adjustment"), 0)) * calibration["injury_weight"]
+    else:
+        rank_edge = (_safe_float(input_stats.get("away_rank"), 60) - _safe_float(input_stats.get("home_rank"), 60)) * calibration["rank_weight"]
+        strength_edge = (_safe_float(input_stats.get("home_strength_rating"), 0) - _safe_float(input_stats.get("away_strength_rating"), 0)) * calibration["strength_weight"]
+        conference_edge = (_safe_float(input_stats.get("home_conference_strength"), 0) - _safe_float(input_stats.get("away_conference_strength"), 0)) * calibration["conference_weight"]
+        experience_edge = (_safe_float(input_stats.get("home_experience_rating"), 0) - _safe_float(input_stats.get("away_experience_rating"), 0)) * calibration["experience_weight"]
+        shooting_edge = (_safe_float(input_stats.get("home_three_point_rate"), 35) - _safe_float(input_stats.get("away_three_point_rate"), 35)) * 0.025
+        ft_edge = (_safe_float(input_stats.get("home_free_throw_pct"), 72) - _safe_float(input_stats.get("away_free_throw_pct"), 72)) * 0.025
+        margin += rank_edge + strength_edge + conference_edge + experience_edge + shooting_edge + ft_edge
+        if sport == "basketball_ncaawb" and (_safe_float(input_stats.get("home_rank"), 99) or 99) <= 5:
+            margin += calibration.get("top_team_weight", 0)
+    if input_stats.get("neutral_court") or input_stats.get("tournament_game"):
+        margin -= calibration["home_court"] * 0.65
+
+    selected_home = str(payload.get("selection") or input_stats.get("selection") or "").strip().lower() == str(input_stats.get("home_team") or "").strip().lower()
+    selected_margin = margin if selected_home else -margin
+    raw_probability = 1 / (1 + math.exp(-selected_margin / calibration["rating_scale"]))
+    no_vig_anchor = _safe_float(input_stats.get("no_vig_market_probability"))
+    if no_vig_anchor is not None and no_vig_anchor > 1:
+        no_vig_anchor = no_vig_anchor / 100
+    market_anchor = max(0.01, min(0.99, no_vig_anchor)) if no_vig_anchor is not None else None
+    calibrated_probability = raw_probability * 0.90 + market_anchor * 0.10 if market_anchor is not None else raw_probability
+    probability = max(0.08, min(0.92, calibrated_probability))
+    projected_total = max(98, min(185, possessions * ((home_off + away_off) / 200) * 2.0 + 18))
+    market_key = _normal_market_key(market)
+    line = _safe_float(payload.get("line"), _safe_float(input_stats.get("line")))
+    total_line = _safe_float(payload.get("total_line"), _safe_float(input_stats.get("total_line")))
+    selection_text = str(payload.get("selection") or input_stats.get("selection") or "").lower()
+    if market_key in {"spread", "first_half_spread", "first_quarter_spread", "alt_spread"}:
+        spread_line = line if line is not None else 0
+        scale = calibration["volatility"] * (0.55 if "first_half" in market_key else 0.32 if "first_quarter" in market_key else 1.0)
+        probability = _normal_cdf(selected_margin + spread_line, mean=0, stddev=max(4.0, scale))
+    elif market_key in {"total", "first_half_total", "first_quarter_total", "alt_total"}:
+        target_total = total_line if total_line is not None else projected_total
+        projected = projected_total * (0.49 if "first_half" in market_key else 0.245 if "first_quarter" in market_key else 1.0)
+        over_prob = 1 - _normal_cdf(target_total, mean=projected, stddev=max(5.0, calibration["volatility"]))
+        probability = over_prob if "over" in selection_text else 1 - over_prob
+    elif market_key in {"team_total", "alt_team_total"}:
+        target_total = total_line if total_line is not None else projected_total / 2
+        projected_team = projected_total / 2 + selected_margin / 2
+        over_prob = 1 - _normal_cdf(target_total, mean=projected_team, stddev=max(4.0, calibration["volatility"] * 0.72))
+        probability = over_prob if "over" in selection_text else 1 - over_prob
+    elif market_key in BASKETBALL_MODULE_PROP_MARKETS:
+        prop_map = {
+            "player_points": "player_points_projection",
+            "player_rebounds": "player_rebounds_projection",
+            "player_assists": "player_assists_projection",
+            "player_pra": "player_pra_projection",
+            "player_threes": "player_threes_projection",
+            "player_steals": "player_steals_projection",
+            "player_blocks": "player_blocks_projection",
+            "player_turnovers": "player_turnovers_projection",
+        }
+        if market_key == "double_double":
+            probability = max(0.05, min(0.72, (_safe_float(input_stats.get("player_rebounds_projection"), 6) or 6) / 16))
+        else:
+            projection = _safe_float(input_stats.get(prop_map.get(market_key, "player_points_projection")), 10) or 10
+            prop_line = line if line is not None else projection
+            stddev = max(1.8, projection * 0.22)
+            over_prob = 1 - _normal_cdf(prop_line, mean=projection, stddev=stddev)
+            probability = over_prob if "over" in selection_text or selection_text == str(input_stats.get("player") or "").lower() else 1 - over_prob
+    probability = max(0.02, min(0.94, probability))
+    confidence = calibration["confidence_base"]
+    risk_flags = []
+    if _safe_float(input_stats.get("book_count"), 0) < 4:
+        confidence -= 3
+        risk_flags.append("book count too low")
+    if market_key in BASKETBALL_MODULE_PROP_MARKETS:
+        confidence -= 3
+        if _safe_float(input_stats.get("player_minutes_projection"), 0) < 18:
+            confidence -= 10
+            risk_flags.append("player minutes uncertainty")
+    if input_stats.get("provider_status") == "error":
+        risk_flags.append("provider failure ignored")
+    if input_stats.get("tempo_volatility") or input_stats.get("blowout_risk"):
+        confidence -= 4
+        risk_flags.append("college variance")
+    confidence = max(1, min(95, round(confidence, 2)))
+    edge = calculate_edge_percent(probability, implied_probability)
+    edge_threshold, confidence_threshold = _nfl_thresholds(risk_profile)
+    no_bet_flags = []
+    if edge is not None and edge <= 0:
+        no_bet_flags.append("negative edge")
+    elif edge is not None and edge < edge_threshold:
+        no_bet_flags.append("edge too small")
+    if confidence < confidence_threshold:
+        no_bet_flags.append("low confidence")
+    suggested = 0 if no_bet_flags else calculate_suggested_stake(
+        bankroll=bankroll,
+        american_odds=odds_american,
+        true_probability=probability,
+        risk_profile=risk_profile,
+        confidence=confidence,
+    )
+    return {
+        "model_status": "active",
+        "true_probability": probability,
+        "implied_probability": implied_probability,
+        "edge": edge,
+        "confidence": confidence,
+        "risk": "moderate" if not risk_flags else "high",
+        "suggested_stake": suggested,
+        "no_bet_flags": no_bet_flags,
+        "raw_model_probability": raw_probability,
+        "calibrated_model_probability": calibrated_probability,
+        "probability_calibration_applied": bool(market_anchor is not None),
+        "probability_sanity_flags": ["basketball module probability cap applied"] if probability != calibrated_probability else [],
+        "probability_cap_reason": calibration["league_calibration_applied"],
+        "market_anchor_probability": market_anchor,
+        "league_calibration_applied": calibration["league_calibration_applied"],
+        "projected_margin": round(margin, 2),
+        "projected_total": round(projected_total, 2),
+        "projected_team_points": round(projected_total / 2 + selected_margin / 2, 2),
+        "projected_opponent_points": round(projected_total / 2 - selected_margin / 2, 2),
         "risk_flags": risk_flags,
         "input_coverage": 1.0,
         "provider_enrichment": {"provider_status": "not_provided", "provider_enrichment_present": []},
@@ -6523,6 +7024,9 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             return response
 
         nba_model = None
+        wnba_model = None
+        mens_cbb_model = None
+        womens_cbb_model = None
         nfl_model = None
         mlb_model = None
         soccer_model = None
@@ -6539,6 +7043,22 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
                 bankroll=bankroll,
                 risk_profile=payload.get("risk_profile") or "conservative",
             )
+        elif sport in {"basketball_wnba", "basketball_ncaab", "basketball_ncaawb"}:
+            basketball_model = _estimate_basketball_module_model(
+                sport=sport,
+                input_stats=input_stats,
+                payload=payload,
+                market=market,
+                odds_american=odds_american,
+                bankroll=bankroll,
+                risk_profile=payload.get("risk_profile") or "moderate",
+            )
+            if sport == "basketball_wnba":
+                wnba_model = basketball_model
+            elif sport == "basketball_ncaab":
+                mens_cbb_model = basketball_model
+            else:
+                womens_cbb_model = basketball_model
         elif sport == "americanfootball_nfl":
             nfl_model = _estimate_nfl_drive_model(
                 input_stats=input_stats,
@@ -6606,6 +7126,8 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
 
         if nba_model:
             component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
+        elif wnba_model or mens_cbb_model or womens_cbb_model:
+            component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
         elif nfl_model:
             component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
         elif mlb_model:
@@ -6620,7 +7142,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
         elif golf_model:
             component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
-        elif sport in {"basketball_nba", "americanfootball_nfl", "baseball_mlb", "soccer", "icehockey_nhl", "tennis", "mma_mixed_martial_arts", "boxing", "golf"}:
+        elif sport in {"basketball_nba", "basketball_wnba", "basketball_ncaab", "basketball_ncaawb", "americanfootball_nfl", "baseball_mlb", "soccer", "icehockey_nhl", "tennis", "mma_mixed_martial_arts", "boxing", "golf"}:
             component_status = COMPONENT_STATUS_INACTIVE
             missing_inputs = _missing_inputs_for_sport(sport, market, input_stats, payload)
         else:
@@ -6640,6 +7162,13 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             edge = nba_model["edge"]
             suggested = nba_model["suggested_stake"]
             no_bet_flags = list(nba_model["no_bet_flags"])
+        elif wnba_model or mens_cbb_model or womens_cbb_model:
+            basketball_model = wnba_model or mens_cbb_model or womens_cbb_model
+            true_probability = basketball_model["true_probability"]
+            implied_probability = basketball_model["implied_probability"]
+            edge = basketball_model["edge"]
+            suggested = basketball_model["suggested_stake"]
+            no_bet_flags = list(basketball_model["no_bet_flags"])
         elif nfl_model:
             true_probability = nfl_model["true_probability"]
             implied_probability = nfl_model["implied_probability"]
@@ -6684,7 +7213,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             no_bet_flags = list(golf_model["no_bet_flags"])
         if implied_probability is not None and true_probability is not None and odds_american is not None:
             edge = edge_percentage(true_probability, implied_probability)
-            if not (nba_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model):
+            if not (nba_model or wnba_model or mens_cbb_model or womens_cbb_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model):
                 suggested = suggested_stake_with_risk_controls(
                     bankroll=bankroll,
                     american_odds=odds_american,
@@ -6701,7 +7230,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         social_input_stats = dict(input_stats)
         social_input_stats["edge"] = edge
         social_layer = build_social_crowd_calibration_layer(social_input_stats)
-        if social_layer["sentiment_no_bet_flags"] and not (nba_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model):
+        if social_layer["sentiment_no_bet_flags"] and not (nba_model or wnba_model or mens_cbb_model or womens_cbb_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model):
             no_bet_flags = list(dict.fromkeys(no_bet_flags + social_layer["sentiment_no_bet_flags"]))
 
         risk_controller = build_risk_controller(bankroll, unit_size, payload.get("risk_profile") or "conservative")
@@ -6718,7 +7247,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         })
         wee_willie = build_wee_willie_market_weakness_detector(detector_payload)
         manual_ticket = build_manual_ticket(detector_payload, suggested)
-        active_model = nba_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model
+        active_model = nba_model or wnba_model or mens_cbb_model or womens_cbb_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model
         confidence = active_model["confidence"] if active_model else input_stats.get("confidence")
         if tennis_model and _safe_float(confidence) is None:
             confidence = 0.0
@@ -6730,7 +7259,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         model_status = active_model["model_status"] if active_model else component_status
         edge_threshold, confidence_threshold = (
             _nfl_thresholds(payload.get("risk_profile") or "moderate")
-            if (nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model)
+            if (wnba_model or mens_cbb_model or womens_cbb_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model)
             else (2.5, 70)
         )
         event_value = payload.get("event_id") or payload.get("event") or input_stats.get("event")
@@ -6847,7 +7376,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
                 "market": market,
                 "selection": selection_value,
                 "confidence": confidence,
-            }] if _normal_market_key(market) in {"player_prop", "knockdown_prop", "takedown_prop", "significant_strikes_prop", "submission_attempt_prop", "birdies_prop", "eagles_prop", "fairways_hit_prop", "greens_in_regulation_prop", "putts_prop", "round_score_prop"} else [],
+            }] if _normal_market_key(market) in {"player_prop", "knockdown_prop", "takedown_prop", "significant_strikes_prop", "submission_attempt_prop", "birdies_prop", "eagles_prop", "fairways_hit_prop", "greens_in_regulation_prop", "putts_prop", "round_score_prop", *BASKETBALL_MODULE_PROP_MARKETS} else [],
             "target_alt_lines": [{
                 "sport": sport,
                 "event": event_value,
@@ -6886,7 +7415,8 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             "status": evaluated_status,
             **officiating_analysis["officiating_logbook_fields"],
         })
-        probability_model = nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model
+        basketball_module_model = wnba_model or mens_cbb_model or womens_cbb_model
+        probability_model = basketball_module_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model
         if probability_model:
             logbook_ready_row.update({
                 "raw_model_probability": probability_model["raw_model_probability"],
@@ -7013,6 +7543,15 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
                 "probability_calibration_applied": False,
                 "probability_sanity_flags": [],
             })
+        if basketball_module_model:
+            logbook_ready_row.update({
+                "league_calibration_applied": basketball_module_model["league_calibration_applied"],
+                "projected_margin": basketball_module_model["projected_margin"],
+                "projected_total": basketball_module_model["projected_total"],
+                "projected_team_points": basketball_module_model["projected_team_points"],
+                "projected_opponent_points": basketball_module_model["projected_opponent_points"],
+                "risk_flags": basketball_module_model["risk_flags"],
+            })
         officiating_fields = {key: officiating_analysis[key] for key in [
             "officiating_module_status",
             "officiating_edge_detected",
@@ -7034,10 +7573,10 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             "model_family": config["model_family"],
             "market": market,
             "projected_score": nba_model["projected_score"] if nba_model else input_stats.get("projected_score"),
-            "projected_margin": nfl_model["projected_margin"] if nfl_model else (nba_model["projected_score"]["estimated_margin"] if nba_model else input_stats.get("projected_margin")),
-            "projected_total": nfl_model["projected_total"] if nfl_model else input_stats.get("projected_total"),
-            "projected_team_points": nfl_model["projected_team_points"] if nfl_model else None,
-            "projected_opponent_points": nfl_model["projected_opponent_points"] if nfl_model else None,
+            "projected_margin": basketball_module_model["projected_margin"] if basketball_module_model else (nfl_model["projected_margin"] if nfl_model else (nba_model["projected_score"]["estimated_margin"] if nba_model else input_stats.get("projected_margin"))),
+            "projected_total": basketball_module_model["projected_total"] if basketball_module_model else (nfl_model["projected_total"] if nfl_model else input_stats.get("projected_total")),
+            "projected_team_points": basketball_module_model["projected_team_points"] if basketball_module_model else (nfl_model["projected_team_points"] if nfl_model else None),
+            "projected_opponent_points": basketball_module_model["projected_opponent_points"] if basketball_module_model else (nfl_model["projected_opponent_points"] if nfl_model else None),
             "projected_team_runs": mlb_model["projected_team_runs"] if mlb_model else None,
             "projected_opponent_runs": mlb_model["projected_opponent_runs"] if mlb_model else None,
             "projected_total_runs": mlb_model["projected_total_runs"] if mlb_model else None,
@@ -7107,6 +7646,10 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             "tennis_input_contract": deepcopy(TENNIS_INPUT_CONTRACT) if sport == "tennis" else None,
             "combat_input_contract": deepcopy(COMBAT_INPUT_CONTRACT) if sport in {"mma_mixed_martial_arts", "boxing"} else None,
             "golf_input_contract": deepcopy(GOLF_INPUT_CONTRACT) if sport == "golf" else None,
+            "wnba_input_contract": deepcopy(WNBA_INPUT_CONTRACT) if sport == "basketball_wnba" else None,
+            "mens_college_basketball_input_contract": deepcopy(MENS_COLLEGE_BASKETBALL_INPUT_CONTRACT) if sport == "basketball_ncaab" else None,
+            "womens_college_basketball_input_contract": deepcopy(WOMENS_COLLEGE_BASKETBALL_INPUT_CONTRACT) if sport == "basketball_ncaawb" else None,
+            "league_calibration_applied": basketball_module_model["league_calibration_applied"] if basketball_module_model else config.get("sport_parameters", {}).get("league_calibration_applied"),
             "input_coverage": active_model.get("input_coverage") if active_model else None,
             "suggested_stake": suggested if confirmed_bets else 0,
             "recommended_unit_size": risk_controller["recommended_unit_size"],
@@ -7159,7 +7702,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         "target_lines": full_board["target_lines"],
         "target_props": full_board["target_props"],
         "target_alt_lines": full_board["target_alt_lines"],
-        "no_bets": no_bets if (tennis_model or combat_model or golf_model) else simple_no_bets,
+        "no_bets": no_bets if (basketball_module_model or tennis_model or combat_model or golf_model) else simple_no_bets,
         "best_correlated_parlay": full_board["best_correlated_parlay"],
         "value_ranking": full_board["value_ranking"],
         "risk_ranking": full_board["risk_ranking"],

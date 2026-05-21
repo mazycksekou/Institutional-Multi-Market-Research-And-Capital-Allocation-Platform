@@ -37,7 +37,14 @@ class TestSportModelRouting(unittest.TestCase):
         expected = {
             "nba": "basketball_nba",
             "wnba": "basketball_wnba",
+            "womens_nba": "basketball_wnba",
             "ncaab": "basketball_ncaab",
+            "college_basketball_mens": "basketball_ncaab",
+            "mens_college_basketball": "basketball_ncaab",
+            "ncaawb": "basketball_ncaawb",
+            "ncaaw": "basketball_ncaawb",
+            "college_basketball_womens": "basketball_ncaawb",
+            "womens_college_basketball": "basketball_ncaawb",
             "nfl": "americanfootball_nfl",
             "cfb": "americanfootball_ncaaf",
             "mlb": "baseball_mlb",
@@ -69,7 +76,7 @@ class TestSportModelRouting(unittest.TestCase):
         self.assertEqual(registry.get_sport_model_config("mlb")["sport"], "baseball_mlb")
 
     def test_primary_model_type_constraints(self):
-        for sport in ["basketball_nba", "basketball_wnba", "basketball_ncaab", "americanfootball_nfl", "americanfootball_ncaaf", "mma_mixed_martial_arts", "boxing", "golf", "formula1", "cricket", "esports"]:
+        for sport in ["basketball_nba", "basketball_wnba", "basketball_ncaab", "basketball_ncaawb", "americanfootball_nfl", "americanfootball_ncaaf", "mma_mixed_martial_arts", "boxing", "golf", "formula1", "cricket", "esports"]:
             self.assertNotEqual(registry.get_sport_model_config(sport)["primary_model_type"], "poisson")
         self.assertIn("Negative Binomial", registry.get_sport_model_config("baseball_mlb")["model_family"])
         self.assertIn("Poisson", registry.get_sport_model_config("soccer")["model_family"])
@@ -84,6 +91,9 @@ class TestSportModelRouting(unittest.TestCase):
         self.assertEqual(registry.get_sport_model_config("mma_mixed_martial_arts")["model_family"], "fighter_striking_grappling_finish_model")
         self.assertEqual(registry.get_sport_model_config("boxing")["model_family"], "fighter_striking_grappling_finish_model")
         self.assertEqual(registry.get_sport_model_config("golf")["model_family"], "strokes_gained_course_fit_monte_carlo_model")
+        self.assertEqual(registry.get_sport_model_config("basketball_wnba")["model_family"], "wnba_possession_rating_monte_carlo_model")
+        self.assertEqual(registry.get_sport_model_config("basketball_ncaab")["model_family"], "mens_college_basketball_possession_variance_model")
+        self.assertEqual(registry.get_sport_model_config("basketball_ncaawb")["model_family"], "womens_college_basketball_possession_variance_model")
         self.assertEqual(registry.get_sport_model_config("formula1")["model_family"], "Race simulation")
         self.assertEqual(registry.get_sport_model_config("cricket")["model_family"], "Pitch toss innings model family")
         self.assertIn("game title routing placeholder", registry.get_sport_model_config("esports")["model_components"])

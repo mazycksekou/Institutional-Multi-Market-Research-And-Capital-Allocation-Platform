@@ -10,6 +10,7 @@ EXPECTED_SPORT_KEYS = [
     "basketball_nba",
     "basketball_wnba",
     "basketball_ncaab",
+    "basketball_ncaawb",
     "americanfootball_nfl",
     "americanfootball_ncaaf",
     "soccer",
@@ -25,9 +26,9 @@ EXPECTED_SPORT_KEYS = [
 
 
 class TestMultiSportModelRegistry(unittest.TestCase):
-    def test_all_15_sports_are_present(self):
+    def test_all_16_sports_are_present(self):
         sports = registry.get_sports_model_registry_response()["sports"]
-        self.assertEqual(len(sports), 15)
+        self.assertEqual(len(sports), 16)
         self.assertEqual([sport["sport_key"] for sport in sports], EXPECTED_SPORT_KEYS)
 
     def test_mlb_is_projection_ready(self):
@@ -35,12 +36,15 @@ class TestMultiSportModelRegistry(unittest.TestCase):
         self.assertIsNotNone(mlb)
         self.assertEqual(mlb["model_level"], "projection_ready")
 
-    def test_only_activated_nba_nfl_mlb_soccer_nhl_tennis_combat_and_golf_allow_confirmed_bets(self):
+    def test_only_activated_sports_allow_confirmed_bets(self):
         sports = registry.get_sports_model_registry_response()["sports"]
         enabled = [sport["sport_key"] for sport in sports if sport["confirmed_bets_allowed"]]
-        self.assertEqual(enabled, ["baseball_mlb", "basketball_nba", "americanfootball_nfl", "soccer", "icehockey_nhl", "tennis", "mma_mixed_martial_arts", "boxing", "golf"])
+        self.assertEqual(enabled, ["baseball_mlb", "basketball_nba", "basketball_wnba", "basketball_ncaab", "basketball_ncaawb", "americanfootball_nfl", "soccer", "icehockey_nhl", "tennis", "mma_mixed_martial_arts", "boxing", "golf"])
         self.assertTrue(registry.confirmed_bets_allowed("baseball_mlb"))
         self.assertTrue(registry.confirmed_bets_allowed("basketball_nba"))
+        self.assertTrue(registry.confirmed_bets_allowed("basketball_wnba"))
+        self.assertTrue(registry.confirmed_bets_allowed("basketball_ncaab"))
+        self.assertTrue(registry.confirmed_bets_allowed("basketball_ncaawb"))
         self.assertTrue(registry.confirmed_bets_allowed("americanfootball_nfl"))
         self.assertTrue(registry.confirmed_bets_allowed("soccer"))
         self.assertTrue(registry.confirmed_bets_allowed("icehockey_nhl"))
@@ -51,7 +55,7 @@ class TestMultiSportModelRegistry(unittest.TestCase):
         self.assertTrue(all(
             not registry.confirmed_bets_allowed(sport["sport_key"])
             for sport in sports
-            if sport["sport_key"] not in {"baseball_mlb", "basketball_nba", "americanfootball_nfl", "soccer", "icehockey_nhl", "tennis", "mma_mixed_martial_arts", "boxing", "golf"}
+            if sport["sport_key"] not in {"baseball_mlb", "basketball_nba", "basketball_wnba", "basketball_ncaab", "basketball_ncaawb", "americanfootball_nfl", "soccer", "icehockey_nhl", "tennis", "mma_mixed_martial_arts", "boxing", "golf"}
         ))
 
     def test_unsupported_sport_helper_behavior_is_clean(self):
@@ -73,10 +77,10 @@ class TestMultiSportModelRegistry(unittest.TestCase):
         response = asyncio.run(action_get_sports_model_registry())
         self.assertTrue(response["ok"])
         self.assertEqual(response["endpoint"], "getSportsModelRegistry")
-        self.assertEqual(response["summary"]["total_sports"], 15)
-        self.assertEqual(response["summary"]["confirmed_bet_enabled_sports"], 9)
+        self.assertEqual(response["summary"]["total_sports"], 16)
+        self.assertEqual(response["summary"]["confirmed_bet_enabled_sports"], 12)
         self.assertEqual(response["summary"]["market_derived_only_sports"], 0)
-        self.assertEqual(response["summary"]["not_built_sports"], 6)
+        self.assertEqual(response["summary"]["not_built_sports"], 4)
         self.assertEqual(response["error"], None)
         self.assertEqual(response["detail"], None)
 
@@ -112,6 +116,20 @@ class TestMultiSportModelRegistry(unittest.TestCase):
                 self.assertTrue(sport.get("input_normalizer"))
                 self.assertIsInstance(sport.get("screenshot_alias_test_payload"), dict)
                 self.assertTrue((sport["screenshot_alias_test_payload"].get("input_stats") or {}))
+
+    def test_wnba_mens_and_womens_college_basketball_are_separate_modules(self):
+        wnba = registry.get_sport_model_config("basketball_wnba")
+        mens = registry.get_sport_model_config("basketball_ncaab")
+        womens = registry.get_sport_model_config("basketball_ncaawb")
+        self.assertEqual(wnba["model_name"] if "model_name" in wnba else wnba["model_used"], "wnba_possession_rating_monte_carlo_model")
+        self.assertEqual(mens["model_used"], "mens_college_basketball_possession_variance_model")
+        self.assertEqual(womens["model_used"], "womens_college_basketball_possession_variance_model")
+        self.assertEqual(wnba["league_calibration_applied"], "wnba")
+        self.assertEqual(mens["league_calibration_applied"], "ncaab")
+        self.assertEqual(womens["league_calibration_applied"], "ncaawb")
+        self.assertEqual(len({wnba["model_family"], mens["model_family"], womens["model_family"]}), 3)
+        self.assertNotEqual(wnba["screenshot_alias_test_payload"], mens["screenshot_alias_test_payload"])
+        self.assertNotEqual(mens["screenshot_alias_test_payload"], womens["screenshot_alias_test_payload"])
 
     def test_log_fields_exist_for_each_sport(self):
         sports = registry.get_sports_model_registry_response()["sports"]
