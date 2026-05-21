@@ -46,7 +46,10 @@ class TestSportModelRouting(unittest.TestCase):
             "college_basketball_womens": "basketball_ncaawb",
             "womens_college_basketball": "basketball_ncaawb",
             "nfl": "americanfootball_nfl",
+            "ncaaf": "americanfootball_ncaaf",
+            "college_football": "americanfootball_ncaaf",
             "cfb": "americanfootball_ncaaf",
+            "ncaa_football": "americanfootball_ncaaf",
             "mlb": "baseball_mlb",
             "nhl": "icehockey_nhl",
             "epl": "soccer",
@@ -94,6 +97,7 @@ class TestSportModelRouting(unittest.TestCase):
         self.assertEqual(registry.get_sport_model_config("basketball_wnba")["model_family"], "wnba_possession_rating_monte_carlo_model")
         self.assertEqual(registry.get_sport_model_config("basketball_ncaab")["model_family"], "mens_college_basketball_possession_variance_model")
         self.assertEqual(registry.get_sport_model_config("basketball_ncaawb")["model_family"], "womens_college_basketball_possession_variance_model")
+        self.assertEqual(registry.get_sport_model_config("americanfootball_ncaaf")["model_family"], "college_football_epa_drive_rating_monte_carlo_model")
         self.assertEqual(registry.get_sport_model_config("formula1")["model_family"], "Race simulation")
         self.assertEqual(registry.get_sport_model_config("cricket")["model_family"], "Pitch toss innings model family")
         self.assertIn("game title routing placeholder", registry.get_sport_model_config("esports")["model_components"])

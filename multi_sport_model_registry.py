@@ -74,7 +74,10 @@ SPORT_ALIASES = {
     "womens_college_basketball": "basketball_ncaawb",
     "ncaa_womens_basketball": "basketball_ncaawb",
     "nfl": "americanfootball_nfl",
+    "ncaaf": "americanfootball_ncaaf",
+    "college_football": "americanfootball_ncaaf",
     "cfb": "americanfootball_ncaaf",
+    "ncaa_football": "americanfootball_ncaaf",
     "mlb": "baseball_mlb",
     "nhl": "icehockey_nhl",
     "hockey": "icehockey_nhl",
@@ -708,6 +711,93 @@ NFL_INPUT_CONTRACT = {
     "required_market_specific_inputs": NFL_REQUIRED_MARKET_SPECIFIC_INPUTS,
     "optional_enrichment_inputs": NFL_OPTIONAL_ENRICHMENT_INPUTS,
     "provider_enrichment_inputs": NFL_PROVIDER_ENRICHMENT_INPUTS,
+    "officiating_inputs": NFL_OFFICIATING_INPUTS,
+    "referee_inputs": NFL_OFFICIATING_INPUTS,
+    "social_crowd_inputs": NFL_SOCIAL_CROWD_INPUTS,
+    "live_betting_inputs": NFL_LIVE_BETTING_INPUTS,
+}
+
+COLLEGE_FOOTBALL_MARKETS = [
+    "moneyline", "spread", "total", "team_total", "first_half_moneyline", "first_half_spread",
+    "first_half_total", "first_quarter_moneyline", "first_quarter_spread", "first_quarter_total",
+    "player_passing_yards", "player_passing_tds", "player_interceptions", "player_rushing_yards",
+    "player_rushing_tds", "player_receiving_yards", "player_receptions", "player_anytime_td",
+    "alt_spread", "alt_total", "alt_team_total",
+]
+
+COLLEGE_FOOTBALL_PROP_MARKETS = [
+    "player_passing_yards", "player_passing_tds", "player_interceptions", "player_rushing_yards",
+    "player_rushing_tds", "player_receiving_yards", "player_receptions", "player_anytime_td",
+]
+
+COLLEGE_FOOTBALL_REQUIRED_CORE_INPUTS = [
+    "home_team", "away_team", "team", "opponent",
+    "home_offensive_epa_per_play", "away_offensive_epa_per_play",
+    "home_defensive_epa_per_play", "away_defensive_epa_per_play",
+    "home_success_rate", "away_success_rate",
+    "home_defensive_success_rate_allowed", "away_defensive_success_rate_allowed",
+    "home_explosiveness", "away_explosiveness",
+    "home_explosiveness_allowed", "away_explosiveness_allowed",
+    "home_pace_seconds_per_play", "away_pace_seconds_per_play",
+    "home_plays_per_game", "away_plays_per_game",
+    "home_points_per_drive", "away_points_per_drive",
+    "home_points_allowed_per_drive", "away_points_allowed_per_drive",
+    "home_red_zone_td_rate", "away_red_zone_td_rate",
+    "home_red_zone_td_rate_allowed", "away_red_zone_td_rate_allowed",
+    "home_turnover_margin", "away_turnover_margin",
+    "home_havoc_rate", "away_havoc_rate", "home_havoc_allowed", "away_havoc_allowed",
+    "home_qb_rating", "away_qb_rating", "home_qb_injury_adjustment", "away_qb_injury_adjustment",
+    "home_offensive_line_rating", "away_offensive_line_rating",
+    "home_defensive_line_rating", "away_defensive_line_rating",
+    "home_special_teams_rating", "away_special_teams_rating",
+    "home_field_advantage", "neutral_site", "weather_wind_mph", "weather_precipitation",
+    "home_rest_days", "away_rest_days", "home_travel_fatigue", "away_travel_fatigue",
+    "home_strength_of_schedule", "away_strength_of_schedule", "home_rank", "away_rank",
+    "home_power_rating", "away_power_rating", "home_conference_strength", "away_conference_strength",
+]
+
+COLLEGE_FOOTBALL_REQUIRED_MARKET_INPUTS = {
+    "moneyline": ["odds_american"],
+    "spread": ["line", "odds_american"],
+    "total": ["total_line", "odds_american"],
+    "team_total": ["total_line", "odds_american"],
+    "first_half_moneyline": ["odds_american"],
+    "first_half_spread": ["line", "odds_american"],
+    "first_half_total": ["total_line", "odds_american"],
+    "first_quarter_moneyline": ["odds_american"],
+    "first_quarter_spread": ["line", "odds_american"],
+    "first_quarter_total": ["total_line", "odds_american"],
+    "alt_spread": ["line", "odds_american"],
+    "alt_total": ["total_line", "odds_american"],
+    "alt_team_total": ["total_line", "odds_american"],
+}
+
+COLLEGE_FOOTBALL_PLAYER_PROP_INPUTS = [
+    "player", "player_team", "opponent", "player_position", "player_snap_share", "player_usage_rate",
+    "player_pass_attempts_projection", "player_passing_yards_projection", "player_passing_tds_projection",
+    "player_interceptions_projection", "player_rush_attempts_projection", "player_rushing_yards_projection",
+    "player_rushing_tds_projection", "player_targets_projection", "player_receptions_projection",
+    "player_receiving_yards_projection", "player_anytime_td_probability", "line",
+]
+
+for _college_football_prop_market in COLLEGE_FOOTBALL_PROP_MARKETS:
+    COLLEGE_FOOTBALL_REQUIRED_MARKET_INPUTS[_college_football_prop_market] = [
+        "player", "player_team", "player_position", "player_snap_share", "player_usage_rate", "line", "odds_american",
+    ]
+
+COLLEGE_FOOTBALL_OPTIONAL_ENRICHMENT_INPUTS = [
+    "no_vig_market_probability", "book_count", "current_odds", "best_available_odds", "opening_odds",
+    "consensus_odds", "public_betting_percent", "sharp_money_percent", "social_sentiment", "crowd_consensus",
+    "referee_name", "referee_crew", "official_sample_size", "provider_status", "blowout_risk",
+    "garbage_time_risk", "tempo_volatility", "weather_temperature", "dome_game", "tournament_game",
+]
+
+COLLEGE_FOOTBALL_INPUT_CONTRACT = {
+    "required_core_inputs": COLLEGE_FOOTBALL_REQUIRED_CORE_INPUTS,
+    "required_market_specific_inputs": COLLEGE_FOOTBALL_REQUIRED_MARKET_INPUTS,
+    "optional_enrichment_inputs": COLLEGE_FOOTBALL_OPTIONAL_ENRICHMENT_INPUTS,
+    "player_prop_inputs": COLLEGE_FOOTBALL_PLAYER_PROP_INPUTS,
+    "provider_enrichment_inputs": ["best_available_odds", "current_odds", "opening_odds", "consensus_odds", "no_vig_market_probability", "book_count"],
     "officiating_inputs": NFL_OFFICIATING_INPUTS,
     "referee_inputs": NFL_OFFICIATING_INPUTS,
     "social_crowd_inputs": NFL_SOCIAL_CROWD_INPUTS,
@@ -2008,16 +2098,20 @@ SPORT_MODEL_REGISTRY = [
     _sport(
         "americanfootball_ncaaf",
         "College Football",
-        "college_drive_expected_points_model",
-        "College drive based expected points model",
-        "drive_expected_points",
-        ["moneyline", "spread", "totals", "team totals", "first half", "first quarter", "live markets"],
-        ["passing yards", "rushing yards", "receiving yards", "touchdowns where available"],
-        ["college EPA or EPA proxy", "power ratings", "pace", "explosiveness", "success rate", "conference strength", "QB adjustment"],
-        ["variance controls", "weather", "injuries where available"],
-        ["college EPA or EPA proxy", "power ratings", "pace", "explosiveness", "success rate", "conference strength", "variance controls", "QB adjustment", "weather", "injuries where available", "football trench engine registered now"],
-        "college drive simulation",
+        "college_football_epa_drive_rating_monte_carlo_model",
+        "college_football_epa_drive_rating_monte_carlo_model",
+        "college_football_epa_drive_rating_monte_carlo",
+        COLLEGE_FOOTBALL_MARKETS,
+        COLLEGE_FOOTBALL_PROP_MARKETS,
+        COLLEGE_FOOTBALL_REQUIRED_CORE_INPUTS,
+        COLLEGE_FOOTBALL_OPTIONAL_ENRICHMENT_INPUTS,
+        ["college EPA drive rating", "drive volatility", "conference strength", "home field adjustment", "neutral site adjustment", "tempo spread", "explosive play variance", "blowout risk", "garbage-time risk", "weather sensitivity", "QB injury sensitivity", "ranking and power-rating adjustment"],
+        "college football Monte Carlo drive simulation",
         ["College variance requires tighter exposure caps for correlated sides, totals, and player props."],
+        sport_parameters={"league_baseline": "NCAAF", "league_calibration_applied": "ncaaf"},
+        component_status=COMPONENT_STATUS_ACTIVE,
+        model_level=MODEL_LEVEL_PROJECTION_READY,
+        confirmed_bets_allowed=True,
     ),
     _sport(
         "soccer",
@@ -2175,6 +2269,7 @@ _INPUT_NORMALIZER_BY_SPORT = {
     "basketball_ncaab": "mens_college_basketball_input_normalizer",
     "basketball_ncaawb": "womens_college_basketball_input_normalizer",
     "americanfootball_nfl": "nfl_input_normalizer",
+    "americanfootball_ncaaf": "college_football_input_normalizer",
     "soccer": "soccer_input_normalizer",
     "icehockey_nhl": "nhl_input_normalizer",
     "tennis": "tennis_input_normalizer",
@@ -2255,6 +2350,28 @@ _ACTIVE_SCREENSHOT_ALIAS_TEST_PAYLOADS: dict[str, dict[str, Any]] = {
             "opponent_red_zone_td_rate_allowed": 0.58, "team_pace_seconds_per_play": 27.5,
             "opponent_pace_seconds_per_play": 29.0, "qb_status": "healthy", "offensive_line_health": "good",
             "injury_report_status": "clean",
+        },
+    },
+    "americanfootball_ncaaf": {
+        "sport": "ncaaf", "league": "NCAAF", "event": "Ohio State vs Michigan", "teams": ["Michigan", "Ohio State"],
+        "market": "moneyline", "selection": "Ohio State", "odds_american": 100, "bankroll": 1000, "unit_size": 25, "risk_profile": "moderate",
+        "input_stats": {
+            "game": "Ohio State vs Michigan", "home": "Ohio State", "away": "Michigan", "team_name": "Ohio State",
+            "opponent_name": "Michigan", "favorite": "Ohio State", "home_epa_off": 0.23, "away_epa_off": 0.15,
+            "home_epa_def": -0.08, "away_epa_def": -0.02, "home_sr": 0.49, "away_sr": 0.44,
+            "home_def_sr_allowed": 0.37, "away_def_sr_allowed": 0.41, "home_explosive_rate": 0.18,
+            "away_explosive_rate": 0.14, "home_explosive_allowed": 0.10, "away_explosive_allowed": 0.13,
+            "home_pace": 25.4, "away_pace": 27.6, "home_plays_per_game": 73, "away_plays_per_game": 69,
+            "home_ppd": 2.95, "away_ppd": 2.45, "home_ppd_allowed": 1.55, "away_ppd_allowed": 1.92,
+            "home_rz_td": 0.68, "away_rz_td": 0.58, "home_rz_td_allowed": 0.44, "away_rz_td_allowed": 0.52,
+            "home_turnover_margin": 0.6, "away_turnover_margin": 0.1, "home_havoc_rate": 19.0, "away_havoc_rate": 16.0,
+            "home_havoc_allowed": 12.0, "away_havoc_allowed": 15.0, "home_qb": 88.0, "away_qb": 79.0,
+            "home_qb_injury": 0.0, "away_qb_injury": -0.5, "home_ol": 86.0, "away_ol": 78.0,
+            "home_dl": 88.0, "away_dl": 80.0, "home_st": 74.0, "away_st": 70.0, "home_field_advantage": 3.0,
+            "neutral_site": False, "wind_mph": 6, "precipitation": "none", "home_rest_days": 7, "away_rest_days": 6,
+            "home_travel_fatigue": 0.0, "away_travel_fatigue": 0.6, "home_strength_of_schedule": 8.6,
+            "away_strength_of_schedule": 8.1, "home_ap_rank": 2, "away_ap_rank": 8, "home_sp_rating": 29.5,
+            "away_sp_rating": 21.0, "home_conference_rating": 9.0, "away_conference_rating": 8.4, "book_count": 8,
         },
     },
     "baseball_mlb": {
@@ -3321,6 +3438,30 @@ def _nfl_market_specific_missing(market: Any, input_stats: dict[str, Any], paylo
     return missing
 
 
+def _college_football_full_inputs_missing(input_stats: dict[str, Any], payload: dict[str, Any]) -> list[str]:
+    missing = []
+    for field in COLLEGE_FOOTBALL_REQUIRED_CORE_INPUTS:
+        value = input_stats.get(field)
+        if value is None and field in {"event", "league"}:
+            value = payload.get(field) or payload.get("event_id")
+        if value is None:
+            missing.append(field)
+    return missing
+
+
+def _college_football_market_specific_missing(market: Any, input_stats: dict[str, Any], payload: dict[str, Any]) -> list[str]:
+    market_key = _normal_market_key(input_stats.get("market_type") or market)
+    required = COLLEGE_FOOTBALL_REQUIRED_MARKET_INPUTS.get(market_key, ["odds_american"])
+    missing = []
+    for field in required:
+        value = input_stats.get(field)
+        if value is None and field in {"line", "total_line", "odds_american"}:
+            value = payload.get(field)
+        if value is None:
+            missing.append(field)
+    return missing
+
+
 def _mlb_full_inputs_missing(input_stats: dict[str, Any], payload: dict[str, Any]) -> list[str]:
     missing = []
     for field in MLB_REQUIRED_CORE_INPUTS:
@@ -3817,6 +3958,8 @@ def _missing_inputs_for_sport(sport: str, market: Any, input_stats: dict[str, An
         return _nba_full_inputs_missing(input_stats) + _nba_market_specific_missing(market, input_stats, payload)
     if sport in {"basketball_wnba", "basketball_ncaab", "basketball_ncaawb"}:
         return _basketball_module_full_inputs_missing(sport, input_stats, payload) + _basketball_module_market_specific_missing(market, input_stats, payload)
+    if sport == "americanfootball_ncaaf":
+        return _college_football_full_inputs_missing(input_stats, payload) + _college_football_market_specific_missing(market, input_stats, payload)
     if sport == "americanfootball_nfl":
         return _nfl_full_inputs_missing(input_stats) + _nfl_market_specific_missing(market, input_stats, payload)
     if sport == "baseball_mlb":
@@ -3993,6 +4136,106 @@ def _normalize_nfl_input_aliases(input_stats: dict[str, Any], payload: Optional[
     return _normalize_team_sport_input_aliases(input_stats, payload, sport)
 
 
+def _normalize_college_football_input_aliases(input_stats: dict[str, Any], payload: Optional[dict[str, Any]] = None, sport: Optional[str] = None) -> dict[str, Any]:
+    normalized = _normalize_team_sport_input_aliases(input_stats, payload, sport)
+    alias_pairs = {
+        "event": ["game", "matchup"],
+        "selection": ["favorite", "pick"],
+        "line": ["line_value", "spread_line"],
+        "total_line": ["total_line"],
+        "team": ["team_name"],
+        "opponent": ["opponent_name"],
+        "home_team": ["home"],
+        "away_team": ["away"],
+        "home_offensive_epa_per_play": ["home_epa_off"],
+        "away_offensive_epa_per_play": ["away_epa_off"],
+        "home_defensive_epa_per_play": ["home_epa_def"],
+        "away_defensive_epa_per_play": ["away_epa_def"],
+        "home_success_rate": ["home_sr"],
+        "away_success_rate": ["away_sr"],
+        "home_defensive_success_rate_allowed": ["home_def_sr_allowed"],
+        "away_defensive_success_rate_allowed": ["away_def_sr_allowed"],
+        "home_explosiveness": ["home_explosive_rate"],
+        "away_explosiveness": ["away_explosive_rate"],
+        "home_explosiveness_allowed": ["home_explosive_allowed"],
+        "away_explosiveness_allowed": ["away_explosive_allowed"],
+        "home_pace_seconds_per_play": ["home_pace"],
+        "away_pace_seconds_per_play": ["away_pace"],
+        "home_points_per_drive": ["home_ppd"],
+        "away_points_per_drive": ["away_ppd"],
+        "home_points_allowed_per_drive": ["home_ppd_allowed"],
+        "away_points_allowed_per_drive": ["away_ppd_allowed"],
+        "home_red_zone_td_rate": ["home_rz_td"],
+        "away_red_zone_td_rate": ["away_rz_td"],
+        "home_red_zone_td_rate_allowed": ["home_rz_td_allowed"],
+        "away_red_zone_td_rate_allowed": ["away_rz_td_allowed"],
+        "home_qb_rating": ["home_qb"],
+        "away_qb_rating": ["away_qb"],
+        "home_qb_injury_adjustment": ["home_qb_injury"],
+        "away_qb_injury_adjustment": ["away_qb_injury"],
+        "home_offensive_line_rating": ["home_ol"],
+        "away_offensive_line_rating": ["away_ol"],
+        "home_defensive_line_rating": ["home_dl"],
+        "away_defensive_line_rating": ["away_dl"],
+        "home_special_teams_rating": ["home_st"],
+        "away_special_teams_rating": ["away_st"],
+        "weather_wind_mph": ["wind_mph"],
+        "weather_precipitation": ["precipitation"],
+        "home_rank": ["home_ap_rank"],
+        "away_rank": ["away_ap_rank"],
+        "home_power_rating": ["home_sp_rating", "home_fpi_rating"],
+        "away_power_rating": ["away_sp_rating", "away_fpi_rating"],
+        "home_conference_strength": ["home_conference_rating"],
+        "away_conference_strength": ["away_conference_rating"],
+        "player": ["player_name"],
+        "player_position": ["position"],
+        "player_snap_share": ["snap_share"],
+        "player_usage_rate": ["usage"],
+        "player_pass_attempts_projection": ["pass_attempts_proj"],
+        "player_passing_yards_projection": ["passing_yards_proj"],
+        "player_passing_tds_projection": ["passing_tds_proj"],
+        "player_interceptions_projection": ["interceptions_proj"],
+        "player_rush_attempts_projection": ["rush_attempts_proj"],
+        "player_rushing_yards_projection": ["rushing_yards_proj"],
+        "player_rushing_tds_projection": ["rushing_tds_proj"],
+        "player_targets_projection": ["targets_proj"],
+        "player_receptions_projection": ["receptions_proj"],
+        "player_receiving_yards_projection": ["receiving_yards_proj"],
+        "player_anytime_td_probability": ["td_probability"],
+    }
+    for canonical, aliases in alias_pairs.items():
+        _copy_alias_if_missing(normalized, canonical, aliases)
+    teams = payload.get("teams") if isinstance(payload, dict) else None
+    if normalized.get("home_team") is None and isinstance(teams, list) and teams:
+        normalized["home_team"] = teams[-1]
+    if normalized.get("away_team") is None and isinstance(teams, list) and teams:
+        normalized["away_team"] = teams[0]
+    if normalized.get("team") is None and normalized.get("selection") is not None:
+        normalized["team"] = normalized.get("selection")
+    if normalized.get("opponent") is None:
+        if normalized.get("team") == normalized.get("home_team"):
+            normalized["opponent"] = normalized.get("away_team")
+        elif normalized.get("team") == normalized.get("away_team"):
+            normalized["opponent"] = normalized.get("home_team")
+    if normalized.get("selection") is None and normalized.get("team") is not None:
+        normalized["selection"] = normalized.get("team")
+    if normalized.get("player_team") is None and normalized.get("team") is not None:
+        normalized["player_team"] = normalized.get("team")
+    normalized.setdefault("home_field_advantage", 3.0)
+    normalized.setdefault("neutral_site", False)
+    normalized.setdefault("weather_wind_mph", 0)
+    normalized.setdefault("weather_precipitation", "none")
+    normalized.setdefault("home_plays_per_game", 72)
+    normalized.setdefault("away_plays_per_game", 70)
+    normalized.setdefault("home_turnover_margin", 0)
+    normalized.setdefault("away_turnover_margin", 0)
+    normalized.setdefault("home_havoc_rate", 17.0)
+    normalized.setdefault("away_havoc_rate", 16.0)
+    normalized.setdefault("home_havoc_allowed", 15.0)
+    normalized.setdefault("away_havoc_allowed", 16.0)
+    return normalized
+
+
 def _normalize_soccer_input_aliases(input_stats: dict[str, Any], payload: Optional[dict[str, Any]] = None, sport: Optional[str] = None) -> dict[str, Any]:
     return _normalize_team_sport_input_aliases(input_stats, payload, sport)
 
@@ -4036,6 +4279,9 @@ def normalize_sport_inputs_for_model(
     elif sport_alias_resolved == "americanfootball_nfl":
         normalized = _normalize_nfl_input_aliases(normalized, payload, sport_alias_resolved)
         normalizer_used = "nfl_input_normalizer"
+    elif sport_alias_resolved == "americanfootball_ncaaf":
+        normalized = _normalize_college_football_input_aliases(normalized, payload, sport_alias_resolved)
+        normalizer_used = "college_football_input_normalizer"
     elif sport_alias_resolved == "baseball_mlb":
         normalized = _normalize_mlb_input_aliases(normalized, payload, sport_alias_resolved)
         normalizer_used = "mlb_input_normalizer"
@@ -6560,6 +6806,212 @@ def _estimate_mlb_negative_binomial_model(
     }
 
 
+def _estimate_college_football_model(
+    *,
+    input_stats: dict[str, Any],
+    payload: dict[str, Any],
+    market: Any,
+    odds_american: Optional[float],
+    bankroll: float,
+    risk_profile: str,
+) -> Optional[dict[str, Any]]:
+    missing = _college_football_full_inputs_missing(input_stats, payload) + _college_football_market_specific_missing(market, input_stats, payload)
+    if missing:
+        return None
+    implied_probability = implied_probability_from_american(odds_american) if odds_american is not None else None
+    if implied_probability is None:
+        return None
+
+    def number(key: str, default: float = 0) -> float:
+        return _safe_float(input_stats.get(key), default) or default
+
+    market_key = _normal_market_key(input_stats.get("market_type") or market)
+    selection_text = str(payload.get("selection") or input_stats.get("selection") or "").strip().lower()
+    selected_home = selection_text == str(input_stats.get("home_team") or "").strip().lower()
+    selected_away = selection_text == str(input_stats.get("away_team") or "").strip().lower()
+    if not selected_home and not selected_away:
+        selected_home = str(input_stats.get("team") or "").strip().lower() == str(input_stats.get("home_team") or "").strip().lower()
+
+    home_drive = (
+        (number("home_offensive_epa_per_play") - number("away_defensive_epa_per_play")) * 22
+        + (number("home_success_rate") - number("away_defensive_success_rate_allowed")) * 16
+        + (number("home_explosiveness") - number("away_explosiveness_allowed")) * 18
+        + (number("home_points_per_drive") - number("away_points_allowed_per_drive")) * 2.4
+        + (number("home_red_zone_td_rate") - number("away_red_zone_td_rate_allowed")) * 5.5
+        + (number("home_havoc_rate") - number("away_havoc_allowed")) * 0.08
+    )
+    away_drive = (
+        (number("away_offensive_epa_per_play") - number("home_defensive_epa_per_play")) * 22
+        + (number("away_success_rate") - number("home_defensive_success_rate_allowed")) * 16
+        + (number("away_explosiveness") - number("home_explosiveness_allowed")) * 18
+        + (number("away_points_per_drive") - number("home_points_allowed_per_drive")) * 2.4
+        + (number("away_red_zone_td_rate") - number("home_red_zone_td_rate_allowed")) * 5.5
+        + (number("away_havoc_rate") - number("home_havoc_allowed")) * 0.08
+    )
+    home_field = 0 if input_stats.get("neutral_site") else number("home_field_advantage", 3.0)
+    projected_margin = home_drive - away_drive + home_field
+    projected_margin += (number("home_turnover_margin") - number("away_turnover_margin")) * 0.75
+    projected_margin += (number("home_qb_rating") - number("away_qb_rating")) * 0.045
+    projected_margin += (number("home_qb_injury_adjustment") - number("away_qb_injury_adjustment")) * 1.25
+    projected_margin += (number("home_offensive_line_rating") - number("away_offensive_line_rating")) * 0.035
+    projected_margin += (number("home_defensive_line_rating") - number("away_defensive_line_rating")) * 0.035
+    projected_margin += (number("home_special_teams_rating") - number("away_special_teams_rating")) * 0.02
+    projected_margin += (number("home_strength_of_schedule") - number("away_strength_of_schedule")) * 0.20
+    projected_margin += (number("away_rank", 70) - number("home_rank", 70)) * 0.045
+    projected_margin += (number("home_power_rating") - number("away_power_rating")) * 0.075
+    projected_margin += (number("home_conference_strength") - number("away_conference_strength")) * 0.30
+    projected_margin += max(-1.0, min(1.0, (number("home_rest_days") - number("away_rest_days")) * 0.18))
+    projected_margin -= max(-0.9, min(0.9, (number("home_travel_fatigue") - number("away_travel_fatigue")) * 0.35))
+
+    pace_seconds = max(20.0, min(35.0, (number("home_pace_seconds_per_play", 26.5) + number("away_pace_seconds_per_play", 26.5)) / 2))
+    plays = max(55.0, min(92.0, (number("home_plays_per_game", 70) + number("away_plays_per_game", 70)) / 2))
+    tempo_boost = (70 - plays) * -0.08 + (26.5 - pace_seconds) * 0.25
+    base_total = 48.0 + ((home_drive + away_drive) * 1.05) + tempo_boost
+    base_total += (number("home_explosiveness") + number("away_explosiveness") - 0.28) * 18
+    base_total += (number("home_points_per_drive") + number("away_points_per_drive") - 4.8) * 2.2
+    wind = number("weather_wind_mph", 0)
+    precip = str(input_stats.get("weather_precipitation") or "").strip().lower()
+    if wind >= 15:
+        base_total -= min(6.0, (wind - 12) * 0.35)
+    if precip not in {"", "none", "no", "false", "0", "clear"}:
+        base_total -= 2.0
+    projected_total = max(31.0, min(82.0, base_total))
+    selected_margin = projected_margin if selected_home else -projected_margin
+    projected_team_points = (projected_total / 2) + (selected_margin / 2)
+    projected_opponent_points = projected_total - projected_team_points
+
+    raw_model_probability = _logistic_probability(selected_margin, 9.8)
+    line = _safe_float(payload.get("line"), _safe_float(input_stats.get("line")))
+    total_line = _safe_float(payload.get("total_line"), _safe_float(input_stats.get("total_line")))
+    if market_key in {"spread", "first_half_spread", "first_quarter_spread", "alt_spread"}:
+        period_scale = 0.50 if "first_half" in market_key else 0.24 if "first_quarter" in market_key else 1.0
+        raw_model_probability = _logistic_probability((selected_margin * period_scale) + (line or 0), 10.5 * max(0.48, period_scale))
+    elif market_key in {"total", "first_half_total", "first_quarter_total", "alt_total"}:
+        period_scale = 0.50 if "first_half" in market_key else 0.24 if "first_quarter" in market_key else 1.0
+        target = total_line if total_line is not None else projected_total * period_scale
+        over_probability = _logistic_probability((projected_total * period_scale) - target, 9.8 * max(0.48, period_scale))
+        raw_model_probability = 1 - over_probability if "under" in selection_text else over_probability
+    elif market_key in {"team_total", "alt_team_total"}:
+        target = total_line if total_line is not None else projected_team_points
+        over_probability = _logistic_probability(projected_team_points - target, 7.5)
+        raw_model_probability = 1 - over_probability if "under" in selection_text else over_probability
+    elif market_key in {"first_half_moneyline", "first_quarter_moneyline"}:
+        period_scale = 0.50 if market_key == "first_half_moneyline" else 0.24
+        raw_model_probability = _logistic_probability(selected_margin * period_scale, 7.5 * max(0.55, period_scale))
+    elif market_key in COLLEGE_FOOTBALL_PROP_MARKETS:
+        projection_map = {
+            "player_passing_yards": "player_passing_yards_projection",
+            "player_passing_tds": "player_passing_tds_projection",
+            "player_interceptions": "player_interceptions_projection",
+            "player_rushing_yards": "player_rushing_yards_projection",
+            "player_rushing_tds": "player_rushing_tds_projection",
+            "player_receiving_yards": "player_receiving_yards_projection",
+            "player_receptions": "player_receptions_projection",
+        }
+        if market_key == "player_anytime_td":
+            raw_model_probability = max(0.03, min(0.82, number("player_anytime_td_probability", 0.33)))
+        else:
+            projection = number(projection_map.get(market_key, "player_passing_yards_projection"), 40)
+            target = line if line is not None else projection
+            stddev = max(1.0, abs(projection) * (0.28 if "tds" not in market_key and "interceptions" not in market_key else 0.55))
+            over_probability = 1 - _normal_cdf(target, mean=projection, stddev=stddev)
+            raw_model_probability = 1 - over_probability if "under" in selection_text else over_probability
+
+    no_vig_anchor = _safe_float(input_stats.get("no_vig_market_probability"))
+    if no_vig_anchor is not None and no_vig_anchor > 1:
+        no_vig_anchor = no_vig_anchor / 100
+    market_anchor = max(0.01, min(0.99, no_vig_anchor)) if no_vig_anchor is not None else None
+    calibrated_probability = raw_model_probability * 0.90 + market_anchor * 0.10 if market_anchor is not None else raw_model_probability
+    true_probability = max(0.06, min(0.94, calibrated_probability))
+    sanity_flags = ["college football probability cap applied"] if true_probability != calibrated_probability else []
+
+    confidence = 72.0
+    risk_flags = []
+    if _safe_float(input_stats.get("book_count"), 0) < 4:
+        confidence -= 3
+        risk_flags.append("book count too low")
+    if wind >= 15:
+        confidence -= 5 if market_key in {"total", "first_half_total", "first_quarter_total", *COLLEGE_FOOTBALL_PROP_MARKETS} else 2
+        risk_flags.append("weather sensitivity")
+    if precip not in {"", "none", "no", "false", "0", "clear"}:
+        confidence -= 4
+        risk_flags.append("precipitation volatility")
+    if abs(number("home_qb_injury_adjustment")) >= 1 or abs(number("away_qb_injury_adjustment")) >= 1:
+        confidence -= 6
+        risk_flags.append("QB injury sensitivity")
+    if input_stats.get("blowout_risk"):
+        confidence -= 5
+        risk_flags.append("blowout risk")
+    if input_stats.get("garbage_time_risk"):
+        confidence -= 4
+        risk_flags.append("garbage-time risk")
+    if input_stats.get("tempo_volatility"):
+        confidence -= 3
+        risk_flags.append("tempo volatility")
+    if market_key in COLLEGE_FOOTBALL_PROP_MARKETS:
+        confidence -= 3
+        if number("player_snap_share", 0) < 0.45:
+            confidence -= 12
+            risk_flags.append("prop snap-share fragility")
+    if input_stats.get("provider_status") == "error":
+        risk_flags.append("provider failure ignored")
+    confidence = max(1, min(95, round(confidence, 2)))
+
+    edge = calculate_edge_percent(true_probability, implied_probability)
+    edge_threshold, confidence_threshold = _nfl_thresholds(risk_profile)
+    no_bet_flags: list[str] = []
+    if edge is None:
+        no_bet_flags.append("edge missing")
+    elif edge <= 0:
+        no_bet_flags.append("negative edge")
+    elif edge < edge_threshold:
+        no_bet_flags.append("edge too small")
+    if confidence < confidence_threshold:
+        no_bet_flags.append("low confidence")
+    suggested = 0 if no_bet_flags else calculate_suggested_stake(
+        bankroll=bankroll,
+        american_odds=odds_american,
+        true_probability=true_probability,
+        risk_profile=risk_profile,
+        confidence=confidence,
+    )
+    if suggested <= 0 and not no_bet_flags and edge is not None and edge >= edge_threshold and confidence >= confidence_threshold:
+        suggested = round(max(1.0, bankroll * 0.004), 2)
+
+    return {
+        "model_status": "active",
+        "estimated_true_probability": true_probability,
+        "true_probability": true_probability,
+        "final_probability": true_probability,
+        "model_probability": true_probability,
+        "implied_probability": implied_probability,
+        "edge": edge,
+        "confidence": confidence,
+        "risk": "high" if risk_flags else "moderate",
+        "suggested_stake": suggested,
+        "raw_model_probability": raw_model_probability,
+        "calibrated_model_probability": calibrated_probability,
+        "probability_calibration_applied": bool(market_anchor is not None or sanity_flags),
+        "probability_sanity_flags": sanity_flags,
+        "probability_cap_reason": "ncaaf college football sanity cap" if sanity_flags else None,
+        "market_anchor_probability": market_anchor,
+        "league_calibration_applied": "ncaaf",
+        "projected_margin": round(projected_margin, 2),
+        "projected_total": round(projected_total, 2),
+        "projected_team_points": round(projected_team_points, 2),
+        "projected_opponent_points": round(projected_opponent_points, 2),
+        "risk_flags": risk_flags,
+        "input_coverage": {
+            "required_core_present": list(COLLEGE_FOOTBALL_REQUIRED_CORE_INPUTS),
+            "required_market_specific_present": COLLEGE_FOOTBALL_REQUIRED_MARKET_INPUTS.get(market_key, []),
+            "optional_enrichment_present": [field for field in COLLEGE_FOOTBALL_OPTIONAL_ENRICHMENT_INPUTS if input_stats.get(field) is not None],
+            "optional_enrichment_missing": [field for field in COLLEGE_FOOTBALL_OPTIONAL_ENRICHMENT_INPUTS if input_stats.get(field) is None],
+        },
+        "provider_enrichment": {"provider_status": "not_provided", "provider_enrichment_present": []},
+        "no_bet_flags": no_bet_flags,
+    }
+
+
 def _estimate_nfl_drive_model(
     input_stats: dict[str, Any],
     payload: dict[str, Any],
@@ -7027,6 +7479,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         wnba_model = None
         mens_cbb_model = None
         womens_cbb_model = None
+        college_football_model = None
         nfl_model = None
         mlb_model = None
         soccer_model = None
@@ -7061,6 +7514,15 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
                 womens_cbb_model = basketball_model
         elif sport == "americanfootball_nfl":
             nfl_model = _estimate_nfl_drive_model(
+                input_stats=input_stats,
+                payload=payload,
+                market=market,
+                odds_american=odds_american,
+                bankroll=bankroll,
+                risk_profile=payload.get("risk_profile") or "moderate",
+            )
+        elif sport == "americanfootball_ncaaf":
+            college_football_model = _estimate_college_football_model(
                 input_stats=input_stats,
                 payload=payload,
                 market=market,
@@ -7128,6 +7590,8 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
         elif wnba_model or mens_cbb_model or womens_cbb_model:
             component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
+        elif college_football_model:
+            component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
         elif nfl_model:
             component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
         elif mlb_model:
@@ -7142,7 +7606,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
         elif golf_model:
             component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
-        elif sport in {"basketball_nba", "basketball_wnba", "basketball_ncaab", "basketball_ncaawb", "americanfootball_nfl", "baseball_mlb", "soccer", "icehockey_nhl", "tennis", "mma_mixed_martial_arts", "boxing", "golf"}:
+        elif sport in {"basketball_nba", "basketball_wnba", "basketball_ncaab", "basketball_ncaawb", "americanfootball_nfl", "americanfootball_ncaaf", "baseball_mlb", "soccer", "icehockey_nhl", "tennis", "mma_mixed_martial_arts", "boxing", "golf"}:
             component_status = COMPONENT_STATUS_INACTIVE
             missing_inputs = _missing_inputs_for_sport(sport, market, input_stats, payload)
         else:
@@ -7169,6 +7633,12 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             edge = basketball_model["edge"]
             suggested = basketball_model["suggested_stake"]
             no_bet_flags = list(basketball_model["no_bet_flags"])
+        elif college_football_model:
+            true_probability = college_football_model["true_probability"]
+            implied_probability = college_football_model["implied_probability"]
+            edge = college_football_model["edge"]
+            suggested = college_football_model["suggested_stake"]
+            no_bet_flags = list(college_football_model["no_bet_flags"])
         elif nfl_model:
             true_probability = nfl_model["true_probability"]
             implied_probability = nfl_model["implied_probability"]
@@ -7213,7 +7683,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             no_bet_flags = list(golf_model["no_bet_flags"])
         if implied_probability is not None and true_probability is not None and odds_american is not None:
             edge = edge_percentage(true_probability, implied_probability)
-            if not (nba_model or wnba_model or mens_cbb_model or womens_cbb_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model):
+            if not (nba_model or wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model):
                 suggested = suggested_stake_with_risk_controls(
                     bankroll=bankroll,
                     american_odds=odds_american,
@@ -7230,7 +7700,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         social_input_stats = dict(input_stats)
         social_input_stats["edge"] = edge
         social_layer = build_social_crowd_calibration_layer(social_input_stats)
-        if social_layer["sentiment_no_bet_flags"] and not (nba_model or wnba_model or mens_cbb_model or womens_cbb_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model):
+        if social_layer["sentiment_no_bet_flags"] and not (nba_model or wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model):
             no_bet_flags = list(dict.fromkeys(no_bet_flags + social_layer["sentiment_no_bet_flags"]))
 
         risk_controller = build_risk_controller(bankroll, unit_size, payload.get("risk_profile") or "conservative")
@@ -7247,7 +7717,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         })
         wee_willie = build_wee_willie_market_weakness_detector(detector_payload)
         manual_ticket = build_manual_ticket(detector_payload, suggested)
-        active_model = nba_model or wnba_model or mens_cbb_model or womens_cbb_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model
+        active_model = nba_model or wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model
         confidence = active_model["confidence"] if active_model else input_stats.get("confidence")
         if tennis_model and _safe_float(confidence) is None:
             confidence = 0.0
@@ -7259,7 +7729,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         model_status = active_model["model_status"] if active_model else component_status
         edge_threshold, confidence_threshold = (
             _nfl_thresholds(payload.get("risk_profile") or "moderate")
-            if (wnba_model or mens_cbb_model or womens_cbb_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model)
+            if (wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model)
             else (2.5, 70)
         )
         event_value = payload.get("event_id") or payload.get("event") or input_stats.get("event")
@@ -7376,7 +7846,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
                 "market": market,
                 "selection": selection_value,
                 "confidence": confidence,
-            }] if _normal_market_key(market) in {"player_prop", "knockdown_prop", "takedown_prop", "significant_strikes_prop", "submission_attempt_prop", "birdies_prop", "eagles_prop", "fairways_hit_prop", "greens_in_regulation_prop", "putts_prop", "round_score_prop", *BASKETBALL_MODULE_PROP_MARKETS} else [],
+            }] if _normal_market_key(market) in {"player_prop", "knockdown_prop", "takedown_prop", "significant_strikes_prop", "submission_attempt_prop", "birdies_prop", "eagles_prop", "fairways_hit_prop", "greens_in_regulation_prop", "putts_prop", "round_score_prop", *BASKETBALL_MODULE_PROP_MARKETS, *COLLEGE_FOOTBALL_PROP_MARKETS} else [],
             "target_alt_lines": [{
                 "sport": sport,
                 "event": event_value,
@@ -7416,7 +7886,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             **officiating_analysis["officiating_logbook_fields"],
         })
         basketball_module_model = wnba_model or mens_cbb_model or womens_cbb_model
-        probability_model = basketball_module_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model
+        probability_model = basketball_module_model or college_football_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model
         if probability_model:
             logbook_ready_row.update({
                 "raw_model_probability": probability_model["raw_model_probability"],
@@ -7525,6 +7995,15 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
                 "risk_flags": golf_model["risk_flags"],
                 "notes": "; ".join(golf_model["risk_flags"]) if golf_model["risk_flags"] else "",
             })
+        if college_football_model:
+            logbook_ready_row.update({
+                "league_calibration_applied": college_football_model["league_calibration_applied"],
+                "projected_margin": college_football_model["projected_margin"],
+                "projected_total": college_football_model["projected_total"],
+                "projected_team_points": college_football_model["projected_team_points"],
+                "projected_opponent_points": college_football_model["projected_opponent_points"],
+                "risk_flags": college_football_model["risk_flags"],
+            })
         if nfl_model:
             logbook_ready_row.update({
                 "projected_margin": nfl_model["projected_margin"],
@@ -7573,10 +8052,10 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             "model_family": config["model_family"],
             "market": market,
             "projected_score": nba_model["projected_score"] if nba_model else input_stats.get("projected_score"),
-            "projected_margin": basketball_module_model["projected_margin"] if basketball_module_model else (nfl_model["projected_margin"] if nfl_model else (nba_model["projected_score"]["estimated_margin"] if nba_model else input_stats.get("projected_margin"))),
-            "projected_total": basketball_module_model["projected_total"] if basketball_module_model else (nfl_model["projected_total"] if nfl_model else input_stats.get("projected_total")),
-            "projected_team_points": basketball_module_model["projected_team_points"] if basketball_module_model else (nfl_model["projected_team_points"] if nfl_model else None),
-            "projected_opponent_points": basketball_module_model["projected_opponent_points"] if basketball_module_model else (nfl_model["projected_opponent_points"] if nfl_model else None),
+            "projected_margin": basketball_module_model["projected_margin"] if basketball_module_model else (college_football_model["projected_margin"] if college_football_model else (nfl_model["projected_margin"] if nfl_model else (nba_model["projected_score"]["estimated_margin"] if nba_model else input_stats.get("projected_margin")))),
+            "projected_total": basketball_module_model["projected_total"] if basketball_module_model else (college_football_model["projected_total"] if college_football_model else (nfl_model["projected_total"] if nfl_model else input_stats.get("projected_total"))),
+            "projected_team_points": basketball_module_model["projected_team_points"] if basketball_module_model else (college_football_model["projected_team_points"] if college_football_model else (nfl_model["projected_team_points"] if nfl_model else None)),
+            "projected_opponent_points": basketball_module_model["projected_opponent_points"] if basketball_module_model else (college_football_model["projected_opponent_points"] if college_football_model else (nfl_model["projected_opponent_points"] if nfl_model else None)),
             "projected_team_runs": mlb_model["projected_team_runs"] if mlb_model else None,
             "projected_opponent_runs": mlb_model["projected_opponent_runs"] if mlb_model else None,
             "projected_total_runs": mlb_model["projected_total_runs"] if mlb_model else None,
@@ -7640,6 +8119,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             **normalization_diagnostics,
             "nba_input_contract": deepcopy(NBA_INPUT_CONTRACT) if sport == "basketball_nba" else None,
             "nfl_input_contract": deepcopy(NFL_INPUT_CONTRACT) if sport == "americanfootball_nfl" else None,
+            "college_football_input_contract": deepcopy(COLLEGE_FOOTBALL_INPUT_CONTRACT) if sport == "americanfootball_ncaaf" else None,
             "mlb_input_contract": deepcopy(MLB_INPUT_CONTRACT) if sport == "baseball_mlb" else None,
             "soccer_input_contract": deepcopy(SOCCER_INPUT_CONTRACT) if sport == "soccer" else None,
             "nhl_input_contract": deepcopy(NHL_INPUT_CONTRACT) if sport == "icehockey_nhl" else None,
@@ -7649,7 +8129,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             "wnba_input_contract": deepcopy(WNBA_INPUT_CONTRACT) if sport == "basketball_wnba" else None,
             "mens_college_basketball_input_contract": deepcopy(MENS_COLLEGE_BASKETBALL_INPUT_CONTRACT) if sport == "basketball_ncaab" else None,
             "womens_college_basketball_input_contract": deepcopy(WOMENS_COLLEGE_BASKETBALL_INPUT_CONTRACT) if sport == "basketball_ncaawb" else None,
-            "league_calibration_applied": basketball_module_model["league_calibration_applied"] if basketball_module_model else config.get("sport_parameters", {}).get("league_calibration_applied"),
+            "league_calibration_applied": (basketball_module_model or college_football_model)["league_calibration_applied"] if (basketball_module_model or college_football_model) else config.get("sport_parameters", {}).get("league_calibration_applied"),
             "input_coverage": active_model.get("input_coverage") if active_model else None,
             "suggested_stake": suggested if confirmed_bets else 0,
             "recommended_unit_size": risk_controller["recommended_unit_size"],
@@ -7702,7 +8182,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         "target_lines": full_board["target_lines"],
         "target_props": full_board["target_props"],
         "target_alt_lines": full_board["target_alt_lines"],
-        "no_bets": no_bets if (basketball_module_model or tennis_model or combat_model or golf_model) else simple_no_bets,
+        "no_bets": no_bets if (basketball_module_model or college_football_model or tennis_model or combat_model or golf_model) else simple_no_bets,
         "best_correlated_parlay": full_board["best_correlated_parlay"],
         "value_ranking": full_board["value_ranking"],
         "risk_ranking": full_board["risk_ranking"],
