@@ -73,6 +73,12 @@ SPORT_ALIASES = {
     "wta": "tennis",
     "tennis_atp": "tennis",
     "tennis_wta": "tennis",
+    "ufc": "mma_mixed_martial_arts",
+    "mma": "mma_mixed_martial_arts",
+    "mixed_martial_arts": "mma_mixed_martial_arts",
+    "mixed martial arts": "mma_mixed_martial_arts",
+    "combat_sports": "mma_mixed_martial_arts",
+    "combat sports": "mma_mixed_martial_arts",
     "epl": "soccer",
     "ucl": "soccer",
     "football": "soccer",
@@ -1238,6 +1244,63 @@ TENNIS_INPUT_CONTRACT = {
     "live_betting_inputs": TENNIS_LIVE_BETTING_INPUTS,
 }
 
+COMBAT_REQUIRED_CORE_INPUTS = [
+    "fighter", "opponent", "selection", "fight_date", "promotion", "weight_class", "scheduled_rounds",
+    "fighter_moneyline", "fighter_elo", "opponent_elo", "fighter_recent_win_percent", "opponent_recent_win_percent",
+    "fighter_finish_rate", "opponent_finish_rate", "fighter_ko_tko_rate", "opponent_ko_tko_rate",
+    "fighter_submission_rate", "opponent_submission_rate", "fighter_decision_rate", "opponent_decision_rate",
+    "fighter_strikes_landed_per_min", "opponent_strikes_landed_per_min",
+    "fighter_strikes_absorbed_per_min", "opponent_strikes_absorbed_per_min",
+    "fighter_striking_accuracy", "opponent_striking_accuracy", "fighter_striking_defense", "opponent_striking_defense",
+    "fighter_takedown_average", "opponent_takedown_average", "fighter_takedown_accuracy", "opponent_takedown_accuracy",
+    "fighter_takedown_defense", "opponent_takedown_defense", "fighter_submission_average", "opponent_submission_average",
+    "fighter_age", "opponent_age", "fighter_reach", "opponent_reach", "fighter_height", "opponent_height",
+    "fighter_stance", "opponent_stance", "fighter_days_rest", "opponent_days_rest",
+    "fighter_injury_status", "opponent_injury_status",
+]
+
+COMBAT_REQUIRED_MARKET_SPECIFIC_INPUTS = {
+    "moneyline": ["odds_american"],
+    "method_of_victory": ["odds_american"],
+    "fighter_by_ko_tko": ["odds_american"],
+    "fighter_by_submission": ["odds_american"],
+    "fighter_by_decision": ["odds_american"],
+    "opponent_by_ko_tko": ["odds_american"],
+    "opponent_by_submission": ["odds_american"],
+    "opponent_by_decision": ["odds_american"],
+    "fight_goes_distance": ["odds_american"],
+    "fight_does_not_go_distance": ["odds_american"],
+    "over_rounds": ["line", "odds_american"],
+    "under_rounds": ["line", "odds_american"],
+    "round_group": ["line", "odds_american"],
+    "exact_round": ["line", "odds_american"],
+    "double_chance": ["odds_american"],
+    "knockdown_prop": ["line", "odds_american"],
+    "takedown_prop": ["line", "odds_american"],
+    "significant_strikes_prop": ["line", "odds_american"],
+    "submission_attempt_prop": ["line", "odds_american"],
+}
+
+COMBAT_OPTIONAL_ENRICHMENT_INPUTS = [
+    "opponent_moneyline", "camp_change", "short_notice", "weight_cut_risk", "travel_risk", "altitude_risk",
+    "five_round_experience", "championship_rounds_experience", "southpaw_matchup", "grappling_advantage",
+    "striking_advantage", "chin_durability", "cardio_rating", "pace_rating", "judge_profile", "referee_profile",
+    "public_betting_percent", "sharp_money_percent", "social_sentiment", "crowd_consensus",
+    "kalshi_probability", "prediction_market_probability", "no_vig_market_probability", "book_count",
+    "best_available_odds", "current_odds", "consensus_odds",
+]
+
+COMBAT_INPUT_CONTRACT = {
+    "required_core_inputs": COMBAT_REQUIRED_CORE_INPUTS,
+    "required_market_specific_inputs": COMBAT_REQUIRED_MARKET_SPECIFIC_INPUTS,
+    "optional_enrichment_inputs": COMBAT_OPTIONAL_ENRICHMENT_INPUTS,
+    "provider_enrichment_inputs": ["best_available_odds", "current_odds", "consensus_odds", "no_vig_market_probability", "book_count"],
+    "officiating_inputs": ["referee_profile", "judge_profile", "referee", "judge_panel", "stoppage_tendency", "decision_scoring_profile"],
+    "referee_inputs": ["referee_profile", "referee", "stoppage_tendency"],
+    "social_crowd_inputs": ["public_betting_percent", "sharp_money_percent", "social_sentiment", "crowd_consensus"],
+    "live_betting_inputs": ["live_round", "live_time_remaining", "live_knockdowns", "live_control_time", "live_strike_counts"],
+}
+
 SPORT_PROP_INPUTS = {
     "baseball_mlb": ["player projection", "lineup status", "opponent matchup", "park factor", "weather"],
     "basketball_nba": ["minutes projection", "usage", "pace", "defensive matchup", "injury report"],
@@ -1313,13 +1376,13 @@ OFFICIALS_MODULE_BY_SPORT = {
     },
     "mma_mixed_martial_arts": {
         "official_type": "referee and judges",
-        "official_inputs": ["referee", "judge panel", "stand-up tendency", "point deduction tendency", "decision scoring profile"],
+        "official_inputs": COMBAT_INPUT_CONTRACT["officiating_inputs"],
         "betting_edge_strength": "moderate",
         "notes": "Referee and judges can matter for finish, goes-distance, decision, and round props.",
     },
     "boxing": {
         "official_type": "referee and judges",
-        "official_inputs": ["referee", "judge panel", "point deduction tendency", "stoppage tendency", "decision scoring profile"],
+        "official_inputs": COMBAT_INPUT_CONTRACT["officiating_inputs"],
         "betting_edge_strength": "moderate",
         "notes": "Referee and judges are relevant to stoppage, decision, draw, and method markets.",
     },
@@ -1805,30 +1868,36 @@ SPORT_MODEL_REGISTRY = [
     _sport(
         "mma_mixed_martial_arts",
         "MMA",
-        "combat_classification_model",
-        "Combat classification model family",
-        "classification",
-        ["moneyline", "method", "round props", "goes distance", "does not go distance"],
-        ["KO TKO", "submission", "decision", "round group", "fight duration"],
-        ["striking stats", "grappling stats", "takedown defense", "reach", "stance", "age", "fight duration history", "finish history", "style matchup"],
-        ["cardio", "camp context"],
-        ["moneyline classifier", "finish method classifier", "KO TKO probability", "submission probability", "decision probability", "round props", "fight duration", "fighter style matchup", "reach, stance, age, cardio, grappling, striking, takedown defense placeholders"],
+        "fighter_striking_grappling_finish_model",
+        "fighter_striking_grappling_finish_model",
+        "fighter_finish_classification",
+        ["moneyline", "method_of_victory", "fighter_by_ko_tko", "fighter_by_submission", "fighter_by_decision", "opponent_by_ko_tko", "opponent_by_submission", "opponent_by_decision", "fight_goes_distance", "fight_does_not_go_distance", "over_rounds", "under_rounds", "round_group", "exact_round", "double_chance", "knockdown_prop", "takedown_prop", "significant_strikes_prop", "submission_attempt_prop", "live"],
+        ["KO TKO", "submission", "decision", "round group", "fight duration", "knockdowns", "takedowns", "significant strikes", "submission attempts"],
+        COMBAT_REQUIRED_CORE_INPUTS,
+        COMBAT_OPTIONAL_ENRICHMENT_INPUTS,
+        ["Elo", "recent form", "striking model", "grappling model", "finish split", "duration model", "referee and judges context"],
         "classification with duration model",
         ["Method, distance, and round group are highly correlated."],
+        component_status=COMPONENT_STATUS_ACTIVE,
+        model_level=MODEL_LEVEL_PROJECTION_READY,
+        confirmed_bets_allowed=True,
     ),
     _sport(
         "boxing",
         "Boxing",
-        "boxing_combat_classification_model",
-        "Combat classification model family",
-        "classification",
-        ["moneyline", "method", "round props", "goes distance", "does not go distance"],
-        ["KO TKO", "decision", "draw", "round group", "fight duration"],
-        ["striking stats", "reach", "stance", "age", "power", "durability", "pace", "fight duration history", "finish history", "style matchup"],
-        ["draw prior", "judging context"],
-        ["moneyline classifier", "KO TKO probability", "decision probability", "draw probability placeholder", "round props", "fight duration", "fighter style matchup", "reach, stance, age, power, durability, pace placeholders"],
+        "fighter_striking_grappling_finish_model",
+        "fighter_striking_grappling_finish_model",
+        "fighter_finish_classification",
+        ["moneyline", "method_of_victory", "fighter_by_ko_tko", "fighter_by_decision", "opponent_by_ko_tko", "opponent_by_decision", "fight_goes_distance", "fight_does_not_go_distance", "over_rounds", "under_rounds", "round_group", "exact_round", "double_chance", "knockdown_prop", "significant_strikes_prop", "live"],
+        ["KO TKO", "decision", "draw", "round group", "fight duration", "knockdowns", "significant strikes"],
+        COMBAT_REQUIRED_CORE_INPUTS,
+        COMBAT_OPTIONAL_ENRICHMENT_INPUTS,
+        ["Elo", "recent form", "striking model", "durability", "finish split", "duration model", "referee and judges context"],
         "classification with duration model",
         ["Decision, draw, and distance prices require correlated review."],
+        component_status=COMPONENT_STATUS_ACTIVE,
+        model_level=MODEL_LEVEL_PROJECTION_READY,
+        confirmed_bets_allowed=True,
     ),
     _sport(
         "golf",
@@ -2973,6 +3042,30 @@ def _tennis_market_specific_missing(market: Any, input_stats: dict[str, Any], pa
     return missing
 
 
+def _combat_full_inputs_missing(input_stats: dict[str, Any], payload: dict[str, Any]) -> list[str]:
+    missing = []
+    for field in COMBAT_REQUIRED_CORE_INPUTS:
+        value = input_stats.get(field)
+        if value is None and field == "selection":
+            value = payload.get("selection")
+        if value is None:
+            missing.append(field)
+    return missing
+
+
+def _combat_market_specific_missing(market: Any, input_stats: dict[str, Any], payload: dict[str, Any]) -> list[str]:
+    market_key = _normal_market_key(input_stats.get("market_type") or market)
+    required = COMBAT_REQUIRED_MARKET_SPECIFIC_INPUTS.get(market_key, [])
+    missing = []
+    for field in required:
+        value = input_stats.get(field)
+        if value is None and field in {"line", "odds_american"}:
+            value = payload.get(field)
+        if value is None:
+            missing.append(field)
+    return missing
+
+
 def _nfl_thresholds(risk_profile: Any) -> tuple[float, float]:
     profile = str(risk_profile or "moderate").strip().lower()
     if profile == "standard":
@@ -3638,6 +3731,291 @@ def calculate_suggested_stake(
         risk_profile="standard" if str(risk_profile or "").lower() == "moderate" else risk_profile,
         confidence_0_100=confidence,
     )
+
+
+def _combat_pct(value: Any, default: float = 0.0) -> float:
+    number = _safe_float(value, default)
+    if number is None:
+        return default
+    return number / 100 if number > 1 else number
+
+
+def _combat_market_probability(
+    *,
+    market: str,
+    selection: Any,
+    fighter_win_probability: float,
+    opponent_win_probability: float,
+    ko_tko_probability: float,
+    submission_probability: float,
+    decision_probability: float,
+    goes_distance_probability: float,
+    scheduled_rounds: float,
+    line: Optional[float],
+) -> float:
+    market_key = _normal_market_key(market)
+    selection_text = str(selection or "").strip().lower()
+    does_not_go_distance = 1 - goes_distance_probability
+    if market_key in {"moneyline", "match_winner"}:
+        return fighter_win_probability
+    if market_key in {"method_of_victory", "fighter_by_ko_tko"}:
+        return ko_tko_probability
+    if market_key == "fighter_by_submission":
+        return submission_probability
+    if market_key == "fighter_by_decision":
+        return decision_probability
+    if market_key == "opponent_by_ko_tko":
+        return opponent_win_probability * max(0.05, min(0.80, ko_tko_probability / max(fighter_win_probability, 0.01) * 0.85))
+    if market_key == "opponent_by_submission":
+        return opponent_win_probability * max(0.03, min(0.65, submission_probability / max(fighter_win_probability, 0.01) * 0.85))
+    if market_key == "opponent_by_decision":
+        return opponent_win_probability * max(0.08, min(0.75, decision_probability / max(fighter_win_probability, 0.01) * 0.90))
+    if market_key == "fight_goes_distance":
+        return goes_distance_probability
+    if market_key == "fight_does_not_go_distance":
+        return does_not_go_distance
+    if market_key == "over_rounds":
+        round_line = line if line is not None else scheduled_rounds - 0.5
+        round_share = max(0.15, min(0.95, round_line / max(scheduled_rounds, 1)))
+        return max(0.08, min(0.88, goes_distance_probability + (1 - goes_distance_probability) * (1 - round_share) * 0.55))
+    if market_key == "under_rounds":
+        round_line = line if line is not None else scheduled_rounds - 0.5
+        round_share = max(0.15, min(0.95, round_line / max(scheduled_rounds, 1)))
+        over_probability = max(0.08, min(0.88, goes_distance_probability + (1 - goes_distance_probability) * (1 - round_share) * 0.55))
+        return 1 - over_probability
+    if market_key == "round_group":
+        return max(0.12, min(0.55, does_not_go_distance * 0.50))
+    if market_key == "exact_round":
+        return max(0.04, min(0.25, does_not_go_distance / max(scheduled_rounds, 1)))
+    if market_key == "double_chance":
+        if "ko" in selection_text or "tko" in selection_text:
+            return max(0.10, min(0.75, ko_tko_probability + submission_probability * 0.45))
+        return max(0.10, min(0.75, ko_tko_probability + decision_probability * 0.45))
+    if market_key == "knockdown_prop":
+        return max(0.12, min(0.72, ko_tko_probability + does_not_go_distance * 0.18))
+    if market_key == "takedown_prop":
+        return max(0.12, min(0.72, submission_probability + 0.22))
+    if market_key == "significant_strikes_prop":
+        return max(0.15, min(0.78, goes_distance_probability + 0.10))
+    if market_key == "submission_attempt_prop":
+        return max(0.10, min(0.70, submission_probability + 0.18))
+    return fighter_win_probability
+
+
+def _estimate_combat_finish_model(
+    *,
+    sport: str,
+    input_stats: dict[str, Any],
+    payload: dict[str, Any],
+    market: Any,
+    odds_american: Optional[float],
+    bankroll: float,
+    risk_profile: str,
+) -> Optional[dict[str, Any]]:
+    missing = _combat_full_inputs_missing(input_stats, payload) + _combat_market_specific_missing(market, input_stats, payload)
+    if missing:
+        return None
+    implied_probability = implied_probability_from_american(odds_american) if odds_american is not None else None
+    if implied_probability is None:
+        return None
+
+    fighter_elo = _safe_float(input_stats.get("fighter_elo"), 1500) or 1500
+    opponent_elo = _safe_float(input_stats.get("opponent_elo"), 1500) or 1500
+    fighter_recent = _combat_pct(input_stats.get("fighter_recent_win_percent"), 0.50)
+    opponent_recent = _combat_pct(input_stats.get("opponent_recent_win_percent"), 0.50)
+    fighter_finish = _combat_pct(input_stats.get("fighter_finish_rate"), 0.45)
+    opponent_finish = _combat_pct(input_stats.get("opponent_finish_rate"), 0.45)
+    fighter_ko = _combat_pct(input_stats.get("fighter_ko_tko_rate"), 0.25)
+    opponent_ko = _combat_pct(input_stats.get("opponent_ko_tko_rate"), 0.25)
+    fighter_sub = 0.0 if sport == "boxing" else _combat_pct(input_stats.get("fighter_submission_rate"), 0.15)
+    opponent_sub = 0.0 if sport == "boxing" else _combat_pct(input_stats.get("opponent_submission_rate"), 0.15)
+    fighter_decision = _combat_pct(input_stats.get("fighter_decision_rate"), 0.35)
+    opponent_decision = _combat_pct(input_stats.get("opponent_decision_rate"), 0.35)
+
+    striking_edge = (
+        (_safe_float(input_stats.get("fighter_strikes_landed_per_min"), 0) or 0)
+        - (_safe_float(input_stats.get("opponent_strikes_landed_per_min"), 0) or 0)
+        - ((_safe_float(input_stats.get("fighter_strikes_absorbed_per_min"), 0) or 0) - (_safe_float(input_stats.get("opponent_strikes_absorbed_per_min"), 0) or 0)) * 0.55
+        + ((_combat_pct(input_stats.get("fighter_striking_accuracy"), 0.45) - _combat_pct(input_stats.get("opponent_striking_accuracy"), 0.45)) * 6)
+        + ((_combat_pct(input_stats.get("fighter_striking_defense"), 0.55) - _combat_pct(input_stats.get("opponent_striking_defense"), 0.55)) * 5)
+    )
+    grappling_edge = (
+        ((_safe_float(input_stats.get("fighter_takedown_average"), 0) or 0) - (_safe_float(input_stats.get("opponent_takedown_average"), 0) or 0)) * 0.18
+        + ((_combat_pct(input_stats.get("fighter_takedown_accuracy"), 0.35) - _combat_pct(input_stats.get("opponent_takedown_accuracy"), 0.35)) * 2.2)
+        + ((_combat_pct(input_stats.get("fighter_takedown_defense"), 0.65) - _combat_pct(input_stats.get("opponent_takedown_defense"), 0.65)) * 2.0)
+        + ((_safe_float(input_stats.get("fighter_submission_average"), 0) or 0) - (_safe_float(input_stats.get("opponent_submission_average"), 0) or 0)) * 0.18
+    )
+    if sport == "boxing":
+        grappling_edge = 0
+    age_edge = ((_safe_float(input_stats.get("opponent_age"), 30) or 30) - (_safe_float(input_stats.get("fighter_age"), 30) or 30)) * 0.018
+    reach_edge = ((_safe_float(input_stats.get("fighter_reach"), 72) or 72) - (_safe_float(input_stats.get("opponent_reach"), 72) or 72)) * 0.018
+    height_edge = ((_safe_float(input_stats.get("fighter_height"), 70) or 70) - (_safe_float(input_stats.get("opponent_height"), 70) or 70)) * 0.010
+    rest_edge = ((_safe_float(input_stats.get("fighter_days_rest"), 90) or 90) - (_safe_float(input_stats.get("opponent_days_rest"), 90) or 90)) * 0.0008
+    cardio_edge = ((_safe_float(input_stats.get("cardio_rating"), 70) or 70) - 70) * 0.006
+    explicit_style_edge = ((_safe_float(input_stats.get("striking_advantage"), 0) or 0) + (_safe_float(input_stats.get("grappling_advantage"), 0) or 0)) * 0.01
+    injury_penalty = -0.12 if str(input_stats.get("fighter_injury_status", "")).lower() not in {"healthy", "clear", "none"} else 0
+    opponent_injury_bonus = 0.08 if str(input_stats.get("opponent_injury_status", "")).lower() not in {"healthy", "clear", "none"} else 0
+
+    model_score = (
+        (fighter_elo - opponent_elo) / 450
+        + (fighter_recent - opponent_recent) * 0.55
+        + striking_edge * 0.08
+        + grappling_edge * 0.11
+        + age_edge
+        + reach_edge
+        + height_edge
+        + rest_edge
+        + cardio_edge
+        + explicit_style_edge
+        + injury_penalty
+        + opponent_injury_bonus
+    )
+    raw_win_probability = 1 / (1 + math.exp(-model_score))
+    market_anchor = _safe_float(input_stats.get("no_vig_market_probability"))
+    market_anchor_is_no_vig = market_anchor is not None
+    if market_anchor is None:
+        market_anchor = _safe_float(input_stats.get("prediction_market_probability") or input_stats.get("kalshi_probability"))
+    if market_anchor is None:
+        market_anchor = 0.50
+    if market_anchor > 1:
+        market_anchor = market_anchor / 100
+    market_weight = 0.30 if market_anchor_is_no_vig else 0.10
+    calibrated_win_probability = raw_win_probability * (1 - market_weight) + market_anchor * market_weight
+    abs_score = abs(model_score)
+    if abs_score < 0.45:
+        low_cap, high_cap = 0.36, 0.64
+    elif abs_score < 0.90:
+        low_cap, high_cap = 0.28, 0.74
+    else:
+        low_cap, high_cap = 0.20, 0.84
+    flags = []
+    probability_cap_reason = None
+    final_win_probability = max(low_cap, min(high_cap, calibrated_win_probability))
+    if final_win_probability != calibrated_win_probability:
+        flags.append("combat probability cap applied")
+        probability_cap_reason = f"fighter model score {round(model_score, 3)}"
+    if raw_win_probability > 0.88 or raw_win_probability < 0.12:
+        flags.append("raw probability extreme")
+
+    fighter_win_probability = final_win_probability
+    opponent_win_probability = 1 - fighter_win_probability
+    finish_pressure = max(0.08, min(0.92, (fighter_finish + opponent_finish) / 2))
+    durability = _safe_float(input_stats.get("chin_durability"), 70) or 70
+    cardio = _safe_float(input_stats.get("cardio_rating"), 70) or 70
+    scheduled_rounds = _safe_float(input_stats.get("scheduled_rounds"), 3) or 3
+    pace = _safe_float(input_stats.get("pace_rating"), 70) or 70
+    does_not_go_distance = max(0.12, min(0.82, finish_pressure * 0.72 + (pace - 70) * 0.002 - (durability - 70) * 0.002 - (cardio - 70) * 0.001))
+    if scheduled_rounds >= 5:
+        does_not_go_distance = min(0.88, does_not_go_distance + 0.05)
+    goes_distance_probability = 1 - does_not_go_distance
+    finish_total = max(0.01, fighter_ko + fighter_sub + fighter_decision)
+    ko_share = fighter_ko / finish_total
+    sub_share = fighter_sub / finish_total
+    decision_share = fighter_decision / finish_total
+    ko_tko_probability = fighter_win_probability * (does_not_go_distance * ko_share + 0.04)
+    submission_probability = fighter_win_probability * (does_not_go_distance * sub_share + 0.02)
+    decision_probability = max(0.02, fighter_win_probability - ko_tko_probability - submission_probability)
+    if sport == "boxing":
+        submission_probability = 0.0
+        decision_probability = max(0.02, fighter_win_probability - ko_tko_probability)
+
+    line = _safe_float(payload.get("line"), _safe_float(input_stats.get("line")))
+    market_probability = _combat_market_probability(
+        market=str(market or "moneyline"),
+        selection=payload.get("selection") or input_stats.get("selection"),
+        fighter_win_probability=fighter_win_probability,
+        opponent_win_probability=opponent_win_probability,
+        ko_tko_probability=ko_tko_probability,
+        submission_probability=submission_probability,
+        decision_probability=decision_probability,
+        goes_distance_probability=goes_distance_probability,
+        scheduled_rounds=scheduled_rounds,
+        line=line,
+    )
+    market_key = _normal_market_key(market)
+    if market_key == "moneyline":
+        market_probability = fighter_win_probability
+    else:
+        market_probability = max(0.03, min(0.88, market_probability))
+
+    confidence = 72.0
+    risk_flags = []
+    for flag, penalty in [
+        ("short notice", 8),
+        ("weight cut risk", 7),
+        ("travel risk", 4),
+        ("altitude risk", 4),
+    ]:
+        key = flag.replace(" ", "_")
+        if input_stats.get(key):
+            risk_flags.append(flag)
+            confidence -= penalty
+    if str(input_stats.get("fighter_injury_status", "healthy")).lower() not in {"healthy", "clear", "none"}:
+        risk_flags.append("injury uncertainty")
+        confidence -= 12
+    if (_safe_float(input_stats.get("fighter_days_rest"), 90) or 90) > 365:
+        risk_flags.append("large layoff")
+        confidence -= 6
+    if market_key in {"exact_round", "round_group", "method_of_victory", "knockdown_prop", "takedown_prop", "significant_strikes_prop", "submission_attempt_prop"}:
+        risk_flags.append("volatile market")
+        confidence -= 5
+    if not input_stats.get("book_count") or (_safe_float(input_stats.get("book_count"), 0) or 0) < 5:
+        risk_flags.append("book count too low")
+        confidence -= 3
+    if not input_stats.get("best_available_odds"):
+        risk_flags.append("best available odds missing")
+        confidence -= 2
+    confidence = max(1, min(95, round(confidence, 2)))
+    risk = "high" if risk_flags or market_key in {"exact_round", "round_group"} else "moderate"
+    edge = calculate_edge_percent(market_probability, implied_probability)
+    edge_threshold, confidence_threshold = _nfl_thresholds(risk_profile)
+    no_bet_flags = []
+    if edge is not None and edge <= 0:
+        no_bet_flags.append("negative edge")
+    elif edge is not None and edge < edge_threshold:
+        no_bet_flags.append("edge too small")
+    if confidence < confidence_threshold:
+        no_bet_flags.append("low confidence")
+    if "injury uncertainty" in risk_flags and market_key not in {"moneyline", "fight_goes_distance", "fight_does_not_go_distance"}:
+        no_bet_flags.append("risk too high")
+    suggested = 0.0 if no_bet_flags else calculate_suggested_stake(
+        bankroll=bankroll,
+        american_odds=odds_american,
+        true_probability=market_probability,
+        risk_profile=risk_profile,
+        confidence=confidence,
+    )
+    if suggested <= 0 and not no_bet_flags and edge is not None and edge >= edge_threshold and confidence >= confidence_threshold:
+        suggested = round(max(1.0, bankroll * 0.005), 2)
+
+    return {
+        "model_status": "active",
+        "true_probability": market_probability,
+        "implied_probability": implied_probability,
+        "edge": edge,
+        "confidence": confidence,
+        "risk": risk,
+        "suggested_stake": suggested,
+        "no_bet_flags": no_bet_flags,
+        "raw_model_probability": raw_win_probability,
+        "calibrated_model_probability": calibrated_win_probability,
+        "probability_calibration_applied": True,
+        "probability_sanity_flags": list(dict.fromkeys(flags)),
+        "probability_cap_reason": probability_cap_reason,
+        "market_anchor_probability": market_anchor,
+        "fighter_win_probability": fighter_win_probability,
+        "opponent_win_probability": opponent_win_probability,
+        "ko_tko_probability": ko_tko_probability,
+        "submission_probability": submission_probability,
+        "decision_probability": decision_probability,
+        "goes_distance_probability": goes_distance_probability,
+        "does_not_go_distance_probability": 1 - goes_distance_probability,
+        "over_rounds_probability": _combat_market_probability(market="over_rounds", selection="Over", fighter_win_probability=fighter_win_probability, opponent_win_probability=opponent_win_probability, ko_tko_probability=ko_tko_probability, submission_probability=submission_probability, decision_probability=decision_probability, goes_distance_probability=goes_distance_probability, scheduled_rounds=scheduled_rounds, line=line),
+        "under_rounds_probability": _combat_market_probability(market="under_rounds", selection="Under", fighter_win_probability=fighter_win_probability, opponent_win_probability=opponent_win_probability, ko_tko_probability=ko_tko_probability, submission_probability=submission_probability, decision_probability=decision_probability, goes_distance_probability=goes_distance_probability, scheduled_rounds=scheduled_rounds, line=line),
+        "risk_flags": risk_flags,
+        "input_coverage": 1.0,
+        "provider_enrichment": {"provider_status": "not_provided", "provider_enrichment_present": []},
+    }
 
 
 def _calibrate_nfl_probability(
@@ -5188,6 +5566,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         soccer_model = None
         nhl_model = None
         tennis_model = None
+        combat_model = None
         if sport == "basketball_nba":
             nba_model = _estimate_nba_possession_model(
                 input_stats=input_stats,
@@ -5242,6 +5621,16 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
                 bankroll=bankroll,
                 risk_profile=payload.get("risk_profile") or "moderate",
             )
+        elif sport in {"mma_mixed_martial_arts", "boxing"}:
+            combat_model = _estimate_combat_finish_model(
+                sport=sport,
+                input_stats=input_stats,
+                payload=payload,
+                market=market,
+                odds_american=odds_american,
+                bankroll=bankroll,
+                risk_profile=payload.get("risk_profile") or "moderate",
+            )
 
         if nba_model:
             component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
@@ -5254,6 +5643,8 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         elif nhl_model:
             component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
         elif tennis_model:
+            component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
+        elif combat_model:
             component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
         elif sport == "basketball_nba":
             component_status = COMPONENT_STATUS_INACTIVE
@@ -5273,6 +5664,9 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         elif sport == "tennis":
             component_status = COMPONENT_STATUS_INACTIVE
             missing_inputs = _tennis_full_inputs_missing(input_stats, payload) + _tennis_market_specific_missing(market, input_stats, payload)
+        elif sport in {"mma_mixed_martial_arts", "boxing"}:
+            component_status = COMPONENT_STATUS_INACTIVE
+            missing_inputs = _combat_full_inputs_missing(input_stats, payload) + _combat_market_specific_missing(market, input_stats, payload)
         else:
             component_status, missing_inputs = _component_status(config["required_inputs"], input_stats)
         backtest_status = "passed" if input_stats.get("backtest_proof") else "not_started"
@@ -5320,9 +5714,15 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             edge = tennis_model["edge"]
             suggested = tennis_model["suggested_stake"]
             no_bet_flags = list(tennis_model["no_bet_flags"])
+        elif combat_model:
+            true_probability = combat_model["true_probability"]
+            implied_probability = combat_model["implied_probability"]
+            edge = combat_model["edge"]
+            suggested = combat_model["suggested_stake"]
+            no_bet_flags = list(combat_model["no_bet_flags"])
         if implied_probability is not None and true_probability is not None and odds_american is not None:
             edge = edge_percentage(true_probability, implied_probability)
-            if not (nba_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model):
+            if not (nba_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model):
                 suggested = suggested_stake_with_risk_controls(
                     bankroll=bankroll,
                     american_odds=odds_american,
@@ -5339,7 +5739,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         social_input_stats = dict(input_stats)
         social_input_stats["edge"] = edge
         social_layer = build_social_crowd_calibration_layer(social_input_stats)
-        if social_layer["sentiment_no_bet_flags"] and not (nba_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model):
+        if social_layer["sentiment_no_bet_flags"] and not (nba_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model):
             no_bet_flags = list(dict.fromkeys(no_bet_flags + social_layer["sentiment_no_bet_flags"]))
 
         risk_controller = build_risk_controller(bankroll, unit_size, payload.get("risk_profile") or "conservative")
@@ -5356,7 +5756,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         })
         wee_willie = build_wee_willie_market_weakness_detector(detector_payload)
         manual_ticket = build_manual_ticket(detector_payload, suggested)
-        active_model = nba_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model
+        active_model = nba_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model
         confidence = active_model["confidence"] if active_model else input_stats.get("confidence")
         if tennis_model and _safe_float(confidence) is None:
             confidence = 0.0
@@ -5368,7 +5768,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         model_status = active_model["model_status"] if active_model else component_status
         edge_threshold, confidence_threshold = (
             _nfl_thresholds(payload.get("risk_profile") or "moderate")
-            if (nfl_model or mlb_model or soccer_model or nhl_model or tennis_model)
+            if (nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model)
             else (2.5, 70)
         )
         event_value = payload.get("event_id") or payload.get("event") or input_stats.get("event")
@@ -5485,7 +5885,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
                 "market": market,
                 "selection": selection_value,
                 "confidence": confidence,
-            }] if _normal_market_key(market) == "player_prop" else [],
+            }] if _normal_market_key(market) in {"player_prop", "knockdown_prop", "takedown_prop", "significant_strikes_prop", "submission_attempt_prop"} else [],
             "target_alt_lines": [{
                 "sport": sport,
                 "event": event_value,
@@ -5524,7 +5924,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             "status": evaluated_status,
             **officiating_analysis["officiating_logbook_fields"],
         })
-        probability_model = nfl_model or mlb_model or soccer_model or nhl_model or tennis_model
+        probability_model = nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model
         if probability_model:
             logbook_ready_row.update({
                 "raw_model_probability": probability_model["raw_model_probability"],
@@ -5597,6 +5997,24 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
                 "fatigue_adjustment_applied": tennis_model["fatigue_adjustment_applied"],
                 "injury_adjustment_applied": tennis_model["injury_adjustment_applied"],
                 "weather_adjustment_applied": tennis_model["weather_adjustment_applied"],
+            })
+        if combat_model:
+            logbook_ready_row.update({
+                "model_level": config["model_level"],
+                "probability_type": _normal_market_key(market),
+                "risk_profile": payload.get("risk_profile") or "moderate",
+                "fighter_win_probability": combat_model["fighter_win_probability"],
+                "opponent_win_probability": combat_model["opponent_win_probability"],
+                "ko_tko_probability": combat_model["ko_tko_probability"],
+                "submission_probability": combat_model["submission_probability"],
+                "decision_probability": combat_model["decision_probability"],
+                "goes_distance_probability": combat_model["goes_distance_probability"],
+                "does_not_go_distance_probability": combat_model["does_not_go_distance_probability"],
+                "over_rounds_probability": combat_model["over_rounds_probability"],
+                "under_rounds_probability": combat_model["under_rounds_probability"],
+                "calibration_applied": combat_model["probability_calibration_applied"],
+                "risk_flags": combat_model["risk_flags"],
+                "notes": "; ".join(combat_model["risk_flags"]) if combat_model["risk_flags"] else "",
             })
         if nfl_model:
             logbook_ready_row.update({
@@ -5707,6 +6125,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             "soccer_input_contract": deepcopy(SOCCER_INPUT_CONTRACT) if sport == "soccer" else None,
             "nhl_input_contract": deepcopy(NHL_INPUT_CONTRACT) if sport == "icehockey_nhl" else None,
             "tennis_input_contract": deepcopy(TENNIS_INPUT_CONTRACT) if sport == "tennis" else None,
+            "combat_input_contract": deepcopy(COMBAT_INPUT_CONTRACT) if sport in {"mma_mixed_martial_arts", "boxing"} else None,
             "input_coverage": active_model.get("input_coverage") if active_model else None,
             "suggested_stake": suggested if confirmed_bets else 0,
             "recommended_unit_size": risk_controller["recommended_unit_size"],
@@ -5735,6 +6154,16 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             "officiating_analysis": officiating_analysis,
             **officiating_fields,
             "provider_enrichment": active_model.get("provider_enrichment") if active_model else {"provider_status": "not_provided", "provider_enrichment_present": []},
+            "fighter_win_probability": combat_model["fighter_win_probability"] if combat_model else None,
+            "opponent_win_probability": combat_model["opponent_win_probability"] if combat_model else None,
+            "ko_tko_probability": combat_model["ko_tko_probability"] if combat_model else None,
+            "submission_probability": combat_model["submission_probability"] if combat_model else None,
+            "decision_probability": combat_model["decision_probability"] if combat_model else None,
+            "goes_distance_probability": combat_model["goes_distance_probability"] if combat_model else None,
+            "does_not_go_distance_probability": combat_model["does_not_go_distance_probability"] if combat_model else None,
+            "over_rounds_probability": combat_model["over_rounds_probability"] if combat_model else None,
+            "under_rounds_probability": combat_model["under_rounds_probability"] if combat_model else None,
+            "risk_flags": combat_model["risk_flags"] if combat_model else [],
             "manual_ticket_preview": manual_ticket,
             "manual_review_required": manual_review_flags,
             "full_board_preview": full_board,
@@ -5742,7 +6171,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         "target_lines": full_board["target_lines"],
         "target_props": full_board["target_props"],
         "target_alt_lines": full_board["target_alt_lines"],
-        "no_bets": no_bets if tennis_model else simple_no_bets,
+        "no_bets": no_bets if (tennis_model or combat_model) else simple_no_bets,
         "best_correlated_parlay": full_board["best_correlated_parlay"],
         "value_ranking": full_board["value_ranking"],
         "risk_ranking": full_board["risk_ranking"],

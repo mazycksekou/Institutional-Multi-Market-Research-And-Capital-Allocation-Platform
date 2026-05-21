@@ -417,6 +417,11 @@ class TestSportAnalysisEndpoint(unittest.TestCase):
                 "nba": "basketball_nba",
                 "soccer": "soccer",
                 "mlb": "baseball_mlb",
+                "ufc": "mma_mixed_martial_arts",
+                "mma": "mma_mixed_martial_arts",
+                "mixed_martial_arts": "mma_mixed_martial_arts",
+                "combat_sports": "mma_mixed_martial_arts",
+                "boxing": "boxing",
             }
             for submitted, expected in cases.items():
                 response = client.post(

@@ -44,6 +44,11 @@ class TestSportModelRouting(unittest.TestCase):
             "nhl": "icehockey_nhl",
             "epl": "soccer",
             "ucl": "soccer",
+            "ufc": "mma_mixed_martial_arts",
+            "mma": "mma_mixed_martial_arts",
+            "mixed_martial_arts": "mma_mixed_martial_arts",
+            "combat_sports": "mma_mixed_martial_arts",
+            "boxing": "boxing",
             "valorant": "esports",
             "csgo": "esports",
             "lol": "esports",
@@ -69,8 +74,8 @@ class TestSportModelRouting(unittest.TestCase):
         self.assertIn("goalie adjustment", hockey["model_components"])
         self.assertIn("special teams adjustment", hockey["model_components"])
         self.assertEqual(registry.get_sport_model_config("tennis")["primary_model_type"], "point_game_set_simulation")
-        self.assertEqual(registry.get_sport_model_config("mma_mixed_martial_arts")["model_family"], "Combat classification model family")
-        self.assertEqual(registry.get_sport_model_config("boxing")["model_family"], "Combat classification model family")
+        self.assertEqual(registry.get_sport_model_config("mma_mixed_martial_arts")["model_family"], "fighter_striking_grappling_finish_model")
+        self.assertEqual(registry.get_sport_model_config("boxing")["model_family"], "fighter_striking_grappling_finish_model")
         self.assertEqual(registry.get_sport_model_config("golf")["model_family"], "Strokes gained simulation")
         self.assertEqual(registry.get_sport_model_config("formula1")["model_family"], "Race simulation")
         self.assertEqual(registry.get_sport_model_config("cricket")["model_family"], "Pitch toss innings model family")

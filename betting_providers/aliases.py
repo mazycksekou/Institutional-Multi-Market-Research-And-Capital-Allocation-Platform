@@ -16,6 +16,11 @@ SPORT_ALIASES = {
     "ahl": "icehockey_ahl",
     "ufc": "mma_mixed_martial_arts",
     "mma": "mma_mixed_martial_arts",
+    "mixed_martial_arts": "mma_mixed_martial_arts",
+    "mixed martial arts": "mma_mixed_martial_arts",
+    "combat_sports": "mma_mixed_martial_arts",
+    "combat sports": "mma_mixed_martial_arts",
+    "boxing": "boxing_boxing",
     "epl": "soccer_epl",
     "premier league": "soccer_epl",
     "mls": "soccer_usa_mls",
@@ -209,9 +214,10 @@ SPORT_LABELS = {
     "soccer_epl": "EPL",
     "soccer_usa_mls": "MLS",
     "mma_mixed_martial_arts": "UFC/MMA",
+    "boxing_boxing": "Boxing",
 }
 
-UNKNOWN_SPORT_EXAMPLES = ["mlb", "nba", "nfl", "nhl", "ufc", "epl", "soccer_italy_serie_a", "baseball_mlb"]
+UNKNOWN_SPORT_EXAMPLES = ["mlb", "nba", "nfl", "nhl", "ufc", "boxing", "epl", "soccer_italy_serie_a", "baseball_mlb"]
 
 
 def resolve_sport_key(sport: Optional[str], league: Optional[str]) -> tuple[Optional[str], Optional[str], Optional[dict]]:
