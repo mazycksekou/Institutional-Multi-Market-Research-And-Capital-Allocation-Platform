@@ -87,6 +87,12 @@ SPORT_ALIASES = {
     "tennis": "tennis_atp",
     "golf": "golf_pga",
     "pga": "golf_pga",
+    "pga_tour": "golf_pga",
+    "liv": "golf_pga",
+    "liv_golf": "golf_pga",
+    "dp_world_tour": "golf_pga",
+    "european_tour": "golf_pga",
+    "lpga": "golf_pga",
 }
 
 SPORT_LABELS = {

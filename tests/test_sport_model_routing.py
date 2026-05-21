@@ -49,6 +49,13 @@ class TestSportModelRouting(unittest.TestCase):
             "mixed_martial_arts": "mma_mixed_martial_arts",
             "combat_sports": "mma_mixed_martial_arts",
             "boxing": "boxing",
+            "pga": "golf",
+            "pga_tour": "golf",
+            "liv": "golf",
+            "liv_golf": "golf",
+            "dp_world_tour": "golf",
+            "european_tour": "golf",
+            "lpga": "golf",
             "valorant": "esports",
             "csgo": "esports",
             "lol": "esports",
@@ -76,7 +83,7 @@ class TestSportModelRouting(unittest.TestCase):
         self.assertEqual(registry.get_sport_model_config("tennis")["primary_model_type"], "point_game_set_simulation")
         self.assertEqual(registry.get_sport_model_config("mma_mixed_martial_arts")["model_family"], "fighter_striking_grappling_finish_model")
         self.assertEqual(registry.get_sport_model_config("boxing")["model_family"], "fighter_striking_grappling_finish_model")
-        self.assertEqual(registry.get_sport_model_config("golf")["model_family"], "Strokes gained simulation")
+        self.assertEqual(registry.get_sport_model_config("golf")["model_family"], "strokes_gained_course_fit_monte_carlo_model")
         self.assertEqual(registry.get_sport_model_config("formula1")["model_family"], "Race simulation")
         self.assertEqual(registry.get_sport_model_config("cricket")["model_family"], "Pitch toss innings model family")
         self.assertIn("game title routing placeholder", registry.get_sport_model_config("esports")["model_components"])

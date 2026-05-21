@@ -36,6 +36,19 @@ SPORT_ALIASES = {
     "ipl": "cricket_ipl",
     "nrl": "rugbyleague_nrl",
     "afl": "aussierules_afl",
+    "golf": "golf_masters_tournament_winner",
+    "golf_pga": "golf_masters_tournament_winner",
+    "pga": "golf_masters_tournament_winner",
+    "pga_tour": "golf_masters_tournament_winner",
+    "pga tour": "golf_masters_tournament_winner",
+    "liv": "golf_masters_tournament_winner",
+    "liv_golf": "golf_masters_tournament_winner",
+    "liv golf": "golf_masters_tournament_winner",
+    "dp_world_tour": "golf_masters_tournament_winner",
+    "dp world tour": "golf_masters_tournament_winner",
+    "european_tour": "golf_masters_tournament_winner",
+    "european tour": "golf_masters_tournament_winner",
+    "lpga": "golf_masters_tournament_winner",
 }
 
 THE_ODDS_API_SPORT_KEYS = {
@@ -215,6 +228,7 @@ SPORT_LABELS = {
     "soccer_usa_mls": "MLS",
     "mma_mixed_martial_arts": "UFC/MMA",
     "boxing_boxing": "Boxing",
+    "golf_masters_tournament_winner": "Golf",
 }
 
 UNKNOWN_SPORT_EXAMPLES = ["mlb", "nba", "nfl", "nhl", "ufc", "boxing", "epl", "soccer_italy_serie_a", "baseball_mlb"]

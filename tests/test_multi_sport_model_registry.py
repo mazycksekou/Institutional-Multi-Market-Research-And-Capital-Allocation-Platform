@@ -35,10 +35,10 @@ class TestMultiSportModelRegistry(unittest.TestCase):
         self.assertIsNotNone(mlb)
         self.assertEqual(mlb["model_level"], "projection_ready")
 
-    def test_only_activated_nba_nfl_mlb_soccer_nhl_tennis_and_combat_allow_confirmed_bets(self):
+    def test_only_activated_nba_nfl_mlb_soccer_nhl_tennis_combat_and_golf_allow_confirmed_bets(self):
         sports = registry.get_sports_model_registry_response()["sports"]
         enabled = [sport["sport_key"] for sport in sports if sport["confirmed_bets_allowed"]]
-        self.assertEqual(enabled, ["baseball_mlb", "basketball_nba", "americanfootball_nfl", "soccer", "icehockey_nhl", "tennis", "mma_mixed_martial_arts", "boxing"])
+        self.assertEqual(enabled, ["baseball_mlb", "basketball_nba", "americanfootball_nfl", "soccer", "icehockey_nhl", "tennis", "mma_mixed_martial_arts", "boxing", "golf"])
         self.assertTrue(registry.confirmed_bets_allowed("baseball_mlb"))
         self.assertTrue(registry.confirmed_bets_allowed("basketball_nba"))
         self.assertTrue(registry.confirmed_bets_allowed("americanfootball_nfl"))
@@ -47,10 +47,11 @@ class TestMultiSportModelRegistry(unittest.TestCase):
         self.assertTrue(registry.confirmed_bets_allowed("tennis"))
         self.assertTrue(registry.confirmed_bets_allowed("mma_mixed_martial_arts"))
         self.assertTrue(registry.confirmed_bets_allowed("boxing"))
+        self.assertTrue(registry.confirmed_bets_allowed("golf"))
         self.assertTrue(all(
             not registry.confirmed_bets_allowed(sport["sport_key"])
             for sport in sports
-            if sport["sport_key"] not in {"baseball_mlb", "basketball_nba", "americanfootball_nfl", "soccer", "icehockey_nhl", "tennis", "mma_mixed_martial_arts", "boxing"}
+            if sport["sport_key"] not in {"baseball_mlb", "basketball_nba", "americanfootball_nfl", "soccer", "icehockey_nhl", "tennis", "mma_mixed_martial_arts", "boxing", "golf"}
         ))
 
     def test_unsupported_sport_helper_behavior_is_clean(self):
@@ -73,9 +74,9 @@ class TestMultiSportModelRegistry(unittest.TestCase):
         self.assertTrue(response["ok"])
         self.assertEqual(response["endpoint"], "getSportsModelRegistry")
         self.assertEqual(response["summary"]["total_sports"], 15)
-        self.assertEqual(response["summary"]["confirmed_bet_enabled_sports"], 8)
+        self.assertEqual(response["summary"]["confirmed_bet_enabled_sports"], 9)
         self.assertEqual(response["summary"]["market_derived_only_sports"], 0)
-        self.assertEqual(response["summary"]["not_built_sports"], 7)
+        self.assertEqual(response["summary"]["not_built_sports"], 6)
         self.assertEqual(response["error"], None)
         self.assertEqual(response["detail"], None)
 

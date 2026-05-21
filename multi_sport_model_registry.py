@@ -80,6 +80,18 @@ SPORT_ALIASES = {
     "mixed martial arts": "mma_mixed_martial_arts",
     "combat_sports": "mma_mixed_martial_arts",
     "combat sports": "mma_mixed_martial_arts",
+    "pga": "golf",
+    "golf_pga": "golf",
+    "pga_tour": "golf",
+    "pga tour": "golf",
+    "liv": "golf",
+    "liv_golf": "golf",
+    "liv golf": "golf",
+    "dp_world_tour": "golf",
+    "dp world tour": "golf",
+    "european_tour": "golf",
+    "european tour": "golf",
+    "lpga": "golf",
     "epl": "soccer",
     "ucl": "soccer",
     "football": "soccer",
@@ -1302,6 +1314,56 @@ COMBAT_INPUT_CONTRACT = {
     "live_betting_inputs": ["live_round", "live_time_remaining", "live_knockdowns", "live_control_time", "live_strike_counts"],
 }
 
+GOLF_REQUIRED_CORE_INPUTS = [
+    "player", "field_size", "event", "course", "market", "selection",
+    "player_world_rank", "player_sg_total", "player_sg_off_tee", "player_sg_approach",
+    "player_sg_around_green", "player_sg_putting", "player_recent_form_rank",
+    "player_recent_scoring_average", "course_fit_score", "course_history_score",
+    "field_strength", "cut_line_projection", "weather_wind_rating", "course_difficulty_rating",
+]
+
+GOLF_REQUIRED_MARKET_SPECIFIC_INPUTS = {
+    "outright_winner": ["odds_american"],
+    "top_5": ["odds_american"],
+    "top_10": ["odds_american"],
+    "top_20": ["odds_american"],
+    "make_cut": ["odds_american"],
+    "miss_cut": ["odds_american"],
+    "tournament_matchup": ["opponent", "opponent_world_rank", "opponent_sg_total", "opponent_sg_off_tee", "opponent_sg_approach", "opponent_sg_around_green", "opponent_sg_putting", "opponent_recent_form_rank", "opponent_recent_scoring_average", "opponent_course_fit_score", "opponent_course_history_score", "odds_american"],
+    "round_matchup": ["opponent", "opponent_world_rank", "opponent_sg_total", "opponent_sg_off_tee", "opponent_sg_approach", "opponent_sg_around_green", "opponent_sg_putting", "opponent_recent_form_rank", "opponent_recent_scoring_average", "opponent_course_fit_score", "opponent_course_history_score", "odds_american"],
+    "three_ball": ["opponent", "opponent_world_rank", "opponent_sg_total", "opponent_sg_off_tee", "opponent_sg_approach", "opponent_sg_around_green", "opponent_sg_putting", "opponent_recent_form_rank", "opponent_recent_scoring_average", "opponent_course_fit_score", "opponent_course_history_score", "odds_american"],
+    "first_round_leader": ["odds_american"],
+    "top_n_finish": ["top_n", "odds_american"],
+    "finishing_position": ["line", "odds_american"],
+    "player_prop": ["prop_type", "line", "odds_american"],
+    "birdies_prop": ["line", "odds_american"],
+    "eagles_prop": ["line", "odds_american"],
+    "fairways_hit_prop": ["line", "odds_american"],
+    "greens_in_regulation_prop": ["line", "odds_american"],
+    "putts_prop": ["line", "odds_american"],
+    "round_score_prop": ["line", "odds_american"],
+}
+
+GOLF_OPTIONAL_ENRICHMENT_INPUTS = [
+    "opponent", "opponent_world_rank", "opponent_sg_total", "opponent_sg_off_tee", "opponent_sg_approach",
+    "opponent_sg_around_green", "opponent_sg_putting", "opponent_recent_form_rank", "opponent_recent_scoring_average",
+    "opponent_course_fit_score", "opponent_course_history_score", "tee_time_wave", "weather_draw", "course_firmness",
+    "rain_risk", "injury_status", "player_withdrawal_risk", "social_sentiment", "crowd_consensus",
+    "public_betting_percent", "sharp_money_percent", "no_vig_market_probability", "book_count",
+    "best_available_odds", "current_odds", "opening_odds",
+]
+
+GOLF_INPUT_CONTRACT = {
+    "required_core_inputs": GOLF_REQUIRED_CORE_INPUTS,
+    "required_market_specific_inputs": GOLF_REQUIRED_MARKET_SPECIFIC_INPUTS,
+    "optional_enrichment_inputs": GOLF_OPTIONAL_ENRICHMENT_INPUTS,
+    "provider_enrichment_inputs": ["best_available_odds", "current_odds", "opening_odds", "no_vig_market_probability", "book_count"],
+    "officiating_inputs": ["rules_officials", "course_ruling_environment"],
+    "referee_inputs": ["rules_officials"],
+    "social_crowd_inputs": ["public_betting_percent", "sharp_money_percent", "social_sentiment", "crowd_consensus"],
+    "live_betting_inputs": ["live_round", "live_score_to_par", "live_position", "holes_remaining"],
+}
+
 SPORT_PROP_INPUTS = {
     "baseball_mlb": ["player projection", "lineup status", "opponent matchup", "park factor", "weather"],
     "basketball_nba": ["minutes projection", "usage", "pace", "defensive matchup", "injury report"],
@@ -1903,16 +1965,19 @@ SPORT_MODEL_REGISTRY = [
     _sport(
         "golf",
         "Golf",
-        "strokes_gained_simulation",
-        "Strokes gained simulation",
-        "strokes_gained",
-        ["outrights", "matchups", "top 5", "top 10", "top 20", "make cut", "first round leader"],
-        ["top finish", "make cut", "matchup", "round score", "birdies where available"],
-        ["strokes gained off tee", "strokes gained approach", "strokes gained around green", "strokes gained putting", "course fit", "weather", "field strength"],
-        ["recent form", "course history"],
-        ["course fit", "driving distance", "accuracy", "approach", "around the green", "putting", "recent form", "weather", "field strength"],
-        "strokes gained simulation",
+        "strokes_gained_course_fit_monte_carlo_model",
+        "strokes_gained_course_fit_monte_carlo_model",
+        "strokes_gained_course_fit_monte_carlo",
+        ["outright_winner", "top_5", "top_10", "top_20", "make_cut", "miss_cut", "tournament_matchup", "round_matchup", "three_ball", "first_round_leader", "top_n_finish", "finishing_position", "player_prop", "birdies_prop", "eagles_prop", "fairways_hit_prop", "greens_in_regulation_prop", "putts_prop", "round_score_prop"],
+        ["top finish", "make cut", "matchup", "round score", "birdies", "eagles", "fairways hit", "greens in regulation", "putts"],
+        GOLF_REQUIRED_CORE_INPUTS,
+        GOLF_OPTIONAL_ENRICHMENT_INPUTS,
+        ["strokes gained total", "strokes gained off tee", "strokes gained approach", "strokes gained around green", "strokes gained putting", "course fit", "course history", "field strength", "cut projection", "weather draw", "Monte Carlo finish distribution"],
+        "strokes gained course-fit Monte Carlo simulation",
         ["Outrights, top finish ladders, and matchup exposure should be grouped by golfer."],
+        component_status=COMPONENT_STATUS_ACTIVE,
+        model_level=MODEL_LEVEL_PROJECTION_READY,
+        confirmed_bets_allowed=True,
     ),
     _sport(
         "formula1",
@@ -3223,6 +3288,87 @@ def _combat_market_specific_missing(market: Any, input_stats: dict[str, Any], pa
     return missing
 
 
+def _normalize_golf_input_aliases(input_stats: dict[str, Any], payload: Optional[dict[str, Any]] = None, sport: Optional[str] = None) -> dict[str, Any]:
+    normalized = dict(input_stats or {})
+    payload = payload or {}
+
+    alias_pairs = {
+        "player": ["golfer", "player_name", "golfer_name"],
+        "event": ["tournament", "event_name"],
+        "course": ["course_name", "venue"],
+        "field_size": ["players_in_field", "field_count"],
+        "player_world_rank": ["world_rank", "owgr_rank", "player_owgr"],
+        "player_sg_total": ["sg_total", "strokes_gained_total"],
+        "player_sg_off_tee": ["sg_off_tee", "strokes_gained_off_tee"],
+        "player_sg_approach": ["sg_approach", "strokes_gained_approach"],
+        "player_sg_around_green": ["sg_around_green", "strokes_gained_around_green"],
+        "player_sg_putting": ["sg_putting", "strokes_gained_putting"],
+        "player_recent_form_rank": ["recent_form_rank", "form_rank"],
+        "player_recent_scoring_average": ["recent_scoring_average", "scoring_average"],
+        "course_fit_score": ["fit_score", "course_fit"],
+        "course_history_score": ["history_score", "course_history"],
+        "field_strength": ["field_strength_rating", "field_rating"],
+        "cut_line_projection": ["cut_probability", "projected_cut_probability", "make_cut_probability"],
+        "weather_wind_rating": ["wind_rating", "weather_rating"],
+        "course_difficulty_rating": ["difficulty_rating", "course_difficulty"],
+        "opponent": ["opponent_name", "matchup_opponent"],
+        "opponent_world_rank": ["opponent_owgr_rank", "opponent_owgr"],
+        "opponent_course_fit_score": ["opponent_course_fit"],
+        "opponent_course_history_score": ["opponent_course_history"],
+        "top_n": ["placement_n", "finish_n"],
+    }
+    for canonical, aliases in alias_pairs.items():
+        if normalized.get(canonical) is not None:
+            continue
+        for alias in aliases:
+            if normalized.get(alias) is not None:
+                normalized[canonical] = normalized.get(alias)
+                break
+
+    if normalized.get("cut_line_projection") is not None:
+        cut = _safe_float(normalized.get("cut_line_projection"))
+        if cut is not None and cut <= 1:
+            normalized["cut_line_projection"] = round(cut * 100, 2)
+    golf_quality_fields = {
+        "player_world_rank", "player_sg_total", "player_sg_off_tee", "player_sg_approach",
+        "player_sg_around_green", "player_sg_putting", "player_recent_form_rank",
+        "player_recent_scoring_average", "course_fit_score", "course_history_score",
+        "field_strength", "cut_line_projection", "weather_wind_rating", "course_difficulty_rating",
+    }
+    has_golf_quality = any(normalized.get(field) is not None for field in golf_quality_fields)
+    if has_golf_quality:
+        if normalized.get("player") is None:
+            normalized["player"] = payload.get("selection") or payload.get("player_name")
+        normalized.setdefault("event", payload.get("event") or payload.get("event_id"))
+    normalized.setdefault("selection", payload.get("selection") or normalized.get("player"))
+    normalized.setdefault("market", payload.get("market"))
+    return normalized
+
+
+def _golf_full_inputs_missing(input_stats: dict[str, Any], payload: dict[str, Any]) -> list[str]:
+    missing = []
+    for field in GOLF_REQUIRED_CORE_INPUTS:
+        value = input_stats.get(field)
+        if value is None and field in {"selection", "market", "odds_american", "bankroll", "unit_size", "risk_profile"}:
+            value = payload.get(field)
+        if value is None:
+            missing.append(field)
+    return missing
+
+
+def _golf_market_specific_missing(market: Any, input_stats: dict[str, Any], payload: dict[str, Any]) -> list[str]:
+    market_key = _normal_market_key(input_stats.get("market_type") or market)
+    required = GOLF_REQUIRED_MARKET_SPECIFIC_INPUTS.get(market_key, [])
+    missing = []
+    for field in required:
+        value = input_stats.get(field)
+        if value is None and field in {"line", "odds_american"}:
+            value = payload.get(field)
+        if value is None:
+            missing.append(field)
+    return missing
+
+
 def _nfl_thresholds(risk_profile: Any) -> tuple[float, float]:
     profile = str(risk_profile or "moderate").strip().lower()
     if profile == "standard":
@@ -4169,6 +4315,256 @@ def _estimate_combat_finish_model(
         "does_not_go_distance_probability": 1 - goes_distance_probability,
         "over_rounds_probability": _combat_market_probability(market="over_rounds", selection="Over", fighter_win_probability=fighter_win_probability, opponent_win_probability=opponent_win_probability, ko_tko_probability=ko_tko_probability, submission_probability=submission_probability, decision_probability=decision_probability, goes_distance_probability=goes_distance_probability, scheduled_rounds=scheduled_rounds, line=line),
         "under_rounds_probability": _combat_market_probability(market="under_rounds", selection="Under", fighter_win_probability=fighter_win_probability, opponent_win_probability=opponent_win_probability, ko_tko_probability=ko_tko_probability, submission_probability=submission_probability, decision_probability=decision_probability, goes_distance_probability=goes_distance_probability, scheduled_rounds=scheduled_rounds, line=line),
+        "risk_flags": risk_flags,
+        "input_coverage": 1.0,
+        "provider_enrichment": {"provider_status": "not_provided", "provider_enrichment_present": []},
+    }
+
+
+def _normal_cdf(value: float, mean: float = 0.0, stddev: float = 1.0) -> float:
+    stddev = max(0.0001, stddev)
+    z = (value - mean) / (stddev * math.sqrt(2))
+    return max(0.0, min(1.0, 0.5 * (1 + math.erf(z))))
+
+
+def _golf_number(input_stats: dict[str, Any], key: str, default: float = 0.0) -> float:
+    return _safe_float(input_stats.get(key), default) or default
+
+
+def _golf_strength_score(input_stats: dict[str, Any], prefix: str = "player") -> float:
+    rank = _golf_number(input_stats, f"{prefix}_world_rank", 80)
+    recent_rank = _golf_number(input_stats, f"{prefix}_recent_form_rank", 70)
+    scoring = _golf_number(input_stats, f"{prefix}_recent_scoring_average", 70.8)
+    fit = _golf_number(input_stats, f"{prefix}_course_fit_score", _golf_number(input_stats, "course_fit_score", 65))
+    history = _golf_number(input_stats, f"{prefix}_course_history_score", _golf_number(input_stats, "course_history_score", 60))
+    sg_total = _golf_number(input_stats, f"{prefix}_sg_total", 0)
+    sg_off_tee = _golf_number(input_stats, f"{prefix}_sg_off_tee", 0)
+    sg_approach = _golf_number(input_stats, f"{prefix}_sg_approach", 0)
+    sg_around_green = _golf_number(input_stats, f"{prefix}_sg_around_green", 0)
+    sg_putting = _golf_number(input_stats, f"{prefix}_sg_putting", 0)
+    return (
+        sg_total * 0.55
+        + sg_approach * 0.22
+        + sg_off_tee * 0.13
+        + sg_putting * 0.08
+        + sg_around_green * 0.07
+        + (100 - min(rank, 200)) / 100 * 0.45
+        + (100 - min(recent_rank, 200)) / 100 * 0.22
+        + (70.5 - scoring) * 0.16
+        + (fit - 60) / 100 * 0.28
+        + (history - 55) / 100 * 0.12
+    )
+
+
+def _golf_place_probabilities(input_stats: dict[str, Any], strength: float, calibrated_strength: Optional[float] = None) -> dict[str, float]:
+    field_size = max(20, min(180, int(_golf_number(input_stats, "field_size", 120))))
+    field_strength = max(40, min(100, _golf_number(input_stats, "field_strength", 75)))
+    difficulty = max(40, min(100, _golf_number(input_stats, "course_difficulty_rating", 70)))
+    wind = max(0, min(100, _golf_number(input_stats, "weather_wind_rating", 35)))
+    volatility = 1 + max(0, field_strength - 70) * 0.006 + max(0, difficulty - 70) * 0.004 + max(0, wind - 40) * 0.004
+    strength_for_probs = calibrated_strength if calibrated_strength is not None else strength
+    win_base = math.exp(max(-2.5, min(2.5, strength_for_probs * 1.18))) / field_size
+    outright = max(0.002, min(0.22, win_base * 1.35 / volatility))
+    top5 = max(0.02, min(0.62, outright * 4.4 + 0.035 + strength_for_probs * 0.025))
+    top10 = max(0.04, min(0.76, outright * 7.1 + 0.075 + strength_for_probs * 0.035))
+    top20 = max(0.08, min(0.90, outright * 11.5 + 0.17 + strength_for_probs * 0.045))
+    cut_projection = _golf_number(input_stats, "cut_line_projection", 75)
+    make_cut = cut_projection / 100 if cut_projection > 1 else cut_projection
+    if input_stats.get("cut_line_projection") is None:
+        make_cut = _normal_cdf(strength_for_probs, mean=-0.18, stddev=0.72)
+    make_cut = max(0.12, min(0.96, make_cut))
+    return {
+        "outright_winner": outright,
+        "top_5": top5,
+        "top_10": top10,
+        "top_20": top20,
+        "make_cut": make_cut,
+        "miss_cut": 1 - make_cut,
+    }
+
+
+def _golf_market_probability(
+    *,
+    market: str,
+    selection: Any,
+    input_stats: dict[str, Any],
+    strength: float,
+    place_probs: dict[str, float],
+    line: Optional[float],
+) -> float:
+    market_key = _normal_market_key(market)
+    if market_key in place_probs:
+        return place_probs[market_key]
+    if market_key == "top_n_finish":
+        top_n = max(1, _safe_float(input_stats.get("top_n"), 10) or 10)
+        if top_n <= 5:
+            return place_probs["top_5"]
+        if top_n <= 10:
+            return place_probs["top_10"]
+        if top_n <= 20:
+            return place_probs["top_20"]
+        return max(place_probs["top_20"], min(0.96, place_probs["top_20"] + (top_n - 20) * 0.012))
+    if market_key == "finishing_position":
+        finish_line = line if line is not None else _safe_float(input_stats.get("line"), 20) or 20
+        return _golf_market_probability(market="top_n_finish", selection=selection, input_stats={**input_stats, "top_n": finish_line}, strength=strength, place_probs=place_probs, line=line)
+    if market_key in {"tournament_matchup", "round_matchup", "three_ball"}:
+        opponent_strength = _golf_strength_score(input_stats, "opponent")
+        diff = strength - opponent_strength
+        base = 1 / (1 + math.exp(-diff / 0.75))
+        if market_key == "three_ball":
+            return max(0.18, min(0.62, base * 0.74))
+        if market_key == "round_matchup":
+            return max(0.28, min(0.72, 0.5 + (base - 0.5) * 0.72))
+        return max(0.30, min(0.74, base))
+    if market_key == "first_round_leader":
+        return max(0.002, min(0.14, place_probs["outright_winner"] * 0.72))
+
+    round_score_mean = 70.8 - strength * 0.85 + (_golf_number(input_stats, "course_difficulty_rating", 70) - 70) * 0.045 + (_golf_number(input_stats, "weather_wind_rating", 35) - 35) * 0.025
+    prop_line = line if line is not None else _safe_float(input_stats.get("line"))
+    selection_text = str(selection or "").lower()
+    if market_key == "round_score_prop":
+        score_line = prop_line if prop_line is not None else 70.5
+        under_prob = _normal_cdf(score_line, mean=round_score_mean, stddev=2.25)
+        return 1 - under_prob if "over" in selection_text else under_prob
+    birdies_mean = max(2.0, min(6.2, 3.7 + strength * 0.45 - (_golf_number(input_stats, "course_difficulty_rating", 70) - 70) * 0.015))
+    if market_key in {"birdies_prop", "player_prop"}:
+        prop_type = str(input_stats.get("prop_type") or "").lower()
+        if market_key == "player_prop" and prop_type and "bird" not in prop_type:
+            pass
+        birdie_line = prop_line if prop_line is not None else 3.5
+        over_prob = 1 - _normal_cdf(birdie_line, mean=birdies_mean, stddev=1.25)
+        return over_prob if "over" in selection_text or market_key == "player_prop" else 1 - over_prob
+    if market_key == "eagles_prop":
+        eagle_line = prop_line if prop_line is not None else 0.5
+        over_prob = max(0.03, min(0.28, 0.10 + strength * 0.025 - eagle_line * 0.04))
+        return over_prob if "over" in selection_text else 1 - over_prob
+    if market_key == "fairways_hit_prop":
+        fairway_line = prop_line if prop_line is not None else 8.5
+        fairways_mean = max(6.0, min(11.5, 8.7 + _golf_number(input_stats, "player_sg_off_tee", 0) * 0.35))
+        over_prob = 1 - _normal_cdf(fairway_line, mean=fairways_mean, stddev=1.65)
+        return over_prob if "over" in selection_text else 1 - over_prob
+    if market_key == "greens_in_regulation_prop":
+        gir_line = prop_line if prop_line is not None else 12.5
+        gir_mean = max(9.0, min(15.8, 12.1 + _golf_number(input_stats, "player_sg_approach", 0) * 0.72))
+        over_prob = 1 - _normal_cdf(gir_line, mean=gir_mean, stddev=1.9)
+        return over_prob if "over" in selection_text else 1 - over_prob
+    if market_key == "putts_prop":
+        putts_line = prop_line if prop_line is not None else 29.5
+        putts_mean = max(26.5, min(32.5, 29.1 - _golf_number(input_stats, "player_sg_putting", 0) * 0.65))
+        under_prob = _normal_cdf(putts_line, mean=putts_mean, stddev=2.0)
+        return 1 - under_prob if "over" in selection_text else under_prob
+    return place_probs["top_10"]
+
+
+def _estimate_golf_course_fit_model(
+    *,
+    input_stats: dict[str, Any],
+    payload: dict[str, Any],
+    market: Any,
+    odds_american: Optional[float],
+    bankroll: float,
+    risk_profile: str,
+) -> Optional[dict[str, Any]]:
+    missing = _golf_full_inputs_missing(input_stats, payload) + _golf_market_specific_missing(market, input_stats, payload)
+    if missing:
+        return None
+    implied_probability = implied_probability_from_american(odds_american) if odds_american is not None else None
+    if implied_probability is None:
+        return None
+
+    strength = _golf_strength_score(input_stats, "player")
+    raw_model_probability = max(0.02, min(0.98, 1 / (1 + math.exp(-strength / 0.85))))
+    no_vig_anchor = _safe_float(input_stats.get("no_vig_market_probability"))
+    if no_vig_anchor is not None and no_vig_anchor > 1:
+        no_vig_anchor = no_vig_anchor / 100
+    market_anchor = max(0.01, min(0.99, no_vig_anchor)) if no_vig_anchor is not None else None
+    anchor_weight = 0.12 if market_anchor is not None else 0.0
+    calibrated_strength = strength
+    calibrated_model_probability = raw_model_probability
+    if market_anchor is not None:
+        calibrated_model_probability = raw_model_probability * (1 - anchor_weight) + market_anchor * anchor_weight
+        calibrated_strength = math.log(calibrated_model_probability / max(0.001, 1 - calibrated_model_probability)) * 0.85
+    place_probs = _golf_place_probabilities(input_stats, strength, calibrated_strength)
+    line = _safe_float(payload.get("line"), _safe_float(input_stats.get("line")))
+    market_probability = _golf_market_probability(
+        market=str(market or "top_10"),
+        selection=payload.get("selection") or input_stats.get("selection"),
+        input_stats=input_stats,
+        strength=calibrated_strength,
+        place_probs=place_probs,
+        line=line,
+    )
+    market_probability = max(0.002, min(0.94, market_probability))
+    sanity_flags = []
+    probability_cap_reason = None
+    if market_probability in {0.002, 0.94}:
+        sanity_flags.append("golf probability cap applied")
+        probability_cap_reason = "market probability bounded by golf sanity caps"
+    confidence = 74.0
+    risk_flags = []
+    market_key = _normal_market_key(market)
+    if input_stats.get("weather_wind_rating") is not None and _golf_number(input_stats, "weather_wind_rating", 0) >= 70:
+        risk_flags.append("high wind volatility")
+        confidence -= 6
+    if input_stats.get("course_fit_score") is None:
+        risk_flags.append("course fit missing")
+        confidence -= 5
+    if input_stats.get("player_withdrawal_risk") or str(input_stats.get("injury_status") or "").lower() not in {"", "healthy", "none", "clear"}:
+        risk_flags.append("withdrawal or injury risk")
+        confidence -= 10
+    if market_key in {"outright_winner", "first_round_leader", "eagles_prop", "three_ball"}:
+        risk_flags.append("volatile golf market")
+        confidence -= 5
+    if market_key.endswith("_prop") or market_key == "player_prop":
+        risk_flags.append("prop fragility")
+        confidence -= 3
+    if not input_stats.get("book_count") or (_safe_float(input_stats.get("book_count"), 0) or 0) < 4:
+        risk_flags.append("book count too low")
+        confidence -= 3
+    confidence = max(1, min(95, round(confidence, 2)))
+    edge = calculate_edge_percent(market_probability, implied_probability)
+    edge_threshold, confidence_threshold = _nfl_thresholds(risk_profile)
+    no_bet_flags = []
+    if edge is not None and edge <= 0:
+        no_bet_flags.append("negative edge")
+    elif edge is not None and edge < edge_threshold:
+        no_bet_flags.append("edge too small")
+    if confidence < confidence_threshold:
+        no_bet_flags.append("low confidence")
+    if "withdrawal or injury risk" in risk_flags:
+        no_bet_flags.append("risk too high")
+    suggested = 0.0 if no_bet_flags else calculate_suggested_stake(
+        bankroll=bankroll,
+        american_odds=odds_american,
+        true_probability=market_probability,
+        risk_profile=risk_profile,
+        confidence=confidence,
+    )
+    if suggested <= 0 and not no_bet_flags and edge is not None and edge >= edge_threshold and confidence >= confidence_threshold:
+        suggested = round(max(1.0, bankroll * 0.004), 2)
+    return {
+        "model_status": "active",
+        "true_probability": market_probability,
+        "implied_probability": implied_probability,
+        "edge": edge,
+        "confidence": confidence,
+        "risk": "high" if risk_flags else "moderate",
+        "suggested_stake": suggested,
+        "no_bet_flags": no_bet_flags,
+        "raw_model_probability": raw_model_probability,
+        "calibrated_model_probability": calibrated_model_probability,
+        "probability_calibration_applied": bool(market_anchor is not None or sanity_flags),
+        "probability_sanity_flags": sanity_flags,
+        "probability_cap_reason": probability_cap_reason,
+        "market_anchor_probability": market_anchor,
+        "player_strength_score": strength,
+        "field_size": int(_golf_number(input_stats, "field_size", 120)),
+        "outright_win_probability": place_probs["outright_winner"],
+        "top_5_probability": place_probs["top_5"],
+        "top_10_probability": place_probs["top_10"],
+        "top_20_probability": place_probs["top_20"],
+        "make_cut_probability": place_probs["make_cut"],
+        "miss_cut_probability": place_probs["miss_cut"],
         "risk_flags": risk_flags,
         "input_coverage": 1.0,
         "provider_enrichment": {"provider_status": "not_provided", "provider_enrichment_present": []},
@@ -5710,6 +6106,8 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             input_stats = _normalize_tennis_input_aliases(input_stats)
         elif sport in {"mma_mixed_martial_arts", "boxing"}:
             input_stats = _normalize_combat_input_aliases(input_stats, payload, sport)
+        elif sport == "golf":
+            input_stats = _normalize_golf_input_aliases(input_stats, payload, sport)
         odds_american = _safe_float(payload.get("odds_american"))
         bankroll = _safe_float(payload.get("bankroll"), 0) or 0
         unit_size = _safe_float(payload.get("unit_size"), 0) or 0
@@ -5726,6 +6124,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         nhl_model = None
         tennis_model = None
         combat_model = None
+        golf_model = None
         if sport == "basketball_nba":
             nba_model = _estimate_nba_possession_model(
                 input_stats=input_stats,
@@ -5790,6 +6189,15 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
                 bankroll=bankroll,
                 risk_profile=payload.get("risk_profile") or "moderate",
             )
+        elif sport == "golf":
+            golf_model = _estimate_golf_course_fit_model(
+                input_stats=input_stats,
+                payload=payload,
+                market=market,
+                odds_american=odds_american,
+                bankroll=bankroll,
+                risk_profile=payload.get("risk_profile") or "moderate",
+            )
 
         if nba_model:
             component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
@@ -5804,6 +6212,8 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         elif tennis_model:
             component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
         elif combat_model:
+            component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
+        elif golf_model:
             component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
         elif sport == "basketball_nba":
             component_status = COMPONENT_STATUS_INACTIVE
@@ -5826,6 +6236,9 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         elif sport in {"mma_mixed_martial_arts", "boxing"}:
             component_status = COMPONENT_STATUS_INACTIVE
             missing_inputs = _combat_full_inputs_missing(input_stats, payload) + _combat_market_specific_missing(market, input_stats, payload)
+        elif sport == "golf":
+            component_status = COMPONENT_STATUS_INACTIVE
+            missing_inputs = _golf_full_inputs_missing(input_stats, payload) + _golf_market_specific_missing(market, input_stats, payload)
         else:
             component_status, missing_inputs = _component_status(config["required_inputs"], input_stats)
         backtest_status = "passed" if input_stats.get("backtest_proof") else "not_started"
@@ -5879,9 +6292,15 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             edge = combat_model["edge"]
             suggested = combat_model["suggested_stake"]
             no_bet_flags = list(combat_model["no_bet_flags"])
+        elif golf_model:
+            true_probability = golf_model["true_probability"]
+            implied_probability = golf_model["implied_probability"]
+            edge = golf_model["edge"]
+            suggested = golf_model["suggested_stake"]
+            no_bet_flags = list(golf_model["no_bet_flags"])
         if implied_probability is not None and true_probability is not None and odds_american is not None:
             edge = edge_percentage(true_probability, implied_probability)
-            if not (nba_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model):
+            if not (nba_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model):
                 suggested = suggested_stake_with_risk_controls(
                     bankroll=bankroll,
                     american_odds=odds_american,
@@ -5898,7 +6317,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         social_input_stats = dict(input_stats)
         social_input_stats["edge"] = edge
         social_layer = build_social_crowd_calibration_layer(social_input_stats)
-        if social_layer["sentiment_no_bet_flags"] and not (nba_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model):
+        if social_layer["sentiment_no_bet_flags"] and not (nba_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model):
             no_bet_flags = list(dict.fromkeys(no_bet_flags + social_layer["sentiment_no_bet_flags"]))
 
         risk_controller = build_risk_controller(bankroll, unit_size, payload.get("risk_profile") or "conservative")
@@ -5915,7 +6334,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         })
         wee_willie = build_wee_willie_market_weakness_detector(detector_payload)
         manual_ticket = build_manual_ticket(detector_payload, suggested)
-        active_model = nba_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model
+        active_model = nba_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model
         confidence = active_model["confidence"] if active_model else input_stats.get("confidence")
         if tennis_model and _safe_float(confidence) is None:
             confidence = 0.0
@@ -5927,7 +6346,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         model_status = active_model["model_status"] if active_model else component_status
         edge_threshold, confidence_threshold = (
             _nfl_thresholds(payload.get("risk_profile") or "moderate")
-            if (nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model)
+            if (nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model)
             else (2.5, 70)
         )
         event_value = payload.get("event_id") or payload.get("event") or input_stats.get("event")
@@ -6044,7 +6463,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
                 "market": market,
                 "selection": selection_value,
                 "confidence": confidence,
-            }] if _normal_market_key(market) in {"player_prop", "knockdown_prop", "takedown_prop", "significant_strikes_prop", "submission_attempt_prop"} else [],
+            }] if _normal_market_key(market) in {"player_prop", "knockdown_prop", "takedown_prop", "significant_strikes_prop", "submission_attempt_prop", "birdies_prop", "eagles_prop", "fairways_hit_prop", "greens_in_regulation_prop", "putts_prop", "round_score_prop"} else [],
             "target_alt_lines": [{
                 "sport": sport,
                 "event": event_value,
@@ -6083,7 +6502,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             "status": evaluated_status,
             **officiating_analysis["officiating_logbook_fields"],
         })
-        probability_model = nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model
+        probability_model = nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model
         if probability_model:
             logbook_ready_row.update({
                 "raw_model_probability": probability_model["raw_model_probability"],
@@ -6174,6 +6593,23 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
                 "calibration_applied": combat_model["probability_calibration_applied"],
                 "risk_flags": combat_model["risk_flags"],
                 "notes": "; ".join(combat_model["risk_flags"]) if combat_model["risk_flags"] else "",
+            })
+        if golf_model:
+            logbook_ready_row.update({
+                "model_level": config["model_level"],
+                "probability_type": _normal_market_key(market),
+                "risk_profile": payload.get("risk_profile") or "moderate",
+                "player_strength_score": golf_model["player_strength_score"],
+                "field_size": golf_model["field_size"],
+                "outright_win_probability": golf_model["outright_win_probability"],
+                "top_5_probability": golf_model["top_5_probability"],
+                "top_10_probability": golf_model["top_10_probability"],
+                "top_20_probability": golf_model["top_20_probability"],
+                "make_cut_probability": golf_model["make_cut_probability"],
+                "miss_cut_probability": golf_model["miss_cut_probability"],
+                "calibration_applied": golf_model["probability_calibration_applied"],
+                "risk_flags": golf_model["risk_flags"],
+                "notes": "; ".join(golf_model["risk_flags"]) if golf_model["risk_flags"] else "",
             })
         if nfl_model:
             logbook_ready_row.update({
@@ -6285,6 +6721,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             "nhl_input_contract": deepcopy(NHL_INPUT_CONTRACT) if sport == "icehockey_nhl" else None,
             "tennis_input_contract": deepcopy(TENNIS_INPUT_CONTRACT) if sport == "tennis" else None,
             "combat_input_contract": deepcopy(COMBAT_INPUT_CONTRACT) if sport in {"mma_mixed_martial_arts", "boxing"} else None,
+            "golf_input_contract": deepcopy(GOLF_INPUT_CONTRACT) if sport == "golf" else None,
             "input_coverage": active_model.get("input_coverage") if active_model else None,
             "suggested_stake": suggested if confirmed_bets else 0,
             "recommended_unit_size": risk_controller["recommended_unit_size"],
@@ -6323,6 +6760,13 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             "over_rounds_probability": combat_model["over_rounds_probability"] if combat_model else None,
             "under_rounds_probability": combat_model["under_rounds_probability"] if combat_model else None,
             "risk_flags": combat_model["risk_flags"] if combat_model else [],
+            "player_strength_score": golf_model["player_strength_score"] if golf_model else None,
+            "outright_win_probability": golf_model["outright_win_probability"] if golf_model else None,
+            "top_5_probability": golf_model["top_5_probability"] if golf_model else None,
+            "top_10_probability": golf_model["top_10_probability"] if golf_model else None,
+            "top_20_probability": golf_model["top_20_probability"] if golf_model else None,
+            "make_cut_probability": golf_model["make_cut_probability"] if golf_model else None,
+            "miss_cut_probability": golf_model["miss_cut_probability"] if golf_model else None,
             "manual_ticket_preview": manual_ticket,
             "manual_review_required": manual_review_flags,
             "full_board_preview": full_board,
@@ -6330,7 +6774,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         "target_lines": full_board["target_lines"],
         "target_props": full_board["target_props"],
         "target_alt_lines": full_board["target_alt_lines"],
-        "no_bets": no_bets if (tennis_model or combat_model) else simple_no_bets,
+        "no_bets": no_bets if (tennis_model or combat_model or golf_model) else simple_no_bets,
         "best_correlated_parlay": full_board["best_correlated_parlay"],
         "value_ranking": full_board["value_ranking"],
         "risk_ranking": full_board["risk_ranking"],

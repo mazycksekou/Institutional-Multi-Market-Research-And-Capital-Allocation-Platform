@@ -422,6 +422,10 @@ class TestSportAnalysisEndpoint(unittest.TestCase):
                 "mixed_martial_arts": "mma_mixed_martial_arts",
                 "combat_sports": "mma_mixed_martial_arts",
                 "boxing": "boxing",
+                "pga": "golf",
+                "liv_golf": "golf",
+                "dp_world_tour": "golf",
+                "lpga": "golf",
             }
             for submitted, expected in cases.items():
                 response = client.post(
