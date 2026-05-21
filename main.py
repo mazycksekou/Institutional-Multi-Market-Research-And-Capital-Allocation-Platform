@@ -773,6 +773,8 @@ class SportModelConfigResponse(BaseModel):
     risk_notes: list[str] = Field(..., description="Sport-specific limitations and governance notes.")
     correlation_rules: list[str] = Field(..., description="Rules for grouping correlated exposure within this sport.")
     log_fields_required: list[str] = Field(..., description="Fields that must be present in logs before model promotion or bet governance review.")
+    input_normalizer: Optional[str] = Field(None, description="Shared screenshot/direct input normalizer registered for confirmed-capable sports.")
+    screenshot_alias_test_payload: Optional[dict[str, Any]] = Field(None, description="Live-style alias payload used to enforce screenshot normalization parity.")
 
 
 class SportsModelRegistrySummaryResponse(BaseModel):

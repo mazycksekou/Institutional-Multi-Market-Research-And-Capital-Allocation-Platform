@@ -147,12 +147,23 @@ def parse_ticket(payload: dict[str, Any]) -> dict[str, Any]:
         ticket.setdefault("home_team", teams[1])
     input_stats = ticket.get("input_stats") or {}
     sport_key = multi_sport_model_registry.normalize_sport_key(str(ticket.get("sport") or ""))
-    if sport_key == "tennis":
-        input_stats = multi_sport_model_registry._normalize_tennis_input_aliases(input_stats)
-    elif sport_key in {"mma_mixed_martial_arts", "boxing"}:
-        input_stats = multi_sport_model_registry._normalize_combat_input_aliases(input_stats, ticket, sport_key)
-    elif sport_key == "golf":
-        input_stats = multi_sport_model_registry._normalize_golf_input_aliases(input_stats, ticket, sport_key)
+    normalization = multi_sport_model_registry.normalize_sport_inputs_for_model(
+        sport=sport_key,
+        market=ticket.get("market"),
+        selection=ticket.get("selection"),
+        input_stats=input_stats,
+        ticket=ticket,
+    )
+    input_stats = normalization["input_stats"]
+    for field in ("market", "selection", "line", "total_line", "sportsbook"):
+        if ticket.get(field) is None and input_stats.get(field) is not None:
+            ticket[field] = input_stats.get(field)
+    if ticket.get("book") is None and input_stats.get("sportsbook") is not None:
+        ticket["book"] = input_stats.get("sportsbook")
+    if ticket.get("event") is None and input_stats.get("event") is not None:
+        ticket["event"] = input_stats.get("event")
+    if ticket.get("odds_american") is None and input_stats.get("odds_american") is not None:
+        ticket["odds_american"] = input_stats.get("odds_american")
     return {
         "source_type": ticket.get("source_type") or "parsed_fields",
         "sport": ticket.get("sport"),
@@ -265,5 +276,11 @@ def analyze_screenshot_ticket(payload: dict[str, Any]) -> dict[str, Any]:
         "status": status,
         "stake": suggested_stake or 0,
         "logbook_ready_rows": log_rows,
+        "raw_input_keys": model_analysis.get("raw_input_keys"),
+        "normalized_input_keys": model_analysis.get("normalized_input_keys"),
+        "missing_inputs_before_normalization": model_analysis.get("missing_inputs_before_normalization"),
+        "missing_inputs_after_normalization": model_analysis.get("missing_inputs_after_normalization"),
+        "sport_alias_resolved": model_analysis.get("sport_alias_resolved"),
+        "normalizer_used": model_analysis.get("normalizer_used"),
     }
     return _cleanup_confirmed_selection_no_bets(response)

@@ -1724,6 +1724,8 @@ def _sport(
     sport_parameters: Optional[dict[str, Any]] = None,
     supported_game_titles: Optional[list[str]] = None,
     confirmed_bets_allowed: bool = False,
+    input_normalizer: Optional[str] = None,
+    screenshot_alias_test_payload: Optional[dict[str, Any]] = None,
 ) -> dict[str, Any]:
     return {
         "sport_key": sport,
@@ -1770,6 +1772,8 @@ def _sport(
         "sport_parameters": deepcopy(sport_parameters or {}),
         "supported_game_titles": list(supported_game_titles or []),
         "log_fields_required": list(BASE_LOG_FIELDS_REQUIRED),
+        "input_normalizer": input_normalizer,
+        "screenshot_alias_test_payload": deepcopy(screenshot_alias_test_payload) if screenshot_alias_test_payload else None,
     }
 
 
@@ -2025,6 +2029,194 @@ SPORT_MODEL_REGISTRY = [
 ]
 
 _REGISTRY_BY_KEY = {sport["sport_key"]: sport for sport in SPORT_MODEL_REGISTRY}
+
+_INPUT_NORMALIZER_BY_SPORT = {
+    "baseball_mlb": "mlb_input_normalizer",
+    "basketball_nba": "nba_input_normalizer",
+    "americanfootball_nfl": "nfl_input_normalizer",
+    "soccer": "soccer_input_normalizer",
+    "icehockey_nhl": "nhl_input_normalizer",
+    "tennis": "tennis_input_normalizer",
+    "mma_mixed_martial_arts": "combat_input_normalizer",
+    "boxing": "combat_input_normalizer",
+    "golf": "golf_input_normalizer",
+}
+
+_ACTIVE_SCREENSHOT_ALIAS_TEST_PAYLOADS: dict[str, dict[str, Any]] = {
+    "basketball_nba": {
+        "sport": "nba", "league": "NBA", "event": "Knicks at Celtics", "market": "moneyline",
+        "selection": "Celtics", "odds_american": 100, "bankroll": 1000, "unit_size": 25, "risk_profile": "standard",
+        "input_stats": {
+            "team_name": "Celtics", "opponent_name": "Knicks", "selection_name": "Celtics", "matchup": "Knicks at Celtics",
+            "home_away": "home", "current_odds": 100, "team_pace": 101.5, "opponent_pace": 98.2,
+            "team_offensive_rating": 121.0, "opponent_offensive_rating": 113.0, "team_defensive_rating": 110.0,
+            "opponent_defensive_rating": 116.0, "team_efg_percent": 0.575, "opponent_efg_percent": 0.535,
+            "team_turnover_percent": 0.118, "opponent_turnover_percent": 0.136, "team_offensive_rebound_percent": 0.285,
+            "opponent_offensive_rebound_percent": 0.245, "team_free_throw_rate": 0.235, "opponent_free_throw_rate": 0.205,
+            "key_player_usage_available": True, "minutes_projection_available": True, "injury_report_status": "clean",
+        },
+    },
+    "americanfootball_nfl": {
+        "sport": "nfl", "league": "NFL", "event": "Jets at Bills", "market": "moneyline",
+        "selection": "Bills", "odds_american": 100, "bankroll": 1000, "unit_size": 25, "risk_profile": "moderate",
+        "input_stats": {
+            "team_name": "Bills", "opponent_name": "Jets", "selection_name": "Bills", "game": "Jets at Bills",
+            "home_away": "home", "current_odds": 100, "team_offensive_epa_per_play": 0.12,
+            "opponent_offensive_epa_per_play": 0.03, "team_defensive_epa_per_play": -0.04,
+            "opponent_defensive_epa_per_play": 0.02, "team_success_rate": 0.47, "opponent_success_rate": 0.42,
+            "team_defensive_success_rate_allowed": 0.40, "opponent_defensive_success_rate_allowed": 0.44,
+            "team_explosive_play_rate": 0.12, "opponent_explosive_play_rate": 0.09,
+            "team_explosive_play_rate_allowed": 0.09, "opponent_explosive_play_rate_allowed": 0.11,
+            "team_turnover_rate": 0.09, "opponent_turnover_rate": 0.12, "team_pressure_rate_allowed": 0.28,
+            "opponent_pressure_rate_allowed": 0.34, "team_pressure_rate_generated": 0.36,
+            "opponent_pressure_rate_generated": 0.29, "team_red_zone_td_rate": 0.62,
+            "opponent_red_zone_td_rate": 0.54, "team_red_zone_td_rate_allowed": 0.50,
+            "opponent_red_zone_td_rate_allowed": 0.58, "team_pace_seconds_per_play": 27.5,
+            "opponent_pace_seconds_per_play": 29.0, "qb_status": "healthy", "offensive_line_health": "good",
+            "injury_report_status": "clean",
+        },
+    },
+    "baseball_mlb": {
+        "sport": "mlb", "league": "MLB", "event": "Giants at Dodgers", "market": "moneyline",
+        "selection": "Dodgers", "odds_american": 100, "bankroll": 1000, "unit_size": 25, "risk_profile": "moderate",
+        "input_stats": {
+            "team_name": "Dodgers", "opponent_name": "Giants", "selection_name": "Dodgers", "game": "Giants at Dodgers",
+            "home_away": "home", "market_name": "moneyline", "current_odds": 100, "team_projected_runs": 4.8,
+            "opponent_projected_runs": 4.1, "team_starting_pitcher": "Dodgers SP", "opponent_starting_pitcher": "Giants SP",
+            "team_starting_pitcher_era": 3.2, "opponent_starting_pitcher_era": 4.2, "team_starting_pitcher_fip": 3.3,
+            "opponent_starting_pitcher_fip": 4.4, "team_starting_pitcher_xfip": 3.4, "opponent_starting_pitcher_xfip": 4.3,
+            "team_starting_pitcher_k_rate": 0.27, "opponent_starting_pitcher_k_rate": 0.22,
+            "team_starting_pitcher_bb_rate": 0.07, "opponent_starting_pitcher_bb_rate": 0.09,
+            "team_starting_pitcher_hr_rate": 0.9, "opponent_starting_pitcher_hr_rate": 1.2,
+            "team_starting_pitcher_innings_projection": 5.8, "opponent_starting_pitcher_innings_projection": 5.1,
+            "team_bullpen_era": 3.6, "opponent_bullpen_era": 4.3, "team_bullpen_fip": 3.7,
+            "opponent_bullpen_fip": 4.2, "team_bullpen_recent_usage": 2.0, "opponent_bullpen_recent_usage": 3.2,
+            "team_bullpen_rest_status": "rested", "opponent_bullpen_rest_status": "tired", "team_woba": 0.335,
+            "opponent_woba": 0.310, "team_xwoba": 0.340, "opponent_xwoba": 0.315, "team_wrc_plus": 112,
+            "opponent_wrc_plus": 96, "team_iso": 0.180, "opponent_iso": 0.145, "team_k_rate": 0.21,
+            "opponent_k_rate": 0.24, "team_bb_rate": 0.09, "opponent_bb_rate": 0.075, "park_factor_runs": 1.02,
+            "park_factor_home_runs": 1.05, "weather_temperature": 74, "weather_wind_mph": 8,
+            "weather_wind_direction": "left to right", "roof_status": "open", "injury_report_status": "clean",
+            "lineup_status": "confirmed",
+        },
+    },
+    "soccer": {
+        "sport": "football", "league": "EPL", "event": "Arsenal vs Chelsea", "market": "three_way_moneyline",
+        "selection": "Arsenal", "odds_american": 100, "bankroll": 1000, "unit_size": 25, "risk_profile": "moderate",
+        "input_stats": {
+            "team_name": "Arsenal", "opponent_name": "Chelsea", "selection_name": "Arsenal", "matchup": "Arsenal vs Chelsea",
+            "home_away": "home", "market_name": "three_way_moneyline", "league_name": "soccer_epl", "current_odds": 100,
+            "match_date": "2026-08-15", "team_expected_goals": 1.75, "opponent_expected_goals": 1.05,
+            "team_xg_for": 1.80, "opponent_xg_for": 1.20, "team_xg_against": 1.05, "opponent_xg_against": 1.45,
+            "team_goals_for_per_match": 2.0, "opponent_goals_for_per_match": 1.35, "team_goals_against_per_match": 0.95,
+            "opponent_goals_against_per_match": 1.45, "team_shots_per_match": 15.2, "opponent_shots_per_match": 11.3,
+            "team_shots_allowed_per_match": 9.2, "opponent_shots_allowed_per_match": 13.4,
+            "team_shots_on_target_per_match": 5.8, "opponent_shots_on_target_per_match": 4.1,
+            "team_shots_on_target_allowed_per_match": 3.1, "opponent_shots_on_target_allowed_per_match": 4.9,
+            "team_big_chances_per_match": 2.8, "opponent_big_chances_per_match": 1.7,
+            "team_big_chances_allowed_per_match": 1.2, "opponent_big_chances_allowed_per_match": 2.2,
+            "team_possession_percent": 58, "opponent_possession_percent": 49, "team_recent_form_points": 12,
+            "opponent_recent_form_points": 8, "team_rest_days": 6, "opponent_rest_days": 4,
+            "injury_report_status": "clean", "lineup_status": "confirmed",
+        },
+    },
+    "icehockey_nhl": {
+        "sport": "nhl", "league": "NHL", "event": "Bruins at Rangers", "market": "moneyline",
+        "selection": "Rangers", "odds_american": 100, "bankroll": 1000, "unit_size": 25, "risk_profile": "moderate",
+        "input_stats": {
+            "team_name": "Rangers", "opponent_name": "Bruins", "selection_name": "Rangers", "game": "Bruins at Rangers",
+            "home_away": "home", "market_name": "moneyline", "league_name": "nhl", "current_odds": 100, "game_date": "2026-11-12",
+            "team_projected_goals": 3.35, "opponent_projected_goals": 2.75, "team_xg_for_per_game": 3.25,
+            "opponent_xg_for_per_game": 2.85, "team_xg_against_per_game": 2.70, "opponent_xg_against_per_game": 3.05,
+            "team_goals_for_per_game": 3.30, "opponent_goals_for_per_game": 2.90, "team_goals_against_per_game": 2.65,
+            "opponent_goals_against_per_game": 3.10, "team_shots_for_per_game": 32.0, "opponent_shots_for_per_game": 29.0,
+            "team_shots_against_per_game": 28.0, "opponent_shots_against_per_game": 31.0,
+            "team_scoring_chances_for_per_game": 29.0, "opponent_scoring_chances_for_per_game": 25.0,
+            "team_scoring_chances_against_per_game": 24.0, "opponent_scoring_chances_against_per_game": 28.0,
+            "team_high_danger_chances_for_per_game": 12.0, "opponent_high_danger_chances_for_per_game": 9.0,
+            "team_high_danger_chances_against_per_game": 8.0, "opponent_high_danger_chances_against_per_game": 11.0,
+            "team_power_play_percent": 24.0, "opponent_power_play_percent": 19.0, "team_penalty_kill_percent": 83.0,
+            "opponent_penalty_kill_percent": 77.0, "team_recent_form_points": 8, "opponent_recent_form_points": 5,
+            "team_rest_days": 2, "opponent_rest_days": 1, "team_goalie_confirmed": True, "opponent_goalie_confirmed": True,
+            "team_starting_goalie_save_percent": 0.918, "opponent_starting_goalie_save_percent": 0.904,
+            "team_starting_goalie_gsaax": 6.0, "opponent_starting_goalie_gsaax": -2.0,
+            "injury_report_status": "clean", "lineup_status": "confirmed",
+        },
+    },
+    "tennis": {
+        "sport": "tennis", "league": "ATP", "event": "Novak Djokovic vs Carlos Alcaraz", "market": "moneyline",
+        "selection": "Novak Djokovic", "odds_american": 100, "bankroll": 1000, "unit_size": 25, "risk_profile": "moderate",
+        "input_stats": {
+            "athlete": "Novak Djokovic", "opponent_name": "Carlos Alcaraz", "selection_name": "Novak Djokovic",
+            "market_name": "moneyline", "league_name": "ATP", "tournament_name": "Wimbledon", "match_date": "2026-05-20",
+            "surface": "grass", "best_of_sets": 3, "player_rank": 2, "opponent_rank": 3, "player_elo": 2200,
+            "opponent_elo": 2075, "player_recent_win_percent": 70, "opponent_recent_win_percent": 60,
+            "player_fatigue_rating": 15, "opponent_fatigue_rating": 22, "player_days_rest": 3, "opponent_days_rest": 2,
+            "player_serve_hold_percent": 86, "opponent_serve_hold_percent": 82, "player_first_serve_percent": 65,
+            "opponent_first_serve_percent": 63, "player_surface_win_percent": 78, "opponent_surface_win_percent": 70,
+            "current_odds": 100,
+        },
+    },
+    "mma_mixed_martial_arts": {
+        "sport": "ufc", "league": "UFC", "event": "Islam Makhachev vs Charles Oliveira", "market": "moneyline",
+        "selection": "Islam Makhachev", "odds_american": 100, "bankroll": 1000, "unit_size": 25, "risk_profile": "moderate",
+        "input_stats": {
+            "fighter_name": "Islam Makhachev", "opponent_name": "Charles Oliveira", "selection_name": "Islam Makhachev",
+            "fight_date": "2026-07-10", "weight_class": "Lightweight", "fighter_moneyline": 100, "fighter_elo": 1860,
+            "opponent_elo": 1775, "fighter_recent_win_percent": 85, "opponent_recent_win_percent": 70,
+            "fighter_finish_rate": 62, "opponent_finish_rate": 70, "fighter_ko_tko_rate": 18, "opponent_ko_tko_rate": 35,
+            "fighter_submission_rate": 42, "opponent_submission_rate": 30, "fighter_decision_rate": 40,
+            "opponent_decision_rate": 35, "fighter_strikes_landed_per_min": 3.2, "opponent_strikes_landed_per_min": 3.5,
+            "fighter_strikes_absorbed_per_min": 1.8, "opponent_strikes_absorbed_per_min": 3.1,
+            "fighter_striking_accuracy": 58, "opponent_striking_accuracy": 52, "fighter_striking_defense": 64,
+            "opponent_striking_defense": 53, "fighter_takedown_average": 3.4, "opponent_takedown_average": 2.2,
+            "fighter_takedown_accuracy": 61, "opponent_takedown_accuracy": 44, "fighter_takedown_defense": 88,
+            "opponent_takedown_defense": 57, "fighter_submission_average": 1.1, "opponent_submission_average": 0.8,
+            "fighter_age": 34, "opponent_age": 36, "fighter_reach": 70, "opponent_reach": 74, "fighter_height": 70,
+            "opponent_height": 70, "fighter_stance": "southpaw", "opponent_stance": "orthodox", "fighter_days_rest": 180,
+            "opponent_days_rest": 160, "current_odds": 100,
+        },
+    },
+    "boxing": {
+        "sport": "boxing", "league": "Boxing", "event": "Fighter A vs Fighter B", "market": "moneyline",
+        "selection": "Fighter A", "odds_american": 100, "bankroll": 1000, "unit_size": 25, "risk_profile": "moderate",
+        "input_stats": {
+            "fighter_name": "Fighter A", "opponent_name": "Fighter B", "selection_name": "Fighter A",
+            "fight_date": "2026-09-12", "promotion": "Top Rank", "weight_class": "Welterweight", "scheduled_rounds": 12,
+            "fighter_moneyline": 100, "fighter_elo": 1780, "opponent_elo": 1710, "fighter_recent_win_percent": 80,
+            "opponent_recent_win_percent": 68, "fighter_finish_rate": 58, "opponent_finish_rate": 52,
+            "fighter_ko_tko_rate": 44, "opponent_ko_tko_rate": 37, "fighter_submission_rate": 0, "opponent_submission_rate": 0,
+            "fighter_decision_rate": 56, "opponent_decision_rate": 63, "fighter_strikes_landed_per_min": 4.1,
+            "opponent_strikes_landed_per_min": 3.7, "fighter_strikes_absorbed_per_min": 2.5,
+            "opponent_strikes_absorbed_per_min": 3.0, "fighter_striking_accuracy": 48, "opponent_striking_accuracy": 43,
+            "fighter_striking_defense": 61, "opponent_striking_defense": 56, "fighter_takedown_average": 0,
+            "opponent_takedown_average": 0, "fighter_takedown_accuracy": 0, "opponent_takedown_accuracy": 0,
+            "fighter_takedown_defense": 100, "opponent_takedown_defense": 100, "fighter_submission_average": 0,
+            "opponent_submission_average": 0, "fighter_age": 29, "opponent_age": 32, "fighter_reach": 72,
+            "opponent_reach": 70, "fighter_height": 70, "opponent_height": 69, "fighter_stance": "orthodox",
+            "opponent_stance": "southpaw", "fighter_days_rest": 150, "opponent_days_rest": 130,
+            "fighter_injury_status": "healthy", "opponent_injury_status": "healthy", "current_odds": 100,
+        },
+    },
+    "golf": {
+        "sport": "golf", "league": "PGA", "event": "Masters Tournament", "market": "top_10",
+        "selection": "Scottie Scheffler", "odds_american": 100, "bankroll": 1000, "unit_size": 25,
+        "risk_profile": "moderate", "screenshot_text": "Scottie Scheffler top 10 +100",
+        "input_stats": {
+            "golfer": "Scottie Scheffler", "tournament": "Masters Tournament", "course_name": "Augusta National",
+            "field": 89, "world_rank": 1, "sg_total": 2.65, "sg_off_tee": 0.85, "sg_approach": 1.15,
+            "sg_around_green": 0.32, "sg_putting": 0.33, "recent_form_rank": 2, "scoring_average": 68.9,
+            "fit_score": 92, "history_score": 88, "field_strength": 91, "projected_cut_line": 2,
+            "wind_rating": 4, "difficulty_rating": 8, "current_odds": 100,
+        },
+    },
+}
+
+for _sport_config in SPORT_MODEL_REGISTRY:
+    _sport_key = _sport_config["sport_key"]
+    if _sport_config.get("confirmed_bets_allowed"):
+        _sport_config["input_normalizer"] = _INPUT_NORMALIZER_BY_SPORT.get(_sport_key)
+        _sport_config["screenshot_alias_test_payload"] = deepcopy(_ACTIVE_SCREENSHOT_ALIAS_TEST_PAYLOADS.get(_sport_key))
 
 
 ADVANCED_EDGE_COMPONENTS = {
@@ -3092,6 +3284,8 @@ def _normalize_tennis_input_aliases(input_stats: dict[str, Any]) -> dict[str, An
             normalized[f"{prefix}_ace_rate"] = round(max(2.0, min(12.0, 5.0 + serve_strength)), 2)
         if normalized.get(f"{prefix}_double_fault_rate") is None and first_in is not None:
             normalized[f"{prefix}_double_fault_rate"] = round(max(1.5, min(6.0, 4.0 - ((first_in or 63) - 60) * 0.06)), 2)
+    if normalized.get("tournament") is None:
+        normalized["tournament"] = normalized.get("tournament_name") or normalized.get("event")
     return normalized
 
 
@@ -3294,10 +3488,10 @@ def _normalize_golf_input_aliases(input_stats: dict[str, Any], payload: Optional
 
     alias_pairs = {
         "player": ["golfer", "player_name", "golfer_name"],
-        "event": ["tournament", "event_name"],
+        "event": ["tournament", "tournament_name", "event_name"],
         "course": ["course_name", "venue"],
-        "field_size": ["players_in_field", "field_count"],
-        "player_world_rank": ["world_rank", "owgr_rank", "player_owgr"],
+        "field_size": ["field", "field_total", "players_in_field", "field_count"],
+        "player_world_rank": ["player_rank", "world_rank", "rank", "owgr_rank", "player_owgr"],
         "player_sg_total": ["sg_total", "strokes_gained_total"],
         "player_sg_off_tee": ["sg_off_tee", "strokes_gained_off_tee"],
         "player_sg_approach": ["sg_approach", "strokes_gained_approach"],
@@ -3308,13 +3502,16 @@ def _normalize_golf_input_aliases(input_stats: dict[str, Any], payload: Optional
         "course_fit_score": ["fit_score", "course_fit"],
         "course_history_score": ["history_score", "course_history"],
         "field_strength": ["field_strength_rating", "field_rating"],
-        "cut_line_projection": ["cut_probability", "projected_cut_probability", "make_cut_probability"],
+        "cut_line_projection": ["projected_cut_line", "cut_projection", "cut_probability", "projected_cut_probability", "make_cut_probability"],
         "weather_wind_rating": ["wind_rating", "weather_rating"],
         "course_difficulty_rating": ["difficulty_rating", "course_difficulty"],
         "opponent": ["opponent_name", "matchup_opponent"],
-        "opponent_world_rank": ["opponent_owgr_rank", "opponent_owgr"],
+        "opponent_world_rank": ["opponent_rank", "opponent_owgr_rank", "opponent_owgr"],
+        "opponent_sg_total": ["opponent_strokes_gained_total"],
+        "opponent_recent_form_rank": ["opponent_form_rank"],
+        "opponent_recent_scoring_average": ["opponent_scoring_average"],
         "opponent_course_fit_score": ["opponent_course_fit"],
-        "opponent_course_history_score": ["opponent_course_history"],
+        "opponent_course_history_score": ["opponent_history_score", "opponent_course_history"],
         "top_n": ["placement_n", "finish_n"],
     }
     for canonical, aliases in alias_pairs.items():
@@ -3333,9 +3530,28 @@ def _normalize_golf_input_aliases(input_stats: dict[str, Any], payload: Optional
         "player_world_rank", "player_sg_total", "player_sg_off_tee", "player_sg_approach",
         "player_sg_around_green", "player_sg_putting", "player_recent_form_rank",
         "player_recent_scoring_average", "course_fit_score", "course_history_score",
-        "field_strength", "cut_line_projection", "weather_wind_rating", "course_difficulty_rating",
+        "field_strength", "cut_line_projection", "course_difficulty_rating",
     }
     has_golf_quality = any(normalized.get(field) is not None for field in golf_quality_fields)
+    has_player_strength = normalized.get("player_world_rank") is not None and normalized.get("player_sg_total") is not None
+    if has_player_strength and normalized.get("player_sg_total") is not None:
+        sg_total = _safe_float(normalized.get("player_sg_total"))
+        if sg_total is not None:
+            normalized.setdefault("player_sg_off_tee", round(sg_total * 0.28, 3))
+            normalized.setdefault("player_sg_approach", round(sg_total * 0.42, 3))
+            normalized.setdefault("player_sg_around_green", round(sg_total * 0.14, 3))
+            normalized.setdefault("player_sg_putting", round(sg_total * 0.16, 3))
+    if has_golf_quality and normalized.get("field_size") is None:
+        league_text = str(payload.get("league") or normalized.get("league") or "").lower()
+        event_text = str(payload.get("event") or normalized.get("event") or "").lower()
+        if any(token in f"{league_text} {event_text}" for token in ("pga", "major", "masters", "u.s. open", "us open", "open championship", "pga championship")):
+            normalized["field_size"] = 89
+    if has_golf_quality and normalized.get("course_fit_score") is None and normalized.get("course_history_score") is not None:
+        normalized["course_fit_score"] = normalized.get("course_history_score")
+    if has_golf_quality and normalized.get("course_history_score") is None and normalized.get("course_fit_score") is not None:
+        normalized["course_history_score"] = normalized.get("course_fit_score")
+    if has_player_strength and normalized.get("cut_line_projection") is None:
+        normalized["cut_line_projection"] = 2
     if has_golf_quality:
         if normalized.get("player") is None:
             normalized["player"] = payload.get("selection") or payload.get("player_name")
@@ -3367,6 +3583,172 @@ def _golf_market_specific_missing(market: Any, input_stats: dict[str, Any], payl
         if value is None:
             missing.append(field)
     return missing
+
+
+def _missing_inputs_for_sport(sport: str, market: Any, input_stats: dict[str, Any], payload: dict[str, Any]) -> list[str]:
+    if sport == "basketball_nba":
+        return _nba_full_inputs_missing(input_stats) + _nba_market_specific_missing(market, input_stats, payload)
+    if sport == "americanfootball_nfl":
+        return _nfl_full_inputs_missing(input_stats) + _nfl_market_specific_missing(market, input_stats, payload)
+    if sport == "baseball_mlb":
+        return _mlb_full_inputs_missing(input_stats, payload) + _mlb_market_specific_missing(market, input_stats, payload)
+    if sport == "soccer":
+        return _soccer_full_inputs_missing(input_stats, payload) + _soccer_market_specific_missing(market, input_stats, payload)
+    if sport == "icehockey_nhl":
+        return _nhl_full_inputs_missing(input_stats, payload) + _nhl_market_specific_missing(market, input_stats, payload)
+    if sport == "tennis":
+        return _tennis_full_inputs_missing(input_stats, payload) + _tennis_market_specific_missing(market, input_stats, payload)
+    if sport in {"mma_mixed_martial_arts", "boxing"}:
+        return _combat_full_inputs_missing(input_stats, payload) + _combat_market_specific_missing(market, input_stats, payload)
+    if sport == "golf":
+        return _golf_full_inputs_missing(input_stats, payload) + _golf_market_specific_missing(market, input_stats, payload)
+    config = get_sport_model_config(sport)
+    if not config:
+        return []
+    status, missing = _component_status(config["required_inputs"], input_stats)
+    return missing if status == COMPONENT_STATUS_INACTIVE else []
+
+
+def _copy_alias_if_missing(data: dict[str, Any], canonical: str, aliases: list[str]) -> None:
+    if data.get(canonical) is not None:
+        return
+    for alias in aliases:
+        if data.get(alias) is not None:
+            data[canonical] = data.get(alias)
+            return
+
+
+def _normalize_generic_betting_aliases(
+    input_stats: dict[str, Any],
+    *,
+    market: Any = None,
+    selection: Any = None,
+    ticket: Optional[dict[str, Any]] = None,
+) -> dict[str, Any]:
+    normalized = dict(input_stats or {})
+    ticket = ticket or {}
+    generic_aliases = {
+        "player": ["player_name", "athlete"],
+        "team": ["team_name"],
+        "selection": ["selection_name"],
+        "opponent": ["opponent_name"],
+        "event": ["game", "matchup", "tournament", "tournament_name"],
+        "league": ["league_name"],
+        "line": ["line_value"],
+        "total_line": ["total_line"],
+        "market": ["market_name"],
+        "sportsbook": ["book_name"],
+    }
+    for canonical, aliases in generic_aliases.items():
+        _copy_alias_if_missing(normalized, canonical, aliases)
+    if normalized.get("odds_american") is None:
+        for alias in ("current_odds", "best_available_odds"):
+            if normalized.get(alias) is not None:
+                normalized["odds_american"] = normalized.get(alias)
+                break
+    market_key = _normal_market_key(market or normalized.get("market") or ticket.get("market"))
+    if normalized.get("line") is None and normalized.get("prop_line") is not None and ("prop" in market_key or market_key in {"aces", "double_faults", "birdies_prop", "putts_prop"}):
+        normalized["line"] = normalized.get("prop_line")
+    if normalized.get("market") is None and (market or ticket.get("market")) is not None:
+        normalized["market"] = market or ticket.get("market")
+    if normalized.get("league") is None and ticket.get("league") is not None:
+        normalized["league"] = ticket.get("league")
+    return normalized
+
+
+def _normalize_team_sport_input_aliases(input_stats: dict[str, Any], payload: Optional[dict[str, Any]] = None, sport: Optional[str] = None) -> dict[str, Any]:
+    normalized = dict(input_stats or {})
+    payload = payload or {}
+    if normalized.get("selection") is None and normalized.get("team") is not None:
+        normalized["selection"] = normalized.get("team")
+    if normalized.get("market") is None:
+        normalized["market"] = payload.get("market")
+    if normalized.get("league") is None:
+        normalized["league"] = payload.get("league")
+    return normalized
+
+
+def _normalize_mlb_input_aliases(input_stats: dict[str, Any], payload: Optional[dict[str, Any]] = None, sport: Optional[str] = None) -> dict[str, Any]:
+    return _normalize_team_sport_input_aliases(input_stats, payload, sport)
+
+
+def _normalize_nba_input_aliases(input_stats: dict[str, Any], payload: Optional[dict[str, Any]] = None, sport: Optional[str] = None) -> dict[str, Any]:
+    return _normalize_team_sport_input_aliases(input_stats, payload, sport)
+
+
+def _normalize_nfl_input_aliases(input_stats: dict[str, Any], payload: Optional[dict[str, Any]] = None, sport: Optional[str] = None) -> dict[str, Any]:
+    return _normalize_team_sport_input_aliases(input_stats, payload, sport)
+
+
+def _normalize_soccer_input_aliases(input_stats: dict[str, Any], payload: Optional[dict[str, Any]] = None, sport: Optional[str] = None) -> dict[str, Any]:
+    return _normalize_team_sport_input_aliases(input_stats, payload, sport)
+
+
+def _normalize_nhl_input_aliases(input_stats: dict[str, Any], payload: Optional[dict[str, Any]] = None, sport: Optional[str] = None) -> dict[str, Any]:
+    return _normalize_team_sport_input_aliases(input_stats, payload, sport)
+
+
+def normalize_sport_inputs_for_model(
+    sport: Any,
+    market: Any,
+    selection: Any,
+    input_stats: Any,
+    ticket: Optional[dict[str, Any]] = None,
+) -> dict[str, Any]:
+    raw_input_stats, input_stats_flags = _normalize_input_stats(input_stats)
+    payload = dict(ticket or {})
+    sport_alias_resolved = normalize_sport_key(str(sport or payload.get("sport") or ""))
+    effective_market = market or payload.get("market") or raw_input_stats.get("market") or raw_input_stats.get("market_name")
+    before_missing = _missing_inputs_for_sport(sport_alias_resolved, effective_market, raw_input_stats, payload)
+    normalized = _normalize_generic_betting_aliases(
+        raw_input_stats,
+        market=effective_market,
+        selection=selection or payload.get("selection"),
+        ticket=payload,
+    )
+
+    normalizer_used = "generic_betting_alias_normalizer"
+    if sport_alias_resolved == "basketball_nba":
+        normalized = _normalize_nba_input_aliases(normalized, payload, sport_alias_resolved)
+        normalizer_used = "nba_input_normalizer"
+    elif sport_alias_resolved == "americanfootball_nfl":
+        normalized = _normalize_nfl_input_aliases(normalized, payload, sport_alias_resolved)
+        normalizer_used = "nfl_input_normalizer"
+    elif sport_alias_resolved == "baseball_mlb":
+        normalized = _normalize_mlb_input_aliases(normalized, payload, sport_alias_resolved)
+        normalizer_used = "mlb_input_normalizer"
+    elif sport_alias_resolved == "soccer":
+        normalized = _normalize_soccer_input_aliases(normalized, payload, sport_alias_resolved)
+        normalizer_used = "soccer_input_normalizer"
+    elif sport_alias_resolved == "icehockey_nhl":
+        normalized = _normalize_nhl_input_aliases(normalized, payload, sport_alias_resolved)
+        normalizer_used = "nhl_input_normalizer"
+    elif sport_alias_resolved == "tennis":
+        normalized = _normalize_tennis_input_aliases(normalized)
+        normalizer_used = "tennis_input_normalizer"
+    elif sport_alias_resolved in {"mma_mixed_martial_arts", "boxing"}:
+        normalized = _normalize_combat_input_aliases(normalized, payload, sport_alias_resolved)
+        normalizer_used = "combat_input_normalizer"
+    elif sport_alias_resolved == "golf":
+        normalized = _normalize_golf_input_aliases(normalized, payload, sport_alias_resolved)
+        normalizer_used = "golf_input_normalizer"
+
+    after_market = market or payload.get("market") or normalized.get("market")
+    after_missing = _missing_inputs_for_sport(sport_alias_resolved, after_market, normalized, payload)
+    diagnostics = {
+        "raw_input_keys": sorted(raw_input_stats.keys()),
+        "normalized_input_keys": sorted(normalized.keys()),
+        "missing_inputs_before_normalization": list(dict.fromkeys(before_missing)),
+        "missing_inputs_after_normalization": list(dict.fromkeys(after_missing)),
+        "sport_alias_resolved": sport_alias_resolved,
+        "normalizer_used": normalizer_used,
+        "input_stats_flags": input_stats_flags,
+    }
+    return {
+        "input_stats": normalized,
+        "diagnostics": diagnostics,
+        **diagnostics,
+    }
 
 
 def _nfl_thresholds(risk_profile: Any) -> tuple[float, float]:
@@ -6101,20 +6483,28 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         sport = normalize_sport_key(str(payload.get("sport", "") or ""))
         config = get_sport_model_config(sport)
         market = payload.get("market")
-        input_stats, input_stats_flags = _normalize_input_stats(payload.get("input_stats"))
-        if sport == "tennis":
-            input_stats = _normalize_tennis_input_aliases(input_stats)
-        elif sport in {"mma_mixed_martial_arts", "boxing"}:
-            input_stats = _normalize_combat_input_aliases(input_stats, payload, sport)
-        elif sport == "golf":
-            input_stats = _normalize_golf_input_aliases(input_stats, payload, sport)
-        odds_american = _safe_float(payload.get("odds_american"))
+        normalization = normalize_sport_inputs_for_model(
+            sport=sport,
+            market=market,
+            selection=payload.get("selection"),
+            input_stats=payload.get("input_stats"),
+            ticket=payload,
+        )
+        input_stats = normalization["input_stats"]
+        normalization_diagnostics = normalization["diagnostics"]
+        input_stats_flags = list(normalization_diagnostics.get("input_stats_flags") or [])
+        market = market or input_stats.get("market")
+        raw_payload_odds = payload.get("odds_american")
+        odds_american = _safe_float(raw_payload_odds)
+        if odds_american is None and raw_payload_odds in (None, ""):
+            odds_american = _safe_float(input_stats.get("odds_american"))
         bankroll = _safe_float(payload.get("bankroll"), 0) or 0
         unit_size = _safe_float(payload.get("unit_size"), 0) or 0
         if not config:
             response = _unsupported_sport_response(payload)
             if input_stats_flags:
                 response["no_bet_flags"] = list(dict.fromkeys(response["no_bet_flags"] + input_stats_flags))
+            response.update(normalization_diagnostics)
             return response
 
         nba_model = None
@@ -6215,30 +6605,9 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
         elif golf_model:
             component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
-        elif sport == "basketball_nba":
+        elif sport in {"basketball_nba", "americanfootball_nfl", "baseball_mlb", "soccer", "icehockey_nhl", "tennis", "mma_mixed_martial_arts", "boxing", "golf"}:
             component_status = COMPONENT_STATUS_INACTIVE
-            missing_inputs = _nba_full_inputs_missing(input_stats) + _nba_market_specific_missing(market, input_stats, payload)
-        elif sport == "americanfootball_nfl":
-            component_status = COMPONENT_STATUS_INACTIVE
-            missing_inputs = _nfl_full_inputs_missing(input_stats) + _nfl_market_specific_missing(market, input_stats, payload)
-        elif sport == "baseball_mlb":
-            component_status = COMPONENT_STATUS_INACTIVE
-            missing_inputs = _mlb_full_inputs_missing(input_stats, payload) + _mlb_market_specific_missing(market, input_stats, payload)
-        elif sport == "soccer":
-            component_status = COMPONENT_STATUS_INACTIVE
-            missing_inputs = _soccer_full_inputs_missing(input_stats, payload) + _soccer_market_specific_missing(market, input_stats, payload)
-        elif sport == "icehockey_nhl":
-            component_status = COMPONENT_STATUS_INACTIVE
-            missing_inputs = _nhl_full_inputs_missing(input_stats, payload) + _nhl_market_specific_missing(market, input_stats, payload)
-        elif sport == "tennis":
-            component_status = COMPONENT_STATUS_INACTIVE
-            missing_inputs = _tennis_full_inputs_missing(input_stats, payload) + _tennis_market_specific_missing(market, input_stats, payload)
-        elif sport in {"mma_mixed_martial_arts", "boxing"}:
-            component_status = COMPONENT_STATUS_INACTIVE
-            missing_inputs = _combat_full_inputs_missing(input_stats, payload) + _combat_market_specific_missing(market, input_stats, payload)
-        elif sport == "golf":
-            component_status = COMPONENT_STATUS_INACTIVE
-            missing_inputs = _golf_full_inputs_missing(input_stats, payload) + _golf_market_specific_missing(market, input_stats, payload)
+            missing_inputs = _missing_inputs_for_sport(sport, market, input_stats, payload)
         else:
             component_status, missing_inputs = _component_status(config["required_inputs"], input_stats)
         backtest_status = "passed" if input_stats.get("backtest_proof") else "not_started"
@@ -6714,6 +7083,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             "status": evaluated_status,
             "decision": "CONFIRMED_BET" if confirmed_bets else "NO_BET",
             "partial_model_mode": bool(missing_inputs or true_probability is None),
+            **normalization_diagnostics,
             "nba_input_contract": deepcopy(NBA_INPUT_CONTRACT) if sport == "basketball_nba" else None,
             "nfl_input_contract": deepcopy(NFL_INPUT_CONTRACT) if sport == "americanfootball_nfl" else None,
             "mlb_input_contract": deepcopy(MLB_INPUT_CONTRACT) if sport == "baseball_mlb" else None,

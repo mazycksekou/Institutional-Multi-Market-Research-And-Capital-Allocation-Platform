@@ -103,6 +103,16 @@ class TestMultiSportModelRegistry(unittest.TestCase):
             self.assertIn("provider_needs", sport)
             self.assertGreater(len(sport["provider_needs"]), 0)
 
+    def test_active_confirmed_sports_register_input_normalization_contract(self):
+        sports = registry.get_sports_model_registry_response()["sports"]
+        for sport in sports:
+            if not sport["confirmed_bets_allowed"]:
+                continue
+            with self.subTest(sport=sport["sport_key"]):
+                self.assertTrue(sport.get("input_normalizer"))
+                self.assertIsInstance(sport.get("screenshot_alias_test_payload"), dict)
+                self.assertTrue((sport["screenshot_alias_test_payload"].get("input_stats") or {}))
+
     def test_log_fields_exist_for_each_sport(self):
         sports = registry.get_sports_model_registry_response()["sports"]
         for sport in sports:
