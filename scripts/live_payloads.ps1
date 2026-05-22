@@ -272,6 +272,40 @@ function New-F1Payload {
     return $payload
 }
 
+function New-NascarPayload {
+    $stats = @{
+        race = "Daytona 500"; track_name = "Daytona International Speedway"; driver_name = "Kyle Larson"; team_name = "Hendrick Motorsports"
+        manufacturer_name = "Chevrolet"; opponent_name = "Denny Hamlin"; opponent_team_name = "Joe Gibbs Racing"; opponent_manufacturer_name = "Toyota"
+        race_series = "NASCAR Cup Series"; session = "race"; track_type = "superspeedway"; track_miles = 2.5; laps = 200; distance_miles = 500
+        start_pos = 6; opp_start_pos = 15; qual_pos = 6; opp_qual_pos = 15; practice_pos = 4; opp_practice_pos = 16
+        single_lap_speed = 189.4; opp_single_lap_speed = 187.8; five_lap_avg = 188.5; opp_five_lap_avg = 187.2
+        ten_lap_avg = 187.8; opp_ten_lap_avg = 186.4; fifteen_lap_avg = 187.0; opp_fifteen_lap_avg = 185.9
+        driver_power_rating = 94; opp_driver_rating = 88; season_rating = 93; opp_season_rating = 87
+        track_history = 88; opp_track_history = 84; track_type_score = 90; opp_track_type_score = 85
+        recent_form = 91; opp_recent_form = 86; car_speed = 92; opp_car_speed = 86
+        long_run_speed = 91; opp_long_run_speed = 85; short_run_speed = 93; opp_short_run_speed = 86
+        clean_air_speed = 91; opp_clean_air_speed = 85; dirty_air_speed = 90; opp_dirty_air_speed = 86
+        restart_score = 92; opp_restart_score = 86; passing_score = 91; opp_passing_score = 86
+        defense_score = 89; opp_defense_score = 86; tire_mgmt = 90; opp_tire_mgmt = 85
+        pit_rating = 91; opp_pit_rating = 85; crew_chief = 91; opp_crew_chief = 85
+        strategy = 90; opp_strategy = 85; manufacturer_score = 88; opp_manufacturer_score = 86
+        track_position = 0.52; pass_difficulty = 0.44; tire_wear = 0.42; fuel_strategy = 0.56
+        pit_sensitivity = 0.48; caution_prob = 0.62; wreck_prob = 0.18; overtime_prob = 0.20
+        temp_f = 72; wind_mph = 12; precip_prob = 0.08; track_temp_f = 84; day_night = "day"
+        aero = 0.44; drafting = 0.92; pack_variance = 0.82; road_skill = 0.28; contact_variance = 0.42; aero_variance = 0.44
+        dnf_risk = 0.08; opp_dnf_risk = 0.11; mechanical_risk = 0.05; opp_mechanical_risk = 0.08
+        crash = 0.10; opp_crash = 0.14; penalty = 0.04; opp_penalty = 0.06; inspection = 0.03; opp_inspection = 0.05
+        backup = $false; opp_backup = $false; engine_penalty = $false; opp_engine_penalty = $false; rear_start = $false; opp_rear_start = $false
+        field = 36; playoff = $false; elimination = $false; superspeedway = $true; road_course = $false; short_track = $false; intermediate = $false; restrictor_plate = $true
+        team_momentum = 88; opp_team_momentum = 85
+        manufacturer_speed_rating = 89; manufacturer_reliability_rating = 87; manufacturer_track_type_rating = 88
+        manufacturer_recent_form_rating = 87; manufacturer_driver_depth_rating = 86; book_count = 8
+    }
+    $payload = New-LiveTicketBase -Sport "nascar" -League "NASCAR Cup Series" -Event "Daytona 500" -Market "driver_matchup" -Selection "Kyle Larson" -InputStats $stats
+    $payload.visible_markets = @("driver_matchup", "top_10_finish", "race_winner")
+    return $payload
+}
+
 function New-LiveActivePayload {
     param([Parameter(Mandatory = $true)] [string] $Sport)
     switch ($Sport.ToLower()) {
@@ -290,6 +324,8 @@ function New-LiveActivePayload {
         "ncaaf" { return New-NcaafPayload }
         "f1" { return New-F1Payload }
         "formula1" { return New-F1Payload }
+        "nascar" { return New-NascarPayload }
+        "nascar_cup" { return New-NascarPayload }
         "cricket" { return New-CricketPayload }
         default { throw "No live active payload builder registered for sport '$Sport'." }
     }

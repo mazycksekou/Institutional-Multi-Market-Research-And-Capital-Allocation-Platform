@@ -450,6 +450,16 @@ class TestSportAnalysisEndpoint(unittest.TestCase):
                 "fia_formula_1": "formula1",
                 "grand_prix": "formula1",
                 "motorsport_f1": "formula1",
+                "nascar_cup": "nascar",
+                "cup_series": "nascar",
+                "nascar_cup_series": "nascar",
+                "xfinity_series": "nascar",
+                "nascar_xfinity": "nascar",
+                "truck_series": "nascar",
+                "nascar_trucks": "nascar",
+                "craftsman_truck_series": "nascar",
+                "stock_car_racing": "nascar",
+                "motorsport_nascar": "nascar",
             }
             for submitted, expected in cases.items():
                 response = client.post(
