@@ -107,11 +107,13 @@ function Invoke-LiveTicketCheck {
     try {
         $json = $Payload | ConvertTo-Json -Depth 80 -Compress
         try {
-            $response = Invoke-RestMethod -Method Post -Uri $script:LiveEndpoint -Headers @{ "X-API-Key" = $env:ACTION_API_KEY } -ContentType "application/json" -Body $json
+            $response = Invoke-RestMethod -Method Post -Uri $script:LiveEndpoint -Headers @{ "X-API-Key" = $env:ACTION_API_KEY } -ContentType "application/json" -Body $json -TimeoutSec 60
         } catch {
+            $firstError = $_.Exception.Message
             $curl = Get-Command curl.exe -ErrorAction SilentlyContinue
             if (-not $curl) { throw }
-            $raw = & curl.exe --ssl-no-revoke -sS -X POST $script:LiveEndpoint -H "X-API-Key: $env:ACTION_API_KEY" -H "Content-Type: application/json" --data-raw $json
+            $raw = & curl.exe --max-time 60 --ssl-no-revoke -sS -X POST $script:LiveEndpoint -H "X-API-Key: $env:ACTION_API_KEY" -H "Content-Type: application/json" --data-raw $json 2>&1
+            if ($LASTEXITCODE -eq 28) { throw "REQUEST_TIMEOUT" }
             if ($LASTEXITCODE -ne 0) { throw "curl.exe failed with exit code $LASTEXITCODE" }
             $response = $raw | ConvertFrom-Json
         }
@@ -122,13 +124,38 @@ function Invoke-LiveTicketCheck {
         }
         return New-LiveCheckRow -Check $Check -Payload $Payload -Response $response -Pass $pass
     } catch {
-        return New-LiveCheckRow -Check $Check -Payload $Payload -Response $null -Pass $false -ErrorMessage $_.Exception.Message
+        $message = $_.Exception.Message
+        if ($message -match "timed out|timeout|operation has timed out") {
+            $message = "REQUEST_TIMEOUT"
+        }
+        return New-LiveCheckRow -Check $Check -Payload $Payload -Response $null -Pass $false -ErrorMessage $message
     }
 }
 
 function Print-LiveCheckTable {
     param([Parameter(Mandatory = $true)] [array] $Rows)
-    $Rows | Format-Table Check,Ok,Sport,Market,Selection,Model,ModelStatus,Calibration,FinalProbability,EdgePercent,Confidence,Decision,Status,Stake,SuggestedStake,ConfirmedCount,SameSelectionNoBets,MissingInputs,Pass -AutoSize | Out-String -Width 260 | Write-Host
+    foreach ($row in $Rows) {
+        Write-Host "CHECK: $($row.Check)"
+        Write-Host "PASS: $($row.Pass)"
+        Write-Host "SPORT: $($row.Sport)"
+        Write-Host "MODEL: $($row.Model)"
+        Write-Host "STATUS: $($row.ModelStatus)"
+        Write-Host "DECISION: $($row.Decision)"
+        Write-Host "STAKE: $($row.Stake)"
+        Write-Host "CONFIRMED: $($row.ConfirmedCount)"
+        Write-Host "NO_BETS: $($row.SameSelectionNoBets)"
+        Write-Host "MISSING_INPUTS: $($row.MissingInputs)"
+        if ($null -ne $row.FinalProbability -or $null -ne $row.EdgePercent -or $null -ne $row.Confidence -or -not [string]::IsNullOrWhiteSpace("$($row.Calibration)")) {
+            Write-Host "FINAL_PROBABILITY: $($row.FinalProbability)"
+            Write-Host "EDGE_PERCENT: $($row.EdgePercent)"
+            Write-Host "CONFIDENCE: $($row.Confidence)"
+            Write-Host "CALIBRATION: $($row.Calibration)"
+        }
+        if (-not [string]::IsNullOrWhiteSpace("$($row.Status)") -and "$($row.Status)" -ne "$($row.ModelStatus)") {
+            Write-Host "RESULT_STATUS: $($row.Status)"
+        }
+        Write-Host "----------------------------------------"
+    }
 }
 
 function Exit-WithPassFail {
@@ -138,10 +165,10 @@ function Exit-WithPassFail {
     )
     $failed = @($Rows | Where-Object { -not $_.Pass })
     if ($failed.Count -eq 0) {
-        Write-Host "$Label PASS"
+        Write-Host "PASS: $Label checks are clean."
         exit 0
     }
-    Write-Host "$Label FAIL"
+    Write-Host "FAIL: $Label checks need review."
     exit 1
 }
 
