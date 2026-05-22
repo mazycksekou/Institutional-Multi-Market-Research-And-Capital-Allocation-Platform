@@ -118,9 +118,40 @@ class TestCollegeFootballModelActivation(unittest.TestCase):
             response = self._sport(input_stats=bad)
             self.assertEqual(response["confirmed_bets"], [])
             self.assertEqual(response["suggested_stake"], 0)
+            self.assertNotEqual(response["decision"], "CONFIRMED_BET")
         response = self._sport(odds_american="bad")
         self.assertEqual(response["confirmed_bets"], [])
         self.assertEqual(response["suggested_stake"], 0)
+
+    def test_direct_malformed_ncaaf_values_cannot_confirm(self):
+        malformed = {key: "bad text" for key in cfb_inputs().keys()}
+        malformed.update({
+            "home_team": "Ohio State", "away_team": "Michigan", "team": "Ohio State",
+            "opponent": "Michigan", "neutral_site": False, "weather_precipitation": "none",
+        })
+        response = self._sport(input_stats=malformed)
+        self.assertEqual(response["confirmed_bets"], [])
+        self.assertEqual(response["suggested_stake"], 0)
+        self.assertNotEqual(response["decision"], "CONFIRMED_BET")
+        self.assertTrue(response["missing_inputs"])
+
+    def test_screenshot_bad_text_input_cannot_confirm(self):
+        response = self._screenshot(
+            event="Vague NCAAF ticket",
+            teams=None,
+            selection="Ohio State",
+            screenshot_text="bad text only maybe buckeyes plus moneyline",
+            input_stats="bad text input",
+        )
+        analysis = response["model_analysis"]
+        self.assertTrue(response["ok"])
+        self.assertEqual(response["confirmed_bets"], [])
+        self.assertEqual(analysis["confirmed_bets"], [])
+        self.assertEqual(response["suggested_stake"], 0)
+        self.assertNotEqual(analysis["decision"], "CONFIRMED_BET")
+        self.assertLessEqual(len(response["confirmed_bets"]), 0)
+        self.assertIn(analysis["model_status"], {"inactive_missing_data", "invalid_input"})
+        self.assertTrue(response["missing_inputs"])
 
     def test_moneyline_confirmed_capable(self): self.assertTrue(self._sport()["confirmed_bets"])
     def test_spread_active(self): self.assert_active(self._sport(market="spread", line=-3.5, input_stats=cfb_inputs(line=-3.5)))

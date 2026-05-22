@@ -756,6 +756,13 @@ COLLEGE_FOOTBALL_REQUIRED_CORE_INPUTS = [
     "home_power_rating", "away_power_rating", "home_conference_strength", "away_conference_strength",
 ]
 
+COLLEGE_FOOTBALL_NUMERIC_CORE_INPUTS = [
+    field for field in COLLEGE_FOOTBALL_REQUIRED_CORE_INPUTS
+    if field not in {
+        "home_team", "away_team", "team", "opponent", "neutral_site", "weather_precipitation",
+    }
+]
+
 COLLEGE_FOOTBALL_REQUIRED_MARKET_INPUTS = {
     "moneyline": ["odds_american"],
     "spread": ["line", "odds_american"],
@@ -3446,6 +3453,10 @@ def _college_football_full_inputs_missing(input_stats: dict[str, Any], payload: 
             value = payload.get(field) or payload.get("event_id")
         if value is None:
             missing.append(field)
+    for field in COLLEGE_FOOTBALL_NUMERIC_CORE_INPUTS:
+        value = input_stats.get(field)
+        if value is not None and _safe_float(value) is None:
+            missing.append(f"{field}_invalid")
     return missing
 
 
@@ -3459,6 +3470,8 @@ def _college_football_market_specific_missing(market: Any, input_stats: dict[str
             value = payload.get(field)
         if value is None:
             missing.append(field)
+        elif field in {"line", "total_line", "odds_american"} and _safe_float(value) is None:
+            missing.append(f"{field}_invalid")
     return missing
 
 

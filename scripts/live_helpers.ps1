@@ -70,6 +70,10 @@ function New-LiveCheckRow {
 
     $analysis = if ($Response -and $Response.model_analysis) { $Response.model_analysis } elseif ($Response) { $Response } else { $null }
     $counts = if ($Response) { Get-SameSelectionCounts -Response $Response } else { [pscustomobject]@{ ConfirmedCount = 0; SameSelectionNoBets = 0 } }
+    $board = if ($Response) { Get-LiveBoard -Response $Response } else { $null }
+    $noBetCount = 0
+    if ($analysis -and $analysis.no_bets) { $noBetCount += @($analysis.no_bets).Count }
+    if ($board -and $board.no_bets) { $noBetCount += @($board.no_bets).Count }
     $missing = if ($analysis -and $analysis.missing_inputs) { @($analysis.missing_inputs).Count } else { 0 }
     return [pscustomobject]@{
         Check = $Check
@@ -88,6 +92,7 @@ function New-LiveCheckRow {
         Stake = if ($analysis) { $analysis.stake } else { 0 }
         SuggestedStake = if ($analysis) { $analysis.suggested_stake } else { 0 }
         ConfirmedCount = $counts.ConfirmedCount
+        NoBetCount = $noBetCount
         SameSelectionNoBets = $counts.SameSelectionNoBets
         MissingInputs = $missing
         Pass = $Pass
@@ -143,7 +148,8 @@ function Print-LiveCheckTable {
         Write-Host "DECISION: $($row.Decision)"
         Write-Host "STAKE: $($row.Stake)"
         Write-Host "CONFIRMED: $($row.ConfirmedCount)"
-        Write-Host "NO_BETS: $($row.SameSelectionNoBets)"
+        Write-Host "NO_BETS: $($row.NoBetCount)"
+        Write-Host "SAME_SELECTION_NO_BETS: $($row.SameSelectionNoBets)"
         Write-Host "MISSING_INPUTS: $($row.MissingInputs)"
         if ($null -ne $row.FinalProbability -or $null -ne $row.EdgePercent -or $null -ne $row.Confidence -or -not [string]::IsNullOrWhiteSpace("$($row.Calibration)")) {
             Write-Host "FINAL_PROBABILITY: $($row.FinalProbability)"

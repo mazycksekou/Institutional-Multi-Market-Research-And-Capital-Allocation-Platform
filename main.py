@@ -595,7 +595,7 @@ class ScreenshotAnalysisRequest(BaseModel):
     bankroll: Optional[Any] = None
     unit_size: Optional[Any] = None
     risk_profile: Optional[str] = "conservative"
-    input_stats: Optional[dict[str, Any]] = None
+    input_stats: Optional[Any] = None
 
 
 class ActionBetLogRequest(BaseModel):

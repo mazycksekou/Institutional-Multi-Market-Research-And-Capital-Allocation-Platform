@@ -34,6 +34,7 @@ function Assert-SafeNoBet {
 
     $analysis = if ($Response.model_analysis) { $Response.model_analysis } else { $Response }
     if (-not $Response.ok) { return $false }
+    if (($Response.confirmed_bets | Measure-Object).Count -ne 0) { return $false }
     if (($analysis.confirmed_bets | Measure-Object).Count -ne 0) { return $false }
     $stake = if ($null -ne $analysis.stake) { [double]$analysis.stake } else { 0 }
     $suggestedStake = if ($null -ne $analysis.suggested_stake) { [double]$analysis.suggested_stake } else { 0 }
