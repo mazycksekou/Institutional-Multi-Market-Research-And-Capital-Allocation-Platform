@@ -66,6 +66,18 @@ class TestSportModelRouting(unittest.TestCase):
             "dp_world_tour": "golf",
             "european_tour": "golf",
             "lpga": "golf",
+            "ipl": "cricket",
+            "t20": "cricket",
+            "t20_cricket": "cricket",
+            "odi": "cricket",
+            "one_day_cricket": "cricket",
+            "test_cricket": "cricket",
+            "international_cricket": "cricket",
+            "big_bash": "cricket",
+            "bbl": "cricket",
+            "the_hundred": "cricket",
+            "cpl": "cricket",
+            "psl": "cricket",
             "valorant": "esports",
             "csgo": "esports",
             "lol": "esports",
@@ -99,7 +111,7 @@ class TestSportModelRouting(unittest.TestCase):
         self.assertEqual(registry.get_sport_model_config("basketball_ncaawb")["model_family"], "womens_college_basketball_possession_variance_model")
         self.assertEqual(registry.get_sport_model_config("americanfootball_ncaaf")["model_family"], "college_football_epa_drive_rating_monte_carlo_model")
         self.assertEqual(registry.get_sport_model_config("formula1")["model_family"], "Race simulation")
-        self.assertEqual(registry.get_sport_model_config("cricket")["model_family"], "Pitch toss innings model family")
+        self.assertEqual(registry.get_sport_model_config("cricket")["model_family"], "cricket_run_rate_wicket_resource_monte_carlo_model")
         self.assertIn("game title routing placeholder", registry.get_sport_model_config("esports")["model_components"])
 
     def test_every_sport_uses_shared_officials_module_with_specific_type(self):

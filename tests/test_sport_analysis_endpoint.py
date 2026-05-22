@@ -437,6 +437,14 @@ class TestSportAnalysisEndpoint(unittest.TestCase):
                 "liv_golf": "golf",
                 "dp_world_tour": "golf",
                 "lpga": "golf",
+                "ipl": "cricket",
+                "t20_cricket": "cricket",
+                "odi": "cricket",
+                "test_cricket": "cricket",
+                "bbl": "cricket",
+                "the_hundred": "cricket",
+                "cpl": "cricket",
+                "psl": "cricket",
             }
             for submitted, expected in cases.items():
                 response = client.post(

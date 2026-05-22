@@ -39,7 +39,7 @@ class TestMultiSportModelRegistry(unittest.TestCase):
     def test_only_activated_sports_allow_confirmed_bets(self):
         sports = registry.get_sports_model_registry_response()["sports"]
         enabled = [sport["sport_key"] for sport in sports if sport["confirmed_bets_allowed"]]
-        self.assertEqual(enabled, ["baseball_mlb", "basketball_nba", "basketball_wnba", "basketball_ncaab", "basketball_ncaawb", "americanfootball_nfl", "americanfootball_ncaaf", "soccer", "icehockey_nhl", "tennis", "mma_mixed_martial_arts", "boxing", "golf"])
+        self.assertEqual(enabled, ["baseball_mlb", "basketball_nba", "basketball_wnba", "basketball_ncaab", "basketball_ncaawb", "americanfootball_nfl", "americanfootball_ncaaf", "soccer", "icehockey_nhl", "tennis", "mma_mixed_martial_arts", "boxing", "golf", "cricket"])
         self.assertTrue(registry.confirmed_bets_allowed("baseball_mlb"))
         self.assertTrue(registry.confirmed_bets_allowed("basketball_nba"))
         self.assertTrue(registry.confirmed_bets_allowed("basketball_wnba"))
@@ -53,10 +53,11 @@ class TestMultiSportModelRegistry(unittest.TestCase):
         self.assertTrue(registry.confirmed_bets_allowed("mma_mixed_martial_arts"))
         self.assertTrue(registry.confirmed_bets_allowed("boxing"))
         self.assertTrue(registry.confirmed_bets_allowed("golf"))
+        self.assertTrue(registry.confirmed_bets_allowed("cricket"))
         self.assertTrue(all(
             not registry.confirmed_bets_allowed(sport["sport_key"])
             for sport in sports
-            if sport["sport_key"] not in {"baseball_mlb", "basketball_nba", "basketball_wnba", "basketball_ncaab", "basketball_ncaawb", "americanfootball_nfl", "americanfootball_ncaaf", "soccer", "icehockey_nhl", "tennis", "mma_mixed_martial_arts", "boxing", "golf"}
+            if sport["sport_key"] not in {"baseball_mlb", "basketball_nba", "basketball_wnba", "basketball_ncaab", "basketball_ncaawb", "americanfootball_nfl", "americanfootball_ncaaf", "soccer", "icehockey_nhl", "tennis", "mma_mixed_martial_arts", "boxing", "golf", "cricket"}
         ))
 
     def test_unsupported_sport_helper_behavior_is_clean(self):
@@ -79,9 +80,9 @@ class TestMultiSportModelRegistry(unittest.TestCase):
         self.assertTrue(response["ok"])
         self.assertEqual(response["endpoint"], "getSportsModelRegistry")
         self.assertEqual(response["summary"]["total_sports"], 16)
-        self.assertEqual(response["summary"]["confirmed_bet_enabled_sports"], 13)
+        self.assertEqual(response["summary"]["confirmed_bet_enabled_sports"], 14)
         self.assertEqual(response["summary"]["market_derived_only_sports"], 0)
-        self.assertEqual(response["summary"]["not_built_sports"], 3)
+        self.assertEqual(response["summary"]["not_built_sports"], 2)
         self.assertEqual(response["error"], None)
         self.assertEqual(response["detail"], None)
 
@@ -143,6 +144,17 @@ class TestMultiSportModelRegistry(unittest.TestCase):
         self.assertTrue(college["input_normalizer"])
         self.assertIsInstance(college["screenshot_alias_test_payload"], dict)
         self.assertNotEqual(college["screenshot_alias_test_payload"], nfl["screenshot_alias_test_payload"])
+
+    def test_cricket_is_standalone_active_module(self):
+        cricket = registry.get_sport_model_config("cricket")
+        mlb = registry.get_sport_model_config("baseball_mlb")
+        self.assertTrue(cricket["confirmed_bets_allowed"])
+        self.assertEqual(cricket["model_used"], "cricket_run_rate_wicket_resource_monte_carlo_model")
+        self.assertEqual(cricket["model_family"], "cricket_run_rate_wicket_resource_monte_carlo_model")
+        self.assertEqual(cricket["league_calibration_applied"], "cricket")
+        self.assertNotEqual(cricket["model_family"], mlb["model_family"])
+        self.assertTrue(cricket["input_normalizer"])
+        self.assertIsInstance(cricket["screenshot_alias_test_payload"], dict)
 
     def test_log_fields_exist_for_each_sport(self):
         sports = registry.get_sports_model_registry_response()["sports"]

@@ -50,6 +50,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\live_all_smoke.ps1
 - `live_ncaab_smoke.ps1`
 - `live_ncaawb_smoke.ps1`
 - `live_ncaaf_smoke.ps1`
+- `live_cricket_smoke.ps1`
 
 Each sport script runs three checks:
 
@@ -79,7 +80,7 @@ Every future sport module must ship with:
 7. missing input names printed on failure through the shared helpers
 8. inclusion in `live_all_smoke.ps1` only after the local contract test passes
 
-Future sports like cricket, Formula 1, esports, and any later module should add a small payload builder in `live_payloads.ps1` and a short sport script based on `live_sport_template.ps1`. Do not paste long terminal blocks for live checks.
+Future sports like Formula 1, esports, and any later module should add a small payload builder in `live_payloads.ps1` and a short sport script based on `live_sport_template.ps1`. Do not paste long terminal blocks for live checks.
 
 ## Local Contract Check
 

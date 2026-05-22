@@ -8,7 +8,8 @@ $children = @(
     "live_tennis_smoke.ps1",
     "live_combat_smoke.ps1",
     "live_golf_smoke.ps1",
-    "live_ncaaf_smoke.ps1"
+    "live_ncaaf_smoke.ps1",
+    "live_cricket_smoke.ps1"
 )
 foreach ($child in $children) {
     Write-Host "Running $child"
@@ -20,4 +21,3 @@ foreach ($child in $children) {
 }
 Write-Host "Core live smoke PASS"
 exit 0
-

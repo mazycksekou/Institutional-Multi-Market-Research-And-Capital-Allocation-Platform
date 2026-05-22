@@ -105,6 +105,26 @@ SPORT_ALIASES = {
     "european_tour": "golf",
     "european tour": "golf",
     "lpga": "golf",
+    "ipl": "cricket",
+    "indian_premier_league": "cricket",
+    "indian premier league": "cricket",
+    "t20": "cricket",
+    "t20_cricket": "cricket",
+    "t20 cricket": "cricket",
+    "odi": "cricket",
+    "one_day_cricket": "cricket",
+    "one day cricket": "cricket",
+    "test_cricket": "cricket",
+    "test cricket": "cricket",
+    "international_cricket": "cricket",
+    "international cricket": "cricket",
+    "big_bash": "cricket",
+    "big bash": "cricket",
+    "bbl": "cricket",
+    "the_hundred": "cricket",
+    "the hundred": "cricket",
+    "cpl": "cricket",
+    "psl": "cricket",
     "epl": "soccer",
     "ucl": "soccer",
     "football": "soccer",
@@ -809,6 +829,92 @@ COLLEGE_FOOTBALL_INPUT_CONTRACT = {
     "referee_inputs": NFL_OFFICIATING_INPUTS,
     "social_crowd_inputs": NFL_SOCIAL_CROWD_INPUTS,
     "live_betting_inputs": NFL_LIVE_BETTING_INPUTS,
+}
+
+CRICKET_MARKETS = [
+    "moneyline", "match_winner", "spread", "run_line", "total_runs", "team_total_runs",
+    "first_innings_winner", "first_innings_total", "first_6_overs_total", "powerplay_total",
+    "top_batter", "top_bowler", "player_runs", "player_wickets", "player_sixes", "player_fours",
+    "player_total_boundaries", "player_ducks", "player_dismissal_method", "anytime_fifty",
+    "anytime_hundred", "alt_total_runs", "alt_team_total_runs",
+]
+
+CRICKET_PROP_MARKETS = [
+    "top_batter", "top_bowler", "player_runs", "player_wickets", "player_sixes", "player_fours",
+    "player_total_boundaries", "player_ducks", "player_dismissal_method", "anytime_fifty",
+    "anytime_hundred",
+]
+
+CRICKET_REQUIRED_CORE_INPUTS = [
+    "team", "opponent", "home_team", "away_team", "batting_team", "bowling_team",
+    "format", "venue", "pitch_type", "weather_conditions", "toss_winner", "toss_decision",
+    "team_batting_rating", "opponent_batting_rating", "team_bowling_rating", "opponent_bowling_rating",
+    "team_fielding_rating", "opponent_fielding_rating", "team_recent_form_rating", "opponent_recent_form_rating",
+    "team_powerplay_run_rate", "opponent_powerplay_run_rate", "team_middle_overs_run_rate",
+    "opponent_middle_overs_run_rate", "team_death_overs_run_rate", "opponent_death_overs_run_rate",
+    "team_wicket_loss_rate", "opponent_wicket_loss_rate", "team_wicket_taking_rate", "opponent_wicket_taking_rate",
+    "team_boundary_rate", "opponent_boundary_rate", "team_dot_ball_rate", "opponent_dot_ball_rate",
+    "team_chase_rating", "opponent_chase_rating", "team_defend_total_rating", "opponent_defend_total_rating",
+    "venue_average_score", "venue_chase_win_rate", "pitch_spin_assist", "pitch_pace_assist", "dew_factor", "wind_factor",
+]
+
+CRICKET_NUMERIC_CORE_INPUTS = [
+    field for field in CRICKET_REQUIRED_CORE_INPUTS
+    if field not in {
+        "team", "opponent", "home_team", "away_team", "batting_team", "bowling_team",
+        "format", "venue", "pitch_type", "weather_conditions", "toss_winner", "toss_decision",
+    }
+]
+
+CRICKET_PLAYER_PROP_INPUTS = [
+    "player", "player_team", "opponent", "player_role", "batting_position",
+    "player_batting_average", "player_strike_rate", "player_recent_runs_average",
+    "player_boundary_rate", "player_six_rate", "player_fifty_rate", "player_hundred_rate",
+    "player_duck_rate", "player_bowling_average", "player_economy_rate",
+    "player_strike_rate_bowling", "player_recent_wickets_average", "player_overs_projection",
+    "player_balls_faced_projection", "player_runs_projection", "player_wickets_projection",
+    "player_sixes_projection", "player_fours_projection", "line",
+]
+
+CRICKET_NUMERIC_PLAYER_PROP_INPUTS = [
+    field for field in CRICKET_PLAYER_PROP_INPUTS
+    if field not in {"player", "player_team", "opponent", "player_role"}
+]
+
+CRICKET_REQUIRED_MARKET_INPUTS = {
+    "moneyline": ["odds_american"],
+    "match_winner": ["odds_american"],
+    "first_innings_winner": ["odds_american"],
+    "spread": ["line", "odds_american"],
+    "run_line": ["line", "odds_american"],
+    "total_runs": ["total_runs_line", "odds_american"],
+    "first_innings_total": ["total_runs_line", "odds_american"],
+    "first_6_overs_total": ["total_runs_line", "odds_american"],
+    "powerplay_total": ["total_runs_line", "odds_american"],
+    "alt_total_runs": ["total_runs_line", "odds_american"],
+    "team_total_runs": ["team_total_runs_line", "odds_american"],
+    "alt_team_total_runs": ["team_total_runs_line", "odds_american"],
+}
+
+for _cricket_prop_market in CRICKET_PROP_MARKETS:
+    CRICKET_REQUIRED_MARKET_INPUTS[_cricket_prop_market] = [
+        "player", "player_team", "player_role", "line", "odds_american",
+    ]
+
+CRICKET_OPTIONAL_ENRICHMENT_INPUTS = [
+    "no_vig_market_probability", "book_count", "current_odds", "best_available_odds", "opening_odds",
+    "consensus_odds", "provider_status", "public_betting_percent", "sharp_money_percent",
+    "social_sentiment", "crowd_consensus", "pitch_report_quality", "toss_report_quality",
+    "weather_report_quality", "lineup_confirmed", "batting_order_confirmed", "bowler_matchup_quality",
+]
+
+CRICKET_INPUT_CONTRACT = {
+    "required_core_inputs": CRICKET_REQUIRED_CORE_INPUTS,
+    "required_market_specific_inputs": CRICKET_REQUIRED_MARKET_INPUTS,
+    "optional_enrichment_inputs": CRICKET_OPTIONAL_ENRICHMENT_INPUTS,
+    "player_prop_inputs": CRICKET_PLAYER_PROP_INPUTS,
+    "provider_enrichment_inputs": ["best_available_odds", "current_odds", "opening_odds", "consensus_odds", "no_vig_market_probability", "book_count"],
+    "social_crowd_inputs": NFL_SOCIAL_CROWD_INPUTS,
 }
 
 MLB_REQUIRED_CORE_INPUTS = [
@@ -2239,16 +2345,20 @@ SPORT_MODEL_REGISTRY = [
     _sport(
         "cricket",
         "Cricket",
-        "pitch_toss_venue_model",
-        "Pitch toss innings model family",
-        "pitch_toss_innings",
-        ["match winner", "innings runs", "totals", "team totals", "player runs", "player wickets"],
-        ["player runs", "player wickets", "sixes", "fours", "top batter", "innings runs"],
-        ["venue", "pitch condition", "toss result", "batting order", "bowling matchup", "run rate", "wicket rate", "weather"],
-        ["format", "dew point", "boundary dimensions"],
-        ["run rate model", "wicket rate model", "innings simulation", "toss impact", "venue impact", "pitch condition", "weather", "batting order", "bowler matchup"],
-        "innings simulation",
+        "cricket_run_rate_wicket_resource_monte_carlo_model",
+        "cricket_run_rate_wicket_resource_monte_carlo_model",
+        "run_rate_wicket_resource_monte_carlo",
+        CRICKET_MARKETS,
+        CRICKET_PROP_MARKETS,
+        CRICKET_REQUIRED_CORE_INPUTS,
+        CRICKET_OPTIONAL_ENRICHMENT_INPUTS,
+        ["phase run-rate model", "wicket resource model", "innings Monte Carlo simulation", "toss impact", "venue impact", "pitch condition", "weather", "batting order", "bowler matchup"],
+        "run-rate wicket-resource Monte Carlo",
         ["Toss, pitch, innings runs, and player runs can change together."],
+        sport_parameters={"league_calibration_applied": "cricket"},
+        component_status=COMPONENT_STATUS_ACTIVE,
+        model_level=MODEL_LEVEL_PROJECTION_READY,
+        confirmed_bets_allowed=True,
     ),
     _sport(
         "esports",
@@ -2283,6 +2393,7 @@ _INPUT_NORMALIZER_BY_SPORT = {
     "mma_mixed_martial_arts": "combat_input_normalizer",
     "boxing": "combat_input_normalizer",
     "golf": "golf_input_normalizer",
+    "cricket": "cricket_input_normalizer",
 }
 
 _ACTIVE_SCREENSHOT_ALIAS_TEST_PAYLOADS: dict[str, dict[str, Any]] = {
@@ -2513,6 +2624,37 @@ _ACTIVE_SCREENSHOT_ALIAS_TEST_PAYLOADS: dict[str, dict[str, Any]] = {
             "sg_around_green": 0.32, "sg_putting": 0.33, "recent_form_rank": 2, "scoring_average": 68.9,
             "fit_score": 92, "history_score": 88, "field_strength": 91, "projected_cut_line": 2,
             "wind_rating": 4, "difficulty_rating": 8, "current_odds": 100,
+        },
+    },
+    "cricket": {
+        "sport": "cricket", "league": "IPL", "event": "Mumbai Indians vs Chennai Super Kings",
+        "teams": ["Mumbai Indians", "Chennai Super Kings"], "market": "match_winner",
+        "selection": "Mumbai Indians", "odds_american": 100, "bankroll": 1000, "unit_size": 25,
+        "risk_profile": "moderate", "source_type": "chatgpt_parsed",
+        "screenshot_text": "Mumbai Indians match winner +100 vs Chennai Super Kings",
+        "visible_markets": ["match_winner", "total_runs", "player_runs"],
+        "input_stats": {
+            "match": "Mumbai Indians vs Chennai Super Kings", "team_name": "Mumbai Indians",
+            "opponent_name": "Chennai Super Kings", "home": "Mumbai Indians", "away": "Chennai Super Kings",
+            "batting": "Mumbai Indians", "bowling": "Chennai Super Kings", "format": "ipl",
+            "ground": "Wankhede Stadium", "surface": "balanced", "weather": "humid",
+            "toss": "Mumbai Indians", "decision": "bowl", "team_bat_rating": 86,
+            "opp_bat_rating": 82, "team_bowl_rating": 84, "opp_bowl_rating": 80,
+            "team_field_rating": 82, "opp_field_rating": 78, "team_form": 84, "opp_form": 77,
+            "team_pp_rr": 9.2, "opp_pp_rr": 8.5, "team_middle_rr": 8.4, "opp_middle_rr": 7.8,
+            "team_death_rr": 11.2, "opp_death_rr": 10.1, "team_wicket_loss": 0.24,
+            "opp_wicket_loss": 0.28, "team_wicket_rate": 0.31, "opp_wicket_rate": 0.27,
+            "team_boundary_pct": 0.19, "opp_boundary_pct": 0.17, "team_dot_pct": 0.34,
+            "opp_dot_pct": 0.37, "team_chase": 88, "opp_chase": 80, "team_defend": 82,
+            "opp_defend": 79, "venue_avg_score": 174, "chase_win_pct": 0.56,
+            "spin_assist": 0.48, "pace_assist": 0.52, "dew": 0.35, "wind": 0.12,
+            "player_name": "Rohit Sharma", "player_team": "Mumbai Indians", "role": "batter",
+            "bat_pos": 1, "batting_avg": 31.5, "batting_strike_rate": 142, "recent_runs": 36,
+            "boundary_rate": 0.17, "six_rate": 0.06, "fifty_rate": 0.24, "hundred_rate": 0.04,
+            "duck_rate": 0.08, "bowling_avg": 0, "economy": 0, "bowling_strike_rate": 0,
+            "recent_wickets": 0, "overs_proj": 0, "balls_faced_proj": 24, "runs_proj": 34.5,
+            "wickets_proj": 0.1, "sixes_proj": 1.6, "fours_proj": 3.2, "book_count": 8,
+            "current_odds": 100,
         },
     },
 }
@@ -3966,6 +4108,40 @@ def _golf_market_specific_missing(market: Any, input_stats: dict[str, Any], payl
     return missing
 
 
+def _cricket_value_missing(field: str, input_stats: dict[str, Any], payload: dict[str, Any]) -> bool:
+    value = input_stats.get(field)
+    if value is None and field in {"sport", "league", "event", "teams", "market", "selection", "odds_american", "bankroll", "unit_size", "risk_profile"}:
+        value = payload.get(field)
+    if value is None and field == "event":
+        value = payload.get("event_id")
+    if value in (None, ""):
+        return True
+    if field in CRICKET_NUMERIC_CORE_INPUTS or field in CRICKET_NUMERIC_PLAYER_PROP_INPUTS or field in {"line", "odds_american", "total_runs_line", "team_total_runs_line"}:
+        return _safe_float(value) is None
+    return False
+
+
+def _cricket_full_inputs_missing(input_stats: dict[str, Any], payload: dict[str, Any]) -> list[str]:
+    base_fields = ["sport", "league", "event", "market", "selection", "odds_american", "bankroll", "unit_size", "risk_profile"]
+    missing = [field for field in base_fields if _cricket_value_missing(field, input_stats, payload)]
+    for field in CRICKET_REQUIRED_CORE_INPUTS:
+        if _cricket_value_missing(field, input_stats, payload):
+            missing.append(field)
+    return list(dict.fromkeys(missing))
+
+
+def _cricket_market_specific_missing(market: Any, input_stats: dict[str, Any], payload: dict[str, Any]) -> list[str]:
+    market_key = _normal_market_key(input_stats.get("market_type") or market)
+    required = list(CRICKET_REQUIRED_MARKET_INPUTS.get(market_key, []))
+    if market_key in CRICKET_PROP_MARKETS:
+        required = list(dict.fromkeys(required + CRICKET_PLAYER_PROP_INPUTS))
+    missing = []
+    for field in required:
+        if _cricket_value_missing(field, input_stats, payload):
+            missing.append(field)
+    return missing
+
+
 def _missing_inputs_for_sport(sport: str, market: Any, input_stats: dict[str, Any], payload: dict[str, Any]) -> list[str]:
     if sport == "basketball_nba":
         return _nba_full_inputs_missing(input_stats) + _nba_market_specific_missing(market, input_stats, payload)
@@ -3987,6 +4163,8 @@ def _missing_inputs_for_sport(sport: str, market: Any, input_stats: dict[str, An
         return _combat_full_inputs_missing(input_stats, payload) + _combat_market_specific_missing(market, input_stats, payload)
     if sport == "golf":
         return _golf_full_inputs_missing(input_stats, payload) + _golf_market_specific_missing(market, input_stats, payload)
+    if sport == "cricket":
+        return _cricket_full_inputs_missing(input_stats, payload) + _cricket_market_specific_missing(market, input_stats, payload)
     config = get_sport_model_config(sport)
     if not config:
         return []
@@ -4022,7 +4200,7 @@ def _normalize_generic_betting_aliases(
         "line": ["line_value"],
         "total_line": ["total_line"],
         "market": ["market_name"],
-        "sportsbook": ["book_name"],
+        "sportsbook": ["book_name", "book"],
     }
     for canonical, aliases in generic_aliases.items():
         _copy_alias_if_missing(normalized, canonical, aliases)
@@ -4323,6 +4501,127 @@ def _normalize_nhl_input_aliases(input_stats: dict[str, Any], payload: Optional[
     return normalized
 
 
+def _normalize_cricket_input_aliases(input_stats: dict[str, Any], payload: Optional[dict[str, Any]] = None, sport: Optional[str] = None) -> dict[str, Any]:
+    normalized = _normalize_team_sport_input_aliases(input_stats, payload, sport)
+    payload = payload or {}
+    alias_pairs = {
+        "event": ["game", "match", "matchup"],
+        "selection": ["pick", "favorite"],
+        "line": ["line_value"],
+        "total_runs_line": ["total_line"],
+        "team_total_runs_line": ["team_total_line"],
+        "team": ["team_name"],
+        "opponent": ["opponent_name"],
+        "home_team": ["home"],
+        "away_team": ["away"],
+        "batting_team": ["batting"],
+        "bowling_team": ["bowling"],
+        "venue": ["ground", "stadium"],
+        "pitch_type": ["surface"],
+        "weather_conditions": ["weather"],
+        "toss_winner": ["toss"],
+        "toss_decision": ["decision"],
+        "team_batting_rating": ["team_bat_rating"],
+        "opponent_batting_rating": ["opp_bat_rating"],
+        "team_bowling_rating": ["team_bowl_rating"],
+        "opponent_bowling_rating": ["opp_bowl_rating"],
+        "team_fielding_rating": ["team_field_rating"],
+        "opponent_fielding_rating": ["opp_field_rating"],
+        "team_recent_form_rating": ["team_form"],
+        "opponent_recent_form_rating": ["opp_form"],
+        "team_powerplay_run_rate": ["team_pp_rr"],
+        "opponent_powerplay_run_rate": ["opp_pp_rr"],
+        "team_middle_overs_run_rate": ["team_middle_rr"],
+        "opponent_middle_overs_run_rate": ["opp_middle_rr"],
+        "team_death_overs_run_rate": ["team_death_rr"],
+        "opponent_death_overs_run_rate": ["opp_death_rr"],
+        "team_wicket_loss_rate": ["team_wicket_loss"],
+        "opponent_wicket_loss_rate": ["opp_wicket_loss"],
+        "team_wicket_taking_rate": ["team_wicket_rate"],
+        "opponent_wicket_taking_rate": ["opp_wicket_rate"],
+        "team_boundary_rate": ["team_boundary_pct"],
+        "opponent_boundary_rate": ["opp_boundary_pct"],
+        "team_dot_ball_rate": ["team_dot_pct"],
+        "opponent_dot_ball_rate": ["opp_dot_pct"],
+        "team_chase_rating": ["team_chase"],
+        "opponent_chase_rating": ["opp_chase"],
+        "team_defend_total_rating": ["team_defend"],
+        "opponent_defend_total_rating": ["opp_defend"],
+        "venue_average_score": ["venue_avg_score"],
+        "venue_chase_win_rate": ["chase_win_pct"],
+        "pitch_spin_assist": ["spin_assist"],
+        "pitch_pace_assist": ["pace_assist"],
+        "dew_factor": ["dew"],
+        "wind_factor": ["wind"],
+        "player": ["player_name"],
+        "player_role": ["role"],
+        "batting_position": ["bat_pos"],
+        "player_batting_average": ["batting_avg"],
+        "player_strike_rate": ["batting_strike_rate"],
+        "player_recent_runs_average": ["recent_runs"],
+        "player_boundary_rate": ["boundary_rate"],
+        "player_six_rate": ["six_rate"],
+        "player_fifty_rate": ["fifty_rate"],
+        "player_hundred_rate": ["hundred_rate"],
+        "player_duck_rate": ["duck_rate"],
+        "player_bowling_average": ["bowling_avg"],
+        "player_economy_rate": ["economy"],
+        "player_strike_rate_bowling": ["bowling_strike_rate"],
+        "player_recent_wickets_average": ["recent_wickets"],
+        "player_overs_projection": ["overs_proj"],
+        "player_balls_faced_projection": ["balls_faced_proj"],
+        "player_runs_projection": ["runs_proj"],
+        "player_wickets_projection": ["wickets_proj"],
+        "player_sixes_projection": ["sixes_proj"],
+        "player_fours_projection": ["fours_proj"],
+    }
+    for canonical, aliases in alias_pairs.items():
+        _copy_alias_if_missing(normalized, canonical, aliases)
+    teams = payload.get("teams") if isinstance(payload, dict) else None
+    if normalized.get("home_team") is None and isinstance(teams, list) and teams:
+        normalized["home_team"] = teams[0]
+    if normalized.get("away_team") is None and isinstance(teams, list) and len(teams) > 1:
+        normalized["away_team"] = teams[1]
+    if normalized.get("team") is None and normalized.get("selection") is not None:
+        normalized["team"] = normalized.get("selection")
+    if normalized.get("opponent") is None:
+        if normalized.get("team") == normalized.get("home_team"):
+            normalized["opponent"] = normalized.get("away_team")
+        elif normalized.get("team") == normalized.get("away_team"):
+            normalized["opponent"] = normalized.get("home_team")
+    if normalized.get("batting_team") is None and normalized.get("team") is not None:
+        normalized["batting_team"] = normalized.get("team")
+    if normalized.get("bowling_team") is None and normalized.get("opponent") is not None:
+        normalized["bowling_team"] = normalized.get("opponent")
+    if normalized.get("player_team") is None and normalized.get("team") is not None:
+        normalized["player_team"] = normalized.get("team")
+    if normalized.get("selection") is None and normalized.get("team") is not None:
+        normalized["selection"] = normalized.get("team")
+    if normalized.get("format") is None:
+        league_text = str(payload.get("league") or normalized.get("league") or "").strip().lower()
+        if "ipl" in league_text:
+            normalized["format"] = "ipl"
+        elif "t20" in league_text or "bbl" in league_text or "hundred" in league_text or league_text in {"cpl", "psl"}:
+            normalized["format"] = "t20"
+        elif "odi" in league_text or "one day" in league_text:
+            normalized["format"] = "odi"
+        elif "test" in league_text:
+            normalized["format"] = "test"
+    if normalized.get("market") is None:
+        normalized["market"] = payload.get("market")
+    if normalized.get("league") is None:
+        normalized["league"] = payload.get("league")
+    if normalized.get("odds_american") is None:
+        normalized["odds_american"] = payload.get("odds_american")
+    if normalized.get("bankroll") is None:
+        normalized["bankroll"] = payload.get("bankroll")
+    if normalized.get("unit_size") is None:
+        normalized["unit_size"] = payload.get("unit_size")
+    if normalized.get("risk_profile") is None:
+        normalized["risk_profile"] = payload.get("risk_profile")
+    return normalized
+
+
 def normalize_sport_inputs_for_model(
     sport: Any,
     market: Any,
@@ -4379,6 +4678,9 @@ def normalize_sport_inputs_for_model(
     elif sport_alias_resolved == "golf":
         normalized = _normalize_golf_input_aliases(normalized, payload, sport_alias_resolved)
         normalizer_used = "golf_input_normalizer"
+    elif sport_alias_resolved == "cricket":
+        normalized = _normalize_cricket_input_aliases(normalized, payload, sport_alias_resolved)
+        normalizer_used = "cricket_input_normalizer"
 
     after_market = market or payload.get("market") or normalized.get("market")
     after_missing = _missing_inputs_for_sport(sport_alias_resolved, after_market, normalized, payload)
@@ -7091,6 +7393,272 @@ def _estimate_college_football_model(
     }
 
 
+def _cricket_format_calibration(raw_format: Any) -> dict[str, Any]:
+    fmt = str(raw_format or "").strip().lower().replace("-", "_").replace(" ", "_")
+    if fmt in {"ipl", "indian_premier_league"}:
+        return {"format": "ipl", "baseline_total": 174.0, "volatility": 18.0, "confidence_base": 74.0, "overs": 20.0}
+    if fmt in {"t20", "t20_cricket", "bbl", "big_bash", "cpl", "psl", "the_hundred"}:
+        return {"format": "t20", "baseline_total": 168.0, "volatility": 19.0, "confidence_base": 72.0, "overs": 20.0}
+    if fmt in {"odi", "one_day", "one_day_cricket"}:
+        return {"format": "odi", "baseline_total": 286.0, "volatility": 27.0, "confidence_base": 70.0, "overs": 50.0}
+    if fmt in {"test", "test_cricket"}:
+        return {"format": "test", "baseline_total": 330.0, "volatility": 38.0, "confidence_base": 66.0, "overs": 90.0}
+    return {"format": "unknown", "baseline_total": 168.0, "volatility": 22.0, "confidence_base": 68.0, "overs": 20.0}
+
+
+def _estimate_cricket_run_rate_model(
+    *,
+    input_stats: dict[str, Any],
+    payload: dict[str, Any],
+    market: Any,
+    odds_american: Optional[float],
+    bankroll: float,
+    risk_profile: str,
+) -> Optional[dict[str, Any]]:
+    missing = _cricket_full_inputs_missing(input_stats, payload) + _cricket_market_specific_missing(market, input_stats, payload)
+    if missing:
+        return None
+    implied_probability = implied_probability_from_american(odds_american) if odds_american is not None else None
+    if implied_probability is None:
+        return None
+
+    def number(key: str, default: float = 0) -> float:
+        return _safe_float(input_stats.get(key), default) or default
+
+    market_key = _normal_market_key(input_stats.get("market_type") or market)
+    selection_text = str(payload.get("selection") or input_stats.get("selection") or "").strip().lower()
+    team_text = str(input_stats.get("team") or "").strip().lower()
+    opponent_text = str(input_stats.get("opponent") or "").strip().lower()
+    selected_team = not opponent_text or selection_text == team_text or team_text in selection_text
+
+    calibration = _cricket_format_calibration(input_stats.get("format") or payload.get("league"))
+    format_key = calibration["format"]
+    baseline_total = calibration["baseline_total"]
+    volatility = calibration["volatility"]
+
+    team_phase_rr = (
+        number("team_powerplay_run_rate") * 0.32
+        + number("team_middle_overs_run_rate") * 0.34
+        + number("team_death_overs_run_rate") * 0.34
+    )
+    opponent_phase_rr = (
+        number("opponent_powerplay_run_rate") * 0.32
+        + number("opponent_middle_overs_run_rate") * 0.34
+        + number("opponent_death_overs_run_rate") * 0.34
+    )
+    run_rate_edge = team_phase_rr - opponent_phase_rr
+    batting_edge = (number("team_batting_rating") - number("opponent_batting_rating")) * 0.032
+    bowling_edge = (number("team_bowling_rating") - number("opponent_bowling_rating")) * 0.030
+    fielding_edge = (number("team_fielding_rating") - number("opponent_fielding_rating")) * 0.018
+    form_edge = (number("team_recent_form_rating") - number("opponent_recent_form_rating")) * 0.025
+    wicket_resource_edge = (
+        (number("team_wicket_taking_rate") - number("opponent_wicket_taking_rate")) * 7.5
+        + (number("opponent_wicket_loss_rate") - number("team_wicket_loss_rate")) * 7.0
+    )
+    boundary_edge = (
+        (number("team_boundary_rate") - number("opponent_boundary_rate")) * 8.0
+        + (number("opponent_dot_ball_rate") - number("team_dot_ball_rate")) * 5.0
+    )
+    chase_edge = (number("team_chase_rating") - number("opponent_chase_rating")) * 0.018
+    defend_edge = (number("team_defend_total_rating") - number("opponent_defend_total_rating")) * 0.014
+
+    toss_winner = str(input_stats.get("toss_winner") or "").strip().lower()
+    toss_decision = str(input_stats.get("toss_decision") or "").strip().lower()
+    dew = number("dew_factor")
+    wind = number("wind_factor")
+    venue_chase = number("venue_chase_win_rate", 0.5)
+    toss_edge = 0.0
+    if toss_winner and toss_winner == team_text:
+        if "bowl" in toss_decision:
+            toss_edge += (venue_chase - 0.5) * 2.8 + dew * 0.55 + chase_edge
+        elif "bat" in toss_decision:
+            toss_edge += defend_edge + (0.5 - venue_chase) * 1.5
+    elif toss_winner and toss_winner == opponent_text:
+        if "bowl" in toss_decision:
+            toss_edge -= (venue_chase - 0.5) * 2.4 + dew * 0.45
+        elif "bat" in toss_decision:
+            toss_edge -= defend_edge * 0.5
+
+    pitch_spin = number("pitch_spin_assist")
+    pitch_pace = number("pitch_pace_assist")
+    bowling_style_edge = ((pitch_spin + pitch_pace) - 1.0) * (number("team_bowling_rating") - number("opponent_bowling_rating")) * 0.006
+    venue_average = number("venue_average_score", baseline_total)
+    venue_scoring_boost = (venue_average - baseline_total) * 0.035
+    wind_drag = -abs(wind) * 0.7 if wind > 0.35 else 0
+
+    selected_edge_score = (
+        run_rate_edge * 1.45 + batting_edge + bowling_edge + fielding_edge + form_edge
+        + wicket_resource_edge + boundary_edge + toss_edge + bowling_style_edge + venue_scoring_boost + wind_drag
+    )
+    if not selected_team:
+        selected_edge_score *= -1
+
+    raw_match_probability = _logistic_probability(selected_edge_score, 4.8 if format_key in {"ipl", "t20"} else 5.6)
+
+    selected_run_rate = team_phase_rr if selected_team else opponent_phase_rr
+    opponent_run_rate = opponent_phase_rr if selected_team else team_phase_rr
+    selected_wicket_loss = number("team_wicket_loss_rate") if selected_team else number("opponent_wicket_loss_rate")
+    opponent_wicket_loss = number("opponent_wicket_loss_rate") if selected_team else number("team_wicket_loss_rate")
+    overs = calibration["overs"]
+    innings_overs = 20.0 if format_key in {"ipl", "t20", "unknown"} else 50.0 if format_key == "odi" else 90.0
+    projected_team_runs = max(35.0, selected_run_rate * innings_overs * (1 - selected_wicket_loss * 0.18))
+    projected_opponent_runs = max(35.0, opponent_run_rate * innings_overs * (1 - opponent_wicket_loss * 0.18))
+    projected_team_runs += selected_edge_score * 1.6 + (venue_average - baseline_total) * 0.22
+    projected_opponent_runs -= selected_edge_score * 1.1 - (venue_average - baseline_total) * 0.16
+    projected_total_runs = max(60.0, projected_team_runs + projected_opponent_runs)
+
+    raw_model_probability = raw_match_probability
+    line = _safe_float(payload.get("line"), _safe_float(input_stats.get("line")))
+    total_runs_line = _safe_float(payload.get("total_runs_line"), _safe_float(input_stats.get("total_runs_line")))
+    team_total_line = _safe_float(payload.get("team_total_runs_line"), _safe_float(input_stats.get("team_total_runs_line")))
+    if market_key in {"spread", "run_line"}:
+        target = line if line is not None else 0
+        margin = projected_team_runs - projected_opponent_runs
+        raw_model_probability = _logistic_probability(margin + target, volatility * 0.65)
+    elif market_key in {"total_runs", "alt_total_runs", "first_innings_total"}:
+        target = total_runs_line if total_runs_line is not None else projected_total_runs
+        over_probability = _logistic_probability(projected_total_runs - target, volatility)
+        raw_model_probability = 1 - over_probability if "under" in selection_text else over_probability
+    elif market_key in {"first_6_overs_total", "powerplay_total"}:
+        target = total_runs_line if total_runs_line is not None else projected_total_runs * 0.18
+        powerplay_projection = selected_run_rate * 6.0
+        over_probability = _logistic_probability(powerplay_projection - target, 6.5)
+        raw_model_probability = 1 - over_probability if "under" in selection_text else over_probability
+    elif market_key in {"team_total_runs", "alt_team_total_runs"}:
+        target = team_total_line if team_total_line is not None else projected_team_runs
+        over_probability = _logistic_probability(projected_team_runs - target, volatility * 0.65)
+        raw_model_probability = 1 - over_probability if "under" in selection_text else over_probability
+    elif market_key == "first_innings_winner":
+        raw_model_probability = _logistic_probability(selected_edge_score + toss_edge * 0.6, 5.0)
+    elif market_key in CRICKET_PROP_MARKETS:
+        player_runs = number("player_runs_projection")
+        player_wickets = number("player_wickets_projection")
+        player_sixes = number("player_sixes_projection")
+        player_fours = number("player_fours_projection")
+        prop_line = line if line is not None else number("line", 0.5)
+        balls_faced = number("player_balls_faced_projection")
+        overs_projection = number("player_overs_projection")
+        if market_key in {"top_batter", "player_runs"}:
+            stddev = max(6.0, player_runs * 0.42)
+            over_probability = 1 - _normal_cdf(prop_line, mean=player_runs, stddev=stddev)
+            raw_model_probability = max(0.04, min(0.88, over_probability if market_key == "player_runs" else 0.16 + player_runs / 155))
+        elif market_key in {"top_bowler", "player_wickets"}:
+            stddev = max(0.55, player_wickets * 0.75)
+            over_probability = 1 - _normal_cdf(prop_line, mean=player_wickets, stddev=stddev)
+            raw_model_probability = max(0.04, min(0.82, over_probability if market_key == "player_wickets" else 0.12 + player_wickets / 5.5))
+        elif market_key == "player_sixes":
+            raw_model_probability = max(0.03, min(0.78, 1 - _normal_cdf(prop_line, mean=player_sixes, stddev=max(0.6, player_sixes * 0.70))))
+        elif market_key == "player_fours":
+            raw_model_probability = max(0.03, min(0.80, 1 - _normal_cdf(prop_line, mean=player_fours, stddev=max(0.8, player_fours * 0.55))))
+        elif market_key == "player_total_boundaries":
+            boundaries = player_sixes + player_fours
+            raw_model_probability = max(0.03, min(0.80, 1 - _normal_cdf(prop_line, mean=boundaries, stddev=max(1.0, boundaries * 0.52))))
+        elif market_key == "player_ducks":
+            raw_model_probability = max(0.02, min(0.36, _safe_probability(input_stats.get("player_duck_rate")) or 0.08))
+        elif market_key == "player_dismissal_method":
+            raw_model_probability = max(0.03, min(0.34, 0.12 + selected_wicket_loss * 0.35))
+        elif market_key == "anytime_fifty":
+            raw_model_probability = max(0.03, min(0.72, (_safe_probability(input_stats.get("player_fifty_rate")) or 0.20) + max(0, player_runs - 32) * 0.006))
+        elif market_key == "anytime_hundred":
+            raw_model_probability = max(0.01, min(0.34, (_safe_probability(input_stats.get("player_hundred_rate")) or 0.04) + max(0, player_runs - 55) * 0.003))
+        if balls_faced < 8 and market_key in {"top_batter", "player_runs", "player_sixes", "player_fours", "player_total_boundaries", "anytime_fifty", "anytime_hundred"}:
+            raw_model_probability = min(raw_model_probability, 0.55)
+        if overs_projection < 1 and market_key in {"top_bowler", "player_wickets"}:
+            raw_model_probability = min(raw_model_probability, 0.50)
+
+    market_anchor = _safe_probability(input_stats.get("no_vig_market_probability"))
+    calibrated_probability = raw_model_probability * 0.90 + market_anchor * 0.10 if market_anchor is not None else raw_model_probability
+    true_probability = max(0.06, min(0.92, calibrated_probability))
+    sanity_flags = ["cricket probability cap applied"] if true_probability != calibrated_probability else []
+
+    confidence = calibration["confidence_base"]
+    risk_flags: list[str] = []
+    if _safe_float(input_stats.get("book_count"), 0) < 4:
+        confidence -= 4
+        risk_flags.append("book count too low")
+    if format_key == "unknown":
+        confidence -= 5
+        risk_flags.append("format calibration unknown")
+    if dew > 0.5:
+        confidence -= 2
+        risk_flags.append("dew volatility")
+    if wind > 0.35:
+        confidence -= 3
+        risk_flags.append("wind volatility")
+    if market_key in CRICKET_PROP_MARKETS:
+        confidence -= 3
+        if number("player_balls_faced_projection") < 10 and market_key not in {"top_bowler", "player_wickets"}:
+            confidence -= 12
+            risk_flags.append("prop batting-role fragility")
+        if number("player_overs_projection") < 1 and market_key in {"top_bowler", "player_wickets"}:
+            confidence -= 10
+            risk_flags.append("bowler overs fragility")
+    if input_stats.get("provider_status") == "error":
+        risk_flags.append("provider failure ignored")
+    if input_stats.get("lineup_confirmed") is False or input_stats.get("batting_order_confirmed") is False:
+        confidence -= 6
+        risk_flags.append("lineup uncertainty")
+    confidence = max(1, min(95, round(confidence, 2)))
+
+    edge = calculate_edge_percent(true_probability, implied_probability)
+    edge_threshold, confidence_threshold = _nfl_thresholds(risk_profile)
+    no_bet_flags: list[str] = []
+    if edge is None:
+        no_bet_flags.append("edge missing")
+    elif edge <= 0:
+        no_bet_flags.append("negative edge")
+    elif edge < edge_threshold:
+        no_bet_flags.append("edge too small")
+    if confidence < confidence_threshold:
+        no_bet_flags.append("low confidence")
+    suggested = 0 if no_bet_flags else calculate_suggested_stake(
+        bankroll=bankroll,
+        american_odds=odds_american,
+        true_probability=true_probability,
+        risk_profile=risk_profile,
+        confidence=confidence,
+    )
+    if suggested <= 0 and not no_bet_flags and edge is not None and edge >= edge_threshold and confidence >= confidence_threshold:
+        suggested = round(max(1.0, bankroll * 0.004), 2)
+
+    return {
+        "model_status": "active",
+        "estimated_true_probability": true_probability,
+        "true_probability": true_probability,
+        "final_probability": true_probability,
+        "model_probability": true_probability,
+        "implied_probability": implied_probability,
+        "edge": edge,
+        "confidence": confidence,
+        "risk": "high" if risk_flags else "moderate",
+        "suggested_stake": suggested,
+        "raw_model_probability": raw_model_probability,
+        "calibrated_model_probability": calibrated_probability,
+        "probability_calibration_applied": bool(market_anchor is not None or sanity_flags),
+        "probability_sanity_flags": sanity_flags,
+        "probability_cap_reason": "cricket sanity cap" if sanity_flags else None,
+        "market_anchor_probability": market_anchor,
+        "league_calibration_applied": "cricket",
+        "format_calibration_applied": format_key,
+        "projected_team_runs": round(projected_team_runs, 2),
+        "projected_opponent_runs": round(projected_opponent_runs, 2),
+        "projected_total_runs": round(projected_total_runs, 2),
+        "projected_run_differential": round(projected_team_runs - projected_opponent_runs, 2),
+        "risk_flags": risk_flags,
+        "input_coverage": {
+            "required_core_present": list(CRICKET_REQUIRED_CORE_INPUTS),
+            "required_market_specific_present": CRICKET_REQUIRED_MARKET_INPUTS.get(market_key, []),
+            "optional_enrichment_present": [field for field in CRICKET_OPTIONAL_ENRICHMENT_INPUTS if input_stats.get(field) is not None],
+            "optional_enrichment_missing": [field for field in CRICKET_OPTIONAL_ENRICHMENT_INPUTS if input_stats.get(field) is None],
+        },
+        "provider_enrichment": {
+            "provider_status": "available" if input_stats.get("provider_status") not in {None, "error"} else input_stats.get("provider_status") or "not_provided",
+            "provider_enrichment_present": [field for field in CRICKET_OPTIONAL_ENRICHMENT_INPUTS if input_stats.get(field) is not None],
+        },
+        "no_bet_flags": no_bet_flags,
+    }
+
+
 def _estimate_nfl_drive_model(
     input_stats: dict[str, Any],
     payload: dict[str, Any],
@@ -7566,6 +8134,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         tennis_model = None
         combat_model = None
         golf_model = None
+        cricket_model = None
         if sport == "basketball_nba":
             nba_model = _estimate_nba_possession_model(
                 input_stats=input_stats,
@@ -7664,6 +8233,15 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
                 bankroll=bankroll,
                 risk_profile=payload.get("risk_profile") or "moderate",
             )
+        elif sport == "cricket":
+            cricket_model = _estimate_cricket_run_rate_model(
+                input_stats=input_stats,
+                payload=payload,
+                market=market,
+                odds_american=odds_american,
+                bankroll=bankroll,
+                risk_profile=payload.get("risk_profile") or "moderate",
+            )
 
         if nba_model:
             component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
@@ -7685,7 +8263,9 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
         elif golf_model:
             component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
-        elif sport in {"basketball_nba", "basketball_wnba", "basketball_ncaab", "basketball_ncaawb", "americanfootball_nfl", "americanfootball_ncaaf", "baseball_mlb", "soccer", "icehockey_nhl", "tennis", "mma_mixed_martial_arts", "boxing", "golf"}:
+        elif cricket_model:
+            component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
+        elif sport in {"basketball_nba", "basketball_wnba", "basketball_ncaab", "basketball_ncaawb", "americanfootball_nfl", "americanfootball_ncaaf", "baseball_mlb", "soccer", "icehockey_nhl", "tennis", "mma_mixed_martial_arts", "boxing", "golf", "cricket"}:
             component_status = COMPONENT_STATUS_INACTIVE
             missing_inputs = _missing_inputs_for_sport(sport, market, input_stats, payload)
         else:
@@ -7760,9 +8340,15 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             edge = golf_model["edge"]
             suggested = golf_model["suggested_stake"]
             no_bet_flags = list(golf_model["no_bet_flags"])
+        elif cricket_model:
+            true_probability = cricket_model["true_probability"]
+            implied_probability = cricket_model["implied_probability"]
+            edge = cricket_model["edge"]
+            suggested = cricket_model["suggested_stake"]
+            no_bet_flags = list(cricket_model["no_bet_flags"])
         if implied_probability is not None and true_probability is not None and odds_american is not None:
             edge = edge_percentage(true_probability, implied_probability)
-            if not (nba_model or wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model):
+            if not (nba_model or wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model or cricket_model):
                 suggested = suggested_stake_with_risk_controls(
                     bankroll=bankroll,
                     american_odds=odds_american,
@@ -7779,7 +8365,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         social_input_stats = dict(input_stats)
         social_input_stats["edge"] = edge
         social_layer = build_social_crowd_calibration_layer(social_input_stats)
-        if social_layer["sentiment_no_bet_flags"] and not (nba_model or wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model):
+        if social_layer["sentiment_no_bet_flags"] and not (nba_model or wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model or cricket_model):
             no_bet_flags = list(dict.fromkeys(no_bet_flags + social_layer["sentiment_no_bet_flags"]))
 
         risk_controller = build_risk_controller(bankroll, unit_size, payload.get("risk_profile") or "conservative")
@@ -7796,7 +8382,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         })
         wee_willie = build_wee_willie_market_weakness_detector(detector_payload)
         manual_ticket = build_manual_ticket(detector_payload, suggested)
-        active_model = nba_model or wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model
+        active_model = nba_model or wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model or cricket_model
         confidence = active_model["confidence"] if active_model else input_stats.get("confidence")
         if tennis_model and _safe_float(confidence) is None:
             confidence = 0.0
@@ -7808,7 +8394,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         model_status = active_model["model_status"] if active_model else component_status
         edge_threshold, confidence_threshold = (
             _nfl_thresholds(payload.get("risk_profile") or "moderate")
-            if (wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model)
+            if (wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model or cricket_model)
             else (2.5, 70)
         )
         event_value = payload.get("event_id") or payload.get("event") or input_stats.get("event")
@@ -7925,7 +8511,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
                 "market": market,
                 "selection": selection_value,
                 "confidence": confidence,
-            }] if _normal_market_key(market) in {"player_prop", "knockdown_prop", "takedown_prop", "significant_strikes_prop", "submission_attempt_prop", "birdies_prop", "eagles_prop", "fairways_hit_prop", "greens_in_regulation_prop", "putts_prop", "round_score_prop", *BASKETBALL_MODULE_PROP_MARKETS, *COLLEGE_FOOTBALL_PROP_MARKETS} else [],
+            }] if _normal_market_key(market) in {"player_prop", "knockdown_prop", "takedown_prop", "significant_strikes_prop", "submission_attempt_prop", "birdies_prop", "eagles_prop", "fairways_hit_prop", "greens_in_regulation_prop", "putts_prop", "round_score_prop", *BASKETBALL_MODULE_PROP_MARKETS, *COLLEGE_FOOTBALL_PROP_MARKETS, *CRICKET_PROP_MARKETS} else [],
             "target_alt_lines": [{
                 "sport": sport,
                 "event": event_value,
@@ -7965,7 +8551,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             **officiating_analysis["officiating_logbook_fields"],
         })
         basketball_module_model = wnba_model or mens_cbb_model or womens_cbb_model
-        probability_model = basketball_module_model or college_football_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model
+        probability_model = basketball_module_model or college_football_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model or cricket_model
         if probability_model:
             logbook_ready_row.update({
                 "raw_model_probability": probability_model["raw_model_probability"],
@@ -8074,6 +8660,20 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
                 "risk_flags": golf_model["risk_flags"],
                 "notes": "; ".join(golf_model["risk_flags"]) if golf_model["risk_flags"] else "",
             })
+        if cricket_model:
+            logbook_ready_row.update({
+                "model_level": config["model_level"],
+                "probability_type": _normal_market_key(market),
+                "risk_profile": payload.get("risk_profile") or "moderate",
+                "league_calibration_applied": cricket_model["league_calibration_applied"],
+                "format_calibration_applied": cricket_model["format_calibration_applied"],
+                "projected_team_runs": cricket_model["projected_team_runs"],
+                "projected_opponent_runs": cricket_model["projected_opponent_runs"],
+                "projected_total_runs": cricket_model["projected_total_runs"],
+                "risk_flags": cricket_model["risk_flags"],
+                "missing_inputs": missing_inputs,
+                "notes": "; ".join(cricket_model["risk_flags"]) if cricket_model["risk_flags"] else "",
+            })
         if college_football_model:
             logbook_ready_row.update({
                 "league_calibration_applied": college_football_model["league_calibration_applied"],
@@ -8135,10 +8735,10 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             "projected_total": basketball_module_model["projected_total"] if basketball_module_model else (college_football_model["projected_total"] if college_football_model else (nfl_model["projected_total"] if nfl_model else input_stats.get("projected_total"))),
             "projected_team_points": basketball_module_model["projected_team_points"] if basketball_module_model else (college_football_model["projected_team_points"] if college_football_model else (nfl_model["projected_team_points"] if nfl_model else None)),
             "projected_opponent_points": basketball_module_model["projected_opponent_points"] if basketball_module_model else (college_football_model["projected_opponent_points"] if college_football_model else (nfl_model["projected_opponent_points"] if nfl_model else None)),
-            "projected_team_runs": mlb_model["projected_team_runs"] if mlb_model else None,
-            "projected_opponent_runs": mlb_model["projected_opponent_runs"] if mlb_model else None,
-            "projected_total_runs": mlb_model["projected_total_runs"] if mlb_model else None,
-            "projected_run_differential": mlb_model["projected_run_differential"] if mlb_model else None,
+            "projected_team_runs": (mlb_model or cricket_model)["projected_team_runs"] if (mlb_model or cricket_model) else None,
+            "projected_opponent_runs": (mlb_model or cricket_model)["projected_opponent_runs"] if (mlb_model or cricket_model) else None,
+            "projected_total_runs": (mlb_model or cricket_model)["projected_total_runs"] if (mlb_model or cricket_model) else None,
+            "projected_run_differential": (mlb_model or cricket_model)["projected_run_differential"] if (mlb_model or cricket_model) else None,
             "team_lambda": (soccer_model or nhl_model)["team_lambda"] if (soccer_model or nhl_model) else None,
             "opponent_lambda": (soccer_model or nhl_model)["opponent_lambda"] if (soccer_model or nhl_model) else None,
             "projected_team_goals": (soccer_model or nhl_model)["projected_team_goals"] if (soccer_model or nhl_model) else None,
@@ -8205,10 +8805,12 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             "tennis_input_contract": deepcopy(TENNIS_INPUT_CONTRACT) if sport == "tennis" else None,
             "combat_input_contract": deepcopy(COMBAT_INPUT_CONTRACT) if sport in {"mma_mixed_martial_arts", "boxing"} else None,
             "golf_input_contract": deepcopy(GOLF_INPUT_CONTRACT) if sport == "golf" else None,
+            "cricket_input_contract": deepcopy(CRICKET_INPUT_CONTRACT) if sport == "cricket" else None,
             "wnba_input_contract": deepcopy(WNBA_INPUT_CONTRACT) if sport == "basketball_wnba" else None,
             "mens_college_basketball_input_contract": deepcopy(MENS_COLLEGE_BASKETBALL_INPUT_CONTRACT) if sport == "basketball_ncaab" else None,
             "womens_college_basketball_input_contract": deepcopy(WOMENS_COLLEGE_BASKETBALL_INPUT_CONTRACT) if sport == "basketball_ncaawb" else None,
-            "league_calibration_applied": (basketball_module_model or college_football_model)["league_calibration_applied"] if (basketball_module_model or college_football_model) else config.get("sport_parameters", {}).get("league_calibration_applied"),
+            "league_calibration_applied": (basketball_module_model or college_football_model or cricket_model)["league_calibration_applied"] if (basketball_module_model or college_football_model or cricket_model) else config.get("sport_parameters", {}).get("league_calibration_applied"),
+            "format_calibration_applied": cricket_model["format_calibration_applied"] if cricket_model else None,
             "input_coverage": active_model.get("input_coverage") if active_model else None,
             "suggested_stake": suggested if confirmed_bets else 0,
             "recommended_unit_size": risk_controller["recommended_unit_size"],
@@ -8254,6 +8856,8 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             "top_20_probability": golf_model["top_20_probability"] if golf_model else None,
             "make_cut_probability": golf_model["make_cut_probability"] if golf_model else None,
             "miss_cut_probability": golf_model["miss_cut_probability"] if golf_model else None,
+            "cricket_projected_team_runs": cricket_model["projected_team_runs"] if cricket_model else None,
+            "cricket_projected_opponent_runs": cricket_model["projected_opponent_runs"] if cricket_model else None,
             "manual_ticket_preview": manual_ticket,
             "manual_review_required": manual_review_flags,
             "full_board_preview": full_board,
@@ -8261,7 +8865,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         "target_lines": full_board["target_lines"],
         "target_props": full_board["target_props"],
         "target_alt_lines": full_board["target_alt_lines"],
-        "no_bets": no_bets if (basketball_module_model or college_football_model or tennis_model or combat_model or golf_model) else simple_no_bets,
+        "no_bets": no_bets if (basketball_module_model or college_football_model or tennis_model or combat_model or golf_model or cricket_model) else simple_no_bets,
         "best_correlated_parlay": full_board["best_correlated_parlay"],
         "value_ranking": full_board["value_ranking"],
         "risk_ranking": full_board["risk_ranking"],

@@ -222,6 +222,29 @@ function New-NcaafPayload {
     return New-LiveTicketBase -Sport "ncaaf" -League "NCAAF" -Event "Ohio State vs Michigan" -Selection "Ohio State" -InputStats $stats
 }
 
+function New-CricketPayload {
+    $stats = @{
+        match = "Mumbai Indians vs Chennai Super Kings"; team_name = "Mumbai Indians"; opponent_name = "Chennai Super Kings"
+        home = "Mumbai Indians"; away = "Chennai Super Kings"; batting = "Mumbai Indians"; bowling = "Chennai Super Kings"
+        format = "ipl"; ground = "Wankhede Stadium"; surface = "balanced"; weather = "humid"; toss = "Mumbai Indians"; decision = "bowl"
+        team_bat_rating = 86; opp_bat_rating = 82; team_bowl_rating = 84; opp_bowl_rating = 80
+        team_field_rating = 82; opp_field_rating = 78; team_form = 84; opp_form = 77
+        team_pp_rr = 9.2; opp_pp_rr = 8.5; team_middle_rr = 8.4; opp_middle_rr = 7.8
+        team_death_rr = 11.2; opp_death_rr = 10.1; team_wicket_loss = 0.24; opp_wicket_loss = 0.28
+        team_wicket_rate = 0.31; opp_wicket_rate = 0.27; team_boundary_pct = 0.19; opp_boundary_pct = 0.17
+        team_dot_pct = 0.34; opp_dot_pct = 0.37; team_chase = 88; opp_chase = 80; team_defend = 82; opp_defend = 79
+        venue_avg_score = 174; chase_win_pct = 0.56; spin_assist = 0.48; pace_assist = 0.52; dew = 0.35; wind = 0.12
+        player_name = "Rohit Sharma"; player_team = "Mumbai Indians"; role = "batter"; bat_pos = 1
+        batting_avg = 31.5; batting_strike_rate = 142; recent_runs = 36; boundary_rate = 0.17; six_rate = 0.06
+        fifty_rate = 0.24; hundred_rate = 0.04; duck_rate = 0.08; bowling_avg = 0; economy = 0; bowling_strike_rate = 0
+        recent_wickets = 0; overs_proj = 2.0; balls_faced_proj = 24; runs_proj = 34.5; wickets_proj = 1.4
+        sixes_proj = 1.6; fours_proj = 3.2; book_count = 8
+    }
+    $payload = New-LiveTicketBase -Sport "cricket" -League "IPL" -Event "Mumbai Indians vs Chennai Super Kings" -Market "match_winner" -Selection "Mumbai Indians" -InputStats $stats
+    $payload.visible_markets = @("match_winner", "total_runs", "player_runs")
+    return $payload
+}
+
 function New-LiveActivePayload {
     param([Parameter(Mandatory = $true)] [string] $Sport)
     switch ($Sport.ToLower()) {
@@ -238,6 +261,7 @@ function New-LiveActivePayload {
         "ncaab" { return New-NcaabPayload }
         "ncaawb" { return New-NcaawbPayload }
         "ncaaf" { return New-NcaafPayload }
+        "cricket" { return New-CricketPayload }
         default { throw "No live active payload builder registered for sport '$Sport'." }
     }
 }
