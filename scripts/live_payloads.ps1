@@ -103,13 +103,30 @@ function New-SoccerPayload {
 
 function New-NhlPayload {
     $stats = @{
-        team_name = "Avalanche"; opponent_name = "Wild"; selection_name = "Avalanche"; game = "Wild at Avalanche"; home_away = "home"
-        team_xg_for = 3.4; opponent_xg_for = 2.7; team_xg_against = 2.5; opponent_xg_against = 3.1
-        team_shots_for = 33; opponent_shots_for = 29; team_shots_against = 28; opponent_shots_against = 32
-        team_power_play_pct = 24.5; opponent_power_play_pct = 19.0; team_penalty_kill_pct = 82.0; opponent_penalty_kill_pct = 77.5
-        team_goalie_save_pct = 0.916; opponent_goalie_save_pct = 0.904; team_rest_days = 2; opponent_rest_days = 1
+        team = "Rangers"; opponent = "Bruins"; selection = "Rangers"; game = "Bruins at Rangers"; home_away = "home"
+        market = "moneyline"; league = "nhl"; game_date = "2026-11-12"
+        team_projected_goals = 3.35; opponent_projected_goals = 2.75
+        team_xg_for_per_game = 3.25; opponent_xg_for_per_game = 2.85
+        team_xg_against_per_game = 2.70; opponent_xg_against_per_game = 3.05
+        team_goals_for_per_game = 3.30; opponent_goals_for_per_match = 2.90; opponent_goals_for_per_game = 2.90
+        team_goals_against_per_game = 2.65; opponent_goals_against_per_game = 3.10
+        team_shots_for_per_game = 32.0; opponent_shots_for_per_game = 29.0
+        team_shots_against_per_game = 28.0; opponent_shots_against_per_game = 31.0
+        team_scoring_chances_for_per_game = 29.0; opponent_scoring_chances_for_per_game = 25.0
+        team_scoring_chances_against_per_game = 24.0; opponent_scoring_chances_against_per_game = 28.0
+        team_high_danger_chances_for_per_game = 12.0; opponent_high_danger_chances_for_per_game = 9.0
+        team_high_danger_chances_against_per_game = 8.0; opponent_high_danger_chances_against_per_game = 11.0
+        team_power_play_percent = 24.0; opponent_power_play_percent = 19.0
+        team_penalty_kill_percent = 83.0; opponent_penalty_kill_percent = 77.0
+        team_recent_form_points = 8; opponent_recent_form_points = 5
+        team_rest_days = 2; opponent_rest_days = 1
+        team_goalie_confirmed = $true; opponent_goalie_confirmed = $true
+        team_starting_goalie_save_percent = 0.918; opponent_starting_goalie_save_percent = 0.904
+        team_starting_goalie_gsaax = 6.0; opponent_starting_goalie_gsaax = -2.0
+        injury_report_status = "clean"; lineup_status = "confirmed"
+        best_available_odds = 100; current_odds = 100; consensus_odds = 100; book_count = 8
     }
-    return New-LiveTicketBase -Sport "nhl" -League "NHL" -Event "Wild at Avalanche" -Selection "Avalanche" -InputStats $stats
+    return New-LiveTicketBase -Sport "nhl" -League "NHL" -Event "Bruins at Rangers" -Selection "Rangers" -InputStats $stats
 }
 
 function New-TennisPayload {

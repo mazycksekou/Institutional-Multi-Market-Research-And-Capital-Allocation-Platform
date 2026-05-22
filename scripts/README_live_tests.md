@@ -72,8 +72,21 @@ Every future sport module must ship with:
 
 1. direct model tests
 2. screenshot normalization parity tests
-3. a live smoke script in `scripts/live_<sport>_smoke.ps1`
-4. inclusion in `live_all_smoke.ps1` once the sport is active
+3. registry `screenshot_alias_test_payload`
+4. active live payload builder in `scripts/live_payloads.ps1`
+5. `tests/test_live_smoke_payload_contract.py` coverage
+6. a live smoke script in `scripts/live_<sport>_smoke.ps1`
+7. missing input names printed on failure through the shared helpers
+8. inclusion in `live_all_smoke.ps1` only after the local contract test passes
 
 Future sports like cricket, Formula 1, esports, and any later module should add a small payload builder in `live_payloads.ps1` and a short sport script based on `live_sport_template.ps1`. Do not paste long terminal blocks for live checks.
 
+## Local Contract Check
+
+Run this before adding a sport to `live_all_smoke.ps1`:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\check_live_payload_contract.ps1
+```
+
+This does not call Render and does not require `ACTION_API_KEY`.

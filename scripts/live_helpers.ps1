@@ -75,6 +75,7 @@ function New-LiveCheckRow {
     if ($analysis -and $analysis.no_bets) { $noBetCount += @($analysis.no_bets).Count }
     if ($board -and $board.no_bets) { $noBetCount += @($board.no_bets).Count }
     $missing = if ($analysis -and $analysis.missing_inputs) { @($analysis.missing_inputs).Count } else { 0 }
+    $missingNames = if ($analysis -and $analysis.missing_inputs) { @($analysis.missing_inputs) } else { @() }
     return [pscustomobject]@{
         Check = $Check
         Ok = if ($Response) { [bool]$Response.ok } else { $false }
@@ -95,6 +96,7 @@ function New-LiveCheckRow {
         NoBetCount = $noBetCount
         SameSelectionNoBets = $counts.SameSelectionNoBets
         MissingInputs = $missing
+        MissingInputNames = $missingNames
         Pass = $Pass
     }
 }
@@ -151,6 +153,12 @@ function Print-LiveCheckTable {
         Write-Host "NO_BETS: $($row.NoBetCount)"
         Write-Host "SAME_SELECTION_NO_BETS: $($row.SameSelectionNoBets)"
         Write-Host "MISSING_INPUTS: $($row.MissingInputs)"
+        if ($row.MissingInputNames -and @($row.MissingInputNames).Count -gt 0) {
+            Write-Host "MISSING_INPUT_NAMES:"
+            foreach ($name in @($row.MissingInputNames)) {
+                Write-Host "- $name"
+            }
+        }
         if ($null -ne $row.FinalProbability -or $null -ne $row.EdgePercent -or $null -ne $row.Confidence -or -not [string]::IsNullOrWhiteSpace("$($row.Calibration)")) {
             Write-Host "FINAL_PROBABILITY: $($row.FinalProbability)"
             Write-Host "EDGE_PERCENT: $($row.EdgePercent)"

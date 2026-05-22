@@ -4285,7 +4285,42 @@ def _normalize_soccer_input_aliases(input_stats: dict[str, Any], payload: Option
 
 
 def _normalize_nhl_input_aliases(input_stats: dict[str, Any], payload: Optional[dict[str, Any]] = None, sport: Optional[str] = None) -> dict[str, Any]:
-    return _normalize_team_sport_input_aliases(input_stats, payload, sport)
+    normalized = _normalize_team_sport_input_aliases(input_stats, payload, sport)
+    alias_pairs = {
+        "team": ["team_name", "home_team", "home"],
+        "opponent": ["opponent_name", "away_team", "away"],
+        "selection": ["selection_name", "favorite", "pick"],
+        "game_date": ["date", "match_date"],
+        "team_projected_goals": ["home_projected_goals", "team_goals_projection"],
+        "opponent_projected_goals": ["away_projected_goals", "opponent_goals_projection"],
+        "team_xg_for_per_game": ["team_xg_for", "home_xg_for"],
+        "opponent_xg_for_per_game": ["opponent_xg_for", "away_xg_for"],
+        "team_xg_against_per_game": ["team_xg_against", "home_xg_against", "home_xga"],
+        "opponent_xg_against_per_game": ["opponent_xg_against", "away_xg_against", "away_xga"],
+        "team_shots_for_per_game": ["team_shots_for", "home_shots_for"],
+        "opponent_shots_for_per_game": ["opponent_shots_for", "away_shots_for"],
+        "team_shots_against_per_game": ["team_shots_against", "home_shots_against"],
+        "opponent_shots_against_per_game": ["opponent_shots_against", "away_shots_against"],
+        "team_power_play_percent": ["team_power_play_pct", "home_power_play_pct"],
+        "opponent_power_play_percent": ["opponent_power_play_pct", "away_power_play_pct"],
+        "team_penalty_kill_percent": ["team_penalty_kill_pct", "home_penalty_kill_pct"],
+        "opponent_penalty_kill_percent": ["opponent_penalty_kill_pct", "away_penalty_kill_pct"],
+        "team_starting_goalie_save_percent": ["team_goalie_save_pct", "home_goalie_save_pct"],
+        "opponent_starting_goalie_save_percent": ["opponent_goalie_save_pct", "away_goalie_save_pct"],
+        "team_starting_goalie_gsaax": ["team_goalie_gsaax", "home_goalie_gsaax"],
+        "opponent_starting_goalie_gsaax": ["opponent_goalie_gsaax", "away_goalie_gsaax"],
+    }
+    for canonical, aliases in alias_pairs.items():
+        _copy_alias_if_missing(normalized, canonical, aliases)
+    if normalized.get("home_away") is None and normalized.get("team") is not None and normalized.get("opponent") is not None:
+        normalized["home_away"] = "home"
+    if normalized.get("selection") is None and normalized.get("team") is not None:
+        normalized["selection"] = normalized.get("team")
+    if normalized.get("market") is None:
+        normalized["market"] = payload.get("market")
+    if normalized.get("league") is None:
+        normalized["league"] = payload.get("league")
+    return normalized
 
 
 def normalize_sport_inputs_for_model(
