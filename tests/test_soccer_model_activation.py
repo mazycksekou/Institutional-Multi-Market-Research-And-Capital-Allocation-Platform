@@ -105,6 +105,23 @@ def soccer_full_inputs(**extra):
     return data
 
 
+def soccer_live_smoke_inputs(**extra):
+    data = soccer_full_inputs(
+        team="Arsenal",
+        opponent="Chelsea",
+        selection="Arsenal",
+        market="three_way_moneyline",
+        league="soccer_epl",
+        match_date="2026-08-15",
+        best_available_odds=100,
+        current_odds=100,
+        consensus_odds=100,
+        book_count=8,
+    )
+    data.update(extra)
+    return data
+
+
 def sport_payload(**extra):
     payload = {
         "sport": "football",
@@ -261,6 +278,23 @@ class TestSoccerModelActivation(unittest.TestCase):
         self.assertTrue(response["ok"])
         self.assertFalse(response["partial_model_mode"])
         self.assertEqual(response["model_analysis"]["model_name"], "poisson_dixon_coles_bivariate_goal_model")
+
+    def test_soccer_live_smoke_active_payload_reaches_active_model(self):
+        response = self._screenshot(
+            input_stats=soccer_live_smoke_inputs(),
+            odds_american=100,
+        )
+        analysis = response["model_analysis"]
+        self.assertTrue(response["ok"])
+        self.assertEqual(analysis["model_name"], "poisson_dixon_coles_bivariate_goal_model")
+        self.assertEqual(analysis["model_status"], "active")
+        self.assertIsNotNone(analysis["final_probability"])
+        self.assertEqual(analysis["missing_inputs"], [])
+        self.assertNotEqual(analysis["decision"], "manual_review_required")
+        if response["confirmed_bets"]:
+            confirmed = {(b.get("sport"), b.get("event"), b.get("market"), b.get("selection")) for b in response["confirmed_bets"]}
+            no_bets = {(b.get("sport"), b.get("event"), b.get("market"), b.get("selection")) for b in response["no_bets"]}
+            self.assertFalse(confirmed & no_bets)
 
     def test_soccer_confirmed_bets_and_no_bets_are_mutually_exclusive(self):
         response = self._sport(odds_american=100)

@@ -4250,7 +4250,38 @@ def _normalize_college_football_input_aliases(input_stats: dict[str, Any], paylo
 
 
 def _normalize_soccer_input_aliases(input_stats: dict[str, Any], payload: Optional[dict[str, Any]] = None, sport: Optional[str] = None) -> dict[str, Any]:
-    return _normalize_team_sport_input_aliases(input_stats, payload, sport)
+    normalized = _normalize_team_sport_input_aliases(input_stats, payload, sport)
+    alias_pairs = {
+        "team": ["home_team", "home", "team_name"],
+        "opponent": ["away_team", "away", "opponent_name"],
+        "selection": ["favorite", "pick", "selection_name"],
+        "home_away": ["team_home_away"],
+        "team_expected_goals": ["home_expected_goals_for", "home_xg_for"],
+        "opponent_expected_goals": ["away_expected_goals_for", "away_xg_for"],
+        "team_xg_for": ["home_recent_xg", "home_xg_for", "home_expected_goals_for"],
+        "opponent_xg_for": ["away_recent_xg", "away_xg_for", "away_expected_goals_for"],
+        "team_xg_against": ["home_recent_xga", "home_xg_against", "home_xga", "home_expected_goals_against"],
+        "opponent_xg_against": ["away_recent_xga", "away_xg_against", "away_xga", "away_expected_goals_against"],
+        "team_recent_form_points": ["home_form_rating", "home_form"],
+        "opponent_recent_form_points": ["away_form_rating", "away_form"],
+        "team_rest_days": ["home_rest_days"],
+        "opponent_rest_days": ["away_rest_days"],
+        "injury_report_status": ["injury_status"],
+        "league_goal_rate": ["league_average_goals", "avg_goals"],
+        "low_score_correlation": ["dc_low_score"],
+        "draw_adjustment": ["draw_adj"],
+    }
+    for canonical, aliases in alias_pairs.items():
+        _copy_alias_if_missing(normalized, canonical, aliases)
+    if normalized.get("home_away") is None and normalized.get("team") is not None and normalized.get("opponent") is not None:
+        normalized["home_away"] = "home"
+    if normalized.get("selection") is None and normalized.get("team") is not None:
+        normalized["selection"] = normalized.get("team")
+    if normalized.get("market") is None:
+        normalized["market"] = payload.get("market")
+    if normalized.get("league") is None:
+        normalized["league"] = payload.get("league")
+    return normalized
 
 
 def _normalize_nhl_input_aliases(input_stats: dict[str, Any], payload: Optional[dict[str, Any]] = None, sport: Optional[str] = None) -> dict[str, Any]:

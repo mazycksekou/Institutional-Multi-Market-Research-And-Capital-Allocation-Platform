@@ -83,12 +83,20 @@ function New-MlbPayload {
 
 function New-SoccerPayload {
     $stats = @{
-        team_name = "Arsenal"; opponent_name = "Chelsea"; selection_name = "Arsenal"; matchup = "Arsenal vs Chelsea"; home_away = "home"
-        market_name = "three_way_moneyline"; league_name = "soccer_epl"; match_date = "2026-08-15"
-        team_expected_goals = 1.75; opponent_expected_goals = 1.05; team_xg_for = 1.85; opponent_xg_for = 1.10
-        team_xg_against = 0.95; opponent_xg_against = 1.55; team_shots = 14; opponent_shots = 10
-        team_shots_on_target = 5.5; opponent_shots_on_target = 3.5; team_big_chances = 2.6; opponent_big_chances = 1.2
-        team_defensive_rating = 0.92; opponent_defensive_rating = 1.12; team_home_away = "home"; league_goal_rate = 2.75
+        team = "Arsenal"; opponent = "Chelsea"; selection = "Arsenal"; matchup = "Arsenal vs Chelsea"; home_away = "home"
+        market = "three_way_moneyline"; league = "soccer_epl"; match_date = "2026-08-15"
+        team_expected_goals = 1.75; opponent_expected_goals = 1.05; team_xg_for = 1.80; opponent_xg_for = 1.20
+        team_xg_against = 1.05; opponent_xg_against = 1.45; team_goals_for_per_match = 2.0; opponent_goals_for_per_match = 1.35
+        team_goals_against_per_match = 0.95; opponent_goals_against_per_match = 1.45
+        team_shots_per_match = 15.2; opponent_shots_per_match = 11.3; team_shots_allowed_per_match = 9.2; opponent_shots_allowed_per_match = 13.4
+        team_shots_on_target_per_match = 5.8; opponent_shots_on_target_per_match = 4.1
+        team_shots_on_target_allowed_per_match = 3.1; opponent_shots_on_target_allowed_per_match = 4.9
+        team_big_chances_per_match = 2.8; opponent_big_chances_per_match = 1.7
+        team_big_chances_allowed_per_match = 1.2; opponent_big_chances_allowed_per_match = 2.2
+        team_possession_percent = 58; opponent_possession_percent = 49
+        team_recent_form_points = 12; opponent_recent_form_points = 8; team_rest_days = 6; opponent_rest_days = 4
+        injury_report_status = "clean"; lineup_status = "confirmed"; best_available_odds = 100; book_count = 8; current_odds = 100; consensus_odds = 100
+        team_recent_xg_for_5 = 1.9; opponent_recent_xg_for_5 = 1.15; team_recent_xg_against_5 = 0.95; opponent_recent_xg_against_5 = 1.55
     }
     return New-LiveTicketBase -Sport "soccer" -League "EPL" -Event "Arsenal vs Chelsea" -Market "three_way_moneyline" -Selection "Arsenal" -InputStats $stats
 }
@@ -216,4 +224,3 @@ function New-LiveActivePayload {
         default { throw "No live active payload builder registered for sport '$Sport'." }
     }
 }
-
