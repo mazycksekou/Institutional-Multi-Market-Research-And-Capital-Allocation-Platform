@@ -245,6 +245,33 @@ function New-CricketPayload {
     return $payload
 }
 
+function New-F1Payload {
+    $stats = @{
+        race = "Monaco Grand Prix"; track = "Circuit de Monaco"; driver_name = "Max Verstappen"; team = "Red Bull Racing"
+        opponent_name = "Charles Leclerc"; opponent_team = "Ferrari"; session_type = "race"; track_type = "street"
+        track_km = 3.337; race_laps = 78; weather = "dry"; rain_pct = 0.12; temp_c = 24; wind_kph = 8; track_temp_c = 38
+        driver_power_rating = 94; opp_driver_rating = 90; team_pace = 93; opp_team_pace = 89
+        car_reliability = 0.95; opp_car_reliability = 0.91; qualy_pace = 92; opp_qualy_pace = 91
+        race_pace = 94; opp_race_pace = 89; tire_deg = 87; opp_tire_deg = 82
+        pit_rating = 91; opp_pit_rating = 84; strategy = 90; opp_strategy = 84
+        dirty_air_sensitivity = 0.34; opponent_dirty_air_sensitivity = 0.42
+        overtaking = 89; opp_overtaking = 84; defending = 92; opp_defending = 88
+        starts = 90; opp_starts = 86; wet_rating = 93; opp_wet_rating = 88
+        street_rating = 88; opp_street_rating = 93; recent_form = 91; opp_recent_form = 86
+        team_form = 90; opp_team_form = 85; grid_pos = 2; opp_grid_pos = 3; qualy_pos = 2; opp_qualy_pos = 3
+        long_run_pace = 93; opp_long_run_pace = 88; short_run_pace = 92; opp_short_run_pace = 91
+        dnf_risk = 0.05; opp_dnf_risk = 0.08; penalty = 0.03; opp_penalty = 0.05
+        grid_penalty = 0; opp_grid_penalty = 0; crash = 0.06; opp_crash = 0.08
+        sc_probability = 0.68; vsc_probability = 0.42; track_position = 0.92; overtake_difficulty = 0.88; pit_delta = 19.5
+        constructor_driver_1_rating = 94; constructor_driver_2_rating = 83
+        constructor_race_pace_rating = 93; constructor_qualifying_pace_rating = 92
+        constructor_reliability_rating = 0.95; constructor_strategy_rating = 90; constructor_pit_crew_rating = 91; book_count = 8
+    }
+    $payload = New-LiveTicketBase -Sport "f1" -League "Formula 1" -Event "Monaco Grand Prix" -Market "head_to_head" -Selection "Max Verstappen" -InputStats $stats
+    $payload.visible_markets = @("head_to_head", "podium_finish", "race_winner")
+    return $payload
+}
+
 function New-LiveActivePayload {
     param([Parameter(Mandatory = $true)] [string] $Sport)
     switch ($Sport.ToLower()) {
@@ -261,6 +288,8 @@ function New-LiveActivePayload {
         "ncaab" { return New-NcaabPayload }
         "ncaawb" { return New-NcaawbPayload }
         "ncaaf" { return New-NcaafPayload }
+        "f1" { return New-F1Payload }
+        "formula1" { return New-F1Payload }
         "cricket" { return New-CricketPayload }
         default { throw "No live active payload builder registered for sport '$Sport'." }
     }

@@ -445,6 +445,11 @@ class TestSportAnalysisEndpoint(unittest.TestCase):
                 "the_hundred": "cricket",
                 "cpl": "cricket",
                 "psl": "cricket",
+                "formula_1": "formula1",
+                "f1": "formula1",
+                "fia_formula_1": "formula1",
+                "grand_prix": "formula1",
+                "motorsport_f1": "formula1",
             }
             for submitted, expected in cases.items():
                 response = client.post(

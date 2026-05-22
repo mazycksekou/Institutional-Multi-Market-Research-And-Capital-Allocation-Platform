@@ -78,6 +78,11 @@ class TestSportModelRouting(unittest.TestCase):
             "the_hundred": "cricket",
             "cpl": "cricket",
             "psl": "cricket",
+            "formula_1": "formula1",
+            "f1": "formula1",
+            "fia_formula_1": "formula1",
+            "grand_prix": "formula1",
+            "motorsport_f1": "formula1",
             "valorant": "esports",
             "csgo": "esports",
             "lol": "esports",
@@ -110,7 +115,7 @@ class TestSportModelRouting(unittest.TestCase):
         self.assertEqual(registry.get_sport_model_config("basketball_ncaab")["model_family"], "mens_college_basketball_possession_variance_model")
         self.assertEqual(registry.get_sport_model_config("basketball_ncaawb")["model_family"], "womens_college_basketball_possession_variance_model")
         self.assertEqual(registry.get_sport_model_config("americanfootball_ncaaf")["model_family"], "college_football_epa_drive_rating_monte_carlo_model")
-        self.assertEqual(registry.get_sport_model_config("formula1")["model_family"], "Race simulation")
+        self.assertEqual(registry.get_sport_model_config("formula1")["model_family"], "f1_qualifying_race_pace_pit_strategy_monte_carlo_model")
         self.assertEqual(registry.get_sport_model_config("cricket")["model_family"], "cricket_run_rate_wicket_resource_monte_carlo_model")
         self.assertIn("game title routing placeholder", registry.get_sport_model_config("esports")["model_components"])
 
