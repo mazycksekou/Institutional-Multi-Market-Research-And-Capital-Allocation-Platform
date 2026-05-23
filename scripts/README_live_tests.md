@@ -52,6 +52,8 @@ powershell -ExecutionPolicy Bypass -File .\scripts\live_all_smoke.ps1
 - `live_ncaaf_smoke.ps1`
 - `live_f1_smoke.ps1`
 - `live_nascar_smoke.ps1`
+- `live_indycar_smoke.ps1`
+- `live_motogp_smoke.ps1`
 - `live_cricket_smoke.ps1`
 
 Each sport script runs three checks:

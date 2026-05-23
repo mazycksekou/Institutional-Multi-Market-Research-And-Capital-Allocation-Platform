@@ -460,6 +460,18 @@ class TestSportAnalysisEndpoint(unittest.TestCase):
                 "craftsman_truck_series": "nascar",
                 "stock_car_racing": "nascar",
                 "motorsport_nascar": "nascar",
+                "indy_car": "indycar",
+                "ntt_indycar": "indycar",
+                "ntt_indycar_series": "indycar",
+                "indycar_series": "indycar",
+                "indianapolis_500": "indycar",
+                "indy_500": "indycar",
+                "motorsport_indycar": "indycar",
+                "moto_gp": "motogp",
+                "fim_motogp": "motogp",
+                "grand_prix_motorcycle": "motogp",
+                "motorcycle_racing": "motogp",
+                "motorsport_motogp": "motogp",
             }
             for submitted, expected in cases.items():
                 response = client.post(

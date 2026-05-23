@@ -93,6 +93,18 @@ class TestSportModelRouting(unittest.TestCase):
             "craftsman_truck_series": "nascar",
             "stock_car_racing": "nascar",
             "motorsport_nascar": "nascar",
+            "indy_car": "indycar",
+            "ntt_indycar": "indycar",
+            "ntt_indycar_series": "indycar",
+            "indycar_series": "indycar",
+            "indianapolis_500": "indycar",
+            "indy_500": "indycar",
+            "motorsport_indycar": "indycar",
+            "moto_gp": "motogp",
+            "fim_motogp": "motogp",
+            "grand_prix_motorcycle": "motogp",
+            "motorcycle_racing": "motogp",
+            "motorsport_motogp": "motogp",
             "valorant": "esports",
             "csgo": "esports",
             "lol": "esports",
@@ -106,7 +118,7 @@ class TestSportModelRouting(unittest.TestCase):
         self.assertEqual(registry.get_sport_model_config("mlb")["sport"], "baseball_mlb")
 
     def test_primary_model_type_constraints(self):
-        for sport in ["basketball_nba", "basketball_wnba", "basketball_ncaab", "basketball_ncaawb", "americanfootball_nfl", "americanfootball_ncaaf", "mma_mixed_martial_arts", "boxing", "golf", "formula1", "nascar", "cricket", "esports"]:
+        for sport in ["basketball_nba", "basketball_wnba", "basketball_ncaab", "basketball_ncaawb", "americanfootball_nfl", "americanfootball_ncaaf", "mma_mixed_martial_arts", "boxing", "golf", "formula1", "nascar", "indycar", "motogp", "cricket", "esports"]:
             self.assertNotEqual(registry.get_sport_model_config(sport)["primary_model_type"], "poisson")
         self.assertIn("Negative Binomial", registry.get_sport_model_config("baseball_mlb")["model_family"])
         self.assertIn("Poisson", registry.get_sport_model_config("soccer")["model_family"])
@@ -127,6 +139,8 @@ class TestSportModelRouting(unittest.TestCase):
         self.assertEqual(registry.get_sport_model_config("americanfootball_ncaaf")["model_family"], "college_football_epa_drive_rating_monte_carlo_model")
         self.assertEqual(registry.get_sport_model_config("formula1")["model_family"], "f1_qualifying_race_pace_pit_strategy_monte_carlo_model")
         self.assertEqual(registry.get_sport_model_config("nascar")["model_family"], "nascar_track_position_speed_rating_pit_variance_monte_carlo_model")
+        self.assertEqual(registry.get_sport_model_config("indycar")["model_family"], "indycar_aero_strategy_restart_pit_variance_monte_carlo_model")
+        self.assertEqual(registry.get_sport_model_config("motogp")["model_family"], "motogp_rider_bike_tire_weather_monte_carlo_model")
         self.assertEqual(registry.get_sport_model_config("cricket")["model_family"], "cricket_run_rate_wicket_resource_monte_carlo_model")
         self.assertIn("game title routing placeholder", registry.get_sport_model_config("esports")["model_components"])
 
@@ -198,6 +212,8 @@ class TestSportModelRouting(unittest.TestCase):
             "golf": {"rules_officials": "Rules A", "course_ruling_environment": "normal"},
             "formula1": {"stewards": "Panel A", "race_control": "Race Control", "penalty_tendency": 0.6},
             "nascar": {"race_control": "Race Control", "inspection_officials": "Crew A", "penalty_tendency": 0.6},
+            "indycar": {"race_control": "Race Control", "pit_lane_officials": "Crew A", "penalty_tendency": 0.6},
+            "motogp": {"race_direction": "Race Direction", "stewards": "Panel A", "penalty_tendency": 0.6},
             "cricket": {"on_field_umpires": "Ump A/Ump B", "third_umpire": "Ump C"},
             "esports": {"tournament_admin": "Admin A", "map_admin": "Map Admin", "server_admin": "Server Admin"},
         }

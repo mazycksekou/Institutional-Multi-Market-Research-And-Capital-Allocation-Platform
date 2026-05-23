@@ -56,6 +56,8 @@ OFFICIAL_SPORT_KEYS = [
     "golf",
     "formula1",
     "nascar",
+    "indycar",
+    "motogp",
     "cricket",
     "esports",
 ]
@@ -143,6 +145,18 @@ SPORT_ALIASES = {
     "craftsman_truck_series": "nascar",
     "stock_car_racing": "nascar",
     "motorsport_nascar": "nascar",
+    "indy_car": "indycar",
+    "ntt_indycar": "indycar",
+    "ntt_indycar_series": "indycar",
+    "indycar_series": "indycar",
+    "indianapolis_500": "indycar",
+    "indy_500": "indycar",
+    "motorsport_indycar": "indycar",
+    "moto_gp": "motogp",
+    "fim_motogp": "motogp",
+    "grand_prix_motorcycle": "motogp",
+    "motorcycle_racing": "motogp",
+    "motorsport_motogp": "motogp",
     "epl": "soccer",
     "ucl": "soccer",
     "football": "soccer",
@@ -1877,6 +1891,173 @@ NASCAR_INPUT_CONTRACT = {
     "social_crowd_inputs": NFL_SOCIAL_CROWD_INPUTS,
 }
 
+INDYCAR_MARKETS = [
+    "race_winner", "podium_finish", "top_5_finish", "top_10_finish", "top_15_finish",
+    "driver_matchup", "group_winner", "pole_winner", "qualifying_matchup", "fastest_lap",
+    "laps_led", "finishing_position", "driver_to_retire", "classified_finish", "not_classified",
+    "lead_lap_finish", "caution_count_over", "caution_count_under", "green_flag_laps_over",
+    "green_flag_laps_under", "overtime_finish", "manufacturer_winner", "alt_top_5",
+    "alt_top_10", "alt_top_15",
+]
+
+INDYCAR_PROP_MARKETS = [
+    "laps_led", "finishing_position", "caution_count_over", "caution_count_under",
+    "green_flag_laps_over", "green_flag_laps_under",
+]
+
+INDYCAR_REQUIRED_CORE_INPUTS = [
+    "driver", "team", "manufacturer", "opponent", "opponent_team", "opponent_manufacturer",
+    "race_name", "track", "track_type", "track_length_miles", "scheduled_laps",
+    "race_distance_miles", "series", "session_type", "starting_position",
+    "opponent_starting_position", "qualifying_position", "opponent_qualifying_position",
+    "practice_rank", "opponent_practice_rank", "practice_single_lap_speed",
+    "opponent_practice_single_lap_speed", "practice_5_lap_average", "opponent_practice_5_lap_average",
+    "practice_10_lap_average", "opponent_practice_10_lap_average", "driver_rating",
+    "opponent_driver_rating", "season_driver_rating", "opponent_season_driver_rating",
+    "track_history_rating", "opponent_track_history_rating", "track_type_rating",
+    "opponent_track_type_rating", "recent_form_rating", "opponent_recent_form_rating",
+    "car_speed_rating", "opponent_car_speed_rating", "long_run_speed_rating",
+    "opponent_long_run_speed_rating", "short_run_speed_rating", "opponent_short_run_speed_rating",
+    "clean_air_speed_rating", "opponent_clean_air_speed_rating", "traffic_speed_rating",
+    "opponent_traffic_speed_rating", "restart_rating", "opponent_restart_rating",
+    "passing_rating", "opponent_passing_rating", "defense_rating", "opponent_defense_rating",
+    "tire_management_rating", "opponent_tire_management_rating", "fuel_save_rating",
+    "opponent_fuel_save_rating", "pit_crew_rating", "opponent_pit_crew_rating",
+    "strategy_rating", "opponent_strategy_rating", "manufacturer_rating",
+    "opponent_manufacturer_rating", "track_position_importance", "passing_difficulty",
+    "tire_wear_rating", "fuel_strategy_importance", "pit_road_sensitivity",
+    "caution_probability", "multi_car_wreck_probability", "overtime_probability",
+    "weather_temperature_f", "weather_wind_mph", "weather_precipitation_probability",
+    "track_temperature_f", "aero_sensitivity", "drafting_importance", "oval_pack_variance",
+    "road_street_course_skill_importance", "short_oval_contact_variance", "dnf_probability",
+    "opponent_dnf_probability", "mechanical_failure_risk", "opponent_mechanical_failure_risk",
+    "crash_risk", "opponent_crash_risk", "penalty_risk", "opponent_penalty_risk",
+    "engine_penalty", "opponent_engine_penalty", "start_at_rear", "opponent_start_at_rear",
+    "field_size", "oval_race", "road_course_race", "street_course_race", "superspeedway_race",
+    "indy_500_race", "team_momentum_rating", "opponent_team_momentum_rating",
+]
+
+INDYCAR_NUMERIC_CORE_INPUTS = [
+    field for field in INDYCAR_REQUIRED_CORE_INPUTS
+    if field not in {
+        "driver", "team", "manufacturer", "opponent", "opponent_team", "opponent_manufacturer",
+        "race_name", "track", "track_type", "series", "session_type", "start_at_rear",
+        "opponent_start_at_rear", "oval_race", "road_course_race", "street_course_race",
+        "superspeedway_race", "indy_500_race",
+    }
+]
+
+INDYCAR_MANUFACTURER_INPUTS = [
+    "manufacturer", "manufacturer_speed_rating", "manufacturer_reliability_rating",
+    "manufacturer_track_type_rating", "manufacturer_recent_form_rating",
+    "manufacturer_driver_depth_rating",
+]
+
+INDYCAR_REQUIRED_MARKET_INPUTS = {
+    **{market: ["odds_american"] for market in INDYCAR_MARKETS if market not in set(INDYCAR_PROP_MARKETS + ["manufacturer_winner"])},
+    "manufacturer_winner": INDYCAR_MANUFACTURER_INPUTS + ["odds_american"],
+    "laps_led": ["line", "odds_american"],
+    "finishing_position": ["line", "odds_american"],
+    "caution_count_over": ["line", "odds_american"],
+    "caution_count_under": ["line", "odds_american"],
+    "green_flag_laps_over": ["line", "odds_american"],
+    "green_flag_laps_under": ["line", "odds_american"],
+}
+
+INDYCAR_OPTIONAL_ENRICHMENT_INPUTS = [
+    "no_vig_market_probability", "book_count", "current_odds", "best_available_odds",
+    "opening_odds", "consensus_odds", "provider_status", "public_betting_percent",
+    "sharp_money_percent", "social_sentiment", "crowd_consensus", "practice_report_quality",
+    "qualifying_report_quality", "pit_road_report_quality",
+]
+
+INDYCAR_INPUT_CONTRACT = {
+    "required_core_inputs": INDYCAR_REQUIRED_CORE_INPUTS,
+    "required_market_specific_inputs": INDYCAR_REQUIRED_MARKET_INPUTS,
+    "optional_enrichment_inputs": INDYCAR_OPTIONAL_ENRICHMENT_INPUTS,
+    "manufacturer_market_inputs": INDYCAR_MANUFACTURER_INPUTS,
+    "provider_enrichment_inputs": ["best_available_odds", "current_odds", "opening_odds", "consensus_odds", "no_vig_market_probability", "book_count"],
+    "social_crowd_inputs": NFL_SOCIAL_CROWD_INPUTS,
+}
+
+MOTOGP_MARKETS = [
+    "race_winner", "podium_finish", "top_5_finish", "top_10_finish", "points_finish",
+    "rider_matchup", "group_winner", "qualifying_winner", "qualifying_matchup",
+    "sprint_winner", "sprint_podium", "fastest_lap", "rider_to_retire",
+    "classified_finish", "not_classified", "manufacturer_winner", "team_winner",
+    "finishing_position", "alt_podium", "alt_top_5", "alt_top_10",
+]
+
+MOTOGP_PROP_MARKETS = ["finishing_position"]
+
+MOTOGP_REQUIRED_CORE_INPUTS = [
+    "rider", "team", "manufacturer", "opponent", "opponent_team", "opponent_manufacturer",
+    "race_name", "circuit", "track_type", "track_length_km", "scheduled_laps", "session_type",
+    "starting_grid_position", "opponent_starting_grid_position", "qualifying_position",
+    "opponent_qualifying_position", "practice_rank", "opponent_practice_rank", "practice_lap_time",
+    "opponent_practice_lap_time", "practice_long_run_pace", "opponent_practice_long_run_pace",
+    "practice_short_run_pace", "opponent_practice_short_run_pace", "rider_rating",
+    "opponent_rider_rating", "season_rider_rating", "opponent_season_rider_rating",
+    "circuit_history_rating", "opponent_circuit_history_rating", "track_type_rating",
+    "opponent_track_type_rating", "recent_form_rating", "opponent_recent_form_rating",
+    "bike_pace_rating", "opponent_bike_pace_rating", "qualifying_pace_rating",
+    "opponent_qualifying_pace_rating", "race_pace_rating", "opponent_race_pace_rating",
+    "tire_degradation_rating", "opponent_tire_degradation_rating", "braking_rating",
+    "opponent_braking_rating", "cornering_rating", "opponent_cornering_rating",
+    "launch_start_rating", "opponent_launch_start_rating", "overtaking_rating",
+    "opponent_overtaking_rating", "defense_rating", "opponent_defense_rating",
+    "wet_weather_rating", "opponent_wet_weather_rating", "manufacturer_rating",
+    "opponent_manufacturer_rating", "team_strategy_rating", "opponent_team_strategy_rating",
+    "track_position_importance", "overtaking_difficulty", "tire_wear_rating",
+    "front_tire_stress", "rear_tire_stress", "crash_probability", "opponent_crash_probability",
+    "mechanical_failure_risk", "opponent_mechanical_failure_risk", "penalty_risk",
+    "opponent_penalty_risk", "weather_temperature_c", "track_temperature_c", "rain_probability",
+    "wind_speed_kph", "dry_wet_transition_risk", "field_size", "sprint_weekend",
+    "rider_injury_adjustment", "opponent_rider_injury_adjustment",
+]
+
+MOTOGP_NUMERIC_CORE_INPUTS = [
+    field for field in MOTOGP_REQUIRED_CORE_INPUTS
+    if field not in {
+        "rider", "team", "manufacturer", "opponent", "opponent_team", "opponent_manufacturer",
+        "race_name", "circuit", "track_type", "session_type", "sprint_weekend",
+    }
+]
+
+MOTOGP_MANUFACTURER_INPUTS = [
+    "manufacturer", "manufacturer_pace_rating", "manufacturer_reliability_rating",
+    "manufacturer_recent_form_rating", "manufacturer_rider_depth_rating",
+]
+
+MOTOGP_TEAM_INPUTS = [
+    "team", "team_rider_1_rating", "team_rider_2_rating", "team_strategy_rating",
+    "team_bike_pace_rating", "team_recent_form_rating",
+]
+
+MOTOGP_REQUIRED_MARKET_INPUTS = {
+    **{market: ["odds_american"] for market in MOTOGP_MARKETS if market not in {"manufacturer_winner", "team_winner", "finishing_position"}},
+    "manufacturer_winner": MOTOGP_MANUFACTURER_INPUTS + ["odds_american"],
+    "team_winner": MOTOGP_TEAM_INPUTS + ["odds_american"],
+    "finishing_position": ["line", "odds_american"],
+}
+
+MOTOGP_OPTIONAL_ENRICHMENT_INPUTS = [
+    "no_vig_market_probability", "book_count", "current_odds", "best_available_odds",
+    "opening_odds", "consensus_odds", "provider_status", "public_betting_percent",
+    "sharp_money_percent", "social_sentiment", "crowd_consensus", "practice_report_quality",
+    "qualifying_report_quality", "weather_report_quality",
+]
+
+MOTOGP_INPUT_CONTRACT = {
+    "required_core_inputs": MOTOGP_REQUIRED_CORE_INPUTS,
+    "required_market_specific_inputs": MOTOGP_REQUIRED_MARKET_INPUTS,
+    "optional_enrichment_inputs": MOTOGP_OPTIONAL_ENRICHMENT_INPUTS,
+    "manufacturer_market_inputs": MOTOGP_MANUFACTURER_INPUTS,
+    "team_market_inputs": MOTOGP_TEAM_INPUTS,
+    "provider_enrichment_inputs": ["best_available_odds", "current_odds", "opening_odds", "consensus_odds", "no_vig_market_probability", "book_count"],
+    "social_crowd_inputs": NFL_SOCIAL_CROWD_INPUTS,
+}
+
 SPORT_PROP_INPUTS = {
     "baseball_mlb": ["player projection", "lineup status", "opponent matchup", "park factor", "weather"],
     "basketball_nba": ["minutes projection", "usage", "pace", "defensive matchup", "injury report"],
@@ -1893,6 +2074,8 @@ SPORT_PROP_INPUTS = {
     "golf": ["strokes gained splits", "course fit", "weather", "field strength"],
     "formula1": ["driver pace", "constructor strength", "track profile", "weather"],
     "nascar": ["driver rating", "track history", "practice speed", "pit crew", "caution risk"],
+    "indycar": ["driver rating", "track type", "fuel strategy", "pit crew", "restart variance"],
+    "motogp": ["rider rating", "bike pace", "tire stress", "weather", "crash risk"],
     "cricket": ["batting order", "bowler matchup", "venue", "pitch condition"],
     "esports": ["game title", "player rating", "team rating", "map pool", "patch or meta version"],
 }
@@ -1987,6 +2170,18 @@ OFFICIALS_MODULE_BY_SPORT = {
         "official_inputs": ["race control", "inspection officials", "pit road officials", "restart enforcement", "penalty tendency"],
         "betting_edge_strength": "situational",
         "notes": "NASCAR official context is situational and cannot replace driver, car, track, and pit inputs.",
+    },
+    "indycar": {
+        "official_type": "race control/IndyCar officials",
+        "official_inputs": ["race control", "pit lane officials", "restart enforcement", "blocking calls", "penalty tendency"],
+        "betting_edge_strength": "situational",
+        "notes": "IndyCar official context is situational and cannot replace driver, aero, strategy, and track inputs.",
+    },
+    "motogp": {
+        "official_type": "race direction/stewards",
+        "official_inputs": ["race direction", "stewards", "track limits", "penalty tendency", "weather procedure"],
+        "betting_edge_strength": "situational",
+        "notes": "MotoGP race direction is situational and cannot replace rider, bike, tire, and weather inputs.",
     },
     "cricket": {
         "official_type": "umpires/match referee",
@@ -2578,6 +2773,42 @@ SPORT_MODEL_REGISTRY = [
         confirmed_bets_allowed=True,
     ),
     _sport(
+        "indycar",
+        "IndyCar",
+        "indycar_aero_strategy_restart_pit_variance_monte_carlo_model",
+        "indycar_aero_strategy_restart_pit_variance_monte_carlo_model",
+        "aero_strategy_restart_pit_variance_monte_carlo",
+        INDYCAR_MARKETS,
+        INDYCAR_PROP_MARKETS,
+        INDYCAR_REQUIRED_CORE_INPUTS,
+        INDYCAR_OPTIONAL_ENRICHMENT_INPUTS,
+        ["aero package model", "fuel-save strategy", "restart variance", "pit window model", "traffic speed", "manufacturer strength", "DNF/crash risk"],
+        "aero strategy restart pit-variance Monte Carlo",
+        ["Top finish ladders, laps led, fastest lap, and driver matchup exposures are correlated."],
+        sport_parameters={"league_calibration_applied": "indycar"},
+        component_status=COMPONENT_STATUS_ACTIVE,
+        model_level=MODEL_LEVEL_PROJECTION_READY,
+        confirmed_bets_allowed=True,
+    ),
+    _sport(
+        "motogp",
+        "MotoGP",
+        "motogp_rider_bike_tire_weather_monte_carlo_model",
+        "motogp_rider_bike_tire_weather_monte_carlo_model",
+        "rider_bike_tire_weather_monte_carlo",
+        MOTOGP_MARKETS,
+        MOTOGP_PROP_MARKETS,
+        MOTOGP_REQUIRED_CORE_INPUTS,
+        MOTOGP_OPTIONAL_ENRICHMENT_INPUTS,
+        ["rider skill model", "bike pace model", "tire temperature model", "wet-weather model", "launch/start model", "crash risk", "manufacturer strength"],
+        "rider bike tire-weather Monte Carlo",
+        ["Podium/top finish ladders, sprint, and rider matchup exposures are correlated."],
+        sport_parameters={"league_calibration_applied": "motogp"},
+        component_status=COMPONENT_STATUS_ACTIVE,
+        model_level=MODEL_LEVEL_PROJECTION_READY,
+        confirmed_bets_allowed=True,
+    ),
+    _sport(
         "cricket",
         "Cricket",
         "cricket_run_rate_wicket_resource_monte_carlo_model",
@@ -2630,6 +2861,8 @@ _INPUT_NORMALIZER_BY_SPORT = {
     "golf": "golf_input_normalizer",
     "formula1": "f1_input_normalizer",
     "nascar": "nascar_input_normalizer",
+    "indycar": "indycar_input_normalizer",
+    "motogp": "motogp_input_normalizer",
     "cricket": "cricket_input_normalizer",
 }
 
@@ -2935,6 +3168,88 @@ _ACTIVE_SCREENSHOT_ALIAS_TEST_PAYLOADS: dict[str, dict[str, Any]] = {
             "team_momentum": 90, "opp_team_momentum": 86, "manufacturer_speed_rating": 89,
             "manufacturer_reliability_rating": 0.93, "manufacturer_track_type_rating": 88,
             "manufacturer_recent_form_rating": 89, "manufacturer_driver_depth_rating": 87,
+            "book_count": 8, "current_odds": 100,
+        },
+    },
+    "indycar": {
+        "sport": "indycar", "league": "NTT IndyCar Series", "event": "Indianapolis 500",
+        "market": "driver_matchup", "selection": "Alex Palou", "odds_american": 100,
+        "bankroll": 1000, "unit_size": 25, "risk_profile": "moderate",
+        "source_type": "chatgpt_parsed", "screenshot_text": "Alex Palou driver matchup +100 vs Josef Newgarden",
+        "visible_markets": ["driver_matchup", "top_10_finish", "race_winner"],
+        "input_stats": {
+            "race": "Indianapolis 500", "track_name": "Indianapolis Motor Speedway",
+            "driver_name": "Alex Palou", "team_name": "Chip Ganassi Racing", "manufacturer_name": "Honda",
+            "opponent_name": "Josef Newgarden", "opponent_team_name": "Team Penske",
+            "opponent_manufacturer_name": "Chevrolet", "race_series": "indycar", "session": "race",
+            "track_type": "superspeedway", "track_miles": 2.5, "laps": 200, "distance_miles": 500,
+            "start_pos": 5, "opp_start_pos": 12, "qual_pos": 5, "opp_qual_pos": 12,
+            "practice_pos": 3, "opp_practice_pos": 11, "single_lap_speed": 232.4,
+            "opp_single_lap_speed": 231.1, "five_lap_avg": 231.8, "opp_five_lap_avg": 230.5,
+            "ten_lap_avg": 231.2, "opp_ten_lap_avg": 229.9, "driver_power_rating": 94,
+            "opp_driver_rating": 88, "season_rating": 95, "opp_season_rating": 87,
+            "track_history": 89, "opp_track_history": 86, "track_type_score": 91,
+            "opp_track_type_score": 86, "recent_form": 94, "opp_recent_form": 86,
+            "car_speed": 93, "opp_car_speed": 87, "long_run_speed": 94, "opp_long_run_speed": 86,
+            "short_run_speed": 92, "opp_short_run_speed": 86, "clean_air_speed": 93,
+            "opp_clean_air_speed": 87, "traffic_speed": 91, "opp_traffic_speed": 85,
+            "restart_score": 90, "opp_restart_score": 87, "passing_score": 90,
+            "opp_passing_score": 86, "defense_score": 89, "opp_defense_score": 86,
+            "tire_mgmt": 91, "opp_tire_mgmt": 85, "fuel_save": 94, "opp_fuel_save": 86,
+            "pit_rating": 91, "opp_pit_rating": 86, "strategy": 92, "opp_strategy": 86,
+            "manufacturer_score": 88, "opp_manufacturer_score": 87, "track_position": 0.62,
+            "pass_difficulty": 0.48, "tire_wear": 0.40, "fuel_strategy": 0.82,
+            "pit_sensitivity": 0.58, "caution_prob": 0.52, "wreck_prob": 0.18,
+            "overtime_prob": 0.16, "temp_f": 78, "wind_mph": 10, "precip_prob": 0.06,
+            "track_temp_f": 96, "aero": 0.72, "drafting": 0.86, "pack_variance": 0.54,
+            "road_skill": 0.35, "contact_variance": 0.28, "dnf_risk": 0.07,
+            "opp_dnf_risk": 0.10, "mechanical_risk": 0.04, "opp_mechanical_risk": 0.07,
+            "crash": 0.08, "opp_crash": 0.11, "penalty": 0.03, "opp_penalty": 0.05,
+            "engine_penalty": 0, "opp_engine_penalty": 0, "rear_start": False,
+            "opp_rear_start": False, "field": 33, "oval": True, "road_course": False,
+            "street_course": False, "superspeedway": True, "indy_500_race": True,
+            "team_momentum": 92, "opp_team_momentum": 86, "manufacturer_speed_rating": 88,
+            "manufacturer_reliability_rating": 0.92, "manufacturer_track_type_rating": 88,
+            "manufacturer_recent_form_rating": 89, "manufacturer_driver_depth_rating": 87,
+            "book_count": 8, "current_odds": 100,
+        },
+    },
+    "motogp": {
+        "sport": "motogp", "league": "MotoGP", "event": "Italian Grand Prix",
+        "market": "rider_matchup", "selection": "Francesco Bagnaia", "odds_american": 100,
+        "bankroll": 1000, "unit_size": 25, "risk_profile": "moderate",
+        "source_type": "chatgpt_parsed", "screenshot_text": "Francesco Bagnaia rider matchup +100 vs Marc Marquez",
+        "visible_markets": ["rider_matchup", "podium_finish", "race_winner"],
+        "input_stats": {
+            "race": "Italian Grand Prix", "circuit_name": "Mugello Circuit",
+            "rider_name": "Francesco Bagnaia", "team_name": "Ducati Lenovo Team",
+            "manufacturer_name": "Ducati", "opponent_name": "Marc Marquez",
+            "opponent_team_name": "Gresini Racing", "opponent_manufacturer_name": "Ducati",
+            "session_type": "race", "track_type": "flowing", "track_km": 5.245, "laps": 23,
+            "grid_pos": 2, "opp_grid_pos": 5, "qualy_pos": 2, "opp_qualy_pos": 5,
+            "practice_pos": 2, "opp_practice_pos": 6, "practice_lap_time": 105.2,
+            "opp_practice_lap_time": 105.7, "long_run_pace": 93, "opp_long_run_pace": 88,
+            "short_run_pace": 92, "opp_short_run_pace": 88, "rider_power_rating": 94,
+            "opp_rider_rating": 89, "season_rating": 93, "opp_season_rating": 88,
+            "circuit_history": 92, "opp_circuit_history": 88, "track_type_score": 91,
+            "opp_track_type_score": 87, "recent_form": 92, "opp_recent_form": 87,
+            "bike_pace": 94, "opp_bike_pace": 89, "qualy_pace": 93, "opp_qualy_pace": 88,
+            "race_pace": 94, "opp_race_pace": 88, "tire_deg": 88, "opp_tire_deg": 83,
+            "braking": 93, "opp_braking": 88, "cornering": 94, "opp_cornering": 88,
+            "launch": 91, "opp_launch": 87, "overtaking": 90, "opp_overtaking": 88,
+            "defense_score": 90, "opp_defense_score": 88, "wet_rating": 88, "opp_wet_rating": 84,
+            "manufacturer_score": 92, "opp_manufacturer_score": 90, "strategy": 90,
+            "opp_strategy": 86, "track_position": 0.74, "overtake_difficulty": 0.58,
+            "tire_wear": 0.66, "front_tire_stress": 0.58, "rear_tire_stress": 0.64,
+            "crash": 0.08, "opp_crash": 0.12, "mechanical_risk": 0.03,
+            "opp_mechanical_risk": 0.05, "penalty": 0.03, "opp_penalty": 0.04,
+            "temp_c": 24, "track_temp_c": 38, "rain_pct": 0.08, "wind_kph": 10,
+            "dry_wet_transition_risk": 0.08, "field": 22, "sprint_weekend": True,
+            "rider_injury_adjustment": 0, "opponent_rider_injury_adjustment": -0.2,
+            "manufacturer_pace_rating": 92, "manufacturer_reliability_rating": 0.94,
+            "manufacturer_recent_form_rating": 91, "manufacturer_rider_depth_rating": 90,
+            "team_rider_1_rating": 94, "team_rider_2_rating": 84, "team_strategy_rating": 90,
+            "team_bike_pace_rating": 93, "team_recent_form_rating": 91,
             "book_count": 8, "current_odds": 100,
         },
     },
@@ -4510,6 +4825,63 @@ def _nascar_market_specific_missing(market: Any, input_stats: dict[str, Any], pa
     return [field for field in required if _nascar_value_missing(field, input_stats, payload)]
 
 
+def _indycar_value_missing(field: str, input_stats: dict[str, Any], payload: dict[str, Any]) -> bool:
+    value = input_stats.get(field)
+    if value is None and field in {"sport", "league", "event", "teams", "market", "selection", "odds_american", "bankroll", "unit_size", "risk_profile"}:
+        value = payload.get(field)
+    if value is None and field == "event":
+        value = payload.get("event_id")
+    if value in (None, ""):
+        return True
+    if field in INDYCAR_NUMERIC_CORE_INPUTS or field in {"line", "odds_american", *[f for f in INDYCAR_MANUFACTURER_INPUTS if f != "manufacturer"]}:
+        return _safe_float(value) is None
+    return False
+
+
+def _indycar_full_inputs_missing(input_stats: dict[str, Any], payload: dict[str, Any]) -> list[str]:
+    base_fields = ["sport", "league", "event", "market", "selection", "odds_american", "bankroll", "unit_size", "risk_profile"]
+    missing = [field for field in base_fields if _indycar_value_missing(field, input_stats, payload)]
+    for field in INDYCAR_REQUIRED_CORE_INPUTS:
+        if _indycar_value_missing(field, input_stats, payload):
+            missing.append(field)
+    return list(dict.fromkeys(missing))
+
+
+def _indycar_market_specific_missing(market: Any, input_stats: dict[str, Any], payload: dict[str, Any]) -> list[str]:
+    market_key = _normal_market_key(input_stats.get("market_type") or market)
+    required = INDYCAR_REQUIRED_MARKET_INPUTS.get(market_key, ["odds_american"])
+    return [field for field in required if _indycar_value_missing(field, input_stats, payload)]
+
+
+def _motogp_value_missing(field: str, input_stats: dict[str, Any], payload: dict[str, Any]) -> bool:
+    value = input_stats.get(field)
+    if value is None and field in {"sport", "league", "event", "teams", "market", "selection", "odds_american", "bankroll", "unit_size", "risk_profile"}:
+        value = payload.get(field)
+    if value is None and field == "event":
+        value = payload.get("event_id")
+    if value in (None, ""):
+        return True
+    numeric_markets = set(MOTOGP_MANUFACTURER_INPUTS + MOTOGP_TEAM_INPUTS) - {"manufacturer", "team"}
+    if field in MOTOGP_NUMERIC_CORE_INPUTS or field in numeric_markets or field in {"line", "odds_american"}:
+        return _safe_float(value) is None
+    return False
+
+
+def _motogp_full_inputs_missing(input_stats: dict[str, Any], payload: dict[str, Any]) -> list[str]:
+    base_fields = ["sport", "league", "event", "market", "selection", "odds_american", "bankroll", "unit_size", "risk_profile"]
+    missing = [field for field in base_fields if _motogp_value_missing(field, input_stats, payload)]
+    for field in MOTOGP_REQUIRED_CORE_INPUTS:
+        if _motogp_value_missing(field, input_stats, payload):
+            missing.append(field)
+    return list(dict.fromkeys(missing))
+
+
+def _motogp_market_specific_missing(market: Any, input_stats: dict[str, Any], payload: dict[str, Any]) -> list[str]:
+    market_key = _normal_market_key(input_stats.get("market_type") or market)
+    required = MOTOGP_REQUIRED_MARKET_INPUTS.get(market_key, ["odds_american"])
+    return [field for field in required if _motogp_value_missing(field, input_stats, payload)]
+
+
 def _missing_inputs_for_sport(sport: str, market: Any, input_stats: dict[str, Any], payload: dict[str, Any]) -> list[str]:
     if sport == "basketball_nba":
         return _nba_full_inputs_missing(input_stats) + _nba_market_specific_missing(market, input_stats, payload)
@@ -4535,6 +4907,10 @@ def _missing_inputs_for_sport(sport: str, market: Any, input_stats: dict[str, An
         return _f1_full_inputs_missing(input_stats, payload) + _f1_market_specific_missing(market, input_stats, payload)
     if sport == "nascar":
         return _nascar_full_inputs_missing(input_stats, payload) + _nascar_market_specific_missing(market, input_stats, payload)
+    if sport == "indycar":
+        return _indycar_full_inputs_missing(input_stats, payload) + _indycar_market_specific_missing(market, input_stats, payload)
+    if sport == "motogp":
+        return _motogp_full_inputs_missing(input_stats, payload) + _motogp_market_specific_missing(market, input_stats, payload)
     if sport == "cricket":
         return _cricket_full_inputs_missing(input_stats, payload) + _cricket_market_specific_missing(market, input_stats, payload)
     config = get_sport_model_config(sport)
@@ -5186,6 +5562,130 @@ def _normalize_nascar_input_aliases(input_stats: dict[str, Any], payload: Option
     return normalized
 
 
+def _normalize_indycar_input_aliases(input_stats: dict[str, Any], payload: Optional[dict[str, Any]] = None, sport: Optional[str] = None) -> dict[str, Any]:
+    normalized = _normalize_team_sport_input_aliases(input_stats, payload, sport)
+    payload = payload or {}
+    alias_pairs = {
+        "race_name": ["race", "event_name"], "track": ["track_name", "circuit"], "driver": ["driver_name"],
+        "team": ["team_name"], "manufacturer": ["manufacturer_name"], "opponent": ["opponent_name", "opp_driver"],
+        "opponent_team": ["opponent_team_name"], "opponent_manufacturer": ["opponent_manufacturer_name"],
+        "selection": ["pick", "favorite"], "line": ["line_value"], "track_length_miles": ["track_miles"],
+        "scheduled_laps": ["laps"], "race_distance_miles": ["distance_miles"], "series": ["race_series"],
+        "session_type": ["session"], "starting_position": ["start_pos", "grid_pos"],
+        "opponent_starting_position": ["opp_start_pos", "opp_grid_pos"], "qualifying_position": ["qual_pos"],
+        "opponent_qualifying_position": ["opp_qual_pos"], "practice_rank": ["practice_pos"],
+        "opponent_practice_rank": ["opp_practice_pos"], "practice_single_lap_speed": ["single_lap_speed"],
+        "opponent_practice_single_lap_speed": ["opp_single_lap_speed"], "practice_5_lap_average": ["five_lap_avg"],
+        "opponent_practice_5_lap_average": ["opp_five_lap_avg"], "practice_10_lap_average": ["ten_lap_avg"],
+        "opponent_practice_10_lap_average": ["opp_ten_lap_avg"], "driver_rating": ["driver_power_rating"],
+        "opponent_driver_rating": ["opp_driver_rating"], "season_driver_rating": ["season_rating"],
+        "opponent_season_driver_rating": ["opp_season_rating"], "track_history_rating": ["track_history"],
+        "opponent_track_history_rating": ["opp_track_history"], "track_type_rating": ["track_type_score"],
+        "opponent_track_type_rating": ["opp_track_type_score"], "recent_form_rating": ["recent_form"],
+        "opponent_recent_form_rating": ["opp_recent_form"], "car_speed_rating": ["car_speed"],
+        "opponent_car_speed_rating": ["opp_car_speed"], "long_run_speed_rating": ["long_run_speed"],
+        "opponent_long_run_speed_rating": ["opp_long_run_speed"], "short_run_speed_rating": ["short_run_speed"],
+        "opponent_short_run_speed_rating": ["opp_short_run_speed"], "clean_air_speed_rating": ["clean_air_speed"],
+        "opponent_clean_air_speed_rating": ["opp_clean_air_speed"], "traffic_speed_rating": ["traffic_speed"],
+        "opponent_traffic_speed_rating": ["opp_traffic_speed"], "restart_rating": ["restart_score"],
+        "opponent_restart_rating": ["opp_restart_score"], "passing_rating": ["passing_score"],
+        "opponent_passing_rating": ["opp_passing_score"], "defense_rating": ["defense_score"],
+        "opponent_defense_rating": ["opp_defense_score"], "tire_management_rating": ["tire_mgmt"],
+        "opponent_tire_management_rating": ["opp_tire_mgmt"], "fuel_save_rating": ["fuel_save"],
+        "opponent_fuel_save_rating": ["opp_fuel_save"], "pit_crew_rating": ["pit_rating"],
+        "opponent_pit_crew_rating": ["opp_pit_rating"], "strategy_rating": ["strategy"],
+        "opponent_strategy_rating": ["opp_strategy"], "manufacturer_rating": ["manufacturer_score"],
+        "opponent_manufacturer_rating": ["opp_manufacturer_score"], "track_position_importance": ["track_position"],
+        "passing_difficulty": ["pass_difficulty"], "tire_wear_rating": ["tire_wear"],
+        "fuel_strategy_importance": ["fuel_strategy"], "pit_road_sensitivity": ["pit_sensitivity"],
+        "caution_probability": ["caution_prob"], "multi_car_wreck_probability": ["wreck_prob"],
+        "overtime_probability": ["overtime_prob"], "weather_temperature_f": ["temp_f"],
+        "weather_wind_mph": ["wind_mph"], "weather_precipitation_probability": ["precip_prob"],
+        "track_temperature_f": ["track_temp_f"], "aero_sensitivity": ["aero"], "drafting_importance": ["drafting"],
+        "oval_pack_variance": ["pack_variance"], "road_street_course_skill_importance": ["road_skill"],
+        "short_oval_contact_variance": ["contact_variance"], "dnf_probability": ["dnf_risk"],
+        "opponent_dnf_probability": ["opp_dnf_risk"], "mechanical_failure_risk": ["mechanical_risk"],
+        "opponent_mechanical_failure_risk": ["opp_mechanical_risk"], "crash_risk": ["crash"],
+        "opponent_crash_risk": ["opp_crash"], "penalty_risk": ["penalty"], "opponent_penalty_risk": ["opp_penalty"],
+        "engine_penalty": ["engine_penalty"], "opponent_engine_penalty": ["opp_engine_penalty"],
+        "start_at_rear": ["rear_start"], "opponent_start_at_rear": ["opp_rear_start"],
+        "field_size": ["field"], "oval_race": ["oval"], "road_course_race": ["road_course"],
+        "street_course_race": ["street_course"], "superspeedway_race": ["superspeedway"],
+        "team_momentum_rating": ["team_momentum"], "opponent_team_momentum_rating": ["opp_team_momentum"],
+    }
+    for canonical, aliases in alias_pairs.items():
+        _copy_alias_if_missing(normalized, canonical, aliases)
+    normalized.setdefault("race_name", payload.get("event") or payload.get("event_id"))
+    normalized.setdefault("selection", normalized.get("driver") or payload.get("selection"))
+    for field in ("market", "league", "odds_american", "bankroll", "unit_size", "risk_profile"):
+        if normalized.get(field) is None:
+            normalized[field] = payload.get(field)
+    if normalized.get("manufacturer_speed_rating") is None and normalized.get("manufacturer_rating") is not None:
+        normalized["manufacturer_speed_rating"] = normalized.get("manufacturer_rating")
+    normalized.setdefault("manufacturer_reliability_rating", 0.90)
+    normalized.setdefault("manufacturer_track_type_rating", normalized.get("track_type_rating"))
+    normalized.setdefault("manufacturer_recent_form_rating", normalized.get("recent_form_rating"))
+    normalized.setdefault("manufacturer_driver_depth_rating", normalized.get("season_driver_rating"))
+    return normalized
+
+
+def _normalize_motogp_input_aliases(input_stats: dict[str, Any], payload: Optional[dict[str, Any]] = None, sport: Optional[str] = None) -> dict[str, Any]:
+    normalized = _normalize_team_sport_input_aliases(input_stats, payload, sport)
+    payload = payload or {}
+    alias_pairs = {
+        "race_name": ["race", "event_name"], "circuit": ["track", "circuit_name"], "rider": ["rider_name"],
+        "team": ["team_name"], "manufacturer": ["manufacturer_name"], "opponent": ["opponent_name", "opp_rider"],
+        "opponent_team": ["opponent_team_name"], "opponent_manufacturer": ["opponent_manufacturer_name"],
+        "selection": ["pick", "favorite"], "line": ["line_value"], "track_length_km": ["track_km"],
+        "scheduled_laps": ["laps"], "starting_grid_position": ["grid_pos"], "opponent_starting_grid_position": ["opp_grid_pos"],
+        "qualifying_position": ["qualy_pos"], "opponent_qualifying_position": ["opp_qualy_pos"],
+        "practice_rank": ["practice_pos"], "opponent_practice_rank": ["opp_practice_pos"],
+        "opponent_practice_lap_time": ["opp_practice_lap_time"], "practice_long_run_pace": ["long_run_pace"],
+        "opponent_practice_long_run_pace": ["opp_long_run_pace"], "practice_short_run_pace": ["short_run_pace"],
+        "opponent_practice_short_run_pace": ["opp_short_run_pace"], "rider_rating": ["rider_power_rating"],
+        "opponent_rider_rating": ["opp_rider_rating"], "season_rider_rating": ["season_rating"],
+        "opponent_season_rider_rating": ["opp_season_rating"], "circuit_history_rating": ["circuit_history"],
+        "opponent_circuit_history_rating": ["opp_circuit_history"], "track_type_rating": ["track_type_score"],
+        "opponent_track_type_rating": ["opp_track_type_score"], "recent_form_rating": ["recent_form"],
+        "opponent_recent_form_rating": ["opp_recent_form"], "bike_pace_rating": ["bike_pace"],
+        "opponent_bike_pace_rating": ["opp_bike_pace"], "qualifying_pace_rating": ["qualy_pace"],
+        "opponent_qualifying_pace_rating": ["opp_qualy_pace"], "race_pace_rating": ["race_pace"],
+        "opponent_race_pace_rating": ["opp_race_pace"], "tire_degradation_rating": ["tire_deg"],
+        "opponent_tire_degradation_rating": ["opp_tire_deg"], "braking_rating": ["braking"],
+        "opponent_braking_rating": ["opp_braking"], "cornering_rating": ["cornering"],
+        "opponent_cornering_rating": ["opp_cornering"], "launch_start_rating": ["launch"],
+        "opponent_launch_start_rating": ["opp_launch"], "overtaking_rating": ["overtaking"],
+        "opponent_overtaking_rating": ["opp_overtaking"], "defense_rating": ["defense_score"],
+        "opponent_defense_rating": ["opp_defense_score"], "wet_weather_rating": ["wet_rating"],
+        "opponent_wet_weather_rating": ["opp_wet_rating"], "manufacturer_rating": ["manufacturer_score"],
+        "opponent_manufacturer_rating": ["opp_manufacturer_score"], "team_strategy_rating": ["strategy"],
+        "opponent_team_strategy_rating": ["opp_strategy"], "track_position_importance": ["track_position"],
+        "overtaking_difficulty": ["overtake_difficulty"], "tire_wear_rating": ["tire_wear"],
+        "crash_probability": ["crash"], "opponent_crash_probability": ["opp_crash"],
+        "mechanical_failure_risk": ["mechanical_risk"], "opponent_mechanical_failure_risk": ["opp_mechanical_risk"],
+        "penalty_risk": ["penalty"], "opponent_penalty_risk": ["opp_penalty"],
+        "weather_temperature_c": ["temp_c"], "track_temperature_c": ["track_temp_c"],
+        "rain_probability": ["rain_pct"], "wind_speed_kph": ["wind_kph"], "field_size": ["field"],
+    }
+    for canonical, aliases in alias_pairs.items():
+        _copy_alias_if_missing(normalized, canonical, aliases)
+    normalized.setdefault("race_name", payload.get("event") or payload.get("event_id"))
+    normalized.setdefault("selection", normalized.get("rider") or payload.get("selection"))
+    for field in ("market", "league", "odds_american", "bankroll", "unit_size", "risk_profile"):
+        if normalized.get(field) is None:
+            normalized[field] = payload.get(field)
+    normalized.setdefault("manufacturer_pace_rating", normalized.get("manufacturer_rating"))
+    normalized.setdefault("manufacturer_reliability_rating", 0.92)
+    normalized.setdefault("manufacturer_recent_form_rating", normalized.get("recent_form_rating"))
+    normalized.setdefault("manufacturer_rider_depth_rating", normalized.get("season_rider_rating"))
+    normalized.setdefault("team_rider_1_rating", normalized.get("rider_rating"))
+    normalized.setdefault("team_rider_2_rating", normalized.get("opponent_rider_rating"))
+    normalized.setdefault("team_strategy_rating", normalized.get("team_strategy_rating"))
+    normalized.setdefault("team_bike_pace_rating", normalized.get("bike_pace_rating"))
+    normalized.setdefault("team_recent_form_rating", normalized.get("recent_form_rating"))
+    return normalized
+
+
 def normalize_sport_inputs_for_model(
     sport: Any,
     market: Any,
@@ -5248,6 +5748,12 @@ def normalize_sport_inputs_for_model(
     elif sport_alias_resolved == "nascar":
         normalized = _normalize_nascar_input_aliases(normalized, payload, sport_alias_resolved)
         normalizer_used = "nascar_input_normalizer"
+    elif sport_alias_resolved == "indycar":
+        normalized = _normalize_indycar_input_aliases(normalized, payload, sport_alias_resolved)
+        normalizer_used = "indycar_input_normalizer"
+    elif sport_alias_resolved == "motogp":
+        normalized = _normalize_motogp_input_aliases(normalized, payload, sport_alias_resolved)
+        normalizer_used = "motogp_input_normalizer"
     elif sport_alias_resolved == "cricket":
         normalized = _normalize_cricket_input_aliases(normalized, payload, sport_alias_resolved)
         normalizer_used = "cricket_input_normalizer"
@@ -8552,6 +9058,283 @@ def _estimate_nascar_monte_carlo_model(
     }
 
 
+def _estimate_indycar_monte_carlo_model(
+    *,
+    input_stats: dict[str, Any],
+    payload: dict[str, Any],
+    market: Any,
+    odds_american: Optional[float],
+    bankroll: float,
+    risk_profile: str,
+) -> Optional[dict[str, Any]]:
+    missing = _indycar_full_inputs_missing(input_stats, payload) + _indycar_market_specific_missing(market, input_stats, payload)
+    if missing:
+        return None
+    implied_probability = implied_probability_from_american(odds_american) if odds_american is not None else None
+    if implied_probability is None:
+        return None
+
+    def number(key: str, default: float = 0) -> float:
+        return _safe_float(input_stats.get(key), default) or default
+
+    market_key = _normal_market_key(input_stats.get("market_type") or market)
+    selection_text = str(payload.get("selection") or input_stats.get("selection") or "").strip().lower()
+    selected_driver = not input_stats.get("opponent") or str(input_stats.get("driver") or "").strip().lower() in selection_text
+    field_size = max(8.0, min(36.0, number("field_size", 27)))
+    start = max(1.0, min(field_size, number("starting_position", field_size / 2)))
+    opp_start = max(1.0, min(field_size, number("opponent_starting_position", field_size / 2)))
+    track_text = str(input_stats.get("track_type") or "").lower()
+    if input_stats.get("indy_500_race") or input_stats.get("superspeedway_race") or "superspeedway" in track_text:
+        track_calibration = "superspeedway"
+    elif input_stats.get("street_course_race") or "street" in track_text:
+        track_calibration = "street_course"
+    elif input_stats.get("road_course_race") or "road" in track_text:
+        track_calibration = "road_course"
+    elif input_stats.get("oval_race") or "oval" in track_text:
+        track_calibration = "oval"
+    else:
+        track_calibration = "unknown"
+    precip = _safe_probability(input_stats.get("weather_precipitation_probability")) or 0
+    environment_calibration = "wet" if precip >= 0.45 else "mixed" if precip >= 0.20 else "dry"
+    dnf = max(0.01, min(0.70, _safe_probability(input_stats.get("dnf_probability")) or number("dnf_probability", 0.08)))
+    opp_dnf = max(0.01, min(0.70, _safe_probability(input_stats.get("opponent_dnf_probability")) or number("opponent_dnf_probability", 0.09)))
+    crash = max(0.0, min(0.70, _safe_probability(input_stats.get("crash_risk")) or number("crash_risk", 0.07)))
+    caution = max(0.01, min(0.95, _safe_probability(input_stats.get("caution_probability")) or number("caution_probability", 0.42)))
+    overtime = max(0.0, min(0.70, _safe_probability(input_stats.get("overtime_probability")) or number("overtime_probability", 0.12)))
+    edge_score = (
+        (number("opponent_practice_rank", field_size / 2) - number("practice_rank", field_size / 2)) * 0.14
+        + (number("practice_single_lap_speed") - number("opponent_practice_single_lap_speed")) * 0.12
+        + (number("practice_5_lap_average") - number("opponent_practice_5_lap_average")) * 0.13
+        + (number("practice_10_lap_average") - number("opponent_practice_10_lap_average")) * 0.14
+        + (number("driver_rating") - number("opponent_driver_rating")) * 0.07
+        + (number("season_driver_rating") - number("opponent_season_driver_rating")) * 0.05
+        + (number("car_speed_rating") - number("opponent_car_speed_rating")) * 0.10
+        + (number("long_run_speed_rating") - number("opponent_long_run_speed_rating")) * 0.12
+        + (number("traffic_speed_rating") - number("opponent_traffic_speed_rating")) * 0.07
+        + (number("fuel_save_rating") - number("opponent_fuel_save_rating")) * 0.08
+        + (number("pit_crew_rating") - number("opponent_pit_crew_rating")) * 0.05
+        + (number("strategy_rating") - number("opponent_strategy_rating")) * 0.05
+        + (number("restart_rating") - number("opponent_restart_rating")) * (0.05 + caution * 0.02)
+        + (opp_start - start) * (0.18 + number("track_position_importance") * 0.12)
+        + (number("opponent_manufacturer_rating") - number("manufacturer_rating")) * -0.035
+        + (opp_dnf - dnf) * 7.0
+        + (number("opponent_crash_risk") - crash) * 4.5
+    )
+    if track_calibration == "superspeedway":
+        edge_score += (number("drafting_importance") + number("oval_pack_variance")) * 0.10
+    if not selected_driver:
+        edge_score = -edge_score
+        start = opp_start
+    volatility = 1 + caution * 0.55 + overtime * 0.35 + (0.45 if input_stats.get("indy_500_race") else 0)
+    matchup_probability = _logistic_probability(edge_score, 6.8 + volatility)
+    finish_score = edge_score + ((field_size / 2) - start) * 0.14 + (1 - dnf) * 1.8
+    raw_model_probability = matchup_probability
+    line = _safe_float(payload.get("line"), _safe_float(input_stats.get("line")))
+    if market_key == "race_winner":
+        raw_model_probability = max(0.01, min(0.50, (1 / field_size) * (1 + max(-0.65, min(3.0, finish_score / 7.5)))))
+    elif market_key in {"podium_finish", "top_5_finish", "top_10_finish", "top_15_finish", "alt_top_5", "alt_top_10", "alt_top_15"}:
+        cutoff = 3 if market_key == "podium_finish" else 5 if "5" in market_key else 10 if "10" in market_key else 15
+        raw_model_probability = _logistic_probability(finish_score - (field_size / 2 - cutoff), 8.4 + volatility)
+    elif market_key in {"driver_matchup", "group_winner"}:
+        raw_model_probability = matchup_probability if market_key == "driver_matchup" else max(0.08, min(0.68, matchup_probability * 0.86))
+    elif market_key in {"pole_winner", "qualifying_matchup"}:
+        q_edge = (number("practice_single_lap_speed") - number("opponent_practice_single_lap_speed")) * 0.18 + (number("car_speed_rating") - number("opponent_car_speed_rating")) * 0.06
+        raw_model_probability = max(0.01, min(0.40, (1 / field_size) * (1 + max(-0.5, min(3.0, q_edge / 6.0))))) if market_key == "pole_winner" else _logistic_probability(q_edge, 5.8)
+    elif market_key == "fastest_lap":
+        raw_model_probability = max(0.01, min(0.40, (1 / field_size) * (1 + max(-0.5, min(3.1, edge_score / 6.0)))))
+    elif market_key in {"driver_to_retire", "not_classified"}:
+        raw_model_probability = max(0.02, min(0.70, dnf + crash * 0.35 + number("mechanical_failure_risk") * 0.25))
+    elif market_key in {"classified_finish", "lead_lap_finish"}:
+        raw_model_probability = max(0.12, min(0.97, 1 - dnf - crash * 0.22))
+    elif market_key == "finishing_position":
+        projected = max(1.0, min(field_size, (field_size / 2) - finish_score * 0.62))
+        raw_model_probability = _logistic_probability((line if line is not None else projected) - projected, 4.4 + volatility)
+    elif market_key == "laps_led":
+        scheduled = max(1.0, number("scheduled_laps", 200))
+        expected = scheduled * max(0.0, min(0.42, 0.05 + _logistic_probability(finish_score, 7.5) * 0.26))
+        raw_model_probability = _logistic_probability(expected - (line if line is not None else expected), max(4.0, scheduled * 0.11))
+    elif market_key in {"caution_count_over", "caution_count_under"}:
+        expected = max(1.0, 2.6 + caution * 4.6 + number("multi_car_wreck_probability") * 2.4)
+        over = _logistic_probability(expected - (line if line is not None else expected), 1.7)
+        raw_model_probability = 1 - over if "under" in market_key else over
+    elif market_key in {"green_flag_laps_over", "green_flag_laps_under"}:
+        scheduled = max(1.0, number("scheduled_laps", 200))
+        expected = scheduled * max(0.35, min(0.94, 1 - caution * 0.32 - overtime * 0.08))
+        over = _logistic_probability(expected - (line if line is not None else expected), max(6.0, scheduled * 0.08))
+        raw_model_probability = 1 - over if "under" in market_key else over
+    elif market_key == "overtime_finish":
+        raw_model_probability = max(0.02, min(0.58, overtime + caution * 0.13 + number("multi_car_wreck_probability") * 0.10))
+    elif market_key == "manufacturer_winner":
+        m_edge = number("manufacturer_speed_rating") * 0.08 + number("manufacturer_reliability_rating") * 0.05 + number("manufacturer_track_type_rating") * 0.05 + number("manufacturer_recent_form_rating") * 0.04 + number("manufacturer_driver_depth_rating") * 0.04
+        raw_model_probability = max(0.08, min(0.55, _logistic_probability(m_edge - 22, 8.0)))
+    market_anchor = _safe_probability(input_stats.get("no_vig_market_probability"))
+    calibrated_probability = raw_model_probability * 0.90 + market_anchor * 0.10 if market_anchor is not None else raw_model_probability
+    true_probability = max(0.03, min(0.94, calibrated_probability))
+    sanity_flags = ["indycar probability cap applied"] if true_probability != calibrated_probability else []
+    confidence = 73.0
+    risk_flags: list[str] = []
+    if _safe_float(input_stats.get("book_count"), 0) < 4:
+        confidence -= 4; risk_flags.append("book count too low")
+    if input_stats.get("indy_500_race"):
+        confidence -= 4; risk_flags.append("Indy 500 pack/fuel variance")
+    if caution >= 0.58 or overtime >= 0.25:
+        confidence -= 4; risk_flags.append("race volatility")
+    if dnf >= 0.18 or crash >= 0.18:
+        confidence -= 6; risk_flags.append("DNF/crash volatility")
+    if environment_calibration in {"wet", "mixed"}:
+        confidence -= 4; risk_flags.append("weather volatility")
+    if market_key in {"fastest_lap", "laps_led", "caution_count_over", "caution_count_under", "overtime_finish"}:
+        confidence -= 4; risk_flags.append("volatile market")
+    if input_stats.get("practice_report_quality") == "low" or input_stats.get("qualifying_report_quality") == "low":
+        confidence -= 5; risk_flags.append("practice/qualifying data uncertainty")
+    if input_stats.get("provider_status") == "error":
+        risk_flags.append("provider failure ignored")
+    confidence = max(1, min(95, round(confidence, 2)))
+    edge = calculate_edge_percent(true_probability, implied_probability)
+    edge_threshold, confidence_threshold = _nfl_thresholds(risk_profile)
+    no_bet_flags: list[str] = []
+    if edge is None:
+        no_bet_flags.append("edge missing")
+    elif edge <= 0:
+        no_bet_flags.append("negative edge")
+    elif edge < edge_threshold:
+        no_bet_flags.append("edge too small")
+    if confidence < confidence_threshold:
+        no_bet_flags.append("low confidence")
+    suggested = 0 if no_bet_flags else calculate_suggested_stake(bankroll=bankroll, american_odds=odds_american, true_probability=true_probability, risk_profile=risk_profile, confidence=confidence)
+    if suggested <= 0 and not no_bet_flags and edge is not None and edge >= edge_threshold and confidence >= confidence_threshold:
+        suggested = round(max(1.0, bankroll * 0.004), 2)
+    return {"model_status": "active", "estimated_true_probability": true_probability, "true_probability": true_probability, "final_probability": true_probability, "model_probability": true_probability, "implied_probability": implied_probability, "edge": edge, "confidence": confidence, "risk": "high" if risk_flags else "moderate", "suggested_stake": suggested, "raw_model_probability": raw_model_probability, "calibrated_model_probability": calibrated_probability, "probability_calibration_applied": bool(market_anchor is not None or sanity_flags), "probability_sanity_flags": sanity_flags, "probability_cap_reason": "indycar sanity cap" if sanity_flags else None, "market_anchor_probability": market_anchor, "league_calibration_applied": "indycar", "series_calibration_applied": "indycar", "track_type_calibration_applied": track_calibration, "race_environment_calibration_applied": environment_calibration, "driver_edge_score": round(edge_score, 2), "matchup_probability": matchup_probability, "risk_flags": risk_flags, "input_coverage": {"required_core_present": list(INDYCAR_REQUIRED_CORE_INPUTS), "required_market_specific_present": INDYCAR_REQUIRED_MARKET_INPUTS.get(market_key, []), "optional_enrichment_present": [f for f in INDYCAR_OPTIONAL_ENRICHMENT_INPUTS if input_stats.get(f) is not None], "optional_enrichment_missing": [f for f in INDYCAR_OPTIONAL_ENRICHMENT_INPUTS if input_stats.get(f) is None]}, "provider_enrichment": {"provider_status": input_stats.get("provider_status") or "not_provided", "provider_enrichment_present": [f for f in INDYCAR_OPTIONAL_ENRICHMENT_INPUTS if input_stats.get(f) is not None]}, "no_bet_flags": no_bet_flags}
+
+
+def _estimate_motogp_monte_carlo_model(
+    *,
+    input_stats: dict[str, Any],
+    payload: dict[str, Any],
+    market: Any,
+    odds_american: Optional[float],
+    bankroll: float,
+    risk_profile: str,
+) -> Optional[dict[str, Any]]:
+    missing = _motogp_full_inputs_missing(input_stats, payload) + _motogp_market_specific_missing(market, input_stats, payload)
+    if missing:
+        return None
+    implied_probability = implied_probability_from_american(odds_american) if odds_american is not None else None
+    if implied_probability is None:
+        return None
+
+    def number(key: str, default: float = 0) -> float:
+        return _safe_float(input_stats.get(key), default) or default
+
+    market_key = _normal_market_key(input_stats.get("market_type") or market)
+    selection_text = str(payload.get("selection") or input_stats.get("selection") or "").strip().lower()
+    selected_rider = not input_stats.get("opponent") or str(input_stats.get("rider") or "").strip().lower() in selection_text
+    field_size = max(8.0, min(26.0, number("field_size", 22)))
+    grid = max(1.0, min(field_size, number("starting_grid_position", field_size / 2)))
+    opp_grid = max(1.0, min(field_size, number("opponent_starting_grid_position", field_size / 2)))
+    crash = max(0.0, min(0.75, _safe_probability(input_stats.get("crash_probability")) or number("crash_probability", 0.08)))
+    opp_crash = max(0.0, min(0.75, _safe_probability(input_stats.get("opponent_crash_probability")) or number("opponent_crash_probability", 0.10)))
+    rain = max(0.0, min(1.0, _safe_probability(input_stats.get("rain_probability")) or number("rain_probability", 0.05)))
+    transition = max(0.0, min(1.0, _safe_probability(input_stats.get("dry_wet_transition_risk")) or number("dry_wet_transition_risk", 0.05)))
+    session_text = str(input_stats.get("session_type") or "").lower()
+    session_calibration = "sprint" if "sprint" in session_text else "qualifying" if "qual" in session_text else "practice" if "practice" in session_text else "race" if "race" in session_text else "unknown"
+    track_text = str(input_stats.get("track_type") or "").lower()
+    track_calibration = "flowing" if "flow" in track_text else "stop_go" if "stop" in track_text else "street" if "street" in track_text else "mixed" if "mixed" in track_text else "unknown"
+    weather_calibration = "wet" if rain >= 0.55 else "mixed" if rain >= 0.25 or transition >= 0.30 else "dry"
+    edge_score = (
+        (number("opponent_practice_rank", field_size / 2) - number("practice_rank", field_size / 2)) * 0.12
+        + (number("opponent_practice_lap_time") - number("practice_lap_time")) * 1.2
+        + (number("practice_long_run_pace") - number("opponent_practice_long_run_pace")) * 0.10
+        + (number("practice_short_run_pace") - number("opponent_practice_short_run_pace")) * 0.08
+        + (number("rider_rating") - number("opponent_rider_rating")) * 0.07
+        + (number("season_rider_rating") - number("opponent_season_rider_rating")) * 0.05
+        + (number("bike_pace_rating") - number("opponent_bike_pace_rating")) * 0.10
+        + (number("race_pace_rating") - number("opponent_race_pace_rating")) * 0.12
+        + (number("braking_rating") - number("opponent_braking_rating")) * 0.055
+        + (number("cornering_rating") - number("opponent_cornering_rating")) * 0.06
+        + (number("launch_start_rating") - number("opponent_launch_start_rating")) * 0.05
+        + (opp_grid - grid) * (0.28 + number("track_position_importance") * 0.18)
+        + (number("wet_weather_rating") - number("opponent_wet_weather_rating")) * (0.02 + rain * 0.08)
+        + (opp_crash - crash) * 4.8
+        + (number("opponent_mechanical_failure_risk") - number("mechanical_failure_risk")) * 3.5
+        + (number("rider_injury_adjustment") - number("opponent_rider_injury_adjustment")) * 1.4
+        - (number("front_tire_stress") + number("rear_tire_stress")) * 0.18
+    )
+    if not selected_rider:
+        edge_score = -edge_score
+        grid = opp_grid
+    volatility = 1 + crash + rain * 0.45 + transition * 0.55
+    matchup_probability = _logistic_probability(edge_score, 6.6 + volatility)
+    finish_score = edge_score + ((field_size / 2) - grid) * 0.22 + (1 - crash) * 1.6
+    raw_model_probability = matchup_probability
+    line = _safe_float(payload.get("line"), _safe_float(input_stats.get("line")))
+    if market_key == "race_winner":
+        raw_model_probability = max(0.01, min(0.52, (1 / field_size) * (1 + max(-0.65, min(3.2, finish_score / 6.8)))))
+    elif market_key in {"podium_finish", "alt_podium", "sprint_podium"}:
+        raw_model_probability = _logistic_probability(finish_score - (field_size / 2 - 3), 7.5 + volatility)
+    elif market_key in {"top_5_finish", "top_10_finish", "points_finish", "alt_top_5", "alt_top_10"}:
+        cutoff = 5 if "5" in market_key else 10
+        raw_model_probability = _logistic_probability(finish_score - (field_size / 2 - cutoff), 8.0 + volatility)
+    elif market_key in {"rider_matchup", "group_winner"}:
+        raw_model_probability = matchup_probability if market_key == "rider_matchup" else max(0.08, min(0.68, matchup_probability * 0.86))
+    elif market_key in {"qualifying_winner", "qualifying_matchup"}:
+        q_edge = edge_score + (number("qualifying_pace_rating") - number("opponent_qualifying_pace_rating")) * 0.12
+        raw_model_probability = max(0.01, min(0.42, (1 / field_size) * (1 + max(-0.5, min(3.1, q_edge / 6.0))))) if market_key == "qualifying_winner" else _logistic_probability(q_edge, 5.7)
+    elif market_key == "sprint_winner":
+        raw_model_probability = max(0.01, min(0.48, (1 / field_size) * (1 + max(-0.6, min(3.1, finish_score / 6.5)))))
+    elif market_key == "fastest_lap":
+        raw_model_probability = max(0.01, min(0.40, (1 / field_size) * (1 + max(-0.5, min(3.0, edge_score / 6.0)))))
+    elif market_key in {"rider_to_retire", "not_classified"}:
+        raw_model_probability = max(0.02, min(0.72, crash + number("mechanical_failure_risk") * 0.3))
+    elif market_key == "classified_finish":
+        raw_model_probability = max(0.12, min(0.97, 1 - crash - number("mechanical_failure_risk") * 0.18))
+    elif market_key == "finishing_position":
+        projected = max(1.0, min(field_size, (field_size / 2) - finish_score * 0.64))
+        raw_model_probability = _logistic_probability((line if line is not None else projected) - projected, 4.2 + volatility)
+    elif market_key == "manufacturer_winner":
+        raw_model_probability = max(0.08, min(0.55, _logistic_probability(number("manufacturer_pace_rating") * 0.08 + number("manufacturer_recent_form_rating") * 0.05 + number("manufacturer_rider_depth_rating") * 0.04 - 16, 8.0)))
+    elif market_key == "team_winner":
+        raw_model_probability = max(0.08, min(0.55, _logistic_probability(number("team_rider_1_rating") * 0.06 + number("team_strategy_rating") * 0.04 + number("team_bike_pace_rating") * 0.06 - 14, 8.0)))
+    market_anchor = _safe_probability(input_stats.get("no_vig_market_probability"))
+    calibrated_probability = raw_model_probability * 0.90 + market_anchor * 0.10 if market_anchor is not None else raw_model_probability
+    true_probability = max(0.03, min(0.94, calibrated_probability))
+    sanity_flags = ["motogp probability cap applied"] if true_probability != calibrated_probability else []
+    confidence = 73.0
+    risk_flags: list[str] = []
+    if _safe_float(input_stats.get("book_count"), 0) < 4:
+        confidence -= 4; risk_flags.append("book count too low")
+    if weather_calibration in {"wet", "mixed"}:
+        confidence -= 5; risk_flags.append("weather volatility")
+    if crash >= 0.18 or opp_crash >= 0.18:
+        confidence -= 6; risk_flags.append("crash volatility")
+    if input_stats.get("sprint_weekend") and market_key in {"sprint_winner", "sprint_podium"}:
+        confidence -= 3; risk_flags.append("sprint variance")
+    if number("front_tire_stress") >= 0.75 or number("rear_tire_stress") >= 0.75:
+        confidence -= 4; risk_flags.append("tire stress")
+    if market_key in {"fastest_lap", "rider_to_retire", "not_classified", "sprint_winner"}:
+        confidence -= 4; risk_flags.append("volatile market")
+    if input_stats.get("practice_report_quality") == "low" or input_stats.get("qualifying_report_quality") == "low":
+        confidence -= 5; risk_flags.append("practice/qualifying data uncertainty")
+    if input_stats.get("provider_status") == "error":
+        risk_flags.append("provider failure ignored")
+    confidence = max(1, min(95, round(confidence, 2)))
+    edge = calculate_edge_percent(true_probability, implied_probability)
+    edge_threshold, confidence_threshold = _nfl_thresholds(risk_profile)
+    no_bet_flags: list[str] = []
+    if edge is None:
+        no_bet_flags.append("edge missing")
+    elif edge <= 0:
+        no_bet_flags.append("negative edge")
+    elif edge < edge_threshold:
+        no_bet_flags.append("edge too small")
+    if confidence < confidence_threshold:
+        no_bet_flags.append("low confidence")
+    suggested = 0 if no_bet_flags else calculate_suggested_stake(bankroll=bankroll, american_odds=odds_american, true_probability=true_probability, risk_profile=risk_profile, confidence=confidence)
+    if suggested <= 0 and not no_bet_flags and edge is not None and edge >= edge_threshold and confidence >= confidence_threshold:
+        suggested = round(max(1.0, bankroll * 0.004), 2)
+    return {"model_status": "active", "estimated_true_probability": true_probability, "true_probability": true_probability, "final_probability": true_probability, "model_probability": true_probability, "implied_probability": implied_probability, "edge": edge, "confidence": confidence, "risk": "high" if risk_flags else "moderate", "suggested_stake": suggested, "raw_model_probability": raw_model_probability, "calibrated_model_probability": calibrated_probability, "probability_calibration_applied": bool(market_anchor is not None or sanity_flags), "probability_sanity_flags": sanity_flags, "probability_cap_reason": "motogp sanity cap" if sanity_flags else None, "market_anchor_probability": market_anchor, "league_calibration_applied": "motogp", "session_calibration_applied": session_calibration, "track_type_calibration_applied": track_calibration, "weather_calibration_applied": weather_calibration, "rider_edge_score": round(edge_score, 2), "matchup_probability": matchup_probability, "risk_flags": risk_flags, "input_coverage": {"required_core_present": list(MOTOGP_REQUIRED_CORE_INPUTS), "required_market_specific_present": MOTOGP_REQUIRED_MARKET_INPUTS.get(market_key, []), "optional_enrichment_present": [f for f in MOTOGP_OPTIONAL_ENRICHMENT_INPUTS if input_stats.get(f) is not None], "optional_enrichment_missing": [f for f in MOTOGP_OPTIONAL_ENRICHMENT_INPUTS if input_stats.get(f) is None]}, "provider_enrichment": {"provider_status": input_stats.get("provider_status") or "not_provided", "provider_enrichment_present": [f for f in MOTOGP_OPTIONAL_ENRICHMENT_INPUTS if input_stats.get(f) is not None]}, "no_bet_flags": no_bet_flags}
+
+
 def _estimate_cricket_run_rate_model(
     *,
     input_stats: dict[str, Any],
@@ -9282,6 +10065,8 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         golf_model = None
         f1_model = None
         nascar_model = None
+        indycar_model = None
+        motogp_model = None
         cricket_model = None
         if sport == "basketball_nba":
             nba_model = _estimate_nba_possession_model(
@@ -9399,6 +10184,24 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
                 bankroll=bankroll,
                 risk_profile=payload.get("risk_profile") or "moderate",
             )
+        elif sport == "indycar":
+            indycar_model = _estimate_indycar_monte_carlo_model(
+                input_stats=input_stats,
+                payload=payload,
+                market=market,
+                odds_american=odds_american,
+                bankroll=bankroll,
+                risk_profile=payload.get("risk_profile") or "moderate",
+            )
+        elif sport == "motogp":
+            motogp_model = _estimate_motogp_monte_carlo_model(
+                input_stats=input_stats,
+                payload=payload,
+                market=market,
+                odds_american=odds_american,
+                bankroll=bankroll,
+                risk_profile=payload.get("risk_profile") or "moderate",
+            )
         elif sport == "cricket":
             cricket_model = _estimate_cricket_run_rate_model(
                 input_stats=input_stats,
@@ -9433,9 +10236,13 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
         elif nascar_model:
             component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
+        elif indycar_model:
+            component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
+        elif motogp_model:
+            component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
         elif cricket_model:
             component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
-        elif sport in {"basketball_nba", "basketball_wnba", "basketball_ncaab", "basketball_ncaawb", "americanfootball_nfl", "americanfootball_ncaaf", "baseball_mlb", "soccer", "icehockey_nhl", "tennis", "mma_mixed_martial_arts", "boxing", "golf", "formula1", "nascar", "cricket"}:
+        elif sport in {"basketball_nba", "basketball_wnba", "basketball_ncaab", "basketball_ncaawb", "americanfootball_nfl", "americanfootball_ncaaf", "baseball_mlb", "soccer", "icehockey_nhl", "tennis", "mma_mixed_martial_arts", "boxing", "golf", "formula1", "nascar", "indycar", "motogp", "cricket"}:
             component_status = COMPONENT_STATUS_INACTIVE
             missing_inputs = _missing_inputs_for_sport(sport, market, input_stats, payload)
         else:
@@ -9522,6 +10329,18 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             edge = nascar_model["edge"]
             suggested = nascar_model["suggested_stake"]
             no_bet_flags = list(nascar_model["no_bet_flags"])
+        elif indycar_model:
+            true_probability = indycar_model["true_probability"]
+            implied_probability = indycar_model["implied_probability"]
+            edge = indycar_model["edge"]
+            suggested = indycar_model["suggested_stake"]
+            no_bet_flags = list(indycar_model["no_bet_flags"])
+        elif motogp_model:
+            true_probability = motogp_model["true_probability"]
+            implied_probability = motogp_model["implied_probability"]
+            edge = motogp_model["edge"]
+            suggested = motogp_model["suggested_stake"]
+            no_bet_flags = list(motogp_model["no_bet_flags"])
         elif cricket_model:
             true_probability = cricket_model["true_probability"]
             implied_probability = cricket_model["implied_probability"]
@@ -9530,7 +10349,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             no_bet_flags = list(cricket_model["no_bet_flags"])
         if implied_probability is not None and true_probability is not None and odds_american is not None:
             edge = edge_percentage(true_probability, implied_probability)
-            if not (nba_model or wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or nascar_model or cricket_model):
+            if not (nba_model or wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or nascar_model or indycar_model or motogp_model or cricket_model):
                 suggested = suggested_stake_with_risk_controls(
                     bankroll=bankroll,
                     american_odds=odds_american,
@@ -9547,7 +10366,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         social_input_stats = dict(input_stats)
         social_input_stats["edge"] = edge
         social_layer = build_social_crowd_calibration_layer(social_input_stats)
-        if social_layer["sentiment_no_bet_flags"] and not (nba_model or wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or nascar_model or cricket_model):
+        if social_layer["sentiment_no_bet_flags"] and not (nba_model or wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or nascar_model or indycar_model or motogp_model or cricket_model):
             no_bet_flags = list(dict.fromkeys(no_bet_flags + social_layer["sentiment_no_bet_flags"]))
 
         risk_controller = build_risk_controller(bankroll, unit_size, payload.get("risk_profile") or "conservative")
@@ -9564,7 +10383,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         })
         wee_willie = build_wee_willie_market_weakness_detector(detector_payload)
         manual_ticket = build_manual_ticket(detector_payload, suggested)
-        active_model = nba_model or wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or nascar_model or cricket_model
+        active_model = nba_model or wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or nascar_model or indycar_model or motogp_model or cricket_model
         confidence = active_model["confidence"] if active_model else input_stats.get("confidence")
         if tennis_model and _safe_float(confidence) is None:
             confidence = 0.0
@@ -9576,7 +10395,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         model_status = active_model["model_status"] if active_model else component_status
         edge_threshold, confidence_threshold = (
             _nfl_thresholds(payload.get("risk_profile") or "moderate")
-            if (wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or nascar_model or cricket_model)
+            if (wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or nascar_model or indycar_model or motogp_model or cricket_model)
             else (2.5, 70)
         )
         event_value = payload.get("event_id") or payload.get("event") or input_stats.get("event")
@@ -9733,7 +10552,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             **officiating_analysis["officiating_logbook_fields"],
         })
         basketball_module_model = wnba_model or mens_cbb_model or womens_cbb_model
-        probability_model = basketball_module_model or college_football_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or nascar_model or cricket_model
+        probability_model = basketball_module_model or college_football_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or nascar_model or indycar_model or motogp_model or cricket_model
         if probability_model:
             logbook_ready_row.update({
                 "raw_model_probability": probability_model["raw_model_probability"],
@@ -9871,6 +10690,36 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
                 "risk_flags": nascar_model["risk_flags"],
                 "missing_inputs": missing_inputs,
                 "notes": "; ".join(nascar_model["risk_flags"]) if nascar_model["risk_flags"] else "",
+            })
+        if indycar_model:
+            logbook_ready_row.update({
+                "model_level": config["model_level"],
+                "probability_type": _normal_market_key(market),
+                "risk_profile": payload.get("risk_profile") or "moderate",
+                "league_calibration_applied": indycar_model["league_calibration_applied"],
+                "series_calibration_applied": indycar_model["series_calibration_applied"],
+                "track_type_calibration_applied": indycar_model["track_type_calibration_applied"],
+                "race_environment_calibration_applied": indycar_model["race_environment_calibration_applied"],
+                "driver_edge_score": indycar_model["driver_edge_score"],
+                "matchup_probability": indycar_model["matchup_probability"],
+                "risk_flags": indycar_model["risk_flags"],
+                "missing_inputs": missing_inputs,
+                "notes": "; ".join(indycar_model["risk_flags"]) if indycar_model["risk_flags"] else "",
+            })
+        if motogp_model:
+            logbook_ready_row.update({
+                "model_level": config["model_level"],
+                "probability_type": _normal_market_key(market),
+                "risk_profile": payload.get("risk_profile") or "moderate",
+                "league_calibration_applied": motogp_model["league_calibration_applied"],
+                "session_calibration_applied": motogp_model["session_calibration_applied"],
+                "track_type_calibration_applied": motogp_model["track_type_calibration_applied"],
+                "weather_calibration_applied": motogp_model["weather_calibration_applied"],
+                "rider_edge_score": motogp_model["rider_edge_score"],
+                "matchup_probability": motogp_model["matchup_probability"],
+                "risk_flags": motogp_model["risk_flags"],
+                "missing_inputs": missing_inputs,
+                "notes": "; ".join(motogp_model["risk_flags"]) if motogp_model["risk_flags"] else "",
             })
         if cricket_model:
             logbook_ready_row.update({
@@ -10019,18 +10868,20 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             "golf_input_contract": deepcopy(GOLF_INPUT_CONTRACT) if sport == "golf" else None,
             "f1_input_contract": deepcopy(F1_INPUT_CONTRACT) if sport == "formula1" else None,
             "nascar_input_contract": deepcopy(NASCAR_INPUT_CONTRACT) if sport == "nascar" else None,
+            "indycar_input_contract": deepcopy(INDYCAR_INPUT_CONTRACT) if sport == "indycar" else None,
+            "motogp_input_contract": deepcopy(MOTOGP_INPUT_CONTRACT) if sport == "motogp" else None,
             "cricket_input_contract": deepcopy(CRICKET_INPUT_CONTRACT) if sport == "cricket" else None,
             "wnba_input_contract": deepcopy(WNBA_INPUT_CONTRACT) if sport == "basketball_wnba" else None,
             "mens_college_basketball_input_contract": deepcopy(MENS_COLLEGE_BASKETBALL_INPUT_CONTRACT) if sport == "basketball_ncaab" else None,
             "womens_college_basketball_input_contract": deepcopy(WOMENS_COLLEGE_BASKETBALL_INPUT_CONTRACT) if sport == "basketball_ncaawb" else None,
-            "league_calibration_applied": (basketball_module_model or college_football_model or f1_model or nascar_model or cricket_model)["league_calibration_applied"] if (basketball_module_model or college_football_model or f1_model or nascar_model or cricket_model) else config.get("sport_parameters", {}).get("league_calibration_applied"),
-            "session_calibration_applied": f1_model["session_calibration_applied"] if f1_model else None,
+            "league_calibration_applied": (basketball_module_model or college_football_model or f1_model or nascar_model or indycar_model or motogp_model or cricket_model)["league_calibration_applied"] if (basketball_module_model or college_football_model or f1_model or nascar_model or indycar_model or motogp_model or cricket_model) else config.get("sport_parameters", {}).get("league_calibration_applied"),
+            "session_calibration_applied": (f1_model or motogp_model)["session_calibration_applied"] if (f1_model or motogp_model) else None,
             "circuit_calibration_applied": f1_model["circuit_calibration_applied"] if f1_model else None,
-            "weather_calibration_applied": f1_model["weather_calibration_applied"] if f1_model else None,
+            "weather_calibration_applied": (f1_model or motogp_model)["weather_calibration_applied"] if (f1_model or motogp_model) else None,
             "format_calibration_applied": cricket_model["format_calibration_applied"] if cricket_model else None,
-            "series_calibration_applied": nascar_model["series_calibration_applied"] if nascar_model else None,
-            "track_type_calibration_applied": nascar_model["track_type_calibration_applied"] if nascar_model else None,
-            "race_environment_calibration_applied": nascar_model["race_environment_calibration_applied"] if nascar_model else None,
+            "series_calibration_applied": (nascar_model or indycar_model)["series_calibration_applied"] if (nascar_model or indycar_model) else None,
+            "track_type_calibration_applied": (nascar_model or indycar_model or motogp_model)["track_type_calibration_applied"] if (nascar_model or indycar_model or motogp_model) else None,
+            "race_environment_calibration_applied": (nascar_model or indycar_model)["race_environment_calibration_applied"] if (nascar_model or indycar_model) else None,
             "input_coverage": active_model.get("input_coverage") if active_model else None,
             "suggested_stake": suggested if confirmed_bets else 0,
             "recommended_unit_size": risk_controller["recommended_unit_size"],
@@ -10080,6 +10931,10 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             "head_to_head_probability": f1_model["head_to_head_probability"] if f1_model else None,
             "nascar_driver_edge_score": nascar_model["driver_edge_score"] if nascar_model else None,
             "nascar_matchup_probability": nascar_model["matchup_probability"] if nascar_model else None,
+            "indycar_driver_edge_score": indycar_model["driver_edge_score"] if indycar_model else None,
+            "indycar_matchup_probability": indycar_model["matchup_probability"] if indycar_model else None,
+            "motogp_rider_edge_score": motogp_model["rider_edge_score"] if motogp_model else None,
+            "motogp_matchup_probability": motogp_model["matchup_probability"] if motogp_model else None,
             "cricket_projected_team_runs": cricket_model["projected_team_runs"] if cricket_model else None,
             "cricket_projected_opponent_runs": cricket_model["projected_opponent_runs"] if cricket_model else None,
             "manual_ticket_preview": manual_ticket,
@@ -10089,7 +10944,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         "target_lines": full_board["target_lines"],
         "target_props": full_board["target_props"],
         "target_alt_lines": full_board["target_alt_lines"],
-        "no_bets": no_bets if (basketball_module_model or college_football_model or tennis_model or combat_model or golf_model or f1_model or nascar_model or cricket_model) else simple_no_bets,
+        "no_bets": no_bets if (basketball_module_model or college_football_model or tennis_model or combat_model or golf_model or f1_model or nascar_model or indycar_model or motogp_model or cricket_model) else simple_no_bets,
         "best_correlated_parlay": full_board["best_correlated_parlay"],
         "value_ranking": full_board["value_ranking"],
         "risk_ranking": full_board["risk_ranking"],

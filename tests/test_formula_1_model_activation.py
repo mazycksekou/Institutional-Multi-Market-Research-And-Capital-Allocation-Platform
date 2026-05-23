@@ -130,6 +130,7 @@ class TestFormula1ModelActivation(unittest.TestCase):
         self.assertTrue(self._sport(market="race_winner")["confirmed_bets"])
 
     def test_podium_finish_active(self): self.assert_active(self._sport(market="podium_finish"))
+    def test_top_5_finish_active(self): self.assert_active(self._sport(market="top_5_finish"))
     def test_top_10_finish_active(self): self.assert_active(self._sport(market="top_10_finish"))
     def test_points_finish_active(self): self.assert_active(self._sport(market="points_finish"))
     def test_head_to_head_active(self): self.assert_active(self._sport(market="head_to_head"))
@@ -140,6 +141,9 @@ class TestFormula1ModelActivation(unittest.TestCase):
     def test_constructor_winner_active(self): self.assert_active(self._sport(market="constructor_winner", selection="Red Bull Racing"))
     def test_safety_car_active(self): self.assert_active(self._sport(market="safety_car", selection="yes"))
     def test_classified_finish_active(self): self.assert_active(self._sport(market="classified_finish"))
+    def test_laps_completed_markets_active(self):
+        self.assert_active(self._sport(market="over_laps_completed", selection="over", line=76.5, input_stats=f1_inputs(line=76.5)))
+        self.assert_active(self._sport(market="under_laps_completed", selection="under", line=77.5, input_stats=f1_inputs(line=77.5)))
     def test_negative_edge_evaluated_no_bet(self): self.assertEqual(self._sport(odds_american=-400)["status"], "evaluated_no_bet")
 
     def test_edge_too_small_evaluated_no_bet(self):

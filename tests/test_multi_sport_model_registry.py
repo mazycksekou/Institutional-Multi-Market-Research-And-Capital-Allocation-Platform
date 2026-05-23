@@ -21,15 +21,17 @@ EXPECTED_SPORT_KEYS = [
     "golf",
     "formula1",
     "nascar",
+    "indycar",
+    "motogp",
     "cricket",
     "esports",
 ]
 
 
 class TestMultiSportModelRegistry(unittest.TestCase):
-    def test_all_17_sports_are_present(self):
+    def test_all_19_sports_are_present(self):
         sports = registry.get_sports_model_registry_response()["sports"]
-        self.assertEqual(len(sports), 17)
+        self.assertEqual(len(sports), 19)
         self.assertEqual([sport["sport_key"] for sport in sports], EXPECTED_SPORT_KEYS)
 
     def test_mlb_is_projection_ready(self):
@@ -40,7 +42,7 @@ class TestMultiSportModelRegistry(unittest.TestCase):
     def test_only_activated_sports_allow_confirmed_bets(self):
         sports = registry.get_sports_model_registry_response()["sports"]
         enabled = [sport["sport_key"] for sport in sports if sport["confirmed_bets_allowed"]]
-        self.assertEqual(enabled, ["baseball_mlb", "basketball_nba", "basketball_wnba", "basketball_ncaab", "basketball_ncaawb", "americanfootball_nfl", "americanfootball_ncaaf", "soccer", "icehockey_nhl", "tennis", "mma_mixed_martial_arts", "boxing", "golf", "formula1", "nascar", "cricket"])
+        self.assertEqual(enabled, ["baseball_mlb", "basketball_nba", "basketball_wnba", "basketball_ncaab", "basketball_ncaawb", "americanfootball_nfl", "americanfootball_ncaaf", "soccer", "icehockey_nhl", "tennis", "mma_mixed_martial_arts", "boxing", "golf", "formula1", "nascar", "indycar", "motogp", "cricket"])
         self.assertTrue(registry.confirmed_bets_allowed("baseball_mlb"))
         self.assertTrue(registry.confirmed_bets_allowed("basketball_nba"))
         self.assertTrue(registry.confirmed_bets_allowed("basketball_wnba"))
@@ -56,11 +58,13 @@ class TestMultiSportModelRegistry(unittest.TestCase):
         self.assertTrue(registry.confirmed_bets_allowed("golf"))
         self.assertTrue(registry.confirmed_bets_allowed("formula1"))
         self.assertTrue(registry.confirmed_bets_allowed("nascar"))
+        self.assertTrue(registry.confirmed_bets_allowed("indycar"))
+        self.assertTrue(registry.confirmed_bets_allowed("motogp"))
         self.assertTrue(registry.confirmed_bets_allowed("cricket"))
         self.assertTrue(all(
             not registry.confirmed_bets_allowed(sport["sport_key"])
             for sport in sports
-            if sport["sport_key"] not in {"baseball_mlb", "basketball_nba", "basketball_wnba", "basketball_ncaab", "basketball_ncaawb", "americanfootball_nfl", "americanfootball_ncaaf", "soccer", "icehockey_nhl", "tennis", "mma_mixed_martial_arts", "boxing", "golf", "formula1", "nascar", "cricket"}
+            if sport["sport_key"] not in {"baseball_mlb", "basketball_nba", "basketball_wnba", "basketball_ncaab", "basketball_ncaawb", "americanfootball_nfl", "americanfootball_ncaaf", "soccer", "icehockey_nhl", "tennis", "mma_mixed_martial_arts", "boxing", "golf", "formula1", "nascar", "indycar", "motogp", "cricket"}
         ))
 
     def test_unsupported_sport_helper_behavior_is_clean(self):
@@ -82,8 +86,8 @@ class TestMultiSportModelRegistry(unittest.TestCase):
         response = asyncio.run(action_get_sports_model_registry())
         self.assertTrue(response["ok"])
         self.assertEqual(response["endpoint"], "getSportsModelRegistry")
-        self.assertEqual(response["summary"]["total_sports"], 17)
-        self.assertEqual(response["summary"]["confirmed_bet_enabled_sports"], 16)
+        self.assertEqual(response["summary"]["total_sports"], 19)
+        self.assertEqual(response["summary"]["confirmed_bet_enabled_sports"], 18)
         self.assertEqual(response["summary"]["market_derived_only_sports"], 0)
         self.assertEqual(response["summary"]["not_built_sports"], 1)
         self.assertEqual(response["error"], None)
@@ -181,6 +185,26 @@ class TestMultiSportModelRegistry(unittest.TestCase):
         self.assertTrue(nascar["input_normalizer"])
         self.assertIsInstance(nascar["screenshot_alias_test_payload"], dict)
 
+    def test_f1_indycar_and_motogp_are_separate_active_modules(self):
+        f1 = registry.get_sport_model_config("formula1")
+        indycar = registry.get_sport_model_config("indycar")
+        motogp = registry.get_sport_model_config("motogp")
+        self.assertTrue(f1["confirmed_bets_allowed"])
+        self.assertTrue(indycar["confirmed_bets_allowed"])
+        self.assertTrue(motogp["confirmed_bets_allowed"])
+        self.assertEqual(f1["model_used"], "f1_qualifying_race_pace_pit_strategy_monte_carlo_model")
+        self.assertEqual(indycar["model_used"], "indycar_aero_strategy_restart_pit_variance_monte_carlo_model")
+        self.assertEqual(motogp["model_used"], "motogp_rider_bike_tire_weather_monte_carlo_model")
+        self.assertEqual(f1["league_calibration_applied"], "f1")
+        self.assertEqual(indycar["league_calibration_applied"], "indycar")
+        self.assertEqual(motogp["league_calibration_applied"], "motogp")
+        self.assertEqual(len({f1["model_family"], indycar["model_family"], motogp["model_family"]}), 3)
+        self.assertTrue(f1["input_normalizer"])
+        self.assertTrue(indycar["input_normalizer"])
+        self.assertTrue(motogp["input_normalizer"])
+        self.assertNotEqual(f1["screenshot_alias_test_payload"], indycar["screenshot_alias_test_payload"])
+        self.assertNotEqual(indycar["screenshot_alias_test_payload"], motogp["screenshot_alias_test_payload"])
+
     def test_log_fields_exist_for_each_sport(self):
         sports = registry.get_sports_model_registry_response()["sports"]
         for sport in sports:
@@ -206,6 +230,8 @@ class TestMultiSportModelRegistry(unittest.TestCase):
             "golf": ("rules officials", "weak"),
             "formula1": ("stewards/race control", "situational"),
             "nascar": ("race control/NASCAR officials", "situational"),
+            "indycar": ("race control/IndyCar officials", "situational"),
+            "motogp": ("race direction/stewards", "situational"),
             "esports": ("tournament admin/map/server/rule enforcement", "weak"),
         }
         for sport_key, (official_type, edge_strength) in expected.items():

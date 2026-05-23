@@ -306,6 +306,65 @@ function New-NascarPayload {
     return $payload
 }
 
+function New-IndyCarPayload {
+    $stats = @{
+        race = "Indianapolis 500"; track_name = "Indianapolis Motor Speedway"; driver_name = "Alex Palou"; team_name = "Chip Ganassi Racing"
+        manufacturer_name = "Honda"; opponent_name = "Josef Newgarden"; opponent_team_name = "Team Penske"; opponent_manufacturer_name = "Chevrolet"
+        race_series = "indycar"; session = "race"; track_type = "superspeedway"; track_miles = 2.5; laps = 200; distance_miles = 500
+        start_pos = 5; opp_start_pos = 12; qual_pos = 5; opp_qual_pos = 12; practice_pos = 3; opp_practice_pos = 11
+        single_lap_speed = 232.4; opp_single_lap_speed = 231.1; five_lap_avg = 231.8; opp_five_lap_avg = 230.5
+        ten_lap_avg = 231.2; opp_ten_lap_avg = 229.9; driver_power_rating = 94; opp_driver_rating = 88
+        season_rating = 95; opp_season_rating = 87; track_history = 89; opp_track_history = 86
+        track_type_score = 91; opp_track_type_score = 86; recent_form = 94; opp_recent_form = 86
+        car_speed = 93; opp_car_speed = 87; long_run_speed = 94; opp_long_run_speed = 86
+        short_run_speed = 92; opp_short_run_speed = 86; clean_air_speed = 93; opp_clean_air_speed = 87
+        traffic_speed = 91; opp_traffic_speed = 85; restart_score = 90; opp_restart_score = 87
+        passing_score = 90; opp_passing_score = 86; defense_score = 89; opp_defense_score = 86
+        tire_mgmt = 91; opp_tire_mgmt = 85; fuel_save = 94; opp_fuel_save = 86
+        pit_rating = 91; opp_pit_rating = 86; strategy = 92; opp_strategy = 86
+        manufacturer_score = 88; opp_manufacturer_score = 87; track_position = 0.62; pass_difficulty = 0.48
+        tire_wear = 0.40; fuel_strategy = 0.82; pit_sensitivity = 0.58; caution_prob = 0.52
+        wreck_prob = 0.18; overtime_prob = 0.16; temp_f = 78; wind_mph = 10; precip_prob = 0.06; track_temp_f = 96
+        aero = 0.72; drafting = 0.86; pack_variance = 0.54; road_skill = 0.35; contact_variance = 0.28
+        dnf_risk = 0.07; opp_dnf_risk = 0.10; mechanical_risk = 0.04; opp_mechanical_risk = 0.07
+        crash = 0.08; opp_crash = 0.11; penalty = 0.03; opp_penalty = 0.05; engine_penalty = 0; opp_engine_penalty = 0
+        rear_start = $false; opp_rear_start = $false; field = 33; oval = $true; road_course = $false; street_course = $false
+        superspeedway = $true; indy_500_race = $true; team_momentum = 92; opp_team_momentum = 86
+        manufacturer_speed_rating = 88; manufacturer_reliability_rating = 0.92; manufacturer_track_type_rating = 88
+        manufacturer_recent_form_rating = 89; manufacturer_driver_depth_rating = 87; book_count = 8
+    }
+    $payload = New-LiveTicketBase -Sport "indycar" -League "NTT IndyCar Series" -Event "Indianapolis 500" -Market "driver_matchup" -Selection "Alex Palou" -InputStats $stats
+    $payload.visible_markets = @("driver_matchup", "top_10_finish", "race_winner")
+    return $payload
+}
+
+function New-MotoGPPayload {
+    $stats = @{
+        race = "Italian Grand Prix"; circuit_name = "Mugello Circuit"; rider_name = "Francesco Bagnaia"; team_name = "Ducati Lenovo Team"
+        manufacturer_name = "Ducati"; opponent_name = "Marc Marquez"; opponent_team_name = "Gresini Racing"; opponent_manufacturer_name = "Ducati"
+        session_type = "race"; track_type = "flowing"; track_km = 5.245; laps = 23; grid_pos = 2; opp_grid_pos = 5
+        qualy_pos = 2; opp_qualy_pos = 5; practice_pos = 2; opp_practice_pos = 6; practice_lap_time = 105.2
+        opp_practice_lap_time = 105.7; long_run_pace = 93; opp_long_run_pace = 88; short_run_pace = 92; opp_short_run_pace = 88
+        rider_power_rating = 94; opp_rider_rating = 89; season_rating = 93; opp_season_rating = 88
+        circuit_history = 92; opp_circuit_history = 88; track_type_score = 91; opp_track_type_score = 87
+        recent_form = 92; opp_recent_form = 87; bike_pace = 94; opp_bike_pace = 89
+        qualy_pace = 93; opp_qualy_pace = 88; race_pace = 94; opp_race_pace = 88
+        tire_deg = 88; opp_tire_deg = 83; braking = 93; opp_braking = 88; cornering = 94; opp_cornering = 88
+        launch = 91; opp_launch = 87; overtaking = 90; opp_overtaking = 88; defense_score = 90; opp_defense_score = 88
+        wet_rating = 88; opp_wet_rating = 84; manufacturer_score = 92; opp_manufacturer_score = 90
+        strategy = 90; opp_strategy = 86; track_position = 0.74; overtake_difficulty = 0.58
+        tire_wear = 0.66; front_tire_stress = 0.58; rear_tire_stress = 0.64; crash = 0.08; opp_crash = 0.12
+        mechanical_risk = 0.03; opp_mechanical_risk = 0.05; penalty = 0.03; opp_penalty = 0.04
+        temp_c = 24; track_temp_c = 38; rain_pct = 0.08; wind_kph = 10; dry_wet_transition_risk = 0.08
+        field = 22; sprint_weekend = $true; rider_injury_adjustment = 0; opponent_rider_injury_adjustment = -0.2
+        manufacturer_pace_rating = 92; manufacturer_reliability_rating = 0.94; manufacturer_recent_form_rating = 91; manufacturer_rider_depth_rating = 90
+        team_rider_1_rating = 94; team_rider_2_rating = 84; team_strategy_rating = 90; team_bike_pace_rating = 93; team_recent_form_rating = 91; book_count = 8
+    }
+    $payload = New-LiveTicketBase -Sport "motogp" -League "MotoGP" -Event "Italian Grand Prix" -Market "rider_matchup" -Selection "Francesco Bagnaia" -InputStats $stats
+    $payload.visible_markets = @("rider_matchup", "podium_finish", "race_winner")
+    return $payload
+}
+
 function New-LiveActivePayload {
     param([Parameter(Mandatory = $true)] [string] $Sport)
     switch ($Sport.ToLower()) {
@@ -326,6 +385,10 @@ function New-LiveActivePayload {
         "formula1" { return New-F1Payload }
         "nascar" { return New-NascarPayload }
         "nascar_cup" { return New-NascarPayload }
+        "indycar" { return New-IndyCarPayload }
+        "indy_car" { return New-IndyCarPayload }
+        "motogp" { return New-MotoGPPayload }
+        "moto_gp" { return New-MotoGPPayload }
         "cricket" { return New-CricketPayload }
         default { throw "No live active payload builder registered for sport '$Sport'." }
     }
