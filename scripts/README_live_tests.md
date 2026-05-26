@@ -58,6 +58,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\live_all_smoke.ps1
 - `live_cs2_smoke.ps1`
 - `live_valorant_smoke.ps1`
 - `live_lol_smoke.ps1`
+- `live_dota2_smoke.ps1`
 
 Each sport script runs three checks:
 

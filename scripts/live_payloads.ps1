@@ -454,6 +454,39 @@ function New-LoLPayload {
     return $payload
 }
 
+function New-Dota2Payload {
+    $stats = @{
+        team_name = "Team Liquid"; opponent_name = "Gaimin Gladiators"; pick = "Team Liquid"; format = "bo3"; maps = 3
+        region_name = "western_europe"; league_name = "The International"; patch = "7.36"; team_rank = 2; opp_rank = 5
+        team_elo_rating = 1865; opp_elo_rating = 1805; team_win_pct = 0.67; opp_win_pct = 0.58
+        team_game_win_pct = 0.63; opp_game_win_pct = 0.56; team_radiant_pct = 0.60; opp_radiant_pct = 0.54
+        team_dire_pct = 0.58; opp_dire_pct = 0.52; team_laning = 88; opp_laning = 82
+        team_mid = 87; opp_mid_game = 81; team_late = 89; opp_late = 84
+        team_gd10 = 380; opp_gd10 = 150; team_gd20 = 1250; opp_gd20 = 560
+        team_xpd10 = 240; opp_xpd10 = 100; team_xpd20 = 980; opp_xpd20 = 430
+        team_first_blood_pct = 0.56; opp_first_blood_pct = 0.50; team_first_tower_pct = 0.58; opp_first_tower_pct = 0.51
+        team_roshan_pct = 0.66; opp_roshan_pct = 0.56; team_tower_pressure = 88; opp_tower_pressure = 80
+        team_objective_score = 88; opp_objective_score = 80; team_vision_score = 86; opp_vision_score = 79
+        team_kills_per_game = 28.5; opp_kills_per_game = 25.2; team_deaths_per_game = 23.4; opp_deaths_per_game = 26.2
+        team_kda_value = 4.4; opp_kda_value = 3.5; team_gpm_value = 2260; opp_gpm_value = 2160
+        team_xpm_value = 2680; opp_xpm_value = 2520; team_networth = 88; opp_networth = 80
+        team_draft_score = 89; opp_draft_score = 81; team_hero_pool = 9; opp_hero_pool = 7
+        team_meta_fit = 88; opp_meta_fit = 80; carry_rating = 89; mid_rating = 91; offlane_rating = 87
+        soft_support_rating = 86; hard_support_rating = 85; opp_carry_rating = 84; opp_mid_rating = 85
+        opp_offlane_rating = 83; opp_soft_support_rating = 82; opp_hard_support_rating = 81
+        roster_stability_score = 0.92; substitute = 0.02; availability_risk = 0.03; rest = 4; travel = 0.15
+        lan = $true; online = $false; tier = "major"; playoff = $true; elimination = $false; form = 85; opp_form = 78
+        market_move = 0.0; public_pct = 54; sharp_pct = 58
+        player_name = "Nisha"; role = "mid"; hero_pool = 90; player_meta_fit = 88
+        kills_proj = 8.4; assists_proj = 12.2; deaths_proj = 3.2; kda_proj = 6.4
+        last_hits_proj = 320; gpm_proj = 625; xpm_proj = 710; net_worth_proj = 26500
+        maps_proj = 2.4; prop_line = 7.5; book_count = 8
+    }
+    $payload = New-LiveTicketBase -Sport "dota2" -League "The International" -Event "Team Liquid vs Gaimin Gladiators" -Market "match_winner" -Selection "Team Liquid" -InputStats $stats
+    $payload.visible_markets = @("match_winner", "first_roshan", "player_kills")
+    return $payload
+}
+
 function New-LiveActivePayload {
     param([Parameter(Mandatory = $true)] [string] $Sport)
     switch ($Sport.ToLower()) {
@@ -499,6 +532,14 @@ function New-LiveActivePayload {
         "lpl" { return New-LoLPayload }
         "worlds" { return New-LoLPayload }
         "msi" { return New-LoLPayload }
+        "dota2" { return New-Dota2Payload }
+        "dota_2" { return New-Dota2Payload }
+        "dota" { return New-Dota2Payload }
+        "esports_dota2" { return New-Dota2Payload }
+        "dota_pro_circuit" { return New-Dota2Payload }
+        "dpc" { return New-Dota2Payload }
+        "the_international" { return New-Dota2Payload }
+        "ti" { return New-Dota2Payload }
         default { throw "No live active payload builder registered for sport '$Sport'." }
     }
 }

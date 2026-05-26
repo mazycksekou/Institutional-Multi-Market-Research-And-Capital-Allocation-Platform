@@ -496,6 +496,14 @@ class TestSportAnalysisEndpoint(unittest.TestCase):
                 "lpl": "league_of_legends",
                 "worlds": "league_of_legends",
                 "msi": "league_of_legends",
+                "dota2": "dota2",
+                "dota_2": "dota2",
+                "dota": "dota2",
+                "esports_dota2": "dota2",
+                "dota_pro_circuit": "dota2",
+                "dpc": "dota2",
+                "the_international": "dota2",
+                "ti": "dota2",
             }
             for submitted, expected in cases.items():
                 response = client.post(
