@@ -472,6 +472,13 @@ class TestSportAnalysisEndpoint(unittest.TestCase):
                 "grand_prix_motorcycle": "motogp",
                 "motorcycle_racing": "motogp",
                 "motorsport_motogp": "motogp",
+                "cs2": "cs2",
+                "counter_strike_2": "cs2",
+                "counterstrike2": "cs2",
+                "counter_strike": "cs2",
+                "csgo": "cs2",
+                "counterstrike": "cs2",
+                "esports_cs2": "cs2",
             }
             for submitted, expected in cases.items():
                 response = client.post(

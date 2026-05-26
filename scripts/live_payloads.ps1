@@ -365,6 +365,34 @@ function New-MotoGPPayload {
     return $payload
 }
 
+function New-CS2Payload {
+    $stats = @{
+        team_name = "Natus Vincere"; opponent_name = "FaZe Clan"; pick = "Natus Vincere"; map = "Mirage"; format = "bo3"; maps = 3
+        team_rank = 2; opp_rank = 5; team_elo_rating = 1885; opp_elo_rating = 1810
+        team_win_pct = 0.68; opp_win_pct = 0.58; team_round_win_pct = 0.56; opp_round_win_pct = 0.52
+        team_ct_pct = 0.58; opp_ct_pct = 0.53; team_t_pct = 0.54; opp_t_pct = 0.50
+        team_pistol_pct = 0.57; opp_pistol_pct = 0.51; team_force_buy_pct = 0.38; opp_force_buy_pct = 0.33
+        team_eco_pct = 0.20; opp_eco_pct = 0.16; team_anti_eco_pct = 0.82; opp_anti_eco_pct = 0.77
+        team_clutch_pct = 0.55; opp_clutch_pct = 0.50; team_entry_pct = 0.54; opp_entry_pct = 0.50
+        team_trade_pct = 0.62; opp_trade_pct = 0.57; team_opening_kill_pct = 0.53; opp_opening_kill_pct = 0.49
+        team_kast_pct = 75.0; opp_kast_pct = 72.0; team_adr_value = 82.5; opp_adr_value = 78.0
+        team_hltv_rating = 1.12; opp_hltv_rating = 1.05; team_util_damage = 24.0; opp_util_damage = 21.0
+        team_flash_pct = 0.18; opp_flash_pct = 0.15; team_map_pct = 0.64; opp_map_pct = 0.55
+        team_pick_pct = 0.34; opp_pick_pct = 0.28; team_ban_pct = 0.12; opp_ban_pct = 0.18
+        ct_bias = 0.54; t_bias = 0.46; team_map_depth = 6; opp_map_depth = 5
+        lan = $true; online = $false; tier = "S"; playoff = $true; elimination = $false; region = "EU"
+        rest = 3; travel = 0.2; roster_stability_score = 0.92; substitute = 0.02; availability_risk = 0.03
+        form = 84; opp_form = 78; market_move = 0.0; public_pct = 52; sharp_pct = 56
+        player_name = "s1mple"; role = "AWPer"; player_rating = 1.18; kills_proj = 20.5
+        headshots_proj = 7.5; assists_proj = 4.5; deaths_proj = 16.5; kda_proj = 1.45
+        adr_proj = 84.5; opening_kills_proj = 3.2; clutches_proj = 0.45; flash_assists_proj = 1.8
+        maps_proj = 2.4; prop_line = 18.5; book_count = 8
+    }
+    $payload = New-LiveTicketBase -Sport "cs2" -League "ESL Pro League" -Event "Natus Vincere vs FaZe Clan" -Market "match_winner" -Selection "Natus Vincere" -InputStats $stats
+    $payload.visible_markets = @("match_winner", "map_winner", "player_kills")
+    return $payload
+}
+
 function New-LiveActivePayload {
     param([Parameter(Mandatory = $true)] [string] $Sport)
     switch ($Sport.ToLower()) {
@@ -390,6 +418,9 @@ function New-LiveActivePayload {
         "motogp" { return New-MotoGPPayload }
         "moto_gp" { return New-MotoGPPayload }
         "cricket" { return New-CricketPayload }
+        "cs2" { return New-CS2Payload }
+        "counter_strike_2" { return New-CS2Payload }
+        "csgo" { return New-CS2Payload }
         default { throw "No live active payload builder registered for sport '$Sport'." }
     }
 }

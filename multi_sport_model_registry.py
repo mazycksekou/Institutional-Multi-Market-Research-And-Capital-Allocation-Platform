@@ -59,6 +59,7 @@ OFFICIAL_SPORT_KEYS = [
     "indycar",
     "motogp",
     "cricket",
+    "cs2",
     "esports",
 ]
 
@@ -128,6 +129,14 @@ SPORT_ALIASES = {
     "the hundred": "cricket",
     "cpl": "cricket",
     "psl": "cricket",
+    "counter_strike_2": "cs2",
+    "counter strike 2": "cs2",
+    "counterstrike2": "cs2",
+    "counter_strike": "cs2",
+    "counter strike": "cs2",
+    "csgo": "cs2",
+    "counterstrike": "cs2",
+    "esports_cs2": "cs2",
     "formula_1": "formula1",
     "f1": "formula1",
     "fia_formula_1": "formula1",
@@ -169,7 +178,6 @@ SPORT_ALIASES = {
     "soccer_usa_mls": "soccer",
     "soccer_international": "soccer",
     "valorant": "esports",
-    "csgo": "esports",
     "lol": "esports",
 }
 
@@ -945,6 +953,105 @@ CRICKET_INPUT_CONTRACT = {
     "required_market_specific_inputs": CRICKET_REQUIRED_MARKET_INPUTS,
     "optional_enrichment_inputs": CRICKET_OPTIONAL_ENRICHMENT_INPUTS,
     "player_prop_inputs": CRICKET_PLAYER_PROP_INPUTS,
+    "provider_enrichment_inputs": ["best_available_odds", "current_odds", "opening_odds", "consensus_odds", "no_vig_market_probability", "book_count"],
+    "social_crowd_inputs": NFL_SOCIAL_CROWD_INPUTS,
+}
+
+CS2_MARKETS = [
+    "match_winner", "moneyline", "map_winner", "map_handicap", "total_maps", "correct_score",
+    "first_map_winner", "second_map_winner", "third_map_winner", "round_handicap", "total_rounds",
+    "team_total_rounds", "pistol_round_winner", "first_pistol_round_winner", "second_pistol_round_winner",
+    "race_to_rounds", "player_kills", "player_headshots", "player_assists", "player_deaths",
+    "player_kda", "player_adr", "player_clutches", "player_opening_kills", "player_flash_assists",
+    "alt_map_handicap", "alt_total_maps", "alt_total_rounds",
+]
+
+CS2_PROP_MARKETS = [
+    "player_kills", "player_headshots", "player_assists", "player_deaths", "player_kda",
+    "player_adr", "player_clutches", "player_opening_kills", "player_flash_assists",
+]
+
+CS2_REQUIRED_CORE_INPUTS = [
+    "team", "opponent", "market", "selection", "odds_american", "map_name", "match_format",
+    "best_of_maps", "team_world_rank", "opponent_world_rank", "team_elo", "opponent_elo",
+    "team_recent_win_rate", "opponent_recent_win_rate", "team_recent_round_win_rate",
+    "opponent_recent_round_win_rate", "team_ct_round_win_rate", "opponent_ct_round_win_rate",
+    "team_t_round_win_rate", "opponent_t_round_win_rate", "team_pistol_round_win_rate",
+    "opponent_pistol_round_win_rate", "team_force_buy_success_rate", "opponent_force_buy_success_rate",
+    "team_eco_round_win_rate", "opponent_eco_round_win_rate", "team_anti_eco_success_rate",
+    "opponent_anti_eco_success_rate", "team_clutch_rate", "opponent_clutch_rate",
+    "team_entry_success_rate", "opponent_entry_success_rate", "team_trade_rate", "opponent_trade_rate",
+    "team_opening_kill_rate", "opponent_opening_kill_rate", "team_kast", "opponent_kast",
+    "team_adr", "opponent_adr", "team_rating", "opponent_rating", "team_utility_damage",
+    "opponent_utility_damage", "team_flash_assist_rate", "opponent_flash_assist_rate",
+    "team_map_win_rate", "opponent_map_win_rate", "team_map_pick_rate", "opponent_map_pick_rate",
+    "team_map_ban_rate", "opponent_map_ban_rate", "map_ct_bias", "map_t_bias", "map_pool_depth",
+    "opponent_map_pool_depth", "lan_event", "online_event", "tournament_tier", "playoff_match",
+    "elimination_match", "server_region", "rest_days", "travel_fatigue", "roster_stability",
+    "substitute_risk", "injury_or_availability_risk", "recent_form", "opponent_recent_form",
+]
+
+CS2_NUMERIC_CORE_INPUTS = [
+    field for field in CS2_REQUIRED_CORE_INPUTS
+    if field not in {
+        "team", "opponent", "market", "selection", "map_name", "match_format",
+        "lan_event", "online_event", "tournament_tier", "playoff_match", "elimination_match",
+        "server_region",
+    }
+]
+
+CS2_PLAYER_PROP_INPUTS = [
+    "player", "player_role", "player_rating", "player_kills_projection",
+    "player_headshots_projection", "player_assists_projection", "player_deaths_projection",
+    "player_kda_projection", "player_adr_projection", "player_opening_kills_projection",
+    "player_clutches_projection", "player_flash_assists_projection", "player_maps_projection",
+    "player_prop_line",
+]
+
+CS2_NUMERIC_PLAYER_PROP_INPUTS = [
+    field for field in CS2_PLAYER_PROP_INPUTS
+    if field not in {"player", "player_role"}
+]
+
+CS2_REQUIRED_MARKET_INPUTS = {
+    "match_winner": ["odds_american"],
+    "moneyline": ["odds_american"],
+    "map_winner": ["odds_american"],
+    "first_map_winner": ["odds_american"],
+    "second_map_winner": ["odds_american"],
+    "third_map_winner": ["odds_american"],
+    "pistol_round_winner": ["odds_american"],
+    "first_pistol_round_winner": ["odds_american"],
+    "second_pistol_round_winner": ["odds_american"],
+    "map_handicap": ["line", "odds_american"],
+    "round_handicap": ["line", "odds_american"],
+    "alt_map_handicap": ["line", "odds_american"],
+    "total_maps": ["total_line", "odds_american"],
+    "alt_total_maps": ["total_line", "odds_american"],
+    "total_rounds": ["total_line", "odds_american"],
+    "alt_total_rounds": ["total_line", "odds_american"],
+    "team_total_rounds": ["total_line", "odds_american"],
+    "race_to_rounds": ["line", "odds_american"],
+    "correct_score": ["line", "odds_american"],
+}
+
+for _cs2_prop_market in CS2_PROP_MARKETS:
+    CS2_REQUIRED_MARKET_INPUTS[_cs2_prop_market] = [
+        "player", "player_role", "player_prop_line", "odds_american",
+    ]
+
+CS2_OPTIONAL_ENRICHMENT_INPUTS = [
+    "no_vig_market_probability", "book_count", "current_odds", "best_available_odds", "opening_odds",
+    "consensus_odds", "provider_status", "market_movement", "public_betting_percent",
+    "sharp_money_percent", "social_sentiment", "crowd_consensus", "patch_version",
+    "coach_change", "stand_in_confirmed", "veto_report_quality", "demo_sample_size",
+]
+
+CS2_INPUT_CONTRACT = {
+    "required_core_inputs": CS2_REQUIRED_CORE_INPUTS,
+    "required_market_specific_inputs": CS2_REQUIRED_MARKET_INPUTS,
+    "optional_enrichment_inputs": CS2_OPTIONAL_ENRICHMENT_INPUTS,
+    "player_prop_inputs": CS2_PLAYER_PROP_INPUTS,
     "provider_enrichment_inputs": ["best_available_odds", "current_odds", "opening_odds", "consensus_odds", "no_vig_market_probability", "book_count"],
     "social_crowd_inputs": NFL_SOCIAL_CROWD_INPUTS,
 }
@@ -2077,6 +2184,7 @@ SPORT_PROP_INPUTS = {
     "indycar": ["driver rating", "track type", "fuel strategy", "pit crew", "restart variance"],
     "motogp": ["rider rating", "bike pace", "tire stress", "weather", "crash risk"],
     "cricket": ["batting order", "bowler matchup", "venue", "pitch condition"],
+    "cs2": ["team rating", "map pool", "round economy", "pistol rounds", "player props"],
     "esports": ["game title", "player rating", "team rating", "map pool", "patch or meta version"],
 }
 
@@ -2189,6 +2297,12 @@ OFFICIALS_MODULE_BY_SPORT = {
         "betting_edge_strength": "weak_to_moderate",
         "notes": "Cricket official context is tracked but usually sits behind pitch, toss, venue, and lineup inputs.",
     },
+    "cs2": {
+        "official_type": "tournament admin/server/map veto enforcement",
+        "official_inputs": ["tournament admin", "server admin", "map veto admin", "pause policy", "rule enforcement"],
+        "betting_edge_strength": "weak",
+        "notes": "CS2 admin context is tracked but cannot replace map pool, team quality, round economy, and player inputs.",
+    },
     "esports": {
         "official_type": "tournament admin/map/server/rule enforcement",
         "official_inputs": ["tournament admin", "map admin", "server admin", "rule enforcement", "pause/remake policy"],
@@ -2292,6 +2406,7 @@ def _official_affected_markets(sport: str, market: Any) -> list[str]:
         "golf": ["outrights", "matchups"],
         "formula1": ["race winner", "podium", "points finish", "driver head to head"],
         "cricket": ["match winner", "innings runs", "player props"],
+        "cs2": ["match winner", "map winner", "round totals", "player props"],
         "esports": ["match winner", "map winner", "round totals", "live markets"],
     }
     markets = list(by_sport.get(sport, []))
@@ -2827,6 +2942,24 @@ SPORT_MODEL_REGISTRY = [
         confirmed_bets_allowed=True,
     ),
     _sport(
+        "cs2",
+        "Counter-Strike 2",
+        "cs2_round_economy_map_pool_monte_carlo_model",
+        "cs2_round_economy_map_pool_monte_carlo_model",
+        "round_economy_map_pool_monte_carlo",
+        CS2_MARKETS,
+        CS2_PROP_MARKETS,
+        CS2_REQUIRED_CORE_INPUTS,
+        CS2_OPTIONAL_ENRICHMENT_INPUTS,
+        ["round economy model", "map pool model", "pistol round model", "CT/T side split", "entry/trade model", "player prop projection"],
+        "round economy map-pool Monte Carlo",
+        ["Map winners, handicaps, round totals, pistol rounds, and player kills are correlated within the same match."],
+        sport_parameters={"league_calibration_applied": "cs2"},
+        component_status=COMPONENT_STATUS_ACTIVE,
+        model_level=MODEL_LEVEL_PROJECTION_READY,
+        confirmed_bets_allowed=True,
+    ),
+    _sport(
         "esports",
         "Esports",
         "game_specific_esports_router",
@@ -2864,6 +2997,7 @@ _INPUT_NORMALIZER_BY_SPORT = {
     "indycar": "indycar_input_normalizer",
     "motogp": "motogp_input_normalizer",
     "cricket": "cricket_input_normalizer",
+    "cs2": "cs2_input_normalizer",
 }
 
 _ACTIVE_SCREENSHOT_ALIAS_TEST_PAYLOADS: dict[str, dict[str, Any]] = {
@@ -3282,6 +3416,37 @@ _ACTIVE_SCREENSHOT_ALIAS_TEST_PAYLOADS: dict[str, dict[str, Any]] = {
             "recent_wickets": 0, "overs_proj": 0, "balls_faced_proj": 24, "runs_proj": 34.5,
             "wickets_proj": 0.1, "sixes_proj": 1.6, "fours_proj": 3.2, "book_count": 8,
             "current_odds": 100,
+        },
+    },
+    "cs2": {
+        "sport": "cs2", "league": "ESL Pro League", "event": "Natus Vincere vs FaZe Clan",
+        "teams": ["Natus Vincere", "FaZe Clan"], "market": "match_winner",
+        "selection": "Natus Vincere", "odds_american": 100, "bankroll": 1000, "unit_size": 25,
+        "risk_profile": "moderate", "source_type": "chatgpt_parsed",
+        "screenshot_text": "Natus Vincere match winner +100 vs FaZe Clan",
+        "visible_markets": ["match_winner", "map_winner", "player_kills"],
+        "input_stats": {
+            "team_name": "Natus Vincere", "opponent_name": "FaZe Clan", "pick": "Natus Vincere",
+            "map": "Mirage", "format": "bo3", "maps": 3, "team_rank": 2, "opp_rank": 5,
+            "team_elo_rating": 1885, "opp_elo_rating": 1810, "team_win_pct": 0.68, "opp_win_pct": 0.58,
+            "team_round_win_pct": 0.56, "opp_round_win_pct": 0.52, "team_ct_pct": 0.58, "opp_ct_pct": 0.53,
+            "team_t_pct": 0.54, "opp_t_pct": 0.50, "team_pistol_pct": 0.57, "opp_pistol_pct": 0.51,
+            "team_force_buy_pct": 0.38, "opp_force_buy_pct": 0.33, "team_eco_pct": 0.20, "opp_eco_pct": 0.16,
+            "team_anti_eco_pct": 0.82, "opp_anti_eco_pct": 0.77, "team_clutch_pct": 0.55, "opp_clutch_pct": 0.50,
+            "team_entry_pct": 0.54, "opp_entry_pct": 0.50, "team_trade_pct": 0.62, "opp_trade_pct": 0.57,
+            "team_opening_kill_pct": 0.53, "opp_opening_kill_pct": 0.49, "team_kast_pct": 75.0, "opp_kast_pct": 72.0,
+            "team_adr_value": 82.5, "opp_adr_value": 78.0, "team_hltv_rating": 1.12, "opp_hltv_rating": 1.05,
+            "team_util_damage": 24.0, "opp_util_damage": 21.0, "team_flash_pct": 0.18, "opp_flash_pct": 0.15,
+            "team_map_pct": 0.64, "opp_map_pct": 0.55, "team_pick_pct": 0.34, "opp_pick_pct": 0.28,
+            "team_ban_pct": 0.12, "opp_ban_pct": 0.18, "ct_bias": 0.54, "t_bias": 0.46,
+            "team_map_depth": 6, "opp_map_depth": 5, "lan": True, "online": False, "tier": "S",
+            "playoff": True, "elimination": False, "region": "EU", "rest": 3, "travel": 0.2,
+            "roster_stability_score": 0.92, "substitute": 0.02, "availability_risk": 0.03,
+            "form": 84, "opp_form": 78, "market_move": 0.0, "public_pct": 52, "sharp_pct": 56,
+            "player_name": "s1mple", "role": "AWPer", "player_rating": 1.18, "kills_proj": 20.5,
+            "headshots_proj": 7.5, "assists_proj": 4.5, "deaths_proj": 16.5, "kda_proj": 1.45,
+            "adr_proj": 84.5, "opening_kills_proj": 3.2, "clutches_proj": 0.45, "flash_assists_proj": 1.8,
+            "maps_proj": 2.4, "prop_line": 18.5, "book_count": 8, "current_odds": 100,
         },
     },
 }
@@ -4769,6 +4934,36 @@ def _cricket_market_specific_missing(market: Any, input_stats: dict[str, Any], p
     return missing
 
 
+def _cs2_value_missing(field: str, input_stats: dict[str, Any], payload: dict[str, Any]) -> bool:
+    value = input_stats.get(field)
+    if value is None and field in {"sport", "league", "event", "teams", "market", "selection", "odds_american", "bankroll", "unit_size", "risk_profile"}:
+        value = payload.get(field)
+    if value is None and field == "event":
+        value = payload.get("event_id")
+    if value in (None, ""):
+        return True
+    if field in CS2_NUMERIC_CORE_INPUTS or field in CS2_NUMERIC_PLAYER_PROP_INPUTS or field in {"line", "total_line", "odds_american"}:
+        return _safe_float(value) is None
+    return False
+
+
+def _cs2_full_inputs_missing(input_stats: dict[str, Any], payload: dict[str, Any]) -> list[str]:
+    base_fields = ["sport", "league", "event", "market", "selection", "odds_american", "bankroll", "unit_size", "risk_profile"]
+    missing = [field for field in base_fields if _cs2_value_missing(field, input_stats, payload)]
+    for field in CS2_REQUIRED_CORE_INPUTS:
+        if _cs2_value_missing(field, input_stats, payload):
+            missing.append(field)
+    return list(dict.fromkeys(missing))
+
+
+def _cs2_market_specific_missing(market: Any, input_stats: dict[str, Any], payload: dict[str, Any]) -> list[str]:
+    market_key = _normal_market_key(input_stats.get("market_type") or market)
+    required = list(CS2_REQUIRED_MARKET_INPUTS.get(market_key, ["odds_american"]))
+    if market_key in CS2_PROP_MARKETS:
+        required = list(dict.fromkeys(required + CS2_PLAYER_PROP_INPUTS))
+    return [field for field in required if _cs2_value_missing(field, input_stats, payload)]
+
+
 def _f1_value_missing(field: str, input_stats: dict[str, Any], payload: dict[str, Any]) -> bool:
     value = input_stats.get(field)
     if value is None and field in {"sport", "league", "event", "teams", "market", "selection", "odds_american", "bankroll", "unit_size", "risk_profile"}:
@@ -4913,6 +5108,8 @@ def _missing_inputs_for_sport(sport: str, market: Any, input_stats: dict[str, An
         return _motogp_full_inputs_missing(input_stats, payload) + _motogp_market_specific_missing(market, input_stats, payload)
     if sport == "cricket":
         return _cricket_full_inputs_missing(input_stats, payload) + _cricket_market_specific_missing(market, input_stats, payload)
+    if sport == "cs2":
+        return _cs2_full_inputs_missing(input_stats, payload) + _cs2_market_specific_missing(market, input_stats, payload)
     config = get_sport_model_config(sport)
     if not config:
         return []
@@ -5370,6 +5567,111 @@ def _normalize_cricket_input_aliases(input_stats: dict[str, Any], payload: Optio
     return normalized
 
 
+def _normalize_cs2_input_aliases(input_stats: dict[str, Any], payload: Optional[dict[str, Any]] = None, sport: Optional[str] = None) -> dict[str, Any]:
+    normalized = _normalize_team_sport_input_aliases(input_stats, payload, sport)
+    payload = payload or {}
+    alias_pairs = {
+        "team": ["team_name"],
+        "opponent": ["opponent_name", "opp_team"],
+        "selection": ["pick", "favorite"],
+        "map_name": ["map", "map_played"],
+        "match_format": ["format", "series_format"],
+        "best_of_maps": ["maps", "best_of"],
+        "team_world_rank": ["team_rank", "world_rank"],
+        "opponent_world_rank": ["opp_rank", "opponent_rank"],
+        "team_elo": ["team_elo_rating"],
+        "opponent_elo": ["opp_elo_rating", "opponent_elo_rating"],
+        "team_recent_win_rate": ["team_win_pct"],
+        "opponent_recent_win_rate": ["opp_win_pct", "opponent_win_pct"],
+        "team_recent_round_win_rate": ["team_round_win_pct"],
+        "opponent_recent_round_win_rate": ["opp_round_win_pct"],
+        "team_ct_round_win_rate": ["team_ct_pct"],
+        "opponent_ct_round_win_rate": ["opp_ct_pct"],
+        "team_t_round_win_rate": ["team_t_pct"],
+        "opponent_t_round_win_rate": ["opp_t_pct"],
+        "team_pistol_round_win_rate": ["team_pistol_pct"],
+        "opponent_pistol_round_win_rate": ["opp_pistol_pct"],
+        "team_force_buy_success_rate": ["team_force_buy_pct"],
+        "opponent_force_buy_success_rate": ["opp_force_buy_pct"],
+        "team_eco_round_win_rate": ["team_eco_pct"],
+        "opponent_eco_round_win_rate": ["opp_eco_pct"],
+        "team_anti_eco_success_rate": ["team_anti_eco_pct"],
+        "opponent_anti_eco_success_rate": ["opp_anti_eco_pct"],
+        "team_clutch_rate": ["team_clutch_pct"],
+        "opponent_clutch_rate": ["opp_clutch_pct"],
+        "team_entry_success_rate": ["team_entry_pct"],
+        "opponent_entry_success_rate": ["opp_entry_pct"],
+        "team_trade_rate": ["team_trade_pct"],
+        "opponent_trade_rate": ["opp_trade_pct"],
+        "team_opening_kill_rate": ["team_opening_kill_pct"],
+        "opponent_opening_kill_rate": ["opp_opening_kill_pct"],
+        "team_kast": ["team_kast_pct"],
+        "opponent_kast": ["opp_kast_pct"],
+        "team_adr": ["team_adr_value"],
+        "opponent_adr": ["opp_adr_value"],
+        "team_rating": ["team_hltv_rating"],
+        "opponent_rating": ["opp_hltv_rating"],
+        "team_utility_damage": ["team_util_damage"],
+        "opponent_utility_damage": ["opp_util_damage"],
+        "team_flash_assist_rate": ["team_flash_pct"],
+        "opponent_flash_assist_rate": ["opp_flash_pct"],
+        "team_map_win_rate": ["team_map_pct"],
+        "opponent_map_win_rate": ["opp_map_pct"],
+        "team_map_pick_rate": ["team_pick_pct"],
+        "opponent_map_pick_rate": ["opp_pick_pct"],
+        "team_map_ban_rate": ["team_ban_pct"],
+        "opponent_map_ban_rate": ["opp_ban_pct"],
+        "map_ct_bias": ["ct_bias"],
+        "map_t_bias": ["t_bias"],
+        "map_pool_depth": ["team_map_depth"],
+        "opponent_map_pool_depth": ["opp_map_depth"],
+        "lan_event": ["lan"],
+        "online_event": ["online"],
+        "tournament_tier": ["tier"],
+        "playoff_match": ["playoff"],
+        "elimination_match": ["elimination"],
+        "server_region": ["region"],
+        "rest_days": ["rest"],
+        "travel_fatigue": ["travel"],
+        "roster_stability": ["roster_stability_score"],
+        "substitute_risk": ["substitute"],
+        "injury_or_availability_risk": ["availability_risk"],
+        "recent_form": ["form"],
+        "opponent_recent_form": ["opp_form"],
+        "market_movement": ["market_move"],
+        "public_betting_percent": ["public_pct"],
+        "sharp_money_percent": ["sharp_pct"],
+        "player": ["player_name"],
+        "player_role": ["role"],
+        "player_kills_projection": ["kills_proj"],
+        "player_headshots_projection": ["headshots_proj"],
+        "player_assists_projection": ["assists_proj"],
+        "player_deaths_projection": ["deaths_proj"],
+        "player_kda_projection": ["kda_proj"],
+        "player_adr_projection": ["adr_proj"],
+        "player_opening_kills_projection": ["opening_kills_proj"],
+        "player_clutches_projection": ["clutches_proj"],
+        "player_flash_assists_projection": ["flash_assists_proj"],
+        "player_maps_projection": ["maps_proj"],
+        "player_prop_line": ["prop_line", "line_value"],
+    }
+    for canonical, aliases in alias_pairs.items():
+        _copy_alias_if_missing(normalized, canonical, aliases)
+    if normalized.get("match_format") is None and normalized.get("best_of_maps") is not None:
+        normalized["match_format"] = f"bo{int(_safe_float(normalized.get('best_of_maps'), 3) or 3)}"
+    if normalized.get("best_of_maps") is None and normalized.get("match_format") is not None:
+        match = re.search(r"(\d+)", str(normalized.get("match_format")))
+        normalized["best_of_maps"] = int(match.group(1)) if match else 3
+    for field in ("market", "league", "odds_american", "bankroll", "unit_size", "risk_profile"):
+        if normalized.get(field) is None:
+            normalized[field] = payload.get(field)
+    normalized.setdefault("selection", payload.get("selection") or normalized.get("team"))
+    normalized.setdefault("event", payload.get("event") or payload.get("event_id"))
+    if normalized.get("map_name") is None:
+        normalized["map_name"] = "unknown"
+    return normalized
+
+
 def _normalize_f1_input_aliases(input_stats: dict[str, Any], payload: Optional[dict[str, Any]] = None, sport: Optional[str] = None) -> dict[str, Any]:
     normalized = dict(input_stats or {})
     payload = payload or {}
@@ -5757,6 +6059,9 @@ def normalize_sport_inputs_for_model(
     elif sport_alias_resolved == "cricket":
         normalized = _normalize_cricket_input_aliases(normalized, payload, sport_alias_resolved)
         normalizer_used = "cricket_input_normalizer"
+    elif sport_alias_resolved == "cs2":
+        normalized = _normalize_cs2_input_aliases(normalized, payload, sport_alias_resolved)
+        normalizer_used = "cs2_input_normalizer"
 
     after_market = market or payload.get("market") or normalized.get("market")
     after_missing = _missing_inputs_for_sport(sport_alias_resolved, after_market, normalized, payload)
@@ -9588,6 +9893,205 @@ def _estimate_cricket_run_rate_model(
     }
 
 
+def _cs2_match_format_calibration(raw_format: Any, best_of_maps: Any = None) -> str:
+    text = str(raw_format or "").strip().lower().replace("best_of_", "bo")
+    maps = int(_safe_float(best_of_maps, 0) or 0)
+    if "bo1" in text or maps == 1:
+        return "bo1"
+    if "bo5" in text or maps == 5:
+        return "bo5"
+    if "bo3" in text or maps == 3:
+        return "bo3"
+    return "unknown"
+
+
+def _estimate_cs2_round_economy_model(
+    *,
+    input_stats: dict[str, Any],
+    payload: dict[str, Any],
+    market: Any,
+    odds_american: Optional[float],
+    bankroll: float,
+    risk_profile: str,
+) -> Optional[dict[str, Any]]:
+    missing = _cs2_full_inputs_missing(input_stats, payload) + _cs2_market_specific_missing(market, input_stats, payload)
+    if missing:
+        return None
+    implied_probability = implied_probability_from_american(odds_american) if odds_american is not None else None
+    if implied_probability is None:
+        return None
+
+    def number(key: str, default: float = 0) -> float:
+        return _safe_float(input_stats.get(key), default) or default
+
+    market_key = _normal_market_key(input_stats.get("market_type") or market)
+    selection_text = str(payload.get("selection") or input_stats.get("selection") or "").strip().lower()
+    selected_team = not input_stats.get("opponent") or str(input_stats.get("team") or "").strip().lower() in selection_text
+    format_key = _cs2_match_format_calibration(input_stats.get("match_format"), input_stats.get("best_of_maps"))
+    event_environment = "lan" if input_stats.get("lan_event") else "online" if input_stats.get("online_event") else "unknown"
+    map_calibration = str(input_stats.get("map_name") or "unknown").strip() or "unknown"
+    tier_bonus = 1.0 if str(input_stats.get("tournament_tier") or "").strip().lower() in {"s", "tier_s", "major"} else 0.0
+    edge_score = (
+        (number("team_elo") - number("opponent_elo")) / 38.0
+        + (number("opponent_world_rank") - number("team_world_rank")) * 0.18
+        + (number("team_recent_win_rate") - number("opponent_recent_win_rate")) * 5.8
+        + (number("team_recent_round_win_rate") - number("opponent_recent_round_win_rate")) * 7.0
+        + (number("team_ct_round_win_rate") - number("opponent_ct_round_win_rate")) * (2.2 + number("map_ct_bias") * 1.2)
+        + (number("team_t_round_win_rate") - number("opponent_t_round_win_rate")) * (2.2 + number("map_t_bias") * 1.2)
+        + (number("team_pistol_round_win_rate") - number("opponent_pistol_round_win_rate")) * 2.4
+        + (number("team_force_buy_success_rate") - number("opponent_force_buy_success_rate")) * 2.1
+        + (number("team_eco_round_win_rate") - number("opponent_eco_round_win_rate")) * 1.7
+        + (number("team_anti_eco_success_rate") - number("opponent_anti_eco_success_rate")) * 1.9
+        + (number("team_clutch_rate") - number("opponent_clutch_rate")) * 2.0
+        + (number("team_entry_success_rate") - number("opponent_entry_success_rate")) * 2.6
+        + (number("team_trade_rate") - number("opponent_trade_rate")) * 1.7
+        + (number("team_opening_kill_rate") - number("opponent_opening_kill_rate")) * 2.2
+        + (number("team_kast") - number("opponent_kast")) * 0.05
+        + (number("team_adr") - number("opponent_adr")) * 0.06
+        + (number("team_rating") - number("opponent_rating")) * 5.5
+        + (number("team_utility_damage") - number("opponent_utility_damage")) * 0.04
+        + (number("team_flash_assist_rate") - number("opponent_flash_assist_rate")) * 1.1
+        + (number("team_map_win_rate") - number("opponent_map_win_rate")) * 4.2
+        + (number("team_map_pick_rate") - number("opponent_map_pick_rate")) * 1.2
+        - (number("team_map_ban_rate") - number("opponent_map_ban_rate")) * 1.1
+        + (number("map_pool_depth") - number("opponent_map_pool_depth")) * 0.16
+        + (number("recent_form") - number("opponent_recent_form")) * 0.04
+        + number("roster_stability") * 1.1
+        - number("substitute_risk") * 3.0
+        - number("injury_or_availability_risk") * 2.8
+        - number("travel_fatigue") * 0.9
+        + tier_bonus
+    )
+    if not selected_team:
+        edge_score = -edge_score
+    volatility = 1.0
+    if format_key == "bo1":
+        volatility += 0.75
+    elif format_key == "bo5":
+        volatility -= 0.18
+    if event_environment == "online":
+        volatility += 0.12
+    if input_stats.get("elimination_match"):
+        volatility += 0.10
+    match_probability = _logistic_probability(edge_score, 6.4 + volatility)
+    map_probability = _logistic_probability(edge_score + (number("team_map_win_rate") - number("opponent_map_win_rate")) * 2.5, 5.8 + volatility)
+    round_probability = _logistic_probability(edge_score + (number("team_recent_round_win_rate") - number("opponent_recent_round_win_rate")) * 4.0, 5.9 + volatility)
+    pistol_probability = _logistic_probability((number("team_pistol_round_win_rate") - number("opponent_pistol_round_win_rate")) * 5.5 + edge_score * 0.25, 4.4 + volatility)
+    expected_rounds = 24.0 + max(-3.2, min(3.2, abs(edge_score) * -0.35 + (1 - abs(match_probability - 0.5) * 2) * 2.7))
+    expected_team_rounds = expected_rounds * round_probability
+    line = _safe_float(payload.get("line"), _safe_float(input_stats.get("line")))
+    total_line = _safe_float(payload.get("total_line"), _safe_float(input_stats.get("total_line")))
+    raw_model_probability = match_probability
+    if market_key in {"match_winner", "moneyline"}:
+        raw_model_probability = match_probability
+    elif market_key in {"map_winner", "first_map_winner", "second_map_winner", "third_map_winner"}:
+        raw_model_probability = map_probability
+    elif market_key in {"pistol_round_winner", "first_pistol_round_winner", "second_pistol_round_winner"}:
+        raw_model_probability = pistol_probability
+    elif market_key in {"map_handicap", "alt_map_handicap"}:
+        raw_model_probability = _logistic_probability((match_probability - 0.5) * 8 - (line or 0), 3.2 + volatility)
+    elif market_key in {"total_maps", "alt_total_maps"}:
+        projected_maps = 2.0 if format_key == "bo3" else 3.1 if format_key == "bo5" else 1.0
+        projected_maps += (1 - abs(match_probability - 0.5) * 2) * (0.6 if format_key != "bo1" else 0.0)
+        raw_model_probability = _logistic_probability(projected_maps - (total_line if total_line is not None else projected_maps), 0.55 + volatility * 0.12)
+    elif market_key in {"round_handicap", "race_to_rounds"}:
+        raw_model_probability = _logistic_probability((expected_team_rounds - expected_rounds / 2) - (line or 0), 3.8 + volatility)
+    elif market_key in {"total_rounds", "alt_total_rounds"}:
+        raw_model_probability = _logistic_probability(expected_rounds - (total_line if total_line is not None else expected_rounds), 3.4 + volatility)
+    elif market_key == "team_total_rounds":
+        raw_model_probability = _logistic_probability(expected_team_rounds - (total_line if total_line is not None else expected_team_rounds), 2.8 + volatility)
+    elif market_key == "correct_score":
+        raw_model_probability = max(0.04, min(0.42, match_probability * (0.65 if format_key == "bo3" else 0.46 if format_key == "bo5" else 1.0)))
+    elif market_key in CS2_PROP_MARKETS:
+        prop_map = {
+            "player_kills": "player_kills_projection", "player_headshots": "player_headshots_projection",
+            "player_assists": "player_assists_projection", "player_deaths": "player_deaths_projection",
+            "player_kda": "player_kda_projection", "player_adr": "player_adr_projection",
+            "player_clutches": "player_clutches_projection", "player_opening_kills": "player_opening_kills_projection",
+            "player_flash_assists": "player_flash_assists_projection",
+        }
+        projection = number(prop_map[market_key])
+        prop_line = number("player_prop_line", line or projection)
+        raw_model_probability = _logistic_probability(projection - prop_line, max(0.9, abs(projection) * 0.18))
+    market_anchor = _safe_probability(input_stats.get("no_vig_market_probability"))
+    calibrated_probability = raw_model_probability * 0.90 + market_anchor * 0.10 if market_anchor is not None else raw_model_probability
+    true_probability = max(0.04, min(0.88, calibrated_probability))
+    sanity_flags = ["cs2 probability cap applied"] if true_probability != calibrated_probability else []
+    confidence = 74.0
+    risk_flags: list[str] = []
+    if format_key == "bo1":
+        confidence -= 5; risk_flags.append("BO1 volatility")
+    if event_environment == "online":
+        confidence -= 3; risk_flags.append("online server variance")
+    if number("substitute_risk") >= 0.10 or number("injury_or_availability_risk") >= 0.10:
+        confidence -= 7; risk_flags.append("roster availability risk")
+    if number("roster_stability") < 0.75:
+        confidence -= 5; risk_flags.append("roster instability")
+    if market_key in CS2_PROP_MARKETS:
+        confidence -= 4; risk_flags.append("player prop fragility")
+    if market_key in {"pistol_round_winner", "first_pistol_round_winner", "second_pistol_round_winner", "correct_score"}:
+        confidence -= 5; risk_flags.append("volatile CS2 market")
+    if _safe_float(input_stats.get("book_count"), 0) < 4:
+        confidence -= 4; risk_flags.append("book count too low")
+    if input_stats.get("provider_status") == "error":
+        risk_flags.append("provider failure ignored")
+    confidence = max(1, min(95, round(confidence, 2)))
+    edge = calculate_edge_percent(true_probability, implied_probability)
+    edge_threshold, confidence_threshold = _nfl_thresholds(risk_profile)
+    no_bet_flags: list[str] = []
+    if edge is None:
+        no_bet_flags.append("edge missing")
+    elif edge <= 0:
+        no_bet_flags.append("negative edge")
+    elif edge < edge_threshold:
+        no_bet_flags.append("edge too small")
+    if confidence < confidence_threshold:
+        no_bet_flags.append("low confidence")
+    suggested = 0 if no_bet_flags else calculate_suggested_stake(bankroll=bankroll, american_odds=odds_american, true_probability=true_probability, risk_profile=risk_profile, confidence=confidence)
+    if suggested <= 0 and not no_bet_flags and edge is not None and edge >= edge_threshold and confidence >= confidence_threshold:
+        suggested = round(max(1.0, bankroll * 0.004), 2)
+    return {
+        "model_status": "active",
+        "estimated_true_probability": true_probability,
+        "true_probability": true_probability,
+        "final_probability": true_probability,
+        "model_probability": true_probability,
+        "implied_probability": implied_probability,
+        "edge": edge,
+        "confidence": confidence,
+        "risk": "high" if risk_flags else "moderate",
+        "suggested_stake": suggested,
+        "raw_model_probability": raw_model_probability,
+        "calibrated_model_probability": calibrated_probability,
+        "probability_calibration_applied": bool(market_anchor is not None or sanity_flags),
+        "probability_sanity_flags": sanity_flags,
+        "probability_cap_reason": "cs2 sanity cap" if sanity_flags else None,
+        "market_anchor_probability": market_anchor,
+        "league_calibration_applied": "cs2",
+        "match_format_calibration_applied": format_key,
+        "event_environment_calibration_applied": event_environment,
+        "map_calibration_applied": map_calibration,
+        "cs2_team_edge_score": round(edge_score, 2),
+        "cs2_match_probability": match_probability,
+        "cs2_map_probability": map_probability,
+        "cs2_round_probability": round_probability,
+        "cs2_projected_total_rounds": round(expected_rounds, 2),
+        "cs2_projected_team_rounds": round(expected_team_rounds, 2),
+        "risk_flags": risk_flags,
+        "input_coverage": {
+            "required_core_present": list(CS2_REQUIRED_CORE_INPUTS),
+            "required_market_specific_present": CS2_REQUIRED_MARKET_INPUTS.get(market_key, []),
+            "optional_enrichment_present": [field for field in CS2_OPTIONAL_ENRICHMENT_INPUTS if input_stats.get(field) is not None],
+            "optional_enrichment_missing": [field for field in CS2_OPTIONAL_ENRICHMENT_INPUTS if input_stats.get(field) is None],
+        },
+        "provider_enrichment": {
+            "provider_status": input_stats.get("provider_status") or "not_provided",
+            "provider_enrichment_present": [field for field in CS2_OPTIONAL_ENRICHMENT_INPUTS if input_stats.get(field) is not None],
+        },
+        "no_bet_flags": no_bet_flags,
+    }
+
+
 def _estimate_nfl_drive_model(
     input_stats: dict[str, Any],
     payload: dict[str, Any],
@@ -10068,6 +10572,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         indycar_model = None
         motogp_model = None
         cricket_model = None
+        cs2_model = None
         if sport == "basketball_nba":
             nba_model = _estimate_nba_possession_model(
                 input_stats=input_stats,
@@ -10211,6 +10716,15 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
                 bankroll=bankroll,
                 risk_profile=payload.get("risk_profile") or "moderate",
             )
+        elif sport == "cs2":
+            cs2_model = _estimate_cs2_round_economy_model(
+                input_stats=input_stats,
+                payload=payload,
+                market=market,
+                odds_american=odds_american,
+                bankroll=bankroll,
+                risk_profile=payload.get("risk_profile") or "moderate",
+            )
 
         if nba_model:
             component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
@@ -10242,7 +10756,9 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
         elif cricket_model:
             component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
-        elif sport in {"basketball_nba", "basketball_wnba", "basketball_ncaab", "basketball_ncaawb", "americanfootball_nfl", "americanfootball_ncaaf", "baseball_mlb", "soccer", "icehockey_nhl", "tennis", "mma_mixed_martial_arts", "boxing", "golf", "formula1", "nascar", "indycar", "motogp", "cricket"}:
+        elif cs2_model:
+            component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
+        elif sport in {"basketball_nba", "basketball_wnba", "basketball_ncaab", "basketball_ncaawb", "americanfootball_nfl", "americanfootball_ncaaf", "baseball_mlb", "soccer", "icehockey_nhl", "tennis", "mma_mixed_martial_arts", "boxing", "golf", "formula1", "nascar", "indycar", "motogp", "cricket", "cs2"}:
             component_status = COMPONENT_STATUS_INACTIVE
             missing_inputs = _missing_inputs_for_sport(sport, market, input_stats, payload)
         else:
@@ -10347,9 +10863,15 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             edge = cricket_model["edge"]
             suggested = cricket_model["suggested_stake"]
             no_bet_flags = list(cricket_model["no_bet_flags"])
+        elif cs2_model:
+            true_probability = cs2_model["true_probability"]
+            implied_probability = cs2_model["implied_probability"]
+            edge = cs2_model["edge"]
+            suggested = cs2_model["suggested_stake"]
+            no_bet_flags = list(cs2_model["no_bet_flags"])
         if implied_probability is not None and true_probability is not None and odds_american is not None:
             edge = edge_percentage(true_probability, implied_probability)
-            if not (nba_model or wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or nascar_model or indycar_model or motogp_model or cricket_model):
+            if not (nba_model or wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model):
                 suggested = suggested_stake_with_risk_controls(
                     bankroll=bankroll,
                     american_odds=odds_american,
@@ -10366,7 +10888,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         social_input_stats = dict(input_stats)
         social_input_stats["edge"] = edge
         social_layer = build_social_crowd_calibration_layer(social_input_stats)
-        if social_layer["sentiment_no_bet_flags"] and not (nba_model or wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or nascar_model or indycar_model or motogp_model or cricket_model):
+        if social_layer["sentiment_no_bet_flags"] and not (nba_model or wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model):
             no_bet_flags = list(dict.fromkeys(no_bet_flags + social_layer["sentiment_no_bet_flags"]))
 
         risk_controller = build_risk_controller(bankroll, unit_size, payload.get("risk_profile") or "conservative")
@@ -10383,7 +10905,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         })
         wee_willie = build_wee_willie_market_weakness_detector(detector_payload)
         manual_ticket = build_manual_ticket(detector_payload, suggested)
-        active_model = nba_model or wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or nascar_model or indycar_model or motogp_model or cricket_model
+        active_model = nba_model or wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model
         confidence = active_model["confidence"] if active_model else input_stats.get("confidence")
         if tennis_model and _safe_float(confidence) is None:
             confidence = 0.0
@@ -10395,7 +10917,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         model_status = active_model["model_status"] if active_model else component_status
         edge_threshold, confidence_threshold = (
             _nfl_thresholds(payload.get("risk_profile") or "moderate")
-            if (wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or nascar_model or indycar_model or motogp_model or cricket_model)
+            if (wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model)
             else (2.5, 70)
         )
         event_value = payload.get("event_id") or payload.get("event") or input_stats.get("event")
@@ -10512,7 +11034,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
                 "market": market,
                 "selection": selection_value,
                 "confidence": confidence,
-            }] if _normal_market_key(market) in {"player_prop", "knockdown_prop", "takedown_prop", "significant_strikes_prop", "submission_attempt_prop", "birdies_prop", "eagles_prop", "fairways_hit_prop", "greens_in_regulation_prop", "putts_prop", "round_score_prop", *BASKETBALL_MODULE_PROP_MARKETS, *COLLEGE_FOOTBALL_PROP_MARKETS, *CRICKET_PROP_MARKETS} else [],
+            }] if _normal_market_key(market) in {"player_prop", "knockdown_prop", "takedown_prop", "significant_strikes_prop", "submission_attempt_prop", "birdies_prop", "eagles_prop", "fairways_hit_prop", "greens_in_regulation_prop", "putts_prop", "round_score_prop", *BASKETBALL_MODULE_PROP_MARKETS, *COLLEGE_FOOTBALL_PROP_MARKETS, *CRICKET_PROP_MARKETS, *CS2_PROP_MARKETS} else [],
             "target_alt_lines": [{
                 "sport": sport,
                 "event": event_value,
@@ -10552,7 +11074,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             **officiating_analysis["officiating_logbook_fields"],
         })
         basketball_module_model = wnba_model or mens_cbb_model or womens_cbb_model
-        probability_model = basketball_module_model or college_football_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or nascar_model or indycar_model or motogp_model or cricket_model
+        probability_model = basketball_module_model or college_football_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model
         if probability_model:
             logbook_ready_row.update({
                 "raw_model_probability": probability_model["raw_model_probability"],
@@ -10735,6 +11257,25 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
                 "missing_inputs": missing_inputs,
                 "notes": "; ".join(cricket_model["risk_flags"]) if cricket_model["risk_flags"] else "",
             })
+        if cs2_model:
+            logbook_ready_row.update({
+                "model_level": config["model_level"],
+                "probability_type": _normal_market_key(market),
+                "risk_profile": payload.get("risk_profile") or "moderate",
+                "league_calibration_applied": cs2_model["league_calibration_applied"],
+                "match_format_calibration_applied": cs2_model["match_format_calibration_applied"],
+                "event_environment_calibration_applied": cs2_model["event_environment_calibration_applied"],
+                "map_calibration_applied": cs2_model["map_calibration_applied"],
+                "cs2_team_edge_score": cs2_model["cs2_team_edge_score"],
+                "cs2_match_probability": cs2_model["cs2_match_probability"],
+                "cs2_map_probability": cs2_model["cs2_map_probability"],
+                "cs2_round_probability": cs2_model["cs2_round_probability"],
+                "cs2_projected_total_rounds": cs2_model["cs2_projected_total_rounds"],
+                "cs2_projected_team_rounds": cs2_model["cs2_projected_team_rounds"],
+                "risk_flags": cs2_model["risk_flags"],
+                "missing_inputs": missing_inputs,
+                "notes": "; ".join(cs2_model["risk_flags"]) if cs2_model["risk_flags"] else "",
+            })
         if college_football_model:
             logbook_ready_row.update({
                 "league_calibration_applied": college_football_model["league_calibration_applied"],
@@ -10871,14 +11412,18 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             "indycar_input_contract": deepcopy(INDYCAR_INPUT_CONTRACT) if sport == "indycar" else None,
             "motogp_input_contract": deepcopy(MOTOGP_INPUT_CONTRACT) if sport == "motogp" else None,
             "cricket_input_contract": deepcopy(CRICKET_INPUT_CONTRACT) if sport == "cricket" else None,
+            "cs2_input_contract": deepcopy(CS2_INPUT_CONTRACT) if sport == "cs2" else None,
             "wnba_input_contract": deepcopy(WNBA_INPUT_CONTRACT) if sport == "basketball_wnba" else None,
             "mens_college_basketball_input_contract": deepcopy(MENS_COLLEGE_BASKETBALL_INPUT_CONTRACT) if sport == "basketball_ncaab" else None,
             "womens_college_basketball_input_contract": deepcopy(WOMENS_COLLEGE_BASKETBALL_INPUT_CONTRACT) if sport == "basketball_ncaawb" else None,
-            "league_calibration_applied": (basketball_module_model or college_football_model or f1_model or nascar_model or indycar_model or motogp_model or cricket_model)["league_calibration_applied"] if (basketball_module_model or college_football_model or f1_model or nascar_model or indycar_model or motogp_model or cricket_model) else config.get("sport_parameters", {}).get("league_calibration_applied"),
+            "league_calibration_applied": (basketball_module_model or college_football_model or f1_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model)["league_calibration_applied"] if (basketball_module_model or college_football_model or f1_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model) else config.get("sport_parameters", {}).get("league_calibration_applied"),
             "session_calibration_applied": (f1_model or motogp_model)["session_calibration_applied"] if (f1_model or motogp_model) else None,
             "circuit_calibration_applied": f1_model["circuit_calibration_applied"] if f1_model else None,
             "weather_calibration_applied": (f1_model or motogp_model)["weather_calibration_applied"] if (f1_model or motogp_model) else None,
             "format_calibration_applied": cricket_model["format_calibration_applied"] if cricket_model else None,
+            "match_format_calibration_applied": cs2_model["match_format_calibration_applied"] if cs2_model else None,
+            "event_environment_calibration_applied": cs2_model["event_environment_calibration_applied"] if cs2_model else None,
+            "map_calibration_applied": cs2_model["map_calibration_applied"] if cs2_model else None,
             "series_calibration_applied": (nascar_model or indycar_model)["series_calibration_applied"] if (nascar_model or indycar_model) else None,
             "track_type_calibration_applied": (nascar_model or indycar_model or motogp_model)["track_type_calibration_applied"] if (nascar_model or indycar_model or motogp_model) else None,
             "race_environment_calibration_applied": (nascar_model or indycar_model)["race_environment_calibration_applied"] if (nascar_model or indycar_model) else None,
@@ -10937,6 +11482,12 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             "motogp_matchup_probability": motogp_model["matchup_probability"] if motogp_model else None,
             "cricket_projected_team_runs": cricket_model["projected_team_runs"] if cricket_model else None,
             "cricket_projected_opponent_runs": cricket_model["projected_opponent_runs"] if cricket_model else None,
+            "cs2_team_edge_score": cs2_model["cs2_team_edge_score"] if cs2_model else None,
+            "cs2_match_probability": cs2_model["cs2_match_probability"] if cs2_model else None,
+            "cs2_map_probability": cs2_model["cs2_map_probability"] if cs2_model else None,
+            "cs2_round_probability": cs2_model["cs2_round_probability"] if cs2_model else None,
+            "cs2_projected_total_rounds": cs2_model["cs2_projected_total_rounds"] if cs2_model else None,
+            "cs2_projected_team_rounds": cs2_model["cs2_projected_team_rounds"] if cs2_model else None,
             "manual_ticket_preview": manual_ticket,
             "manual_review_required": manual_review_flags,
             "full_board_preview": full_board,
@@ -10944,7 +11495,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         "target_lines": full_board["target_lines"],
         "target_props": full_board["target_props"],
         "target_alt_lines": full_board["target_alt_lines"],
-        "no_bets": no_bets if (basketball_module_model or college_football_model or tennis_model or combat_model or golf_model or f1_model or nascar_model or indycar_model or motogp_model or cricket_model) else simple_no_bets,
+        "no_bets": no_bets if (basketball_module_model or college_football_model or tennis_model or combat_model or golf_model or f1_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model) else simple_no_bets,
         "best_correlated_parlay": full_board["best_correlated_parlay"],
         "value_ranking": full_board["value_ranking"],
         "risk_ranking": full_board["risk_ranking"],
