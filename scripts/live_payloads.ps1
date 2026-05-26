@@ -423,6 +423,37 @@ function New-ValorantPayload {
     return $payload
 }
 
+function New-LoLPayload {
+    $stats = @{
+        team_name = "T1"; opponent_name = "Gen.G"; pick = "T1"; format = "bo3"; maps = 3
+        region_name = "lck"; league_name = "LCK"; patch = "14.10"; team_rank = 2; opp_rank = 4
+        team_elo_rating = 1875; opp_elo_rating = 1810; team_win_pct = 0.68; opp_win_pct = 0.59
+        team_game_win_pct = 0.64; opp_game_win_pct = 0.57; team_blue_pct = 0.61; opp_blue_pct = 0.55
+        team_red_pct = 0.58; opp_red_pct = 0.52; team_early = 88; opp_early = 82
+        team_mid = 87; opp_mid = 81; team_late = 89; opp_late = 84
+        team_gd10 = 420; opp_gd10 = 180; team_gd15 = 760; opp_gd15 = 320
+        team_xpd10 = 260; opp_xpd10 = 110; team_xpd15 = 520; opp_xpd15 = 240
+        team_first_blood_pct = 0.56; opp_first_blood_pct = 0.50; team_first_tower_pct = 0.59; opp_first_tower_pct = 0.51
+        team_first_dragon_pct = 0.57; opp_first_dragon_pct = 0.50; team_first_herald_pct = 0.58; opp_first_herald_pct = 0.49
+        team_baron_pct = 0.66; opp_baron_pct = 0.57; team_dragon_pct = 0.64; opp_dragon_pct = 0.55
+        team_objective_score = 88; opp_objective_score = 80; team_vision_score = 86; opp_vision_score = 79
+        team_kills_per_game = 15.8; opp_kills_per_game = 13.9; team_deaths_per_game = 11.6; opp_deaths_per_game = 12.9
+        team_kda_value = 4.1; opp_kda_value = 3.3; team_dpm = 2340; opp_dpm = 2180; team_gpm = 1905; opp_gpm = 1835
+        team_draft_score = 89; opp_draft_score = 81; team_champ_pool = 8; opp_champ_pool = 6
+        team_meta_fit = 88; opp_meta_fit = 80; top_rating = 86; jungle_rating = 90; mid_rating = 91; adc_rating = 88; support_rating = 87
+        opp_top_rating = 82; opp_jungle_rating = 84; opp_mid_rating = 85; opp_adc_rating = 84; opp_support_rating = 82
+        roster_stability_score = 0.93; substitute = 0.02; availability_risk = 0.03; rest = 4; travel = 0.15
+        lan = $true; online = $false; tier = "major"; playoff = $true; elimination = $false; form = 85; opp_form = 78
+        market_move = 0.0; public_pct = 54; sharp_pct = 58
+        player_name = "Faker"; role = "mid"; champion_pool = 90; player_meta_fit = 88
+        kills_proj = 4.8; assists_proj = 7.4; deaths_proj = 2.1; kda_proj = 5.6; kp_proj = 0.72
+        damage_share_proj = 0.27; gold_share_proj = 0.24; maps_proj = 2.4; prop_line = 4.5; book_count = 8
+    }
+    $payload = New-LiveTicketBase -Sport "lol" -League "LCK" -Event "T1 vs Gen.G" -Market "match_winner" -Selection "T1" -InputStats $stats
+    $payload.visible_markets = @("match_winner", "game_winner", "player_kills")
+    return $payload
+}
+
 function New-LiveActivePayload {
     param([Parameter(Mandatory = $true)] [string] $Sport)
     switch ($Sport.ToLower()) {
@@ -457,6 +488,17 @@ function New-LiveActivePayload {
         "esports_valorant" { return New-ValorantPayload }
         "vct" { return New-ValorantPayload }
         "valorant_champions_tour" { return New-ValorantPayload }
+        "league_of_legends" { return New-LoLPayload }
+        "lol" { return New-LoLPayload }
+        "league" { return New-LoLPayload }
+        "riot_lol" { return New-LoLPayload }
+        "esports_lol" { return New-LoLPayload }
+        "lcs" { return New-LoLPayload }
+        "lec" { return New-LoLPayload }
+        "lck" { return New-LoLPayload }
+        "lpl" { return New-LoLPayload }
+        "worlds" { return New-LoLPayload }
+        "msi" { return New-LoLPayload }
         default { throw "No live active payload builder registered for sport '$Sport'." }
     }
 }

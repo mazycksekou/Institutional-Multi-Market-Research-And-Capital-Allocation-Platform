@@ -485,6 +485,17 @@ class TestSportAnalysisEndpoint(unittest.TestCase):
                 "esports_valorant": "valorant",
                 "vct": "valorant",
                 "valorant_champions_tour": "valorant",
+                "league_of_legends": "league_of_legends",
+                "lol": "league_of_legends",
+                "league": "league_of_legends",
+                "riot_lol": "league_of_legends",
+                "esports_lol": "league_of_legends",
+                "lcs": "league_of_legends",
+                "lec": "league_of_legends",
+                "lck": "league_of_legends",
+                "lpl": "league_of_legends",
+                "worlds": "league_of_legends",
+                "msi": "league_of_legends",
             }
             for submitted, expected in cases.items():
                 response = client.post(

@@ -23,6 +23,17 @@ SPORT_ALIASES = {
     "esports_valorant": "valorant",
     "vct": "valorant",
     "valorant_champions_tour": "valorant",
+    "league_of_legends": "league_of_legends",
+    "lol": "league_of_legends",
+    "league": "league_of_legends",
+    "riot_lol": "league_of_legends",
+    "esports_lol": "league_of_legends",
+    "lcs": "league_of_legends",
+    "lec": "league_of_legends",
+    "lck": "league_of_legends",
+    "lpl": "league_of_legends",
+    "worlds": "league_of_legends",
+    "msi": "league_of_legends",
     "csgo": "cs2",
     "cs2": "cs2",
     "counter_strike_2": "cs2",
@@ -30,7 +41,6 @@ SPORT_ALIASES = {
     "counter_strike": "cs2",
     "counterstrike": "cs2",
     "esports_cs2": "cs2",
-    "lol": "esports",
 }
 
 MARKET_ALIASES = {
