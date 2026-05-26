@@ -63,6 +63,7 @@ OFFICIAL_SPORT_KEYS = [
     "valorant",
     "league_of_legends",
     "dota2",
+    "call_of_duty",
     "esports",
 ]
 
@@ -162,6 +163,12 @@ SPORT_ALIASES = {
     "dpc": "dota2",
     "the_international": "dota2",
     "ti": "dota2",
+    "cod": "call_of_duty",
+    "cdl": "call_of_duty",
+    "esports_cod": "call_of_duty",
+    "cod_league": "call_of_duty",
+    "callofduty": "call_of_duty",
+    "call_of_duty_league": "call_of_duty",
     "formula_1": "formula1",
     "f1": "formula1",
     "fia_formula_1": "formula1",
@@ -1388,6 +1395,96 @@ DOTA2_INPUT_CONTRACT = {
     "social_crowd_inputs": NFL_SOCIAL_CROWD_INPUTS,
 }
 
+COD_MARKETS = [
+    "match_winner", "moneyline", "map_winner", "map_handicap", "total_maps", "correct_score",
+    "first_map_winner", "second_map_winner", "third_map_winner", "fourth_map_winner", "fifth_map_winner",
+    "round_handicap", "total_rounds", "team_total_rounds", "hardpoint_winner",
+    "search_and_destroy_winner", "control_winner", "first_blood", "player_kills",
+    "player_assists", "player_deaths", "player_kda", "player_damage", "player_objective_time",
+    "player_first_bloods", "alt_map_handicap", "alt_total_maps",
+]
+
+COD_PROP_MARKETS = [
+    "player_kills", "player_assists", "player_deaths", "player_kda",
+    "player_damage", "player_objective_time", "player_first_bloods",
+]
+
+COD_REQUIRED_CORE_INPUTS = [
+    "team", "opponent", "market", "selection", "odds_american", "match_format", "best_of_maps",
+    "map_name", "game_mode", "map_rotation", "team_world_rank", "opponent_world_rank",
+    "team_elo", "opponent_elo", "team_recent_win_rate", "opponent_recent_win_rate",
+    "team_map_win_rate", "opponent_map_win_rate", "team_hardpoint_win_rate",
+    "opponent_hardpoint_win_rate", "team_search_destroy_win_rate", "opponent_search_destroy_win_rate",
+    "team_control_win_rate", "opponent_control_win_rate", "team_respawn_rating",
+    "opponent_respawn_rating", "team_snd_rating", "opponent_snd_rating", "team_control_rating",
+    "opponent_control_rating", "team_slaying_rating", "opponent_slaying_rating",
+    "team_objective_rating", "opponent_objective_rating", "team_breaking_rating",
+    "opponent_breaking_rating", "team_hold_rating", "opponent_hold_rating", "team_rotation_rating",
+    "opponent_rotation_rating", "team_first_blood_rate", "opponent_first_blood_rate",
+    "team_clutch_rate", "opponent_clutch_rate", "team_trade_rate", "opponent_trade_rate",
+    "team_kd_ratio", "opponent_kd_ratio", "team_damage_per_round", "opponent_damage_per_round",
+    "team_map_pool_depth", "opponent_map_pool_depth", "team_map_pick_rate", "opponent_map_pick_rate",
+    "team_map_ban_rate", "opponent_map_ban_rate", "lan_event", "online_event",
+    "tournament_tier", "playoff_match", "elimination_match", "rest_days", "travel_fatigue",
+    "roster_stability", "substitute_risk", "player_availability_risk", "recent_form",
+    "opponent_recent_form", "market_movement", "public_betting_percent", "sharp_money_percent",
+]
+
+COD_NUMERIC_CORE_INPUTS = [
+    field for field in COD_REQUIRED_CORE_INPUTS
+    if field not in {
+        "team", "opponent", "market", "selection", "match_format", "map_name",
+        "game_mode", "map_rotation", "lan_event", "online_event", "tournament_tier",
+        "playoff_match", "elimination_match",
+    }
+]
+
+COD_PLAYER_PROP_INPUTS = [
+    "player", "player_role", "player_kills_projection", "player_assists_projection",
+    "player_deaths_projection", "player_kda_projection", "player_damage_projection",
+    "player_objective_time_projection", "player_first_bloods_projection",
+    "player_maps_projection", "player_prop_line",
+]
+
+COD_NUMERIC_PLAYER_PROP_INPUTS = [
+    field for field in COD_PLAYER_PROP_INPUTS
+    if field not in {"player", "player_role"}
+]
+
+COD_REQUIRED_MARKET_INPUTS = {
+    "match_winner": ["odds_american"], "moneyline": ["odds_american"], "map_winner": ["odds_american"],
+    "first_map_winner": ["odds_american"], "second_map_winner": ["odds_american"],
+    "third_map_winner": ["odds_american"], "fourth_map_winner": ["odds_american"],
+    "fifth_map_winner": ["odds_american"], "hardpoint_winner": ["odds_american"],
+    "search_and_destroy_winner": ["odds_american"], "control_winner": ["odds_american"],
+    "first_blood": ["odds_american"], "map_handicap": ["line", "odds_american"],
+    "round_handicap": ["line", "odds_american"], "alt_map_handicap": ["line", "odds_american"],
+    "total_maps": ["total_line", "odds_american"], "alt_total_maps": ["total_line", "odds_american"],
+    "total_rounds": ["total_line", "odds_american"], "team_total_rounds": ["total_line", "odds_american"],
+    "correct_score": ["line", "odds_american"],
+}
+
+for _cod_prop_market in COD_PROP_MARKETS:
+    COD_REQUIRED_MARKET_INPUTS[_cod_prop_market] = [
+        "player", "player_role", "player_prop_line", "odds_american",
+    ]
+
+COD_OPTIONAL_ENRICHMENT_INPUTS = [
+    "no_vig_market_probability", "book_count", "current_odds", "best_available_odds", "opening_odds",
+    "consensus_odds", "provider_status", "server_region", "market_movement",
+    "public_betting_percent", "sharp_money_percent", "social_sentiment", "crowd_consensus",
+    "coach_change", "role_swap", "scrim_signal_quality",
+]
+
+COD_INPUT_CONTRACT = {
+    "required_core_inputs": COD_REQUIRED_CORE_INPUTS,
+    "required_market_specific_inputs": COD_REQUIRED_MARKET_INPUTS,
+    "optional_enrichment_inputs": COD_OPTIONAL_ENRICHMENT_INPUTS,
+    "player_prop_inputs": COD_PLAYER_PROP_INPUTS,
+    "provider_enrichment_inputs": ["best_available_odds", "current_odds", "opening_odds", "consensus_odds", "no_vig_market_probability", "book_count"],
+    "social_crowd_inputs": NFL_SOCIAL_CROWD_INPUTS,
+}
+
 MLB_REQUIRED_CORE_INPUTS = [
     "team",
     "opponent",
@@ -2520,6 +2617,7 @@ SPORT_PROP_INPUTS = {
     "valorant": ["agent composition", "map pool", "round economy", "post plant", "player props"],
     "league_of_legends": ["draft", "objective control", "gold tempo", "lane ratings", "player props"],
     "dota2": ["draft", "lane pressure", "Roshan control", "tower pressure", "player props"],
+    "call_of_duty": ["map/mode rotation", "respawn form", "search and destroy", "objective time", "player props"],
     "esports": ["game title", "player rating", "team rating", "map pool", "patch or meta version"],
 }
 
@@ -2656,6 +2754,12 @@ OFFICIALS_MODULE_BY_SPORT = {
         "betting_edge_strength": "weak",
         "notes": "Dota 2 admin context is tracked but cannot replace draft, lane, Roshan, tower, and player inputs.",
     },
+    "call_of_duty": {
+        "official_type": "tournament admin/server/map-mode enforcement",
+        "official_inputs": ["tournament admin", "server admin", "map-mode admin", "rule enforcement"],
+        "betting_edge_strength": "weak",
+        "notes": "Call of Duty admin context is tracked but cannot replace map rotation, mode, respawn, SND, and player inputs.",
+    },
     "esports": {
         "official_type": "tournament admin/map/server/rule enforcement",
         "official_inputs": ["tournament admin", "map admin", "server admin", "rule enforcement", "pause/remake policy"],
@@ -2763,6 +2867,7 @@ def _official_affected_markets(sport: str, market: Any) -> list[str]:
         "valorant": ["match winner", "map winner", "round totals", "player props"],
         "league_of_legends": ["match winner", "game winner", "objective props", "kill totals", "player props"],
         "dota2": ["match winner", "game winner", "Roshan props", "kill totals", "player props"],
+        "call_of_duty": ["match winner", "map winner", "map/mode props", "round totals", "player props"],
         "esports": ["match winner", "map winner", "round totals", "live markets"],
     }
     markets = list(by_sport.get(sport, []))
@@ -3370,6 +3475,24 @@ SPORT_MODEL_REGISTRY = [
         confirmed_bets_allowed=True,
     ),
     _sport(
+        "call_of_duty",
+        "Call of Duty",
+        "call_of_duty_map_mode_rotation_respawn_snd_monte_carlo_model",
+        "call_of_duty_map_mode_rotation_respawn_snd_monte_carlo_model",
+        "map_mode_rotation_respawn_snd_monte_carlo",
+        COD_MARKETS,
+        COD_PROP_MARKETS,
+        COD_REQUIRED_CORE_INPUTS,
+        COD_OPTIONAL_ENRICHMENT_INPUTS,
+        ["map/mode rotation model", "respawn rating model", "search and destroy model", "control mode model", "objective model", "player prop projection"],
+        "map-mode rotation respawn/SND Monte Carlo",
+        ["Map winners, mode winners, map handicaps, round totals, and player props are correlated within the same match."],
+        sport_parameters={"league_calibration_applied": "call_of_duty"},
+        component_status=COMPONENT_STATUS_ACTIVE,
+        model_level=MODEL_LEVEL_PROJECTION_READY,
+        confirmed_bets_allowed=True,
+    ),
+    _sport(
         "esports",
         "Esports",
         "game_specific_esports_router",
@@ -3411,6 +3534,7 @@ _INPUT_NORMALIZER_BY_SPORT = {
     "valorant": "valorant_input_normalizer",
     "league_of_legends": "league_of_legends_input_normalizer",
     "dota2": "dota2_input_normalizer",
+    "call_of_duty": "call_of_duty_input_normalizer",
 }
 
 _ACTIVE_SCREENSHOT_ALIAS_TEST_PAYLOADS: dict[str, dict[str, Any]] = {
@@ -3971,6 +4095,38 @@ _ACTIVE_SCREENSHOT_ALIAS_TEST_PAYLOADS: dict[str, dict[str, Any]] = {
             "kills_proj": 8.4, "assists_proj": 12.2, "deaths_proj": 3.2, "kda_proj": 6.4,
             "last_hits_proj": 320, "gpm_proj": 625, "xpm_proj": 710, "net_worth_proj": 26500,
             "maps_proj": 2.4, "prop_line": 7.5, "book_count": 8, "current_odds": 100,
+        },
+    },
+    "call_of_duty": {
+        "sport": "call_of_duty", "league": "CDL", "event": "Atlanta FaZe vs OpTic Texas",
+        "teams": ["Atlanta FaZe", "OpTic Texas"], "market": "match_winner",
+        "selection": "Atlanta FaZe", "odds_american": 100, "bankroll": 1000, "unit_size": 25,
+        "risk_profile": "moderate", "source_type": "chatgpt_parsed",
+        "screenshot_text": "Atlanta FaZe match winner +100 vs OpTic Texas",
+        "visible_markets": ["match_winner", "hardpoint_winner", "player_kills"],
+        "input_stats": {
+            "team_name": "Atlanta FaZe", "opponent_name": "OpTic Texas", "pick": "Atlanta FaZe",
+            "format": "bo5", "maps": 5, "map": "Rio", "mode": "hardpoint", "rotation": "HP-SND-Control-HP-SND",
+            "team_rank": 1, "opp_rank": 4, "team_elo_rating": 1880, "opp_elo_rating": 1815,
+            "team_win_pct": 0.69, "opp_win_pct": 0.59, "team_map_pct": 0.65, "opp_map_pct": 0.56,
+            "team_hp_pct": 0.68, "opp_hp_pct": 0.58, "team_snd_pct": 0.62, "opp_snd_pct": 0.54,
+            "team_control_pct": 0.64, "opp_control_pct": 0.55, "team_respawn": 89, "opp_respawn": 82,
+            "team_snd": 86, "opp_snd": 80, "team_control": 87, "opp_control": 81,
+            "team_slaying": 90, "opp_slaying": 84, "team_objective": 88, "opp_objective": 82,
+            "team_breaking": 87, "opp_breaking": 80, "team_hold": 89, "opp_hold": 83,
+            "team_rotation": 90, "opp_rotation": 82, "team_first_blood_pct": 0.56, "opp_first_blood_pct": 0.50,
+            "team_clutch_pct": 0.55, "opp_clutch_pct": 0.49, "team_trade_pct": 0.63, "opp_trade_pct": 0.57,
+            "team_kd": 1.10, "opp_kd": 1.02, "team_damage_round": 485, "opp_damage_round": 455,
+            "team_map_depth": 7, "opp_map_depth": 6, "team_pick_pct": 0.36, "opp_pick_pct": 0.30,
+            "team_ban_pct": 0.12, "opp_ban_pct": 0.17, "lan": True, "online": False,
+            "tier": "major", "playoff": True, "elimination": False, "region": "NA",
+            "rest": 4, "travel": 0.15, "roster_stability_score": 0.92, "substitute": 0.02,
+            "availability_risk": 0.03, "form": 86, "opp_form": 79, "market_move": 0.0,
+            "public_pct": 54, "sharp_pct": 58,
+            "player_name": "Simp", "role": "SMG", "kills_proj": 24.5, "assists_proj": 7.5,
+            "deaths_proj": 20.5, "kda_proj": 1.55, "damage_proj": 3150, "objective_time_proj": 72,
+            "first_bloods_proj": 3.1, "maps_proj": 4.2, "prop_line": 23.5, "book_count": 8,
+            "current_odds": 100,
         },
     },
 }
@@ -5578,6 +5734,36 @@ def _dota2_market_specific_missing(market: Any, input_stats: dict[str, Any], pay
     return [field for field in required if _dota2_value_missing(field, input_stats, payload)]
 
 
+def _cod_value_missing(field: str, input_stats: dict[str, Any], payload: dict[str, Any]) -> bool:
+    value = input_stats.get(field)
+    if value is None and field in {"sport", "league", "event", "teams", "market", "selection", "odds_american", "bankroll", "unit_size", "risk_profile"}:
+        value = payload.get(field)
+    if value is None and field == "event":
+        value = payload.get("event_id")
+    if value in (None, ""):
+        return True
+    if field in COD_NUMERIC_CORE_INPUTS or field in COD_NUMERIC_PLAYER_PROP_INPUTS or field in {"line", "total_line", "odds_american"}:
+        return _safe_float(value) is None
+    return False
+
+
+def _cod_full_inputs_missing(input_stats: dict[str, Any], payload: dict[str, Any]) -> list[str]:
+    base_fields = ["sport", "league", "event", "market", "selection", "odds_american", "bankroll", "unit_size", "risk_profile"]
+    missing = [field for field in base_fields if _cod_value_missing(field, input_stats, payload)]
+    for field in COD_REQUIRED_CORE_INPUTS:
+        if _cod_value_missing(field, input_stats, payload):
+            missing.append(field)
+    return list(dict.fromkeys(missing))
+
+
+def _cod_market_specific_missing(market: Any, input_stats: dict[str, Any], payload: dict[str, Any]) -> list[str]:
+    market_key = _normal_market_key(input_stats.get("market_type") or market)
+    required = list(COD_REQUIRED_MARKET_INPUTS.get(market_key, ["odds_american"]))
+    if market_key in COD_PROP_MARKETS:
+        required = list(dict.fromkeys(required + COD_PLAYER_PROP_INPUTS))
+    return [field for field in required if _cod_value_missing(field, input_stats, payload)]
+
+
 def _f1_value_missing(field: str, input_stats: dict[str, Any], payload: dict[str, Any]) -> bool:
     value = input_stats.get(field)
     if value is None and field in {"sport", "league", "event", "teams", "market", "selection", "odds_american", "bankroll", "unit_size", "risk_profile"}:
@@ -5730,6 +5916,8 @@ def _missing_inputs_for_sport(sport: str, market: Any, input_stats: dict[str, An
         return _lol_full_inputs_missing(input_stats, payload) + _lol_market_specific_missing(market, input_stats, payload)
     if sport == "dota2":
         return _dota2_full_inputs_missing(input_stats, payload) + _dota2_market_specific_missing(market, input_stats, payload)
+    if sport == "call_of_duty":
+        return _cod_full_inputs_missing(input_stats, payload) + _cod_market_specific_missing(market, input_stats, payload)
     config = get_sport_model_config(sport)
     if not config:
         return []
@@ -6488,6 +6676,65 @@ def _normalize_dota2_input_aliases(input_stats: dict[str, Any], payload: Optiona
     return normalized
 
 
+def _normalize_cod_input_aliases(input_stats: dict[str, Any], payload: Optional[dict[str, Any]] = None, sport: Optional[str] = None) -> dict[str, Any]:
+    normalized = _normalize_team_sport_input_aliases(input_stats, payload, sport)
+    payload = payload or {}
+    alias_pairs = {
+        "team": ["team_name"], "opponent": ["opponent_name", "opp_team"], "selection": ["pick", "favorite"],
+        "match_format": ["format", "series_format"], "best_of_maps": ["maps", "best_of"],
+        "map_name": ["map"], "game_mode": ["mode"], "map_rotation": ["rotation"],
+        "team_world_rank": ["team_rank", "world_rank"], "opponent_world_rank": ["opp_rank", "opponent_rank"],
+        "team_elo": ["team_elo_rating"], "opponent_elo": ["opp_elo_rating", "opponent_elo_rating"],
+        "team_recent_win_rate": ["team_win_pct"], "opponent_recent_win_rate": ["opp_win_pct"],
+        "team_map_win_rate": ["team_map_pct"], "opponent_map_win_rate": ["opp_map_pct"],
+        "team_hardpoint_win_rate": ["team_hp_pct", "team_hardpoint_pct"],
+        "opponent_hardpoint_win_rate": ["opp_hp_pct", "opp_hardpoint_pct"],
+        "team_search_destroy_win_rate": ["team_snd_pct"], "opponent_search_destroy_win_rate": ["opp_snd_pct"],
+        "team_control_win_rate": ["team_control_pct"], "opponent_control_win_rate": ["opp_control_pct"],
+        "team_respawn_rating": ["team_respawn"], "opponent_respawn_rating": ["opp_respawn"],
+        "team_snd_rating": ["team_snd"], "opponent_snd_rating": ["opp_snd"],
+        "team_control_rating": ["team_control"], "opponent_control_rating": ["opp_control"],
+        "team_slaying_rating": ["team_slaying"], "opponent_slaying_rating": ["opp_slaying"],
+        "team_objective_rating": ["team_objective"], "opponent_objective_rating": ["opp_objective"],
+        "team_breaking_rating": ["team_breaking"], "opponent_breaking_rating": ["opp_breaking"],
+        "team_hold_rating": ["team_hold"], "opponent_hold_rating": ["opp_hold"],
+        "team_rotation_rating": ["team_rotation"], "opponent_rotation_rating": ["opp_rotation"],
+        "team_first_blood_rate": ["team_first_blood_pct"], "opponent_first_blood_rate": ["opp_first_blood_pct"],
+        "team_clutch_rate": ["team_clutch_pct"], "opponent_clutch_rate": ["opp_clutch_pct"],
+        "team_trade_rate": ["team_trade_pct"], "opponent_trade_rate": ["opp_trade_pct"],
+        "team_kd_ratio": ["team_kd"], "opponent_kd_ratio": ["opp_kd"],
+        "team_damage_per_round": ["team_damage_round"], "opponent_damage_per_round": ["opp_damage_round"],
+        "team_map_pool_depth": ["team_map_depth"], "opponent_map_pool_depth": ["opp_map_depth"],
+        "team_map_pick_rate": ["team_pick_pct"], "opponent_map_pick_rate": ["opp_pick_pct"],
+        "team_map_ban_rate": ["team_ban_pct"], "opponent_map_ban_rate": ["opp_ban_pct"],
+        "lan_event": ["lan"], "online_event": ["online"], "tournament_tier": ["tier"], "playoff_match": ["playoff"],
+        "elimination_match": ["elimination"], "server_region": ["region"], "rest_days": ["rest"],
+        "travel_fatigue": ["travel"], "roster_stability": ["roster_stability_score"],
+        "substitute_risk": ["substitute"], "player_availability_risk": ["availability_risk"],
+        "recent_form": ["form"], "opponent_recent_form": ["opp_form"],
+        "market_movement": ["market_move"], "public_betting_percent": ["public_pct"], "sharp_money_percent": ["sharp_pct"],
+        "player": ["player_name"], "player_role": ["role"], "player_kills_projection": ["kills_proj"],
+        "player_assists_projection": ["assists_proj"], "player_deaths_projection": ["deaths_proj"],
+        "player_kda_projection": ["kda_proj"], "player_damage_projection": ["damage_proj"],
+        "player_objective_time_projection": ["objective_time_proj"],
+        "player_first_bloods_projection": ["first_bloods_proj"],
+        "player_maps_projection": ["maps_proj"], "player_prop_line": ["prop_line", "line_value"],
+    }
+    for canonical, aliases in alias_pairs.items():
+        _copy_alias_if_missing(normalized, canonical, aliases)
+    if normalized.get("match_format") is None and normalized.get("best_of_maps") is not None:
+        normalized["match_format"] = f"bo{int(_safe_float(normalized.get('best_of_maps'), 5) or 5)}"
+    if normalized.get("best_of_maps") is None and normalized.get("match_format") is not None:
+        match = re.search(r"(\d+)", str(normalized.get("match_format")))
+        normalized["best_of_maps"] = int(match.group(1)) if match else 5
+    for field in ("market", "league", "odds_american", "bankroll", "unit_size", "risk_profile"):
+        if normalized.get(field) is None:
+            normalized[field] = payload.get(field)
+    normalized.setdefault("selection", payload.get("selection") or normalized.get("team"))
+    normalized.setdefault("event", payload.get("event") or payload.get("event_id"))
+    return normalized
+
+
 def _normalize_f1_input_aliases(input_stats: dict[str, Any], payload: Optional[dict[str, Any]] = None, sport: Optional[str] = None) -> dict[str, Any]:
     normalized = dict(input_stats or {})
     payload = payload or {}
@@ -6887,6 +7134,9 @@ def normalize_sport_inputs_for_model(
     elif sport_alias_resolved == "dota2":
         normalized = _normalize_dota2_input_aliases(normalized, payload, sport_alias_resolved)
         normalizer_used = "dota2_input_normalizer"
+    elif sport_alias_resolved == "call_of_duty":
+        normalized = _normalize_cod_input_aliases(normalized, payload, sport_alias_resolved)
+        normalizer_used = "call_of_duty_input_normalizer"
 
     after_market = market or payload.get("market") or normalized.get("market")
     after_missing = _missing_inputs_for_sport(sport_alias_resolved, after_market, normalized, payload)
