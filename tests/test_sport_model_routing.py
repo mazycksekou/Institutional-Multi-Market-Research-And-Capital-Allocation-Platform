@@ -137,6 +137,13 @@ class TestSportModelRouting(unittest.TestCase):
             "dpc": "dota2",
             "the_international": "dota2",
             "ti": "dota2",
+            "call_of_duty": "call_of_duty",
+            "cod": "call_of_duty",
+            "cdl": "call_of_duty",
+            "esports_cod": "call_of_duty",
+            "cod_league": "call_of_duty",
+            "callofduty": "call_of_duty",
+            "call_of_duty_league": "call_of_duty",
         }
         for alias, sport_key in expected.items():
             self.assertEqual(registry.normalize_sport_key(alias), sport_key)
@@ -147,7 +154,7 @@ class TestSportModelRouting(unittest.TestCase):
         self.assertEqual(registry.get_sport_model_config("mlb")["sport"], "baseball_mlb")
 
     def test_primary_model_type_constraints(self):
-        for sport in ["basketball_nba", "basketball_wnba", "basketball_ncaab", "basketball_ncaawb", "americanfootball_nfl", "americanfootball_ncaaf", "mma_mixed_martial_arts", "boxing", "golf", "formula1", "nascar", "indycar", "motogp", "cricket", "cs2", "valorant", "league_of_legends", "dota2", "esports"]:
+        for sport in ["basketball_nba", "basketball_wnba", "basketball_ncaab", "basketball_ncaawb", "americanfootball_nfl", "americanfootball_ncaaf", "mma_mixed_martial_arts", "boxing", "golf", "formula1", "nascar", "indycar", "motogp", "cricket", "cs2", "valorant", "league_of_legends", "dota2", "call_of_duty", "esports"]:
             self.assertNotEqual(registry.get_sport_model_config(sport)["primary_model_type"], "poisson")
         self.assertIn("Negative Binomial", registry.get_sport_model_config("baseball_mlb")["model_family"])
         self.assertIn("Poisson", registry.get_sport_model_config("soccer")["model_family"])
@@ -175,6 +182,7 @@ class TestSportModelRouting(unittest.TestCase):
         self.assertEqual(registry.get_sport_model_config("valorant")["model_family"], "valorant_agent_composition_economy_map_pool_monte_carlo_model")
         self.assertEqual(registry.get_sport_model_config("league_of_legends")["model_family"], "league_of_legends_draft_objective_gold_monte_carlo_model")
         self.assertEqual(registry.get_sport_model_config("dota2")["model_family"], "dota2_draft_lane_objective_roshan_monte_carlo_model")
+        self.assertEqual(registry.get_sport_model_config("call_of_duty")["model_family"], "call_of_duty_map_mode_rotation_respawn_snd_monte_carlo_model")
         self.assertIn("game title routing placeholder", registry.get_sport_model_config("esports")["model_components"])
 
     def test_every_sport_uses_shared_officials_module_with_specific_type(self):
@@ -252,6 +260,7 @@ class TestSportModelRouting(unittest.TestCase):
             "valorant": {"tournament_admin": "Admin A", "map_admin": "Map Admin", "server_admin": "Server Admin"},
             "league_of_legends": {"tournament_admin": "Admin A", "side_selection_admin": "Side Admin", "server_admin": "Server Admin"},
             "dota2": {"tournament_admin": "Admin A", "server_admin": "Server Admin"},
+            "call_of_duty": {"tournament_admin": "Admin A", "server_admin": "Server Admin", "map_mode_admin": "Admin B"},
             "esports": {"tournament_admin": "Admin A", "map_admin": "Map Admin", "server_admin": "Server Admin"},
         }
         for sport, official_inputs in samples.items():

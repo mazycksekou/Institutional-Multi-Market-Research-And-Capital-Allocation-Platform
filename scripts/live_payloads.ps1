@@ -487,6 +487,35 @@ function New-Dota2Payload {
     return $payload
 }
 
+function New-CoDPayload {
+    $stats = @{
+        team_name = "Atlanta FaZe"; opponent_name = "OpTic Texas"; pick = "Atlanta FaZe"
+        format = "bo5"; maps = 5; map = "Rio"; mode = "hardpoint"; rotation = "HP-SND-Control-HP-SND"
+        team_rank = 1; opp_rank = 4; team_elo_rating = 1880; opp_elo_rating = 1815
+        team_win_pct = 0.69; opp_win_pct = 0.59; team_map_pct = 0.65; opp_map_pct = 0.56
+        team_hp_pct = 0.68; opp_hp_pct = 0.58; team_snd_pct = 0.62; opp_snd_pct = 0.54
+        team_control_pct = 0.64; opp_control_pct = 0.55; team_respawn = 89; opp_respawn = 82
+        team_snd = 86; opp_snd = 80; team_control = 87; opp_control = 81
+        team_slaying = 90; opp_slaying = 84; team_objective = 88; opp_objective = 82
+        team_breaking = 87; opp_breaking = 80; team_hold = 89; opp_hold = 83
+        team_rotation = 90; opp_rotation = 82; team_first_blood_pct = 0.56; opp_first_blood_pct = 0.50
+        team_clutch_pct = 0.55; opp_clutch_pct = 0.49; team_trade_pct = 0.63; opp_trade_pct = 0.57
+        team_kd = 1.10; opp_kd = 1.02; team_damage_round = 485; opp_damage_round = 455
+        team_map_depth = 7; opp_map_depth = 6; team_pick_pct = 0.36; opp_pick_pct = 0.30
+        team_ban_pct = 0.12; opp_ban_pct = 0.17; lan = $true; online = $false
+        tier = "major"; playoff = $true; elimination = $false; region = "NA"
+        rest = 4; travel = 0.15; roster_stability_score = 0.92; substitute = 0.02
+        availability_risk = 0.03; form = 86; opp_form = 79; market_move = 0.0
+        public_pct = 54; sharp_pct = 58
+        player_name = "Simp"; role = "SMG"; kills_proj = 24.5; assists_proj = 7.5
+        deaths_proj = 20.5; kda_proj = 1.55; damage_proj = 3150; objective_time_proj = 72
+        first_bloods_proj = 3.1; maps_proj = 4.2; prop_line = 23.5; book_count = 8
+    }
+    $payload = New-LiveTicketBase -Sport "cod" -League "CDL" -Event "Atlanta FaZe vs OpTic Texas" -Market "match_winner" -Selection "Atlanta FaZe" -InputStats $stats
+    $payload.visible_markets = @("match_winner", "hardpoint_winner", "player_kills")
+    return $payload
+}
+
 function New-LiveActivePayload {
     param([Parameter(Mandatory = $true)] [string] $Sport)
     switch ($Sport.ToLower()) {
@@ -540,6 +569,13 @@ function New-LiveActivePayload {
         "dpc" { return New-Dota2Payload }
         "the_international" { return New-Dota2Payload }
         "ti" { return New-Dota2Payload }
+        "call_of_duty" { return New-CoDPayload }
+        "cod" { return New-CoDPayload }
+        "cdl" { return New-CoDPayload }
+        "esports_cod" { return New-CoDPayload }
+        "cod_league" { return New-CoDPayload }
+        "callofduty" { return New-CoDPayload }
+        "call_of_duty_league" { return New-CoDPayload }
         default { throw "No live active payload builder registered for sport '$Sport'." }
     }
 }

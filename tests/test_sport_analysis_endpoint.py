@@ -504,6 +504,13 @@ class TestSportAnalysisEndpoint(unittest.TestCase):
                 "dpc": "dota2",
                 "the_international": "dota2",
                 "ti": "dota2",
+                "call_of_duty": "call_of_duty",
+                "cod": "call_of_duty",
+                "cdl": "call_of_duty",
+                "esports_cod": "call_of_duty",
+                "cod_league": "call_of_duty",
+                "callofduty": "call_of_duty",
+                "call_of_duty_league": "call_of_duty",
             }
             for submitted, expected in cases.items():
                 response = client.post(
