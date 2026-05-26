@@ -112,7 +112,12 @@ class TestSportModelRouting(unittest.TestCase):
             "csgo": "cs2",
             "counterstrike": "cs2",
             "esports_cs2": "cs2",
-            "valorant": "esports",
+            "valorant": "valorant",
+            "val": "valorant",
+            "riot_valorant": "valorant",
+            "esports_valorant": "valorant",
+            "vct": "valorant",
+            "valorant_champions_tour": "valorant",
             "lol": "esports",
         }
         for alias, sport_key in expected.items():
@@ -124,7 +129,7 @@ class TestSportModelRouting(unittest.TestCase):
         self.assertEqual(registry.get_sport_model_config("mlb")["sport"], "baseball_mlb")
 
     def test_primary_model_type_constraints(self):
-        for sport in ["basketball_nba", "basketball_wnba", "basketball_ncaab", "basketball_ncaawb", "americanfootball_nfl", "americanfootball_ncaaf", "mma_mixed_martial_arts", "boxing", "golf", "formula1", "nascar", "indycar", "motogp", "cricket", "cs2", "esports"]:
+        for sport in ["basketball_nba", "basketball_wnba", "basketball_ncaab", "basketball_ncaawb", "americanfootball_nfl", "americanfootball_ncaaf", "mma_mixed_martial_arts", "boxing", "golf", "formula1", "nascar", "indycar", "motogp", "cricket", "cs2", "valorant", "esports"]:
             self.assertNotEqual(registry.get_sport_model_config(sport)["primary_model_type"], "poisson")
         self.assertIn("Negative Binomial", registry.get_sport_model_config("baseball_mlb")["model_family"])
         self.assertIn("Poisson", registry.get_sport_model_config("soccer")["model_family"])
@@ -149,6 +154,7 @@ class TestSportModelRouting(unittest.TestCase):
         self.assertEqual(registry.get_sport_model_config("motogp")["model_family"], "motogp_rider_bike_tire_weather_monte_carlo_model")
         self.assertEqual(registry.get_sport_model_config("cricket")["model_family"], "cricket_run_rate_wicket_resource_monte_carlo_model")
         self.assertEqual(registry.get_sport_model_config("cs2")["model_family"], "cs2_round_economy_map_pool_monte_carlo_model")
+        self.assertEqual(registry.get_sport_model_config("valorant")["model_family"], "valorant_agent_composition_economy_map_pool_monte_carlo_model")
         self.assertIn("game title routing placeholder", registry.get_sport_model_config("esports")["model_components"])
 
     def test_every_sport_uses_shared_officials_module_with_specific_type(self):
@@ -223,6 +229,7 @@ class TestSportModelRouting(unittest.TestCase):
             "motogp": {"race_direction": "Race Direction", "stewards": "Panel A", "penalty_tendency": 0.6},
             "cricket": {"on_field_umpires": "Ump A/Ump B", "third_umpire": "Ump C"},
             "cs2": {"tournament_admin": "Admin A", "map_admin": "Map Admin", "server_admin": "Server Admin"},
+            "valorant": {"tournament_admin": "Admin A", "map_admin": "Map Admin", "server_admin": "Server Admin"},
             "esports": {"tournament_admin": "Admin A", "map_admin": "Map Admin", "server_admin": "Server Admin"},
         }
         for sport, official_inputs in samples.items():

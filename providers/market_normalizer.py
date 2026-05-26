@@ -17,8 +17,19 @@ SPORT_ALIASES = {
     "ufc": "mixed_martial_arts",
     "mma": "mixed_martial_arts",
     "boxing": "boxing",
-    "valorant": "esports",
-    "csgo": "esports",
+    "valorant": "valorant",
+    "val": "valorant",
+    "riot_valorant": "valorant",
+    "esports_valorant": "valorant",
+    "vct": "valorant",
+    "valorant_champions_tour": "valorant",
+    "csgo": "cs2",
+    "cs2": "cs2",
+    "counter_strike_2": "cs2",
+    "counterstrike2": "cs2",
+    "counter_strike": "cs2",
+    "counterstrike": "cs2",
+    "esports_cs2": "cs2",
     "lol": "esports",
 }
 
@@ -73,4 +84,3 @@ def normalize_ticket_fields(payload: dict[str, Any]) -> dict[str, Any]:
     ticket["league"] = normalize_sport(ticket.get("league"), ticket.get("sport")) or ticket.get("league")
     ticket["market"] = normalize_market(ticket.get("market"))
     return ticket
-

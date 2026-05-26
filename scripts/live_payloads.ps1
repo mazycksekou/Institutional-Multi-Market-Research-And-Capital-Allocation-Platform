@@ -393,6 +393,36 @@ function New-CS2Payload {
     return $payload
 }
 
+function New-ValorantPayload {
+    $stats = @{
+        team_name = "Sentinels"; opponent_name = "Fnatic"; pick = "Sentinels"; map = "Ascent"; format = "bo3"; maps = 3
+        team_rank = 3; opp_rank = 7; team_elo_rating = 1860; opp_elo_rating = 1795
+        team_win_pct = 0.67; opp_win_pct = 0.57; team_round_win_pct = 0.56; opp_round_win_pct = 0.51
+        team_attack_pct = 0.55; opp_attack_pct = 0.50; team_defense_pct = 0.57; opp_defense_pct = 0.52
+        team_pistol_pct = 0.58; opp_pistol_pct = 0.51; team_bonus_pct = 0.47; opp_bonus_pct = 0.40
+        team_eco_pct = 0.19; opp_eco_pct = 0.15; team_anti_eco_pct = 0.83; opp_anti_eco_pct = 0.77
+        team_clutch_pct = 0.56; opp_clutch_pct = 0.50; team_first_blood_pct = 0.54; opp_first_blood_pct = 0.49
+        team_trade_pct = 0.64; opp_trade_pct = 0.58; team_post_plant_pct = 0.61; opp_post_plant_pct = 0.55
+        team_retake_pct = 0.48; opp_retake_pct = 0.43; team_acs_value = 226; opp_acs_value = 213
+        team_adr_value = 151; opp_adr_value = 142; team_kast_pct = 76.5; opp_kast_pct = 72.5
+        team_vlr_rating = 1.12; opp_vlr_rating = 1.04; team_util_value = 82; opp_util_value = 75
+        team_agent_comp = 88; opp_agent_comp = 80; duelist = 90; initiator = 87; controller = 86; sentinel = 84
+        team_map_pct = 0.65; opp_map_pct = 0.55; team_pick_pct = 0.35; opp_pick_pct = 0.28
+        team_ban_pct = 0.10; opp_ban_pct = 0.17; attack_bias = 0.51; defense_bias = 0.49
+        team_map_depth = 6; opp_map_depth = 5; lan = $true; online = $false; tier = "VCT"; playoff = $true
+        elimination = $false; region = "NA"; rest = 4; travel = 0.18; roster_stability_score = 0.91
+        substitute = 0.02; availability_risk = 0.03; form = 84; opp_form = 77; market_move = 0.0
+        public_pct = 53; sharp_pct = 57
+        player_name = "zekken"; role = "Duelist"; agent_pool = 88; player_rating = 1.16; kills_proj = 19.5
+        assists_proj = 6.5; deaths_proj = 16.5; kda_proj = 1.45; acs_proj = 236; adr_proj = 154
+        first_bloods_proj = 3.1; headshots_proj = 7.0; clutches_proj = 0.5; maps_proj = 2.4
+        prop_line = 18.5; book_count = 8
+    }
+    $payload = New-LiveTicketBase -Sport "valorant" -League "VCT" -Event "Sentinels vs Fnatic" -Market "match_winner" -Selection "Sentinels" -InputStats $stats
+    $payload.visible_markets = @("match_winner", "map_winner", "player_kills")
+    return $payload
+}
+
 function New-LiveActivePayload {
     param([Parameter(Mandatory = $true)] [string] $Sport)
     switch ($Sport.ToLower()) {
@@ -421,6 +451,12 @@ function New-LiveActivePayload {
         "cs2" { return New-CS2Payload }
         "counter_strike_2" { return New-CS2Payload }
         "csgo" { return New-CS2Payload }
+        "valorant" { return New-ValorantPayload }
+        "val" { return New-ValorantPayload }
+        "riot_valorant" { return New-ValorantPayload }
+        "esports_valorant" { return New-ValorantPayload }
+        "vct" { return New-ValorantPayload }
+        "valorant_champions_tour" { return New-ValorantPayload }
         default { throw "No live active payload builder registered for sport '$Sport'." }
     }
 }

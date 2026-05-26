@@ -479,6 +479,12 @@ class TestSportAnalysisEndpoint(unittest.TestCase):
                 "csgo": "cs2",
                 "counterstrike": "cs2",
                 "esports_cs2": "cs2",
+                "valorant": "valorant",
+                "val": "valorant",
+                "riot_valorant": "valorant",
+                "esports_valorant": "valorant",
+                "vct": "valorant",
+                "valorant_champions_tour": "valorant",
             }
             for submitted, expected in cases.items():
                 response = client.post(

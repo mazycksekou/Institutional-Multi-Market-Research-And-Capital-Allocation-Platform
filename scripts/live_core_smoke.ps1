@@ -14,7 +14,8 @@ $children = @(
     "live_indycar_smoke.ps1",
     "live_motogp_smoke.ps1",
     "live_cricket_smoke.ps1",
-    "live_cs2_smoke.ps1"
+    "live_cs2_smoke.ps1",
+    "live_valorant_smoke.ps1"
 )
 foreach ($child in $children) {
     Write-Host "Running $child"
