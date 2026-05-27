@@ -54,6 +54,16 @@ class TestSportModelRouting(unittest.TestCase):
             "nhl": "icehockey_nhl",
             "epl": "soccer",
             "ucl": "soccer",
+            "rugby": "rugby",
+            "rugby_union": "rugby",
+            "rugby_league": "rugby",
+            "nrl": "rugby",
+            "super_rugby": "rugby",
+            "six_nations": "rugby",
+            "premiership_rugby": "rugby",
+            "united_rugby_championship": "rugby",
+            "rugby_world_cup": "rugby",
+            "top_14": "rugby",
             "ufc": "mma_mixed_martial_arts",
             "mma": "mma_mixed_martial_arts",
             "mixed_martial_arts": "mma_mixed_martial_arts",
@@ -171,7 +181,7 @@ class TestSportModelRouting(unittest.TestCase):
         self.assertEqual(registry.get_sport_model_config("mlb")["sport"], "baseball_mlb")
 
     def test_primary_model_type_constraints(self):
-        for sport in ["basketball_nba", "basketball_wnba", "basketball_ncaab", "basketball_ncaawb", "americanfootball_nfl", "americanfootball_ncaaf", "mma_mixed_martial_arts", "boxing", "golf", "formula1", "formula_e", "nascar", "indycar", "motogp", "cricket", "cs2", "valorant", "league_of_legends", "dota2", "call_of_duty", "overwatch", "esports"]:
+        for sport in ["basketball_nba", "basketball_wnba", "basketball_ncaab", "basketball_ncaawb", "americanfootball_nfl", "americanfootball_ncaaf", "rugby", "mma_mixed_martial_arts", "boxing", "golf", "formula1", "formula_e", "nascar", "indycar", "motogp", "cricket", "cs2", "valorant", "league_of_legends", "dota2", "call_of_duty", "overwatch", "esports"]:
             self.assertNotEqual(registry.get_sport_model_config(sport)["primary_model_type"], "poisson")
         self.assertIn("Negative Binomial", registry.get_sport_model_config("baseball_mlb")["model_family"])
         self.assertIn("Poisson", registry.get_sport_model_config("soccer")["model_family"])
@@ -190,6 +200,7 @@ class TestSportModelRouting(unittest.TestCase):
         self.assertEqual(registry.get_sport_model_config("basketball_ncaab")["model_family"], "mens_college_basketball_possession_variance_model")
         self.assertEqual(registry.get_sport_model_config("basketball_ncaawb")["model_family"], "womens_college_basketball_possession_variance_model")
         self.assertEqual(registry.get_sport_model_config("americanfootball_ncaaf")["model_family"], "college_football_epa_drive_rating_monte_carlo_model")
+        self.assertEqual(registry.get_sport_model_config("rugby")["model_family"], "rugby_set_piece_territory_expected_points_monte_carlo_model")
         self.assertEqual(registry.get_sport_model_config("formula1")["model_family"], "f1_qualifying_race_pace_pit_strategy_monte_carlo_model")
         self.assertEqual(registry.get_sport_model_config("formula_e")["model_family"], "formula_e_energy_management_attack_mode_street_circuit_monte_carlo_model")
         self.assertEqual(registry.get_sport_model_config("nascar")["model_family"], "nascar_track_position_speed_rating_pit_variance_monte_carlo_model")
@@ -266,6 +277,7 @@ class TestSportModelRouting(unittest.TestCase):
             "baseball_mlb": {"umpire_assignment": "Ump A", "umpire_run_environment": 0.4},
             "icehockey_nhl": {"referees": "Ref A/Ref B", "linesmen": "Line A/Line B", "penalty_rate": 1.2},
             "soccer": {"referee": "Ref A", "penalty_awarded_rate": 0.7},
+            "rugby": {"referee": "Ref A", "TMO": "TMO A", "referee_penalty_rate": 20.5},
             "mma_mixed_martial_arts": {"referee": "Ref A", "judge_panel": "Panel A", "decision_scoring_profile": 0.5},
             "boxing": {"referee": "Ref A", "judge_panel": "Panel A", "decision_scoring_profile": 0.5},
             "tennis": {"chair_umpire": "Chair A", "time_violation_tendency": 0.2},
@@ -405,7 +417,7 @@ class TestSportModelRouting(unittest.TestCase):
         self.assertEqual(response["full_board_preview"]["no_bets"], [])
 
     def test_unsupported_sport_returns_safe_no_bet_response(self):
-        response = registry.analyze_sport_model({"sport": "rugby_union", "market": "moneyline"})
+        response = registry.analyze_sport_model({"sport": "lacrosse", "market": "moneyline"})
         self.assertFalse(response["ok"])
         self.assertEqual(response["confirmed_bets"], [])
         self.assertIn("unsupported sport", response["no_bet_flags"])

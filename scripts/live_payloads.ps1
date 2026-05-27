@@ -101,6 +101,34 @@ function New-SoccerPayload {
     return New-LiveTicketBase -Sport "soccer" -League "EPL" -Event "Arsenal vs Chelsea" -Market "three_way_moneyline" -Selection "Arsenal" -InputStats $stats
 }
 
+function New-RugbyPayload {
+    $stats = @{
+        team_name = "Ireland"; opponent_name = "France"; pick = "Ireland"; variant = "rugby_union"; competition_name = "Six Nations"; home = "home"; neutral = $false
+        team_power_rating = 91; opp_power_rating = 87; team_elo_rating = 1840; opp_elo_rating = 1785; team_win_pct = 0.74; opp_win_pct = 0.64
+        team_form = 88; opp_form = 82; team_pf = 31.4; opp_pf = 28.2; team_pa = 18.6; opp_pa = 21.4
+        team_xp_for = 30.8; opp_xp_for = 27.7; team_xp_against = 19.2; opp_xp_against = 22.0
+        team_tries = 4.1; opp_tries = 3.6; team_tries_allowed = 2.1; opp_tries_allowed = 2.6
+        team_kicking_pct = 0.83; opp_kicking_pct = 0.78; team_set_piece = 90; opp_set_piece = 84
+        team_scrum = 88; opp_scrum = 83; team_lineout = 91; opp_lineout = 85; team_ruck = 89; opp_ruck = 84
+        team_breakdown = 90; opp_breakdown = 85; team_maul = 87; opp_maul = 82; team_territory = 89; opp_territory = 84
+        team_possession = 87; opp_possession = 83; team_kicking_game = 88; opp_kicking_game = 84
+        team_discipline = 86; opp_discipline = 80; team_penalties = 8.2; opp_penalties = 10.4
+        team_yellow_cards = 0.18; opp_yellow_cards = 0.32; team_red_cards = 0.02; opp_red_cards = 0.05
+        team_tackle_pct = 0.89; opp_tackle_pct = 0.85; team_missed_tackles = 13.2; opp_missed_tackles = 16.8
+        team_line_breaks = 6.1; opp_line_breaks = 5.0; team_offloads = 8.5; opp_offloads = 7.2
+        team_gainline = 0.58; opp_gainline = 0.52; team_turnovers = 10.8; opp_turnovers = 12.5
+        team_forced_turnovers = 7.8; opp_forced_turnovers = 6.5; team_goal_line_defense = 88; opp_goal_line_defense = 83
+        team_availability = 0.93; opp_availability = 0.88; key_available = 0.95; opp_key_available = 0.89
+        rest = 7; opp_rest = 6; travel = 0.08; opp_travel = 0.14; weather_risk = 0.15; rain_pct = 0.12
+        wind_kph = 16; temp_c = 12; pitch = "good"; ref_penalty_rate = 19.5; ref_card_rate = 0.42
+        market_move = 0.0; public_pct = 54; sharp_pct = 58
+        player_name = "James Lowe"; position = "wing"; minutes_proj = 78; try_proj = 0.46; points_proj = 5.2
+        tackles_proj = 8.5; kicking_points_proj = 0.0; goal_kicking_pct = 0.0; anytime_try_prob = 0.48; first_try_prob = 0.12
+        prop_line = 0.5; book_count = 8; current_odds = 100
+    }
+    return New-LiveTicketBase -Sport "rugby_union" -League "Six Nations" -Event "Ireland vs France" -Market "match_winner" -Selection "Ireland" -InputStats $stats
+}
+
 function New-NhlPayload {
     $stats = @{
         team = "Rangers"; opponent = "Bruins"; selection = "Rangers"; game = "Bruins at Rangers"; home_away = "home"
@@ -582,6 +610,16 @@ function New-LiveActivePayload {
         "nfl" { return New-NflPayload }
         "mlb" { return New-MlbPayload }
         "soccer" { return New-SoccerPayload }
+        "rugby" { return New-RugbyPayload }
+        "rugby_union" { return New-RugbyPayload }
+        "rugby_league" { return New-RugbyPayload }
+        "nrl" { return New-RugbyPayload }
+        "super_rugby" { return New-RugbyPayload }
+        "six_nations" { return New-RugbyPayload }
+        "premiership_rugby" { return New-RugbyPayload }
+        "united_rugby_championship" { return New-RugbyPayload }
+        "rugby_world_cup" { return New-RugbyPayload }
+        "top_14" { return New-RugbyPayload }
         "nhl" { return New-NhlPayload }
         "tennis" { return New-TennisPayload }
         "combat" { return New-CombatPayload }
