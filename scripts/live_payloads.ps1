@@ -272,6 +272,33 @@ function New-F1Payload {
     return $payload
 }
 
+function New-FormulaEPayload {
+    $stats = @{
+        driver_name = "Jake Dennis"; team_name = "Andretti"; opponent_name = "Pascal Wehrlein"; opponent_team_name = "Porsche"
+        track = "Monaco E-Prix Circuit"; track_type = "street"; street = $true; race_no = 8
+        qualy_pos = 3; grid_pos = 3; driver_power_rating = 91; opp_driver_rating = 88
+        team_power_rating = 89; opp_team_power_rating = 87; form = 88; opp_form = 84
+        points = 112; opp_points = 104; champ_pos = 2; opp_champ_pos = 4
+        qualy_pace = 90; opp_qualy_pace = 87; race_pace = 91; opp_race_pace = 86
+        energy_rating = 93; opp_energy_rating = 87; attack_eff = 0.86; opp_attack_eff = 0.80
+        regen = 0.91; opp_regen = 0.85; efficiency = 92; opp_efficiency = 86
+        street_rating = 90; opp_street_rating = 85; overtaking = 86; opp_overtaking = 82
+        defense = 88; opp_defense = 84; tire_mgmt = 86; opp_tire_mgmt = 83
+        racecraft = 90; opp_racecraft = 86; qualy_h2h = 0.58; race_h2h = 0.61
+        reliability = 0.94; opp_reliability = 0.90; dnf_risk = 0.05; opp_dnf_risk = 0.08
+        penalty = 0.04; opp_penalty = 0.07; incident = 0.06; opp_incident = 0.09
+        sc_probability = 0.58; fcy_probability = 0.36; weather_risk = 0.12; rain_pct = 0.08
+        track_temp = 31; air_temp = 23; humidity_pct = 55; wind_kph = 12
+        practice_rank = 4; opp_practice_rank = 8; qualy_delta = -0.04; race_delta = -0.08
+        grid_penalty = 0; opp_grid_penalty = 0; attack_count = 2; attack_loss = 1.7
+        pit_boost = $true; battery_temp_risk = 0.10; efficiency_window = 91
+        market_move = 0.0; public_pct = 53; sharp_pct = 57; book_count = 8
+    }
+    $payload = New-LiveTicketBase -Sport "formula_e" -League "Formula E" -Event "Monaco E-Prix" -Market "race_head_to_head" -Selection "Jake Dennis" -InputStats $stats
+    $payload.visible_markets = @("race_head_to_head", "podium_finish", "race_winner")
+    return $payload
+}
+
 function New-NascarPayload {
     $stats = @{
         race = "Daytona 500"; track_name = "Daytona International Speedway"; driver_name = "Kyle Larson"; team_name = "Hendrick Motorsports"
@@ -566,6 +593,13 @@ function New-LiveActivePayload {
         "ncaaf" { return New-NcaafPayload }
         "f1" { return New-F1Payload }
         "formula1" { return New-F1Payload }
+        "formula_e" { return New-FormulaEPayload }
+        "formulae" { return New-FormulaEPayload }
+        "fe" { return New-FormulaEPayload }
+        "fia_formula_e" { return New-FormulaEPayload }
+        "abb_formula_e" { return New-FormulaEPayload }
+        "electric_racing" { return New-FormulaEPayload }
+        "motorsport_formula_e" { return New-FormulaEPayload }
         "nascar" { return New-NascarPayload }
         "nascar_cup" { return New-NascarPayload }
         "indycar" { return New-IndyCarPayload }
