@@ -180,6 +180,27 @@ function New-TableTennisPayload {
     return $payload
 }
 
+function New-VolleyballPayload {
+    $stats = @{
+        team_name = "Nebraska"; opponent_name = "Wisconsin"; pick = "Nebraska"; competition_name = "NCAA"; format = "best_of_5"; sets = 5
+        court = "indoor"; gender = "womens"; home = "home"; neutral = $false
+        team_power_rating = 91; opp_power_rating = 86; team_elo_rating = 1885; opp_elo_rating = 1810; team_win_pct = 0.78; opp_win_pct = 0.66; team_form = 89; opp_form = 82
+        team_attack = 90; opp_attack = 85; team_kill_pct = 0.42; opp_kill_pct = 0.38; team_hit_pct = 0.298; opp_hit_pct = 0.247; team_sideout_pct = 0.65; opp_sideout_pct = 0.59
+        team_transition_attack = 88; opp_transition_attack = 82; team_error_pct = 0.16; opp_error_pct = 0.20
+        team_serve = 87; opp_serve = 82; team_ace_pct = 0.082; opp_ace_pct = 0.064; team_service_error_pct = 0.11; opp_service_error_pct = 0.13
+        team_receive = 88; opp_receive = 82; team_pass = 89; opp_pass = 83; team_first_contact = 88; opp_first_contact = 82
+        team_block = 86; opp_block = 80; team_block_pct = 0.14; opp_block_pct = 0.11; team_digs = 16.5; opp_digs = 14.2; team_defense = 88; opp_defense = 82; team_floor_defense = 87; opp_floor_defense = 81
+        team_set_win_pct = 0.68; opp_set_win_pct = 0.57; team_deciding_set_pct = 0.62; opp_deciding_set_pct = 0.51; team_clutch = 88; opp_clutch = 81; team_momentum = 87; opp_momentum = 80
+        team_availability = 0.94; opp_availability = 0.88; key_available = 0.96; opp_key_available = 0.90; rest = 4; opp_rest = 3; travel = 0.06; opp_travel = 0.14; altitude = 0.12; venue = 0.65
+        market_move = 0.0; public_pct = 54; sharp_pct = 58
+        player_name = "Merritt Beason"; position = "outside"; sets_proj = 4.2; kills_proj = 17.5; aces_proj = 1.4; blocks_proj = 2.6; digs_proj = 9.5; assists_proj = 0.8; points_proj = 21.5; prop_line = 16.5
+        book_count = 8; current_odds = 100
+    }
+    $payload = New-LiveTicketBase -Sport "vnl" -League "NCAA" -Event "Nebraska vs Wisconsin" -Market "match_winner" -Selection "Nebraska" -InputStats $stats
+    $payload.visible_markets = @("match_winner", "set_handicap", "player_kills")
+    return $payload
+}
+
 function New-AFLPayload {
     $stats = @{
         team_name = "Collingwood"; opponent_name = "Carlton"; pick = "Collingwood"; competition_name = "AFL"; venue_name = "MCG"; home = "home"; neutral = $false
@@ -707,6 +728,16 @@ function New-LiveActivePayload {
         "wtt" { return New-TableTennisPayload }
         "world_table_tennis" { return New-TableTennisPayload }
         "olympic_table_tennis" { return New-TableTennisPayload }
+        "volleyball" { return New-VolleyballPayload }
+        "indoor_volleyball" { return New-VolleyballPayload }
+        "beach_volleyball" { return New-VolleyballPayload }
+        "ncaa_volleyball" { return New-VolleyballPayload }
+        "mens_volleyball" { return New-VolleyballPayload }
+        "womens_volleyball" { return New-VolleyballPayload }
+        "fivb" { return New-VolleyballPayload }
+        "vnl" { return New-VolleyballPayload }
+        "avp" { return New-VolleyballPayload }
+        "olympic_volleyball" { return New-VolleyballPayload }
         "lax" { return New-LacrossePayload }
         "mens_lacrosse" { return New-LacrossePayload }
         "womens_lacrosse" { return New-LacrossePayload }
