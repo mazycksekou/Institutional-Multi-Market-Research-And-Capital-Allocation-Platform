@@ -18,7 +18,8 @@ $children = @(
     "live_valorant_smoke.ps1",
     "live_lol_smoke.ps1",
     "live_dota2_smoke.ps1",
-    "live_cod_smoke.ps1"
+    "live_cod_smoke.ps1",
+    "live_overwatch_smoke.ps1"
 )
 foreach ($child in $children) {
     Write-Host "Running $child"

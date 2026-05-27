@@ -29,14 +29,15 @@ EXPECTED_SPORT_KEYS = [
     "league_of_legends",
     "dota2",
     "call_of_duty",
+    "overwatch",
     "esports",
 ]
 
 
 class TestMultiSportModelRegistry(unittest.TestCase):
-    def test_all_24_sports_are_present(self):
+    def test_all_25_sports_are_present(self):
         sports = registry.get_sports_model_registry_response()["sports"]
-        self.assertEqual(len(sports), 24)
+        self.assertEqual(len(sports), 25)
         self.assertEqual([sport["sport_key"] for sport in sports], EXPECTED_SPORT_KEYS)
 
     def test_mlb_is_projection_ready(self):
@@ -47,7 +48,7 @@ class TestMultiSportModelRegistry(unittest.TestCase):
     def test_only_activated_sports_allow_confirmed_bets(self):
         sports = registry.get_sports_model_registry_response()["sports"]
         enabled = [sport["sport_key"] for sport in sports if sport["confirmed_bets_allowed"]]
-        self.assertEqual(enabled, ["baseball_mlb", "basketball_nba", "basketball_wnba", "basketball_ncaab", "basketball_ncaawb", "americanfootball_nfl", "americanfootball_ncaaf", "soccer", "icehockey_nhl", "tennis", "mma_mixed_martial_arts", "boxing", "golf", "formula1", "nascar", "indycar", "motogp", "cricket", "cs2", "valorant", "league_of_legends", "dota2", "call_of_duty"])
+        self.assertEqual(enabled, ["baseball_mlb", "basketball_nba", "basketball_wnba", "basketball_ncaab", "basketball_ncaawb", "americanfootball_nfl", "americanfootball_ncaaf", "soccer", "icehockey_nhl", "tennis", "mma_mixed_martial_arts", "boxing", "golf", "formula1", "nascar", "indycar", "motogp", "cricket", "cs2", "valorant", "league_of_legends", "dota2", "call_of_duty", "overwatch"])
         self.assertTrue(registry.confirmed_bets_allowed("baseball_mlb"))
         self.assertTrue(registry.confirmed_bets_allowed("basketball_nba"))
         self.assertTrue(registry.confirmed_bets_allowed("basketball_wnba"))
@@ -71,10 +72,11 @@ class TestMultiSportModelRegistry(unittest.TestCase):
         self.assertTrue(registry.confirmed_bets_allowed("league_of_legends"))
         self.assertTrue(registry.confirmed_bets_allowed("dota2"))
         self.assertTrue(registry.confirmed_bets_allowed("call_of_duty"))
+        self.assertTrue(registry.confirmed_bets_allowed("overwatch"))
         self.assertTrue(all(
             not registry.confirmed_bets_allowed(sport["sport_key"])
             for sport in sports
-            if sport["sport_key"] not in {"baseball_mlb", "basketball_nba", "basketball_wnba", "basketball_ncaab", "basketball_ncaawb", "americanfootball_nfl", "americanfootball_ncaaf", "soccer", "icehockey_nhl", "tennis", "mma_mixed_martial_arts", "boxing", "golf", "formula1", "nascar", "indycar", "motogp", "cricket", "cs2", "valorant", "league_of_legends", "dota2", "call_of_duty"}
+            if sport["sport_key"] not in {"baseball_mlb", "basketball_nba", "basketball_wnba", "basketball_ncaab", "basketball_ncaawb", "americanfootball_nfl", "americanfootball_ncaaf", "soccer", "icehockey_nhl", "tennis", "mma_mixed_martial_arts", "boxing", "golf", "formula1", "nascar", "indycar", "motogp", "cricket", "cs2", "valorant", "league_of_legends", "dota2", "call_of_duty", "overwatch"}
         ))
 
     def test_unsupported_sport_helper_behavior_is_clean(self):
@@ -96,8 +98,8 @@ class TestMultiSportModelRegistry(unittest.TestCase):
         response = asyncio.run(action_get_sports_model_registry())
         self.assertTrue(response["ok"])
         self.assertEqual(response["endpoint"], "getSportsModelRegistry")
-        self.assertEqual(response["summary"]["total_sports"], 24)
-        self.assertEqual(response["summary"]["confirmed_bet_enabled_sports"], 23)
+        self.assertEqual(response["summary"]["total_sports"], 25)
+        self.assertEqual(response["summary"]["confirmed_bet_enabled_sports"], 24)
         self.assertEqual(response["summary"]["market_derived_only_sports"], 0)
         self.assertEqual(response["summary"]["not_built_sports"], 1)
         self.assertEqual(response["error"], None)
@@ -236,6 +238,19 @@ class TestMultiSportModelRegistry(unittest.TestCase):
         self.assertTrue(cod["input_normalizer"])
         self.assertIsInstance(cod["screenshot_alias_test_payload"], dict)
 
+    def test_overwatch_is_standalone_active_module(self):
+        overwatch = registry.get_sport_model_config("overwatch")
+        cod = registry.get_sport_model_config("call_of_duty")
+        esports = registry.get_sport_model_config("esports")
+        self.assertTrue(overwatch["confirmed_bets_allowed"])
+        self.assertEqual(overwatch["model_used"], "overwatch_hero_composition_map_mode_objective_monte_carlo_model")
+        self.assertEqual(overwatch["model_family"], "overwatch_hero_composition_map_mode_objective_monte_carlo_model")
+        self.assertEqual(overwatch["league_calibration_applied"], "overwatch")
+        self.assertNotEqual(overwatch["model_family"], cod["model_family"])
+        self.assertNotEqual(overwatch["model_family"], esports["model_family"])
+        self.assertTrue(overwatch["input_normalizer"])
+        self.assertIsInstance(overwatch["screenshot_alias_test_payload"], dict)
+
     def test_formula1_is_standalone_active_module(self):
         f1 = registry.get_sport_model_config("formula1")
         cricket = registry.get_sport_model_config("cricket")
@@ -310,6 +325,7 @@ class TestMultiSportModelRegistry(unittest.TestCase):
             "league_of_legends": ("tournament admin/side selection/rule enforcement", "weak"),
             "dota2": ("tournament admin/server/rule enforcement", "weak"),
             "call_of_duty": ("tournament admin/server/map-mode enforcement", "weak"),
+            "overwatch": ("tournament admin/server/map-mode enforcement", "weak"),
             "esports": ("tournament admin/map/server/rule enforcement", "weak"),
         }
         for sport_key, (official_type, edge_strength) in expected.items():

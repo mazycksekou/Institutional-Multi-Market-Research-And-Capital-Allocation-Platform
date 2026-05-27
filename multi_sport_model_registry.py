@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from copy import deepcopy
 from datetime import datetime, timezone
@@ -64,6 +64,7 @@ OFFICIAL_SPORT_KEYS = [
     "league_of_legends",
     "dota2",
     "call_of_duty",
+    "overwatch",
     "esports",
 ]
 
@@ -169,6 +170,15 @@ SPORT_ALIASES = {
     "cod_league": "call_of_duty",
     "callofduty": "call_of_duty",
     "call_of_duty_league": "call_of_duty",
+    "overwatch2": "overwatch",
+    "overwatch_2": "overwatch",
+    "ow": "overwatch",
+    "ow2": "overwatch",
+    "esports_overwatch": "overwatch",
+    "overwatch_league": "overwatch",
+    "owl": "overwatch",
+    "overwatch_champions_series": "overwatch",
+    "owcs": "overwatch",
     "formula_1": "formula1",
     "f1": "formula1",
     "fia_formula_1": "formula1",
@@ -1485,6 +1495,100 @@ COD_INPUT_CONTRACT = {
     "social_crowd_inputs": NFL_SOCIAL_CROWD_INPUTS,
 }
 
+OVERWATCH_MARKETS = [
+    "match_winner", "moneyline", "map_winner", "map_handicap", "total_maps", "correct_score",
+    "first_map_winner", "second_map_winner", "third_map_winner", "fourth_map_winner", "fifth_map_winner",
+    "team_total_maps", "objective_handicap", "control_map_winner", "escort_map_winner",
+    "hybrid_map_winner", "push_map_winner", "flashpoint_map_winner", "clash_map_winner",
+    "player_eliminations", "player_final_blows", "player_assists", "player_deaths",
+    "player_damage", "player_healing", "player_mitigation", "player_kda",
+    "alt_map_handicap", "alt_total_maps",
+]
+
+OVERWATCH_PROP_MARKETS = [
+    "player_eliminations", "player_final_blows", "player_assists", "player_deaths",
+    "player_damage", "player_healing", "player_mitigation", "player_kda",
+]
+
+OVERWATCH_REQUIRED_CORE_INPUTS = [
+    "team", "opponent", "market", "selection", "odds_american", "match_format", "best_of_maps",
+    "map_name", "game_mode", "map_rotation", "patch_version", "team_world_rank", "opponent_world_rank",
+    "team_elo", "opponent_elo", "team_recent_win_rate", "opponent_recent_win_rate",
+    "team_map_win_rate", "opponent_map_win_rate", "team_control_win_rate", "opponent_control_win_rate",
+    "team_escort_win_rate", "opponent_escort_win_rate", "team_hybrid_win_rate", "opponent_hybrid_win_rate",
+    "team_push_win_rate", "opponent_push_win_rate", "team_flashpoint_win_rate", "opponent_flashpoint_win_rate",
+    "team_clash_win_rate", "opponent_clash_win_rate", "team_fight_win_rate", "opponent_fight_win_rate",
+    "team_first_fight_win_rate", "opponent_first_fight_win_rate", "team_objective_control_rating",
+    "opponent_objective_control_rating", "team_ultimate_economy_rating", "opponent_ultimate_economy_rating",
+    "team_ultimate_conversion_rate", "opponent_ultimate_conversion_rate", "team_stagger_avoidance_rating",
+    "opponent_stagger_avoidance_rating", "team_composition_rating", "opponent_composition_rating",
+    "team_meta_fit_rating", "opponent_meta_fit_rating", "team_tank_rating", "opponent_tank_rating",
+    "team_dps_rating", "opponent_dps_rating", "team_support_rating", "opponent_support_rating",
+    "team_damage_per_10", "opponent_damage_per_10", "team_healing_per_10", "opponent_healing_per_10",
+    "team_eliminations_per_10", "opponent_eliminations_per_10", "team_deaths_per_10", "opponent_deaths_per_10",
+    "team_final_blow_rate", "opponent_final_blow_rate", "team_map_pool_depth", "opponent_map_pool_depth",
+    "team_map_pick_rate", "opponent_map_pick_rate", "team_map_ban_rate", "opponent_map_ban_rate",
+    "lan_event", "online_event", "tournament_tier", "playoff_match", "elimination_match",
+    "rest_days", "travel_fatigue", "roster_stability", "substitute_risk", "player_availability_risk",
+    "recent_form", "opponent_recent_form", "market_movement", "public_betting_percent", "sharp_money_percent",
+]
+
+OVERWATCH_NUMERIC_CORE_INPUTS = [
+    field for field in OVERWATCH_REQUIRED_CORE_INPUTS
+    if field not in {
+        "team", "opponent", "market", "selection", "match_format", "map_name", "game_mode",
+        "map_rotation", "patch_version", "lan_event", "online_event", "tournament_tier",
+        "playoff_match", "elimination_match",
+    }
+]
+
+OVERWATCH_PLAYER_PROP_INPUTS = [
+    "player", "player_role", "player_hero_pool_rating", "player_meta_fit_rating",
+    "player_eliminations_projection", "player_final_blows_projection", "player_assists_projection",
+    "player_deaths_projection", "player_damage_projection", "player_healing_projection",
+    "player_mitigation_projection", "player_kda_projection", "player_maps_projection",
+    "player_prop_line",
+]
+
+OVERWATCH_NUMERIC_PLAYER_PROP_INPUTS = [
+    field for field in OVERWATCH_PLAYER_PROP_INPUTS
+    if field not in {"player", "player_role"}
+]
+
+OVERWATCH_REQUIRED_MARKET_INPUTS = {
+    "match_winner": ["odds_american"], "moneyline": ["odds_american"], "map_winner": ["odds_american"],
+    "first_map_winner": ["odds_american"], "second_map_winner": ["odds_american"],
+    "third_map_winner": ["odds_american"], "fourth_map_winner": ["odds_american"],
+    "fifth_map_winner": ["odds_american"], "control_map_winner": ["odds_american"],
+    "escort_map_winner": ["odds_american"], "hybrid_map_winner": ["odds_american"],
+    "push_map_winner": ["odds_american"], "flashpoint_map_winner": ["odds_american"],
+    "clash_map_winner": ["odds_american"], "map_handicap": ["line", "odds_american"],
+    "objective_handicap": ["line", "odds_american"], "alt_map_handicap": ["line", "odds_american"],
+    "total_maps": ["total_line", "odds_american"], "team_total_maps": ["total_line", "odds_american"],
+    "alt_total_maps": ["total_line", "odds_american"], "correct_score": ["line", "odds_american"],
+}
+
+for _overwatch_prop_market in OVERWATCH_PROP_MARKETS:
+    OVERWATCH_REQUIRED_MARKET_INPUTS[_overwatch_prop_market] = [
+        "player", "player_role", "player_prop_line", "odds_american",
+    ]
+
+OVERWATCH_OPTIONAL_ENRICHMENT_INPUTS = [
+    "no_vig_market_probability", "book_count", "current_odds", "best_available_odds", "opening_odds",
+    "consensus_odds", "provider_status", "server_region", "market_movement",
+    "public_betting_percent", "sharp_money_percent", "social_sentiment", "crowd_consensus",
+    "coach_change", "role_swap", "scrim_signal_quality",
+]
+
+OVERWATCH_INPUT_CONTRACT = {
+    "required_core_inputs": OVERWATCH_REQUIRED_CORE_INPUTS,
+    "required_market_specific_inputs": OVERWATCH_REQUIRED_MARKET_INPUTS,
+    "optional_enrichment_inputs": OVERWATCH_OPTIONAL_ENRICHMENT_INPUTS,
+    "player_prop_inputs": OVERWATCH_PLAYER_PROP_INPUTS,
+    "provider_enrichment_inputs": ["best_available_odds", "current_odds", "opening_odds", "consensus_odds", "no_vig_market_probability", "book_count"],
+    "social_crowd_inputs": NFL_SOCIAL_CROWD_INPUTS,
+}
+
 MLB_REQUIRED_CORE_INPUTS = [
     "team",
     "opponent",
@@ -2618,6 +2722,7 @@ SPORT_PROP_INPUTS = {
     "league_of_legends": ["draft", "objective control", "gold tempo", "lane ratings", "player props"],
     "dota2": ["draft", "lane pressure", "Roshan control", "tower pressure", "player props"],
     "call_of_duty": ["map/mode rotation", "respawn form", "search and destroy", "objective time", "player props"],
+    "overwatch": ["hero composition", "map/mode objective control", "ultimate economy", "fight win rate", "player props"],
     "esports": ["game title", "player rating", "team rating", "map pool", "patch or meta version"],
 }
 
@@ -2760,6 +2865,12 @@ OFFICIALS_MODULE_BY_SPORT = {
         "betting_edge_strength": "weak",
         "notes": "Call of Duty admin context is tracked but cannot replace map rotation, mode, respawn, SND, and player inputs.",
     },
+    "overwatch": {
+        "official_type": "tournament admin/server/map-mode enforcement",
+        "official_inputs": ["tournament admin", "server admin", "map-mode admin", "rule enforcement"],
+        "betting_edge_strength": "weak",
+        "notes": "Overwatch admin context is tracked but cannot replace hero composition, patch, map-mode, objective, and player inputs.",
+    },
     "esports": {
         "official_type": "tournament admin/map/server/rule enforcement",
         "official_inputs": ["tournament admin", "map admin", "server admin", "rule enforcement", "pause/remake policy"],
@@ -2868,6 +2979,7 @@ def _official_affected_markets(sport: str, market: Any) -> list[str]:
         "league_of_legends": ["match winner", "game winner", "objective props", "kill totals", "player props"],
         "dota2": ["match winner", "game winner", "Roshan props", "kill totals", "player props"],
         "call_of_duty": ["match winner", "map winner", "map/mode props", "round totals", "player props"],
+        "overwatch": ["match winner", "map winner", "map/mode props", "objective handicaps", "player props"],
         "esports": ["match winner", "map winner", "round totals", "live markets"],
     }
     markets = list(by_sport.get(sport, []))
@@ -3493,6 +3605,24 @@ SPORT_MODEL_REGISTRY = [
         confirmed_bets_allowed=True,
     ),
     _sport(
+        "overwatch",
+        "Overwatch",
+        "overwatch_hero_composition_map_mode_objective_monte_carlo_model",
+        "overwatch_hero_composition_map_mode_objective_monte_carlo_model",
+        "hero_composition_map_mode_objective_monte_carlo",
+        OVERWATCH_MARKETS,
+        OVERWATCH_PROP_MARKETS,
+        OVERWATCH_REQUIRED_CORE_INPUTS,
+        OVERWATCH_OPTIONAL_ENRICHMENT_INPUTS,
+        ["hero composition model", "map-mode objective model", "ultimate economy model", "team fight model", "patch/meta model", "player prop projection"],
+        "hero composition map-mode objective Monte Carlo",
+        ["Map winners, objective handicaps, total maps, and player props are correlated within the same match."],
+        sport_parameters={"league_calibration_applied": "overwatch"},
+        component_status=COMPONENT_STATUS_ACTIVE,
+        model_level=MODEL_LEVEL_PROJECTION_READY,
+        confirmed_bets_allowed=True,
+    ),
+    _sport(
         "esports",
         "Esports",
         "game_specific_esports_router",
@@ -3535,6 +3665,7 @@ _INPUT_NORMALIZER_BY_SPORT = {
     "league_of_legends": "league_of_legends_input_normalizer",
     "dota2": "dota2_input_normalizer",
     "call_of_duty": "call_of_duty_input_normalizer",
+    "overwatch": "overwatch_input_normalizer",
 }
 
 _ACTIVE_SCREENSHOT_ALIAS_TEST_PAYLOADS: dict[str, dict[str, Any]] = {
@@ -4127,6 +4258,40 @@ _ACTIVE_SCREENSHOT_ALIAS_TEST_PAYLOADS: dict[str, dict[str, Any]] = {
             "deaths_proj": 20.5, "kda_proj": 1.55, "damage_proj": 3150, "objective_time_proj": 72,
             "first_bloods_proj": 3.1, "maps_proj": 4.2, "prop_line": 23.5, "book_count": 8,
             "current_odds": 100,
+        },
+    },
+    "overwatch": {
+        "sport": "overwatch", "league": "OWCS", "event": "San Francisco Shock vs Dallas Fuel",
+        "teams": ["San Francisco Shock", "Dallas Fuel"], "market": "match_winner",
+        "selection": "San Francisco Shock", "odds_american": 100, "bankroll": 1000, "unit_size": 25,
+        "risk_profile": "moderate", "source_type": "chatgpt_parsed",
+        "screenshot_text": "San Francisco Shock match winner +100 vs Dallas Fuel",
+        "visible_markets": ["match_winner", "control_map_winner", "player_eliminations"],
+        "input_stats": {
+            "team_name": "San Francisco Shock", "opponent_name": "Dallas Fuel", "pick": "San Francisco Shock",
+            "format": "bo5", "maps": 5, "map": "Lijiang Tower", "mode": "control", "rotation": "Control-Hybrid-Escort-Push-Control",
+            "patch": "2.10", "team_rank": 2, "opp_rank": 6, "team_elo_rating": 1860, "opp_elo_rating": 1790,
+            "team_win_pct": 0.67, "opp_win_pct": 0.58, "team_map_pct": 0.64, "opp_map_pct": 0.55,
+            "team_control_pct": 0.66, "opp_control_pct": 0.57, "team_escort_pct": 0.62, "opp_escort_pct": 0.54,
+            "team_hybrid_pct": 0.63, "opp_hybrid_pct": 0.55, "team_push_pct": 0.61, "opp_push_pct": 0.53,
+            "team_flashpoint_pct": 0.60, "opp_flashpoint_pct": 0.52, "team_clash_pct": 0.59, "opp_clash_pct": 0.51,
+            "team_fight_pct": 0.58, "opp_fight_pct": 0.52, "team_first_fight_pct": 0.56, "opp_first_fight_pct": 0.50,
+            "team_objective_score": 88, "opp_objective_score": 81, "team_ult_econ": 89, "opp_ult_econ": 82,
+            "team_ult_conversion": 0.64, "opp_ult_conversion": 0.56, "team_stagger": 87, "opp_stagger": 80,
+            "team_comp": 90, "opp_comp": 82, "team_meta_fit": 89, "opp_meta_fit": 81,
+            "team_tank": 88, "opp_tank": 82, "team_dps": 90, "opp_dps": 84, "team_support": 87, "opp_support": 82,
+            "team_damage10": 8200, "opp_damage10": 7800, "team_healing10": 6900, "opp_healing10": 6500,
+            "team_elims10": 23.5, "opp_elims10": 21.0, "team_deaths10": 18.2, "opp_deaths10": 20.4,
+            "team_final_blow_pct": 0.54, "opp_final_blow_pct": 0.49, "team_map_depth": 7, "opp_map_depth": 6,
+            "team_pick_pct": 0.34, "opp_pick_pct": 0.28, "team_ban_pct": 0.12, "opp_ban_pct": 0.17,
+            "lan": True, "online": False, "tier": "major", "playoff": True, "elimination": False,
+            "region": "NA", "rest": 4, "travel": 0.14, "roster_stability_score": 0.92,
+            "substitute": 0.02, "availability_risk": 0.03, "form": 85, "opp_form": 78,
+            "market_move": 0.0, "public_pct": 54, "sharp_pct": 58,
+            "player_name": "Proper", "role": "DPS", "hero_pool": 91, "player_meta_fit": 89,
+            "elims_proj": 29.5, "final_blows_proj": 12.5, "assists_proj": 10.5, "deaths_proj": 8.5,
+            "damage_proj": 11800, "healing_proj": 500, "mitigation_proj": 850, "kda_proj": 4.6,
+            "maps_proj": 4.2, "prop_line": 28.5, "book_count": 8, "current_odds": 100,
         },
     },
 }
@@ -5764,6 +5929,36 @@ def _cod_market_specific_missing(market: Any, input_stats: dict[str, Any], paylo
     return [field for field in required if _cod_value_missing(field, input_stats, payload)]
 
 
+def _overwatch_value_missing(field: str, input_stats: dict[str, Any], payload: dict[str, Any]) -> bool:
+    value = input_stats.get(field)
+    if value is None and field in {"sport", "league", "event", "teams", "market", "selection", "odds_american", "bankroll", "unit_size", "risk_profile"}:
+        value = payload.get(field)
+    if value is None and field == "event":
+        value = payload.get("event_id")
+    if value in (None, ""):
+        return True
+    if field in OVERWATCH_NUMERIC_CORE_INPUTS or field in OVERWATCH_NUMERIC_PLAYER_PROP_INPUTS or field in {"line", "total_line", "odds_american"}:
+        return _safe_float(value) is None
+    return False
+
+
+def _overwatch_full_inputs_missing(input_stats: dict[str, Any], payload: dict[str, Any]) -> list[str]:
+    base_fields = ["sport", "league", "event", "market", "selection", "odds_american", "bankroll", "unit_size", "risk_profile"]
+    missing = [field for field in base_fields if _overwatch_value_missing(field, input_stats, payload)]
+    for field in OVERWATCH_REQUIRED_CORE_INPUTS:
+        if _overwatch_value_missing(field, input_stats, payload):
+            missing.append(field)
+    return list(dict.fromkeys(missing))
+
+
+def _overwatch_market_specific_missing(market: Any, input_stats: dict[str, Any], payload: dict[str, Any]) -> list[str]:
+    market_key = _normal_market_key(input_stats.get("market_type") or market)
+    required = list(OVERWATCH_REQUIRED_MARKET_INPUTS.get(market_key, ["odds_american"]))
+    if market_key in OVERWATCH_PROP_MARKETS:
+        required = list(dict.fromkeys(required + OVERWATCH_PLAYER_PROP_INPUTS))
+    return [field for field in required if _overwatch_value_missing(field, input_stats, payload)]
+
+
 def _f1_value_missing(field: str, input_stats: dict[str, Any], payload: dict[str, Any]) -> bool:
     value = input_stats.get(field)
     if value is None and field in {"sport", "league", "event", "teams", "market", "selection", "odds_american", "bankroll", "unit_size", "risk_profile"}:
@@ -5918,6 +6113,8 @@ def _missing_inputs_for_sport(sport: str, market: Any, input_stats: dict[str, An
         return _dota2_full_inputs_missing(input_stats, payload) + _dota2_market_specific_missing(market, input_stats, payload)
     if sport == "call_of_duty":
         return _cod_full_inputs_missing(input_stats, payload) + _cod_market_specific_missing(market, input_stats, payload)
+    if sport == "overwatch":
+        return _overwatch_full_inputs_missing(input_stats, payload) + _overwatch_market_specific_missing(market, input_stats, payload)
     config = get_sport_model_config(sport)
     if not config:
         return []
@@ -6735,6 +6932,70 @@ def _normalize_cod_input_aliases(input_stats: dict[str, Any], payload: Optional[
     return normalized
 
 
+def _normalize_overwatch_input_aliases(input_stats: dict[str, Any], payload: Optional[dict[str, Any]] = None, sport: Optional[str] = None) -> dict[str, Any]:
+    normalized = _normalize_team_sport_input_aliases(input_stats, payload, sport)
+    payload = payload or {}
+    alias_pairs = {
+        "team": ["team_name"], "opponent": ["opponent_name", "opp_team"], "selection": ["pick", "favorite"],
+        "match_format": ["format"], "best_of_maps": ["maps"], "map_name": ["map"], "game_mode": ["mode"],
+        "map_rotation": ["rotation"], "patch_version": ["patch"], "team_world_rank": ["team_rank"],
+        "opponent_world_rank": ["opp_rank"], "team_elo": ["team_elo_rating"], "opponent_elo": ["opp_elo_rating"],
+        "team_recent_win_rate": ["team_win_pct"], "opponent_recent_win_rate": ["opp_win_pct"],
+        "team_map_win_rate": ["team_map_pct"], "opponent_map_win_rate": ["opp_map_pct"],
+        "team_control_win_rate": ["team_control_pct"], "opponent_control_win_rate": ["opp_control_pct"],
+        "team_escort_win_rate": ["team_escort_pct"], "opponent_escort_win_rate": ["opp_escort_pct"],
+        "team_hybrid_win_rate": ["team_hybrid_pct"], "opponent_hybrid_win_rate": ["opp_hybrid_pct"],
+        "team_push_win_rate": ["team_push_pct"], "opponent_push_win_rate": ["opp_push_pct"],
+        "team_flashpoint_win_rate": ["team_flashpoint_pct"], "opponent_flashpoint_win_rate": ["opp_flashpoint_pct"],
+        "team_clash_win_rate": ["team_clash_pct"], "opponent_clash_win_rate": ["opp_clash_pct"],
+        "team_fight_win_rate": ["team_fight_pct"], "opponent_fight_win_rate": ["opp_fight_pct"],
+        "team_first_fight_win_rate": ["team_first_fight_pct"], "opponent_first_fight_win_rate": ["opp_first_fight_pct"],
+        "team_objective_control_rating": ["team_objective_score"], "opponent_objective_control_rating": ["opp_objective_score"],
+        "team_ultimate_economy_rating": ["team_ult_econ"], "opponent_ultimate_economy_rating": ["opp_ult_econ"],
+        "team_ultimate_conversion_rate": ["team_ult_conversion"], "opponent_ultimate_conversion_rate": ["opp_ult_conversion"],
+        "team_stagger_avoidance_rating": ["team_stagger"], "opponent_stagger_avoidance_rating": ["opp_stagger"],
+        "team_composition_rating": ["team_comp"], "opponent_composition_rating": ["opp_comp"],
+        "team_meta_fit_rating": ["team_meta_fit"], "opponent_meta_fit_rating": ["opp_meta_fit"],
+        "team_tank_rating": ["team_tank"], "opponent_tank_rating": ["opp_tank"],
+        "team_dps_rating": ["team_dps"], "opponent_dps_rating": ["opp_dps"],
+        "team_support_rating": ["team_support"], "opponent_support_rating": ["opp_support"],
+        "team_damage_per_10": ["team_damage10"], "opponent_damage_per_10": ["opp_damage10"],
+        "team_healing_per_10": ["team_healing10"], "opponent_healing_per_10": ["opp_healing10"],
+        "team_eliminations_per_10": ["team_elims10"], "opponent_eliminations_per_10": ["opp_elims10"],
+        "team_deaths_per_10": ["team_deaths10"], "opponent_deaths_per_10": ["opp_deaths10"],
+        "team_final_blow_rate": ["team_final_blow_pct"], "opponent_final_blow_rate": ["opp_final_blow_pct"],
+        "team_map_pool_depth": ["team_map_depth"], "opponent_map_pool_depth": ["opp_map_depth"],
+        "team_map_pick_rate": ["team_pick_pct"], "opponent_map_pick_rate": ["opp_pick_pct"],
+        "team_map_ban_rate": ["team_ban_pct"], "opponent_map_ban_rate": ["opp_ban_pct"],
+        "lan_event": ["lan"], "online_event": ["online"], "tournament_tier": ["tier"], "playoff_match": ["playoff"],
+        "elimination_match": ["elimination"], "server_region": ["region"], "rest_days": ["rest"],
+        "travel_fatigue": ["travel"], "roster_stability": ["roster_stability_score"],
+        "substitute_risk": ["substitute"], "player_availability_risk": ["availability_risk"],
+        "recent_form": ["form"], "opponent_recent_form": ["opp_form"], "market_movement": ["market_move"],
+        "public_betting_percent": ["public_pct"], "sharp_money_percent": ["sharp_pct"],
+        "player": ["player_name"], "player_role": ["role"], "player_hero_pool_rating": ["hero_pool"],
+        "player_meta_fit_rating": ["player_meta_fit"], "player_eliminations_projection": ["elims_proj"],
+        "player_final_blows_projection": ["final_blows_proj"], "player_assists_projection": ["assists_proj"],
+        "player_deaths_projection": ["deaths_proj"], "player_damage_projection": ["damage_proj"],
+        "player_healing_projection": ["healing_proj"], "player_mitigation_projection": ["mitigation_proj"],
+        "player_kda_projection": ["kda_proj"], "player_maps_projection": ["maps_proj"],
+        "player_prop_line": ["prop_line", "line_value"],
+    }
+    for canonical, aliases in alias_pairs.items():
+        _copy_alias_if_missing(normalized, canonical, aliases)
+    if normalized.get("match_format") is None and normalized.get("best_of_maps") is not None:
+        normalized["match_format"] = f"bo{int(_safe_float(normalized.get('best_of_maps'), 5) or 5)}"
+    if normalized.get("best_of_maps") is None and normalized.get("match_format") is not None:
+        match = re.search(r"(\d+)", str(normalized.get("match_format")))
+        normalized["best_of_maps"] = int(match.group(1)) if match else 5
+    for field in ("market", "league", "odds_american", "bankroll", "unit_size", "risk_profile"):
+        if normalized.get(field) is None:
+            normalized[field] = payload.get(field)
+    normalized.setdefault("selection", payload.get("selection") or normalized.get("team"))
+    normalized.setdefault("event", payload.get("event") or payload.get("event_id"))
+    return normalized
+
+
 def _normalize_f1_input_aliases(input_stats: dict[str, Any], payload: Optional[dict[str, Any]] = None, sport: Optional[str] = None) -> dict[str, Any]:
     normalized = dict(input_stats or {})
     payload = payload or {}
@@ -7137,6 +7398,9 @@ def normalize_sport_inputs_for_model(
     elif sport_alias_resolved == "call_of_duty":
         normalized = _normalize_cod_input_aliases(normalized, payload, sport_alias_resolved)
         normalizer_used = "call_of_duty_input_normalizer"
+    elif sport_alias_resolved == "overwatch":
+        normalized = _normalize_overwatch_input_aliases(normalized, payload, sport_alias_resolved)
+        normalizer_used = "overwatch_input_normalizer"
 
     after_market = market or payload.get("market") or normalized.get("market")
     after_missing = _missing_inputs_for_sport(sport_alias_resolved, after_market, normalized, payload)
@@ -11931,6 +12195,161 @@ def _estimate_cod_map_mode_rotation_model(
     }
 
 
+def _overwatch_mode_calibration(raw_mode: Any) -> str:
+    text = str(raw_mode or "").strip().lower().replace(" ", "_")
+    mapping = {"control": "control", "escort": "escort", "hybrid": "hybrid", "push": "push", "flashpoint": "flashpoint", "clash": "clash", "mixed": "mixed"}
+    return mapping.get(text, "unknown")
+
+
+def _estimate_overwatch_hero_objective_model(
+    *, input_stats: dict[str, Any], payload: dict[str, Any], market: Any,
+    odds_american: Optional[float], bankroll: float, risk_profile: str,
+) -> Optional[dict[str, Any]]:
+    missing = _overwatch_full_inputs_missing(input_stats, payload) + _overwatch_market_specific_missing(market, input_stats, payload)
+    if missing:
+        return None
+    implied_probability = implied_probability_from_american(odds_american) if odds_american is not None else None
+    if implied_probability is None:
+        return None
+
+    def number(key: str, default: float = 0) -> float:
+        return _safe_float(input_stats.get(key), default) or default
+
+    market_key = _normal_market_key(input_stats.get("market_type") or market)
+    selection_text = str(payload.get("selection") or input_stats.get("selection") or "").strip().lower()
+    selected_team = not input_stats.get("opponent") or str(input_stats.get("team") or "").strip().lower() in selection_text
+    format_key = _cs2_match_format_calibration(input_stats.get("match_format"), input_stats.get("best_of_maps"))
+    mode_key = _overwatch_mode_calibration(input_stats.get("game_mode"))
+    environment = "lan" if input_stats.get("lan_event") else "online" if input_stats.get("online_event") else "unknown"
+    map_key = str(input_stats.get("map_name") or "unknown").strip() or "unknown"
+    patch_key = str(input_stats.get("patch_version") or "unknown").strip() or "unknown"
+    comp_applied = all(input_stats.get(f) is not None for f in ("team_composition_rating", "opponent_composition_rating", "team_meta_fit_rating", "opponent_meta_fit_rating"))
+    mode_rates = {
+        "control": ("team_control_win_rate", "opponent_control_win_rate"),
+        "escort": ("team_escort_win_rate", "opponent_escort_win_rate"),
+        "hybrid": ("team_hybrid_win_rate", "opponent_hybrid_win_rate"),
+        "push": ("team_push_win_rate", "opponent_push_win_rate"),
+        "flashpoint": ("team_flashpoint_win_rate", "opponent_flashpoint_win_rate"),
+        "clash": ("team_clash_win_rate", "opponent_clash_win_rate"),
+    }
+    team_mode, opp_mode = mode_rates.get(mode_key, ("team_map_win_rate", "opponent_map_win_rate"))
+    role_edge = ((number("team_tank_rating") - number("opponent_tank_rating")) * 1.0 + (number("team_dps_rating") - number("opponent_dps_rating")) * 1.15 + (number("team_support_rating") - number("opponent_support_rating")) * 0.95) / 3.0
+    objective_edge = (
+        (number("team_objective_control_rating") - number("opponent_objective_control_rating")) * 0.08
+        + (number("team_ultimate_economy_rating") - number("opponent_ultimate_economy_rating")) * 0.065
+        + (number("team_ultimate_conversion_rate") - number("opponent_ultimate_conversion_rate")) * 3.0
+        + (number("team_stagger_avoidance_rating") - number("opponent_stagger_avoidance_rating")) * 0.04
+    )
+    fight_edge = (
+        (number("team_fight_win_rate") - number("opponent_fight_win_rate")) * 5.2
+        + (number("team_first_fight_win_rate") - number("opponent_first_fight_win_rate")) * 1.8
+        + (number("team_eliminations_per_10") - number("opponent_eliminations_per_10")) * 0.16
+        - (number("team_deaths_per_10") - number("opponent_deaths_per_10")) * 0.14
+        + (number("team_final_blow_rate") - number("opponent_final_blow_rate")) * 1.8
+        + (number("team_damage_per_10") - number("opponent_damage_per_10")) / 1000.0
+        + (number("team_healing_per_10") - number("opponent_healing_per_10")) / 1400.0
+    )
+    comp_edge = (number("team_composition_rating") - number("opponent_composition_rating")) * 0.08 + (number("team_meta_fit_rating") - number("opponent_meta_fit_rating")) * 0.07 + role_edge * 0.08
+    map_edge = (number("team_map_win_rate") - number("opponent_map_win_rate")) * 4.0 + (number(team_mode) - number(opp_mode)) * 3.4 + (number("team_map_pool_depth") - number("opponent_map_pool_depth")) * 0.12
+    edge_score = (
+        (number("team_elo") - number("opponent_elo")) / 42.0
+        + (number("opponent_world_rank") - number("team_world_rank")) * 0.18
+        + (number("team_recent_win_rate") - number("opponent_recent_win_rate")) * 5.0
+        + map_edge + objective_edge + fight_edge + comp_edge
+        + (number("recent_form") - number("opponent_recent_form")) * 0.04
+        + number("roster_stability") * 0.85
+        - number("substitute_risk") * 3.0 - number("player_availability_risk") * 2.8 - number("travel_fatigue") * 0.65
+    )
+    if not selected_team:
+        edge_score = -edge_score
+    volatility = 1.0 + (0.2 if format_key == "bo3" else -0.1 if format_key in {"bo5", "bo7"} else 0)
+    if environment == "online":
+        volatility += 0.12
+    match_probability = _logistic_probability(edge_score, 6.3 + volatility)
+    map_probability = _logistic_probability(edge_score * 0.72 + map_edge * 0.5 + objective_edge * 0.3, 5.3 + volatility)
+    objective_probability = _logistic_probability(objective_edge + fight_edge * 0.25, 4.2 + volatility)
+    projected_maps = 3.2 if format_key == "bo5" else 4.1 if format_key == "bo7" else 2.2
+    projected_maps += (1 - abs(match_probability - 0.5) * 2) * 0.7
+    line = _safe_float(payload.get("line"), _safe_float(input_stats.get("line")))
+    total_line = _safe_float(payload.get("total_line"), _safe_float(input_stats.get("total_line")))
+    raw_model_probability = match_probability
+    if market_key in {"map_winner", "first_map_winner", "second_map_winner", "third_map_winner", "fourth_map_winner", "fifth_map_winner"}:
+        raw_model_probability = map_probability
+    elif market_key in {"control_map_winner", "escort_map_winner", "hybrid_map_winner", "push_map_winner", "flashpoint_map_winner", "clash_map_winner"}:
+        raw_model_probability = _logistic_probability(edge_score * 0.4 + objective_edge + map_edge * 0.5, 4.7 + volatility)
+    elif market_key in {"map_handicap", "alt_map_handicap"}:
+        raw_model_probability = _logistic_probability((match_probability - 0.5) * 8.0 - (line or 0), 3.0 + volatility)
+    elif market_key == "objective_handicap":
+        raw_model_probability = _logistic_probability(objective_edge - (line or 0), 3.8 + volatility)
+    elif market_key in {"total_maps", "alt_total_maps", "team_total_maps"}:
+        raw_model_probability = _logistic_probability(projected_maps - (total_line if total_line is not None else projected_maps), 0.6 + volatility * 0.12)
+    elif market_key == "correct_score":
+        raw_model_probability = max(0.04, min(0.42, match_probability * (0.52 if format_key in {"bo5", "bo7"} else 0.66)))
+    elif market_key in OVERWATCH_PROP_MARKETS:
+        prop_map = {
+            "player_eliminations": "player_eliminations_projection", "player_final_blows": "player_final_blows_projection",
+            "player_assists": "player_assists_projection", "player_deaths": "player_deaths_projection",
+            "player_damage": "player_damage_projection", "player_healing": "player_healing_projection",
+            "player_mitigation": "player_mitigation_projection", "player_kda": "player_kda_projection",
+        }
+        projection = number(prop_map[market_key])
+        prop_line = number("player_prop_line", line or projection)
+        raw_model_probability = _logistic_probability(projection - prop_line, max(0.9, abs(projection) * 0.18))
+    market_anchor = _safe_probability(input_stats.get("no_vig_market_probability"))
+    calibrated_probability = raw_model_probability * 0.90 + market_anchor * 0.10 if market_anchor is not None else raw_model_probability
+    true_probability = max(0.04, min(0.88, calibrated_probability))
+    sanity_flags = ["overwatch probability cap applied"] if true_probability != calibrated_probability else []
+    confidence = 74.0
+    risk_flags: list[str] = []
+    if format_key == "bo3":
+        confidence -= 3; risk_flags.append("BO3 series variance")
+    if environment == "online":
+        confidence -= 3; risk_flags.append("online server variance")
+    if not comp_applied:
+        confidence -= 5; risk_flags.append("hero composition uncertainty")
+    if number("substitute_risk") >= 0.10 or number("player_availability_risk") >= 0.10:
+        confidence -= 7; risk_flags.append("player availability risk")
+    if number("roster_stability") < 0.75:
+        confidence -= 5; risk_flags.append("roster instability")
+    if market_key in OVERWATCH_PROP_MARKETS:
+        confidence -= 4; risk_flags.append("player prop fragility")
+    if _safe_float(input_stats.get("book_count"), 0) < 4:
+        confidence -= 4; risk_flags.append("book count too low")
+    confidence = max(1, min(95, round(confidence, 2)))
+    edge = calculate_edge_percent(true_probability, implied_probability)
+    edge_threshold, confidence_threshold = _nfl_thresholds(risk_profile)
+    no_bet_flags: list[str] = []
+    if edge is None:
+        no_bet_flags.append("edge missing")
+    elif edge <= 0:
+        no_bet_flags.append("negative edge")
+    elif edge < edge_threshold:
+        no_bet_flags.append("edge too small")
+    if confidence < confidence_threshold:
+        no_bet_flags.append("low confidence")
+    suggested = 0 if no_bet_flags else calculate_suggested_stake(bankroll=bankroll, american_odds=odds_american, true_probability=true_probability, risk_profile=risk_profile, confidence=confidence)
+    if suggested <= 0 and not no_bet_flags and edge is not None and edge >= edge_threshold and confidence >= confidence_threshold:
+        suggested = round(max(1.0, bankroll * 0.004), 2)
+    return {
+        "model_status": "active", "estimated_true_probability": true_probability, "true_probability": true_probability,
+        "final_probability": true_probability, "model_probability": true_probability, "implied_probability": implied_probability,
+        "edge": edge, "confidence": confidence, "risk": "high" if risk_flags else "moderate", "suggested_stake": suggested,
+        "raw_model_probability": raw_model_probability, "calibrated_model_probability": calibrated_probability,
+        "probability_calibration_applied": bool(market_anchor is not None or sanity_flags), "probability_sanity_flags": sanity_flags,
+        "probability_cap_reason": "overwatch sanity cap" if sanity_flags else None, "market_anchor_probability": market_anchor,
+        "league_calibration_applied": "overwatch", "match_format_calibration_applied": format_key,
+        "mode_calibration_applied": mode_key, "event_environment_calibration_applied": environment,
+        "patch_calibration_applied": patch_key, "hero_composition_calibration_applied": comp_applied,
+        "map_calibration_applied": map_key, "overwatch_team_edge_score": round(edge_score, 2),
+        "overwatch_match_probability": match_probability, "overwatch_map_probability": map_probability,
+        "overwatch_objective_probability": objective_probability, "overwatch_projected_maps": round(projected_maps, 2),
+        "risk_flags": risk_flags,
+        "input_coverage": {"required_core_present": list(OVERWATCH_REQUIRED_CORE_INPUTS), "required_market_specific_present": OVERWATCH_REQUIRED_MARKET_INPUTS.get(market_key, []), "optional_enrichment_present": [f for f in OVERWATCH_OPTIONAL_ENRICHMENT_INPUTS if input_stats.get(f) is not None], "optional_enrichment_missing": [f for f in OVERWATCH_OPTIONAL_ENRICHMENT_INPUTS if input_stats.get(f) is None]},
+        "provider_enrichment": {"provider_status": input_stats.get("provider_status") or "not_provided", "provider_enrichment_present": [f for f in OVERWATCH_OPTIONAL_ENRICHMENT_INPUTS if input_stats.get(f) is not None]},
+        "no_bet_flags": no_bet_flags,
+    }
+
+
 def _estimate_nfl_drive_model(
     input_stats: dict[str, Any],
     payload: dict[str, Any],
@@ -12416,6 +12835,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         lol_model = None
         dota2_model = None
         cod_model = None
+        overwatch_model = None
         if sport == "basketball_nba":
             nba_model = _estimate_nba_possession_model(
                 input_stats=input_stats,
@@ -12604,6 +13024,15 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
                 bankroll=bankroll,
                 risk_profile=payload.get("risk_profile") or "moderate",
             )
+        elif sport == "overwatch":
+            overwatch_model = _estimate_overwatch_hero_objective_model(
+                input_stats=input_stats,
+                payload=payload,
+                market=market,
+                odds_american=odds_american,
+                bankroll=bankroll,
+                risk_profile=payload.get("risk_profile") or "moderate",
+            )
 
         if nba_model:
             component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
@@ -12645,7 +13074,9 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
         elif cod_model:
             component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
-        elif sport in {"basketball_nba", "basketball_wnba", "basketball_ncaab", "basketball_ncaawb", "americanfootball_nfl", "americanfootball_ncaaf", "baseball_mlb", "soccer", "icehockey_nhl", "tennis", "mma_mixed_martial_arts", "boxing", "golf", "formula1", "nascar", "indycar", "motogp", "cricket", "cs2", "valorant", "league_of_legends", "dota2", "call_of_duty"}:
+        elif overwatch_model:
+            component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
+        elif sport in {"basketball_nba", "basketball_wnba", "basketball_ncaab", "basketball_ncaawb", "americanfootball_nfl", "americanfootball_ncaaf", "baseball_mlb", "soccer", "icehockey_nhl", "tennis", "mma_mixed_martial_arts", "boxing", "golf", "formula1", "nascar", "indycar", "motogp", "cricket", "cs2", "valorant", "league_of_legends", "dota2", "call_of_duty", "overwatch"}:
             component_status = COMPONENT_STATUS_INACTIVE
             missing_inputs = _missing_inputs_for_sport(sport, market, input_stats, payload)
         else:
@@ -12780,9 +13211,15 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             edge = cod_model["edge"]
             suggested = cod_model["suggested_stake"]
             no_bet_flags = list(cod_model["no_bet_flags"])
+        elif overwatch_model:
+            true_probability = overwatch_model["true_probability"]
+            implied_probability = overwatch_model["implied_probability"]
+            edge = overwatch_model["edge"]
+            suggested = overwatch_model["suggested_stake"]
+            no_bet_flags = list(overwatch_model["no_bet_flags"])
         if implied_probability is not None and true_probability is not None and odds_american is not None:
             edge = edge_percentage(true_probability, implied_probability)
-            if not (nba_model or wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model):
+            if not (nba_model or wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model):
                 suggested = suggested_stake_with_risk_controls(
                     bankroll=bankroll,
                     american_odds=odds_american,
@@ -12799,7 +13236,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         social_input_stats = dict(input_stats)
         social_input_stats["edge"] = edge
         social_layer = build_social_crowd_calibration_layer(social_input_stats)
-        if social_layer["sentiment_no_bet_flags"] and not (nba_model or wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model):
+        if social_layer["sentiment_no_bet_flags"] and not (nba_model or wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model):
             no_bet_flags = list(dict.fromkeys(no_bet_flags + social_layer["sentiment_no_bet_flags"]))
 
         risk_controller = build_risk_controller(bankroll, unit_size, payload.get("risk_profile") or "conservative")
@@ -12816,7 +13253,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         })
         wee_willie = build_wee_willie_market_weakness_detector(detector_payload)
         manual_ticket = build_manual_ticket(detector_payload, suggested)
-        active_model = nba_model or wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model
+        active_model = nba_model or wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model
         confidence = active_model["confidence"] if active_model else input_stats.get("confidence")
         if tennis_model and _safe_float(confidence) is None:
             confidence = 0.0
@@ -12828,7 +13265,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         model_status = active_model["model_status"] if active_model else component_status
         edge_threshold, confidence_threshold = (
             _nfl_thresholds(payload.get("risk_profile") or "moderate")
-            if (wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model)
+            if (wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model)
             else (2.5, 70)
         )
         event_value = payload.get("event_id") or payload.get("event") or input_stats.get("event")
@@ -12939,13 +13376,13 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
                 "target_price": odds_american,
                 "confidence": confidence,
             }],
-            "target_props": [{
+                "target_props": [{
                 "sport": sport,
                 "event": event_value,
                 "market": market,
                 "selection": selection_value,
                 "confidence": confidence,
-            }] if _normal_market_key(market) in {"player_prop", "knockdown_prop", "takedown_prop", "significant_strikes_prop", "submission_attempt_prop", "birdies_prop", "eagles_prop", "fairways_hit_prop", "greens_in_regulation_prop", "putts_prop", "round_score_prop", *BASKETBALL_MODULE_PROP_MARKETS, *COLLEGE_FOOTBALL_PROP_MARKETS, *CRICKET_PROP_MARKETS, *CS2_PROP_MARKETS, *VALORANT_PROP_MARKETS, *LOL_PROP_MARKETS, *DOTA2_PROP_MARKETS, *COD_PROP_MARKETS} else [],
+            }] if _normal_market_key(market) in {"player_prop", "knockdown_prop", "takedown_prop", "significant_strikes_prop", "submission_attempt_prop", "birdies_prop", "eagles_prop", "fairways_hit_prop", "greens_in_regulation_prop", "putts_prop", "round_score_prop", *BASKETBALL_MODULE_PROP_MARKETS, *COLLEGE_FOOTBALL_PROP_MARKETS, *CRICKET_PROP_MARKETS, *CS2_PROP_MARKETS, *VALORANT_PROP_MARKETS, *LOL_PROP_MARKETS, *DOTA2_PROP_MARKETS, *COD_PROP_MARKETS, *OVERWATCH_PROP_MARKETS} else [],
             "target_alt_lines": [{
                 "sport": sport,
                 "event": event_value,
@@ -12985,7 +13422,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             **officiating_analysis["officiating_logbook_fields"],
         })
         basketball_module_model = wnba_model or mens_cbb_model or womens_cbb_model
-        probability_model = basketball_module_model or college_football_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model
+        probability_model = basketball_module_model or college_football_model or nfl_model or mlb_model or soccer_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model
         if probability_model:
             logbook_ready_row.update({
                 "raw_model_probability": probability_model["raw_model_probability"],
@@ -13270,6 +13707,27 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
                 "missing_inputs": missing_inputs,
                 "notes": "; ".join(cod_model["risk_flags"]) if cod_model["risk_flags"] else "",
             })
+        if overwatch_model:
+            logbook_ready_row.update({
+                "model_level": config["model_level"],
+                "probability_type": _normal_market_key(market),
+                "risk_profile": payload.get("risk_profile") or "moderate",
+                "league_calibration_applied": overwatch_model["league_calibration_applied"],
+                "match_format_calibration_applied": overwatch_model["match_format_calibration_applied"],
+                "mode_calibration_applied": overwatch_model["mode_calibration_applied"],
+                "event_environment_calibration_applied": overwatch_model["event_environment_calibration_applied"],
+                "patch_calibration_applied": overwatch_model["patch_calibration_applied"],
+                "hero_composition_calibration_applied": overwatch_model["hero_composition_calibration_applied"],
+                "map_calibration_applied": overwatch_model["map_calibration_applied"],
+                "overwatch_team_edge_score": overwatch_model["overwatch_team_edge_score"],
+                "overwatch_match_probability": overwatch_model["overwatch_match_probability"],
+                "overwatch_map_probability": overwatch_model["overwatch_map_probability"],
+                "overwatch_objective_probability": overwatch_model["overwatch_objective_probability"],
+                "overwatch_projected_maps": overwatch_model["overwatch_projected_maps"],
+                "risk_flags": overwatch_model["risk_flags"],
+                "missing_inputs": missing_inputs,
+                "notes": "; ".join(overwatch_model["risk_flags"]) if overwatch_model["risk_flags"] else "",
+            })
         if college_football_model:
             logbook_ready_row.update({
                 "league_calibration_applied": college_football_model["league_calibration_applied"],
@@ -13411,22 +13869,24 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             "league_of_legends_input_contract": deepcopy(LOL_INPUT_CONTRACT) if sport == "league_of_legends" else None,
             "dota2_input_contract": deepcopy(DOTA2_INPUT_CONTRACT) if sport == "dota2" else None,
             "call_of_duty_input_contract": deepcopy(COD_INPUT_CONTRACT) if sport == "call_of_duty" else None,
+            "overwatch_input_contract": deepcopy(OVERWATCH_INPUT_CONTRACT) if sport == "overwatch" else None,
             "wnba_input_contract": deepcopy(WNBA_INPUT_CONTRACT) if sport == "basketball_wnba" else None,
             "mens_college_basketball_input_contract": deepcopy(MENS_COLLEGE_BASKETBALL_INPUT_CONTRACT) if sport == "basketball_ncaab" else None,
             "womens_college_basketball_input_contract": deepcopy(WOMENS_COLLEGE_BASKETBALL_INPUT_CONTRACT) if sport == "basketball_ncaawb" else None,
-            "league_calibration_applied": (basketball_module_model or college_football_model or f1_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model)["league_calibration_applied"] if (basketball_module_model or college_football_model or f1_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model) else config.get("sport_parameters", {}).get("league_calibration_applied"),
+            "league_calibration_applied": (basketball_module_model or college_football_model or f1_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model)["league_calibration_applied"] if (basketball_module_model or college_football_model or f1_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model) else config.get("sport_parameters", {}).get("league_calibration_applied"),
             "session_calibration_applied": (f1_model or motogp_model)["session_calibration_applied"] if (f1_model or motogp_model) else None,
             "circuit_calibration_applied": f1_model["circuit_calibration_applied"] if f1_model else None,
             "weather_calibration_applied": (f1_model or motogp_model)["weather_calibration_applied"] if (f1_model or motogp_model) else None,
             "format_calibration_applied": cricket_model["format_calibration_applied"] if cricket_model else None,
-            "match_format_calibration_applied": (cs2_model or valorant_model or lol_model or dota2_model or cod_model)["match_format_calibration_applied"] if (cs2_model or valorant_model or lol_model or dota2_model or cod_model) else None,
-            "event_environment_calibration_applied": (cs2_model or valorant_model or cod_model)["event_environment_calibration_applied"] if (cs2_model or valorant_model or cod_model) else None,
-            "map_calibration_applied": (cs2_model or valorant_model or cod_model)["map_calibration_applied"] if (cs2_model or valorant_model or cod_model) else None,
-            "mode_calibration_applied": cod_model["mode_calibration_applied"] if cod_model else None,
+            "match_format_calibration_applied": (cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model)["match_format_calibration_applied"] if (cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model) else None,
+            "event_environment_calibration_applied": (cs2_model or valorant_model or cod_model or overwatch_model)["event_environment_calibration_applied"] if (cs2_model or valorant_model or cod_model or overwatch_model) else None,
+            "map_calibration_applied": (cs2_model or valorant_model or cod_model or overwatch_model)["map_calibration_applied"] if (cs2_model or valorant_model or cod_model or overwatch_model) else None,
+            "mode_calibration_applied": (cod_model or overwatch_model)["mode_calibration_applied"] if (cod_model or overwatch_model) else None,
             "agent_composition_calibration_applied": valorant_model["agent_composition_calibration_applied"] if valorant_model else None,
             "region_calibration_applied": (lol_model or dota2_model)["region_calibration_applied"] if (lol_model or dota2_model) else None,
-            "patch_calibration_applied": (lol_model or dota2_model)["patch_calibration_applied"] if (lol_model or dota2_model) else None,
+            "patch_calibration_applied": (lol_model or dota2_model or overwatch_model)["patch_calibration_applied"] if (lol_model or dota2_model or overwatch_model) else None,
             "draft_calibration_applied": (lol_model or dota2_model)["draft_calibration_applied"] if (lol_model or dota2_model) else None,
+            "hero_composition_calibration_applied": overwatch_model["hero_composition_calibration_applied"] if overwatch_model else None,
             "series_calibration_applied": (nascar_model or indycar_model)["series_calibration_applied"] if (nascar_model or indycar_model) else None,
             "track_type_calibration_applied": (nascar_model or indycar_model or motogp_model)["track_type_calibration_applied"] if (nascar_model or indycar_model or motogp_model) else None,
             "race_environment_calibration_applied": (nascar_model or indycar_model)["race_environment_calibration_applied"] if (nascar_model or indycar_model) else None,
@@ -13518,6 +13978,11 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             "cod_control_probability": cod_model["cod_control_probability"] if cod_model else None,
             "cod_projected_total_rounds": cod_model["cod_projected_total_rounds"] if cod_model else None,
             "cod_projected_team_rounds": cod_model["cod_projected_team_rounds"] if cod_model else None,
+            "overwatch_team_edge_score": overwatch_model["overwatch_team_edge_score"] if overwatch_model else None,
+            "overwatch_match_probability": overwatch_model["overwatch_match_probability"] if overwatch_model else None,
+            "overwatch_map_probability": overwatch_model["overwatch_map_probability"] if overwatch_model else None,
+            "overwatch_objective_probability": overwatch_model["overwatch_objective_probability"] if overwatch_model else None,
+            "overwatch_projected_maps": overwatch_model["overwatch_projected_maps"] if overwatch_model else None,
             "manual_ticket_preview": manual_ticket,
             "manual_review_required": manual_review_flags,
             "full_board_preview": full_board,
@@ -13525,7 +13990,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         "target_lines": full_board["target_lines"],
         "target_props": full_board["target_props"],
         "target_alt_lines": full_board["target_alt_lines"],
-        "no_bets": no_bets if (basketball_module_model or college_football_model or tennis_model or combat_model or golf_model or f1_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model) else simple_no_bets,
+        "no_bets": no_bets if (basketball_module_model or college_football_model or tennis_model or combat_model or golf_model or f1_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model) else simple_no_bets,
         "best_correlated_parlay": full_board["best_correlated_parlay"],
         "value_ranking": full_board["value_ranking"],
         "risk_ranking": full_board["risk_ranking"],
@@ -13631,3 +14096,4 @@ def _unsupported_sport_response(payload: dict[str, Any]) -> dict[str, Any]:
 
 
 _validate_registry()
+

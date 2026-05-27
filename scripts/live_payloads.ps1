@@ -516,6 +516,38 @@ function New-CoDPayload {
     return $payload
 }
 
+function New-OverwatchPayload {
+    $stats = @{
+        team_name = "San Francisco Shock"; opponent_name = "Dallas Fuel"; pick = "San Francisco Shock"
+        format = "bo5"; maps = 5; map = "Lijiang Tower"; mode = "control"; rotation = "Control-Hybrid-Escort-Push-Control"; patch = "2.10"
+        team_rank = 2; opp_rank = 6; team_elo_rating = 1860; opp_elo_rating = 1790
+        team_win_pct = 0.67; opp_win_pct = 0.58; team_map_pct = 0.64; opp_map_pct = 0.55
+        team_control_pct = 0.66; opp_control_pct = 0.57; team_escort_pct = 0.62; opp_escort_pct = 0.54
+        team_hybrid_pct = 0.63; opp_hybrid_pct = 0.55; team_push_pct = 0.61; opp_push_pct = 0.53
+        team_flashpoint_pct = 0.60; opp_flashpoint_pct = 0.52; team_clash_pct = 0.59; opp_clash_pct = 0.51
+        team_fight_pct = 0.58; opp_fight_pct = 0.52; team_first_fight_pct = 0.56; opp_first_fight_pct = 0.50
+        team_objective_score = 88; opp_objective_score = 81; team_ult_econ = 89; opp_ult_econ = 82
+        team_ult_conversion = 0.64; opp_ult_conversion = 0.56; team_stagger = 87; opp_stagger = 80
+        team_comp = 90; opp_comp = 82; team_meta_fit = 89; opp_meta_fit = 81
+        team_tank = 88; opp_tank = 82; team_dps = 90; opp_dps = 84; team_support = 87; opp_support = 82
+        team_damage10 = 8200; opp_damage10 = 7800; team_healing10 = 6900; opp_healing10 = 6500
+        team_elims10 = 23.5; opp_elims10 = 21.0; team_deaths10 = 18.2; opp_deaths10 = 20.4
+        team_final_blow_pct = 0.54; opp_final_blow_pct = 0.49; team_map_depth = 7; opp_map_depth = 6
+        team_pick_pct = 0.34; opp_pick_pct = 0.28; team_ban_pct = 0.12; opp_ban_pct = 0.17
+        lan = $true; online = $false; tier = "major"; playoff = $true; elimination = $false; region = "NA"
+        rest = 4; travel = 0.14; roster_stability_score = 0.92; substitute = 0.02
+        availability_risk = 0.03; form = 85; opp_form = 78; market_move = 0.0
+        public_pct = 54; sharp_pct = 58
+        player_name = "Proper"; role = "DPS"; hero_pool = 91; player_meta_fit = 89
+        elims_proj = 29.5; final_blows_proj = 12.5; assists_proj = 10.5; deaths_proj = 8.5
+        damage_proj = 11800; healing_proj = 500; mitigation_proj = 850; kda_proj = 4.6
+        maps_proj = 4.2; prop_line = 28.5; book_count = 8
+    }
+    $payload = New-LiveTicketBase -Sport "overwatch" -League "OWCS" -Event "San Francisco Shock vs Dallas Fuel" -Market "match_winner" -Selection "San Francisco Shock" -InputStats $stats
+    $payload.visible_markets = @("match_winner", "control_map_winner", "player_eliminations")
+    return $payload
+}
+
 function New-LiveActivePayload {
     param([Parameter(Mandatory = $true)] [string] $Sport)
     switch ($Sport.ToLower()) {
@@ -576,6 +608,16 @@ function New-LiveActivePayload {
         "cod_league" { return New-CoDPayload }
         "callofduty" { return New-CoDPayload }
         "call_of_duty_league" { return New-CoDPayload }
+        "overwatch" { return New-OverwatchPayload }
+        "overwatch2" { return New-OverwatchPayload }
+        "overwatch_2" { return New-OverwatchPayload }
+        "ow" { return New-OverwatchPayload }
+        "ow2" { return New-OverwatchPayload }
+        "esports_overwatch" { return New-OverwatchPayload }
+        "overwatch_league" { return New-OverwatchPayload }
+        "owl" { return New-OverwatchPayload }
+        "overwatch_champions_series" { return New-OverwatchPayload }
+        "owcs" { return New-OverwatchPayload }
         default { throw "No live active payload builder registered for sport '$Sport'." }
     }
 }

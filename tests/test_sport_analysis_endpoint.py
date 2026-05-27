@@ -511,6 +511,16 @@ class TestSportAnalysisEndpoint(unittest.TestCase):
                 "cod_league": "call_of_duty",
                 "callofduty": "call_of_duty",
                 "call_of_duty_league": "call_of_duty",
+                "overwatch": "overwatch",
+                "overwatch2": "overwatch",
+                "overwatch_2": "overwatch",
+                "ow": "overwatch",
+                "ow2": "overwatch",
+                "esports_overwatch": "overwatch",
+                "overwatch_league": "overwatch",
+                "owl": "overwatch",
+                "overwatch_champions_series": "overwatch",
+                "owcs": "overwatch",
             }
             for submitted, expected in cases.items():
                 response = client.post(
