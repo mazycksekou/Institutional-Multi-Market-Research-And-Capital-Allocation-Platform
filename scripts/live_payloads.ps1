@@ -129,6 +129,33 @@ function New-RugbyPayload {
     return New-LiveTicketBase -Sport "rugby_union" -League "Six Nations" -Event "Ireland vs France" -Market "match_winner" -Selection "Ireland" -InputStats $stats
 }
 
+function New-LacrossePayload {
+    $stats = @{
+        team_name = "Atlas"; opponent_name = "Whipsnakes"; pick = "Atlas"; competition_name = "PLL"; gender = "mens"; format = "field"; home = "home"; neutral = $false
+        team_power_rating = 88; opp_power_rating = 82; team_elo_rating = 1810; opp_elo_rating = 1740; team_win_pct = 0.70; opp_win_pct = 0.58
+        team_form = 86; opp_form = 78; team_gf = 13.8; opp_gf = 12.1; team_ga = 10.6; opp_ga = 12.4
+        team_xg_for = 13.5; opp_xg_for = 12.0; team_xg_against = 10.8; opp_xg_against = 12.5
+        team_shots = 44.0; opp_shots = 39.5; team_sog = 27.0; opp_sog = 23.5; team_shot_quality = 88; opp_shot_quality = 80
+        team_save_pct = 0.565; opp_save_pct = 0.520; goalie_score = 86; opp_goalie_score = 78; team_faceoff_pct = 0.585; opp_faceoff_pct = 0.495
+        team_possession = 87; opp_possession = 80; team_ground_balls = 34.0; opp_ground_balls = 29.5
+        team_turnovers = 12.0; opp_turnovers = 14.4; team_forced_turnovers = 8.1; opp_forced_turnovers = 6.4
+        team_clear_pct = 0.885; opp_clear_pct = 0.835; team_ride_pct = 0.185; opp_ride_pct = 0.145
+        team_emo = 0.465; opp_emo = 0.380; team_man_down = 0.710; opp_man_down = 0.655
+        team_penalties = 2.8; opp_penalties = 3.4; team_transition = 87; opp_transition = 79
+        team_set_offense = 86; opp_set_offense = 80; team_def_eff = 84; opp_def_eff = 78
+        team_pace_value = 75.0; opp_pace_value = 71.0; team_availability = 0.94; opp_availability = 0.88
+        key_available = 0.96; opp_key_available = 0.88; rest = 5; opp_rest = 4; travel = 0.10; opp_travel = 0.22
+        weather_risk = 0.10; wind_mph = 8; temp_f = 72; field = "dry"; ref_penalty_rate = 5.6
+        market_move = 0.0; public_pct = 52; sharp_pct = 58
+        player_name = "Jeff Teat"; position = "attack"; minutes_proj = 48; goals_proj = 2.4; assists_proj = 2.0; points_proj = 4.4
+        shots_proj = 8.5; sog_proj = 5.1; saves_proj = 0.0; ground_balls_proj = 2.2; faceoff_wins_proj = 0.0
+        anytime_goal_prob = 0.72; first_goal_prob = 0.14; prop_line = 1.5; book_count = 8; current_odds = 100
+    }
+    $payload = New-LiveTicketBase -Sport "pll" -League "PLL" -Event "Atlas vs Whipsnakes" -Market "match_winner" -Selection "Atlas" -InputStats $stats
+    $payload.visible_markets = @("match_winner", "spread", "player_goals")
+    return $payload
+}
+
 function New-NhlPayload {
     $stats = @{
         team = "Rangers"; opponent = "Bruins"; selection = "Rangers"; game = "Bruins at Rangers"; home_away = "home"
@@ -620,6 +647,16 @@ function New-LiveActivePayload {
         "united_rugby_championship" { return New-RugbyPayload }
         "rugby_world_cup" { return New-RugbyPayload }
         "top_14" { return New-RugbyPayload }
+        "lacrosse" { return New-LacrossePayload }
+        "lax" { return New-LacrossePayload }
+        "mens_lacrosse" { return New-LacrossePayload }
+        "womens_lacrosse" { return New-LacrossePayload }
+        "college_lacrosse" { return New-LacrossePayload }
+        "ncaa_lacrosse" { return New-LacrossePayload }
+        "pll" { return New-LacrossePayload }
+        "premier_lacrosse_league" { return New-LacrossePayload }
+        "nll" { return New-LacrossePayload }
+        "national_lacrosse_league" { return New-LacrossePayload }
         "nhl" { return New-NhlPayload }
         "tennis" { return New-TennisPayload }
         "combat" { return New-CombatPayload }

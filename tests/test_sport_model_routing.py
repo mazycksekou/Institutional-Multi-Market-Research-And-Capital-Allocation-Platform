@@ -64,6 +64,16 @@ class TestSportModelRouting(unittest.TestCase):
             "united_rugby_championship": "rugby",
             "rugby_world_cup": "rugby",
             "top_14": "rugby",
+            "lacrosse": "lacrosse",
+            "lax": "lacrosse",
+            "mens_lacrosse": "lacrosse",
+            "womens_lacrosse": "lacrosse",
+            "college_lacrosse": "lacrosse",
+            "ncaa_lacrosse": "lacrosse",
+            "pll": "lacrosse",
+            "premier_lacrosse_league": "lacrosse",
+            "nll": "lacrosse",
+            "national_lacrosse_league": "lacrosse",
             "ufc": "mma_mixed_martial_arts",
             "mma": "mma_mixed_martial_arts",
             "mixed_martial_arts": "mma_mixed_martial_arts",
@@ -181,7 +191,7 @@ class TestSportModelRouting(unittest.TestCase):
         self.assertEqual(registry.get_sport_model_config("mlb")["sport"], "baseball_mlb")
 
     def test_primary_model_type_constraints(self):
-        for sport in ["basketball_nba", "basketball_wnba", "basketball_ncaab", "basketball_ncaawb", "americanfootball_nfl", "americanfootball_ncaaf", "rugby", "mma_mixed_martial_arts", "boxing", "golf", "formula1", "formula_e", "nascar", "indycar", "motogp", "cricket", "cs2", "valorant", "league_of_legends", "dota2", "call_of_duty", "overwatch", "esports"]:
+        for sport in ["basketball_nba", "basketball_wnba", "basketball_ncaab", "basketball_ncaawb", "americanfootball_nfl", "americanfootball_ncaaf", "rugby", "lacrosse", "mma_mixed_martial_arts", "boxing", "golf", "formula1", "formula_e", "nascar", "indycar", "motogp", "cricket", "cs2", "valorant", "league_of_legends", "dota2", "call_of_duty", "overwatch", "esports"]:
             self.assertNotEqual(registry.get_sport_model_config(sport)["primary_model_type"], "poisson")
         self.assertIn("Negative Binomial", registry.get_sport_model_config("baseball_mlb")["model_family"])
         self.assertIn("Poisson", registry.get_sport_model_config("soccer")["model_family"])
@@ -201,6 +211,7 @@ class TestSportModelRouting(unittest.TestCase):
         self.assertEqual(registry.get_sport_model_config("basketball_ncaawb")["model_family"], "womens_college_basketball_possession_variance_model")
         self.assertEqual(registry.get_sport_model_config("americanfootball_ncaaf")["model_family"], "college_football_epa_drive_rating_monte_carlo_model")
         self.assertEqual(registry.get_sport_model_config("rugby")["model_family"], "rugby_set_piece_territory_expected_points_monte_carlo_model")
+        self.assertEqual(registry.get_sport_model_config("lacrosse")["model_family"], "lacrosse_faceoff_possession_shot_quality_monte_carlo_model")
         self.assertEqual(registry.get_sport_model_config("formula1")["model_family"], "f1_qualifying_race_pace_pit_strategy_monte_carlo_model")
         self.assertEqual(registry.get_sport_model_config("formula_e")["model_family"], "formula_e_energy_management_attack_mode_street_circuit_monte_carlo_model")
         self.assertEqual(registry.get_sport_model_config("nascar")["model_family"], "nascar_track_position_speed_rating_pit_variance_monte_carlo_model")
@@ -417,7 +428,7 @@ class TestSportModelRouting(unittest.TestCase):
         self.assertEqual(response["full_board_preview"]["no_bets"], [])
 
     def test_unsupported_sport_returns_safe_no_bet_response(self):
-        response = registry.analyze_sport_model({"sport": "lacrosse", "market": "moneyline"})
+        response = registry.analyze_sport_model({"sport": "pickleball", "market": "moneyline"})
         self.assertFalse(response["ok"])
         self.assertEqual(response["confirmed_bets"], [])
         self.assertIn("unsupported sport", response["no_bet_flags"])

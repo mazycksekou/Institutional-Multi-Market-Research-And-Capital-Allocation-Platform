@@ -299,7 +299,7 @@ class TestSportAnalysisEndpoint(unittest.TestCase):
 
     def test_handles_unsupported_sport_with_safe_no_bet_response(self):
         response = asyncio.run(action_analyze_sport_model(SportAnalysisRequest(
-            sport="lacrosse",
+            sport="pickleball",
             market="moneyline",
             bankroll="1000",
             unit_size="25",
@@ -426,6 +426,16 @@ class TestSportAnalysisEndpoint(unittest.TestCase):
                 "united_rugby_championship": "rugby",
                 "rugby_world_cup": "rugby",
                 "top_14": "rugby",
+                "lacrosse": "lacrosse",
+                "lax": "lacrosse",
+                "mens_lacrosse": "lacrosse",
+                "womens_lacrosse": "lacrosse",
+                "college_lacrosse": "lacrosse",
+                "ncaa_lacrosse": "lacrosse",
+                "pll": "lacrosse",
+                "premier_lacrosse_league": "lacrosse",
+                "nll": "lacrosse",
+                "national_lacrosse_league": "lacrosse",
                 "mlb": "baseball_mlb",
                 "ufc": "mma_mixed_martial_arts",
                 "mma": "mma_mixed_martial_arts",
