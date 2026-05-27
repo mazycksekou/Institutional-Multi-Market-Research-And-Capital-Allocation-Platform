@@ -16,6 +16,7 @@ EXPECTED_SPORT_KEYS = [
     "soccer",
     "rugby",
     "lacrosse",
+    "table_tennis",
     "afl",
     "icehockey_nhl",
     "tennis",
@@ -39,9 +40,9 @@ EXPECTED_SPORT_KEYS = [
 
 
 class TestMultiSportModelRegistry(unittest.TestCase):
-    def test_all_29_sports_are_present(self):
+    def test_all_30_sports_are_present(self):
         sports = registry.get_sports_model_registry_response()["sports"]
-        self.assertEqual(len(sports), 29)
+        self.assertEqual(len(sports), 30)
         self.assertEqual([sport["sport_key"] for sport in sports], EXPECTED_SPORT_KEYS)
 
     def test_mlb_is_projection_ready(self):
@@ -52,7 +53,7 @@ class TestMultiSportModelRegistry(unittest.TestCase):
     def test_only_activated_sports_allow_confirmed_bets(self):
         sports = registry.get_sports_model_registry_response()["sports"]
         enabled = [sport["sport_key"] for sport in sports if sport["confirmed_bets_allowed"]]
-        self.assertEqual(enabled, ["baseball_mlb", "basketball_nba", "basketball_wnba", "basketball_ncaab", "basketball_ncaawb", "americanfootball_nfl", "americanfootball_ncaaf", "soccer", "rugby", "lacrosse", "afl", "icehockey_nhl", "tennis", "mma_mixed_martial_arts", "boxing", "golf", "formula1", "formula_e", "nascar", "indycar", "motogp", "cricket", "cs2", "valorant", "league_of_legends", "dota2", "call_of_duty", "overwatch"])
+        self.assertEqual(enabled, ["baseball_mlb", "basketball_nba", "basketball_wnba", "basketball_ncaab", "basketball_ncaawb", "americanfootball_nfl", "americanfootball_ncaaf", "soccer", "rugby", "lacrosse", "table_tennis", "afl", "icehockey_nhl", "tennis", "mma_mixed_martial_arts", "boxing", "golf", "formula1", "formula_e", "nascar", "indycar", "motogp", "cricket", "cs2", "valorant", "league_of_legends", "dota2", "call_of_duty", "overwatch"])
         self.assertTrue(registry.confirmed_bets_allowed("baseball_mlb"))
         self.assertTrue(registry.confirmed_bets_allowed("basketball_nba"))
         self.assertTrue(registry.confirmed_bets_allowed("basketball_wnba"))
@@ -63,6 +64,7 @@ class TestMultiSportModelRegistry(unittest.TestCase):
         self.assertTrue(registry.confirmed_bets_allowed("soccer"))
         self.assertTrue(registry.confirmed_bets_allowed("rugby"))
         self.assertTrue(registry.confirmed_bets_allowed("lacrosse"))
+        self.assertTrue(registry.confirmed_bets_allowed("table_tennis"))
         self.assertTrue(registry.confirmed_bets_allowed("afl"))
         self.assertTrue(registry.confirmed_bets_allowed("icehockey_nhl"))
         self.assertTrue(registry.confirmed_bets_allowed("tennis"))
@@ -84,7 +86,7 @@ class TestMultiSportModelRegistry(unittest.TestCase):
         self.assertTrue(all(
             not registry.confirmed_bets_allowed(sport["sport_key"])
             for sport in sports
-            if sport["sport_key"] not in {"baseball_mlb", "basketball_nba", "basketball_wnba", "basketball_ncaab", "basketball_ncaawb", "americanfootball_nfl", "americanfootball_ncaaf", "soccer", "rugby", "lacrosse", "afl", "icehockey_nhl", "tennis", "mma_mixed_martial_arts", "boxing", "golf", "formula1", "formula_e", "nascar", "indycar", "motogp", "cricket", "cs2", "valorant", "league_of_legends", "dota2", "call_of_duty", "overwatch"}
+            if sport["sport_key"] not in {"baseball_mlb", "basketball_nba", "basketball_wnba", "basketball_ncaab", "basketball_ncaawb", "americanfootball_nfl", "americanfootball_ncaaf", "soccer", "rugby", "lacrosse", "table_tennis", "afl", "icehockey_nhl", "tennis", "mma_mixed_martial_arts", "boxing", "golf", "formula1", "formula_e", "nascar", "indycar", "motogp", "cricket", "cs2", "valorant", "league_of_legends", "dota2", "call_of_duty", "overwatch"}
         ))
 
     def test_unsupported_sport_helper_behavior_is_clean(self):
@@ -106,8 +108,8 @@ class TestMultiSportModelRegistry(unittest.TestCase):
         response = asyncio.run(action_get_sports_model_registry())
         self.assertTrue(response["ok"])
         self.assertEqual(response["endpoint"], "getSportsModelRegistry")
-        self.assertEqual(response["summary"]["total_sports"], 29)
-        self.assertEqual(response["summary"]["confirmed_bet_enabled_sports"], 28)
+        self.assertEqual(response["summary"]["total_sports"], 30)
+        self.assertEqual(response["summary"]["confirmed_bet_enabled_sports"], 29)
         self.assertEqual(response["summary"]["market_derived_only_sports"], 0)
         self.assertEqual(response["summary"]["not_built_sports"], 1)
         self.assertEqual(response["error"], None)
@@ -208,6 +210,19 @@ class TestMultiSportModelRegistry(unittest.TestCase):
         self.assertNotEqual(lacrosse["model_family"], soccer["model_family"])
         self.assertTrue(lacrosse["input_normalizer"])
         self.assertIsInstance(lacrosse["screenshot_alias_test_payload"], dict)
+
+    def test_table_tennis_is_standalone_active_module(self):
+        table_tennis = registry.get_sport_model_config("table_tennis")
+        tennis = registry.get_sport_model_config("tennis")
+        lacrosse = registry.get_sport_model_config("lacrosse")
+        self.assertTrue(table_tennis["confirmed_bets_allowed"])
+        self.assertEqual(table_tennis["model_used"], "table_tennis_serve_return_rally_momentum_monte_carlo_model")
+        self.assertEqual(table_tennis["model_family"], "table_tennis_serve_return_rally_momentum_monte_carlo_model")
+        self.assertEqual(table_tennis["league_calibration_applied"], "table_tennis")
+        self.assertNotEqual(table_tennis["model_family"], tennis["model_family"])
+        self.assertNotEqual(table_tennis["model_family"], lacrosse["model_family"])
+        self.assertTrue(table_tennis["input_normalizer"])
+        self.assertIsInstance(table_tennis["screenshot_alias_test_payload"], dict)
 
     def test_afl_is_standalone_active_module(self):
         afl = registry.get_sport_model_config("afl")
@@ -376,6 +391,7 @@ class TestMultiSportModelRegistry(unittest.TestCase):
             "soccer": ("referee", "moderate"),
             "rugby": ("referee/TMO", "moderate"),
             "lacrosse": ("officials", "weak"),
+            "table_tennis": ("umpire/referee", "weak"),
             "mma_mixed_martial_arts": ("referee and judges", "moderate"),
             "boxing": ("referee and judges", "moderate"),
             "tennis": ("chair umpire", "weak_to_moderate"),

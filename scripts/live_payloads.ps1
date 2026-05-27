@@ -156,6 +156,30 @@ function New-LacrossePayload {
     return $payload
 }
 
+function New-TableTennisPayload {
+    $stats = @{
+        player_name = "Ma Long"; opponent_name = "Fan Zhendong"; pick = "Ma Long"; tournament_name = "WTT Champions"; competition_name = "WTT"; format = "best_of_7"; games = 7; game_no = 1; neutral = $true
+        player_power_rating = 91; opp_power_rating = 87; player_elo_rating = 2185; opp_elo_rating = 2120; player_rank = 3; opp_rank = 5
+        player_win_pct = 0.72; opp_win_pct = 0.64; player_form = 88; opp_form = 82
+        serve_rating = 90; opp_serve_rating = 85; return_rating = 88; opp_return_rating = 82
+        service_points_won_pct = 0.62; opp_service_points_won_pct = 0.58; return_points_won_pct = 0.46; opp_return_points_won_pct = 0.42
+        first_ball_attack = 89; opp_first_ball_attack = 83; receive_quality = 88; opp_receive_quality = 82
+        rally_rating = 90; opp_rally_rating = 84; short_game = 86; opp_short_game = 82; counterattack = 89; opp_counterattack = 84
+        defense = 87; opp_defense = 83; spin = 90; opp_spin = 84; speed = 88; opp_speed = 85; consistency = 89; opp_consistency = 83
+        error_rate = 0.12; opp_error_rate = 0.16; game_win_pct = 0.66; opp_game_win_pct = 0.58
+        deciding_game_pct = 0.62; opp_deciding_game_pct = 0.54; comeback = 86; opp_comeback = 80; clutch = 88; opp_clutch = 82
+        momentum = 87; opp_momentum = 81; pressure = 88; opp_pressure = 82
+        handedness = "right_vs_right"; style_matchup = "two-wing attack"; table_speed = 0.55; ball_speed = 0.52; altitude = 120
+        fatigue = 0.12; opp_fatigue = 0.18; rest = 3; opp_rest = 2; travel = 0.08; opp_travel = 0.16; injury = 0.04; opp_injury = 0.08
+        market_move = 0.0; public_pct = 54; sharp_pct = 58
+        points_proj = 47.5; opp_points_proj = 42.0; games_proj = 4.7; opp_games_proj = 3.8; service_points_proj = 28.5; return_points_proj = 19.0
+        prop_line = 26.5; book_count = 8; current_odds = 100
+    }
+    $payload = New-LiveTicketBase -Sport "ping_pong" -League "WTT" -Event "Ma Long vs Fan Zhendong" -Market "match_winner" -Selection "Ma Long" -InputStats $stats
+    $payload.visible_markets = @("match_winner", "game_handicap", "player_service_points_won")
+    return $payload
+}
+
 function New-AFLPayload {
     $stats = @{
         team_name = "Collingwood"; opponent_name = "Carlton"; pick = "Collingwood"; competition_name = "AFL"; venue_name = "MCG"; home = "home"; neutral = $false
@@ -676,6 +700,13 @@ function New-LiveActivePayload {
         "rugby_world_cup" { return New-RugbyPayload }
         "top_14" { return New-RugbyPayload }
         "lacrosse" { return New-LacrossePayload }
+        "table_tennis" { return New-TableTennisPayload }
+        "ping_pong" { return New-TableTennisPayload }
+        "pingpong" { return New-TableTennisPayload }
+        "ittf" { return New-TableTennisPayload }
+        "wtt" { return New-TableTennisPayload }
+        "world_table_tennis" { return New-TableTennisPayload }
+        "olympic_table_tennis" { return New-TableTennisPayload }
         "lax" { return New-LacrossePayload }
         "mens_lacrosse" { return New-LacrossePayload }
         "womens_lacrosse" { return New-LacrossePayload }

@@ -5,7 +5,7 @@ $RepoRoot = Split-Path -Parent $ScriptDir
 . "$ScriptDir\live_payloads.ps1"
 
 $payloads = [ordered]@{}
-foreach ($sport in @("nba","nfl","mlb","soccer","rugby","lacrosse","afl","nhl","tennis","combat","golf","wnba","ncaab","ncaawb","ncaaf","f1","formula_e","nascar","indycar","motogp","cricket","cs2","valorant","lol","dota2","cod","overwatch")) {
+foreach ($sport in @("nba","nfl","mlb","soccer","rugby","lacrosse","table_tennis","afl","nhl","tennis","combat","golf","wnba","ncaab","ncaawb","ncaaf","f1","formula_e","nascar","indycar","motogp","cricket","cs2","valorant","lol","dota2","cod","overwatch")) {
     $payloads[$sport] = New-LiveActivePayload -Sport $sport
 }
 
