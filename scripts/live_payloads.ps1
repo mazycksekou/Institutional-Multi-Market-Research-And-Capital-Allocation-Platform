@@ -156,6 +156,34 @@ function New-LacrossePayload {
     return $payload
 }
 
+function New-AFLPayload {
+    $stats = @{
+        team_name = "Collingwood"; opponent_name = "Carlton"; pick = "Collingwood"; competition_name = "AFL"; venue_name = "MCG"; home = "home"; neutral = $false
+        team_power_rating = 88; opp_power_rating = 82; team_elo_rating = 1815; opp_elo_rating = 1750; team_win_pct = 0.70; opp_win_pct = 0.58
+        team_form = 86; opp_form = 78; team_pf = 91.5; opp_pf = 84.2; team_pa = 75.4; opp_pa = 83.6
+        team_xscore_for = 93.0; opp_xscore_for = 84.0; team_xscore_against = 76.0; opp_xscore_against = 85.0
+        team_goal_accuracy_pct = 0.535; opp_goal_accuracy_pct = 0.492; team_scoring_shots = 26.5; opp_scoring_shots = 23.2
+        team_inside50s = 58.0; opp_inside50s = 51.0; team_i50_conversion = 0.47; opp_i50_conversion = 0.41
+        team_clearances = 42.0; opp_clearances = 36.0; team_center_clearances = 13.5; opp_center_clearances = 10.8
+        team_stoppage_clearances = 28.5; opp_stoppage_clearances = 25.2; team_contested_possessions = 144.0; opp_contested_possessions = 134.0
+        team_uncontested_possessions = 235.0; opp_uncontested_possessions = 221.0; team_disposal_eff_pct = 0.742; opp_disposal_eff_pct = 0.706
+        team_turnovers = 59.0; opp_turnovers = 65.0; team_intercept_marks = 15.2; opp_intercept_marks = 12.8
+        team_marks_i50 = 13.0; opp_marks_i50 = 10.6; team_tackles = 68.0; opp_tackles = 61.0
+        team_pressure = 87; opp_pressure = 80; team_rebound50s = 39.0; opp_rebound50s = 34.0
+        team_ruck = 86; opp_ruck = 78; team_hitout_pct = 0.56; opp_hitout_pct = 0.48
+        team_availability = 0.94; opp_availability = 0.88; key_available = 0.96; opp_key_available = 0.89
+        rest = 7; opp_rest = 6; travel = 0.08; opp_travel = 0.16; weather_risk = 0.12
+        rain_pct = 0.10; wind_kph = 16; temp_c = 17; ground = "firm"; umpire_fk_rate = 39.5
+        market_move = 0.0; public_pct = 52; sharp_pct = 58
+        player_name = "Nick Daicos"; position = "midfielder"; minutes_proj = 86; goals_proj = 1.1; disposals_proj = 31.5
+        marks_proj = 6.2; tackles_proj = 5.8; hitouts_proj = 0.0; fantasy_points_proj = 111.0
+        anytime_goal_prob = 0.56; first_goal_prob = 0.08; prop_line = 27.5; book_count = 8; current_odds = 100
+    }
+    $payload = New-LiveTicketBase -Sport "aussie_rules" -League "AFL" -Event "Collingwood vs Carlton" -Market "match_winner" -Selection "Collingwood" -InputStats $stats
+    $payload.visible_markets = @("match_winner", "spread", "player_disposals")
+    return $payload
+}
+
 function New-NhlPayload {
     $stats = @{
         team = "Rangers"; opponent = "Bruins"; selection = "Rangers"; game = "Bruins at Rangers"; home_away = "home"
@@ -657,6 +685,13 @@ function New-LiveActivePayload {
         "premier_lacrosse_league" { return New-LacrossePayload }
         "nll" { return New-LacrossePayload }
         "national_lacrosse_league" { return New-LacrossePayload }
+        "afl" { return New-AFLPayload }
+        "australian_rules" { return New-AFLPayload }
+        "aussie_rules" { return New-AFLPayload }
+        "australian_football" { return New-AFLPayload }
+        "australian_rules_football" { return New-AFLPayload }
+        "afl_football" { return New-AFLPayload }
+        "australian_football_league" { return New-AFLPayload }
         "nhl" { return New-NhlPayload }
         "tennis" { return New-TennisPayload }
         "combat" { return New-CombatPayload }

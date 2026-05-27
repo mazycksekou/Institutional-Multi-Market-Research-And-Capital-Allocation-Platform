@@ -51,6 +51,7 @@ OFFICIAL_SPORT_KEYS = [
     "soccer",
     "rugby",
     "lacrosse",
+    "afl",
     "icehockey_nhl",
     "tennis",
     "mma_mixed_martial_arts",
@@ -216,6 +217,13 @@ SPORT_ALIASES = {
     "premier_lacrosse_league": "lacrosse",
     "nll": "lacrosse",
     "national_lacrosse_league": "lacrosse",
+    "afl": "afl",
+    "australian_rules": "afl",
+    "aussie_rules": "afl",
+    "australian_football": "afl",
+    "australian_rules_football": "afl",
+    "afl_football": "afl",
+    "australian_football_league": "afl",
     "nascar_cup": "nascar",
     "cup_series": "nascar",
     "nascar_cup_series": "nascar",
@@ -2178,6 +2186,99 @@ LACROSSE_INPUT_CONTRACT = {
     "social_crowd_inputs": ["public_betting_percent", "sharp_money_percent", "social_sentiment", "crowd_consensus"],
 }
 
+AFL_MARKETS = [
+    "match_winner", "moneyline", "spread", "handicap", "total_points", "team_total_points",
+    "first_half_winner", "first_half_spread", "first_half_total", "quarter_winner",
+    "quarter_spread", "quarter_total", "winning_margin", "exact_margin", "player_goals",
+    "player_disposals", "player_marks", "player_tackles", "player_hitouts",
+    "player_fantasy_points", "anytime_goal_scorer", "first_goal_scorer", "alt_spread",
+    "alt_total_points", "alt_team_total_points",
+]
+
+AFL_PROP_MARKETS = [
+    "player_goals", "player_disposals", "player_marks", "player_tackles",
+    "player_hitouts", "player_fantasy_points", "anytime_goal_scorer",
+    "first_goal_scorer",
+]
+
+AFL_REQUIRED_CORE_INPUTS = [
+    "team", "opponent", "market", "selection", "odds_american", "league", "competition",
+    "venue", "home_away", "neutral_site", "team_rating", "opponent_rating", "team_elo",
+    "opponent_elo", "team_recent_win_rate", "opponent_recent_win_rate", "team_recent_form",
+    "opponent_recent_form", "team_points_for", "opponent_points_for", "team_points_against",
+    "opponent_points_against", "team_expected_score_for", "opponent_expected_score_for",
+    "team_expected_score_against", "opponent_expected_score_against", "team_goal_accuracy",
+    "opponent_goal_accuracy", "team_scoring_shot_rate", "opponent_scoring_shot_rate",
+    "team_inside50_rate", "opponent_inside50_rate", "team_inside50_conversion_rate",
+    "opponent_inside50_conversion_rate", "team_clearance_rate", "opponent_clearance_rate",
+    "team_center_clearance_rate", "opponent_center_clearance_rate",
+    "team_stoppage_clearance_rate", "opponent_stoppage_clearance_rate",
+    "team_contested_possession_rate", "opponent_contested_possession_rate",
+    "team_uncontested_possession_rate", "opponent_uncontested_possession_rate",
+    "team_disposal_efficiency", "opponent_disposal_efficiency", "team_turnover_rate",
+    "opponent_turnover_rate", "team_intercept_mark_rate", "opponent_intercept_mark_rate",
+    "team_marks_inside50_rate", "opponent_marks_inside50_rate", "team_tackle_rate",
+    "opponent_tackle_rate", "team_pressure_rating", "opponent_pressure_rating",
+    "team_rebound50_rate", "opponent_rebound50_rate", "team_ruck_rating",
+    "opponent_ruck_rating", "team_hitout_win_rate", "opponent_hitout_win_rate",
+    "team_injury_availability_rating", "opponent_injury_availability_rating",
+    "key_player_availability", "opponent_key_player_availability", "rest_days",
+    "opponent_rest_days", "travel_fatigue", "opponent_travel_fatigue", "weather_risk",
+    "rain_probability", "wind_speed", "temperature", "ground_condition",
+    "umpire_free_kick_rate",
+]
+
+AFL_NUMERIC_CORE_INPUTS = [
+    field for field in AFL_REQUIRED_CORE_INPUTS
+    if field not in {
+        "team", "opponent", "market", "selection", "league", "competition",
+        "venue", "home_away", "neutral_site", "ground_condition",
+    }
+]
+
+AFL_PLAYER_PROP_INPUTS = [
+    "player", "player_position", "player_minutes_projection", "player_goals_projection",
+    "player_disposals_projection", "player_marks_projection", "player_tackles_projection",
+    "player_hitouts_projection", "player_fantasy_points_projection",
+    "player_anytime_goal_probability", "player_first_goal_probability", "player_prop_line",
+]
+
+AFL_NUMERIC_PLAYER_PROP_INPUTS = [
+    field for field in AFL_PLAYER_PROP_INPUTS if field not in {"player", "player_position"}
+]
+
+AFL_REQUIRED_MARKET_INPUTS = {
+    "match_winner": ["odds_american"], "moneyline": ["odds_american"],
+    "spread": ["line", "odds_american"], "handicap": ["line", "odds_american"],
+    "total_points": ["line", "odds_american"], "team_total_points": ["line", "odds_american"],
+    "first_half_winner": ["odds_american"], "first_half_spread": ["line", "odds_american"],
+    "first_half_total": ["line", "odds_american"], "quarter_winner": ["odds_american"],
+    "quarter_spread": ["line", "odds_american"], "quarter_total": ["line", "odds_american"],
+    "winning_margin": ["line", "odds_american"], "exact_margin": ["line", "odds_american"],
+    "alt_spread": ["line", "odds_american"], "alt_total_points": ["line", "odds_american"],
+    "alt_team_total_points": ["line", "odds_american"],
+}
+for _afl_prop_market in AFL_PROP_MARKETS:
+    AFL_REQUIRED_MARKET_INPUTS[_afl_prop_market] = ["odds_american"] + AFL_PLAYER_PROP_INPUTS
+
+AFL_OPTIONAL_ENRICHMENT_INPUTS = [
+    "market_movement", "public_betting_percent", "sharp_money_percent",
+    "social_sentiment", "crowd_consensus", "book_count", "current_odds",
+    "best_available_odds", "opening_odds", "consensus_odds", "provider_status",
+    "injury_report_quality", "weather_report_quality", "lineup_confirmed",
+]
+
+AFL_INPUT_CONTRACT = {
+    "required_core_inputs": AFL_REQUIRED_CORE_INPUTS,
+    "required_market_specific_inputs": AFL_REQUIRED_MARKET_INPUTS,
+    "optional_enrichment_inputs": AFL_OPTIONAL_ENRICHMENT_INPUTS,
+    "player_prop_inputs": AFL_PLAYER_PROP_INPUTS,
+    "provider_enrichment_inputs": ["best_available_odds", "current_odds", "opening_odds", "consensus_odds", "book_count"],
+    "officiating_inputs": ["umpire_free_kick_rate", "umpire_crew"],
+    "umpire_inputs": ["umpire_free_kick_rate", "umpire_crew"],
+    "social_crowd_inputs": ["public_betting_percent", "sharp_money_percent", "social_sentiment", "crowd_consensus"],
+}
+
 NHL_REQUIRED_CORE_INPUTS = [
     "team",
     "opponent",
@@ -2994,6 +3095,7 @@ SPORT_PROP_INPUTS = {
     "soccer": ["player role", "expected minutes", "xG or xA", "field tilt", "opponent matchup"],
     "rugby": ["set piece", "territory", "expected points", "discipline/card risk", "player try props"],
     "lacrosse": ["faceoff possession", "shot quality", "goalie matchup", "pace", "player shot and scorer props"],
+    "afl": ["clearance", "inside 50s", "scoring shots", "ruck", "player disposal and goal props"],
     "icehockey_nhl": ["line assignment", "power play role", "shot projection", "goalie matchup"],
     "tennis": ["serve profile", "return profile", "surface", "fatigue"],
     "mma_mixed_martial_arts": ["fighter stats", "style matchup", "finish history", "fight duration history"],
@@ -3074,6 +3176,12 @@ OFFICIALS_MODULE_BY_SPORT = {
         "official_inputs": ["referee", "official crew", "penalty rate", "stall warning tendency"],
         "betting_edge_strength": "weak",
         "notes": "Lacrosse officiating context can affect penalties and pace but cannot create bets without active Lacrosse model inputs.",
+    },
+    "afl": {
+        "official_type": "umpires",
+        "official_inputs": ["umpire crew", "free kick rate", "holding the ball tendency", "advantage interpretation"],
+        "betting_edge_strength": "weak_to_moderate",
+        "notes": "AFL umpire context can affect free kicks, territory, and pace but cannot create bets without active AFL model inputs.",
     },
     "icehockey_nhl": {
         "official_type": "referees and linesmen",
@@ -3275,6 +3383,7 @@ def _official_affected_markets(sport: str, market: Any) -> list[str]:
         "soccer": ["cards", "penalties", "totals", "both teams to score"],
         "rugby": ["match winner", "spread", "totals", "try scorer", "player props"],
         "lacrosse": ["match winner", "spread", "totals", "goal scorer", "player props"],
+        "afl": ["match winner", "spread", "totals", "goal scorer", "player props"],
         "icehockey_nhl": ["totals", "power play props", "penalty props"],
         "tennis": ["live markets", "game spread", "total games"],
         "mma_mixed_martial_arts": ["method", "goes distance", "round props"],
@@ -3685,6 +3794,24 @@ SPORT_MODEL_REGISTRY = [
         confirmed_bets_allowed=True,
     ),
     _sport(
+        "afl",
+        "AFL",
+        "afl_clearance_inside50_scoring_shot_monte_carlo_model",
+        "afl_clearance_inside50_scoring_shot_monte_carlo_model",
+        "clearance_inside50_scoring_shot_monte_carlo",
+        AFL_MARKETS,
+        AFL_PROP_MARKETS,
+        AFL_REQUIRED_CORE_INPUTS,
+        AFL_OPTIONAL_ENRICHMENT_INPUTS,
+        ["clearance model", "inside 50 model", "scoring shot quality", "ruck adjustment", "player prop projection", "venue/weather/ground calibration"],
+        "clearance inside-50 scoring-shot Monte Carlo",
+        ["Spread, total, team total, goal scorer, disposal, mark, tackle, hitout, and fantasy props are correlated through territory and scoring-shot volume."],
+        sport_parameters={"league_calibration_applied": "afl"},
+        component_status=COMPONENT_STATUS_ACTIVE,
+        model_level=MODEL_LEVEL_PROJECTION_READY,
+        confirmed_bets_allowed=True,
+    ),
+    _sport(
         "icehockey_nhl",
         "NHL",
         "poisson_bivariate_goalie_special_teams_model",
@@ -4015,6 +4142,7 @@ _INPUT_NORMALIZER_BY_SPORT = {
     "soccer": "soccer_input_normalizer",
     "rugby": "rugby_input_normalizer",
     "lacrosse": "lacrosse_input_normalizer",
+    "afl": "afl_input_normalizer",
     "icehockey_nhl": "nhl_input_normalizer",
     "tennis": "tennis_input_normalizer",
     "mma_mixed_martial_arts": "combat_input_normalizer",
@@ -4239,6 +4367,37 @@ _ACTIVE_SCREENSHOT_ALIAS_TEST_PAYLOADS: dict[str, dict[str, Any]] = {
             "shots_proj": 8.5, "sog_proj": 5.1, "saves_proj": 0.0, "ground_balls_proj": 2.2,
             "faceoff_wins_proj": 0.0, "anytime_goal_prob": 0.72, "first_goal_prob": 0.14,
             "prop_line": 1.5, "book_count": 8, "current_odds": 100,
+        },
+    },
+    "afl": {
+        "sport": "aussie_rules", "league": "AFL", "event": "Collingwood vs Carlton", "market": "match_winner",
+        "selection": "Collingwood", "odds_american": 100, "bankroll": 1000, "unit_size": 25, "risk_profile": "moderate",
+        "source_type": "chatgpt_parsed", "screenshot_text": "Collingwood match winner +100 vs Carlton",
+        "visible_markets": ["match_winner", "spread", "player_disposals"],
+        "input_stats": {
+            "team_name": "Collingwood", "opponent_name": "Carlton", "pick": "Collingwood",
+            "competition_name": "AFL", "venue_name": "MCG", "home": "home", "neutral": False,
+            "team_power_rating": 88, "opp_power_rating": 82, "team_elo_rating": 1815, "opp_elo_rating": 1750,
+            "team_win_pct": 0.70, "opp_win_pct": 0.58, "team_form": 86, "opp_form": 78,
+            "team_pf": 91.5, "opp_pf": 84.2, "team_pa": 75.4, "opp_pa": 83.6,
+            "team_xscore_for": 93.0, "opp_xscore_for": 84.0, "team_xscore_against": 76.0, "opp_xscore_against": 85.0,
+            "team_goal_accuracy_pct": 0.535, "opp_goal_accuracy_pct": 0.492, "team_scoring_shots": 26.5, "opp_scoring_shots": 23.2,
+            "team_inside50s": 58.0, "opp_inside50s": 51.0, "team_i50_conversion": 0.47, "opp_i50_conversion": 0.41,
+            "team_clearances": 42.0, "opp_clearances": 36.0, "team_center_clearances": 13.5, "opp_center_clearances": 10.8,
+            "team_stoppage_clearances": 28.5, "opp_stoppage_clearances": 25.2, "team_contested_possessions": 144.0, "opp_contested_possessions": 134.0,
+            "team_uncontested_possessions": 235.0, "opp_uncontested_possessions": 221.0, "team_disposal_eff_pct": 0.742, "opp_disposal_eff_pct": 0.706,
+            "team_turnovers": 59.0, "opp_turnovers": 65.0, "team_intercept_marks": 15.2, "opp_intercept_marks": 12.8,
+            "team_marks_i50": 13.0, "opp_marks_i50": 10.6, "team_tackles": 68.0, "opp_tackles": 61.0,
+            "team_pressure": 87, "opp_pressure": 80, "team_rebound50s": 39.0, "opp_rebound50s": 34.0,
+            "team_ruck": 86, "opp_ruck": 78, "team_hitout_pct": 0.56, "opp_hitout_pct": 0.48,
+            "team_availability": 0.94, "opp_availability": 0.88, "key_available": 0.96, "opp_key_available": 0.89,
+            "rest": 7, "opp_rest": 6, "travel": 0.08, "opp_travel": 0.16, "weather_risk": 0.12,
+            "rain_pct": 0.10, "wind_kph": 16, "temp_c": 17, "ground": "firm", "umpire_fk_rate": 39.5,
+            "market_move": 0.0, "public_pct": 52, "sharp_pct": 58, "player_name": "Nick Daicos",
+            "position": "midfielder", "minutes_proj": 86, "goals_proj": 1.1, "disposals_proj": 31.5,
+            "marks_proj": 6.2, "tackles_proj": 5.8, "hitouts_proj": 0.0, "fantasy_points_proj": 111.0,
+            "anytime_goal_prob": 0.56, "first_goal_prob": 0.08, "prop_line": 27.5,
+            "book_count": 8, "current_odds": 100,
         },
     },
     "icehockey_nhl": {
@@ -6536,6 +6695,36 @@ def _lacrosse_market_specific_missing(market: Any, input_stats: dict[str, Any], 
     return [field for field in required if _lacrosse_value_missing(field, input_stats, payload)]
 
 
+def _afl_value_missing(field: str, input_stats: dict[str, Any], payload: dict[str, Any]) -> bool:
+    value = input_stats.get(field)
+    if value is None and field in {"sport", "league", "event", "teams", "market", "selection", "odds_american", "bankroll", "unit_size", "risk_profile"}:
+        value = payload.get(field)
+    if value is None and field == "event":
+        value = payload.get("event_id")
+    if value is None and field == "line":
+        value = payload.get("line") if payload.get("line") is not None else input_stats.get("player_prop_line")
+    if value in (None, ""):
+        return True
+    if field in AFL_NUMERIC_CORE_INPUTS or field in AFL_NUMERIC_PLAYER_PROP_INPUTS or field in {"line", "odds_american"}:
+        return _safe_float(value) is None
+    return False
+
+
+def _afl_full_inputs_missing(input_stats: dict[str, Any], payload: dict[str, Any]) -> list[str]:
+    base_fields = ["sport", "league", "event", "market", "selection", "odds_american", "bankroll", "unit_size", "risk_profile"]
+    missing = [field for field in base_fields if _afl_value_missing(field, input_stats, payload)]
+    for field in AFL_REQUIRED_CORE_INPUTS:
+        if _afl_value_missing(field, input_stats, payload):
+            missing.append(field)
+    return list(dict.fromkeys(missing))
+
+
+def _afl_market_specific_missing(market: Any, input_stats: dict[str, Any], payload: dict[str, Any]) -> list[str]:
+    market_key = _normal_market_key(input_stats.get("market_type") or market)
+    required = AFL_REQUIRED_MARKET_INPUTS.get(market_key, ["odds_american"])
+    return [field for field in required if _afl_value_missing(field, input_stats, payload)]
+
+
 def _nascar_value_missing(field: str, input_stats: dict[str, Any], payload: dict[str, Any]) -> bool:
     value = input_stats.get(field)
     if value is None and field in {"sport", "league", "event", "teams", "market", "selection", "odds_american", "bankroll", "unit_size", "risk_profile"}:
@@ -6638,6 +6827,8 @@ def _missing_inputs_for_sport(sport: str, market: Any, input_stats: dict[str, An
         return _rugby_full_inputs_missing(input_stats, payload) + _rugby_market_specific_missing(market, input_stats, payload)
     if sport == "lacrosse":
         return _lacrosse_full_inputs_missing(input_stats, payload) + _lacrosse_market_specific_missing(market, input_stats, payload)
+    if sport == "afl":
+        return _afl_full_inputs_missing(input_stats, payload) + _afl_market_specific_missing(market, input_stats, payload)
     if sport == "icehockey_nhl":
         return _nhl_full_inputs_missing(input_stats, payload) + _nhl_market_specific_missing(market, input_stats, payload)
     if sport == "tennis":
@@ -7146,6 +7337,70 @@ def _normalize_lacrosse_input_aliases(input_stats: dict[str, Any], payload: Opti
     normalized.setdefault("event", payload.get("event") or payload.get("event_id"))
     normalized.setdefault("gender_format", "unknown")
     normalized.setdefault("indoor_outdoor", "unknown")
+    normalized.setdefault("home_away", "neutral" if normalized.get("neutral_site") else "home")
+    normalized.setdefault("neutral_site", False)
+    return normalized
+
+
+def _normalize_afl_input_aliases(input_stats: dict[str, Any], payload: Optional[dict[str, Any]] = None, sport: Optional[str] = None) -> dict[str, Any]:
+    normalized = _normalize_team_sport_input_aliases(input_stats, payload, sport)
+    payload = payload or {}
+    alias_pairs = {
+        "team": ["team_name"], "opponent": ["opponent_name"], "selection": ["pick", "favorite"],
+        "competition": ["competition_name", "tournament"], "venue": ["venue_name", "stadium", "ground_name"],
+        "home_away": ["home", "venue_side"], "neutral_site": ["neutral"],
+        "team_rating": ["team_power_rating"], "opponent_rating": ["opp_power_rating", "opponent_power_rating"],
+        "team_elo": ["team_elo_rating"], "opponent_elo": ["opp_elo_rating", "opponent_elo_rating"],
+        "team_recent_win_rate": ["team_win_pct"], "opponent_recent_win_rate": ["opp_win_pct", "opponent_win_pct"],
+        "team_recent_form": ["team_form", "form"], "opponent_recent_form": ["opp_form", "opponent_form"],
+        "team_points_for": ["team_pf", "team_points"], "opponent_points_for": ["opp_pf", "opponent_pf"],
+        "team_points_against": ["team_pa"], "opponent_points_against": ["opp_pa", "opponent_pa"],
+        "team_expected_score_for": ["team_xscore_for", "team_expected_points_for"],
+        "opponent_expected_score_for": ["opp_xscore_for", "opponent_xscore_for", "opponent_expected_points_for"],
+        "team_expected_score_against": ["team_xscore_against", "team_expected_points_against"],
+        "opponent_expected_score_against": ["opp_xscore_against", "opponent_xscore_against", "opponent_expected_points_against"],
+        "team_goal_accuracy": ["team_goal_accuracy_pct"], "opponent_goal_accuracy": ["opp_goal_accuracy_pct", "opponent_goal_accuracy_pct"],
+        "team_scoring_shot_rate": ["team_scoring_shots"], "opponent_scoring_shot_rate": ["opp_scoring_shots", "opponent_scoring_shots"],
+        "team_inside50_rate": ["team_inside50s", "team_i50s"], "opponent_inside50_rate": ["opp_inside50s", "opponent_inside50s", "opp_i50s"],
+        "team_inside50_conversion_rate": ["team_i50_conversion"], "opponent_inside50_conversion_rate": ["opp_i50_conversion", "opponent_i50_conversion"],
+        "team_clearance_rate": ["team_clearances"], "opponent_clearance_rate": ["opp_clearances", "opponent_clearances"],
+        "team_center_clearance_rate": ["team_center_clearances"], "opponent_center_clearance_rate": ["opp_center_clearances", "opponent_center_clearances"],
+        "team_stoppage_clearance_rate": ["team_stoppage_clearances"], "opponent_stoppage_clearance_rate": ["opp_stoppage_clearances", "opponent_stoppage_clearances"],
+        "team_contested_possession_rate": ["team_contested_possessions"], "opponent_contested_possession_rate": ["opp_contested_possessions", "opponent_contested_possessions"],
+        "team_uncontested_possession_rate": ["team_uncontested_possessions"], "opponent_uncontested_possession_rate": ["opp_uncontested_possessions", "opponent_uncontested_possessions"],
+        "team_disposal_efficiency": ["team_disposal_eff_pct"], "opponent_disposal_efficiency": ["opp_disposal_eff_pct", "opponent_disposal_eff_pct"],
+        "team_turnover_rate": ["team_turnovers"], "opponent_turnover_rate": ["opp_turnovers", "opponent_turnovers"],
+        "team_intercept_mark_rate": ["team_intercept_marks"], "opponent_intercept_mark_rate": ["opp_intercept_marks", "opponent_intercept_marks"],
+        "team_marks_inside50_rate": ["team_marks_i50"], "opponent_marks_inside50_rate": ["opp_marks_i50", "opponent_marks_i50"],
+        "team_tackle_rate": ["team_tackles"], "opponent_tackle_rate": ["opp_tackles", "opponent_tackles"],
+        "team_pressure_rating": ["team_pressure"], "opponent_pressure_rating": ["opp_pressure", "opponent_pressure"],
+        "team_rebound50_rate": ["team_rebound50s"], "opponent_rebound50_rate": ["opp_rebound50s", "opponent_rebound50s"],
+        "team_ruck_rating": ["team_ruck"], "opponent_ruck_rating": ["opp_ruck", "opponent_ruck"],
+        "team_hitout_win_rate": ["team_hitout_pct"], "opponent_hitout_win_rate": ["opp_hitout_pct", "opponent_hitout_pct"],
+        "team_injury_availability_rating": ["team_availability"], "opponent_injury_availability_rating": ["opp_availability", "opponent_availability"],
+        "key_player_availability": ["key_available"], "opponent_key_player_availability": ["opp_key_available", "opponent_key_available"],
+        "rest_days": ["rest"], "opponent_rest_days": ["opp_rest", "opponent_rest"],
+        "travel_fatigue": ["travel"], "opponent_travel_fatigue": ["opp_travel", "opponent_travel"],
+        "rain_probability": ["rain_pct"], "wind_speed": ["wind_kph", "wind_mph"], "temperature": ["temp_c", "temp_f"],
+        "ground_condition": ["ground", "field"], "umpire_free_kick_rate": ["umpire_fk_rate", "umpire_free_kicks"],
+        "market_movement": ["market_move"], "public_betting_percent": ["public_pct"], "sharp_money_percent": ["sharp_pct"],
+        "player": ["player_name"], "player_position": ["position"], "player_minutes_projection": ["minutes_proj"],
+        "player_goals_projection": ["goals_proj"], "player_disposals_projection": ["disposals_proj"],
+        "player_marks_projection": ["marks_proj"], "player_tackles_projection": ["tackles_proj"],
+        "player_hitouts_projection": ["hitouts_proj"], "player_fantasy_points_projection": ["fantasy_points_proj"],
+        "player_anytime_goal_probability": ["anytime_goal_prob"], "player_first_goal_probability": ["first_goal_prob"],
+        "player_prop_line": ["prop_line", "line_value"],
+    }
+    for canonical, aliases in alias_pairs.items():
+        _copy_alias_if_missing(normalized, canonical, aliases)
+    if normalized.get("competition") is None:
+        normalized["competition"] = payload.get("league") or normalized.get("league")
+    for field in ("market", "league", "odds_american", "bankroll", "unit_size", "risk_profile"):
+        if normalized.get(field) is None:
+            normalized[field] = payload.get(field)
+    normalized.setdefault("selection", payload.get("selection") or normalized.get("team"))
+    normalized.setdefault("event", payload.get("event") or payload.get("event_id"))
+    normalized.setdefault("venue", "unknown")
     normalized.setdefault("home_away", "neutral" if normalized.get("neutral_site") else "home")
     normalized.setdefault("neutral_site", False)
     return normalized
@@ -8157,6 +8412,9 @@ def normalize_sport_inputs_for_model(
     elif sport_alias_resolved == "lacrosse":
         normalized = _normalize_lacrosse_input_aliases(normalized, payload, sport_alias_resolved)
         normalizer_used = "lacrosse_input_normalizer"
+    elif sport_alias_resolved == "afl":
+        normalized = _normalize_afl_input_aliases(normalized, payload, sport_alias_resolved)
+        normalizer_used = "afl_input_normalizer"
     elif sport_alias_resolved == "icehockey_nhl":
         normalized = _normalize_nhl_input_aliases(normalized, payload, sport_alias_resolved)
         normalizer_used = "nhl_input_normalizer"
@@ -11907,6 +12165,261 @@ def _estimate_lacrosse_faceoff_possession_model(
     }
 
 
+def _afl_weather_calibration(input_stats: dict[str, Any]) -> str:
+    rain = _safe_float(input_stats.get("rain_probability"), 0) or 0
+    wind = _safe_float(input_stats.get("wind_speed"), 0) or 0
+    risk = _safe_float(input_stats.get("weather_risk"), 0) or 0
+    ground = str(input_stats.get("ground_condition") or "").strip().lower()
+    wet = rain >= 0.45 or risk >= 0.55 or any(term in ground for term in ("wet", "soft", "heavy", "mud"))
+    windy = wind >= 28 or "wind" in ground
+    if wet and windy:
+        return "mixed"
+    if wet:
+        return "wet"
+    if windy:
+        return "windy"
+    if any(value is not None for value in (input_stats.get("rain_probability"), input_stats.get("wind_speed"), input_stats.get("weather_risk"), input_stats.get("ground_condition"))):
+        return "dry"
+    return "unknown"
+
+
+def _afl_ground_calibration(input_stats: dict[str, Any]) -> str:
+    text = str(input_stats.get("ground_condition") or "").strip().lower()
+    if any(term in text for term in ("heavy", "mud", "waterlogged")):
+        return "heavy"
+    if any(term in text for term in ("soft", "wet", "slow")):
+        return "soft"
+    if any(term in text for term in ("firm", "good", "dry", "fast")):
+        return "firm"
+    return "unknown"
+
+
+def _estimate_afl_clearance_inside50_model(
+    *,
+    input_stats: dict[str, Any],
+    payload: dict[str, Any],
+    market: Any,
+    odds_american: Optional[float],
+    bankroll: float,
+    risk_profile: str,
+) -> Optional[dict[str, Any]]:
+    missing = _afl_full_inputs_missing(input_stats, payload) + _afl_market_specific_missing(market, input_stats, payload)
+    if missing or odds_american is None:
+        return None
+
+    market_key = _normal_market_key(input_stats.get("market") or market)
+    selection_text = str(payload.get("selection") or input_stats.get("selection") or "").strip().lower()
+    team_text = str(input_stats.get("team") or "").strip().lower()
+    selected_team = selection_text in {"", team_text} or team_text in selection_text
+
+    def n(field: str, default: float = 0.0) -> float:
+        value = _safe_float(input_stats.get(field), default)
+        return default if value is None else value
+
+    implied_probability = implied_probability_from_american(odds_american)
+    weather_calibration = _afl_weather_calibration(input_stats)
+    ground_calibration = _afl_ground_calibration(input_stats)
+    clearance_calibration = any(input_stats.get(field) is not None for field in ("team_clearance_rate", "opponent_clearance_rate", "team_center_clearance_rate", "opponent_center_clearance_rate"))
+    inside50_calibration = any(input_stats.get(field) is not None for field in ("team_inside50_rate", "opponent_inside50_rate", "team_inside50_conversion_rate", "opponent_inside50_conversion_rate"))
+    ruck_calibration = any(input_stats.get(field) is not None for field in ("team_ruck_rating", "opponent_ruck_rating", "team_hitout_win_rate", "opponent_hitout_win_rate"))
+
+    scoring_power = (
+        n("team_expected_score_for") * 0.46
+        + n("team_points_for") * 0.24
+        + n("team_scoring_shot_rate") * 0.16
+        + n("team_inside50_rate") * 0.05
+        + n("team_inside50_conversion_rate") * 18
+        + n("team_goal_accuracy") * 10
+    )
+    opponent_scoring_power = (
+        n("opponent_expected_score_for") * 0.46
+        + n("opponent_points_for") * 0.24
+        + n("opponent_scoring_shot_rate") * 0.16
+        + n("opponent_inside50_rate") * 0.05
+        + n("opponent_inside50_conversion_rate") * 18
+        + n("opponent_goal_accuracy") * 10
+    )
+    defense_allowance = n("team_expected_score_against") * 0.44 + n("team_points_against") * 0.30
+    opponent_defense_allowance = n("opponent_expected_score_against") * 0.44 + n("opponent_points_against") * 0.30
+    clearance_edge = (
+        (n("team_clearance_rate") - n("opponent_clearance_rate")) * 0.18
+        + (n("team_center_clearance_rate") - n("opponent_center_clearance_rate")) * 0.12
+        + (n("team_stoppage_clearance_rate") - n("opponent_stoppage_clearance_rate")) * 0.10
+        + (n("team_contested_possession_rate") - n("opponent_contested_possession_rate")) * 0.05
+        + (n("team_uncontested_possession_rate") - n("opponent_uncontested_possession_rate")) * 0.015
+        + (n("team_disposal_efficiency") - n("opponent_disposal_efficiency")) * 11
+    )
+    inside50_edge = (
+        (n("team_inside50_rate") - n("opponent_inside50_rate")) * 0.08
+        + (n("team_inside50_conversion_rate") - n("opponent_inside50_conversion_rate")) * 16
+        + (n("team_marks_inside50_rate") - n("opponent_marks_inside50_rate")) * 0.20
+        + (n("team_intercept_mark_rate") - n("opponent_intercept_mark_rate")) * 0.12
+    )
+    pressure_edge = (
+        (n("team_pressure_rating") - n("opponent_pressure_rating")) * 0.08
+        + (n("team_tackle_rate") - n("opponent_tackle_rate")) * 0.04
+        + (n("team_rebound50_rate") - n("opponent_rebound50_rate")) * 0.08
+        + (n("opponent_turnover_rate") - n("team_turnover_rate")) * 0.10
+    )
+    ruck_edge = (
+        (n("team_ruck_rating") - n("opponent_ruck_rating")) * 0.06
+        + (n("team_hitout_win_rate") - n("opponent_hitout_win_rate")) * 4
+    )
+    availability_edge = (
+        (n("key_player_availability") - n("opponent_key_player_availability")) * 7
+        + (n("team_injury_availability_rating") - n("opponent_injury_availability_rating")) * 6
+        + (n("rest_days") - n("opponent_rest_days")) * 0.32
+        + (n("opponent_travel_fatigue") - n("travel_fatigue")) * 3.0
+    )
+    home_edge = 3.0 if str(input_stats.get("home_away") or "").lower() == "home" and not input_stats.get("neutral_site") else 0.0
+    weather_drag = 5.5 if weather_calibration == "mixed" else (4.2 if weather_calibration in {"wet", "windy"} else 0.0)
+    ground_drag = 3.0 if ground_calibration == "heavy" else (1.5 if ground_calibration == "soft" else 0.0)
+    umpire_drag = max(0.0, n("umpire_free_kick_rate") - 44.0) * 0.10
+    projected_team_points = max(35.0, scoring_power * 0.58 + opponent_defense_allowance * 0.36 + clearance_edge + inside50_edge + pressure_edge + ruck_edge + availability_edge + home_edge - weather_drag - ground_drag - umpire_drag)
+    projected_opponent_points = max(35.0, opponent_scoring_power * 0.58 + defense_allowance * 0.36 - clearance_edge * 0.45 - inside50_edge * 0.52 - pressure_edge * 0.45 - ruck_edge * 0.35 - availability_edge * 0.35 + weather_drag * 0.15 + ground_drag * 0.10)
+    projected_margin = projected_team_points - projected_opponent_points
+    projected_total = projected_team_points + projected_opponent_points
+
+    if not selected_team and market_key not in {"total_points", "first_half_total", "quarter_total", "alt_total_points"}:
+        projected_margin *= -1
+
+    raw_model_probability = _logistic_probability(projected_margin, 18.0)
+    line = _safe_float(payload.get("line"), _safe_float(input_stats.get("line") or input_stats.get("player_prop_line")))
+    if market_key in {"spread", "handicap", "alt_spread"}:
+        raw_model_probability = _logistic_probability(projected_margin + (line or 0), 16.0)
+    elif market_key in {"total_points", "alt_total_points"}:
+        total_line = line if line is not None else 170.5
+        over_probability = _logistic_probability(projected_total - total_line, 22.0)
+        raw_model_probability = 1 - over_probability if "under" in selection_text else over_probability
+    elif market_key in {"team_total_points", "alt_team_total_points"}:
+        total_line = line if line is not None else 85.5
+        over_probability = _logistic_probability(projected_team_points - total_line, 15.0)
+        raw_model_probability = 1 - over_probability if "under" in selection_text else over_probability
+    elif market_key == "first_half_winner":
+        raw_model_probability = _logistic_probability(projected_margin * 0.50, 10.0)
+    elif market_key == "first_half_spread":
+        raw_model_probability = _logistic_probability(projected_margin * 0.50 + (line or 0), 8.5)
+    elif market_key == "first_half_total":
+        total_line = line if line is not None else 84.5
+        over_probability = _logistic_probability(projected_total * 0.50 - total_line, 12.0)
+        raw_model_probability = 1 - over_probability if "under" in selection_text else over_probability
+    elif market_key == "quarter_winner":
+        raw_model_probability = _logistic_probability(projected_margin * 0.25, 6.0)
+    elif market_key == "quarter_spread":
+        raw_model_probability = _logistic_probability(projected_margin * 0.25 + (line or 0), 5.5)
+    elif market_key == "quarter_total":
+        total_line = line if line is not None else 42.5
+        over_probability = _logistic_probability(projected_total * 0.25 - total_line, 7.5)
+        raw_model_probability = 1 - over_probability if "under" in selection_text else over_probability
+    elif market_key in {"winning_margin", "exact_margin"}:
+        target_margin = abs(line if line is not None else 12.5)
+        raw_model_probability = max(0.03, min(0.42, _logistic_probability(8.0 - abs(abs(projected_margin) - target_margin), 7.0)))
+    elif market_key in AFL_PROP_MARKETS:
+        prop_line = line if line is not None else n("player_prop_line", 1.5)
+        if market_key == "player_goals":
+            raw_model_probability = _logistic_probability(n("player_goals_projection") - prop_line, 0.8)
+        elif market_key == "player_disposals":
+            raw_model_probability = _logistic_probability(n("player_disposals_projection") - prop_line, 4.5)
+        elif market_key == "player_marks":
+            raw_model_probability = _logistic_probability(n("player_marks_projection") - prop_line, 2.0)
+        elif market_key == "player_tackles":
+            raw_model_probability = _logistic_probability(n("player_tackles_projection") - prop_line, 2.0)
+        elif market_key == "player_hitouts":
+            raw_model_probability = _logistic_probability(n("player_hitouts_projection") - prop_line, 5.0)
+        elif market_key == "player_fantasy_points":
+            raw_model_probability = _logistic_probability(n("player_fantasy_points_projection") - prop_line, 12.0)
+        elif market_key == "anytime_goal_scorer":
+            raw_model_probability = max(0.04, min(0.82, n("player_anytime_goal_probability", 0.35)))
+        elif market_key == "first_goal_scorer":
+            raw_model_probability = max(0.02, min(0.25, n("player_first_goal_probability", 0.07)))
+
+    calibrated_probability = raw_model_probability
+    true_probability = max(0.04, min(0.94, calibrated_probability))
+    sanity_flags = ["afl probability cap applied"] if true_probability != calibrated_probability else []
+
+    confidence = 74.0
+    risk_flags: list[str] = []
+    if (_safe_float(input_stats.get("book_count"), 0) or 0) < 4:
+        confidence -= 4
+        risk_flags.append("book count too low")
+    if weather_calibration in {"wet", "windy", "mixed"}:
+        confidence -= 5
+        risk_flags.append("weather volatility")
+    if ground_calibration in {"soft", "heavy"}:
+        confidence -= 4
+        risk_flags.append("ground condition volatility")
+    if n("key_player_availability") < 0.75 or n("team_injury_availability_rating") < 0.78:
+        confidence -= 9
+        risk_flags.append("key player availability risk")
+    if n("team_ruck_rating") < 65 or n("team_hitout_win_rate") < 0.40:
+        confidence -= 5
+        risk_flags.append("ruck volatility")
+    if market_key in {"first_goal_scorer", "winning_margin", "exact_margin", "quarter_winner"}:
+        confidence -= 6
+        risk_flags.append("volatile market")
+    if input_stats.get("provider_status") == "error":
+        risk_flags.append("provider failure ignored")
+    confidence = max(1, min(95, round(confidence, 2)))
+
+    edge = calculate_edge_percent(true_probability, implied_probability)
+    edge_threshold, confidence_threshold = _nfl_thresholds(risk_profile)
+    no_bet_flags: list[str] = []
+    if edge is None:
+        no_bet_flags.append("edge missing")
+    elif edge <= 0:
+        no_bet_flags.append("negative edge")
+    elif edge < edge_threshold:
+        no_bet_flags.append("edge too small")
+    if confidence < confidence_threshold:
+        no_bet_flags.append("low confidence")
+
+    suggested = 0 if no_bet_flags else calculate_suggested_stake(
+        bankroll=bankroll,
+        american_odds=odds_american,
+        true_probability=true_probability,
+        risk_profile=risk_profile,
+        confidence=confidence,
+    )
+    if suggested <= 0 and not no_bet_flags and edge is not None and edge >= edge_threshold and confidence >= confidence_threshold:
+        suggested = round(max(1.0, bankroll * 0.004), 2)
+
+    return {
+        "model_status": "active", "estimated_true_probability": true_probability,
+        "true_probability": true_probability, "final_probability": true_probability,
+        "model_probability": true_probability, "implied_probability": implied_probability,
+        "edge": edge, "confidence": confidence, "risk": "high" if risk_flags else "moderate",
+        "suggested_stake": suggested, "raw_model_probability": raw_model_probability,
+        "calibrated_model_probability": calibrated_probability,
+        "probability_calibration_applied": bool(sanity_flags),
+        "probability_sanity_flags": sanity_flags,
+        "probability_cap_reason": "afl sanity cap" if sanity_flags else None,
+        "market_anchor_probability": None,
+        "league_calibration_applied": "afl",
+        "venue_calibration_applied": "venue" if str(input_stats.get("venue") or "").strip() else "unknown",
+        "weather_calibration_applied": weather_calibration,
+        "ground_calibration_applied": ground_calibration,
+        "clearance_calibration_applied": clearance_calibration,
+        "inside50_calibration_applied": inside50_calibration,
+        "ruck_calibration_applied": ruck_calibration,
+        "afl_projected_team_points": round(projected_team_points, 2),
+        "afl_projected_opponent_points": round(projected_opponent_points, 2),
+        "afl_projected_margin": round(projected_margin, 2),
+        "afl_projected_total": round(projected_total, 2),
+        "afl_clearance_edge_score": round(clearance_edge, 2),
+        "afl_inside50_edge_score": round(inside50_edge, 2),
+        "afl_ruck_edge_score": round(ruck_edge, 2),
+        "risk_flags": risk_flags,
+        "input_coverage": {
+            "required_core_present": list(AFL_REQUIRED_CORE_INPUTS),
+            "required_market_specific_present": AFL_REQUIRED_MARKET_INPUTS.get(market_key, []),
+            "optional_enrichment_present": [field for field in AFL_OPTIONAL_ENRICHMENT_INPUTS if input_stats.get(field) is not None],
+            "optional_enrichment_missing": [field for field in AFL_OPTIONAL_ENRICHMENT_INPUTS if input_stats.get(field) is None],
+        },
+        "provider_enrichment": {"provider_status": input_stats.get("provider_status") or "not_provided", "provider_enrichment_present": [field for field in AFL_OPTIONAL_ENRICHMENT_INPUTS if input_stats.get(field) is not None]},
+        "no_bet_flags": no_bet_flags,
+    }
+
+
 def _nascar_series_calibration(raw_series: Any) -> str:
     text = str(raw_series or "").strip().lower().replace("-", "_").replace(" ", "_")
     if "xfinity" in text:
@@ -14351,6 +14864,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         soccer_model = None
         rugby_model = None
         lacrosse_model = None
+        afl_model = None
         nhl_model = None
         tennis_model = None
         combat_model = None
@@ -14439,6 +14953,15 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             )
         elif sport == "lacrosse":
             lacrosse_model = _estimate_lacrosse_faceoff_possession_model(
+                input_stats=input_stats,
+                payload=payload,
+                market=market,
+                odds_american=odds_american,
+                bankroll=bankroll,
+                risk_profile=payload.get("risk_profile") or "moderate",
+            )
+        elif sport == "afl":
+            afl_model = _estimate_afl_clearance_inside50_model(
                 input_stats=input_stats,
                 payload=payload,
                 market=market,
@@ -14608,6 +15131,8 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
         elif lacrosse_model:
             component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
+        elif afl_model:
+            component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
         elif nhl_model:
             component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
         elif tennis_model:
@@ -14640,7 +15165,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
         elif overwatch_model:
             component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
-        elif sport in {"basketball_nba", "basketball_wnba", "basketball_ncaab", "basketball_ncaawb", "americanfootball_nfl", "americanfootball_ncaaf", "baseball_mlb", "soccer", "rugby", "lacrosse", "icehockey_nhl", "tennis", "mma_mixed_martial_arts", "boxing", "golf", "formula1", "formula_e", "nascar", "indycar", "motogp", "cricket", "cs2", "valorant", "league_of_legends", "dota2", "call_of_duty", "overwatch"}:
+        elif sport in {"basketball_nba", "basketball_wnba", "basketball_ncaab", "basketball_ncaawb", "americanfootball_nfl", "americanfootball_ncaaf", "baseball_mlb", "soccer", "rugby", "lacrosse", "afl", "icehockey_nhl", "tennis", "mma_mixed_martial_arts", "boxing", "golf", "formula1", "formula_e", "nascar", "indycar", "motogp", "cricket", "cs2", "valorant", "league_of_legends", "dota2", "call_of_duty", "overwatch"}:
             component_status = COMPONENT_STATUS_INACTIVE
             missing_inputs = _missing_inputs_for_sport(sport, market, input_stats, payload)
         else:
@@ -14703,6 +15228,12 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             edge = lacrosse_model["edge"]
             suggested = lacrosse_model["suggested_stake"]
             no_bet_flags = list(lacrosse_model["no_bet_flags"])
+        elif afl_model:
+            true_probability = afl_model["true_probability"]
+            implied_probability = afl_model["implied_probability"]
+            edge = afl_model["edge"]
+            suggested = afl_model["suggested_stake"]
+            no_bet_flags = list(afl_model["no_bet_flags"])
         elif nhl_model:
             true_probability = nhl_model["true_probability"]
             implied_probability = nhl_model["implied_probability"]
@@ -14801,7 +15332,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             no_bet_flags = list(overwatch_model["no_bet_flags"])
         if implied_probability is not None and true_probability is not None and odds_american is not None:
             edge = edge_percentage(true_probability, implied_probability)
-            if not (nba_model or wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or rugby_model or lacrosse_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or formula_e_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model):
+            if not (nba_model or wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or rugby_model or lacrosse_model or afl_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or formula_e_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model):
                 suggested = suggested_stake_with_risk_controls(
                     bankroll=bankroll,
                     american_odds=odds_american,
@@ -14818,7 +15349,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         social_input_stats = dict(input_stats)
         social_input_stats["edge"] = edge
         social_layer = build_social_crowd_calibration_layer(social_input_stats)
-        if social_layer["sentiment_no_bet_flags"] and not (nba_model or wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or rugby_model or lacrosse_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or formula_e_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model):
+        if social_layer["sentiment_no_bet_flags"] and not (nba_model or wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or rugby_model or lacrosse_model or afl_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or formula_e_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model):
             no_bet_flags = list(dict.fromkeys(no_bet_flags + social_layer["sentiment_no_bet_flags"]))
 
         risk_controller = build_risk_controller(bankroll, unit_size, payload.get("risk_profile") or "conservative")
@@ -14835,7 +15366,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         })
         wee_willie = build_wee_willie_market_weakness_detector(detector_payload)
         manual_ticket = build_manual_ticket(detector_payload, suggested)
-        active_model = nba_model or wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or rugby_model or lacrosse_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or formula_e_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model
+        active_model = nba_model or wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or rugby_model or lacrosse_model or afl_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or formula_e_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model
         confidence = active_model["confidence"] if active_model else input_stats.get("confidence")
         if tennis_model and _safe_float(confidence) is None:
             confidence = 0.0
@@ -14847,7 +15378,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         model_status = active_model["model_status"] if active_model else component_status
         edge_threshold, confidence_threshold = (
             _nfl_thresholds(payload.get("risk_profile") or "moderate")
-            if (wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or rugby_model or lacrosse_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or formula_e_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model)
+            if (wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or rugby_model or lacrosse_model or afl_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or formula_e_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model)
             else (2.5, 70)
         )
         event_value = payload.get("event_id") or payload.get("event") or input_stats.get("event")
@@ -14964,7 +15495,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
                 "market": market,
                 "selection": selection_value,
                 "confidence": confidence,
-            }] if _normal_market_key(market) in {"player_prop", "knockdown_prop", "takedown_prop", "significant_strikes_prop", "submission_attempt_prop", "birdies_prop", "eagles_prop", "fairways_hit_prop", "greens_in_regulation_prop", "putts_prop", "round_score_prop", *BASKETBALL_MODULE_PROP_MARKETS, *COLLEGE_FOOTBALL_PROP_MARKETS, *RUGBY_PROP_MARKETS, *LACROSSE_PROP_MARKETS, *FORMULA_E_PROP_MARKETS, *CRICKET_PROP_MARKETS, *CS2_PROP_MARKETS, *VALORANT_PROP_MARKETS, *LOL_PROP_MARKETS, *DOTA2_PROP_MARKETS, *COD_PROP_MARKETS, *OVERWATCH_PROP_MARKETS} else [],
+            }] if _normal_market_key(market) in {"player_prop", "knockdown_prop", "takedown_prop", "significant_strikes_prop", "submission_attempt_prop", "birdies_prop", "eagles_prop", "fairways_hit_prop", "greens_in_regulation_prop", "putts_prop", "round_score_prop", *BASKETBALL_MODULE_PROP_MARKETS, *COLLEGE_FOOTBALL_PROP_MARKETS, *RUGBY_PROP_MARKETS, *LACROSSE_PROP_MARKETS, *AFL_PROP_MARKETS, *FORMULA_E_PROP_MARKETS, *CRICKET_PROP_MARKETS, *CS2_PROP_MARKETS, *VALORANT_PROP_MARKETS, *LOL_PROP_MARKETS, *DOTA2_PROP_MARKETS, *COD_PROP_MARKETS, *OVERWATCH_PROP_MARKETS} else [],
             "target_alt_lines": [{
                 "sport": sport,
                 "event": event_value,
@@ -15004,7 +15535,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             **officiating_analysis["officiating_logbook_fields"],
         })
         basketball_module_model = wnba_model or mens_cbb_model or womens_cbb_model
-        probability_model = basketball_module_model or college_football_model or nfl_model or mlb_model or soccer_model or rugby_model or lacrosse_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or formula_e_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model
+        probability_model = basketball_module_model or college_football_model or nfl_model or mlb_model or soccer_model or rugby_model or lacrosse_model or afl_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or formula_e_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model
         if probability_model:
             logbook_ready_row.update({
                 "raw_model_probability": probability_model["raw_model_probability"],
@@ -15068,6 +15599,24 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
                 "lacrosse_faceoff_edge_score": lacrosse_model["lacrosse_faceoff_edge_score"],
                 "lacrosse_shot_quality_edge_score": lacrosse_model["lacrosse_shot_quality_edge_score"],
                 "lacrosse_goalie_edge_score": lacrosse_model["lacrosse_goalie_edge_score"],
+            })
+        if afl_model:
+            logbook_ready_row.update({
+                "league": payload.get("league") or input_stats.get("league"),
+                "league_calibration_applied": afl_model["league_calibration_applied"],
+                "venue_calibration_applied": afl_model["venue_calibration_applied"],
+                "weather_calibration_applied": afl_model["weather_calibration_applied"],
+                "ground_calibration_applied": afl_model["ground_calibration_applied"],
+                "clearance_calibration_applied": afl_model["clearance_calibration_applied"],
+                "inside50_calibration_applied": afl_model["inside50_calibration_applied"],
+                "ruck_calibration_applied": afl_model["ruck_calibration_applied"],
+                "afl_projected_team_points": afl_model["afl_projected_team_points"],
+                "afl_projected_opponent_points": afl_model["afl_projected_opponent_points"],
+                "afl_projected_margin": afl_model["afl_projected_margin"],
+                "afl_projected_total": afl_model["afl_projected_total"],
+                "afl_clearance_edge_score": afl_model["afl_clearance_edge_score"],
+                "afl_inside50_edge_score": afl_model["afl_inside50_edge_score"],
+                "afl_ruck_edge_score": afl_model["afl_ruck_edge_score"],
             })
         if nhl_model:
             logbook_ready_row.update({
@@ -15491,6 +16040,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             "soccer_input_contract": deepcopy(SOCCER_INPUT_CONTRACT) if sport == "soccer" else None,
             "rugby_input_contract": deepcopy(RUGBY_INPUT_CONTRACT) if sport == "rugby" else None,
             "lacrosse_input_contract": deepcopy(LACROSSE_INPUT_CONTRACT) if sport == "lacrosse" else None,
+            "afl_input_contract": deepcopy(AFL_INPUT_CONTRACT) if sport == "afl" else None,
             "nhl_input_contract": deepcopy(NHL_INPUT_CONTRACT) if sport == "icehockey_nhl" else None,
             "tennis_input_contract": deepcopy(TENNIS_INPUT_CONTRACT) if sport == "tennis" else None,
             "combat_input_contract": deepcopy(COMBAT_INPUT_CONTRACT) if sport in {"mma_mixed_martial_arts", "boxing"} else None,
@@ -15510,17 +16060,22 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             "wnba_input_contract": deepcopy(WNBA_INPUT_CONTRACT) if sport == "basketball_wnba" else None,
             "mens_college_basketball_input_contract": deepcopy(MENS_COLLEGE_BASKETBALL_INPUT_CONTRACT) if sport == "basketball_ncaab" else None,
             "womens_college_basketball_input_contract": deepcopy(WOMENS_COLLEGE_BASKETBALL_INPUT_CONTRACT) if sport == "basketball_ncaawb" else None,
-            "league_calibration_applied": (basketball_module_model or college_football_model or rugby_model or lacrosse_model or f1_model or formula_e_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model)["league_calibration_applied"] if (basketball_module_model or college_football_model or rugby_model or lacrosse_model or f1_model or formula_e_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model) else config.get("sport_parameters", {}).get("league_calibration_applied"),
+            "league_calibration_applied": (basketball_module_model or college_football_model or rugby_model or lacrosse_model or afl_model or f1_model or formula_e_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model)["league_calibration_applied"] if (basketball_module_model or college_football_model or rugby_model or lacrosse_model or afl_model or f1_model or formula_e_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model) else config.get("sport_parameters", {}).get("league_calibration_applied"),
             "code_variant_calibration_applied": rugby_model["code_variant_calibration_applied"] if rugby_model else None,
             "competition_calibration_applied": (rugby_model or lacrosse_model)["competition_calibration_applied"] if (rugby_model or lacrosse_model) else None,
             "session_calibration_applied": (f1_model or motogp_model)["session_calibration_applied"] if (f1_model or motogp_model) else None,
             "circuit_calibration_applied": (f1_model or formula_e_model)["circuit_calibration_applied"] if (f1_model or formula_e_model) else None,
-            "weather_calibration_applied": (f1_model or motogp_model or rugby_model or lacrosse_model)["weather_calibration_applied"] if (f1_model or motogp_model or rugby_model or lacrosse_model) else None,
+            "weather_calibration_applied": (f1_model or motogp_model or rugby_model or lacrosse_model or afl_model)["weather_calibration_applied"] if (f1_model or motogp_model or rugby_model or lacrosse_model or afl_model) else None,
             "referee_calibration_applied": rugby_model["referee_calibration_applied"] if rugby_model else None,
             "format_calibration_applied": lacrosse_model["format_calibration_applied"] if lacrosse_model else (cricket_model["format_calibration_applied"] if cricket_model else None),
             "gender_calibration_applied": lacrosse_model["gender_calibration_applied"] if lacrosse_model else None,
             "faceoff_calibration_applied": lacrosse_model["faceoff_calibration_applied"] if lacrosse_model else None,
             "goalie_calibration_applied": lacrosse_model["goalie_calibration_applied"] if lacrosse_model else None,
+            "venue_calibration_applied": afl_model["venue_calibration_applied"] if afl_model else None,
+            "ground_calibration_applied": afl_model["ground_calibration_applied"] if afl_model else None,
+            "clearance_calibration_applied": afl_model["clearance_calibration_applied"] if afl_model else None,
+            "inside50_calibration_applied": afl_model["inside50_calibration_applied"] if afl_model else None,
+            "ruck_calibration_applied": afl_model["ruck_calibration_applied"] if afl_model else None,
             "qualifying_calibration_applied": formula_e_model["qualifying_calibration_applied"] if formula_e_model else None,
             "energy_management_calibration_applied": formula_e_model["energy_management_calibration_applied"] if formula_e_model else None,
             "match_format_calibration_applied": (cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model)["match_format_calibration_applied"] if (cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model) else None,
@@ -15609,6 +16164,14 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             "lacrosse_shot_quality_edge_score": lacrosse_model["lacrosse_shot_quality_edge_score"] if lacrosse_model else None,
             "lacrosse_goalie_edge_score": lacrosse_model["lacrosse_goalie_edge_score"] if lacrosse_model else None,
             "lacrosse_risk_flags": lacrosse_model["risk_flags"] if lacrosse_model else [],
+            "afl_projected_team_points": afl_model["afl_projected_team_points"] if afl_model else None,
+            "afl_projected_opponent_points": afl_model["afl_projected_opponent_points"] if afl_model else None,
+            "afl_projected_margin": afl_model["afl_projected_margin"] if afl_model else None,
+            "afl_projected_total": afl_model["afl_projected_total"] if afl_model else None,
+            "afl_clearance_edge_score": afl_model["afl_clearance_edge_score"] if afl_model else None,
+            "afl_inside50_edge_score": afl_model["afl_inside50_edge_score"] if afl_model else None,
+            "afl_ruck_edge_score": afl_model["afl_ruck_edge_score"] if afl_model else None,
+            "afl_risk_flags": afl_model["risk_flags"] if afl_model else [],
             "cricket_projected_team_runs": cricket_model["projected_team_runs"] if cricket_model else None,
             "cricket_projected_opponent_runs": cricket_model["projected_opponent_runs"] if cricket_model else None,
             "cs2_team_edge_score": cs2_model["cs2_team_edge_score"] if cs2_model else None,
