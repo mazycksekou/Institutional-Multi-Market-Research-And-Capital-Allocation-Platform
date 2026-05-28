@@ -36,6 +36,11 @@ def build_alert(candidate: dict[str, Any], thresholds: dict[str, Any]) -> dict[s
             base_blockers.append(blocker)
 
     action = classify_opportunity(float(candidate.get("opportunity_score", 0)), thresholds)
+    governance_status = str(candidate.get("governance_status") or "")
+    review_queue_gate_result = str(candidate.get("review_queue_gate_result") or "")
+    if governance_status == "blocked_by_governance" or review_queue_gate_result == "blocked_by_governance":
+        if "blocked_by_governance" not in base_blockers:
+            base_blockers.append("blocked_by_governance")
     if base_blockers:
         action = "no_bet"
 

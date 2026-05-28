@@ -15,3 +15,6 @@ class TestSystemHealth(unittest.TestCase):
             self.assertTrue(health["human_approval_required"])
             self.assertFalse(health["auto_execution_enabled"])
             self.assertTrue(all(health["paths_ready"].values()))
+            self.assertGreater(health["model_inventory_count"], 0)
+            self.assertIn("research_only_count", health)
+            self.assertIn("governance_audit_status", health)

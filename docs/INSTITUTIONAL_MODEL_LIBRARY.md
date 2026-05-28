@@ -46,3 +46,7 @@ Institutional model fields are only relevant when:
 - the output is relevant to the candidate market and horizon
 
 These models are intended to enrich long-horizon portfolio, risk, liability, execution, and governance review rather than drive short-term event decisions.
+
+## Governance Integration
+
+Institutional models now sit behind the common `model_governance` layer. Their outputs can affect downstream review only after activation-tier, evidence, input quality, calibration, drift, and governance gates are satisfied.

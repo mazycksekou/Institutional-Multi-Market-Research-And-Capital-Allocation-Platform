@@ -11,3 +11,9 @@ class TestAlertEngine(unittest.TestCase):
         self.assertEqual(alert["recommended_action"], "no_bet")
         self.assertIn("contains_banned_language", alert["blockers"])
         self.assertTrue(alert["human_approval_required"])
+
+    def test_governance_block_forces_no_bet(self):
+        thresholds = get_default_scheduler_config()["score_thresholds"]
+        alert = build_alert({"opportunity_score": 90, "governance_status": "blocked_by_governance"}, thresholds)
+        self.assertEqual(alert["recommended_action"], "no_bet")
+        self.assertIn("blocked_by_governance", alert["blockers"])

@@ -28,6 +28,8 @@ class TestReviewQueue(unittest.TestCase):
             saved = upsert_review_item(config, item)
             self.assertEqual(saved["recommended_action"], "urgent_review")
             self.assertTrue(saved["human_approval_required"])
+            self.assertIn("governance_status", saved)
+            self.assertIn("review_queue_gate_result", saved)
 
     def test_stale_and_market_closed_items_drop_out(self):
         with TemporaryDirectory() as tmp:
