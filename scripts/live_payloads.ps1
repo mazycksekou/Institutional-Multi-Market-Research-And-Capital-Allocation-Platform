@@ -180,6 +180,31 @@ function New-TableTennisPayload {
     return $payload
 }
 
+function New-BadmintonPayload {
+    $stats = @{
+        player_name = "Viktor Axelsen"; opponent_name = "Lee Zii Jia"; team_name = "Axelsen"; opponent_team_name = "Lee Zii Jia"; pick = "Viktor Axelsen"
+        tournament_name = "BWF World Tour Finals"; competition_name = "BWF World Tour"; format = "best_of_3"; games = 3; discipline = "singles"; neutral = $true
+        player_power_rating = 91; opp_power_rating = 86; player_elo_rating = 2195; opp_elo_rating = 2110; player_rank = 1; opp_rank = 8
+        player_win_pct = 0.76; opp_win_pct = 0.62; player_form = 89; opp_form = 81
+        serve_rating = 90; opp_serve_rating = 84; return_rating = 88; opp_return_rating = 82
+        service_points_won_pct = 0.64; opp_service_points_won_pct = 0.58; return_points_won_pct = 0.47; opp_return_points_won_pct = 0.41
+        short_serve = 89; opp_short_serve = 83; long_serve = 88; opp_long_serve = 82
+        rally_rating = 90; opp_rally_rating = 83; net_play = 87; opp_net_play = 82; smash = 91; opp_smash = 85
+        drop_shot = 88; opp_drop_shot = 82; clear = 89; opp_clear = 83; defense = 88; opp_defense = 82
+        speed = 87; opp_speed = 84; stamina = 89; opp_stamina = 82; error_rate = 0.13; opp_error_rate = 0.18
+        game_win_pct = 0.68; opp_game_win_pct = 0.57; deciding_game_pct = 0.64; opp_deciding_game_pct = 0.52
+        clutch = 88; opp_clutch = 81; momentum = 87; opp_momentum = 80; pressure = 88; opp_pressure = 81
+        handedness = "right_vs_right"; style_matchup = "attacking control"; court_speed = 0.55; shuttle_speed = 0.52; altitude = 90
+        fatigue = 0.12; opp_fatigue = 0.20; rest = 3; opp_rest = 2; travel = 0.08; opp_travel = 0.18; injury = 0.03; opp_injury = 0.09
+        market_move = 0.0; public_pct = 54; sharp_pct = 58
+        points_proj = 45.5; opp_points_proj = 39.5; games_proj = 2.2; opp_games_proj = 1.8; service_points_proj = 27.5; return_points_proj = 18.5
+        prop_line = 25.5; book_count = 8; current_odds = 100
+    }
+    $payload = New-LiveTicketBase -Sport "bwf" -League "BWF World Tour" -Event "Viktor Axelsen vs Lee Zii Jia" -Market "match_winner" -Selection "Viktor Axelsen" -InputStats $stats
+    $payload.visible_markets = @("match_winner", "game_handicap", "player_service_points_won")
+    return $payload
+}
+
 function New-VolleyballPayload {
     $stats = @{
         team_name = "Nebraska"; opponent_name = "Wisconsin"; pick = "Nebraska"; competition_name = "NCAA"; format = "best_of_5"; sets = 5
@@ -747,6 +772,13 @@ function New-LiveActivePayload {
         "wtt" { return New-TableTennisPayload }
         "world_table_tennis" { return New-TableTennisPayload }
         "olympic_table_tennis" { return New-TableTennisPayload }
+        "badminton" { return New-BadmintonPayload }
+        "bwf" { return New-BadmintonPayload }
+        "world_badminton" { return New-BadmintonPayload }
+        "olympic_badminton" { return New-BadmintonPayload }
+        "badminton_singles" { return New-BadmintonPayload }
+        "badminton_doubles" { return New-BadmintonPayload }
+        "bwf_world_tour" { return New-BadmintonPayload }
         "volleyball" { return New-VolleyballPayload }
         "indoor_volleyball" { return New-VolleyballPayload }
         "beach_volleyball" { return New-VolleyballPayload }

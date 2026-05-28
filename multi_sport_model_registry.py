@@ -52,6 +52,7 @@ OFFICIAL_SPORT_KEYS = [
     "rugby",
     "lacrosse",
     "table_tennis",
+    "badminton",
     "volleyball",
     "handball",
     "afl",
@@ -227,6 +228,13 @@ SPORT_ALIASES = {
     "wtt": "table_tennis",
     "world_table_tennis": "table_tennis",
     "olympic_table_tennis": "table_tennis",
+    "badminton": "badminton",
+    "bwf": "badminton",
+    "world_badminton": "badminton",
+    "olympic_badminton": "badminton",
+    "badminton_singles": "badminton",
+    "badminton_doubles": "badminton",
+    "bwf_world_tour": "badminton",
     "volleyball": "volleyball",
     "indoor_volleyball": "volleyball",
     "beach_volleyball": "volleyball",
@@ -2304,6 +2312,98 @@ TABLE_TENNIS_INPUT_CONTRACT = {
     "social_crowd_inputs": ["public_betting_percent", "sharp_money_percent", "social_sentiment", "crowd_consensus"],
 }
 
+BADMINTON_MARKETS = [
+    "match_winner", "moneyline", "game_winner", "set_winner", "correct_score",
+    "game_handicap", "point_handicap", "total_games", "total_points",
+    "player_total_points", "first_game_winner", "second_game_winner",
+    "third_game_winner", "player_aces", "player_service_points_won",
+    "player_return_points_won", "alt_game_handicap", "alt_total_games",
+    "alt_total_points",
+]
+
+BADMINTON_PROP_MARKETS = [
+    "player_aces", "player_service_points_won", "player_return_points_won",
+    "player_total_points",
+]
+
+BADMINTON_REQUIRED_CORE_INPUTS = [
+    "player", "opponent", "team", "opponent_team", "market", "selection",
+    "odds_american", "tournament", "competition", "match_format",
+    "best_of_games", "singles_doubles", "neutral_site",
+    "player_rating", "opponent_rating", "player_elo", "opponent_elo",
+    "player_world_rank", "opponent_world_rank", "player_recent_win_rate",
+    "opponent_recent_win_rate", "player_recent_form", "opponent_recent_form",
+    "player_serve_rating", "opponent_serve_rating", "player_return_rating",
+    "opponent_return_rating", "player_service_points_won_rate",
+    "opponent_service_points_won_rate", "player_return_points_won_rate",
+    "opponent_return_points_won_rate", "player_short_serve_rating",
+    "opponent_short_serve_rating", "player_long_serve_rating",
+    "opponent_long_serve_rating", "player_rally_rating", "opponent_rally_rating",
+    "player_net_play_rating", "opponent_net_play_rating", "player_smash_rating",
+    "opponent_smash_rating", "player_drop_shot_rating", "opponent_drop_shot_rating",
+    "player_clear_rating", "opponent_clear_rating", "player_defense_rating",
+    "opponent_defense_rating", "player_speed_rating", "opponent_speed_rating",
+    "player_stamina_rating", "opponent_stamina_rating", "player_error_rate",
+    "opponent_error_rate", "player_game_win_rate", "opponent_game_win_rate",
+    "player_deciding_game_win_rate", "opponent_deciding_game_win_rate",
+    "player_clutch_rating", "opponent_clutch_rating", "player_momentum_rating",
+    "opponent_momentum_rating", "player_pressure_rating", "opponent_pressure_rating",
+    "handedness_matchup", "playing_style_matchup", "court_speed_rating",
+    "shuttle_speed_rating", "venue_altitude", "fatigue_rating",
+    "opponent_fatigue_rating", "rest_days", "opponent_rest_days",
+    "travel_fatigue", "opponent_travel_fatigue", "injury_risk",
+    "opponent_injury_risk",
+]
+
+BADMINTON_NUMERIC_CORE_INPUTS = [
+    field for field in BADMINTON_REQUIRED_CORE_INPUTS
+    if field not in {
+        "player", "opponent", "team", "opponent_team", "market", "selection",
+        "tournament", "competition", "match_format", "singles_doubles",
+        "neutral_site", "handedness_matchup", "playing_style_matchup",
+    }
+]
+
+BADMINTON_PLAYER_PROP_INPUTS = [
+    "player_points_projection", "opponent_points_projection",
+    "player_games_projection", "opponent_games_projection",
+    "player_service_points_projection", "player_return_points_projection",
+    "player_prop_line",
+]
+
+BADMINTON_NUMERIC_PLAYER_PROP_INPUTS = list(BADMINTON_PLAYER_PROP_INPUTS)
+
+BADMINTON_REQUIRED_MARKET_INPUTS = {
+    "match_winner": ["odds_american"], "moneyline": ["odds_american"],
+    "game_winner": ["odds_american"], "set_winner": ["odds_american"],
+    "correct_score": ["odds_american"], "first_game_winner": ["odds_american"],
+    "second_game_winner": ["odds_american"], "third_game_winner": ["odds_american"],
+    "game_handicap": ["line", "odds_american"], "point_handicap": ["line", "odds_american"],
+    "total_games": ["line", "odds_american"], "total_points": ["line", "odds_american"],
+    "alt_game_handicap": ["line", "odds_american"], "alt_total_games": ["line", "odds_american"],
+    "alt_total_points": ["line", "odds_american"],
+}
+for _badminton_prop_market in BADMINTON_PROP_MARKETS:
+    BADMINTON_REQUIRED_MARKET_INPUTS[_badminton_prop_market] = ["odds_american"] + BADMINTON_PLAYER_PROP_INPUTS
+
+BADMINTON_OPTIONAL_ENRICHMENT_INPUTS = [
+    "market_movement", "public_betting_percent", "sharp_money_percent",
+    "no_vig_market_probability", "book_count", "current_odds",
+    "best_available_odds", "opening_odds", "consensus_odds", "provider_status",
+    "social_sentiment", "crowd_consensus",
+]
+
+BADMINTON_INPUT_CONTRACT = {
+    "required_core_inputs": BADMINTON_REQUIRED_CORE_INPUTS,
+    "required_market_specific_inputs": BADMINTON_REQUIRED_MARKET_INPUTS,
+    "optional_enrichment_inputs": BADMINTON_OPTIONAL_ENRICHMENT_INPUTS,
+    "player_prop_inputs": BADMINTON_PLAYER_PROP_INPUTS,
+    "provider_enrichment_inputs": ["best_available_odds", "current_odds", "opening_odds", "consensus_odds", "no_vig_market_probability", "book_count"],
+    "officiating_inputs": ["umpire_name", "service_judge_name", "fault_call_tendency", "shuttle_speed_enforcement"],
+    "referee_inputs": ["umpire_name", "service_judge_name", "fault_call_tendency", "shuttle_speed_enforcement"],
+    "social_crowd_inputs": ["public_betting_percent", "sharp_money_percent", "social_sentiment", "crowd_consensus"],
+}
+
 VOLLEYBALL_MARKETS = [
     "match_winner", "moneyline", "set_winner", "correct_score", "set_handicap",
     "point_spread", "total_sets", "total_points", "team_total_points",
@@ -3401,6 +3501,7 @@ SPORT_PROP_INPUTS = {
     "rugby": ["set piece", "territory", "expected points", "discipline/card risk", "player try props"],
     "lacrosse": ["faceoff possession", "shot quality", "goalie matchup", "pace", "player shot and scorer props"],
     "table_tennis": ["serve quality", "return quality", "rally style", "game momentum", "player point props"],
+    "badminton": ["serve quality", "return quality", "rally style", "shuttle speed", "player point props"],
     "volleyball": ["sideout rate", "attack rating", "serve receive", "block defense", "player prop projection"],
     "handball": ["fastbreak rate", "goalkeeper efficiency", "shot accuracy", "discipline context", "player prop projection"],
     "afl": ["clearance", "inside 50s", "scoring shots", "ruck", "player disposal and goal props"],
@@ -3490,6 +3591,12 @@ OFFICIALS_MODULE_BY_SPORT = {
         "official_inputs": TABLE_TENNIS_INPUT_CONTRACT["officiating_inputs"],
         "betting_edge_strength": "weak",
         "notes": "Table Tennis officiating context can affect serve faults and expedite-system pace but cannot create bets without active Table Tennis model inputs.",
+    },
+    "badminton": {
+        "official_type": "umpire/service judge",
+        "official_inputs": BADMINTON_INPUT_CONTRACT["officiating_inputs"],
+        "betting_edge_strength": "weak",
+        "notes": "Badminton officiating context can affect service faults and shuttle-speed enforcement but cannot create bets without active Badminton model inputs.",
     },
     "volleyball": {
         "official_type": "first ref/second ref",
@@ -4138,6 +4245,24 @@ SPORT_MODEL_REGISTRY = [
         confirmed_bets_allowed=True,
     ),
     _sport(
+        "badminton",
+        "Badminton",
+        "badminton_serve_return_rally_momentum_shuttle_monte_carlo_model",
+        "badminton_serve_return_rally_momentum_shuttle_monte_carlo_model",
+        "serve_return_rally_momentum_shuttle_monte_carlo",
+        BADMINTON_MARKETS,
+        BADMINTON_PROP_MARKETS,
+        BADMINTON_REQUIRED_CORE_INPUTS,
+        BADMINTON_OPTIONAL_ENRICHMENT_INPUTS,
+        ["serve/return model", "rally style model", "net play and smash model", "shuttle speed context", "deciding-game momentum", "player prop projection", "format/discipline/tournament calibration"],
+        "serve-return rally-momentum shuttle Monte Carlo",
+        ["Match, game, handicap, total, and player point/service/return props are correlated through serve quality, return pressure, rally control, shuttle speed, and deciding-game momentum."],
+        sport_parameters={"league_calibration_applied": "badminton"},
+        component_status=COMPONENT_STATUS_ACTIVE,
+        model_level=MODEL_LEVEL_PROJECTION_READY,
+        confirmed_bets_allowed=True,
+    ),
+    _sport(
         "volleyball",
         "Volleyball",
         "volleyball_sideout_attack_block_serve_monte_carlo_model",
@@ -4523,6 +4648,7 @@ _INPUT_NORMALIZER_BY_SPORT = {
     "rugby": "rugby_input_normalizer",
     "lacrosse": "lacrosse_input_normalizer",
     "table_tennis": "table_tennis_input_normalizer",
+    "badminton": "badminton_input_normalizer",
     "volleyball": "volleyball_input_normalizer",
     "handball": "handball_input_normalizer",
     "afl": "afl_input_normalizer",
@@ -4781,6 +4907,39 @@ _ACTIVE_SCREENSHOT_ALIAS_TEST_PAYLOADS: dict[str, dict[str, Any]] = {
             "market_move": 0.0, "public_pct": 54, "sharp_pct": 58, "points_proj": 47.5,
             "opp_points_proj": 42.0, "games_proj": 4.7, "opp_games_proj": 3.8,
             "service_points_proj": 28.5, "return_points_proj": 19.0, "prop_line": 26.5,
+            "book_count": 8, "current_odds": 100,
+        },
+    },
+    "badminton": {
+        "sport": "bwf", "league": "BWF World Tour", "event": "Viktor Axelsen vs Lee Zii Jia", "market": "match_winner",
+        "selection": "Viktor Axelsen", "odds_american": 100, "bankroll": 1000, "unit_size": 25, "risk_profile": "moderate",
+        "source_type": "chatgpt_parsed", "screenshot_text": "Viktor Axelsen match winner +100 vs Lee Zii Jia",
+        "visible_markets": ["match_winner", "game_handicap", "player_service_points_won"],
+        "input_stats": {
+            "player_name": "Viktor Axelsen", "opponent_name": "Lee Zii Jia", "team_name": "Axelsen",
+            "opponent_team_name": "Lee Zii Jia", "pick": "Viktor Axelsen", "tournament_name": "BWF World Tour Finals",
+            "competition_name": "BWF World Tour", "format": "best_of_3", "games": 3, "discipline": "singles",
+            "neutral": True, "player_power_rating": 91, "opp_power_rating": 86, "player_elo_rating": 2195,
+            "opp_elo_rating": 2110, "player_rank": 1, "opp_rank": 8, "player_win_pct": 0.76,
+            "opp_win_pct": 0.62, "player_form": 89, "opp_form": 81, "serve_rating": 90,
+            "opp_serve_rating": 84, "return_rating": 88, "opp_return_rating": 82,
+            "service_points_won_pct": 0.64, "opp_service_points_won_pct": 0.58,
+            "return_points_won_pct": 0.47, "opp_return_points_won_pct": 0.41,
+            "short_serve": 89, "opp_short_serve": 83, "long_serve": 88, "opp_long_serve": 82,
+            "rally_rating": 90, "opp_rally_rating": 83, "net_play": 87, "opp_net_play": 82,
+            "smash": 91, "opp_smash": 85, "drop_shot": 88, "opp_drop_shot": 82,
+            "clear": 89, "opp_clear": 83, "defense": 88, "opp_defense": 82,
+            "speed": 87, "opp_speed": 84, "stamina": 89, "opp_stamina": 82,
+            "error_rate": 0.13, "opp_error_rate": 0.18, "game_win_pct": 0.68,
+            "opp_game_win_pct": 0.57, "deciding_game_pct": 0.64, "opp_deciding_game_pct": 0.52,
+            "clutch": 88, "opp_clutch": 81, "momentum": 87, "opp_momentum": 80,
+            "pressure": 88, "opp_pressure": 81, "handedness": "right_vs_right",
+            "style_matchup": "attacking control", "court_speed": 0.55, "shuttle_speed": 0.52,
+            "altitude": 90, "fatigue": 0.12, "opp_fatigue": 0.20, "rest": 3, "opp_rest": 2,
+            "travel": 0.08, "opp_travel": 0.18, "injury": 0.03, "opp_injury": 0.09,
+            "market_move": 0.0, "public_pct": 54, "sharp_pct": 58, "points_proj": 45.5,
+            "opp_points_proj": 39.5, "games_proj": 2.2, "opp_games_proj": 1.8,
+            "service_points_proj": 27.5, "return_points_proj": 18.5, "prop_line": 25.5,
             "book_count": 8, "current_odds": 100,
         },
     },
@@ -7204,6 +7363,38 @@ def _table_tennis_market_specific_missing(market: Any, input_stats: dict[str, An
     return [field for field in required if _table_tennis_value_missing(field, input_stats, payload)]
 
 
+def _badminton_value_missing(field: str, input_stats: dict[str, Any], payload: dict[str, Any]) -> bool:
+    value = input_stats.get(field)
+    if value is None and field in {"sport", "league", "event", "teams", "market", "selection", "odds_american", "bankroll", "unit_size", "risk_profile"}:
+        value = payload.get(field)
+    if value is None and field == "event":
+        value = payload.get("event_id")
+    if value is None and field == "line":
+        value = payload.get("line") if payload.get("line") is not None else input_stats.get("player_prop_line")
+    if value in (None, ""):
+        return True
+    if field in BADMINTON_NUMERIC_CORE_INPUTS or field in BADMINTON_NUMERIC_PLAYER_PROP_INPUTS or field in {"line", "odds_american"}:
+        return _safe_float(value) is None
+    return False
+
+
+def _badminton_full_inputs_missing(input_stats: dict[str, Any], payload: dict[str, Any]) -> list[str]:
+    base_fields = ["sport", "league", "event", "market", "selection", "odds_american", "bankroll", "unit_size", "risk_profile"]
+    missing = [field for field in base_fields if _badminton_value_missing(field, input_stats, payload)]
+    for field in BADMINTON_REQUIRED_CORE_INPUTS:
+        if _badminton_value_missing(field, input_stats, payload):
+            missing.append(field)
+    return list(dict.fromkeys(missing))
+
+
+def _badminton_market_specific_missing(market: Any, input_stats: dict[str, Any], payload: dict[str, Any]) -> list[str]:
+    market_key = _normal_market_key(input_stats.get("market_type") or market)
+    required = list(BADMINTON_REQUIRED_MARKET_INPUTS.get(market_key, ["odds_american"]))
+    if market_key in BADMINTON_PROP_MARKETS:
+        required = list(dict.fromkeys(required + BADMINTON_PLAYER_PROP_INPUTS))
+    return [field for field in required if _badminton_value_missing(field, input_stats, payload)]
+
+
 def _volleyball_value_missing(field: str, input_stats: dict[str, Any], payload: dict[str, Any]) -> bool:
     value = input_stats.get(field)
     if value is None and field in {"sport", "league", "event", "teams", "market", "selection", "odds_american", "bankroll", "unit_size", "risk_profile"}:
@@ -7402,6 +7593,8 @@ def _missing_inputs_for_sport(sport: str, market: Any, input_stats: dict[str, An
         return _lacrosse_full_inputs_missing(input_stats, payload) + _lacrosse_market_specific_missing(market, input_stats, payload)
     if sport == "table_tennis":
         return _table_tennis_full_inputs_missing(input_stats, payload) + _table_tennis_market_specific_missing(market, input_stats, payload)
+    if sport == "badminton":
+        return _badminton_full_inputs_missing(input_stats, payload) + _badminton_market_specific_missing(market, input_stats, payload)
     if sport == "volleyball":
         return _volleyball_full_inputs_missing(input_stats, payload) + _volleyball_market_specific_missing(market, input_stats, payload)
     if sport == "handball":
@@ -7978,6 +8171,69 @@ def _normalize_table_tennis_input_aliases(input_stats: dict[str, Any], payload: 
     normalized.setdefault("selection", payload.get("selection") or normalized.get("player"))
     normalized.setdefault("event", payload.get("event") or payload.get("event_id"))
     normalized.setdefault("match_format", "unknown")
+    normalized.setdefault("neutral_site", True)
+    return normalized
+
+
+def _normalize_badminton_input_aliases(input_stats: dict[str, Any], payload: Optional[dict[str, Any]] = None, sport: Optional[str] = None) -> dict[str, Any]:
+    normalized = dict(input_stats or {})
+    payload = payload or {}
+    alias_pairs = {
+        "player": ["player_name"], "opponent": ["opponent_name"], "team": ["team_name", "player_name"],
+        "opponent_team": ["opponent_team_name", "opponent_name"], "selection": ["pick", "favorite"],
+        "tournament": ["tournament_name", "event_name"], "competition": ["competition_name", "league_name"],
+        "match_format": ["format", "series_format"], "best_of_games": ["games", "best_of"],
+        "singles_doubles": ["discipline", "draw_type"], "neutral_site": ["neutral"],
+        "player_rating": ["player_power_rating"], "opponent_rating": ["opp_power_rating", "opponent_power_rating"],
+        "player_elo": ["player_elo_rating"], "opponent_elo": ["opp_elo_rating", "opponent_elo_rating"],
+        "player_world_rank": ["player_rank"], "opponent_world_rank": ["opp_rank", "opponent_rank"],
+        "player_recent_win_rate": ["player_win_pct"], "opponent_recent_win_rate": ["opp_win_pct", "opponent_win_pct"],
+        "player_recent_form": ["player_form", "form"], "opponent_recent_form": ["opp_form", "opponent_form"],
+        "player_serve_rating": ["serve_rating"], "opponent_serve_rating": ["opp_serve_rating"],
+        "player_return_rating": ["return_rating"], "opponent_return_rating": ["opp_return_rating"],
+        "player_service_points_won_rate": ["service_points_won_pct"], "opponent_service_points_won_rate": ["opp_service_points_won_pct"],
+        "player_return_points_won_rate": ["return_points_won_pct"], "opponent_return_points_won_rate": ["opp_return_points_won_pct"],
+        "player_short_serve_rating": ["short_serve"], "opponent_short_serve_rating": ["opp_short_serve"],
+        "player_long_serve_rating": ["long_serve"], "opponent_long_serve_rating": ["opp_long_serve"],
+        "player_rally_rating": ["rally_rating"], "opponent_rally_rating": ["opp_rally_rating"],
+        "player_net_play_rating": ["net_play"], "opponent_net_play_rating": ["opp_net_play"],
+        "player_smash_rating": ["smash"], "opponent_smash_rating": ["opp_smash"],
+        "player_drop_shot_rating": ["drop_shot"], "opponent_drop_shot_rating": ["opp_drop_shot"],
+        "player_clear_rating": ["clear"], "opponent_clear_rating": ["opp_clear"],
+        "player_defense_rating": ["defense"], "opponent_defense_rating": ["opp_defense"],
+        "player_speed_rating": ["speed"], "opponent_speed_rating": ["opp_speed"],
+        "player_stamina_rating": ["stamina"], "opponent_stamina_rating": ["opp_stamina"],
+        "player_error_rate": ["error_rate"], "opponent_error_rate": ["opp_error_rate"],
+        "player_game_win_rate": ["game_win_pct"], "opponent_game_win_rate": ["opp_game_win_pct"],
+        "player_deciding_game_win_rate": ["deciding_game_pct"], "opponent_deciding_game_win_rate": ["opp_deciding_game_pct"],
+        "player_clutch_rating": ["clutch"], "opponent_clutch_rating": ["opp_clutch"],
+        "player_momentum_rating": ["momentum"], "opponent_momentum_rating": ["opp_momentum"],
+        "player_pressure_rating": ["pressure"], "opponent_pressure_rating": ["opp_pressure"],
+        "handedness_matchup": ["handedness"], "playing_style_matchup": ["style_matchup"],
+        "court_speed_rating": ["court_speed"], "shuttle_speed_rating": ["shuttle_speed"], "venue_altitude": ["altitude"],
+        "fatigue_rating": ["fatigue"], "opponent_fatigue_rating": ["opp_fatigue"],
+        "rest_days": ["rest"], "opponent_rest_days": ["opp_rest"],
+        "travel_fatigue": ["travel"], "opponent_travel_fatigue": ["opp_travel"],
+        "injury_risk": ["injury"], "opponent_injury_risk": ["opp_injury"],
+        "market_movement": ["market_move"], "public_betting_percent": ["public_pct"], "sharp_money_percent": ["sharp_pct"],
+        "player_points_projection": ["points_proj"], "opponent_points_projection": ["opp_points_proj"],
+        "player_games_projection": ["games_proj"], "opponent_games_projection": ["opp_games_proj"],
+        "player_service_points_projection": ["service_points_proj"],
+        "player_return_points_projection": ["return_points_proj"], "player_prop_line": ["prop_line", "line_value"],
+    }
+    for canonical, aliases in alias_pairs.items():
+        _copy_alias_if_missing(normalized, canonical, aliases)
+    if normalized.get("competition") is None:
+        normalized["competition"] = payload.get("league") or normalized.get("league")
+    if normalized.get("tournament") is None:
+        normalized["tournament"] = payload.get("event") or payload.get("event_id") or payload.get("league")
+    for field in ("market", "league", "odds_american", "bankroll", "unit_size", "risk_profile"):
+        if normalized.get(field) is None:
+            normalized[field] = payload.get(field)
+    normalized.setdefault("selection", payload.get("selection") or normalized.get("player"))
+    normalized.setdefault("event", payload.get("event") or payload.get("event_id"))
+    normalized.setdefault("match_format", "unknown")
+    normalized.setdefault("singles_doubles", "unknown")
     normalized.setdefault("neutral_site", True)
     return normalized
 
@@ -9174,6 +9430,9 @@ def normalize_sport_inputs_for_model(
     elif sport_alias_resolved == "table_tennis":
         normalized = _normalize_table_tennis_input_aliases(normalized, payload, sport_alias_resolved)
         normalizer_used = "table_tennis_input_normalizer"
+    elif sport_alias_resolved == "badminton":
+        normalized = _normalize_badminton_input_aliases(normalized, payload, sport_alias_resolved)
+        normalizer_used = "badminton_input_normalizer"
     elif sport_alias_resolved == "volleyball":
         normalized = _normalize_volleyball_input_aliases(normalized, payload, sport_alias_resolved)
         normalizer_used = "volleyball_input_normalizer"
@@ -13124,6 +13383,209 @@ def _estimate_table_tennis_serve_return_rally_model(
     }
 
 
+def _badminton_format_calibration(input_stats: dict[str, Any]) -> str:
+    games = _safe_float(input_stats.get("best_of_games"))
+    text = str(input_stats.get("match_format") or "").strip().lower().replace("-", "_").replace(" ", "_")
+    if games == 3 or "best_of_3" in text or text in {"bo3", "best3"}:
+        return "best_of_3"
+    return "unknown"
+
+
+def _badminton_discipline_calibration(input_stats: dict[str, Any]) -> str:
+    text = str(input_stats.get("singles_doubles") or "").strip().lower()
+    if "single" in text:
+        return "singles"
+    if "double" in text:
+        return "doubles"
+    return "unknown"
+
+
+def _badminton_tournament_calibration(input_stats: dict[str, Any]) -> str:
+    text = str(input_stats.get("tournament") or input_stats.get("competition") or "").strip().lower()
+    if any(term in text for term in ("bwf", "world tour", "championship", "olympic", "open", "finals", "tournament")):
+        return "tournament"
+    return "unknown"
+
+
+def _estimate_badminton_serve_return_rally_shuttle_model(
+    *,
+    input_stats: dict[str, Any],
+    payload: dict[str, Any],
+    market: Any,
+    odds_american: Optional[float],
+    bankroll: float,
+    risk_profile: str,
+) -> Optional[dict[str, Any]]:
+    missing = _badminton_full_inputs_missing(input_stats, payload) + _badminton_market_specific_missing(market, input_stats, payload)
+    if missing or odds_american is None:
+        return None
+
+    market_key = _normal_market_key(input_stats.get("market") or market)
+    selection_text = str(payload.get("selection") or input_stats.get("selection") or "").strip().lower()
+    player_text = str(input_stats.get("player") or input_stats.get("team") or "").strip().lower()
+    selected_player = selection_text in {"", player_text} or player_text in selection_text
+
+    def n(field: str, default: float = 0.0) -> float:
+        value = _safe_float(input_stats.get(field), default)
+        return default if value is None else value
+
+    implied_probability = implied_probability_from_american(odds_american)
+    format_calibration = _badminton_format_calibration(input_stats)
+    discipline_calibration = _badminton_discipline_calibration(input_stats)
+    tournament_calibration = _badminton_tournament_calibration(input_stats)
+    serve_return_calibration = any(input_stats.get(field) is not None for field in ("player_serve_rating", "opponent_serve_rating", "player_return_rating", "opponent_return_rating"))
+    rally_style_calibration = any(input_stats.get(field) is not None for field in ("player_rally_rating", "opponent_rally_rating", "player_smash_rating", "opponent_smash_rating", "playing_style_matchup"))
+    deciding_game_calibration = any(input_stats.get(field) is not None for field in ("player_deciding_game_win_rate", "opponent_deciding_game_win_rate", "player_clutch_rating", "opponent_clutch_rating"))
+
+    rating_edge = (n("player_rating") - n("opponent_rating")) * 0.044 + (n("player_elo") - n("opponent_elo")) * 0.004
+    rank_edge = (n("opponent_world_rank") - n("player_world_rank")) * 0.024
+    form_edge = (n("player_recent_win_rate") - n("opponent_recent_win_rate")) * 3.1 + (n("player_recent_form") - n("opponent_recent_form")) * 0.030
+    serve_return_edge = (
+        (n("player_serve_rating") - n("opponent_serve_rating")) * 0.030
+        + (n("player_return_rating") - n("opponent_return_rating")) * 0.034
+        + (n("player_service_points_won_rate") - n("opponent_service_points_won_rate")) * 4.0
+        + (n("player_return_points_won_rate") - n("opponent_return_points_won_rate")) * 4.6
+        + (n("player_short_serve_rating") - n("opponent_short_serve_rating")) * 0.020
+        + (n("player_long_serve_rating") - n("opponent_long_serve_rating")) * 0.018
+    )
+    rally_edge = (
+        (n("player_rally_rating") - n("opponent_rally_rating")) * 0.030
+        + (n("player_net_play_rating") - n("opponent_net_play_rating")) * 0.024
+        + (n("player_smash_rating") - n("opponent_smash_rating")) * 0.026
+        + (n("player_drop_shot_rating") - n("opponent_drop_shot_rating")) * 0.022
+        + (n("player_clear_rating") - n("opponent_clear_rating")) * 0.016
+        + (n("player_defense_rating") - n("opponent_defense_rating")) * 0.020
+        + (n("player_speed_rating") - n("opponent_speed_rating")) * 0.016
+        + (n("player_stamina_rating") - n("opponent_stamina_rating")) * 0.018
+        + (n("opponent_error_rate") - n("player_error_rate")) * 5.0
+    )
+    momentum_edge = (
+        (n("player_game_win_rate") - n("opponent_game_win_rate")) * 3.4
+        + (n("player_deciding_game_win_rate") - n("opponent_deciding_game_win_rate")) * 2.1
+        + (n("player_clutch_rating") - n("opponent_clutch_rating")) * 0.024
+        + (n("player_momentum_rating") - n("opponent_momentum_rating")) * 0.020
+        + (n("player_pressure_rating") - n("opponent_pressure_rating")) * 0.020
+    )
+    context_edge = (
+        (n("opponent_fatigue_rating") - n("fatigue_rating")) * 1.8
+        + (n("rest_days") - n("opponent_rest_days")) * 0.12
+        + (n("opponent_travel_fatigue") - n("travel_fatigue")) * 1.2
+        + (n("opponent_injury_risk") - n("injury_risk")) * 2.4
+    )
+    shuttle_drag = max(0.0, n("court_speed_rating") - 0.75) * 0.20 + max(0.0, n("shuttle_speed_rating") - 0.75) * 0.24
+    player_edge_score = rating_edge + rank_edge + form_edge + serve_return_edge + rally_edge + momentum_edge + context_edge - shuttle_drag
+    if not selected_player and market_key not in {"total_games", "total_points", "alt_total_games", "alt_total_points"}:
+        player_edge_score *= -1
+
+    raw_model_probability = _logistic_probability(player_edge_score, 2.65)
+    projected_games = max(2.0, min(n("best_of_games", 3), n("player_games_projection") + n("opponent_games_projection") * 0.18))
+    projected_points = max(30.0, n("player_points_projection") + n("opponent_points_projection"))
+    line = _safe_float(payload.get("line"), _safe_float(input_stats.get("line") or input_stats.get("player_prop_line")))
+    if market_key in {"game_winner", "set_winner", "first_game_winner", "second_game_winner", "third_game_winner"}:
+        game_multiplier = 0.74 if market_key == "third_game_winner" else 0.86
+        raw_model_probability = _logistic_probability(player_edge_score * game_multiplier, 2.2)
+    elif market_key in {"game_handicap", "alt_game_handicap"}:
+        raw_model_probability = _logistic_probability(player_edge_score + (line or 0), 2.3)
+    elif market_key == "point_handicap":
+        raw_model_probability = _logistic_probability(player_edge_score * 5.2 + (line or 0), 7.0)
+    elif market_key in {"total_games", "alt_total_games"}:
+        total_line = line if line is not None else 2.5
+        over_probability = _logistic_probability(projected_games - total_line, 0.75)
+        raw_model_probability = 1 - over_probability if "under" in selection_text else over_probability
+    elif market_key in {"total_points", "alt_total_points"}:
+        total_line = line if line is not None else 78.5
+        over_probability = _logistic_probability(projected_points - total_line, 8.0)
+        raw_model_probability = 1 - over_probability if "under" in selection_text else over_probability
+    elif market_key == "correct_score":
+        raw_model_probability = max(0.05, min(0.44, _logistic_probability(abs(player_edge_score) - 0.9, 2.0)))
+    elif market_key in BADMINTON_PROP_MARKETS:
+        prop_line = line if line is not None else n("player_prop_line", 24.5)
+        if market_key == "player_service_points_won":
+            raw_model_probability = _logistic_probability(n("player_service_points_projection") - prop_line, 3.8)
+        elif market_key == "player_return_points_won":
+            raw_model_probability = _logistic_probability(n("player_return_points_projection") - prop_line, 3.2)
+        elif market_key == "player_total_points":
+            raw_model_probability = _logistic_probability(n("player_points_projection") - prop_line, 5.5)
+        elif market_key == "player_aces":
+            raw_model_probability = _logistic_probability((n("player_serve_rating") - 82) * 0.10 - prop_line, 1.6)
+
+    calibrated_probability = raw_model_probability
+    true_probability = max(0.04, min(0.94, calibrated_probability))
+    sanity_flags = ["badminton probability cap applied"] if true_probability != calibrated_probability else []
+
+    confidence = 74.0
+    risk_flags: list[str] = []
+    if (_safe_float(input_stats.get("book_count"), 0) or 0) < 4:
+        confidence -= 4
+        risk_flags.append("book count too low")
+    if n("fatigue_rating") > 0.65 or n("injury_risk") > 0.30:
+        confidence -= 9
+        risk_flags.append("player condition risk")
+    if market_key in {"correct_score", "player_aces", "third_game_winner"}:
+        confidence -= 7
+        risk_flags.append("volatile market")
+    if input_stats.get("provider_status") == "error":
+        risk_flags.append("provider failure ignored")
+    confidence = max(1, min(95, round(confidence, 2)))
+
+    edge = calculate_edge_percent(true_probability, implied_probability)
+    edge_threshold, confidence_threshold = _nfl_thresholds(risk_profile)
+    no_bet_flags: list[str] = []
+    if edge is None:
+        no_bet_flags.append("edge missing")
+    elif edge <= 0:
+        no_bet_flags.append("negative edge")
+    elif edge < edge_threshold:
+        no_bet_flags.append("edge too small")
+    if confidence < confidence_threshold:
+        no_bet_flags.append("low confidence")
+
+    suggested = 0 if no_bet_flags else calculate_suggested_stake(
+        bankroll=bankroll,
+        american_odds=odds_american,
+        true_probability=true_probability,
+        risk_profile=risk_profile,
+        confidence=confidence,
+    )
+    if suggested <= 0 and not no_bet_flags and edge is not None and edge >= edge_threshold and confidence >= confidence_threshold:
+        suggested = round(max(1.0, bankroll * 0.004), 2)
+
+    return {
+        "model_status": "active", "estimated_true_probability": true_probability,
+        "true_probability": true_probability, "final_probability": true_probability,
+        "model_probability": true_probability, "implied_probability": implied_probability,
+        "edge": edge, "confidence": confidence, "risk": "high" if risk_flags else "moderate",
+        "suggested_stake": suggested, "raw_model_probability": raw_model_probability,
+        "calibrated_model_probability": calibrated_probability,
+        "probability_calibration_applied": bool(sanity_flags),
+        "probability_sanity_flags": sanity_flags,
+        "probability_cap_reason": "badminton sanity cap" if sanity_flags else None,
+        "market_anchor_probability": None,
+        "league_calibration_applied": "badminton",
+        "format_calibration_applied": format_calibration,
+        "discipline_calibration_applied": discipline_calibration,
+        "tournament_calibration_applied": tournament_calibration,
+        "serve_return_calibration_applied": serve_return_calibration,
+        "rally_style_calibration_applied": rally_style_calibration,
+        "deciding_game_calibration_applied": deciding_game_calibration,
+        "badminton_player_edge_score": round(player_edge_score, 2),
+        "badminton_projected_games": round(projected_games, 2),
+        "badminton_projected_total_points": round(projected_points, 2),
+        "badminton_serve_return_edge_score": round(serve_return_edge, 2),
+        "badminton_rally_style_edge_score": round(rally_edge, 2),
+        "badminton_momentum_edge_score": round(momentum_edge, 2),
+        "risk_flags": risk_flags,
+        "input_coverage": {
+            "required_core_present": list(BADMINTON_REQUIRED_CORE_INPUTS),
+            "required_market_specific_present": BADMINTON_REQUIRED_MARKET_INPUTS.get(market_key, []),
+            "optional_enrichment_present": [field for field in BADMINTON_OPTIONAL_ENRICHMENT_INPUTS if input_stats.get(field) is not None],
+            "optional_enrichment_missing": [field for field in BADMINTON_OPTIONAL_ENRICHMENT_INPUTS if input_stats.get(field) is None],
+        },
+        "provider_enrichment": {"provider_status": input_stats.get("provider_status") or "not_provided", "provider_enrichment_present": [field for field in BADMINTON_OPTIONAL_ENRICHMENT_INPUTS if input_stats.get(field) is not None]},
+        "no_bet_flags": no_bet_flags,
+    }
+
+
 def _volleyball_format_calibration(input_stats: dict[str, Any]) -> str:
     sets = _safe_float(input_stats.get("best_of_sets"))
     text = str(input_stats.get("match_format") or "").strip().lower().replace("-", "_").replace(" ", "_")
@@ -16261,6 +16723,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         rugby_model = None
         lacrosse_model = None
         table_tennis_model = None
+        badminton_model = None
         volleyball_model = None
         handball_model = None
         afl_model = None
@@ -16361,6 +16824,15 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             )
         elif sport == "table_tennis":
             table_tennis_model = _estimate_table_tennis_serve_return_rally_model(
+                input_stats=input_stats,
+                payload=payload,
+                market=market,
+                odds_american=odds_american,
+                bankroll=bankroll,
+                risk_profile=payload.get("risk_profile") or "moderate",
+            )
+        elif sport == "badminton":
+            badminton_model = _estimate_badminton_serve_return_rally_shuttle_model(
                 input_stats=input_stats,
                 payload=payload,
                 market=market,
@@ -16559,6 +17031,8 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
         elif table_tennis_model:
             component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
+        elif badminton_model:
+            component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
         elif volleyball_model:
             component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
         elif handball_model:
@@ -16597,7 +17071,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
         elif overwatch_model:
             component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
-        elif sport in {"basketball_nba", "basketball_wnba", "basketball_ncaab", "basketball_ncaawb", "americanfootball_nfl", "americanfootball_ncaaf", "baseball_mlb", "soccer", "rugby", "lacrosse", "table_tennis", "volleyball", "handball", "afl", "icehockey_nhl", "tennis", "mma_mixed_martial_arts", "boxing", "golf", "formula1", "formula_e", "nascar", "indycar", "motogp", "cricket", "cs2", "valorant", "league_of_legends", "dota2", "call_of_duty", "overwatch"}:
+        elif sport in {"basketball_nba", "basketball_wnba", "basketball_ncaab", "basketball_ncaawb", "americanfootball_nfl", "americanfootball_ncaaf", "baseball_mlb", "soccer", "rugby", "lacrosse", "table_tennis", "badminton", "volleyball", "handball", "afl", "icehockey_nhl", "tennis", "mma_mixed_martial_arts", "boxing", "golf", "formula1", "formula_e", "nascar", "indycar", "motogp", "cricket", "cs2", "valorant", "league_of_legends", "dota2", "call_of_duty", "overwatch"}:
             component_status = COMPONENT_STATUS_INACTIVE
             missing_inputs = _missing_inputs_for_sport(sport, market, input_stats, payload)
         else:
@@ -16666,6 +17140,12 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             edge = table_tennis_model["edge"]
             suggested = table_tennis_model["suggested_stake"]
             no_bet_flags = list(table_tennis_model["no_bet_flags"])
+        elif badminton_model:
+            true_probability = badminton_model["true_probability"]
+            implied_probability = badminton_model["implied_probability"]
+            edge = badminton_model["edge"]
+            suggested = badminton_model["suggested_stake"]
+            no_bet_flags = list(badminton_model["no_bet_flags"])
         elif volleyball_model:
             true_probability = volleyball_model["true_probability"]
             implied_probability = volleyball_model["implied_probability"]
@@ -16782,7 +17262,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             no_bet_flags = list(overwatch_model["no_bet_flags"])
         if implied_probability is not None and true_probability is not None and odds_american is not None:
             edge = edge_percentage(true_probability, implied_probability)
-            if not (nba_model or wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or rugby_model or lacrosse_model or table_tennis_model or volleyball_model or handball_model or afl_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or formula_e_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model):
+            if not (nba_model or wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or rugby_model or lacrosse_model or table_tennis_model or badminton_model or volleyball_model or handball_model or afl_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or formula_e_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model):
                 suggested = suggested_stake_with_risk_controls(
                     bankroll=bankroll,
                     american_odds=odds_american,
@@ -16799,7 +17279,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         social_input_stats = dict(input_stats)
         social_input_stats["edge"] = edge
         social_layer = build_social_crowd_calibration_layer(social_input_stats)
-        if social_layer["sentiment_no_bet_flags"] and not (nba_model or wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or rugby_model or lacrosse_model or table_tennis_model or volleyball_model or handball_model or afl_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or formula_e_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model):
+        if social_layer["sentiment_no_bet_flags"] and not (nba_model or wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or rugby_model or lacrosse_model or table_tennis_model or badminton_model or volleyball_model or handball_model or afl_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or formula_e_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model):
             no_bet_flags = list(dict.fromkeys(no_bet_flags + social_layer["sentiment_no_bet_flags"]))
 
         risk_controller = build_risk_controller(bankroll, unit_size, payload.get("risk_profile") or "conservative")
@@ -16816,7 +17296,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         })
         wee_willie = build_wee_willie_market_weakness_detector(detector_payload)
         manual_ticket = build_manual_ticket(detector_payload, suggested)
-        active_model = nba_model or wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or rugby_model or lacrosse_model or table_tennis_model or volleyball_model or handball_model or afl_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or formula_e_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model
+        active_model = nba_model or wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or rugby_model or lacrosse_model or table_tennis_model or badminton_model or volleyball_model or handball_model or afl_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or formula_e_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model
         confidence = active_model["confidence"] if active_model else input_stats.get("confidence")
         if tennis_model and _safe_float(confidence) is None:
             confidence = 0.0
@@ -16828,7 +17308,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         model_status = active_model["model_status"] if active_model else component_status
         edge_threshold, confidence_threshold = (
             _nfl_thresholds(payload.get("risk_profile") or "moderate")
-            if (wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or rugby_model or lacrosse_model or table_tennis_model or volleyball_model or handball_model or afl_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or formula_e_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model)
+            if (wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or rugby_model or lacrosse_model or table_tennis_model or badminton_model or volleyball_model or handball_model or afl_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or formula_e_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model)
             else (2.5, 70)
         )
         event_value = payload.get("event_id") or payload.get("event") or input_stats.get("event")
@@ -16945,7 +17425,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
                 "market": market,
                 "selection": selection_value,
                 "confidence": confidence,
-            }] if _normal_market_key(market) in {"player_prop", "knockdown_prop", "takedown_prop", "significant_strikes_prop", "submission_attempt_prop", "birdies_prop", "eagles_prop", "fairways_hit_prop", "greens_in_regulation_prop", "putts_prop", "round_score_prop", *BASKETBALL_MODULE_PROP_MARKETS, *COLLEGE_FOOTBALL_PROP_MARKETS, *RUGBY_PROP_MARKETS, *LACROSSE_PROP_MARKETS, *TABLE_TENNIS_PROP_MARKETS, *VOLLEYBALL_PROP_MARKETS, *HANDBALL_PROP_MARKETS, *AFL_PROP_MARKETS, *FORMULA_E_PROP_MARKETS, *CRICKET_PROP_MARKETS, *CS2_PROP_MARKETS, *VALORANT_PROP_MARKETS, *LOL_PROP_MARKETS, *DOTA2_PROP_MARKETS, *COD_PROP_MARKETS, *OVERWATCH_PROP_MARKETS} else [],
+            }] if _normal_market_key(market) in {"player_prop", "knockdown_prop", "takedown_prop", "significant_strikes_prop", "submission_attempt_prop", "birdies_prop", "eagles_prop", "fairways_hit_prop", "greens_in_regulation_prop", "putts_prop", "round_score_prop", *BASKETBALL_MODULE_PROP_MARKETS, *COLLEGE_FOOTBALL_PROP_MARKETS, *RUGBY_PROP_MARKETS, *LACROSSE_PROP_MARKETS, *TABLE_TENNIS_PROP_MARKETS, *BADMINTON_PROP_MARKETS, *VOLLEYBALL_PROP_MARKETS, *HANDBALL_PROP_MARKETS, *AFL_PROP_MARKETS, *FORMULA_E_PROP_MARKETS, *CRICKET_PROP_MARKETS, *CS2_PROP_MARKETS, *VALORANT_PROP_MARKETS, *LOL_PROP_MARKETS, *DOTA2_PROP_MARKETS, *COD_PROP_MARKETS, *OVERWATCH_PROP_MARKETS} else [],
             "target_alt_lines": [{
                 "sport": sport,
                 "event": event_value,
@@ -16985,7 +17465,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             **officiating_analysis["officiating_logbook_fields"],
         })
         basketball_module_model = wnba_model or mens_cbb_model or womens_cbb_model
-        probability_model = basketball_module_model or college_football_model or nfl_model or mlb_model or soccer_model or rugby_model or lacrosse_model or table_tennis_model or volleyball_model or handball_model or afl_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or formula_e_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model
+        probability_model = basketball_module_model or college_football_model or nfl_model or mlb_model or soccer_model or rugby_model or lacrosse_model or table_tennis_model or badminton_model or volleyball_model or handball_model or afl_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or formula_e_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model
         if probability_model:
             logbook_ready_row.update({
                 "raw_model_probability": probability_model["raw_model_probability"],
@@ -17065,6 +17545,23 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
                 "table_tennis_serve_return_edge_score": table_tennis_model["table_tennis_serve_return_edge_score"],
                 "table_tennis_rally_style_edge_score": table_tennis_model["table_tennis_rally_style_edge_score"],
                 "table_tennis_momentum_edge_score": table_tennis_model["table_tennis_momentum_edge_score"],
+            })
+        if badminton_model:
+            logbook_ready_row.update({
+                "league": payload.get("league") or input_stats.get("league"),
+                "league_calibration_applied": badminton_model["league_calibration_applied"],
+                "format_calibration_applied": badminton_model["format_calibration_applied"],
+                "discipline_calibration_applied": badminton_model["discipline_calibration_applied"],
+                "tournament_calibration_applied": badminton_model["tournament_calibration_applied"],
+                "serve_return_calibration_applied": badminton_model["serve_return_calibration_applied"],
+                "rally_style_calibration_applied": badminton_model["rally_style_calibration_applied"],
+                "deciding_game_calibration_applied": badminton_model["deciding_game_calibration_applied"],
+                "badminton_player_edge_score": badminton_model["badminton_player_edge_score"],
+                "badminton_projected_games": badminton_model["badminton_projected_games"],
+                "badminton_projected_total_points": badminton_model["badminton_projected_total_points"],
+                "badminton_serve_return_edge_score": badminton_model["badminton_serve_return_edge_score"],
+                "badminton_rally_style_edge_score": badminton_model["badminton_rally_style_edge_score"],
+                "badminton_momentum_edge_score": badminton_model["badminton_momentum_edge_score"],
             })
         if volleyball_model:
             logbook_ready_row.update({
@@ -17544,6 +18041,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             "rugby_input_contract": deepcopy(RUGBY_INPUT_CONTRACT) if sport == "rugby" else None,
             "lacrosse_input_contract": deepcopy(LACROSSE_INPUT_CONTRACT) if sport == "lacrosse" else None,
             "table_tennis_input_contract": deepcopy(TABLE_TENNIS_INPUT_CONTRACT) if sport == "table_tennis" else None,
+            "badminton_input_contract": deepcopy(BADMINTON_INPUT_CONTRACT) if sport == "badminton" else None,
             "volleyball_input_contract": deepcopy(VOLLEYBALL_INPUT_CONTRACT) if sport == "volleyball" else None,
             "handball_input_contract": deepcopy(HANDBALL_INPUT_CONTRACT) if sport == "handball" else None,
             "afl_input_contract": deepcopy(AFL_INPUT_CONTRACT) if sport == "afl" else None,
@@ -17566,29 +18064,29 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             "wnba_input_contract": deepcopy(WNBA_INPUT_CONTRACT) if sport == "basketball_wnba" else None,
             "mens_college_basketball_input_contract": deepcopy(MENS_COLLEGE_BASKETBALL_INPUT_CONTRACT) if sport == "basketball_ncaab" else None,
             "womens_college_basketball_input_contract": deepcopy(WOMENS_COLLEGE_BASKETBALL_INPUT_CONTRACT) if sport == "basketball_ncaawb" else None,
-            "league_calibration_applied": (basketball_module_model or college_football_model or rugby_model or lacrosse_model or table_tennis_model or volleyball_model or handball_model or afl_model or f1_model or formula_e_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model)["league_calibration_applied"] if (basketball_module_model or college_football_model or rugby_model or lacrosse_model or table_tennis_model or volleyball_model or handball_model or afl_model or f1_model or formula_e_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model) else config.get("sport_parameters", {}).get("league_calibration_applied"),
+            "league_calibration_applied": (basketball_module_model or college_football_model or rugby_model or lacrosse_model or table_tennis_model or badminton_model or volleyball_model or handball_model or afl_model or f1_model or formula_e_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model)["league_calibration_applied"] if (basketball_module_model or college_football_model or rugby_model or lacrosse_model or table_tennis_model or badminton_model or volleyball_model or handball_model or afl_model or f1_model or formula_e_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model) else config.get("sport_parameters", {}).get("league_calibration_applied"),
             "code_variant_calibration_applied": rugby_model["code_variant_calibration_applied"] if rugby_model else None,
             "competition_calibration_applied": handball_model["competition_calibration_applied"] if handball_model else ((rugby_model or lacrosse_model)["competition_calibration_applied"] if (rugby_model or lacrosse_model) else None),
-            "tournament_calibration_applied": table_tennis_model["tournament_calibration_applied"] if table_tennis_model else None,
+            "tournament_calibration_applied": (badminton_model or table_tennis_model)["tournament_calibration_applied"] if (badminton_model or table_tennis_model) else None,
             "session_calibration_applied": (f1_model or motogp_model)["session_calibration_applied"] if (f1_model or motogp_model) else None,
             "circuit_calibration_applied": (f1_model or formula_e_model)["circuit_calibration_applied"] if (f1_model or formula_e_model) else None,
             "weather_calibration_applied": (f1_model or motogp_model or rugby_model or lacrosse_model or afl_model)["weather_calibration_applied"] if (f1_model or motogp_model or rugby_model or lacrosse_model or afl_model) else None,
             "referee_calibration_applied": rugby_model["referee_calibration_applied"] if rugby_model else None,
-            "format_calibration_applied": volleyball_model["format_calibration_applied"] if volleyball_model else (table_tennis_model["format_calibration_applied"] if table_tennis_model else (lacrosse_model["format_calibration_applied"] if lacrosse_model else (cricket_model["format_calibration_applied"] if cricket_model else None))),
+            "format_calibration_applied": volleyball_model["format_calibration_applied"] if volleyball_model else ((badminton_model or table_tennis_model)["format_calibration_applied"] if (badminton_model or table_tennis_model) else (lacrosse_model["format_calibration_applied"] if lacrosse_model else (cricket_model["format_calibration_applied"] if cricket_model else None))),
             "court_calibration_applied": volleyball_model["court_calibration_applied"] if volleyball_model else None,
             "gender_calibration_applied": volleyball_model["gender_calibration_applied"] if volleyball_model else (lacrosse_model["gender_calibration_applied"] if lacrosse_model else None),
             "faceoff_calibration_applied": lacrosse_model["faceoff_calibration_applied"] if lacrosse_model else None,
             "goalie_calibration_applied": lacrosse_model["goalie_calibration_applied"] if lacrosse_model else None,
-            "serve_return_calibration_applied": table_tennis_model["serve_return_calibration_applied"] if table_tennis_model else None,
-            "rally_style_calibration_applied": table_tennis_model["rally_style_calibration_applied"] if table_tennis_model else None,
-            "deciding_game_calibration_applied": table_tennis_model["deciding_game_calibration_applied"] if table_tennis_model else None,
+            "serve_return_calibration_applied": (badminton_model or table_tennis_model)["serve_return_calibration_applied"] if (badminton_model or table_tennis_model) else None,
+            "rally_style_calibration_applied": (badminton_model or table_tennis_model)["rally_style_calibration_applied"] if (badminton_model or table_tennis_model) else None,
+            "deciding_game_calibration_applied": (badminton_model or table_tennis_model)["deciding_game_calibration_applied"] if (badminton_model or table_tennis_model) else None,
+            "discipline_calibration_applied": badminton_model["discipline_calibration_applied"] if badminton_model else (handball_model["discipline_calibration_applied"] if handball_model else None),
             "sideout_calibration_applied": volleyball_model["sideout_calibration_applied"] if volleyball_model else None,
             "serve_receive_calibration_applied": volleyball_model["serve_receive_calibration_applied"] if volleyball_model else None,
             "deciding_set_calibration_applied": volleyball_model["deciding_set_calibration_applied"] if volleyball_model else None,
             "pace_calibration_applied": handball_model["pace_calibration_applied"] if handball_model else None,
             "goalkeeper_calibration_applied": handball_model["goalkeeper_calibration_applied"] if handball_model else None,
             "fastbreak_calibration_applied": handball_model["fastbreak_calibration_applied"] if handball_model else None,
-            "discipline_calibration_applied": handball_model["discipline_calibration_applied"] if handball_model else None,
             "venue_calibration_applied": afl_model["venue_calibration_applied"] if afl_model else None,
             "ground_calibration_applied": afl_model["ground_calibration_applied"] if afl_model else None,
             "clearance_calibration_applied": afl_model["clearance_calibration_applied"] if afl_model else None,
@@ -17689,6 +18187,13 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             "table_tennis_rally_style_edge_score": table_tennis_model["table_tennis_rally_style_edge_score"] if table_tennis_model else None,
             "table_tennis_momentum_edge_score": table_tennis_model["table_tennis_momentum_edge_score"] if table_tennis_model else None,
             "table_tennis_risk_flags": table_tennis_model["risk_flags"] if table_tennis_model else [],
+            "badminton_player_edge_score": badminton_model["badminton_player_edge_score"] if badminton_model else None,
+            "badminton_projected_games": badminton_model["badminton_projected_games"] if badminton_model else None,
+            "badminton_projected_total_points": badminton_model["badminton_projected_total_points"] if badminton_model else None,
+            "badminton_serve_return_edge_score": badminton_model["badminton_serve_return_edge_score"] if badminton_model else None,
+            "badminton_rally_style_edge_score": badminton_model["badminton_rally_style_edge_score"] if badminton_model else None,
+            "badminton_momentum_edge_score": badminton_model["badminton_momentum_edge_score"] if badminton_model else None,
+            "badminton_risk_flags": badminton_model["risk_flags"] if badminton_model else [],
             "volleyball_team_edge_score": volleyball_model["volleyball_team_edge_score"] if volleyball_model else None,
             "volleyball_projected_sets": volleyball_model["volleyball_projected_sets"] if volleyball_model else None,
             "volleyball_projected_total_points": volleyball_model["volleyball_projected_total_points"] if volleyball_model else None,
@@ -17762,7 +18267,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         "target_lines": full_board["target_lines"],
         "target_props": full_board["target_props"],
         "target_alt_lines": full_board["target_alt_lines"],
-        "no_bets": no_bets if (basketball_module_model or college_football_model or table_tennis_model or volleyball_model or handball_model or tennis_model or combat_model or golf_model or f1_model or formula_e_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model) else simple_no_bets,
+        "no_bets": no_bets if (basketball_module_model or college_football_model or table_tennis_model or badminton_model or volleyball_model or handball_model or tennis_model or combat_model or golf_model or f1_model or formula_e_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model) else simple_no_bets,
         "best_correlated_parlay": full_board["best_correlated_parlay"],
         "value_ranking": full_board["value_ranking"],
         "risk_ranking": full_board["risk_ranking"],
