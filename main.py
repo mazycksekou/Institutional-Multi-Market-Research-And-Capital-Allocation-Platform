@@ -29,6 +29,8 @@ from automation_scheduler.response_compactor import (
     compact_governance_inventory,
     compact_governance_report,
     compact_health_response,
+    compact_performance_health,
+    compact_performance_report,
     compact_review_queue_response,
     compact_run_once_response,
     compact_validation_response,
@@ -922,6 +924,15 @@ class AutomationRunOnceRequest(BaseModel):
     dry_run: bool = True
     run_key: Optional[str] = None
     injected_data: dict[str, Any] = Field(default_factory=dict)
+
+
+class PerformanceBacktestRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", protected_namespaces=())
+
+    model_id: str = Field(min_length=1, max_length=120)
+    historical_rows_path: Optional[str] = None
+    rows: Optional[list[dict[str, Any]]] = None
+    dry_run: bool = True
 
 
 def utc_now() -> str:
@@ -2817,6 +2828,67 @@ async def validate_governance_endpoint(payload: dict[str, Any], verbose: bool = 
     return compact
 
 
+@app.get("/api/performance/health", operation_id="getPerformanceHealth")
+async def get_performance_health_endpoint(verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=10)):
+    payload = {"ok": True, **automation_scheduler.get_performance_health()}
+    compact = compact_performance_health(payload)
+    cap = min(max(int(limit), 1), 100 if verbose else 10)
+    if verbose or include_debug:
+        compact["debug"] = redact_and_limit_payload(payload, limit=cap, verbose=verbose)
+    return compact
+
+
+@app.get("/api/performance/report", operation_id="getPerformanceReport")
+async def get_performance_report_endpoint(
+    model_id: str = Query(default="default_model"),
+    historical_rows_path: Optional[str] = Query(default=None),
+    verbose: bool = Query(default=False),
+    include_debug: bool = Query(default=False),
+    limit: int = Query(default=10),
+):
+    compact_payload = automation_scheduler.get_performance_report(
+        model_id=model_id,
+        historical_rows_path=historical_rows_path,
+    )
+    compact = compact_performance_report(compact_payload)
+    cap = min(max(int(limit), 1), 100 if verbose else 10)
+    if verbose or include_debug:
+        compact["debug"] = redact_and_limit_payload(compact_payload, limit=cap, verbose=verbose)
+    return compact
+
+
+@app.post("/api/performance/backtest", operation_id="runPerformanceBacktest")
+async def run_performance_backtest_endpoint(
+    payload: PerformanceBacktestRequest,
+    verbose: bool = Query(default=False),
+    include_debug: bool = Query(default=False),
+    limit: int = Query(default=10),
+):
+    if payload.dry_run is not True:
+        raise HTTPException(status_code=400, detail="performance backtest only supports dry_run=true")
+    result = automation_scheduler.run_performance_backtest(
+        model_id=payload.model_id,
+        historical_rows_path=payload.historical_rows_path,
+        rows=payload.rows,
+    )
+    compact = compact_performance_report(result["compact_report"])
+    cap = min(max(int(limit), 1), 100 if verbose else 10)
+    if verbose or include_debug:
+        compact["debug"] = redact_and_limit_payload(result, limit=cap, verbose=verbose)
+    return compact
+
+
+@app.post("/api/performance/paper-summary", operation_id="runPerformancePaperSummary")
+async def run_performance_paper_summary_endpoint(verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=10)):
+    payload = automation_scheduler.get_paper_summary()
+    compact = compact_performance_health({"ok": True, **automation_scheduler.get_performance_health()})
+    compact["status"] = payload.get("status", "paper_tracking")
+    cap = min(max(int(limit), 1), 100 if verbose else 10)
+    if verbose or include_debug:
+        compact["debug"] = redact_and_limit_payload(payload, limit=cap, verbose=verbose)
+    return compact
+
+
 PUBLIC_OPENAPI_PATH_METHODS = frozenset({
     ("/", "get"),
     ("/health", "get"),
@@ -2825,6 +2897,10 @@ PUBLIC_OPENAPI_PATH_METHODS = frozenset({
     ("/api/automation/health", "get"),
     ("/api/automation/review-queue", "get"),
     ("/api/automation/run-once", "post"),
+    ("/api/performance/health", "get"),
+    ("/api/performance/report", "get"),
+    ("/api/performance/backtest", "post"),
+    ("/api/performance/paper-summary", "post"),
 })
 
 

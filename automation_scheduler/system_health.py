@@ -5,6 +5,8 @@ from pathlib import Path
 from typing import Any
 
 from model_governance.model_inventory import inventory_counts
+from .clv_tracker import summarize_clv_by_model
+from .paper_trade_ledger import load_paper_ledger
 from .review_queue import load_review_queue
 from .scheduler_config import SCHEMA_VERSION, utc_now_iso
 
@@ -37,6 +39,28 @@ def get_system_health(config: dict[str, Any]) -> dict[str, Any]:
             models_blocked_due_to_settlement += 1
         if str(item.get("kelly_gate_result", "")).startswith("blocked"):
             models_blocked_due_to_Kelly += 1
+
+    paper_entries = load_paper_ledger()
+    settled_paper_entries = [entry for entry in paper_entries if str(entry.get("settlement_status")) == "settled"]
+    clv_by_model = summarize_clv_by_model(paper_entries)
+    models_with_positive_clv = sum(
+        1 for summary in clv_by_model.values() if float(summary.get("average_clv_percent", 0.0)) > 0
+    )
+    models_needing_revalidation = sum(
+        1
+        for summary in clv_by_model.values()
+        if bool(summary.get("clv_decay_detected")) or float(summary.get("average_clv_percent", 0.0)) < 0
+    )
+
+    latest_report_id = None
+    reports_dir = Path("data/performance_reports")
+    if reports_dir.exists():
+        report_files = sorted(reports_dir.glob("*.json"), key=lambda p: p.stat().st_mtime, reverse=True)
+        if report_files:
+            latest_report_id = report_files[0].stem
+
+    clv_sample_size = sum(int(summary.get("clv_sample_size", 0)) for summary in clv_by_model.values())
+
     return {
         "ok": True,
         "schema_version": SCHEMA_VERSION,
@@ -60,6 +84,12 @@ def get_system_health(config: dict[str, Any]) -> dict[str, Any]:
         "models_blocked_due_to_risk": models_blocked_due_to_risk,
         "models_blocked_due_to_settlement": models_blocked_due_to_settlement,
         "models_blocked_due_to_Kelly": models_blocked_due_to_Kelly,
+        "paper_ledger_count": len(paper_entries),
+        "settled_paper_count": len(settled_paper_entries),
+        "clv_sample_size": clv_sample_size,
+        "latest_performance_report_id": latest_report_id,
+        "models_with_positive_clv": models_with_positive_clv,
+        "models_needing_revalidation": models_needing_revalidation,
     }
 
 

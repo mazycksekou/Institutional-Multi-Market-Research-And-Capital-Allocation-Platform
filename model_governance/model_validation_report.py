@@ -12,6 +12,8 @@ def build_model_validation_report(model_id: str, activation_tier: str, **section
         "input_quality_summary": sections.get("input_quality_summary", {}),
         "calibration_summary": sections.get("calibration_summary", {}),
         "backtest_summary": sections.get("backtest_summary", {}),
+        "paper_tracking_summary": sections.get("paper_tracking_summary", {}),
+        "clv_summary": sections.get("clv_summary", {}),
         "walk_forward_summary": sections.get("walk_forward_summary", {}),
         "risk_summary": sections.get("risk_summary", {}),
         "Kelly_summary": sections.get("Kelly_summary", {}),

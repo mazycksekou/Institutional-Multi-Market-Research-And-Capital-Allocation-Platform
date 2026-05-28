@@ -156,3 +156,42 @@ def compact_validation_response(payload: dict[str, Any]) -> dict[str, Any]:
         "blockers": list(v.get("blocked_reasons", []))[:10],
         "top_reasons": list(v.get("blocked_reasons", []))[:10],
     }
+
+
+def compact_performance_health(payload: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "ok": bool(payload.get("ok", True)),
+        "status": "ok" if payload.get("ok", True) else "error",
+        "timestamp": payload.get("checked_at"),
+        "dry_run": True,
+        "human_approval_required": True,
+        "auto_execution_enabled": False,
+        "counts": {
+            "paper_ledger_count": int(payload.get("paper_ledger_count", 0)),
+            "settled_paper_count": int(payload.get("settled_paper_count", 0)),
+            "clv_sample_size": int(payload.get("clv_sample_size", 0)),
+            "models_with_positive_clv": int(payload.get("models_with_positive_clv", 0)),
+            "models_needing_revalidation": int(payload.get("models_needing_revalidation", 0)),
+        },
+        "latest_performance_report_id": payload.get("latest_performance_report_id"),
+    }
+
+
+def compact_performance_report(payload: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "ok": bool(payload.get("ok", True)),
+        "status": payload.get("status", "backtest_complete"),
+        "report_id": payload.get("report_id"),
+        "model_id": payload.get("model_id"),
+        "sample_size": int(payload.get("sample_size", 0)),
+        "realized_roi_percent": float(payload.get("realized_roi_percent", 0.0)),
+        "average_clv_percent": float(payload.get("average_clv_percent", 0.0)),
+        "positive_clv_rate": float(payload.get("positive_clv_rate", 0.0)),
+        "max_drawdown_percent": float(payload.get("max_drawdown_percent", 0.0)),
+        "brier_score": float(payload.get("brier_score", 0.0)),
+        "calibration_status": payload.get("calibration_status"),
+        "performance_status": payload.get("performance_status"),
+        "blocked_reasons": list(payload.get("blocked_reasons", []))[:10],
+        "recommended_next_action": payload.get("recommended_next_action", "watch_recheck"),
+        "report_path": payload.get("report_path"),
+    }
