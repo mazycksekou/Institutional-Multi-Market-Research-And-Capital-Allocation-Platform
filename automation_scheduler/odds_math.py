@@ -16,6 +16,13 @@ def validate_odds(odds: Any, *, odds_format: str = "american") -> bool:
     return True
 
 
+def validate_probability(probability: Any) -> bool:
+    value = float(probability)
+    if value < 0 or value > 1:
+        raise ValueError("probability must be between 0 and 1")
+    return True
+
+
 def american_to_decimal(odds: Any) -> float:
     validate_odds(odds, odds_format="american")
     odds_value = float(odds)
@@ -74,9 +81,17 @@ def calculate_profit_loss(stake: Any, odds: Any, *, won: bool, odds_format: str 
 def calculate_ev(stake: Any, true_probability: Any, odds: Any, *, odds_format: str = "american") -> float:
     stake_value = float(stake)
     probability = float(true_probability)
+    validate_probability(probability)
     win_profit = calculate_profit_loss(stake_value, odds, won=True, odds_format=odds_format)
     loss = calculate_profit_loss(stake_value, odds, won=False, odds_format=odds_format)
     return round((probability * win_profit) + ((1 - probability) * loss), 6)
+
+
+def calculate_ev_percent(stake: Any, true_probability: Any, odds: Any, *, odds_format: str = "american") -> float:
+    stake_value = float(stake)
+    if stake_value <= 0:
+        raise ValueError("stake must be positive")
+    return round((calculate_ev(stake_value, true_probability, odds, odds_format=odds_format) / stake_value) * 100.0, 6)
 
 
 def calculate_roi(stake: Any, expected_value: Any) -> float:

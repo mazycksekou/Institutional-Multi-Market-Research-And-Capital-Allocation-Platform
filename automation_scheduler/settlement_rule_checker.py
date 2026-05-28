@@ -23,4 +23,8 @@ def compare_settlement_rules(rule_sets: list[dict[str, Any]]) -> dict[str, Any]:
         "material_mismatch": bool(mismatches),
         "settlement_risk": round(min(1.0, len(mismatches) * 0.25), 4),
         "mismatches": mismatches,
+        "overtime_rule_match": "overtime_rule_mismatch" not in mismatches,
+        "void_rule_match": "void_rule_mismatch" not in mismatches,
+        "player_prop_rule_match": "player_prop_settlement_mismatch" not in mismatches,
+        "prediction_market_resolution_match": "prediction_market_resolution_mismatch" not in mismatches,
     }

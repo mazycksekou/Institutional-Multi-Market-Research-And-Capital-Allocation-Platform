@@ -13,3 +13,4 @@ class TestSettlementRuleChecker(unittest.TestCase):
         )
         self.assertTrue(result["material_mismatch"])
         self.assertIn("overtime_rule_mismatch", result["mismatches"])
+        self.assertFalse(result["overtime_rule_match"])

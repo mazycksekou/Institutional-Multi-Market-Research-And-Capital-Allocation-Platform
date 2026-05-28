@@ -13,6 +13,16 @@ def calculate_market_hold(probabilities: list[Any]) -> float:
     return hold
 
 
+def calculate_fair_probability(implied_probabilities: list[Any], index: int) -> float:
+    normalized = [normalize_probability(value) for value in implied_probabilities]
+    if not normalized or index < 0 or index >= len(normalized):
+        raise ValueError("impossible market")
+    total = sum(normalized)
+    if total <= 0:
+        raise ValueError("impossible market")
+    return round(normalized[index] / total, 6)
+
+
 def remove_two_way_vig(probability_a: Any, probability_b: Any) -> dict[str, float]:
     probabilities = [normalize_probability(probability_a), normalize_probability(probability_b)]
     total = sum(probabilities)

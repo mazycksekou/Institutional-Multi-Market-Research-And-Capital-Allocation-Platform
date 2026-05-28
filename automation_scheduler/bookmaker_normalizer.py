@@ -123,4 +123,11 @@ def normalize_offer(offer: dict[str, Any]) -> dict[str, Any]:
     normalized["odds"] = normalize_odds_value(offer.get("odds") if "odds" in offer else offer.get("odds_american"))
     normalized["line"] = normalize_line_value(offer.get("line"))
     normalized["timestamp"] = normalize_timestamp(offer.get("timestamp") or offer.get("odds_timestamp") or offer.get("last_update"))
+    confidence = 0
+    for key in ("bookmaker", "event_name", "market", "selection", "odds", "timestamp"):
+        if normalized.get(key) not in (None, "", "unknown"):
+            confidence += 16
+    if normalized.get("line") is not None:
+        confidence += 4
+    normalized["normalization_confidence"] = max(0, min(100, confidence))
     return normalized

@@ -37,3 +37,4 @@ class TestBookmakerNormalizer(unittest.TestCase):
         self.assertEqual(offer["odds"], 110)
         self.assertEqual(offer["line"], -1.5)
         self.assertIsInstance(offer["timestamp"], int)
+        self.assertGreaterEqual(offer["normalization_confidence"], 85)

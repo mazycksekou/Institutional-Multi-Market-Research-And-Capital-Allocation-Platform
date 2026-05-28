@@ -48,3 +48,15 @@ class TestArbitrageDetector(unittest.TestCase):
         self.assertEqual(stale["reason"], "stale_data")
         self.assertFalse(low_conf["candidate_found"])
         self.assertEqual(low_conf["reason"], "low_market_identity_confidence")
+
+    def test_three_way_arbitrage_math_works(self):
+        result = detect_arbitrage(
+            [
+                {"bookmaker": "DraftKings", "event": "TeamA vs TeamB", "market": "1x2", "selection": "TeamA", "odds": 260, "timestamp": 100},
+                {"bookmaker": "FanDuel", "event": "TeamA vs TeamB", "market": "1x2", "selection": "Draw", "odds": 360, "timestamp": 102},
+                {"bookmaker": "BetMGM", "event": "TeamA vs TeamB", "market": "1x2", "selection": "TeamB", "odds": 320, "timestamp": 101},
+            ],
+            market_identity_confidence=95,
+        )
+        self.assertTrue(result["candidate_found"])
+        self.assertLess(result["arbitrage_implied_sum"], 1.0)

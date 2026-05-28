@@ -41,3 +41,13 @@ class TestMiddleOpportunityDetector(unittest.TestCase):
         self.assertTrue(positive["candidate_found"])
         self.assertFalse(negative["candidate_found"])
         self.assertEqual(negative["reason"], "negative_middle_ev")
+
+    def test_player_prop_middle_detected(self):
+        result = detect_middle_opportunity(
+            {"bookmaker": "DraftKings", "event": "Player A vs market", "market": "player points", "selection": "over", "line": 22.5, "odds": -105, "timestamp": 100},
+            {"bookmaker": "FanDuel", "event": "Player A vs market", "market": "player points", "selection": "under", "line": 24.5, "odds": -105, "timestamp": 110},
+            market_identity_confidence=92,
+            model_distribution={"middle_hit_probability": 0.25},
+        )
+        self.assertTrue(result["candidate_found"])
+        self.assertGreater(result["middle_width"], 0)

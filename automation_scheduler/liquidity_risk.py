@@ -27,11 +27,23 @@ def estimate_stale_odds_risk(age_seconds: Any, max_age_seconds: Any) -> float:
     return round(clamp(age_value / max_age, 0, 1), 4)
 
 
+def score_stale_data_risk(age_seconds: Any, max_age_seconds: Any) -> float:
+    return estimate_stale_odds_risk(age_seconds, max_age_seconds)
+
+
 def estimate_execution_feasibility(*, liquidity_score_value: Any, stale_odds_risk: Any, settlement_risk: Any = 0) -> float:
     liquidity = clamp(liquidity_score_value, 0, 10) / 10.0
     stale = clamp(stale_odds_risk, 0, 1)
     settlement = clamp(settlement_risk, 0, 1)
     return round(clamp((liquidity * 0.7) + ((1 - stale) * 0.2) + ((1 - settlement) * 0.1), 0, 1), 4)
+
+
+def score_execution_feasibility(*, liquidity_score_value: Any, stale_odds_risk: Any, settlement_risk: Any = 0) -> float:
+    return estimate_execution_feasibility(
+        liquidity_score_value=liquidity_score_value,
+        stale_odds_risk=stale_odds_risk,
+        settlement_risk=settlement_risk,
+    )
 
 
 def block_low_liquidity_arbitrage(*, liquidity_score_value: Any, watch_only: bool = False) -> dict[str, Any]:

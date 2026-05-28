@@ -89,7 +89,7 @@ def shop_ev_lines(
     stale_data_risk: bool = False,
 ) -> dict[str, Any]:
     if model_probability is None:
-        return {"candidate_found": False, "reason": "model_probability_required", "ranked_offers": []}
+        return {"candidate_found": False, "reason": "model_probability_or_fair_probability_required", "ranked_offers": []}
     if stale_data_risk:
         return {"candidate_found": False, "reason": "stale_data", "ranked_offers": []}
 
@@ -108,7 +108,7 @@ def shop_ev_lines(
                 "implied_probability": round(implied_probability, 6),
                 "ev_percent": round((ev_value / stake) * 100.0, 6),
                 "estimated_roi_percent": round(roi, 6),
-                "candidate_type": "positive_ev" if ev_value > 0 else "best_line_available",
+                "candidate_type": "positive_ev_candidate" if ev_value > 0 else "best_line_available",
                 "human_approval_required": True,
                 "auto_execution_enabled": False,
                 "auto_bet_enabled": False,

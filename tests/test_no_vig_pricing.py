@@ -3,6 +3,7 @@ import unittest
 from automation_scheduler.no_vig_pricing import (
     calculate_consensus_probability,
     calculate_fair_odds,
+    calculate_fair_probability,
     calculate_market_hold,
     remove_three_way_vig,
     remove_two_way_vig,
@@ -21,3 +22,4 @@ class TestNoVigPricing(unittest.TestCase):
         fair = calculate_fair_odds(0.4)
         self.assertEqual(fair["american_odds"], 150)
         self.assertEqual(calculate_consensus_probability([0.4, 0.42, 0.38]), 0.4)
+        self.assertGreater(calculate_fair_probability([0.52, 0.52], 0), 0)
