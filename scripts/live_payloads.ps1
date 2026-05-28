@@ -205,6 +205,31 @@ function New-BadmintonPayload {
     return $payload
 }
 
+function New-PickleballPayload {
+    $stats = @{
+        player_name = "Ben Johns"; opponent_name = "Federico Staksrud"; team_name = "Johns"; opponent_team_name = "Staksrud"; pick = "Ben Johns"
+        tournament_name = "PPA Tour Finals"; competition_name = "PPA Tour"; format = "best_of_3"; games = 3; discipline = "singles"; court = "indoor"; neutral = $true
+        player_power_rating = 92; opp_power_rating = 86; player_elo_rating = 2210; opp_elo_rating = 2120; player_rank = 1; opp_rank = 5
+        player_win_pct = 0.78; opp_win_pct = 0.63; player_form = 90; opp_form = 82
+        serve_rating = 89; opp_serve_rating = 84; return_rating = 90; opp_return_rating = 83
+        service_points_won_pct = 0.66; opp_service_points_won_pct = 0.59; return_points_won_pct = 0.48; opp_return_points_won_pct = 0.42
+        third_shot_drop = 91; opp_third_shot_drop = 84; third_shot_drive = 88; opp_third_shot_drive = 83
+        dink = 92; opp_dink = 84; kitchen = 91; opp_kitchen = 83; hand_speed = 89; opp_hand_speed = 84
+        net_exchange = 90; opp_net_exchange = 83; lob = 85; opp_lob = 82; overhead = 90; opp_overhead = 84
+        rally_rating = 91; opp_rally_rating = 83; error_rate = 0.12; opp_error_rate = 0.18
+        game_win_pct = 0.69; opp_game_win_pct = 0.57; deciding_game_pct = 0.65; opp_deciding_game_pct = 0.52
+        clutch = 89; opp_clutch = 81; momentum = 88; opp_momentum = 80; pressure = 89; opp_pressure = 81
+        handedness = "right_vs_right"; style_matchup = "kitchen control"; court_speed = 0.54; ball_speed = 0.50; altitude = 80
+        fatigue = 0.10; opp_fatigue = 0.19; rest = 3; opp_rest = 2; travel = 0.07; opp_travel = 0.17; injury = 0.03; opp_injury = 0.08
+        market_move = 0.0; public_pct = 54; sharp_pct = 58
+        points_proj = 33.5; opp_points_proj = 27.5; games_proj = 2.1; opp_games_proj = 1.7; service_points_proj = 20.5; return_points_proj = 13.5
+        prop_line = 18.5; book_count = 8; current_odds = 100
+    }
+    $payload = New-LiveTicketBase -Sport "ppa" -League "PPA Tour" -Event "Ben Johns vs Federico Staksrud" -Market "match_winner" -Selection "Ben Johns" -InputStats $stats
+    $payload.visible_markets = @("match_winner", "game_handicap", "player_service_points_won")
+    return $payload
+}
+
 function New-VolleyballPayload {
     $stats = @{
         team_name = "Nebraska"; opponent_name = "Wisconsin"; pick = "Nebraska"; competition_name = "NCAA"; format = "best_of_5"; sets = 5
@@ -779,6 +804,14 @@ function New-LiveActivePayload {
         "badminton_singles" { return New-BadmintonPayload }
         "badminton_doubles" { return New-BadmintonPayload }
         "bwf_world_tour" { return New-BadmintonPayload }
+        "pickleball" { return New-PickleballPayload }
+        "pro_pickleball" { return New-PickleballPayload }
+        "ppa" { return New-PickleballPayload }
+        "mlf" { return New-PickleballPayload }
+        "major_league_pickleball" { return New-PickleballPayload }
+        "app_tour" { return New-PickleballPayload }
+        "pickleball_singles" { return New-PickleballPayload }
+        "pickleball_doubles" { return New-PickleballPayload }
         "volleyball" { return New-VolleyballPayload }
         "indoor_volleyball" { return New-VolleyballPayload }
         "beach_volleyball" { return New-VolleyballPayload }

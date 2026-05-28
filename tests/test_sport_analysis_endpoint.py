@@ -299,7 +299,7 @@ class TestSportAnalysisEndpoint(unittest.TestCase):
 
     def test_handles_unsupported_sport_with_safe_no_bet_response(self):
         response = asyncio.run(action_analyze_sport_model(SportAnalysisRequest(
-            sport="pickleball",
+            sport="padel",
             market="moneyline",
             bankroll="1000",
             unit_size="25",
@@ -450,6 +450,14 @@ class TestSportAnalysisEndpoint(unittest.TestCase):
                 "badminton_singles": "badminton",
                 "badminton_doubles": "badminton",
                 "bwf_world_tour": "badminton",
+                "pickleball": "pickleball",
+                "pro_pickleball": "pickleball",
+                "ppa": "pickleball",
+                "mlf": "pickleball",
+                "major_league_pickleball": "pickleball",
+                "app_tour": "pickleball",
+                "pickleball_singles": "pickleball",
+                "pickleball_doubles": "pickleball",
                 "volleyball": "volleyball",
                 "indoor_volleyball": "volleyball",
                 "beach_volleyball": "volleyball",

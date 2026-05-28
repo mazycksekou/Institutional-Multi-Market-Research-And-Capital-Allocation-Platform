@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 from copy import deepcopy
 from datetime import datetime, timezone
@@ -53,6 +53,7 @@ OFFICIAL_SPORT_KEYS = [
     "lacrosse",
     "table_tennis",
     "badminton",
+    "pickleball",
     "volleyball",
     "handball",
     "afl",
@@ -235,6 +236,14 @@ SPORT_ALIASES = {
     "badminton_singles": "badminton",
     "badminton_doubles": "badminton",
     "bwf_world_tour": "badminton",
+    "pickleball": "pickleball",
+    "pro_pickleball": "pickleball",
+    "ppa": "pickleball",
+    "mlf": "pickleball",
+    "major_league_pickleball": "pickleball",
+    "app_tour": "pickleball",
+    "pickleball_singles": "pickleball",
+    "pickleball_doubles": "pickleball",
     "volleyball": "volleyball",
     "indoor_volleyball": "volleyball",
     "beach_volleyball": "volleyball",
@@ -2404,6 +2413,97 @@ BADMINTON_INPUT_CONTRACT = {
     "social_crowd_inputs": ["public_betting_percent", "sharp_money_percent", "social_sentiment", "crowd_consensus"],
 }
 
+PICKLEBALL_MARKETS = [
+    "match_winner", "moneyline", "game_winner", "correct_score",
+    "game_handicap", "point_handicap", "total_games", "total_points",
+    "player_total_points", "team_total_points", "first_game_winner",
+    "second_game_winner", "third_game_winner", "player_aces",
+    "player_service_points_won", "player_return_points_won",
+    "alt_game_handicap", "alt_total_games", "alt_total_points",
+]
+
+PICKLEBALL_PROP_MARKETS = [
+    "player_aces", "player_service_points_won", "player_return_points_won",
+    "player_total_points", "team_total_points",
+]
+
+PICKLEBALL_REQUIRED_CORE_INPUTS = [
+    "player", "opponent", "team", "opponent_team", "market", "selection",
+    "odds_american", "tournament", "competition", "match_format",
+    "best_of_games", "singles_doubles", "indoor_outdoor", "neutral_site",
+    "player_rating", "opponent_rating", "player_elo", "opponent_elo",
+    "player_world_rank", "opponent_world_rank", "player_recent_win_rate",
+    "opponent_recent_win_rate", "player_recent_form", "opponent_recent_form",
+    "player_serve_rating", "opponent_serve_rating", "player_return_rating",
+    "opponent_return_rating", "player_service_points_won_rate",
+    "opponent_service_points_won_rate", "player_return_points_won_rate",
+    "opponent_return_points_won_rate", "player_third_shot_drop_rating",
+    "opponent_third_shot_drop_rating", "player_third_shot_drive_rating",
+    "opponent_third_shot_drive_rating", "player_dink_rating",
+    "opponent_dink_rating", "player_kitchen_rating", "opponent_kitchen_rating",
+    "player_hand_speed_rating", "opponent_hand_speed_rating",
+    "player_net_exchange_rating", "opponent_net_exchange_rating",
+    "player_lob_rating", "opponent_lob_rating", "player_overhead_rating",
+    "opponent_overhead_rating", "player_rally_rating", "opponent_rally_rating",
+    "player_error_rate", "opponent_error_rate", "player_game_win_rate",
+    "opponent_game_win_rate", "player_deciding_game_win_rate",
+    "opponent_deciding_game_win_rate", "player_clutch_rating",
+    "opponent_clutch_rating", "player_momentum_rating", "opponent_momentum_rating",
+    "player_pressure_rating", "opponent_pressure_rating", "handedness_matchup",
+    "playing_style_matchup", "court_speed_rating", "ball_speed_rating",
+    "venue_altitude", "fatigue_rating", "opponent_fatigue_rating",
+    "rest_days", "opponent_rest_days", "travel_fatigue",
+    "opponent_travel_fatigue", "injury_risk", "opponent_injury_risk",
+]
+
+PICKLEBALL_NUMERIC_CORE_INPUTS = [
+    field for field in PICKLEBALL_REQUIRED_CORE_INPUTS
+    if field not in {
+        "player", "opponent", "team", "opponent_team", "market", "selection",
+        "tournament", "competition", "match_format", "singles_doubles",
+        "indoor_outdoor", "neutral_site", "handedness_matchup", "playing_style_matchup",
+    }
+]
+
+PICKLEBALL_PLAYER_PROP_INPUTS = [
+    "player_points_projection", "opponent_points_projection",
+    "player_games_projection", "opponent_games_projection",
+    "player_service_points_projection", "player_return_points_projection",
+    "player_prop_line",
+]
+
+PICKLEBALL_NUMERIC_PLAYER_PROP_INPUTS = list(PICKLEBALL_PLAYER_PROP_INPUTS)
+
+PICKLEBALL_REQUIRED_MARKET_INPUTS = {
+    "match_winner": ["odds_american"], "moneyline": ["odds_american"],
+    "game_winner": ["odds_american"], "correct_score": ["odds_american"],
+    "first_game_winner": ["odds_american"], "second_game_winner": ["odds_american"],
+    "third_game_winner": ["odds_american"], "game_handicap": ["line", "odds_american"],
+    "point_handicap": ["line", "odds_american"], "total_games": ["line", "odds_american"],
+    "total_points": ["line", "odds_american"], "alt_game_handicap": ["line", "odds_american"],
+    "alt_total_games": ["line", "odds_american"], "alt_total_points": ["line", "odds_american"],
+}
+for _pickleball_prop_market in PICKLEBALL_PROP_MARKETS:
+    PICKLEBALL_REQUIRED_MARKET_INPUTS[_pickleball_prop_market] = ["odds_american"] + PICKLEBALL_PLAYER_PROP_INPUTS
+
+PICKLEBALL_OPTIONAL_ENRICHMENT_INPUTS = [
+    "market_movement", "public_betting_percent", "sharp_money_percent",
+    "no_vig_market_probability", "book_count", "current_odds",
+    "best_available_odds", "opening_odds", "consensus_odds", "provider_status",
+    "social_sentiment", "crowd_consensus",
+]
+
+PICKLEBALL_INPUT_CONTRACT = {
+    "required_core_inputs": PICKLEBALL_REQUIRED_CORE_INPUTS,
+    "required_market_specific_inputs": PICKLEBALL_REQUIRED_MARKET_INPUTS,
+    "optional_enrichment_inputs": PICKLEBALL_OPTIONAL_ENRICHMENT_INPUTS,
+    "player_prop_inputs": PICKLEBALL_PLAYER_PROP_INPUTS,
+    "provider_enrichment_inputs": ["best_available_odds", "current_odds", "opening_odds", "consensus_odds", "no_vig_market_probability", "book_count"],
+    "officiating_inputs": ["referee_name", "kitchen_fault_tendency", "serve_fault_tendency"],
+    "referee_inputs": ["referee_name", "kitchen_fault_tendency", "serve_fault_tendency"],
+    "social_crowd_inputs": ["public_betting_percent", "sharp_money_percent", "social_sentiment", "crowd_consensus"],
+}
+
 VOLLEYBALL_MARKETS = [
     "match_winner", "moneyline", "set_winner", "correct_score", "set_handicap",
     "point_spread", "total_sets", "total_points", "team_total_points",
@@ -3502,6 +3602,7 @@ SPORT_PROP_INPUTS = {
     "lacrosse": ["faceoff possession", "shot quality", "goalie matchup", "pace", "player shot and scorer props"],
     "table_tennis": ["serve quality", "return quality", "rally style", "game momentum", "player point props"],
     "badminton": ["serve quality", "return quality", "rally style", "shuttle speed", "player point props"],
+    "pickleball": ["serve quality", "return quality", "third shot", "kitchen/net exchange", "player point props"],
     "volleyball": ["sideout rate", "attack rating", "serve receive", "block defense", "player prop projection"],
     "handball": ["fastbreak rate", "goalkeeper efficiency", "shot accuracy", "discipline context", "player prop projection"],
     "afl": ["clearance", "inside 50s", "scoring shots", "ruck", "player disposal and goal props"],
@@ -3597,6 +3698,12 @@ OFFICIALS_MODULE_BY_SPORT = {
         "official_inputs": BADMINTON_INPUT_CONTRACT["officiating_inputs"],
         "betting_edge_strength": "weak",
         "notes": "Badminton officiating context can affect service faults and shuttle-speed enforcement but cannot create bets without active Badminton model inputs.",
+    },
+    "pickleball": {
+        "official_type": "referee",
+        "official_inputs": PICKLEBALL_INPUT_CONTRACT["officiating_inputs"],
+        "betting_edge_strength": "weak",
+        "notes": "Pickleball officiating context can affect kitchen and serve faults but cannot create bets without active Pickleball model inputs.",
     },
     "volleyball": {
         "official_type": "first ref/second ref",
@@ -4263,6 +4370,24 @@ SPORT_MODEL_REGISTRY = [
         confirmed_bets_allowed=True,
     ),
     _sport(
+        "pickleball",
+        "Pickleball",
+        "pickleball_dink_kitchen_serve_return_monte_carlo_model",
+        "pickleball_dink_kitchen_serve_return_monte_carlo_model",
+        "dink_kitchen_serve_return_monte_carlo",
+        PICKLEBALL_MARKETS,
+        PICKLEBALL_PROP_MARKETS,
+        PICKLEBALL_REQUIRED_CORE_INPUTS,
+        PICKLEBALL_OPTIONAL_ENRICHMENT_INPUTS,
+        ["serve/return model", "third-shot model", "dink and kitchen model", "net exchange model", "deciding-game momentum", "player prop projection", "format/discipline/tournament calibration"],
+        "dink-kitchen serve-return Monte Carlo",
+        ["Match, game, handicap, total, and player point/service/return props are correlated through serve quality, third-shot execution, kitchen control, net exchanges, and deciding-game momentum."],
+        sport_parameters={"league_calibration_applied": "pickleball"},
+        component_status=COMPONENT_STATUS_ACTIVE,
+        model_level=MODEL_LEVEL_PROJECTION_READY,
+        confirmed_bets_allowed=True,
+    ),
+    _sport(
         "volleyball",
         "Volleyball",
         "volleyball_sideout_attack_block_serve_monte_carlo_model",
@@ -4649,6 +4774,7 @@ _INPUT_NORMALIZER_BY_SPORT = {
     "lacrosse": "lacrosse_input_normalizer",
     "table_tennis": "table_tennis_input_normalizer",
     "badminton": "badminton_input_normalizer",
+    "pickleball": "pickleball_input_normalizer",
     "volleyball": "volleyball_input_normalizer",
     "handball": "handball_input_normalizer",
     "afl": "afl_input_normalizer",
@@ -4940,6 +5066,37 @@ _ACTIVE_SCREENSHOT_ALIAS_TEST_PAYLOADS: dict[str, dict[str, Any]] = {
             "market_move": 0.0, "public_pct": 54, "sharp_pct": 58, "points_proj": 45.5,
             "opp_points_proj": 39.5, "games_proj": 2.2, "opp_games_proj": 1.8,
             "service_points_proj": 27.5, "return_points_proj": 18.5, "prop_line": 25.5,
+            "book_count": 8, "current_odds": 100,
+        },
+    },
+    "pickleball": {
+        "sport": "ppa", "league": "PPA Tour", "event": "Ben Johns vs Federico Staksrud", "market": "match_winner",
+        "selection": "Ben Johns", "odds_american": 100, "bankroll": 1000, "unit_size": 25, "risk_profile": "moderate",
+        "source_type": "chatgpt_parsed", "screenshot_text": "Ben Johns match winner +100 vs Federico Staksrud",
+        "visible_markets": ["match_winner", "game_handicap", "player_service_points_won"],
+        "input_stats": {
+            "player_name": "Ben Johns", "opponent_name": "Federico Staksrud", "team_name": "Johns",
+            "opponent_team_name": "Staksrud", "pick": "Ben Johns", "tournament_name": "PPA Tour Finals",
+            "competition_name": "PPA Tour", "format": "best_of_3", "games": 3, "discipline": "singles",
+            "court": "indoor", "neutral": True, "player_power_rating": 92, "opp_power_rating": 86,
+            "player_elo_rating": 2210, "opp_elo_rating": 2120, "player_rank": 1, "opp_rank": 5,
+            "player_win_pct": 0.78, "opp_win_pct": 0.63, "player_form": 90, "opp_form": 82,
+            "serve_rating": 89, "opp_serve_rating": 84, "return_rating": 90, "opp_return_rating": 83,
+            "service_points_won_pct": 0.66, "opp_service_points_won_pct": 0.59,
+            "return_points_won_pct": 0.48, "opp_return_points_won_pct": 0.42,
+            "third_shot_drop": 91, "opp_third_shot_drop": 84, "third_shot_drive": 88, "opp_third_shot_drive": 83,
+            "dink": 92, "opp_dink": 84, "kitchen": 91, "opp_kitchen": 83,
+            "hand_speed": 89, "opp_hand_speed": 84, "net_exchange": 90, "opp_net_exchange": 83,
+            "lob": 85, "opp_lob": 82, "overhead": 90, "opp_overhead": 84,
+            "rally_rating": 91, "opp_rally_rating": 83, "error_rate": 0.12, "opp_error_rate": 0.18,
+            "game_win_pct": 0.69, "opp_game_win_pct": 0.57, "deciding_game_pct": 0.65, "opp_deciding_game_pct": 0.52,
+            "clutch": 89, "opp_clutch": 81, "momentum": 88, "opp_momentum": 80, "pressure": 89, "opp_pressure": 81,
+            "handedness": "right_vs_right", "style_matchup": "kitchen control", "court_speed": 0.54, "ball_speed": 0.50,
+            "altitude": 80, "fatigue": 0.10, "opp_fatigue": 0.19, "rest": 3, "opp_rest": 2,
+            "travel": 0.07, "opp_travel": 0.17, "injury": 0.03, "opp_injury": 0.08,
+            "market_move": 0.0, "public_pct": 54, "sharp_pct": 58, "points_proj": 33.5,
+            "opp_points_proj": 27.5, "games_proj": 2.1, "opp_games_proj": 1.7,
+            "service_points_proj": 20.5, "return_points_proj": 13.5, "prop_line": 18.5,
             "book_count": 8, "current_odds": 100,
         },
     },
@@ -7395,6 +7552,38 @@ def _badminton_market_specific_missing(market: Any, input_stats: dict[str, Any],
     return [field for field in required if _badminton_value_missing(field, input_stats, payload)]
 
 
+def _pickleball_value_missing(field: str, input_stats: dict[str, Any], payload: dict[str, Any]) -> bool:
+    value = input_stats.get(field)
+    if value is None and field in {"sport", "league", "event", "teams", "market", "selection", "odds_american", "bankroll", "unit_size", "risk_profile"}:
+        value = payload.get(field)
+    if value is None and field == "event":
+        value = payload.get("event_id")
+    if value is None and field == "line":
+        value = payload.get("line") if payload.get("line") is not None else input_stats.get("player_prop_line")
+    if value in (None, ""):
+        return True
+    if field in PICKLEBALL_NUMERIC_CORE_INPUTS or field in PICKLEBALL_NUMERIC_PLAYER_PROP_INPUTS or field in {"line", "odds_american"}:
+        return _safe_float(value) is None
+    return False
+
+
+def _pickleball_full_inputs_missing(input_stats: dict[str, Any], payload: dict[str, Any]) -> list[str]:
+    base_fields = ["sport", "league", "event", "market", "selection", "odds_american", "bankroll", "unit_size", "risk_profile"]
+    missing = [field for field in base_fields if _pickleball_value_missing(field, input_stats, payload)]
+    for field in PICKLEBALL_REQUIRED_CORE_INPUTS:
+        if _pickleball_value_missing(field, input_stats, payload):
+            missing.append(field)
+    return list(dict.fromkeys(missing))
+
+
+def _pickleball_market_specific_missing(market: Any, input_stats: dict[str, Any], payload: dict[str, Any]) -> list[str]:
+    market_key = _normal_market_key(input_stats.get("market_type") or market)
+    required = list(PICKLEBALL_REQUIRED_MARKET_INPUTS.get(market_key, ["odds_american"]))
+    if market_key in PICKLEBALL_PROP_MARKETS:
+        required = list(dict.fromkeys(required + PICKLEBALL_PLAYER_PROP_INPUTS))
+    return [field for field in required if _pickleball_value_missing(field, input_stats, payload)]
+
+
 def _volleyball_value_missing(field: str, input_stats: dict[str, Any], payload: dict[str, Any]) -> bool:
     value = input_stats.get(field)
     if value is None and field in {"sport", "league", "event", "teams", "market", "selection", "odds_american", "bankroll", "unit_size", "risk_profile"}:
@@ -7595,6 +7784,8 @@ def _missing_inputs_for_sport(sport: str, market: Any, input_stats: dict[str, An
         return _table_tennis_full_inputs_missing(input_stats, payload) + _table_tennis_market_specific_missing(market, input_stats, payload)
     if sport == "badminton":
         return _badminton_full_inputs_missing(input_stats, payload) + _badminton_market_specific_missing(market, input_stats, payload)
+    if sport == "pickleball":
+        return _pickleball_full_inputs_missing(input_stats, payload) + _pickleball_market_specific_missing(market, input_stats, payload)
     if sport == "volleyball":
         return _volleyball_full_inputs_missing(input_stats, payload) + _volleyball_market_specific_missing(market, input_stats, payload)
     if sport == "handball":
@@ -8234,6 +8425,69 @@ def _normalize_badminton_input_aliases(input_stats: dict[str, Any], payload: Opt
     normalized.setdefault("event", payload.get("event") or payload.get("event_id"))
     normalized.setdefault("match_format", "unknown")
     normalized.setdefault("singles_doubles", "unknown")
+    normalized.setdefault("neutral_site", True)
+    return normalized
+
+
+def _normalize_pickleball_input_aliases(input_stats: dict[str, Any], payload: Optional[dict[str, Any]] = None, sport: Optional[str] = None) -> dict[str, Any]:
+    normalized = dict(input_stats or {})
+    payload = payload or {}
+    alias_pairs = {
+        "player": ["player_name"], "opponent": ["opponent_name"], "team": ["team_name", "player_name"],
+        "opponent_team": ["opponent_team_name", "opponent_name"], "selection": ["pick", "favorite"],
+        "tournament": ["tournament_name", "event_name"], "competition": ["competition_name", "league_name"],
+        "match_format": ["format", "series_format"], "best_of_games": ["games", "best_of"],
+        "singles_doubles": ["discipline", "draw_type"], "indoor_outdoor": ["court", "venue_type"], "neutral_site": ["neutral"],
+        "player_rating": ["player_power_rating"], "opponent_rating": ["opp_power_rating", "opponent_power_rating"],
+        "player_elo": ["player_elo_rating"], "opponent_elo": ["opp_elo_rating", "opponent_elo_rating"],
+        "player_world_rank": ["player_rank"], "opponent_world_rank": ["opp_rank", "opponent_rank"],
+        "player_recent_win_rate": ["player_win_pct"], "opponent_recent_win_rate": ["opp_win_pct", "opponent_win_pct"],
+        "player_recent_form": ["player_form", "form"], "opponent_recent_form": ["opp_form", "opponent_form"],
+        "player_serve_rating": ["serve_rating"], "opponent_serve_rating": ["opp_serve_rating"],
+        "player_return_rating": ["return_rating"], "opponent_return_rating": ["opp_return_rating"],
+        "player_service_points_won_rate": ["service_points_won_pct"], "opponent_service_points_won_rate": ["opp_service_points_won_pct"],
+        "player_return_points_won_rate": ["return_points_won_pct"], "opponent_return_points_won_rate": ["opp_return_points_won_pct"],
+        "player_third_shot_drop_rating": ["third_shot_drop"], "opponent_third_shot_drop_rating": ["opp_third_shot_drop"],
+        "player_third_shot_drive_rating": ["third_shot_drive"], "opponent_third_shot_drive_rating": ["opp_third_shot_drive"],
+        "player_dink_rating": ["dink"], "opponent_dink_rating": ["opp_dink"],
+        "player_kitchen_rating": ["kitchen"], "opponent_kitchen_rating": ["opp_kitchen"],
+        "player_hand_speed_rating": ["hand_speed"], "opponent_hand_speed_rating": ["opp_hand_speed"],
+        "player_net_exchange_rating": ["net_exchange"], "opponent_net_exchange_rating": ["opp_net_exchange"],
+        "player_lob_rating": ["lob"], "opponent_lob_rating": ["opp_lob"],
+        "player_overhead_rating": ["overhead"], "opponent_overhead_rating": ["opp_overhead"],
+        "player_rally_rating": ["rally_rating"], "opponent_rally_rating": ["opp_rally_rating"],
+        "player_error_rate": ["error_rate"], "opponent_error_rate": ["opp_error_rate"],
+        "player_game_win_rate": ["game_win_pct"], "opponent_game_win_rate": ["opp_game_win_pct"],
+        "player_deciding_game_win_rate": ["deciding_game_pct"], "opponent_deciding_game_win_rate": ["opp_deciding_game_pct"],
+        "player_clutch_rating": ["clutch"], "opponent_clutch_rating": ["opp_clutch"],
+        "player_momentum_rating": ["momentum"], "opponent_momentum_rating": ["opp_momentum"],
+        "player_pressure_rating": ["pressure"], "opponent_pressure_rating": ["opp_pressure"],
+        "handedness_matchup": ["handedness"], "playing_style_matchup": ["style_matchup"],
+        "court_speed_rating": ["court_speed"], "ball_speed_rating": ["ball_speed"], "venue_altitude": ["altitude"],
+        "fatigue_rating": ["fatigue"], "opponent_fatigue_rating": ["opp_fatigue"],
+        "rest_days": ["rest"], "opponent_rest_days": ["opp_rest"],
+        "travel_fatigue": ["travel"], "opponent_travel_fatigue": ["opp_travel"],
+        "injury_risk": ["injury"], "opponent_injury_risk": ["opp_injury"],
+        "market_movement": ["market_move"], "public_betting_percent": ["public_pct"], "sharp_money_percent": ["sharp_pct"],
+        "player_points_projection": ["points_proj"], "opponent_points_projection": ["opp_points_proj"],
+        "player_games_projection": ["games_proj"], "opponent_games_projection": ["opp_games_proj"],
+        "player_service_points_projection": ["service_points_proj"],
+        "player_return_points_projection": ["return_points_proj"], "player_prop_line": ["prop_line", "line_value"],
+    }
+    for canonical, aliases in alias_pairs.items():
+        _copy_alias_if_missing(normalized, canonical, aliases)
+    if normalized.get("competition") is None:
+        normalized["competition"] = payload.get("league") or normalized.get("league")
+    if normalized.get("tournament") is None:
+        normalized["tournament"] = payload.get("event") or payload.get("event_id") or payload.get("league")
+    for field in ("market", "league", "odds_american", "bankroll", "unit_size", "risk_profile"):
+        if normalized.get(field) is None:
+            normalized[field] = payload.get(field)
+    normalized.setdefault("selection", payload.get("selection") or normalized.get("player"))
+    normalized.setdefault("event", payload.get("event") or payload.get("event_id"))
+    normalized.setdefault("match_format", "unknown")
+    normalized.setdefault("singles_doubles", "unknown")
+    normalized.setdefault("indoor_outdoor", "unknown")
     normalized.setdefault("neutral_site", True)
     return normalized
 
@@ -9433,6 +9687,9 @@ def normalize_sport_inputs_for_model(
     elif sport_alias_resolved == "badminton":
         normalized = _normalize_badminton_input_aliases(normalized, payload, sport_alias_resolved)
         normalizer_used = "badminton_input_normalizer"
+    elif sport_alias_resolved == "pickleball":
+        normalized = _normalize_pickleball_input_aliases(normalized, payload, sport_alias_resolved)
+        normalizer_used = "pickleball_input_normalizer"
     elif sport_alias_resolved == "volleyball":
         normalized = _normalize_volleyball_input_aliases(normalized, payload, sport_alias_resolved)
         normalizer_used = "volleyball_input_normalizer"
@@ -13586,6 +13843,216 @@ def _estimate_badminton_serve_return_rally_shuttle_model(
     }
 
 
+def _pickleball_format_calibration(input_stats: dict[str, Any]) -> str:
+    games = _safe_float(input_stats.get("best_of_games"))
+    text = str(input_stats.get("match_format") or "").strip().lower().replace("-", "_").replace(" ", "_")
+    if games in {3, 5}:
+        return f"best_of_{int(games)}"
+    if "best_of_3" in text or text in {"bo3", "best3"}:
+        return "best_of_3"
+    if "best_of_5" in text or text in {"bo5", "best5"}:
+        return "best_of_5"
+    return "unknown"
+
+
+def _pickleball_discipline_calibration(input_stats: dict[str, Any]) -> str:
+    text = str(input_stats.get("singles_doubles") or "").strip().lower()
+    if "single" in text:
+        return "singles"
+    if "double" in text:
+        return "doubles"
+    return "unknown"
+
+
+def _pickleball_tournament_calibration(input_stats: dict[str, Any]) -> str:
+    text = str(input_stats.get("tournament") or input_stats.get("competition") or "").strip().lower()
+    if "major league pickleball" in text or "mlp" in text or "mlf" in text:
+        return "mlf"
+    if "ppa" in text:
+        return "ppa"
+    if "app" in text:
+        return "app"
+    return "unknown"
+
+
+def _estimate_pickleball_dink_kitchen_serve_return_model(
+    *,
+    input_stats: dict[str, Any],
+    payload: dict[str, Any],
+    market: Any,
+    odds_american: Optional[float],
+    bankroll: float,
+    risk_profile: str,
+) -> Optional[dict[str, Any]]:
+    missing = _pickleball_full_inputs_missing(input_stats, payload) + _pickleball_market_specific_missing(market, input_stats, payload)
+    if missing or odds_american is None:
+        return None
+
+    market_key = _normal_market_key(input_stats.get("market") or market)
+    selection_text = str(payload.get("selection") or input_stats.get("selection") or "").strip().lower()
+    player_text = str(input_stats.get("player") or input_stats.get("team") or "").strip().lower()
+    selected_player = selection_text in {"", player_text} or player_text in selection_text
+
+    def n(field: str, default: float = 0.0) -> float:
+        value = _safe_float(input_stats.get(field), default)
+        return default if value is None else value
+
+    implied_probability = implied_probability_from_american(odds_american)
+    format_calibration = _pickleball_format_calibration(input_stats)
+    discipline_calibration = _pickleball_discipline_calibration(input_stats)
+    tournament_calibration = _pickleball_tournament_calibration(input_stats)
+    serve_return_calibration = any(input_stats.get(field) is not None for field in ("player_serve_rating", "opponent_serve_rating", "player_return_rating", "opponent_return_rating"))
+    kitchen_calibration = any(input_stats.get(field) is not None for field in ("player_dink_rating", "opponent_dink_rating", "player_kitchen_rating", "opponent_kitchen_rating", "player_net_exchange_rating", "opponent_net_exchange_rating"))
+    deciding_game_calibration = any(input_stats.get(field) is not None for field in ("player_deciding_game_win_rate", "opponent_deciding_game_win_rate", "player_clutch_rating", "opponent_clutch_rating"))
+
+    rating_edge = (n("player_rating") - n("opponent_rating")) * 0.043 + (n("player_elo") - n("opponent_elo")) * 0.004
+    rank_edge = (n("opponent_world_rank") - n("player_world_rank")) * 0.023
+    form_edge = (n("player_recent_win_rate") - n("opponent_recent_win_rate")) * 3.0 + (n("player_recent_form") - n("opponent_recent_form")) * 0.030
+    serve_return_edge = (
+        (n("player_serve_rating") - n("opponent_serve_rating")) * 0.028
+        + (n("player_return_rating") - n("opponent_return_rating")) * 0.035
+        + (n("player_service_points_won_rate") - n("opponent_service_points_won_rate")) * 3.8
+        + (n("player_return_points_won_rate") - n("opponent_return_points_won_rate")) * 4.4
+        + (n("player_third_shot_drop_rating") - n("opponent_third_shot_drop_rating")) * 0.026
+        + (n("player_third_shot_drive_rating") - n("opponent_third_shot_drive_rating")) * 0.020
+    )
+    kitchen_edge = (
+        (n("player_dink_rating") - n("opponent_dink_rating")) * 0.034
+        + (n("player_kitchen_rating") - n("opponent_kitchen_rating")) * 0.036
+        + (n("player_hand_speed_rating") - n("opponent_hand_speed_rating")) * 0.022
+        + (n("player_net_exchange_rating") - n("opponent_net_exchange_rating")) * 0.030
+        + (n("player_lob_rating") - n("opponent_lob_rating")) * 0.012
+        + (n("player_overhead_rating") - n("opponent_overhead_rating")) * 0.018
+        + (n("player_rally_rating") - n("opponent_rally_rating")) * 0.024
+        + (n("opponent_error_rate") - n("player_error_rate")) * 5.0
+    )
+    momentum_edge = (
+        (n("player_game_win_rate") - n("opponent_game_win_rate")) * 3.2
+        + (n("player_deciding_game_win_rate") - n("opponent_deciding_game_win_rate")) * 2.0
+        + (n("player_clutch_rating") - n("opponent_clutch_rating")) * 0.024
+        + (n("player_momentum_rating") - n("opponent_momentum_rating")) * 0.020
+        + (n("player_pressure_rating") - n("opponent_pressure_rating")) * 0.020
+    )
+    context_edge = (
+        (n("opponent_fatigue_rating") - n("fatigue_rating")) * 1.7
+        + (n("rest_days") - n("opponent_rest_days")) * 0.12
+        + (n("opponent_travel_fatigue") - n("travel_fatigue")) * 1.1
+        + (n("opponent_injury_risk") - n("injury_risk")) * 2.3
+    )
+    speed_drag = max(0.0, n("court_speed_rating") - 0.75) * 0.20 + max(0.0, n("ball_speed_rating") - 0.75) * 0.22
+    player_edge_score = rating_edge + rank_edge + form_edge + serve_return_edge + kitchen_edge + momentum_edge + context_edge - speed_drag
+    if not selected_player and market_key not in {"total_games", "total_points", "alt_total_games", "alt_total_points"}:
+        player_edge_score *= -1
+
+    raw_model_probability = _logistic_probability(player_edge_score, 2.55)
+    projected_games = max(2.0, min(n("best_of_games", 3), n("player_games_projection") + n("opponent_games_projection") * 0.18))
+    projected_points = max(20.0, n("player_points_projection") + n("opponent_points_projection"))
+    line = _safe_float(payload.get("line"), _safe_float(input_stats.get("line") or input_stats.get("player_prop_line")))
+    if market_key in {"game_winner", "first_game_winner", "second_game_winner", "third_game_winner"}:
+        game_multiplier = 0.74 if market_key == "third_game_winner" else 0.86
+        raw_model_probability = _logistic_probability(player_edge_score * game_multiplier, 2.15)
+    elif market_key in {"game_handicap", "alt_game_handicap"}:
+        raw_model_probability = _logistic_probability(player_edge_score + (line or 0), 2.2)
+    elif market_key == "point_handicap":
+        raw_model_probability = _logistic_probability(player_edge_score * 4.8 + (line or 0), 6.2)
+    elif market_key in {"total_games", "alt_total_games"}:
+        total_line = line if line is not None else 2.5
+        over_probability = _logistic_probability(projected_games - total_line, 0.75)
+        raw_model_probability = 1 - over_probability if "under" in selection_text else over_probability
+    elif market_key in {"total_points", "alt_total_points"}:
+        total_line = line if line is not None else 55.5
+        over_probability = _logistic_probability(projected_points - total_line, 7.0)
+        raw_model_probability = 1 - over_probability if "under" in selection_text else over_probability
+    elif market_key == "correct_score":
+        raw_model_probability = max(0.05, min(0.44, _logistic_probability(abs(player_edge_score) - 0.9, 2.0)))
+    elif market_key in PICKLEBALL_PROP_MARKETS:
+        prop_line = line if line is not None else n("player_prop_line", 18.5)
+        if market_key == "player_service_points_won":
+            raw_model_probability = _logistic_probability(n("player_service_points_projection") - prop_line, 3.2)
+        elif market_key == "player_return_points_won":
+            raw_model_probability = _logistic_probability(n("player_return_points_projection") - prop_line, 2.8)
+        elif market_key in {"player_total_points", "team_total_points"}:
+            raw_model_probability = _logistic_probability(n("player_points_projection") - prop_line, 4.8)
+        elif market_key == "player_aces":
+            raw_model_probability = _logistic_probability((n("player_serve_rating") - 82) * 0.08 - prop_line, 1.4)
+
+    calibrated_probability = raw_model_probability
+    true_probability = max(0.04, min(0.94, calibrated_probability))
+    sanity_flags = ["pickleball probability cap applied"] if true_probability != calibrated_probability else []
+
+    confidence = 74.0
+    risk_flags: list[str] = []
+    if (_safe_float(input_stats.get("book_count"), 0) or 0) < 4:
+        confidence -= 4
+        risk_flags.append("book count too low")
+    if n("fatigue_rating") > 0.65 or n("injury_risk") > 0.30:
+        confidence -= 9
+        risk_flags.append("player condition risk")
+    if market_key in {"correct_score", "player_aces", "third_game_winner"}:
+        confidence -= 7
+        risk_flags.append("volatile market")
+    if input_stats.get("provider_status") == "error":
+        risk_flags.append("provider failure ignored")
+    confidence = max(1, min(95, round(confidence, 2)))
+
+    edge = calculate_edge_percent(true_probability, implied_probability)
+    edge_threshold, confidence_threshold = _nfl_thresholds(risk_profile)
+    no_bet_flags: list[str] = []
+    if edge is None:
+        no_bet_flags.append("edge missing")
+    elif edge <= 0:
+        no_bet_flags.append("negative edge")
+    elif edge < edge_threshold:
+        no_bet_flags.append("edge too small")
+    if confidence < confidence_threshold:
+        no_bet_flags.append("low confidence")
+
+    suggested = 0 if no_bet_flags else calculate_suggested_stake(
+        bankroll=bankroll,
+        american_odds=odds_american,
+        true_probability=true_probability,
+        risk_profile=risk_profile,
+        confidence=confidence,
+    )
+    if suggested <= 0 and not no_bet_flags and edge is not None and edge >= edge_threshold and confidence >= confidence_threshold:
+        suggested = round(max(1.0, bankroll * 0.004), 2)
+
+    return {
+        "model_status": "active", "estimated_true_probability": true_probability,
+        "true_probability": true_probability, "final_probability": true_probability,
+        "model_probability": true_probability, "implied_probability": implied_probability,
+        "edge": edge, "confidence": confidence, "risk": "high" if risk_flags else "moderate",
+        "suggested_stake": suggested, "raw_model_probability": raw_model_probability,
+        "calibrated_model_probability": calibrated_probability,
+        "probability_calibration_applied": bool(sanity_flags),
+        "probability_sanity_flags": sanity_flags,
+        "probability_cap_reason": "pickleball sanity cap" if sanity_flags else None,
+        "market_anchor_probability": None,
+        "league_calibration_applied": "pickleball",
+        "format_calibration_applied": format_calibration,
+        "discipline_calibration_applied": discipline_calibration,
+        "tournament_calibration_applied": tournament_calibration,
+        "serve_return_calibration_applied": serve_return_calibration,
+        "kitchen_calibration_applied": kitchen_calibration,
+        "deciding_game_calibration_applied": deciding_game_calibration,
+        "pickleball_player_edge_score": round(player_edge_score, 2),
+        "pickleball_projected_games": round(projected_games, 2),
+        "pickleball_projected_total_points": round(projected_points, 2),
+        "pickleball_serve_return_edge_score": round(serve_return_edge, 2),
+        "pickleball_kitchen_edge_score": round(kitchen_edge, 2),
+        "pickleball_momentum_edge_score": round(momentum_edge, 2),
+        "risk_flags": risk_flags,
+        "input_coverage": {
+            "required_core_present": list(PICKLEBALL_REQUIRED_CORE_INPUTS),
+            "required_market_specific_present": PICKLEBALL_REQUIRED_MARKET_INPUTS.get(market_key, []),
+            "optional_enrichment_present": [field for field in PICKLEBALL_OPTIONAL_ENRICHMENT_INPUTS if input_stats.get(field) is not None],
+            "optional_enrichment_missing": [field for field in PICKLEBALL_OPTIONAL_ENRICHMENT_INPUTS if input_stats.get(field) is None],
+        },
+        "provider_enrichment": {"provider_status": input_stats.get("provider_status") or "not_provided", "provider_enrichment_present": [field for field in PICKLEBALL_OPTIONAL_ENRICHMENT_INPUTS if input_stats.get(field) is not None]},
+        "no_bet_flags": no_bet_flags,
+    }
+
+
 def _volleyball_format_calibration(input_stats: dict[str, Any]) -> str:
     sets = _safe_float(input_stats.get("best_of_sets"))
     text = str(input_stats.get("match_format") or "").strip().lower().replace("-", "_").replace(" ", "_")
@@ -16724,6 +17191,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         lacrosse_model = None
         table_tennis_model = None
         badminton_model = None
+        pickleball_model = None
         volleyball_model = None
         handball_model = None
         afl_model = None
@@ -16833,6 +17301,15 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             )
         elif sport == "badminton":
             badminton_model = _estimate_badminton_serve_return_rally_shuttle_model(
+                input_stats=input_stats,
+                payload=payload,
+                market=market,
+                odds_american=odds_american,
+                bankroll=bankroll,
+                risk_profile=payload.get("risk_profile") or "moderate",
+            )
+        elif sport == "pickleball":
+            pickleball_model = _estimate_pickleball_dink_kitchen_serve_return_model(
                 input_stats=input_stats,
                 payload=payload,
                 market=market,
@@ -17033,6 +17510,8 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
         elif badminton_model:
             component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
+        elif pickleball_model:
+            component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
         elif volleyball_model:
             component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
         elif handball_model:
@@ -17071,7 +17550,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
         elif overwatch_model:
             component_status, missing_inputs = COMPONENT_STATUS_ACTIVE, []
-        elif sport in {"basketball_nba", "basketball_wnba", "basketball_ncaab", "basketball_ncaawb", "americanfootball_nfl", "americanfootball_ncaaf", "baseball_mlb", "soccer", "rugby", "lacrosse", "table_tennis", "badminton", "volleyball", "handball", "afl", "icehockey_nhl", "tennis", "mma_mixed_martial_arts", "boxing", "golf", "formula1", "formula_e", "nascar", "indycar", "motogp", "cricket", "cs2", "valorant", "league_of_legends", "dota2", "call_of_duty", "overwatch"}:
+        elif sport in {"basketball_nba", "basketball_wnba", "basketball_ncaab", "basketball_ncaawb", "americanfootball_nfl", "americanfootball_ncaaf", "baseball_mlb", "soccer", "rugby", "lacrosse", "table_tennis", "badminton", "pickleball", "volleyball", "handball", "afl", "icehockey_nhl", "tennis", "mma_mixed_martial_arts", "boxing", "golf", "formula1", "formula_e", "nascar", "indycar", "motogp", "cricket", "cs2", "valorant", "league_of_legends", "dota2", "call_of_duty", "overwatch"}:
             component_status = COMPONENT_STATUS_INACTIVE
             missing_inputs = _missing_inputs_for_sport(sport, market, input_stats, payload)
         else:
@@ -17146,6 +17625,12 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             edge = badminton_model["edge"]
             suggested = badminton_model["suggested_stake"]
             no_bet_flags = list(badminton_model["no_bet_flags"])
+        elif pickleball_model:
+            true_probability = pickleball_model["true_probability"]
+            implied_probability = pickleball_model["implied_probability"]
+            edge = pickleball_model["edge"]
+            suggested = pickleball_model["suggested_stake"]
+            no_bet_flags = list(pickleball_model["no_bet_flags"])
         elif volleyball_model:
             true_probability = volleyball_model["true_probability"]
             implied_probability = volleyball_model["implied_probability"]
@@ -17262,7 +17747,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             no_bet_flags = list(overwatch_model["no_bet_flags"])
         if implied_probability is not None and true_probability is not None and odds_american is not None:
             edge = edge_percentage(true_probability, implied_probability)
-            if not (nba_model or wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or rugby_model or lacrosse_model or table_tennis_model or badminton_model or volleyball_model or handball_model or afl_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or formula_e_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model):
+            if not (nba_model or wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or rugby_model or lacrosse_model or table_tennis_model or badminton_model or pickleball_model or volleyball_model or handball_model or afl_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or formula_e_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model):
                 suggested = suggested_stake_with_risk_controls(
                     bankroll=bankroll,
                     american_odds=odds_american,
@@ -17279,7 +17764,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         social_input_stats = dict(input_stats)
         social_input_stats["edge"] = edge
         social_layer = build_social_crowd_calibration_layer(social_input_stats)
-        if social_layer["sentiment_no_bet_flags"] and not (nba_model or wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or rugby_model or lacrosse_model or table_tennis_model or badminton_model or volleyball_model or handball_model or afl_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or formula_e_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model):
+        if social_layer["sentiment_no_bet_flags"] and not (nba_model or wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or rugby_model or lacrosse_model or table_tennis_model or badminton_model or pickleball_model or volleyball_model or handball_model or afl_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or formula_e_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model):
             no_bet_flags = list(dict.fromkeys(no_bet_flags + social_layer["sentiment_no_bet_flags"]))
 
         risk_controller = build_risk_controller(bankroll, unit_size, payload.get("risk_profile") or "conservative")
@@ -17296,7 +17781,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         })
         wee_willie = build_wee_willie_market_weakness_detector(detector_payload)
         manual_ticket = build_manual_ticket(detector_payload, suggested)
-        active_model = nba_model or wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or rugby_model or lacrosse_model or table_tennis_model or badminton_model or volleyball_model or handball_model or afl_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or formula_e_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model
+        active_model = nba_model or wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or rugby_model or lacrosse_model or table_tennis_model or badminton_model or pickleball_model or volleyball_model or handball_model or afl_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or formula_e_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model
         confidence = active_model["confidence"] if active_model else input_stats.get("confidence")
         if tennis_model and _safe_float(confidence) is None:
             confidence = 0.0
@@ -17308,7 +17793,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         model_status = active_model["model_status"] if active_model else component_status
         edge_threshold, confidence_threshold = (
             _nfl_thresholds(payload.get("risk_profile") or "moderate")
-            if (wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or rugby_model or lacrosse_model or table_tennis_model or badminton_model or volleyball_model or handball_model or afl_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or formula_e_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model)
+            if (wnba_model or mens_cbb_model or womens_cbb_model or college_football_model or nfl_model or mlb_model or soccer_model or rugby_model or lacrosse_model or table_tennis_model or badminton_model or pickleball_model or volleyball_model or handball_model or afl_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or formula_e_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model)
             else (2.5, 70)
         )
         event_value = payload.get("event_id") or payload.get("event") or input_stats.get("event")
@@ -17425,7 +17910,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
                 "market": market,
                 "selection": selection_value,
                 "confidence": confidence,
-            }] if _normal_market_key(market) in {"player_prop", "knockdown_prop", "takedown_prop", "significant_strikes_prop", "submission_attempt_prop", "birdies_prop", "eagles_prop", "fairways_hit_prop", "greens_in_regulation_prop", "putts_prop", "round_score_prop", *BASKETBALL_MODULE_PROP_MARKETS, *COLLEGE_FOOTBALL_PROP_MARKETS, *RUGBY_PROP_MARKETS, *LACROSSE_PROP_MARKETS, *TABLE_TENNIS_PROP_MARKETS, *BADMINTON_PROP_MARKETS, *VOLLEYBALL_PROP_MARKETS, *HANDBALL_PROP_MARKETS, *AFL_PROP_MARKETS, *FORMULA_E_PROP_MARKETS, *CRICKET_PROP_MARKETS, *CS2_PROP_MARKETS, *VALORANT_PROP_MARKETS, *LOL_PROP_MARKETS, *DOTA2_PROP_MARKETS, *COD_PROP_MARKETS, *OVERWATCH_PROP_MARKETS} else [],
+            }] if _normal_market_key(market) in {"player_prop", "knockdown_prop", "takedown_prop", "significant_strikes_prop", "submission_attempt_prop", "birdies_prop", "eagles_prop", "fairways_hit_prop", "greens_in_regulation_prop", "putts_prop", "round_score_prop", *BASKETBALL_MODULE_PROP_MARKETS, *COLLEGE_FOOTBALL_PROP_MARKETS, *RUGBY_PROP_MARKETS, *LACROSSE_PROP_MARKETS, *TABLE_TENNIS_PROP_MARKETS, *BADMINTON_PROP_MARKETS, *PICKLEBALL_PROP_MARKETS, *VOLLEYBALL_PROP_MARKETS, *HANDBALL_PROP_MARKETS, *AFL_PROP_MARKETS, *FORMULA_E_PROP_MARKETS, *CRICKET_PROP_MARKETS, *CS2_PROP_MARKETS, *VALORANT_PROP_MARKETS, *LOL_PROP_MARKETS, *DOTA2_PROP_MARKETS, *COD_PROP_MARKETS, *OVERWATCH_PROP_MARKETS} else [],
             "target_alt_lines": [{
                 "sport": sport,
                 "event": event_value,
@@ -17465,7 +17950,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             **officiating_analysis["officiating_logbook_fields"],
         })
         basketball_module_model = wnba_model or mens_cbb_model or womens_cbb_model
-        probability_model = basketball_module_model or college_football_model or nfl_model or mlb_model or soccer_model or rugby_model or lacrosse_model or table_tennis_model or badminton_model or volleyball_model or handball_model or afl_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or formula_e_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model
+        probability_model = basketball_module_model or college_football_model or nfl_model or mlb_model or soccer_model or rugby_model or lacrosse_model or table_tennis_model or badminton_model or pickleball_model or volleyball_model or handball_model or afl_model or nhl_model or tennis_model or combat_model or golf_model or f1_model or formula_e_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model
         if probability_model:
             logbook_ready_row.update({
                 "raw_model_probability": probability_model["raw_model_probability"],
@@ -17562,6 +18047,23 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
                 "badminton_serve_return_edge_score": badminton_model["badminton_serve_return_edge_score"],
                 "badminton_rally_style_edge_score": badminton_model["badminton_rally_style_edge_score"],
                 "badminton_momentum_edge_score": badminton_model["badminton_momentum_edge_score"],
+            })
+        if pickleball_model:
+            logbook_ready_row.update({
+                "league": payload.get("league") or input_stats.get("league"),
+                "league_calibration_applied": pickleball_model["league_calibration_applied"],
+                "format_calibration_applied": pickleball_model["format_calibration_applied"],
+                "discipline_calibration_applied": pickleball_model["discipline_calibration_applied"],
+                "tournament_calibration_applied": pickleball_model["tournament_calibration_applied"],
+                "serve_return_calibration_applied": pickleball_model["serve_return_calibration_applied"],
+                "kitchen_calibration_applied": pickleball_model["kitchen_calibration_applied"],
+                "deciding_game_calibration_applied": pickleball_model["deciding_game_calibration_applied"],
+                "pickleball_player_edge_score": pickleball_model["pickleball_player_edge_score"],
+                "pickleball_projected_games": pickleball_model["pickleball_projected_games"],
+                "pickleball_projected_total_points": pickleball_model["pickleball_projected_total_points"],
+                "pickleball_serve_return_edge_score": pickleball_model["pickleball_serve_return_edge_score"],
+                "pickleball_kitchen_edge_score": pickleball_model["pickleball_kitchen_edge_score"],
+                "pickleball_momentum_edge_score": pickleball_model["pickleball_momentum_edge_score"],
             })
         if volleyball_model:
             logbook_ready_row.update({
@@ -18042,6 +18544,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             "lacrosse_input_contract": deepcopy(LACROSSE_INPUT_CONTRACT) if sport == "lacrosse" else None,
             "table_tennis_input_contract": deepcopy(TABLE_TENNIS_INPUT_CONTRACT) if sport == "table_tennis" else None,
             "badminton_input_contract": deepcopy(BADMINTON_INPUT_CONTRACT) if sport == "badminton" else None,
+            "pickleball_input_contract": deepcopy(PICKLEBALL_INPUT_CONTRACT) if sport == "pickleball" else None,
             "volleyball_input_contract": deepcopy(VOLLEYBALL_INPUT_CONTRACT) if sport == "volleyball" else None,
             "handball_input_contract": deepcopy(HANDBALL_INPUT_CONTRACT) if sport == "handball" else None,
             "afl_input_contract": deepcopy(AFL_INPUT_CONTRACT) if sport == "afl" else None,
@@ -18064,23 +18567,24 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             "wnba_input_contract": deepcopy(WNBA_INPUT_CONTRACT) if sport == "basketball_wnba" else None,
             "mens_college_basketball_input_contract": deepcopy(MENS_COLLEGE_BASKETBALL_INPUT_CONTRACT) if sport == "basketball_ncaab" else None,
             "womens_college_basketball_input_contract": deepcopy(WOMENS_COLLEGE_BASKETBALL_INPUT_CONTRACT) if sport == "basketball_ncaawb" else None,
-            "league_calibration_applied": (basketball_module_model or college_football_model or rugby_model or lacrosse_model or table_tennis_model or badminton_model or volleyball_model or handball_model or afl_model or f1_model or formula_e_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model)["league_calibration_applied"] if (basketball_module_model or college_football_model or rugby_model or lacrosse_model or table_tennis_model or badminton_model or volleyball_model or handball_model or afl_model or f1_model or formula_e_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model) else config.get("sport_parameters", {}).get("league_calibration_applied"),
+            "league_calibration_applied": (basketball_module_model or college_football_model or rugby_model or lacrosse_model or table_tennis_model or badminton_model or pickleball_model or volleyball_model or handball_model or afl_model or f1_model or formula_e_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model)["league_calibration_applied"] if (basketball_module_model or college_football_model or rugby_model or lacrosse_model or table_tennis_model or badminton_model or pickleball_model or volleyball_model or handball_model or afl_model or f1_model or formula_e_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model) else config.get("sport_parameters", {}).get("league_calibration_applied"),
             "code_variant_calibration_applied": rugby_model["code_variant_calibration_applied"] if rugby_model else None,
             "competition_calibration_applied": handball_model["competition_calibration_applied"] if handball_model else ((rugby_model or lacrosse_model)["competition_calibration_applied"] if (rugby_model or lacrosse_model) else None),
-            "tournament_calibration_applied": (badminton_model or table_tennis_model)["tournament_calibration_applied"] if (badminton_model or table_tennis_model) else None,
+            "tournament_calibration_applied": (pickleball_model or badminton_model or table_tennis_model)["tournament_calibration_applied"] if (pickleball_model or badminton_model or table_tennis_model) else None,
             "session_calibration_applied": (f1_model or motogp_model)["session_calibration_applied"] if (f1_model or motogp_model) else None,
             "circuit_calibration_applied": (f1_model or formula_e_model)["circuit_calibration_applied"] if (f1_model or formula_e_model) else None,
             "weather_calibration_applied": (f1_model or motogp_model or rugby_model or lacrosse_model or afl_model)["weather_calibration_applied"] if (f1_model or motogp_model or rugby_model or lacrosse_model or afl_model) else None,
             "referee_calibration_applied": rugby_model["referee_calibration_applied"] if rugby_model else None,
-            "format_calibration_applied": volleyball_model["format_calibration_applied"] if volleyball_model else ((badminton_model or table_tennis_model)["format_calibration_applied"] if (badminton_model or table_tennis_model) else (lacrosse_model["format_calibration_applied"] if lacrosse_model else (cricket_model["format_calibration_applied"] if cricket_model else None))),
+            "format_calibration_applied": volleyball_model["format_calibration_applied"] if volleyball_model else ((pickleball_model or badminton_model or table_tennis_model)["format_calibration_applied"] if (pickleball_model or badminton_model or table_tennis_model) else (lacrosse_model["format_calibration_applied"] if lacrosse_model else (cricket_model["format_calibration_applied"] if cricket_model else None))),
             "court_calibration_applied": volleyball_model["court_calibration_applied"] if volleyball_model else None,
             "gender_calibration_applied": volleyball_model["gender_calibration_applied"] if volleyball_model else (lacrosse_model["gender_calibration_applied"] if lacrosse_model else None),
             "faceoff_calibration_applied": lacrosse_model["faceoff_calibration_applied"] if lacrosse_model else None,
             "goalie_calibration_applied": lacrosse_model["goalie_calibration_applied"] if lacrosse_model else None,
-            "serve_return_calibration_applied": (badminton_model or table_tennis_model)["serve_return_calibration_applied"] if (badminton_model or table_tennis_model) else None,
+            "serve_return_calibration_applied": (pickleball_model or badminton_model or table_tennis_model)["serve_return_calibration_applied"] if (pickleball_model or badminton_model or table_tennis_model) else None,
             "rally_style_calibration_applied": (badminton_model or table_tennis_model)["rally_style_calibration_applied"] if (badminton_model or table_tennis_model) else None,
-            "deciding_game_calibration_applied": (badminton_model or table_tennis_model)["deciding_game_calibration_applied"] if (badminton_model or table_tennis_model) else None,
-            "discipline_calibration_applied": badminton_model["discipline_calibration_applied"] if badminton_model else (handball_model["discipline_calibration_applied"] if handball_model else None),
+            "kitchen_calibration_applied": pickleball_model["kitchen_calibration_applied"] if pickleball_model else None,
+            "deciding_game_calibration_applied": (pickleball_model or badminton_model or table_tennis_model)["deciding_game_calibration_applied"] if (pickleball_model or badminton_model or table_tennis_model) else None,
+            "discipline_calibration_applied": (pickleball_model or badminton_model)["discipline_calibration_applied"] if (pickleball_model or badminton_model) else (handball_model["discipline_calibration_applied"] if handball_model else None),
             "sideout_calibration_applied": volleyball_model["sideout_calibration_applied"] if volleyball_model else None,
             "serve_receive_calibration_applied": volleyball_model["serve_receive_calibration_applied"] if volleyball_model else None,
             "deciding_set_calibration_applied": volleyball_model["deciding_set_calibration_applied"] if volleyball_model else None,
@@ -18194,6 +18698,13 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
             "badminton_rally_style_edge_score": badminton_model["badminton_rally_style_edge_score"] if badminton_model else None,
             "badminton_momentum_edge_score": badminton_model["badminton_momentum_edge_score"] if badminton_model else None,
             "badminton_risk_flags": badminton_model["risk_flags"] if badminton_model else [],
+            "pickleball_player_edge_score": pickleball_model["pickleball_player_edge_score"] if pickleball_model else None,
+            "pickleball_projected_games": pickleball_model["pickleball_projected_games"] if pickleball_model else None,
+            "pickleball_projected_total_points": pickleball_model["pickleball_projected_total_points"] if pickleball_model else None,
+            "pickleball_serve_return_edge_score": pickleball_model["pickleball_serve_return_edge_score"] if pickleball_model else None,
+            "pickleball_kitchen_edge_score": pickleball_model["pickleball_kitchen_edge_score"] if pickleball_model else None,
+            "pickleball_momentum_edge_score": pickleball_model["pickleball_momentum_edge_score"] if pickleball_model else None,
+            "pickleball_risk_flags": pickleball_model["risk_flags"] if pickleball_model else [],
             "volleyball_team_edge_score": volleyball_model["volleyball_team_edge_score"] if volleyball_model else None,
             "volleyball_projected_sets": volleyball_model["volleyball_projected_sets"] if volleyball_model else None,
             "volleyball_projected_total_points": volleyball_model["volleyball_projected_total_points"] if volleyball_model else None,
@@ -18267,7 +18778,7 @@ def analyze_sport_model(payload: dict[str, Any]) -> dict[str, Any]:
         "target_lines": full_board["target_lines"],
         "target_props": full_board["target_props"],
         "target_alt_lines": full_board["target_alt_lines"],
-        "no_bets": no_bets if (basketball_module_model or college_football_model or table_tennis_model or badminton_model or volleyball_model or handball_model or tennis_model or combat_model or golf_model or f1_model or formula_e_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model) else simple_no_bets,
+        "no_bets": no_bets if (basketball_module_model or college_football_model or table_tennis_model or badminton_model or pickleball_model or volleyball_model or handball_model or tennis_model or combat_model or golf_model or f1_model or formula_e_model or nascar_model or indycar_model or motogp_model or cricket_model or cs2_model or valorant_model or lol_model or dota2_model or cod_model or overwatch_model) else simple_no_bets,
         "best_correlated_parlay": full_board["best_correlated_parlay"],
         "value_ranking": full_board["value_ranking"],
         "risk_ranking": full_board["risk_ranking"],
