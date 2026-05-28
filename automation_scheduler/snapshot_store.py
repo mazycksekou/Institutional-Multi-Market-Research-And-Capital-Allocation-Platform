@@ -35,6 +35,9 @@ class SnapshotStore:
             return None
         return json.loads(path.read_text(encoding="utf-8"))
 
+    def load_latest_snapshot(self, namespace: str, key: str) -> dict[str, Any] | None:
+        return self.load_snapshot(namespace, key)
+
     @staticmethod
     def diff_snapshots(previous: dict[str, Any] | None, current: dict[str, Any] | None) -> dict[str, Any]:
         previous_payload = (previous or {}).get("payload", previous or {})
@@ -50,3 +53,15 @@ class SnapshotStore:
             "previous_count": len(previous_payload) if isinstance(previous_payload, dict) else 0,
             "current_count": len(current_payload) if isinstance(current_payload, dict) else 0,
         }
+
+
+def save_snapshot(category: str, key: str, payload: Any, config: dict[str, Any]) -> dict[str, Any]:
+    return SnapshotStore(config).save_snapshot(category, key, payload)
+
+
+def load_latest_snapshot(category: str, key: str, config: dict[str, Any]) -> dict[str, Any] | None:
+    return SnapshotStore(config).load_latest_snapshot(category, key)
+
+
+def diff_snapshots(previous: dict[str, Any] | None, current: dict[str, Any] | None) -> dict[str, Any]:
+    return SnapshotStore.diff_snapshots(previous, current)

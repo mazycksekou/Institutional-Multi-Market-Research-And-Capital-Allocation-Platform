@@ -62,3 +62,16 @@ def apply_score_decay(score: float, age_seconds: int, *, decay_window_seconds: i
         return round(score, 2)
     decay_steps = age_seconds // max(1, decay_window_seconds)
     return round(max(0.0, float(score) - (decay_steps * 3.0)), 2)
+
+
+def market_open_status(market_type: str, now: datetime | None = None) -> dict[str, Any]:
+    current = now or utc_now()
+    hour = current.hour
+    if market_type in {"news", "news_events"}:
+        return {"is_open": True, "reason": "always_open_news", "next_check_allowed": current.isoformat()}
+    if market_type in {"low_liquidity"}:
+        return {"is_open": True, "reason": "low_liquidity_polling", "next_check_allowed": current.isoformat()}
+    if market_type in {"stock", "stocks_watchlist"}:
+        is_open = 13 <= hour <= 20
+        return {"is_open": is_open, "reason": "market_hours" if is_open else "outside_market_hours", "next_check_allowed": current.isoformat()}
+    return {"is_open": True, "reason": "placeholder_open", "next_check_allowed": current.isoformat()}

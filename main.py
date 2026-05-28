@@ -25,6 +25,15 @@ import market_pricing
 import multi_sport_model_registry
 import model_probability
 import screenshot_intake
+from automation_scheduler.response_compactor import (
+    compact_governance_inventory,
+    compact_governance_report,
+    compact_health_response,
+    compact_review_queue_response,
+    compact_run_once_response,
+    compact_validation_response,
+    redact_and_limit_payload,
+)
 from model_governance.governance_health import get_governance_health
 from model_governance.model_inventory import get_model_inventory
 from model_governance.governance_report import generate_governance_report
@@ -2730,25 +2739,21 @@ async def quant_stock_analysis(payload: StockAnalysisRequest):
 @app.get("/api/automation/health", operation_id="getAutomationSchedulerHealth")
 async def get_automation_scheduler_health():
     health = automation_scheduler.get_scheduler_health()
-    return {
-        "ok": True,
-        "service": "automation_scheduler",
-        "health": health,
-    }
+    return compact_health_response(health)
 
 
 @app.get("/api/automation/review-queue", operation_id="getAutomationSchedulerReviewQueue")
-async def get_automation_scheduler_review_queue():
+async def get_automation_scheduler_review_queue(verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=10)):
     queue = automation_scheduler.get_scheduler_review_queue()
-    return {
-        "ok": True,
-        "service": "automation_scheduler",
-        **queue,
-    }
+    cap = min(max(int(limit), 1), 100 if verbose else 10)
+    compact = compact_review_queue_response(queue, limit=cap)
+    if verbose or include_debug:
+        compact["debug"] = redact_and_limit_payload(queue, limit=cap, verbose=verbose)
+    return compact
 
 
 @app.post("/api/automation/run-once", operation_id="runAutomationSchedulerOnce")
-async def run_automation_scheduler_once(payload: AutomationRunOnceRequest):
+async def run_automation_scheduler_once(payload: AutomationRunOnceRequest, verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=10)):
     if payload.dry_run is not True:
         raise HTTPException(status_code=400, detail="automation scheduler run-once only supports dry_run=true")
     try:
@@ -2759,37 +2764,57 @@ async def run_automation_scheduler_once(payload: AutomationRunOnceRequest):
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
-    return {
-        "ok": True,
-        "service": "automation_scheduler",
-        **result,
-    }
+    compact = compact_run_once_response(result)
+    cap = min(max(int(limit), 1), 100 if verbose else 10)
+    if verbose or include_debug:
+        compact["debug"] = redact_and_limit_payload(result, limit=cap, verbose=verbose)
+    return compact
 
 
 @app.get("/api/governance/health", operation_id="getGovernanceHealth")
-async def get_governance_health_endpoint():
-    return {"ok": True, **get_governance_health()}
+async def get_governance_health_endpoint(verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=10)):
+    payload = {"ok": True, **get_governance_health()}
+    compact = compact_health_response(payload)
+    cap = min(max(int(limit), 1), 100 if verbose else 10)
+    if verbose or include_debug:
+        compact["debug"] = redact_and_limit_payload(payload, limit=cap, verbose=verbose)
+    return compact
 
 
 @app.get("/api/governance/inventory", operation_id="getGovernanceInventory")
-async def get_governance_inventory_endpoint():
-    return {"ok": True, "inventory": get_model_inventory()}
+async def get_governance_inventory_endpoint(verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=10)):
+    payload = {"ok": True, "inventory": get_model_inventory()}
+    cap = min(max(int(limit), 1), 100 if verbose else 10)
+    compact = compact_governance_inventory(payload, limit=cap)
+    if verbose or include_debug:
+        compact["debug"] = redact_and_limit_payload(payload, limit=cap, verbose=verbose)
+    return compact
 
 
 @app.get("/api/governance/report", operation_id="getGovernanceReport")
-async def get_governance_report_endpoint():
-    return {"ok": True, **generate_governance_report()}
+async def get_governance_report_endpoint(verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=10)):
+    payload = {"ok": True, **generate_governance_report()}
+    compact = compact_governance_report(payload)
+    cap = min(max(int(limit), 1), 100 if verbose else 10)
+    if verbose or include_debug:
+        compact["debug"] = redact_and_limit_payload(payload, limit=cap, verbose=verbose)
+    return compact
 
 
 @app.post("/api/governance/validate", operation_id="validateGovernanceDryRun")
-async def validate_governance_endpoint(payload: dict[str, Any]):
+async def validate_governance_endpoint(payload: dict[str, Any], verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=10)):
     model_id = str(payload.get("model_id") or "unknown_model")
     activation_tier = str(payload.get("activation_tier") or "research_only")
-    return {
+    result = {
         "ok": True,
         "dry_run": True,
         "validation": build_model_validation_report(model_id=model_id, activation_tier=activation_tier),
     }
+    compact = compact_validation_response(result)
+    cap = min(max(int(limit), 1), 100 if verbose else 10)
+    if verbose or include_debug:
+        compact["debug"] = redact_and_limit_payload(result, limit=cap, verbose=verbose)
+    return compact
 
 
 PUBLIC_OPENAPI_PATH_METHODS = frozenset({

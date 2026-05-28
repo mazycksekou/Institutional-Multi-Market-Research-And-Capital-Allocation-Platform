@@ -30,6 +30,7 @@ def choose_next_check_seconds(
     config: dict[str, Any],
     low_liquidity: bool = False,
     market_closed: bool = False,
+    stale_data: bool = False,
 ) -> dict[str, Any]:
     if market_closed:
         return {
@@ -42,16 +43,20 @@ def choose_next_check_seconds(
     profile_name = resolve_profile_name(market_type, low_liquidity)
     profile = config["cadence_profiles"][profile_name]
     if profile_name == "low_liquidity":
-        desired_seconds = profile["standard_scan_seconds"] if opportunity_score >= 70 else profile["slow_scan_seconds"]
+        desired_seconds = profile.get("standard_watchlist_seconds", 900)
     elif "hot_watchlist_seconds" in profile:
         if opportunity_score >= config["score_thresholds"]["urgent_threshold"]:
             desired_seconds = profile["hot_watchlist_seconds"]
         elif opportunity_score >= config["score_thresholds"]["review_threshold"]:
-            desired_seconds = profile.get("standard_watchlist_seconds", profile["hot_watchlist_seconds"])
+            desired_seconds = profile.get("standard_watchlist_seconds", profile.get("broad_scan_seconds", profile["hot_watchlist_seconds"]))
         else:
-            desired_seconds = profile.get("broad_scan_seconds", profile.get("fallback_seconds", 300))
+            desired_seconds = profile.get("broad_scan_seconds", profile.get("standard_watchlist_seconds", profile.get("fallback_seconds", 300)))
     else:
-        desired_seconds = profile["standard_scan_seconds"] if opportunity_score >= 70 else profile["slow_scan_seconds"]
+        desired_seconds = profile.get("standard_scan_seconds", profile.get("standard_watchlist_seconds", 300))
+    if stale_data:
+        desired_seconds = max(int(desired_seconds), 300)
+    if low_liquidity:
+        desired_seconds = max(int(desired_seconds), 900)
 
     provider_floor = provider_min_interval_seconds(provider_name, config)
     next_check_seconds = max(provider_floor, int(desired_seconds))
