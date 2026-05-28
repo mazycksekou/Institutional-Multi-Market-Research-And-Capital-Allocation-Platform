@@ -3,19 +3,25 @@ from __future__ import annotations
 from typing import Any
 
 _WEIGHTS = {
-    "edge_score": 0.14,
-    "confidence_score": 0.10,
+    "edge_score": 0.06,
+    "ev_score": 0.12,
+    "line_value_score": 0.10,
+    "arbitrage_score": 0.10,
+    "middle_width_score": 0.10,
+    "confidence_score": 0.06,
+    "match_confidence_score": 0.09,
     "liquidity_score": 0.08,
-    "movement_score": 0.07,
-    "data_quality_score": 0.10,
-    "market_depth_score": 0.06,
-    "timing_score": 0.08,
-    "model_fit_score": 0.10,
-    "risk_score": 0.08,
-    "volatility_score": 0.04,
-    "source_consensus_score": 0.05,
-    "execution_feasibility_score": 0.05,
-    "expected_roi_score": 0.05,
+    "movement_score": 0.04,
+    "data_quality_score": 0.05,
+    "market_depth_score": 0.03,
+    "timing_score": 0.03,
+    "model_fit_score": 0.04,
+    "risk_score": 0.04,
+    "volatility_score": 0.02,
+    "source_consensus_score": 0.01,
+    "execution_feasibility_score": 0.01,
+    "expected_roi_score": 0.01,
+    "stale_data_risk_score": 0.01,
 }
 
 

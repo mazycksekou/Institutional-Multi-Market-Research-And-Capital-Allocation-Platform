@@ -8,13 +8,15 @@ class TestFieldScorecard(unittest.TestCase):
         scorecard = build_field_scorecard(
             {
                 "edge_percent": 12,
+                "ev_percent": 6,
                 "confidence": 0.8,
                 "liquidity": 0.7,
                 "movement_strength": 18,
+                "line_match_confidence": 92,
                 "expected_roi_percent": 11,
             }
         )
-        self.assertEqual(len(scorecard), 13)
+        self.assertEqual(len(scorecard), 19)
         for value in scorecard.values():
             self.assertGreaterEqual(value, 0)
             self.assertLessEqual(value, 10)

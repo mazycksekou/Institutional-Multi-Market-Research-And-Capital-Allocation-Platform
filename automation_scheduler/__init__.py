@@ -7,9 +7,14 @@ from .alert_engine import build_alert
 from .audit_log import append_audit_record
 from .field_scorecard import build_field_scorecard
 from .kalshi_monitor import monitor_kalshi_market
+from .arbitrage_detector import detect_arbitrage
+from .cross_book_line_comparator import compare_cross_book_lines
+from .ev_line_shopper import shop_ev_lines
 from .model_recheck_runner import run_model_recheck
+from .middle_opportunity_detector import detect_middle_opportunity
 from .news_event_monitor import monitor_news_events
 from .odds_line_monitor import monitor_odds_lines
+from .stake_sizing_simulator import simulate_stake_plan
 from .opportunity_scoring import calculate_opportunity_score
 from .player_prop_monitor import monitor_player_props
 from .provider_registry import get_provider_registry

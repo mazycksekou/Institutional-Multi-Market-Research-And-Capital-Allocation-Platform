@@ -9,7 +9,12 @@ class TestOpportunityScoring(unittest.TestCase):
         score = calculate_opportunity_score(
             {
                 "edge_score": 9,
+                "ev_score": 9,
+                "line_value_score": 8,
+                "arbitrage_score": 7,
+                "middle_width_score": 7,
                 "confidence_score": 8,
+                "match_confidence_score": 9,
                 "liquidity_score": 7,
                 "movement_score": 9,
                 "data_quality_score": 8,
@@ -21,6 +26,7 @@ class TestOpportunityScoring(unittest.TestCase):
                 "source_consensus_score": 7,
                 "execution_feasibility_score": 8,
                 "expected_roi_score": 9,
+                "stale_data_risk_score": 10,
             }
         )
         thresholds = get_default_scheduler_config()["score_thresholds"]
