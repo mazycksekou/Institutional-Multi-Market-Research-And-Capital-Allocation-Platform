@@ -46,6 +46,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\live_all_smoke.ps1
 - `live_lacrosse_smoke.ps1`
 - `live_table_tennis_smoke.ps1`
 - `live_volleyball_smoke.ps1`
+- `live_handball_smoke.ps1`
 - `live_afl_smoke.ps1`
 - `live_nhl_smoke.ps1`
 - `live_tennis_smoke.ps1`

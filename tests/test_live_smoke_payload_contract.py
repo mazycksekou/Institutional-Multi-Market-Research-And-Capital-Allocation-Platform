@@ -15,6 +15,7 @@ LIVE_SCRIPT_SPORTS = [
     "lacrosse",
     "table_tennis",
     "volleyball",
+    "handball",
     "afl",
     "nhl",
     "tennis",
@@ -76,7 +77,7 @@ def load_script_payloads():
     script = (
         ". .\\scripts\\live_payloads.ps1; "
         "$payloads=[ordered]@{}; "
-            "foreach($s in @('nba','nfl','mlb','soccer','rugby','lacrosse','table_tennis','volleyball','afl','nhl','tennis','combat','golf','wnba','ncaab','ncaawb','ncaaf','f1','formula_e','nascar','indycar','motogp','cricket','cs2','valorant','lol','dota2','cod','overwatch'))"
+            "foreach($s in @('nba','nfl','mlb','soccer','rugby','lacrosse','table_tennis','volleyball','handball','afl','nhl','tennis','combat','golf','wnba','ncaab','ncaawb','ncaaf','f1','formula_e','nascar','indycar','motogp','cricket','cs2','valorant','lol','dota2','cod','overwatch'))"
         "{ $payloads[$s]=New-LiveActivePayload -Sport $s }; "
         "$payloads | ConvertTo-Json -Depth 80 -Compress"
     )

@@ -91,6 +91,14 @@ class TestSportModelRouting(unittest.TestCase):
             "vnl": "volleyball",
             "avp": "volleyball",
             "olympic_volleyball": "volleyball",
+            "handball": "handball",
+            "team_handball": "handball",
+            "european_handball": "handball",
+            "olympic_handball": "handball",
+            "ehf": "handball",
+            "ihf": "handball",
+            "handball_bundesliga": "handball",
+            "champions_league_handball": "handball",
             "afl": "afl",
             "australian_rules": "afl",
             "aussie_rules": "afl",
@@ -215,7 +223,7 @@ class TestSportModelRouting(unittest.TestCase):
         self.assertEqual(registry.get_sport_model_config("mlb")["sport"], "baseball_mlb")
 
     def test_primary_model_type_constraints(self):
-        for sport in ["basketball_nba", "basketball_wnba", "basketball_ncaab", "basketball_ncaawb", "americanfootball_nfl", "americanfootball_ncaaf", "rugby", "lacrosse", "table_tennis", "volleyball", "afl", "mma_mixed_martial_arts", "boxing", "golf", "formula1", "formula_e", "nascar", "indycar", "motogp", "cricket", "cs2", "valorant", "league_of_legends", "dota2", "call_of_duty", "overwatch", "esports"]:
+        for sport in ["basketball_nba", "basketball_wnba", "basketball_ncaab", "basketball_ncaawb", "americanfootball_nfl", "americanfootball_ncaaf", "rugby", "lacrosse", "table_tennis", "volleyball", "handball", "afl", "mma_mixed_martial_arts", "boxing", "golf", "formula1", "formula_e", "nascar", "indycar", "motogp", "cricket", "cs2", "valorant", "league_of_legends", "dota2", "call_of_duty", "overwatch", "esports"]:
             self.assertNotEqual(registry.get_sport_model_config(sport)["primary_model_type"], "poisson")
         self.assertIn("Negative Binomial", registry.get_sport_model_config("baseball_mlb")["model_family"])
         self.assertIn("Poisson", registry.get_sport_model_config("soccer")["model_family"])
@@ -238,6 +246,7 @@ class TestSportModelRouting(unittest.TestCase):
         self.assertEqual(registry.get_sport_model_config("lacrosse")["model_family"], "lacrosse_faceoff_possession_shot_quality_monte_carlo_model")
         self.assertEqual(registry.get_sport_model_config("table_tennis")["model_family"], "table_tennis_serve_return_rally_momentum_monte_carlo_model")
         self.assertEqual(registry.get_sport_model_config("volleyball")["model_family"], "volleyball_sideout_attack_block_serve_monte_carlo_model")
+        self.assertEqual(registry.get_sport_model_config("handball")["model_family"], "handball_fastbreak_goalkeeper_efficiency_monte_carlo_model")
         self.assertEqual(registry.get_sport_model_config("afl")["model_family"], "afl_clearance_inside50_scoring_shot_monte_carlo_model")
         self.assertEqual(registry.get_sport_model_config("formula1")["model_family"], "f1_qualifying_race_pace_pit_strategy_monte_carlo_model")
         self.assertEqual(registry.get_sport_model_config("formula_e")["model_family"], "formula_e_energy_management_attack_mode_street_circuit_monte_carlo_model")
@@ -319,6 +328,7 @@ class TestSportModelRouting(unittest.TestCase):
             "lacrosse": {"referee": "Ref A", "referee_penalty_rate": 5.6},
             "table_tennis": {"umpire_name": "Ump A", "service_fault_tendency": 0.2},
             "volleyball": {"first_referee_name": "Ref A", "challenge_rate": 0.4},
+            "handball": {"referee_name": "Ref A", "referee_penalty_rate": 7.2},
             "afl": {"umpire_crew": "Crew A", "umpire_free_kick_rate": 42.0},
             "mma_mixed_martial_arts": {"referee": "Ref A", "judge_panel": "Panel A", "decision_scoring_profile": 0.5},
             "boxing": {"referee": "Ref A", "judge_panel": "Panel A", "decision_scoring_profile": 0.5},

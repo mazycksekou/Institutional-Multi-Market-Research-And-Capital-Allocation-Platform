@@ -201,6 +201,25 @@ function New-VolleyballPayload {
     return $payload
 }
 
+function New-HandballPayload {
+    $stats = @{
+        team_name = "Kiel"; opponent_name = "Barcelona"; pick = "Kiel"; competition_name = "EHF Champions League"; home = "home"; neutral = $false
+        team_power_rating = 90; opp_power_rating = 85; team_elo_rating = 1845; opp_elo_rating = 1780; team_win_pct = 0.72; opp_win_pct = 0.64; team_form = 88; opp_form = 82
+        team_gf = 32.4; opp_gf = 30.8; team_ga = 27.6; opp_ga = 29.4; team_xg_for = 31.8; opp_xg_for = 30.1; team_xg_against = 27.9; opp_xg_against = 29.2
+        team_shots = 52.0; opp_shots = 49.5; team_shot_pct = 0.62; opp_shot_pct = 0.59; team_attack_eff = 0.64; opp_attack_eff = 0.59; team_7m_pct = 0.82; opp_7m_pct = 0.76
+        team_def_eff = 0.78; opp_def_eff = 0.73; gk_save_pct = 0.345; opp_gk_save_pct = 0.318; gk_rating = 88; opp_gk_rating = 82; team_blocks = 3.8; opp_blocks = 3.1; team_steals = 5.6; opp_steals = 4.9
+        team_pace_value = 61.5; opp_pace_value = 59.8; team_fastbreak_pct = 0.18; opp_fastbreak_pct = 0.14; team_fastbreak_eff = 0.72; opp_fastbreak_eff = 0.65
+        team_turnovers = 10.6; opp_turnovers = 12.2; team_forced_turnovers = 11.8; opp_forced_turnovers = 10.1; team_possession_eff = 0.61; opp_possession_eff = 0.57
+        team_penalties = 3.2; opp_penalties = 3.8; team_2min = 2.4; opp_2min = 3.1; team_availability = 0.94; opp_availability = 0.88; key_available = 0.96; opp_key_available = 0.90
+        rest = 5; opp_rest = 4; travel = 0.08; opp_travel = 0.18; venue = 0.70; ref_penalty_rate = 7.2; market_move = 0.0; public_pct = 54; sharp_pct = 58
+        player_name = "Sander Sagosen"; position = "back"; minutes_proj = 48; goals_proj = 6.4; assists_proj = 4.2; saves_proj = 0.0; shots_proj = 9.5; points_proj = 10.6
+        anytime_goal_prob = 0.82; first_goal_prob = 0.10; prop_line = 5.5; book_count = 8; current_odds = 100
+    }
+    $payload = New-LiveTicketBase -Sport "ehf" -League "EHF Champions League" -Event "Kiel vs Barcelona" -Market "match_winner" -Selection "Kiel" -InputStats $stats
+    $payload.visible_markets = @("match_winner", "spread", "player_goals")
+    return $payload
+}
+
 function New-AFLPayload {
     $stats = @{
         team_name = "Collingwood"; opponent_name = "Carlton"; pick = "Collingwood"; competition_name = "AFL"; venue_name = "MCG"; home = "home"; neutral = $false
@@ -738,6 +757,14 @@ function New-LiveActivePayload {
         "vnl" { return New-VolleyballPayload }
         "avp" { return New-VolleyballPayload }
         "olympic_volleyball" { return New-VolleyballPayload }
+        "handball" { return New-HandballPayload }
+        "team_handball" { return New-HandballPayload }
+        "european_handball" { return New-HandballPayload }
+        "olympic_handball" { return New-HandballPayload }
+        "ehf" { return New-HandballPayload }
+        "ihf" { return New-HandballPayload }
+        "handball_bundesliga" { return New-HandballPayload }
+        "champions_league_handball" { return New-HandballPayload }
         "lax" { return New-LacrossePayload }
         "mens_lacrosse" { return New-LacrossePayload }
         "womens_lacrosse" { return New-LacrossePayload }
