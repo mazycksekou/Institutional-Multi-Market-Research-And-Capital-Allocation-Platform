@@ -270,6 +270,28 @@ function New-HandballPayload {
     return $payload
 }
 
+function New-WaterPoloPayload {
+    $stats = @{
+        team_name = "Hungary"; opponent_name = "Spain"; pick = "Hungary"; competition_name = "World Aquatics"; gender = "mens"; format = "outdoor"; home = "home"; neutral = $false
+        venue_name = "Aquatics Centre"; pool_type = "50m"; team_power_rating = 90; opp_power_rating = 86; team_elo_rating = 1845; opp_elo_rating = 1790
+        team_win_pct = 0.74; opp_win_pct = 0.66; team_form = 88; opp_form = 82; team_gf = 13.2; opp_gf = 12.4; team_ga = 9.6; opp_ga = 10.4
+        team_xg_for = 13.0; opp_xg_for = 12.0; team_xg_against = 9.8; opp_xg_against = 10.7; team_shots = 31.0; opp_shots = 29.0
+        team_shot_pct = 0.42; opp_shot_pct = 0.39; team_shot_quality = 88; opp_shot_quality = 83; gk_save_pct = 0.58; opp_gk_save_pct = 0.54
+        gk_rating = 89; opp_gk_rating = 84; team_def_eff = 0.82; opp_def_eff = 0.77; team_blocks = 4.1; opp_blocks = 3.4; team_steals = 6.2; opp_steals = 5.4
+        team_pp_conv = 0.41; opp_pp_conv = 0.36; team_pk = 0.79; opp_pk = 0.74; team_excl = 8.8; opp_excl = 10.2; team_drawn_excl = 10.0; opp_drawn_excl = 9.1
+        team_pace_value = 60.5; opp_pace_value = 58.8; team_possession_eff = 0.61; opp_possession_eff = 0.57; team_counterattack_rate = 0.17; opp_counterattack_rate = 0.13
+        team_counterattack_eff = 0.68; opp_counterattack_eff = 0.60; team_turnovers = 11.2; opp_turnovers = 12.6; team_forced_turnovers = 12.3; opp_forced_turnovers = 10.8
+        team_center_forward_rating = 88; opp_center_forward_rating = 83; team_perimeter_shooting_rating = 87; opp_perimeter_shooting_rating = 82
+        team_swim_speed_rating = 86; opp_swim_speed_rating = 81; team_availability = 0.95; opp_availability = 0.90; key_available = 0.96; opp_key_available = 0.90
+        rest = 4; opp_rest = 3; travel = 0.08; opp_travel = 0.16; ref_exclusion_rate = 11.8; market_move = 0.0; public_pct = 54; sharp_pct = 58
+        player_name = "Denes Varga"; position = "attacker"; minutes_proj = 28; goals_proj = 2.6; assists_proj = 1.5; shots_proj = 6.2; saves_proj = 0.0
+        points_proj = 4.1; anytime_goal_prob = 0.78; first_goal_prob = 0.12; prop_line = 1.5; book_count = 8; current_odds = 100
+    }
+    $payload = New-LiveTicketBase -Sport "water_polo" -League "World Aquatics" -Event "Hungary vs Spain" -Market "match_winner" -Selection "Hungary" -InputStats $stats
+    $payload.visible_markets = @("match_winner", "spread", "player_goals")
+    return $payload
+}
+
 function New-AFLPayload {
     $stats = @{
         team_name = "Collingwood"; opponent_name = "Carlton"; pick = "Collingwood"; competition_name = "AFL"; venue_name = "MCG"; home = "home"; neutral = $false
@@ -830,6 +852,14 @@ function New-LiveActivePayload {
         "ihf" { return New-HandballPayload }
         "handball_bundesliga" { return New-HandballPayload }
         "champions_league_handball" { return New-HandballPayload }
+        "water_polo" { return New-WaterPoloPayload }
+        "waterpolo" { return New-WaterPoloPayload }
+        "olympic_water_polo" { return New-WaterPoloPayload }
+        "ncaa_water_polo" { return New-WaterPoloPayload }
+        "world_aquatics_water_polo" { return New-WaterPoloPayload }
+        "fina_water_polo" { return New-WaterPoloPayload }
+        "mens_water_polo" { return New-WaterPoloPayload }
+        "womens_water_polo" { return New-WaterPoloPayload }
         "lax" { return New-LacrossePayload }
         "mens_lacrosse" { return New-LacrossePayload }
         "womens_lacrosse" { return New-LacrossePayload }

@@ -114,6 +114,14 @@ class TestSportModelRouting(unittest.TestCase):
             "ihf": "handball",
             "handball_bundesliga": "handball",
             "champions_league_handball": "handball",
+            "water_polo": "water_polo",
+            "waterpolo": "water_polo",
+            "olympic_water_polo": "water_polo",
+            "ncaa_water_polo": "water_polo",
+            "world_aquatics_water_polo": "water_polo",
+            "fina_water_polo": "water_polo",
+            "mens_water_polo": "water_polo",
+            "womens_water_polo": "water_polo",
             "afl": "afl",
             "australian_rules": "afl",
             "aussie_rules": "afl",
@@ -238,7 +246,7 @@ class TestSportModelRouting(unittest.TestCase):
         self.assertEqual(registry.get_sport_model_config("mlb")["sport"], "baseball_mlb")
 
     def test_primary_model_type_constraints(self):
-        for sport in ["basketball_nba", "basketball_wnba", "basketball_ncaab", "basketball_ncaawb", "americanfootball_nfl", "americanfootball_ncaaf", "rugby", "lacrosse", "table_tennis", "badminton", "pickleball", "volleyball", "handball", "afl", "mma_mixed_martial_arts", "boxing", "golf", "formula1", "formula_e", "nascar", "indycar", "motogp", "cricket", "cs2", "valorant", "league_of_legends", "dota2", "call_of_duty", "overwatch", "esports"]:
+        for sport in ["basketball_nba", "basketball_wnba", "basketball_ncaab", "basketball_ncaawb", "americanfootball_nfl", "americanfootball_ncaaf", "rugby", "lacrosse", "table_tennis", "badminton", "pickleball", "volleyball", "handball", "water_polo", "afl", "mma_mixed_martial_arts", "boxing", "golf", "formula1", "formula_e", "nascar", "indycar", "motogp", "cricket", "cs2", "valorant", "league_of_legends", "dota2", "call_of_duty", "overwatch", "esports"]:
             self.assertNotEqual(registry.get_sport_model_config(sport)["primary_model_type"], "poisson")
         self.assertIn("Negative Binomial", registry.get_sport_model_config("baseball_mlb")["model_family"])
         self.assertIn("Poisson", registry.get_sport_model_config("soccer")["model_family"])
@@ -264,6 +272,7 @@ class TestSportModelRouting(unittest.TestCase):
         self.assertEqual(registry.get_sport_model_config("pickleball")["model_family"], "pickleball_dink_kitchen_serve_return_monte_carlo_model")
         self.assertEqual(registry.get_sport_model_config("volleyball")["model_family"], "volleyball_sideout_attack_block_serve_monte_carlo_model")
         self.assertEqual(registry.get_sport_model_config("handball")["model_family"], "handball_fastbreak_goalkeeper_efficiency_monte_carlo_model")
+        self.assertEqual(registry.get_sport_model_config("water_polo")["model_family"], "water_polo_goalkeeper_power_play_shot_quality_monte_carlo_model")
         self.assertEqual(registry.get_sport_model_config("afl")["model_family"], "afl_clearance_inside50_scoring_shot_monte_carlo_model")
         self.assertEqual(registry.get_sport_model_config("formula1")["model_family"], "f1_qualifying_race_pace_pit_strategy_monte_carlo_model")
         self.assertEqual(registry.get_sport_model_config("formula_e")["model_family"], "formula_e_energy_management_attack_mode_street_circuit_monte_carlo_model")
