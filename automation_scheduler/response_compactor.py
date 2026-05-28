@@ -64,6 +64,10 @@ def compact_review_queue_response(payload: dict[str, Any], limit: int = 10) -> d
             "opportunity_score": it.get("opportunity_score"),
             "confidence": it.get("confidence"),
             "risk": it.get("risk"),
+            "recommended_kelly_mode": it.get("recommended_kelly_mode"),
+            "final_recommended_stake": it.get("final_recommended_stake"),
+            "final_recommended_stake_percent": it.get("final_recommended_stake_percent"),
+            "stake_confidence_score": it.get("stake_confidence_score"),
             "blockers": list(it.get("blockers", []))[:10],
             "next_check_seconds": it.get("recheck_after_seconds"),
         })
