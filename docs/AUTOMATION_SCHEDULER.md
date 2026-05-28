@@ -113,3 +113,6 @@ The repository also includes a separate `math_models.institutional` library for:
 - alternatives, macro regime, tax-aware, attribution, and governance models
 
 These models default to `research_only`. They are metadata-first and gated by evidence, input quality, model risk, time horizon, and market relevance before any review-queue field can be populated.
+
+## Governance v1 integration
+Scheduler outputs are tier-gated and remain paper/review only unless governance promotion criteria are met.

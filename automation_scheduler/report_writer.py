@@ -22,6 +22,7 @@ def write_report(config: dict[str, Any], *, report_name: str, payload: dict[str,
         "auto_execution_enabled": config["auto_execution_enabled"],
         "auto_bet_enabled": config["auto_bet_enabled"],
         "auto_trade_enabled": config["auto_trade_enabled"],
+        "governance_layer": "model_governance.v1",
         "payload": redact_secrets(payload),
     }
     path = report_dir / f"{sanitize_filename(report_name)}.json"

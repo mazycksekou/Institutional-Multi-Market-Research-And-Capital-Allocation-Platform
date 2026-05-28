@@ -18,6 +18,8 @@ def get_system_health(config: dict[str, Any]) -> dict[str, Any]:
     models_blocked_due_to_stale_data = 0
     models_blocked_due_to_calibration = 0
     models_blocked_due_to_risk = 0
+    models_blocked_due_to_settlement = 0
+    models_blocked_due_to_Kelly = 0
     for item in review_items:
         input_gate = item.get("input_quality_gate_result") or {}
         calibration_gate = item.get("calibration_gate_result") or {}
@@ -31,6 +33,10 @@ def get_system_health(config: dict[str, Any]) -> dict[str, Any]:
             models_blocked_due_to_calibration += 1
         if risk_gate and not risk_gate.get("passes_gate", True):
             models_blocked_due_to_risk += 1
+        if str(item.get("settlement_liquidity_gate_result", "")).startswith("blocked"):
+            models_blocked_due_to_settlement += 1
+        if str(item.get("kelly_gate_result", "")).startswith("blocked"):
+            models_blocked_due_to_Kelly += 1
     return {
         "ok": True,
         "schema_version": SCHEMA_VERSION,
@@ -52,6 +58,8 @@ def get_system_health(config: dict[str, Any]) -> dict[str, Any]:
         "models_blocked_due_to_stale_data": models_blocked_due_to_stale_data,
         "models_blocked_due_to_calibration": models_blocked_due_to_calibration,
         "models_blocked_due_to_risk": models_blocked_due_to_risk,
+        "models_blocked_due_to_settlement": models_blocked_due_to_settlement,
+        "models_blocked_due_to_Kelly": models_blocked_due_to_Kelly,
     }
 
 

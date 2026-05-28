@@ -3,31 +3,22 @@ from __future__ import annotations
 from typing import Any
 
 
-def build_model_validation_report(
-    *,
-    model_id: str,
-    activation_tier: str,
-    input_quality_gate_result: dict[str, Any],
-    calibration_gate_result: dict[str, Any],
-    backtest_gate_result: dict[str, Any],
-    walk_forward_gate_result: dict[str, Any],
-    risk_gate_result: dict[str, Any],
-    drift_gate_result: dict[str, Any],
-) -> dict[str, Any]:
-    gates = {
-        "input_quality_gate_result": input_quality_gate_result,
-        "calibration_gate_result": calibration_gate_result,
-        "backtest_gate_result": backtest_gate_result,
-        "walk_forward_gate_result": walk_forward_gate_result,
-        "risk_gate_result": risk_gate_result,
-        "drift_gate_result": drift_gate_result,
-    }
-    blocked = [name for name, result in gates.items() if not result.get("passes_gate", not result.get("blocked", False))]
+def build_model_validation_report(model_id: str, activation_tier: str, **sections: Any) -> dict[str, Any]:
     return {
         "model_id": model_id,
         "activation_tier": activation_tier,
-        "gates": gates,
-        "blocked_gates": blocked,
-        "validation_status": "approved" if not blocked else "blocked_by_governance",
+        "evidence_summary": sections.get("evidence_summary", {}),
+        "test_summary": sections.get("test_summary", {}),
+        "input_quality_summary": sections.get("input_quality_summary", {}),
+        "calibration_summary": sections.get("calibration_summary", {}),
+        "backtest_summary": sections.get("backtest_summary", {}),
+        "walk_forward_summary": sections.get("walk_forward_summary", {}),
+        "risk_summary": sections.get("risk_summary", {}),
+        "Kelly_summary": sections.get("Kelly_summary", {}),
+        "cross_book_summary": sections.get("cross_book_summary", {}),
+        "settlement_liquidity_summary": sections.get("settlement_liquidity_summary", {}),
+        "challenger_summary": sections.get("challenger_summary", {}),
+        "promotion_recommendation": sections.get("promotion_recommendation", "review_required"),
+        "blocked_reasons": list(sections.get("blocked_reasons", [])),
+        "human_approval_required": True,
     }
-

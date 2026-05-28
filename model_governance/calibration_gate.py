@@ -1,31 +1,10 @@
 from __future__ import annotations
+import math
 
-
-def evaluate_calibration_gate(
-    *,
-    brier_score: float,
-    log_loss: float,
-    expected_calibration_error: float,
-    calibration_bucket_reliability: float,
-    overconfidence_penalty: float,
-    sample_size: int,
-) -> dict[str, float | bool]:
-    sample_component = min(100.0, sample_size / 10.0)
-    score = 100.0
-    score -= min(30.0, brier_score * 100.0)
-    score -= min(25.0, log_loss * 20.0)
-    score -= min(20.0, expected_calibration_error * 100.0)
-    score -= min(15.0, overconfidence_penalty * 100.0)
-    score = (score * 0.6) + (float(calibration_bucket_reliability) * 0.25) + (sample_component * 0.15)
-    calibration_score = round(max(0.0, min(100.0, score)), 2)
-    return {
-        "brier_score": float(brier_score),
-        "log_loss": float(log_loss),
-        "expected_calibration_error": float(expected_calibration_error),
-        "calibration_bucket_reliability": float(calibration_bucket_reliability),
-        "overconfidence_penalty": float(overconfidence_penalty),
-        "sample_size": int(sample_size),
-        "calibration_score": calibration_score,
-        "passes_gate": calibration_score >= 70,
-    }
-
+def evaluate_calibration_gate(*, brier_score: float, log_loss: float, ignorance_score: float, expected_calibration_error: float, overconfidence_penalty: float, sample_size: int, market_specific_calibration: float = 80, sport_specific_calibration: float = 80):
+    quality = 100 - (brier_score * 100 + log_loss * 10 + ignorance_score * 5 + expected_calibration_error * 100 + overconfidence_penalty * 5)
+    quality = max(0.0, min(100.0, quality))
+    if sample_size < 30:
+        quality *= 0.7
+    quality = (quality + market_specific_calibration + sport_specific_calibration) / 3
+    return {"Brier score": brier_score, "log loss": log_loss, "ignorance score": ignorance_score, "expected calibration error": expected_calibration_error, "calibration bucket reliability": market_specific_calibration, "overconfidence penalty": overconfidence_penalty, "sample_size": sample_size, "market-specific calibration": market_specific_calibration, "sport-specific calibration": sport_specific_calibration, "calibration_score": round(quality, 2), "passes_gate": quality >= 70}

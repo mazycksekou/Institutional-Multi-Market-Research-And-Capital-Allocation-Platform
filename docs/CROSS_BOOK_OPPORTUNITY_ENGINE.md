@@ -59,3 +59,6 @@ Blocked phrases:
 - `risk-free`
 - `sure thing`
 - `can't lose`
+
+## Governance v1 integration
+Cross-book outputs require identity, stale-data, settlement, and liquidity gates before active scoring.

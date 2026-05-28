@@ -45,3 +45,9 @@ def classify_opportunity(score: float, thresholds: dict[str, Any]) -> str:
     if score >= float(thresholds["watch_threshold"]):
         return "watch_recheck"
     return "no_action"
+
+
+def governance_adjusted_score(raw_score: float, governance_blocked: bool) -> float:
+    if governance_blocked:
+        return 0.0
+    return max(0.0, min(100.0, float(raw_score)))

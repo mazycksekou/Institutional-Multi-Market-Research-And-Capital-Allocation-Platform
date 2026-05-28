@@ -47,6 +47,7 @@ def build_alert(candidate: dict[str, Any], thresholds: dict[str, Any]) -> dict[s
     return {
         "recommended_action": action,
         "reason": sanitized_reason,
+        "governance_status": "blocked_by_governance" if "blocked_by_governance" in base_blockers else "review_required",
         "blockers": base_blockers,
         "human_approval_required": True,
         "auto_execution_enabled": False,

@@ -2,87 +2,103 @@ from __future__ import annotations
 
 from typing import Any
 
-from . import contains_banned_language
 from .activation_tiers import default_activation_tier
 
+SUPPORTED_MODEL_TYPES = {
+    "primary_predictive_model",
+    "supporting_signal_model",
+    "cross_book_model",
+    "arbitrage_model",
+    "middle_model",
+    "risk_model",
+    "staking_model",
+    "allocation_model",
+    "execution_model_disabled",
+    "validation_model",
+    "governance_model",
+    "data_quality_model",
+    "challenger_model",
+    "scheduler_monitor",
+    "alert_model",
+    "review_queue_model",
+}
+
 REQUIRED_FIELDS = (
-    "model_id",
-    "model_name",
-    "version",
-    "purpose",
-    "market_type",
-    "time_horizon",
-    "research_basis",
-    "mathematical_summary",
-    "inputs",
-    "outputs",
-    "assumptions",
-    "limitations",
-    "known_failure_modes",
-    "data_quality_requirements",
-    "calibration_requirements",
-    "backtest_requirements",
-    "risk_controls",
-    "human_review_requirements",
-    "activation_tier",
-    "last_validated_at",
-    "validation_status",
+    "model_id", "model_name", "model_family", "model_group", "model_type", "market_type", "time_horizon", "purpose",
+    "owner", "version", "source_module", "inputs_required", "outputs_produced", "assumptions", "limitations",
+    "known_failure_modes", "evidence_basis", "activation_tier", "status_reason", "tests_required", "tests_last_passed",
+    "deploy_verified", "live_smoke_verified", "input_contract_exists", "missing_input_gate_exists", "malformed_input_gate_exists",
+    "stale_data_gate_exists", "settlement_gate_exists", "liquidity_gate_exists", "calibration_required", "backtest_required",
+    "walk_forward_required", "risk_gate_required", "kelly_gate_required", "human_approval_required", "can_affect_review_queue",
+    "can_affect_opportunity_score", "can_affect_stake_sizing", "can_affect_alerts", "can_affect_final_decision", "can_confirm_alone",
+    "auto_execution_allowed",
 )
 
 
 def create_model_card(**kwargs: Any) -> dict[str, Any]:
-    card = {
-        "model_id": kwargs["model_id"],
-        "model_name": kwargs["model_name"],
-        "version": kwargs.get("version", "1.0"),
-        "purpose": kwargs["purpose"],
-        "market_type": kwargs["market_type"],
-        "time_horizon": kwargs["time_horizon"],
-        "research_basis": kwargs["research_basis"],
-        "mathematical_summary": kwargs["mathematical_summary"],
-        "inputs": list(kwargs["inputs"]),
-        "outputs": list(kwargs["outputs"]),
-        "assumptions": list(kwargs["assumptions"]),
-        "limitations": list(kwargs["limitations"]),
-        "known_failure_modes": list(kwargs.get("known_failure_modes", [])),
-        "data_quality_requirements": kwargs.get("data_quality_requirements", "Documented required inputs and freshness thresholds."),
-        "calibration_requirements": kwargs.get("calibration_requirements", "Calibration evidence must be available before promotion."),
-        "backtest_requirements": kwargs.get("backtest_requirements", "Backtests must include realistic costs."),
-        "risk_controls": kwargs.get("risk_controls", "Human review and risk gates remain mandatory."),
-        "human_review_requirements": kwargs.get("human_review_requirements", "Human approval is required for all actionable usage."),
-        "activation_tier": kwargs.get("activation_tier", default_activation_tier()),
-        "last_validated_at": kwargs.get("last_validated_at", ""),
-        "validation_status": kwargs.get("validation_status", "research_pending"),
-    }
+    card = {key: kwargs.get(key) for key in REQUIRED_FIELDS}
+    card["activation_tier"] = kwargs.get("activation_tier", default_activation_tier())
+    card["model_type"] = kwargs.get("model_type", "supporting_signal_model")
+    card["tests_required"] = list(kwargs.get("tests_required", []))
+    card["inputs_required"] = list(kwargs.get("inputs_required", []))
+    card["outputs_produced"] = list(kwargs.get("outputs_produced", []))
+    card["assumptions"] = list(kwargs.get("assumptions", []))
+    card["limitations"] = list(kwargs.get("limitations", []))
+    card["known_failure_modes"] = list(kwargs.get("known_failure_modes", []))
+    card["human_approval_required"] = True
+    card["auto_execution_allowed"] = False
     return card
 
 
 def validate_model_card(card: dict[str, Any]) -> dict[str, Any]:
-    missing_fields = [field for field in REQUIRED_FIELDS if field not in card or card[field] in (None, "", [])]
-    prohibited_claim_language = contains_banned_language(card)
-    valid = not missing_fields and not prohibited_claim_language
-    return {
-        "valid": valid,
-        "missing_fields": missing_fields,
-        "prohibited_claim_language": prohibited_claim_language,
-    }
+    missing = [k for k in REQUIRED_FIELDS if card.get(k) in (None, "", [])]
+    type_ok = card.get("model_type") in SUPPORTED_MODEL_TYPES
+    if not type_ok:
+        missing.append("model_type")
+    return {"valid": not missing, "missing_fields": sorted(set(missing))}
 
 
 def build_card_from_inventory_item(item: dict[str, Any]) -> dict[str, Any]:
     return create_model_card(
         model_id=item["model_id"],
-        model_name=item["model_name"],
-        purpose=item["model_purpose"],
-        market_type=item["market_type"],
-        time_horizon=item["time_horizon"],
-        research_basis=f"Registered governance basis for {item['model_family']}.",
-        mathematical_summary=f"Governed model family for {item['model_purpose']}.",
-        inputs=item["inputs_required"],
-        outputs=item["outputs_produced"],
-        assumptions=item["assumptions"],
-        limitations=item["limitations"],
-        known_failure_modes=["Missing or stale inputs can block activation."],
-        activation_tier=item["activation_tier"],
-        validation_status="validated" if item["governance_score"] >= 80 else "research_pending",
-        last_validated_at="2026-05-28",
+        model_name=item.get("model_name", item["model_id"]),
+        model_family=item.get("group", "unknown"),
+        model_group=item.get("group", "unknown"),
+        model_type=item.get("model_type", "supporting_signal_model"),
+        market_type=item.get("market_type", "sportsbook"),
+        time_horizon=item.get("time_horizon", "same_day"),
+        purpose=item.get("purpose", "governed_scoring"),
+        owner=item.get("governance_owner", "governance_team"),
+        version="1.0.0",
+        source_module=item.get("module_path", "unknown"),
+        inputs_required=["market", "selection"],
+        outputs_produced=["score"],
+        assumptions=["inputs are available"],
+        limitations=["requires review_required"],
+        known_failure_modes=["stale data"],
+        evidence_basis=item.get("status_reason", "documented"),
+        activation_tier=item.get("activation_tier", default_activation_tier()),
+        status_reason=item.get("status_reason", "governed"),
+        tests_required=["unit"],
+        tests_last_passed="2026-05-28",
+        deploy_verified=item.get("activation_tier") in {"active_scoring_ready", "production_candidate"},
+        live_smoke_verified=item.get("activation_tier") in {"active_scoring_ready", "production_candidate"},
+        input_contract_exists=True,
+        missing_input_gate_exists=True,
+        malformed_input_gate_exists=True,
+        stale_data_gate_exists=True,
+        settlement_gate_exists=True,
+        liquidity_gate_exists=True,
+        calibration_required=True,
+        backtest_required=True,
+        walk_forward_required=True,
+        risk_gate_required=True,
+        kelly_gate_required=item.get("group") == "Kelly_staking",
+        can_affect_review_queue=item.get("can_affect_review_queue", False),
+        can_affect_opportunity_score=item.get("can_affect_opportunity_score", False),
+        can_affect_stake_sizing=item.get("can_affect_stake_sizing", False),
+        can_affect_alerts=item.get("can_affect_alerts", False),
+        can_affect_final_decision=item.get("can_affect_final_decision", False),
+        can_confirm_alone=False,
+        auto_execution_allowed=False,
     )

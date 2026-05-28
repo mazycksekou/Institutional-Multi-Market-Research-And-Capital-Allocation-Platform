@@ -50,3 +50,6 @@ These models are intended to enrich long-horizon portfolio, risk, liability, exe
 ## Governance Integration
 
 Institutional models now sit behind the common `model_governance` layer. Their outputs can affect downstream review only after activation-tier, evidence, input quality, calibration, drift, and governance gates are satisfied.
+
+## Governance v1 integration
+Institutional and long-term allocation models are blocked from short-term sportsbook recommendations.

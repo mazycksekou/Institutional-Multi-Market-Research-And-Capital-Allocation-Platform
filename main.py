@@ -25,6 +25,10 @@ import market_pricing
 import multi_sport_model_registry
 import model_probability
 import screenshot_intake
+from model_governance.governance_health import get_governance_health
+from model_governance.model_inventory import get_model_inventory
+from model_governance.governance_report import generate_governance_report
+from model_governance.model_validation_report import build_model_validation_report
 from quant_engine import (
     american_to_implied_probability,
     capm_required_return,
@@ -2759,6 +2763,32 @@ async def run_automation_scheduler_once(payload: AutomationRunOnceRequest):
         "ok": True,
         "service": "automation_scheduler",
         **result,
+    }
+
+
+@app.get("/api/governance/health", operation_id="getGovernanceHealth")
+async def get_governance_health_endpoint():
+    return {"ok": True, **get_governance_health()}
+
+
+@app.get("/api/governance/inventory", operation_id="getGovernanceInventory")
+async def get_governance_inventory_endpoint():
+    return {"ok": True, "inventory": get_model_inventory()}
+
+
+@app.get("/api/governance/report", operation_id="getGovernanceReport")
+async def get_governance_report_endpoint():
+    return {"ok": True, **generate_governance_report()}
+
+
+@app.post("/api/governance/validate", operation_id="validateGovernanceDryRun")
+async def validate_governance_endpoint(payload: dict[str, Any]):
+    model_id = str(payload.get("model_id") or "unknown_model")
+    activation_tier = str(payload.get("activation_tier") or "research_only")
+    return {
+        "ok": True,
+        "dry_run": True,
+        "validation": build_model_validation_report(model_id=model_id, activation_tier=activation_tier),
     }
 
 
