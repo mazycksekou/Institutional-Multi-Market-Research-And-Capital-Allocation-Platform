@@ -73,6 +73,8 @@ def resolve_market_identity(left: dict[str, Any], right: dict[str, Any]) -> dict
         "same_market": market_match,
         "same_selection": selection_match,
         "confidence": max(0, min(100, score)),
+        "market_identity_confidence": max(0, min(100, score)),
+        "accepted": score >= 85,
         "same_market_identity": same_market_identity,
         "line_delta": line_delta,
         "reasons": reasons,

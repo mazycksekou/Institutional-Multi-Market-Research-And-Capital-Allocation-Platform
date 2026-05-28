@@ -22,6 +22,7 @@ def get_system_health(config: dict[str, Any]) -> dict[str, Any]:
         "auto_execution_enabled": config["auto_execution_enabled"],
         "paper_execution_only": config["paper_execution_only"],
         "alert_only_mode": config["alert_only_mode"],
+        "cross_book_engine_enabled": True,
         "paths_ready": path_status,
         "review_queue_count": len(review_items),
         "provider_count": len(config["providers"]),

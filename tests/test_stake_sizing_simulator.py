@@ -15,10 +15,12 @@ class TestStakeSizingSimulator(unittest.TestCase):
             },
             bankroll=1000,
             risk_profile="low",
+            max_loss_cap=8,
         )
         self.assertEqual(result["risk_cap"], 10.0)
         for profile in result["profiles"]:
             self.assertLessEqual(profile["suggested_stake"], 10.0)
+            self.assertLessEqual(profile["max_loss"], 8)
             self.assertTrue(profile["review_only"])
         self.assertFalse(result["auto_bet_enabled"])
         self.assertFalse(result["auto_trade_enabled"])

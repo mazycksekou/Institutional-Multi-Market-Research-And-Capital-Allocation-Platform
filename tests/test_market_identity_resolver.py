@@ -10,6 +10,7 @@ class TestMarketIdentityResolver(unittest.TestCase):
         result = resolve_market_identity(left, right)
         self.assertTrue(result["same_market_identity"])
         self.assertGreaterEqual(result["confidence"], 85)
+        self.assertTrue(result["accepted"])
 
     def test_rejects_false_matches(self):
         left = {"event": "Lakers vs Celtics", "market": "spread", "selection": "Lakers", "participant": "Lakers", "line": 3.5}
@@ -17,3 +18,4 @@ class TestMarketIdentityResolver(unittest.TestCase):
         result = resolve_market_identity(left, right)
         self.assertFalse(result["same_market_identity"])
         self.assertLess(result["confidence"], 85)
+        self.assertFalse(result["accepted"])

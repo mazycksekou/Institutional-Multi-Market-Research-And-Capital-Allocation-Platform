@@ -16,3 +16,5 @@ class TestCrossBookLineComparator(unittest.TestCase):
         self.assertEqual(result["best_odds"], 105)
         self.assertGreater(result["odds_spread"], 0)
         self.assertGreaterEqual(result["book_disagreement_score"], 0)
+        self.assertIn("worst_book", result)
+        self.assertIn("stale_data_risk", result)

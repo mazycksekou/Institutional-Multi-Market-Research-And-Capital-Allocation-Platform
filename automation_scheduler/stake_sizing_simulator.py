@@ -20,6 +20,7 @@ def simulate_stake_plan(
     *,
     bankroll: float,
     risk_profile: str = "medium",
+    max_loss_cap: float | None = None,
 ) -> dict[str, Any]:
     bankroll_value = max(0.0, float(bankroll))
     risk_cap = _RISK_CAPS.get(str(risk_profile).lower(), 0.02)
@@ -28,6 +29,7 @@ def simulate_stake_plan(
     base_roi = float(candidate.get("estimated_roi_percent") or candidate.get("ev_percent") or 0.0)
     max_gain = float(candidate.get("max_gain") or 0.0)
     max_loss = float(candidate.get("max_loss") or total_cap)
+    max_loss_limit = min(total_cap, float(max_loss_cap)) if max_loss_cap is not None else total_cap
 
     plans = []
     for profile, multiplier in _PROFILE_MULTIPLIERS.items():
@@ -47,7 +49,7 @@ def simulate_stake_plan(
                 "profile": profile,
                 "suggested_stake": suggested_stake,
                 "stake_plan": plan_value,
-                "max_loss": round(min(total_cap, max_loss if max_loss > 0 else suggested_stake), 2),
+                "max_loss": round(min(max_loss_limit, max_loss if max_loss > 0 else suggested_stake), 2),
                 "max_gain": round(max(max_gain, expected_value), 2),
                 "expected_value": expected_value,
                 "expected_roi": round(base_roi, 4),

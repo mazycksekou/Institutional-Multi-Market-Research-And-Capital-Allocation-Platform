@@ -87,3 +87,16 @@ All actionable items require human approval.
 Reports are JSON only. Every report includes:
 
 `ROI target is a filter target, not a guarantee.`
+
+## Cross-Book Engine
+
+The scheduler also supports evaluation-only cross-book analysis for:
+
+- positive EV
+- best-line shopping
+- no-vig and consensus EV
+- arbitrage candidates
+- middle candidates
+- CLV watch records
+
+This engine is dry-run only and never places bets or trades.

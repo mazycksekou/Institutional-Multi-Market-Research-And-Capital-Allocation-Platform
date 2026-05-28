@@ -19,6 +19,9 @@ def write_report(config: dict[str, Any], *, report_name: str, payload: dict[str,
         "paper_execution_only": config["paper_execution_only"],
         "roi_target_percent": config["roi_target_percent"],
         "roi_target_disclaimer": ROI_TARGET_DISCLAIMER,
+        "auto_execution_enabled": config["auto_execution_enabled"],
+        "auto_bet_enabled": config["auto_bet_enabled"],
+        "auto_trade_enabled": config["auto_trade_enabled"],
         "payload": redact_secrets(payload),
     }
     path = report_dir / f"{sanitize_filename(report_name)}.json"

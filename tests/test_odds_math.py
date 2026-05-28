@@ -7,8 +7,11 @@ from automation_scheduler.odds_math import (
     calculate_payout,
     calculate_profit_loss,
     calculate_roi,
+    decimal_to_implied_probability,
     decimal_to_american,
+    normalize_probability,
     remove_two_way_vig,
+    validate_odds,
 )
 
 
@@ -30,3 +33,11 @@ class TestOddsMath(unittest.TestCase):
         self.assertEqual(profit, 150.0)
         self.assertEqual(ev, 25.0)
         self.assertEqual(roi, 25.0)
+
+    def test_invalid_odds_rejected_and_probability_normalized(self):
+        with self.assertRaises(ValueError):
+            validate_odds(0)
+        with self.assertRaises(ValueError):
+            validate_odds(1, odds_format="decimal")
+        self.assertAlmostEqual(decimal_to_implied_probability(2.5), 0.4, places=6)
+        self.assertEqual(normalize_probability(55), 0.55)

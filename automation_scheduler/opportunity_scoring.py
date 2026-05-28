@@ -9,7 +9,9 @@ _WEIGHTS = {
     "arbitrage_score": 0.10,
     "middle_width_score": 0.10,
     "confidence_score": 0.06,
+    "model_confidence_score": 0.08,
     "match_confidence_score": 0.09,
+    "market_identity_score": 0.08,
     "liquidity_score": 0.08,
     "movement_score": 0.04,
     "data_quality_score": 0.05,
@@ -22,6 +24,8 @@ _WEIGHTS = {
     "execution_feasibility_score": 0.01,
     "expected_roi_score": 0.01,
     "stale_data_risk_score": 0.01,
+    "settlement_risk_score": 0.01,
+    "max_loss_score": 0.03,
 }
 
 

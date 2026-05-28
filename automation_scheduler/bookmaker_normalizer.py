@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from datetime import datetime, timezone
 from typing import Any
 
 _BOOKMAKER_ALIASES = {
@@ -97,6 +98,21 @@ def normalize_line_value(value: Any) -> int | float | None:
     return int(numeric) if float(numeric).is_integer() else float(numeric)
 
 
+def normalize_timestamp(value: Any) -> int | None:
+    if value in (None, ""):
+        return None
+    if isinstance(value, (int, float)):
+        return int(value)
+    text = str(value).strip()
+    try:
+        return int(float(text))
+    except ValueError:
+        parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=timezone.utc)
+        return int(parsed.timestamp())
+
+
 def normalize_offer(offer: dict[str, Any]) -> dict[str, Any]:
     normalized = dict(offer)
     normalized["bookmaker"] = normalize_bookmaker_name(offer.get("bookmaker") or offer.get("book"))
@@ -106,4 +122,5 @@ def normalize_offer(offer: dict[str, Any]) -> dict[str, Any]:
     normalized["selection"] = normalize_selection_name(offer.get("selection"))
     normalized["odds"] = normalize_odds_value(offer.get("odds") if "odds" in offer else offer.get("odds_american"))
     normalized["line"] = normalize_line_value(offer.get("line"))
+    normalized["timestamp"] = normalize_timestamp(offer.get("timestamp") or offer.get("odds_timestamp") or offer.get("last_update"))
     return normalized

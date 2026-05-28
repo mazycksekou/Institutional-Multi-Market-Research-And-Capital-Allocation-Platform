@@ -16,7 +16,7 @@ class TestFieldScorecard(unittest.TestCase):
                 "expected_roi_percent": 11,
             }
         )
-        self.assertEqual(len(scorecard), 19)
+        self.assertEqual(len(scorecard), 23)
         for value in scorecard.values():
             self.assertGreaterEqual(value, 0)
             self.assertLessEqual(value, 10)

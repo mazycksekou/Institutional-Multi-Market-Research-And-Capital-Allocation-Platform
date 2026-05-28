@@ -42,6 +42,7 @@ def compare_cross_book_lines(offers: list[dict[str, Any]]) -> dict[str, Any]:
 
     line_values = [float(offer["line"]) for offer in normalized if offer.get("line") is not None]
     odds_values = [float(offer["odds"]) for offer in normalized if offer.get("odds") is not None]
+    timestamps = [int(offer["timestamp"]) for offer in normalized if offer.get("timestamp") is not None]
     identity_scores = []
     for index in range(len(normalized) - 1):
         for other in range(index + 1, len(normalized)):
@@ -59,8 +60,14 @@ def compare_cross_book_lines(offers: list[dict[str, Any]]) -> dict[str, Any]:
         "best_book": best_offer["bookmaker"],
         "best_line": best_offer.get("line"),
         "best_odds": best_offer.get("odds"),
+        "worst_book": worst_offer["bookmaker"],
+        "worst_line": worst_offer.get("line"),
+        "worst_odds": worst_offer.get("odds"),
         "line_spread": round(line_spread, 4),
         "odds_spread": round(odds_spread, 4),
         "book_disagreement_score": round(disagreement, 2),
         "line_match_confidence": round(sum(identity_scores) / len(identity_scores), 2) if identity_scores else 100.0,
+        "market_identity_confidence": round(sum(identity_scores) / len(identity_scores), 2) if identity_scores else 100.0,
+        "stale_data_risk": bool(timestamps and (max(timestamps) - min(timestamps) > 120)),
+        "timestamp_mismatch_seconds": (max(timestamps) - min(timestamps)) if timestamps else 0,
     }
