@@ -96,6 +96,13 @@ class TestSportModelRouting(unittest.TestCase):
             "app_tour": "pickleball",
             "pickleball_singles": "pickleball",
             "pickleball_doubles": "pickleball",
+            "darts": "darts",
+            "pdc": "darts",
+            "wdf": "darts",
+            "professional_darts": "darts",
+            "premier_league_darts": "darts",
+            "world_darts_championship": "darts",
+            "darts_match": "darts",
             "volleyball": "volleyball",
             "indoor_volleyball": "volleyball",
             "beach_volleyball": "volleyball",
@@ -246,7 +253,7 @@ class TestSportModelRouting(unittest.TestCase):
         self.assertEqual(registry.get_sport_model_config("mlb")["sport"], "baseball_mlb")
 
     def test_primary_model_type_constraints(self):
-        for sport in ["basketball_nba", "basketball_wnba", "basketball_ncaab", "basketball_ncaawb", "americanfootball_nfl", "americanfootball_ncaaf", "rugby", "lacrosse", "table_tennis", "badminton", "pickleball", "volleyball", "handball", "water_polo", "afl", "mma_mixed_martial_arts", "boxing", "golf", "formula1", "formula_e", "nascar", "indycar", "motogp", "cricket", "cs2", "valorant", "league_of_legends", "dota2", "call_of_duty", "overwatch", "esports"]:
+        for sport in ["basketball_nba", "basketball_wnba", "basketball_ncaab", "basketball_ncaawb", "americanfootball_nfl", "americanfootball_ncaaf", "rugby", "lacrosse", "table_tennis", "badminton", "pickleball", "darts", "volleyball", "handball", "water_polo", "afl", "mma_mixed_martial_arts", "boxing", "golf", "formula1", "formula_e", "nascar", "indycar", "motogp", "cricket", "cs2", "valorant", "league_of_legends", "dota2", "call_of_duty", "overwatch", "esports"]:
             self.assertNotEqual(registry.get_sport_model_config(sport)["primary_model_type"], "poisson")
         self.assertIn("Negative Binomial", registry.get_sport_model_config("baseball_mlb")["model_family"])
         self.assertIn("Poisson", registry.get_sport_model_config("soccer")["model_family"])

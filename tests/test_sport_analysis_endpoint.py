@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
+import multi_sport_model_registry as registry
 from main import SportAnalysisRequest, action_analyze_sport_model, app, require_action_key
 
 
@@ -58,6 +59,38 @@ class TestSportAnalysisEndpoint(unittest.TestCase):
             self.assertIn(field, response)
         self.assertEqual(response["confirmed_bets"], [])
         self.assertIn("required inputs missing", response["no_bet_flags"])
+
+    def test_darts_active_response_includes_calibration_fields(self):
+        ticket = registry.get_sport_model_config("darts")["screenshot_alias_test_payload"]
+        normalized = registry.normalize_sport_inputs_for_model(
+            sport=ticket["sport"],
+            market=ticket["market"],
+            selection=ticket["selection"],
+            input_stats=ticket["input_stats"],
+            ticket=ticket,
+        )
+        response = asyncio.run(action_analyze_sport_model(SportAnalysisRequest(
+            sport="darts",
+            market=ticket["market"],
+            event_id=ticket["event"],
+            selection=ticket["selection"],
+            odds_american=ticket["odds_american"],
+            bankroll=ticket["bankroll"],
+            unit_size=ticket["unit_size"],
+            risk_profile=ticket["risk_profile"],
+            input_stats=normalized["input_stats"],
+        )))
+        self.assertEqual(response["model_status"], "active")
+        self.assertEqual(response["model_name"], "darts_checkout_scoring_pressure_leg_set_monte_carlo_model")
+        self.assertEqual(response["league_calibration_applied"], "darts")
+        self.assertIn(response["format_calibration_applied"], {"legs", "sets", "mixed", "unknown"})
+        self.assertIn(response["competition_calibration_applied"], {"pdc", "wdf", "premier_league", "world_championship", "unknown"})
+        self.assertIn(response["checkout_calibration_applied"], {True, False})
+        self.assertIn(response["scoring_power_calibration_applied"], {True, False})
+        self.assertIn(response["pressure_calibration_applied"], {True, False})
+        self.assertIn(response["throw_advantage_calibration_applied"], {True, False})
+        self.assertIsNotNone(response["darts_projected_legs"])
+        self.assertIn("darts_input_contract", response)
 
     def test_legacy_nba_inputs_without_modern_core_are_inactive_missing_data(self):
         input_stats = {

@@ -230,6 +230,30 @@ function New-PickleballPayload {
     return $payload
 }
 
+function New-DartsPayload {
+    $stats = @{
+        player_name = "Luke Littler"; opponent_name = "Luke Humphries"; pick = "Luke Littler"; competition_name = "PDC"; tournament_name = "Premier League Darts"; stage_name = "Semifinal"; neutral = $true
+        format = "legs"; sets_format_name = "none"; legs_format_name = "race_to_11"; best_of_sets_value = 0; best_of_legs_value = 21; first_to = 0; race_to = 11; throw_edge = "player"; starts_first_leg = $true
+        player_power_rating = 94; opp_power_rating = 91; player_elo_rating = 2140; opp_elo_rating = 2085; player_rank = 2; opp_rank = 1
+        player_win_pct = 0.77; opp_win_pct = 0.71; player_form = 91; opp_form = 87
+        three_dart_average = 101.6; opp_three_dart_average = 99.8; first_9_average = 107.2; opp_first_9_average = 104.7
+        scoring_power = 93; opp_scoring_power = 89; player_180_rate = 0.44; opp_180_rate = 0.36; player_140_rate = 1.18; opp_140_rate = 1.06; player_100_rate = 2.92; opp_100_rate = 2.76
+        player_checkout_pct = 0.432; opp_checkout_pct = 0.408; player_double_pct = 0.446; opp_double_pct = 0.417; player_high_checkout = 91; opp_high_checkout = 88; player_finishing = 92; opp_finishing = 88
+        player_missed_doubles = 0.21; opp_missed_doubles = 0.25
+        player_leg_win_pct = 0.62; opp_leg_win_pct = 0.56; player_set_win_pct = 0.58; opp_set_win_pct = 0.53; player_hold_throw_pct = 0.73; opp_hold_throw_pct = 0.68; player_break_throw_pct = 0.29; opp_break_throw_pct = 0.25
+        player_deciding_leg_pct = 0.61; opp_deciding_leg_pct = 0.55; player_deciding_set_pct = 0.59; opp_deciding_set_pct = 0.54
+        clutch = 92; opp_clutch = 88; pressure = 91; opp_pressure = 87; stage_pressure = 93; opp_stage_pressure = 88; comeback = 90; opp_comeback = 86
+        momentum = 92; opp_momentum = 88; consistency = 91; opp_consistency = 87; error_rate = 0.14; opp_error_rate = 0.18
+        crowd_pressure = 82; venue = 78; rest = 4; opp_rest = 3; fatigue = 0.10; opp_fatigue = 0.16; travel = 0.05; opp_travel = 0.11; injury = 0.03; opp_injury = 0.06
+        market_move = 0.0; public_pct = 56; sharp_pct = 59
+        player_180s_proj = 4.1; opp_180s_proj = 3.5; player_checkout_proj = 0.43; opp_checkout_proj = 0.40; player_legs_proj = 6.2; opp_legs_proj = 4.8; player_sets_proj = 0.0; opp_sets_proj = 0.0; prop_line = 3.5
+        book_count = 8; current_odds = 100
+    }
+    $payload = New-LiveTicketBase -Sport "premier_league_darts" -League "PDC" -Event "Luke Littler vs Luke Humphries" -Market "match_winner" -Selection "Luke Littler" -InputStats $stats
+    $payload.visible_markets = @("match_winner", "leg_handicap", "player_total_180s")
+    return $payload
+}
+
 function New-VolleyballPayload {
     $stats = @{
         team_name = "Nebraska"; opponent_name = "Wisconsin"; pick = "Nebraska"; competition_name = "NCAA"; format = "best_of_5"; sets = 5
@@ -834,6 +858,13 @@ function New-LiveActivePayload {
         "app_tour" { return New-PickleballPayload }
         "pickleball_singles" { return New-PickleballPayload }
         "pickleball_doubles" { return New-PickleballPayload }
+        "darts" { return New-DartsPayload }
+        "pdc" { return New-DartsPayload }
+        "wdf" { return New-DartsPayload }
+        "professional_darts" { return New-DartsPayload }
+        "premier_league_darts" { return New-DartsPayload }
+        "world_darts_championship" { return New-DartsPayload }
+        "darts_match" { return New-DartsPayload }
         "volleyball" { return New-VolleyballPayload }
         "indoor_volleyball" { return New-VolleyballPayload }
         "beach_volleyball" { return New-VolleyballPayload }
