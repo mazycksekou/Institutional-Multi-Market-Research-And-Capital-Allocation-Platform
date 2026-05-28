@@ -100,3 +100,16 @@ The scheduler also supports evaluation-only cross-book analysis for:
 - CLV watch records
 
 This engine is dry-run only and never places bets or trades.
+
+## Institutional Model Library
+
+The repository also includes a separate `math_models.institutional` library for:
+
+- portfolio construction
+- factor and credit risk
+- liability and retirement planning
+- fixed-income and derivatives analytics
+- execution cost analysis
+- alternatives, macro regime, tax-aware, attribution, and governance models
+
+These models default to `research_only`. They are metadata-first and gated by evidence, input quality, model risk, time horizon, and market relevance before any review-queue field can be populated.
