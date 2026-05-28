@@ -18,6 +18,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from betting_providers import aliases as betting_aliases
 from betting_providers.base import PREDICTION_MARKET
 from betting_providers.provider_router import ProviderRouter
+import automation_scheduler
 import bet_log
 import bet_decision_engine
 import market_pricing
@@ -900,6 +901,14 @@ class ScreenshotAnalysisResponse(BaseModel):
     logbook_ready_rows: list[dict[str, Any]]
     error: Optional[str] = None
     detail: Optional[str] = None
+
+
+class AutomationRunOnceRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", protected_namespaces=())
+
+    dry_run: bool = True
+    run_key: Optional[str] = None
+    injected_data: dict[str, Any] = Field(default_factory=dict)
 
 
 def utc_now() -> str:
@@ -2714,11 +2723,53 @@ async def quant_stock_analysis(payload: StockAnalysisRequest):
     return {"ok": True, "endpoint": "/quant/stock-analysis", "analysis": analysis, "logbook_row": logbook_row}
 
 
+@app.get("/api/automation/health", operation_id="getAutomationSchedulerHealth")
+async def get_automation_scheduler_health():
+    health = automation_scheduler.get_scheduler_health()
+    return {
+        "ok": True,
+        "service": "automation_scheduler",
+        "health": health,
+    }
+
+
+@app.get("/api/automation/review-queue", operation_id="getAutomationSchedulerReviewQueue")
+async def get_automation_scheduler_review_queue():
+    queue = automation_scheduler.get_scheduler_review_queue()
+    return {
+        "ok": True,
+        "service": "automation_scheduler",
+        **queue,
+    }
+
+
+@app.post("/api/automation/run-once", operation_id="runAutomationSchedulerOnce")
+async def run_automation_scheduler_once(payload: AutomationRunOnceRequest):
+    if payload.dry_run is not True:
+        raise HTTPException(status_code=400, detail="automation scheduler run-once only supports dry_run=true")
+    try:
+        result = automation_scheduler.run_scheduler_once(
+            injected_data=payload.injected_data,
+            dry_run=payload.dry_run,
+            run_key=payload.run_key,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {
+        "ok": True,
+        "service": "automation_scheduler",
+        **result,
+    }
+
+
 PUBLIC_OPENAPI_PATH_METHODS = frozenset({
     ("/", "get"),
     ("/health", "get"),
     ("/ping", "get"),
     ("/api/debug/auth-status", "get"),
+    ("/api/automation/health", "get"),
+    ("/api/automation/review-queue", "get"),
+    ("/api/automation/run-once", "post"),
 })
 
 

@@ -1,0 +1,26 @@
+from __future__ import annotations
+
+import json
+from pathlib import Path
+from typing import Any
+
+from .scheduler_config import ROI_TARGET_DISCLAIMER, SCHEMA_VERSION, redact_secrets, sanitize_filename, utc_now_iso
+
+
+def write_report(config: dict[str, Any], *, report_name: str, payload: dict[str, Any]) -> dict[str, Any]:
+    report_dir = Path(config["paths"]["reports"])
+    report_dir.mkdir(parents=True, exist_ok=True)
+    wrapper = {
+        "schema_version": SCHEMA_VERSION,
+        "written_at": utc_now_iso(),
+        "report_name": report_name,
+        "dry_run": config["dry_run"],
+        "human_approval_required": config["human_approval_required"],
+        "paper_execution_only": config["paper_execution_only"],
+        "roi_target_percent": config["roi_target_percent"],
+        "roi_target_disclaimer": ROI_TARGET_DISCLAIMER,
+        "payload": redact_secrets(payload),
+    }
+    path = report_dir / f"{sanitize_filename(report_name)}.json"
+    path.write_text(json.dumps(wrapper, indent=2, sort_keys=True), encoding="utf-8")
+    return {"path": str(path), "report_name": report_name, "schema_version": SCHEMA_VERSION}
