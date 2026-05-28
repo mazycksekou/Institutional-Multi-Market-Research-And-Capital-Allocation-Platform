@@ -254,6 +254,27 @@ function New-DartsPayload {
     return $payload
 }
 
+function New-SnookerPayload {
+    $stats = @{
+        player_name = "Judd Trump"; opponent_name = "Ronnie O'Sullivan"; pick = "Judd Trump"; competition_name = "WST"; tournament_name = "World Snooker Championship"; discipline_name = "snooker"; stage_name = "Quarterfinal"; neutral = $true
+        format = "best_of_19_frames"; best_of_frames_value = 19; race_to = 10; best_of_racks_value = 0; race_to_racks_value = 0; current_frame = 1; current_rack = 0; table_name = "12ft"; break_style = "alternating"
+        player_power_rating = 95; opp_power_rating = 93; player_elo_rating = 2175; opp_elo_rating = 2205; player_rank = 2; opp_rank = 1
+        player_win_pct = 0.75; opp_win_pct = 0.73; player_form = 92; opp_form = 94
+        potting_rating = 94; opp_potting_rating = 92; long_pot_success = 0.41; opp_long_pot_success = 0.39; break_building = 95; opp_break_building = 93; scoring_rate = 26.4; opp_scoring_rate = 25.1
+        high_break_average = 72.5; opp_high_break_average = 69.8; century_rate = 0.34; opp_century_rate = 0.31; fifty_break_rate = 1.48; opp_fifty_break_rate = 1.36
+        safety_rating = 91; opp_safety_rating = 92; safety_success = 0.67; opp_safety_success = 0.69; escape_success = 0.64; opp_escape_success = 0.66; tactical_rating = 92; opp_tactical_rating = 93; error_rate = 0.11; opp_error_rate = 0.10; foul_rate = 0.06; opp_foul_rate = 0.05
+        frame_win_pct = 0.60; opp_frame_win_pct = 0.58; rack_win_pct = 0.0; opp_rack_win_pct = 0.0; deciding_frame_pct = 0.59; opp_deciding_frame_pct = 0.57; deciding_rack_pct = 0.0; opp_deciding_rack_pct = 0.0; first_frame_pct = 0.62; opp_first_frame_pct = 0.56
+        clutch = 91; opp_clutch = 90; pressure = 92; opp_pressure = 91; stage_pressure = 94; opp_stage_pressure = 95; comeback = 90; opp_comeback = 91; momentum = 92; opp_momentum = 93; consistency = 93; opp_consistency = 94
+        venue = 86; table_condition = 82; pocket_tightness = 78; rest = 3; opp_rest = 2; fatigue = 0.10; opp_fatigue = 0.13; travel = 0.04; opp_travel = 0.07; injury = 0.03; opp_injury = 0.04
+        market_move = 0.0; public_pct = 55; sharp_pct = 58
+        player_frames_proj = 10.4; opp_frames_proj = 8.6; player_racks_proj = 0.0; opp_racks_proj = 0.0; highest_break_proj = 126.0; opp_highest_break_proj = 119.0; century_proj = 2.4; opp_century_proj = 2.0; fifty_break_proj = 5.4; opp_fifty_break_proj = 4.7; prop_line = 1.5
+        book_count = 8; current_odds = 100
+    }
+    $payload = New-LiveTicketBase -Sport "world_snooker" -League "WST" -Event "Judd Trump vs Ronnie O'Sullivan" -Market "match_winner" -Selection "Judd Trump" -InputStats $stats
+    $payload.visible_markets = @("match_winner", "frame_handicap", "player_total_centuries")
+    return $payload
+}
+
 function New-VolleyballPayload {
     $stats = @{
         team_name = "Nebraska"; opponent_name = "Wisconsin"; pick = "Nebraska"; competition_name = "NCAA"; format = "best_of_5"; sets = 5
@@ -865,6 +886,16 @@ function New-LiveActivePayload {
         "premier_league_darts" { return New-DartsPayload }
         "world_darts_championship" { return New-DartsPayload }
         "darts_match" { return New-DartsPayload }
+        "snooker" { return New-SnookerPayload }
+        "billiards" { return New-SnookerPayload }
+        "pool" { return New-SnookerPayload }
+        "cue_sports" { return New-SnookerPayload }
+        "world_snooker" { return New-SnookerPayload }
+        "wst" { return New-SnookerPayload }
+        "nine_ball" { return New-SnookerPayload }
+        "eight_ball" { return New-SnookerPayload }
+        "ten_ball" { return New-SnookerPayload }
+        "professional_snooker" { return New-SnookerPayload }
         "volleyball" { return New-VolleyballPayload }
         "indoor_volleyball" { return New-VolleyballPayload }
         "beach_volleyball" { return New-VolleyballPayload }

@@ -92,6 +92,39 @@ class TestSportAnalysisEndpoint(unittest.TestCase):
         self.assertIsNotNone(response["darts_projected_legs"])
         self.assertIn("darts_input_contract", response)
 
+    def test_snooker_active_response_includes_calibration_fields(self):
+        ticket = registry.get_sport_model_config("snooker")["screenshot_alias_test_payload"]
+        normalized = registry.normalize_sport_inputs_for_model(
+            sport=ticket["sport"],
+            market=ticket["market"],
+            selection=ticket["selection"],
+            input_stats=ticket["input_stats"],
+            ticket=ticket,
+        )
+        response = asyncio.run(action_analyze_sport_model(SportAnalysisRequest(
+            sport="snooker",
+            market=ticket["market"],
+            event_id=ticket["event"],
+            selection=ticket["selection"],
+            odds_american=ticket["odds_american"],
+            bankroll=ticket["bankroll"],
+            unit_size=ticket["unit_size"],
+            risk_profile=ticket["risk_profile"],
+            input_stats=normalized["input_stats"],
+        )))
+        self.assertEqual(response["model_status"], "active")
+        self.assertEqual(response["model_name"], "snooker_frame_break_safety_potting_monte_carlo_model")
+        self.assertEqual(response["league_calibration_applied"], "snooker")
+        self.assertIn(response["discipline_calibration_applied"], {"snooker", "pool", "billiards", "unknown"})
+        self.assertIn(response["format_calibration_applied"], {"frames", "racks", "race", "unknown"})
+        self.assertIn(response["competition_calibration_applied"], {"wst", "world_championship", "masters", "uk_championship", "pool_tour", "unknown"})
+        self.assertIn(response["potting_calibration_applied"], {True, False})
+        self.assertIn(response["safety_calibration_applied"], {True, False})
+        self.assertIn(response["break_building_calibration_applied"], {True, False})
+        self.assertIn(response["pressure_calibration_applied"], {True, False})
+        self.assertIsNotNone(response["snooker_projected_frames"])
+        self.assertIn("snooker_input_contract", response)
+
     def test_legacy_nba_inputs_without_modern_core_are_inactive_missing_data(self):
         input_stats = {
             "pace": 99,
