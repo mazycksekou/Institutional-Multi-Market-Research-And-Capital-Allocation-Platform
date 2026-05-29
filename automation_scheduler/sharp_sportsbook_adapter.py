@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from collections import Counter
 from datetime import datetime, timezone
 from urllib.parse import urlsplit, urlunsplit
 from typing import Any
@@ -79,6 +80,58 @@ def _implied_probability_from_american(american_odds: float | int | None) -> flo
     if odds > 0:
         return round(100.0 / (odds + 100.0), 8)
     return round(abs(odds) / (abs(odds) + 100.0), 8)
+
+
+def _implied_probability_from_decimal(decimal_odds: float | int | None) -> float | None:
+    try:
+        odds = float(decimal_odds)
+    except (TypeError, ValueError):
+        return None
+    if odds <= 1.0:
+        return None
+    return round(1.0 / odds, 8)
+
+
+def _as_dict(value: Any) -> dict[str, Any]:
+    return value if isinstance(value, dict) else {}
+
+
+def _safe_str(value: Any) -> str | None:
+    if value is None:
+        return None
+    text = str(value).strip()
+    return text or None
+
+
+def _coalesce(*values: Any) -> Any:
+    for value in values:
+        if value is None:
+            continue
+        if isinstance(value, str) and not value.strip():
+            continue
+        return value
+    return None
+
+
+def _to_float(value: Any) -> float | None:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _to_american_int(value: Any) -> int | None:
+    parsed = _to_float(value)
+    if parsed is None or parsed == 0:
+        return None
+    return int(round(parsed))
+
+
+def _to_decimal(value: Any) -> float | None:
+    parsed = _to_float(value)
+    if parsed is None or parsed <= 1.0:
+        return None
+    return round(parsed, 6)
 
 
 class SharpSportsbookAdapter:
@@ -257,17 +310,7 @@ class SharpSportsbookAdapter:
                 "errors": ["provider_unreachable"],
             }
 
-        records = body if isinstance(body, list) else body.get("data", [])
-        if not isinstance(records, list):
-            return {
-                "ok": False,
-                "status": "provider_error",
-                "http_status": 200,
-                "blocker": "malformed_provider_response",
-                "diagnostic": redact_http_diagnostic({**diagnostic, "method": "GET"}),
-                "records": [],
-                "errors": ["malformed_provider_response"],
-            }
+        records = self._extract_records(body)
         return {"ok": True, "status": "ok", "records": records, "errors": []}
 
     def fetch_events(self) -> dict[str, Any]:
@@ -305,6 +348,242 @@ class SharpSportsbookAdapter:
             "source_payload_redacted": redact_mapping(payload),
             "schema_version": SCHEMA_VERSION,
         }
+
+    def _extract_records(self, body: Any) -> list[Any]:
+        if isinstance(body, list):
+            return body
+        if not isinstance(body, dict):
+            return []
+        for key in ("data", "events", "eventBoards", "items", "results"):
+            candidate = body.get(key)
+            if isinstance(candidate, list):
+                return candidate
+        return []
+
+    def _extract_nested_rows(self, row: dict[str, Any]) -> tuple[list[dict[str, Any]], dict[str, int]]:
+        market_keys = ("markets", "market", "marketGroups", "lines")
+        book_keys = ("books", "bookmakers", "sportsbooks", "prices")
+        outcome_keys = ("outcomes", "selections", "participants", "runners", "options")
+
+        markets: list[dict[str, Any]] = []
+        for key in market_keys:
+            value = row.get(key)
+            if isinstance(value, list):
+                markets = [item for item in value if isinstance(item, dict)]
+                if markets:
+                    break
+        if not markets:
+            markets = [_as_dict(_coalesce(row.get("market"), row))]
+
+        counts = {"events": 1, "markets": len(markets), "books": 0, "outcomes": 0}
+        flattened: list[dict[str, Any]] = []
+        for market in markets:
+            books: list[dict[str, Any]] = []
+            for key in book_keys:
+                value = market.get(key)
+                if isinstance(value, list):
+                    books = [item for item in value if isinstance(item, dict)]
+                    if books:
+                        break
+            if not books:
+                books = [_as_dict(_coalesce(market.get("book"), market))]
+            counts["books"] += len(books)
+
+            for book in books:
+                outcomes: list[dict[str, Any]] = []
+                for key in outcome_keys:
+                    value = book.get(key)
+                    if isinstance(value, list):
+                        outcomes = [item for item in value if isinstance(item, dict)]
+                        if outcomes:
+                            break
+                if not outcomes:
+                    for key in outcome_keys:
+                        value = market.get(key)
+                        if isinstance(value, list):
+                            outcomes = [item for item in value if isinstance(item, dict)]
+                            if outcomes:
+                                break
+                if not outcomes:
+                    outcomes = [_as_dict(_coalesce(book.get("outcome"), book.get("selection"), market.get("selection")))]
+                counts["outcomes"] += len(outcomes)
+                for outcome in outcomes:
+                    flattened.append({"event": row, "market": market, "book": book, "outcome": outcome})
+        return flattened, counts
+
+    def _normalize_flattened_row(self, candidate: dict[str, Any]) -> tuple[dict[str, Any] | None, list[str], str | None]:
+        event = _as_dict(candidate.get("event"))
+        market = _as_dict(candidate.get("market"))
+        book = _as_dict(candidate.get("book"))
+        outcome = _as_dict(candidate.get("outcome"))
+        warnings: list[str] = []
+
+        event_id = _coalesce(
+            event.get("event_id"),
+            event.get("eventId"),
+            event.get("id"),
+            event.get("game_id"),
+            event.get("gameId"),
+            market.get("event_id"),
+            market.get("eventId"),
+            market.get("gameId"),
+            outcome.get("event_id"),
+            outcome.get("eventId"),
+        )
+        if event_id is None:
+            return None, warnings, "missing_event_id"
+
+        market_name = _coalesce(
+            market.get("market"),
+            market.get("market_name"),
+            market.get("marketName"),
+            market.get("name"),
+            market.get("type"),
+            outcome.get("market"),
+            outcome.get("marketName"),
+        )
+        if market_name is None:
+            return None, warnings, "missing_market_name"
+
+        selection = _coalesce(
+            outcome.get("selection"),
+            outcome.get("name"),
+            outcome.get("label"),
+            outcome.get("outcome"),
+            outcome.get("participant"),
+            outcome.get("runner"),
+            outcome.get("team"),
+            outcome.get("side"),
+            market.get("selection"),
+            market.get("outcome"),
+            market.get("participant"),
+        )
+        if selection is None:
+            return None, warnings, "missing_selection"
+
+        american_odds = _to_american_int(
+            _coalesce(
+                outcome.get("odds"),
+                outcome.get("american_odds"),
+                outcome.get("americanOdds"),
+                outcome.get("price"),
+                outcome.get("price_american"),
+                outcome.get("priceAmerican"),
+                market.get("odds"),
+                market.get("american_odds"),
+                market.get("americanOdds"),
+            )
+        )
+        decimal_odds = _to_decimal(
+            _coalesce(
+                outcome.get("decimal_odds"),
+                outcome.get("decimalOdds"),
+                outcome.get("price_decimal"),
+                outcome.get("priceDecimal"),
+                outcome.get("decimal"),
+                market.get("decimal_odds"),
+                market.get("decimalOdds"),
+                market.get("price_decimal"),
+                market.get("priceDecimal"),
+            )
+        )
+
+        odds = american_odds
+        implied_probability = None
+        if odds is not None:
+            decimal_odds = decimal_odds or _american_to_decimal(odds)
+            implied_probability = _implied_probability_from_american(odds)
+        else:
+            if decimal_odds is None:
+                return None, warnings, "malformed_odds"
+            odds = decimal_odds
+            implied_probability = _implied_probability_from_decimal(decimal_odds)
+            warnings.append("odds_format_decimal")
+
+        sport = _coalesce(event.get("sport"), event.get("sport_name"), event.get("sportName"), event.get("sport_key"))
+        league = _coalesce(
+            event.get("league"),
+            event.get("league_name"),
+            event.get("leagueName"),
+            event.get("competition"),
+            event.get("competitionName"),
+            event.get("tournament"),
+        )
+        event_name = _coalesce(
+            event.get("event_name"),
+            event.get("eventName"),
+            event.get("name"),
+            event.get("title"),
+            event.get("matchup"),
+        )
+        if event_name is None:
+            home = _safe_str(_coalesce(event.get("home_team"), event.get("homeTeam"), event.get("team1")))
+            away = _safe_str(_coalesce(event.get("away_team"), event.get("awayTeam"), event.get("team2")))
+            if home and away:
+                event_name = f"{away} @ {home}"
+            else:
+                event_name = f"event_{event_id}"
+            warnings.append("fallback_event_name")
+
+        start_time = _coalesce(
+            event.get("start_time"),
+            event.get("startTime"),
+            event.get("starts_at"),
+            event.get("startsAt"),
+            event.get("commence_time"),
+            event.get("scheduled"),
+        )
+        if start_time is None:
+            start_time = utc_now_iso()
+            warnings.append("fallback_start_time")
+
+        timestamp = _coalesce(
+            outcome.get("timestamp"),
+            outcome.get("updated_at"),
+            outcome.get("updatedAt"),
+            market.get("timestamp"),
+            market.get("updated_at"),
+            market.get("updatedAt"),
+            book.get("timestamp"),
+            book.get("updated_at"),
+            book.get("updatedAt"),
+            event.get("timestamp"),
+            event.get("updated_at"),
+            event.get("updatedAt"),
+            utc_now_iso(),
+        )
+        if not _safe_str(timestamp):
+            timestamp = utc_now_iso()
+            warnings.append("fallback_timestamp")
+
+        normalized = {
+            "provider_id": self.provider_id,
+            "provider_name": self.provider_name,
+            "received_at": utc_now_iso(),
+            "event_id": _safe_str(event_id),
+            "sport": _safe_str(sport),
+            "league": _safe_str(league),
+            "event_name": _safe_str(event_name),
+            "start_time": _safe_str(start_time),
+            "book": _safe_str(_coalesce(book.get("book"), book.get("name"), book.get("sportsbook"), book.get("key"), "sharp")),
+            "market": _safe_str(market_name),
+            "selection": _safe_str(selection),
+            "line": _coalesce(outcome.get("line"), outcome.get("point"), market.get("line"), market.get("point")),
+            "odds": odds,
+            "decimal_odds": decimal_odds,
+            "implied_probability": implied_probability,
+            "timestamp": _safe_str(timestamp),
+            "source_payload_redacted": redact_mapping(
+                {
+                    "event": event,
+                    "market": market,
+                    "book": book,
+                    "outcome": outcome,
+                }
+            ),
+            "schema_version": SCHEMA_VERSION,
+        }
+        return normalized, warnings, None
 
     def validate_payload(self, payload: dict[str, Any]) -> dict[str, Any]:
         return validate_provider_payload(
@@ -365,17 +644,54 @@ class SharpSportsbookAdapter:
             }
 
         normalized: list[dict[str, Any]] = []
-        rejected = 0
+        rejection_reason_counts: Counter[str] = Counter()
+        warning_reason_counts: Counter[str] = Counter()
+        shape_top_level_keys: set[str] = set()
+        first_level_nested_keys: set[str] = set()
+        candidate_counts: Counter[str] = Counter()
         for row in fetch["records"]:
             if not isinstance(row, dict):
-                rejected += 1
+                rejection_reason_counts["malformed_record"] += 1
                 continue
-            norm = self.normalize_payload(row)
-            verdict = self.validate_payload(norm)
-            if verdict["ok"]:
-                normalized.append(norm)
-            else:
-                rejected += 1
+            shape_top_level_keys.update(str(k) for k in row.keys())
+            for value in row.values():
+                if isinstance(value, dict):
+                    first_level_nested_keys.update(str(k) for k in value.keys())
+                elif isinstance(value, list):
+                    for item in value:
+                        if isinstance(item, dict):
+                            first_level_nested_keys.update(str(k) for k in item.keys())
+                            break
+            flattened_rows, counts = self._extract_nested_rows(row)
+            candidate_counts.update(counts)
+            for flattened in flattened_rows:
+                norm, warnings, reject_reason = self._normalize_flattened_row(flattened)
+                for warning in warnings:
+                    warning_reason_counts[warning] += 1
+                if reject_reason:
+                    rejection_reason_counts[reject_reason] += 1
+                    continue
+                verdict = self.validate_payload(norm or {})
+                if verdict["ok"]:
+                    normalized.append(norm or {})
+                else:
+                    if verdict["errors"]:
+                        for reason in verdict["errors"]:
+                            rejection_reason_counts[str(reason)] += 1
+                    else:
+                        rejection_reason_counts["validation_rejected"] += 1
+        rejected = int(sum(rejection_reason_counts.values()))
+        debug_summary = {
+            "top_level_keys_present": sorted(shape_top_level_keys)[:50],
+            "first_level_nested_key_names": sorted(first_level_nested_keys)[:100],
+            "candidate_event_count": int(candidate_counts.get("events", 0)),
+            "candidate_market_count": int(candidate_counts.get("markets", 0)),
+            "candidate_book_count": int(candidate_counts.get("books", 0)),
+            "candidate_outcome_count": int(candidate_counts.get("outcomes", 0)),
+            "rejection_reason_counts": dict(rejection_reason_counts),
+            "validation_warning_counts": dict(warning_reason_counts),
+            "secret_redacted": True,
+        }
         return {
             "ok": True,
             "status": "live_snapshot_complete",
@@ -388,6 +704,8 @@ class SharpSportsbookAdapter:
             "records_received": len(fetch["records"]),
             "records_valid": len(normalized),
             "records_rejected": rejected,
+            "rejection_reason_counts": dict(rejection_reason_counts),
+            "internal_debug_summary": debug_summary,
             "blockers": [],
             "timestamp": utc_now_iso(),
         }

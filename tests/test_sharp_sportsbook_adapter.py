@@ -44,18 +44,30 @@ class _MockClient:
             payload = {
                 "data": [
                     {
-                        "event_id": "evt1",
-                        "sport": "basketball",
-                        "league": "NBA",
-                        "event_name": "A vs B",
-                        "start_time": "2026-05-28T00:00:00+00:00",
-                        "book": "sharp",
-                        "market": "moneyline",
-                        "selection": "A",
-                        "line": None,
-                        "odds": -110,
-                        "timestamp": now_iso,
-                        "api_key": "should_redact",
+                        "eventId": "evt1",
+                        "sportName": "basketball",
+                        "leagueName": "NBA",
+                        "homeTeam": "B",
+                        "awayTeam": "A",
+                        "startsAt": "2026-05-28T00:00:00+00:00",
+                        "markets": [
+                            {
+                                "marketName": "moneyline",
+                                "books": [
+                                    {
+                                        "name": "sharp",
+                                        "outcomes": [
+                                            {
+                                                "name": "A",
+                                                "americanOdds": -110,
+                                                "updatedAt": now_iso,
+                                                "api_key": "should_redact",
+                                            }
+                                        ],
+                                    }
+                                ],
+                            }
+                        ],
                     }
                 ]
             }
@@ -136,7 +148,7 @@ class TestSharpSportsbookAdapter(unittest.TestCase):
         rec = result["records"][0]
         self.assertAlmostEqual(rec["implied_probability"], 0.52380952, places=6)
         self.assertEqual(rec["decimal_odds"], 1.909091)
-        self.assertEqual(rec["source_payload_redacted"]["api_key"], "[redacted]")
+        self.assertEqual(rec["source_payload_redacted"]["outcome"]["api_key"], "[redacted]")
 
     def test_missing_credentials_do_not_crash(self):
         os.environ["SHARP_LIVE_READS_ENABLED"] = "true"
@@ -170,6 +182,67 @@ class TestSharpSportsbookAdapter(unittest.TestCase):
         verdict = adapter.validate_payload(normalized)
         self.assertFalse(verdict["ok"])
         self.assertIn("malformed_odds", verdict["errors"])
+
+    def test_decimal_odds_normalize_and_probability(self):
+        adapter = SharpSportsbookAdapter(self.contract)
+        normalized, warnings, reject = adapter._normalize_flattened_row(
+            {
+                "event": {
+                    "eventId": "evt2",
+                    "sportName": "soccer",
+                    "leagueName": "EPL",
+                    "name": "X vs Y",
+                    "startsAt": "2026-05-28T00:00:00+00:00",
+                },
+                "market": {"marketName": "moneyline"},
+                "book": {"name": "sharp"},
+                "outcome": {"name": "X", "decimalOdds": 2.5, "updatedAt": "2026-05-28T00:00:00+00:00"},
+            }
+        )
+        self.assertIsNone(reject)
+        self.assertEqual(normalized["odds"], 2.5)
+        self.assertEqual(normalized["decimal_odds"], 2.5)
+        self.assertAlmostEqual(normalized["implied_probability"], 0.4, places=6)
+        self.assertIn("odds_format_decimal", warnings)
+
+    @patch("automation_scheduler.sharp_sportsbook_adapter.httpx.Client", new=_MockClient)
+    def test_rejection_reason_counts_and_debug_summary(self):
+        os.environ["SHARP_API_KEY"] = "sharp_key_1234567890"
+        os.environ["SHARP_PROVIDER_ENABLED"] = "true"
+        os.environ["SHARP_LIVE_READS_ENABLED"] = "true"
+        contract = dict(self.contract)
+        contract["enabled"] = True
+        contract["live_calls_enabled"] = True
+        contract["dry_run"] = False
+        _MockClient.response_payload = {
+            "data": [
+                {
+                    "eventId": "evt_ok",
+                    "sportName": "basketball",
+                    "leagueName": "NBA",
+                    "markets": [
+                        {
+                            "marketName": "moneyline",
+                            "books": [{"name": "sharp", "outcomes": [{"name": "A", "americanOdds": -120}]}],
+                        }
+                    ],
+                },
+                {
+                    "eventId": "evt_bad",
+                    "markets": [{"marketName": "moneyline", "books": [{"name": "sharp", "outcomes": [{"name": "B"}]}]}],
+                },
+            ]
+        }
+        adapter = SharpSportsbookAdapter(contract)
+        snapshot = adapter.fetch_snapshot()
+        self.assertEqual(snapshot["records_received"], 2)
+        self.assertEqual(snapshot["records_valid"], 1)
+        self.assertEqual(snapshot["records_rejected"], 1)
+        self.assertIn("malformed_odds", snapshot["rejection_reason_counts"])
+        debug = snapshot["internal_debug_summary"]
+        self.assertIn("top_level_keys_present", debug)
+        self.assertIn("candidate_outcome_count", debug)
+        self.assertTrue(debug["secret_redacted"])
 
     def test_build_sharp_url_diagnostic_redacted(self):
         os.environ["SHARP_API_BASE_URL"] = "https://api.sharp.app/"

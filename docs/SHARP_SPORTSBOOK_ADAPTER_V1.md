@@ -9,6 +9,8 @@ This release adds a read-only `sharp_sportsbook` provider adapter that is instal
 - Missing credentials never crash the app.
 - Snapshot and health payloads stay compact and redacted.
 - No betting, trading, or auto-execution paths are added.
+- Nested Sharp payload shapes (`events -> markets -> books -> outcomes`) are flattened into normalized sportsbook rows.
+- Snapshot responses include compact `rejection_reason_counts` while keeping raw payloads hidden by default.
 
 ## Environment Variables
 
@@ -104,3 +106,14 @@ Each normalized record contains:
 - `POST /api/providers/sharp/snapshot`
 
 Both endpoints return compact payloads and exclude secrets/raw auth data by default.
+
+## Internal Debug Summary
+
+Snapshot processing stores a safe internal debug summary (available only through debug views):
+
+- top-level keys present
+- first-level nested key names
+- candidate events/markets/books/outcomes counts
+- rejection reason counts and warning counts
+
+Raw provider payloads, API keys, and auth headers are not exposed.

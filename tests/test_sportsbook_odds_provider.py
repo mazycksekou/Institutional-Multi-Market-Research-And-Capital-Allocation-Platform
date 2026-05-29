@@ -51,6 +51,7 @@ class TestSportsbookOddsProvider(unittest.TestCase):
             "provider_enabled": True,
             "live_calls_enabled": True,
             "credential_status": "ok",
+            "rejection_reason_counts": {"malformed_odds": 3},
             "http_status": 404,
             "diagnostic": {
                 "url_host": "api.sharp.app",
@@ -73,6 +74,7 @@ class TestSportsbookOddsProvider(unittest.TestCase):
         self.assertEqual(compact["diagnostic"]["url_path"], "/v1/odds")
         self.assertEqual(compact["diagnostic"]["method"], "GET")
         self.assertTrue(compact["diagnostic"]["secret_redacted"])
+        self.assertEqual(compact["rejection_reason_counts"]["malformed_odds"], 3)
         self.assertNotIn("authorization", str(compact).lower())
         self.assertNotIn("raw_body", str(compact).lower())
 

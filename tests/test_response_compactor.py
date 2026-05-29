@@ -76,12 +76,14 @@ class TestResponseCompactor(unittest.TestCase):
                 "records_received": 0,
                 "records_valid": 0,
                 "records_rejected": 0,
+                "rejection_reason_counts": {"missing_event_id": 1},
                 "blockers": [],
                 "api_key": "secret-value",
             }
         )
         self.assertTrue(compact["provider_enabled"])
         self.assertTrue(compact["live_calls_enabled"])
+        self.assertEqual(compact["rejection_reason_counts"]["missing_event_id"], 1)
         self.assertNotIn("secret-value", str(compact))
 
     def test_provider_status_diagnostic_is_compact(self):

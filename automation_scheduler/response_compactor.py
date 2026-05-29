@@ -267,6 +267,7 @@ def compact_provider_status(payload: dict[str, Any]) -> dict[str, Any]:
         "records_received": int(payload.get("records_received", 0)),
         "records_valid": int(payload.get("records_valid", 0)),
         "records_rejected": int(payload.get("records_rejected", 0)),
+        "rejection_reason_counts": dict(payload.get("rejection_reason_counts", {})),
         "http_status": payload.get("http_status"),
         "diagnostic": compact_diag,
         "blockers": list(payload.get("blockers", []))[:10],
