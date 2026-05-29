@@ -83,3 +83,35 @@ class TestResponseCompactor(unittest.TestCase):
         self.assertTrue(compact["provider_enabled"])
         self.assertTrue(compact["live_calls_enabled"])
         self.assertNotIn("secret-value", str(compact))
+
+    def test_provider_status_diagnostic_is_compact(self):
+        compact = compact_provider_status(
+            {
+                "ok": True,
+                "status": "provider_error",
+                "provider_id": "sharp_sportsbook",
+                "provider_enabled": True,
+                "live_calls_enabled": True,
+                "credential_status": "ok",
+                "http_status": 404,
+                "diagnostic": {
+                    "url_host": "api.sharp.app",
+                    "url_path": "/v1/odds",
+                    "method": "GET",
+                    "secret_redacted": True,
+                    "raw_body": {"detail": "nope"},
+                    "authorization": "Bearer abc",
+                },
+                "records_received": 0,
+                "records_valid": 0,
+                "records_rejected": 0,
+                "blockers": ["http_404"],
+            }
+        )
+        self.assertEqual(compact["http_status"], 404)
+        self.assertEqual(compact["diagnostic"]["url_host"], "api.sharp.app")
+        self.assertEqual(compact["diagnostic"]["url_path"], "/v1/odds")
+        self.assertEqual(compact["diagnostic"]["method"], "GET")
+        self.assertTrue(compact["diagnostic"]["secret_redacted"])
+        self.assertNotIn("raw_body", str(compact))
+        self.assertNotIn("authorization", str(compact).lower())

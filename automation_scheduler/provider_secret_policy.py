@@ -103,3 +103,14 @@ def credential_status_from_env(provider_id: str) -> dict[str, Any]:
         "present": present,
         "missing": missing,
     }
+
+
+def redact_http_diagnostic(payload: Mapping[str, Any]) -> dict[str, Any]:
+    safe = {
+        "url_host": payload.get("url_host"),
+        "url_path": payload.get("url_path"),
+        "method": payload.get("method", "GET"),
+        "secret_redacted": True,
+        "query_redacted": True,
+    }
+    return redact_mapping(safe)

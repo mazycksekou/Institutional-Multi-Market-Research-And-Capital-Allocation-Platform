@@ -3,6 +3,8 @@ import unittest
 from datetime import datetime, timezone
 from unittest.mock import patch
 
+import httpx
+
 from automation_scheduler.sharp_sportsbook_adapter import SharpSportsbookAdapter
 from automation_scheduler.sportsbook_odds_provider import summarize_sportsbook_snapshot
 
@@ -17,6 +19,11 @@ class _MockResponse:
 
 
 class _MockClient:
+    response_status = 200
+    response_payload = {"data": []}
+    should_timeout = False
+    last_call: tuple | None = None
+
     def __init__(self, *args, **kwargs):
         self.calls = []
 
@@ -27,11 +34,14 @@ class _MockClient:
         return None
 
     def get(self, url, headers=None, params=None):
+        if self.should_timeout:
+            raise httpx.TimeoutException("timed out")
         now_iso = datetime.now(timezone.utc).isoformat()
         self.calls.append(("GET", url, headers, params))
-        return _MockResponse(
-            200,
-            {
+        _MockClient.last_call = (url, headers or {}, params or {})
+        payload = self.response_payload
+        if payload == "__default__":
+            payload = {
                 "data": [
                     {
                         "event_id": "evt1",
@@ -48,8 +58,8 @@ class _MockClient:
                         "api_key": "should_redact",
                     }
                 ]
-            },
-        )
+            }
+        return _MockResponse(self.response_status, payload)
 
 
 class TestSharpSportsbookAdapter(unittest.TestCase):
@@ -65,6 +75,15 @@ class TestSharpSportsbookAdapter(unittest.TestCase):
         os.environ.pop("SHARP_API_KEY", None)
         os.environ.pop("SHARP_LIVE_READS_ENABLED", None)
         os.environ.pop("SHARP_PROVIDER_ENABLED", None)
+        os.environ.pop("SHARP_API_BASE_URL", None)
+        os.environ.pop("SHARP_EVENTS_PATH", None)
+        os.environ.pop("SHARP_ODDS_PATH", None)
+        os.environ.pop("SHARP_PLAYER_PROPS_PATH", None)
+        os.environ.pop("SHARP_SPORTS_PATH", None)
+        _MockClient.response_status = 200
+        _MockClient.response_payload = "__default__"
+        _MockClient.should_timeout = False
+        _MockClient.last_call = None
 
     def test_defaults_disabled(self):
         adapter = SharpSportsbookAdapter(self.contract)
@@ -108,7 +127,7 @@ class TestSharpSportsbookAdapter(unittest.TestCase):
 
         adapter = SharpSportsbookAdapter(contract)
         result = adapter.fetch_snapshot()
-        self.assertEqual(result["status"], "ok")
+        self.assertEqual(result["status"], "live_snapshot_complete")
         self.assertTrue(result["provider_enabled"])
         self.assertTrue(result["live_calls_enabled"])
         self.assertEqual(result["records_received"], 1)
@@ -151,6 +170,93 @@ class TestSharpSportsbookAdapter(unittest.TestCase):
         verdict = adapter.validate_payload(normalized)
         self.assertFalse(verdict["ok"])
         self.assertIn("malformed_odds", verdict["errors"])
+
+    def test_build_sharp_url_diagnostic_redacted(self):
+        os.environ["SHARP_API_BASE_URL"] = "https://api.sharp.app/"
+        os.environ["SHARP_ODDS_PATH"] = "/v1/odds"
+        adapter = SharpSportsbookAdapter(self.contract)
+        diag = adapter.build_sharp_url("odds_path")
+        self.assertTrue(diag["base_url_present"])
+        self.assertEqual(diag["resolved_path"], "/v1/odds")
+        self.assertEqual(diag["url_host"], "api.sharp.app")
+        self.assertEqual(diag["url_path"], "/v1/odds")
+        self.assertTrue(diag["query_redacted"])
+        self.assertTrue(diag["secret_redacted"])
+        self.assertNotIn("api_key", str(diag).lower())
+
+    @patch("automation_scheduler.sharp_sportsbook_adapter.httpx.Client", new=_MockClient)
+    def test_path_joining_handles_leading_and_double_slash(self):
+        os.environ["SHARP_API_KEY"] = "sharp_key_1234567890"
+        os.environ["SHARP_PROVIDER_ENABLED"] = "true"
+        os.environ["SHARP_LIVE_READS_ENABLED"] = "true"
+        os.environ["SHARP_API_BASE_URL"] = "https://api.sharp.app///"
+        os.environ["SHARP_ODDS_PATH"] = "/v1//odds"
+        contract = dict(self.contract)
+        contract["enabled"] = True
+        contract["live_calls_enabled"] = True
+        contract["dry_run"] = False
+        adapter = SharpSportsbookAdapter(contract)
+        _MockClient.response_payload = "__default__"
+        snapshot = adapter.fetch_snapshot()
+        self.assertEqual(snapshot["status"], "live_snapshot_complete")
+        self.assertIsNotNone(_MockClient.last_call)
+        called_url = _MockClient.last_call[0]
+        self.assertEqual(called_url, "https://api.sharp.app/v1/odds")
+
+    @patch("automation_scheduler.sharp_sportsbook_adapter.httpx.Client", new=_MockClient)
+    def test_path_joining_handles_missing_leading_slash(self):
+        os.environ["SHARP_API_KEY"] = "sharp_key_1234567890"
+        os.environ["SHARP_PROVIDER_ENABLED"] = "true"
+        os.environ["SHARP_LIVE_READS_ENABLED"] = "true"
+        os.environ["SHARP_API_BASE_URL"] = "https://api.sharp.app"
+        os.environ["SHARP_ODDS_PATH"] = "v1/odds"
+        contract = dict(self.contract)
+        contract["enabled"] = True
+        contract["live_calls_enabled"] = True
+        contract["dry_run"] = False
+        adapter = SharpSportsbookAdapter(contract)
+        _MockClient.response_payload = "__default__"
+        adapter.fetch_snapshot()
+        self.assertIsNotNone(_MockClient.last_call)
+        self.assertEqual(_MockClient.last_call[0], "https://api.sharp.app/v1/odds")
+
+    @patch("automation_scheduler.sharp_sportsbook_adapter.httpx.Client", new=_MockClient)
+    def test_http_error_mapping_and_compact_diagnostic(self):
+        status_to_blocker = {404: "http_404", 401: "http_401", 403: "http_403", 429: "http_429", 502: "http_5xx"}
+        for status, blocker in status_to_blocker.items():
+            with self.subTest(status=status):
+                os.environ["SHARP_API_KEY"] = "sharp_key_1234567890"
+                os.environ["SHARP_PROVIDER_ENABLED"] = "true"
+                os.environ["SHARP_LIVE_READS_ENABLED"] = "true"
+                contract = dict(self.contract)
+                contract["enabled"] = True
+                contract["live_calls_enabled"] = True
+                contract["dry_run"] = False
+                _MockClient.response_status = status
+                _MockClient.response_payload = {"error": "bad route"}
+                adapter = SharpSportsbookAdapter(contract)
+                snapshot = adapter.fetch_snapshot()
+                self.assertEqual(snapshot["status"], "provider_error")
+                self.assertIn(blocker, snapshot["blockers"])
+                self.assertIn("diagnostic", snapshot)
+                self.assertEqual(snapshot["diagnostic"]["method"], "GET")
+                self.assertTrue(snapshot["diagnostic"]["secret_redacted"])
+                self.assertNotIn("error", str(snapshot.get("diagnostic", {})).lower())
+
+    @patch("automation_scheduler.sharp_sportsbook_adapter.httpx.Client", new=_MockClient)
+    def test_timeout_maps_to_provider_timeout(self):
+        os.environ["SHARP_API_KEY"] = "sharp_key_1234567890"
+        os.environ["SHARP_PROVIDER_ENABLED"] = "true"
+        os.environ["SHARP_LIVE_READS_ENABLED"] = "true"
+        contract = dict(self.contract)
+        contract["enabled"] = True
+        contract["live_calls_enabled"] = True
+        contract["dry_run"] = False
+        _MockClient.should_timeout = True
+        adapter = SharpSportsbookAdapter(contract)
+        snapshot = adapter.fetch_snapshot()
+        self.assertEqual(snapshot["status"], "provider_error")
+        self.assertIn("provider_timeout", snapshot["blockers"])
 
 
 if __name__ == "__main__":

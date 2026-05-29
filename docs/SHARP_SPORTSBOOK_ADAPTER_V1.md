@@ -14,9 +14,15 @@ This release adds a read-only `sharp_sportsbook` provider adapter that is instal
 
 - `SHARP_API_BASE_URL`
 - `SHARP_API_KEY`
+- `SHARP_EVENTS_PATH`
+- `SHARP_ODDS_PATH`
+- `SHARP_PLAYER_PROPS_PATH`
+- `SHARP_SPORTS_PATH`
 - `SHARP_API_TIMEOUT_SECONDS`
 - `SHARP_PROVIDER_ENABLED`
 - `SHARP_LIVE_READS_ENABLED`
+
+Path env values support both leading-slash and no-leading-slash forms and are joined safely without duplicate slashes.
 
 ## Safety Defaults
 
@@ -52,6 +58,22 @@ When all gates are satisfied, the health status moves to `read_only_ready` while
 - Timeout is enforced via `SHARP_API_TIMEOUT_SECONDS`.
 - Provider errors, rate limits, and malformed payloads are safely handled.
 - No POST/PUT/PATCH/DELETE calls are present.
+
+## Path Diagnostics
+
+The adapter exposes safe path diagnostics via `build_sharp_url(path_name)` and compact snapshot errors.
+
+Returned diagnostic fields:
+
+- `base_url_present`
+- `path_name`
+- `resolved_path`
+- `url_host`
+- `url_path`
+- `query_redacted=true`
+- `secret_redacted=true`
+
+Raw URLs, API keys, auth headers, and raw provider response bodies are not returned by default.
 
 ## Normalized Schema
 

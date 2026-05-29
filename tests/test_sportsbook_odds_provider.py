@@ -21,6 +21,7 @@ class TestSportsbookOddsProvider(unittest.TestCase):
     def setUp(self):
         os.environ.pop("SHARP_API_KEY", None)
         os.environ.pop("SHARP_LIVE_READS_ENABLED", None)
+        os.environ.pop("SHARP_PROVIDER_ENABLED", None)
 
     def test_registry_contains_sharp_metadata(self):
         registry = get_provider_registry()
@@ -41,6 +42,39 @@ class TestSportsbookOddsProvider(unittest.TestCase):
         compact = compact_provider_status(summary)
         self.assertIn(compact["status"], {"provider_disabled", "live_reads_disabled", "blocked_missing_credentials"})
         self.assertNotIn("source_payload_redacted", str(compact))
+
+    def test_compact_provider_error_includes_safe_diagnostic(self):
+        snapshot = {
+            "ok": True,
+            "status": "provider_error",
+            "provider_id": "sharp_sportsbook",
+            "provider_enabled": True,
+            "live_calls_enabled": True,
+            "credential_status": "ok",
+            "http_status": 404,
+            "diagnostic": {
+                "url_host": "api.sharp.app",
+                "url_path": "/v1/odds",
+                "method": "GET",
+                "secret_redacted": True,
+                "authorization": "Bearer secret",
+                "raw_body": {"error": "not found"},
+            },
+            "records_received": 0,
+            "records_valid": 0,
+            "records_rejected": 0,
+            "blockers": ["http_404"],
+        }
+        summary = summarize_sportsbook_snapshot(snapshot)
+        compact = compact_provider_status(summary)
+        self.assertEqual(compact["status"], "provider_error")
+        self.assertEqual(compact["http_status"], 404)
+        self.assertEqual(compact["diagnostic"]["url_host"], "api.sharp.app")
+        self.assertEqual(compact["diagnostic"]["url_path"], "/v1/odds")
+        self.assertEqual(compact["diagnostic"]["method"], "GET")
+        self.assertTrue(compact["diagnostic"]["secret_redacted"])
+        self.assertNotIn("authorization", str(compact).lower())
+        self.assertNotIn("raw_body", str(compact).lower())
 
     def test_validate_snapshot_stale_payload_flagged(self):
         stale = (datetime.now(timezone.utc) - timedelta(days=3)).isoformat()

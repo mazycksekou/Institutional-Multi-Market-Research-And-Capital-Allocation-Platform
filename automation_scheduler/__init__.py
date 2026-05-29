@@ -111,7 +111,7 @@ def run_sharp_provider_snapshot(base_data_dir: str | None = None, write_snapshot
     snapshot = get_sportsbook_snapshot(adapter)
     validation = validate_sportsbook_snapshot(snapshot)
     snapshot_path = None
-    if write_snapshot:
+    if write_snapshot and int(snapshot.get("records_received", 0)) > 0:
         snapshot_path = write_sportsbook_snapshot(snapshot, base_data_dir=base_data_dir or "data")
     summary = summarize_sportsbook_snapshot(snapshot, snapshot_path=snapshot_path)
     summary["validation_status"] = validation["status"]

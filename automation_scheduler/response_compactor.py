@@ -247,6 +247,15 @@ def compact_provider_registry_response(payload: dict[str, Any], limit: int = 10)
 
 
 def compact_provider_status(payload: dict[str, Any]) -> dict[str, Any]:
+    diag = payload.get("diagnostic") if isinstance(payload.get("diagnostic"), dict) else {}
+    compact_diag = None
+    if diag:
+        compact_diag = {
+            "url_host": diag.get("url_host"),
+            "url_path": diag.get("url_path"),
+            "method": diag.get("method", "GET"),
+            "secret_redacted": True,
+        }
     return {
         "ok": bool(payload.get("ok", True)),
         "status": payload.get("status", "blocked"),
@@ -258,6 +267,8 @@ def compact_provider_status(payload: dict[str, Any]) -> dict[str, Any]:
         "records_received": int(payload.get("records_received", 0)),
         "records_valid": int(payload.get("records_valid", 0)),
         "records_rejected": int(payload.get("records_rejected", 0)),
+        "http_status": payload.get("http_status"),
+        "diagnostic": compact_diag,
         "blockers": list(payload.get("blockers", []))[:10],
         "snapshot_path": payload.get("snapshot_path"),
     }

@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import os
 from datetime import datetime, timezone
+from urllib.parse import urlsplit, urlunsplit
 from typing import Any
 
 import httpx
 
 from .provider_payload_validator import validate_provider_payload
-from .provider_secret_policy import credential_status_from_env, redact_mapping
+from .provider_secret_policy import credential_status_from_env, redact_http_diagnostic, redact_mapping
 from .scheduler_config import utc_now_iso
 
 PROVIDER_ID = "sharp_sportsbook"
@@ -15,6 +16,10 @@ PROVIDER_TYPE = "sportsbook_odds"
 SCHEMA_VERSION = "automation_scheduler.v1.sharp_sportsbook.v1"
 DEFAULT_TIMEOUT_SECONDS = 8.0
 DEFAULT_BASE_URL = "https://api.sharp.app"
+DEFAULT_EVENTS_PATH = "v1/events"
+DEFAULT_ODDS_PATH = "v1/odds"
+DEFAULT_PLAYER_PROPS_PATH = "v1/player-props"
+DEFAULT_SPORTS_PATH = "v1/sports"
 
 
 def _env_bool(name: str, default: bool = False) -> bool:
@@ -29,6 +34,27 @@ def _safe_float(value: Any, default: float) -> float:
         return float(value)
     except (TypeError, ValueError):
         return default
+
+
+def _normalize_path(path_value: str) -> str:
+    segments = [segment for segment in str(path_value or "").strip().split("/") if segment]
+    if not segments:
+        return "/"
+    return "/" + "/".join(segments)
+
+
+def _blocker_from_http_status(http_status: int) -> str:
+    if http_status == 404:
+        return "http_404"
+    if http_status == 401:
+        return "http_401"
+    if http_status == 403:
+        return "http_403"
+    if http_status == 429:
+        return "http_429"
+    if 500 <= int(http_status) <= 599:
+        return "http_5xx"
+    return f"http_{int(http_status)}"
 
 
 def _american_to_decimal(american_odds: float | int | None) -> float | None:
@@ -61,10 +87,44 @@ class SharpSportsbookAdapter:
         self.provider_id = PROVIDER_ID
         self.provider_name = "Sharp Sportsbook"
         self.provider_type = PROVIDER_TYPE
-        self.base_url = (os.getenv("SHARP_API_BASE_URL") or DEFAULT_BASE_URL).rstrip("/")
+        self.base_url = (os.getenv("SHARP_API_BASE_URL") or DEFAULT_BASE_URL).strip().rstrip("/")
+        self.base_url_present = bool(os.getenv("SHARP_API_BASE_URL", "").strip())
         self.timeout_seconds = max(1.0, _safe_float(os.getenv("SHARP_API_TIMEOUT_SECONDS"), DEFAULT_TIMEOUT_SECONDS))
-        self.live_reads_enabled = _env_bool("SHARP_LIVE_READS_ENABLED", default=False)
+        self.provider_enabled_env_set = os.getenv("SHARP_PROVIDER_ENABLED") is not None
+        self.live_reads_env_set = os.getenv("SHARP_LIVE_READS_ENABLED") is not None
+        self.provider_enabled_from_env = _env_bool("SHARP_PROVIDER_ENABLED", default=False) if self.provider_enabled_env_set else None
+        self.live_reads_enabled = _env_bool("SHARP_LIVE_READS_ENABLED", default=bool(self.contract.get("live_calls_enabled", False)))
+        self.path_config = {
+            "events_path": os.getenv("SHARP_EVENTS_PATH", DEFAULT_EVENTS_PATH),
+            "odds_path": os.getenv("SHARP_ODDS_PATH", DEFAULT_ODDS_PATH),
+            "player_props_path": os.getenv("SHARP_PLAYER_PROPS_PATH", DEFAULT_PLAYER_PROPS_PATH),
+            "sports_path": os.getenv("SHARP_SPORTS_PATH", DEFAULT_SPORTS_PATH),
+        }
         self.read_only_mode = True
+
+    def _resolve_url_and_diag(self, path_name: str) -> tuple[str, dict[str, Any]]:
+        resolved_path = _normalize_path(self.path_config.get(path_name, ""))
+        split = urlsplit(self.base_url or DEFAULT_BASE_URL)
+        base_path = _normalize_path(split.path) if split.path else ""
+        if base_path in {"", "/"}:
+            joined_path = resolved_path
+        else:
+            joined_path = _normalize_path(f"{base_path}/{resolved_path}")
+        safe_url = urlunsplit((split.scheme or "https", split.netloc, joined_path, "", ""))
+        diagnostic = {
+            "base_url_present": bool(self.base_url_present),
+            "path_name": path_name,
+            "resolved_path": resolved_path,
+            "url_host": split.netloc,
+            "url_path": joined_path,
+            "query_redacted": True,
+            "secret_redacted": True,
+        }
+        return safe_url, diagnostic
+
+    def build_sharp_url(self, path_name: str) -> dict[str, Any]:
+        _, diagnostic = self._resolve_url_and_diag(path_name)
+        return diagnostic
 
     def get_capabilities(self) -> dict[str, Any]:
         return {
@@ -85,7 +145,11 @@ class SharpSportsbookAdapter:
     def validate_config(self) -> dict[str, Any]:
         blockers: list[str] = []
         credential = credential_status_from_env(self.provider_id)
-        provider_enabled = bool(self.contract.get("enabled", False))
+        provider_enabled = (
+            bool(self.provider_enabled_from_env)
+            if self.provider_enabled_from_env is not None
+            else bool(self.contract.get("enabled", False))
+        )
         live_call_contract_enabled = bool(self.contract.get("live_calls_enabled", False))
         dry_run = bool(self.contract.get("dry_run", True))
 
@@ -134,7 +198,7 @@ class SharpSportsbookAdapter:
         api_key = os.getenv("SHARP_API_KEY", "").strip()
         return {"X-API-Key": api_key, "Accept": "application/json"}
 
-    def _safe_get(self, path: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
+    def _safe_get(self, path_name: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
         cfg = self.validate_config()
         if "blocked_missing_credentials" in cfg["blockers"]:
             return {"ok": False, "status": "blocked_missing_credentials", "records": [], "errors": ["missing_credentials"]}
@@ -145,38 +209,78 @@ class SharpSportsbookAdapter:
         if not cfg["ok"]:
             return {"ok": True, "status": "blocked", "records": [], "errors": cfg["blockers"]}
 
-        url = f"{self.base_url}/{path.lstrip('/')}"
+        url, diagnostic = self._resolve_url_and_diag(path_name)
         try:
             with httpx.Client(timeout=self.timeout_seconds) as client:
                 response = client.get(url, headers=self._build_headers(), params=params or {})
-            if response.status_code == 429:
-                return {"ok": False, "status": "rate_limited", "records": [], "errors": ["provider_rate_limited"]}
             if response.status_code >= 400:
+                blocker = _blocker_from_http_status(int(response.status_code))
                 return {
                     "ok": False,
                     "status": "provider_error",
+                    "http_status": int(response.status_code),
+                    "blocker": blocker,
+                    "diagnostic": redact_http_diagnostic({**diagnostic, "method": "GET"}),
                     "records": [],
-                    "errors": [f"http_{response.status_code}"],
+                    "errors": [blocker],
                 }
-            body = response.json()
+            try:
+                body = response.json()
+            except Exception:
+                return {
+                    "ok": False,
+                    "status": "provider_error",
+                    "http_status": int(response.status_code),
+                    "blocker": "malformed_provider_response",
+                    "diagnostic": redact_http_diagnostic({**diagnostic, "method": "GET"}),
+                    "records": [],
+                    "errors": ["malformed_provider_response"],
+                }
         except httpx.TimeoutException:
-            return {"ok": False, "status": "timeout", "records": [], "errors": ["provider_timeout"]}
+            return {
+                "ok": False,
+                "status": "provider_error",
+                "http_status": None,
+                "blocker": "provider_timeout",
+                "diagnostic": redact_http_diagnostic({**diagnostic, "method": "GET"}),
+                "records": [],
+                "errors": ["provider_timeout"],
+            }
         except Exception:
-            return {"ok": False, "status": "provider_error", "records": [], "errors": ["provider_unreachable"]}
+            return {
+                "ok": False,
+                "status": "provider_error",
+                "http_status": None,
+                "blocker": "provider_unreachable",
+                "diagnostic": redact_http_diagnostic({**diagnostic, "method": "GET"}),
+                "records": [],
+                "errors": ["provider_unreachable"],
+            }
 
         records = body if isinstance(body, list) else body.get("data", [])
         if not isinstance(records, list):
-            return {"ok": False, "status": "malformed_payload", "records": [], "errors": ["malformed_payload"]}
+            return {
+                "ok": False,
+                "status": "provider_error",
+                "http_status": 200,
+                "blocker": "malformed_provider_response",
+                "diagnostic": redact_http_diagnostic({**diagnostic, "method": "GET"}),
+                "records": [],
+                "errors": ["malformed_provider_response"],
+            }
         return {"ok": True, "status": "ok", "records": records, "errors": []}
 
     def fetch_events(self) -> dict[str, Any]:
-        return self._safe_get("v1/events")
+        return self._safe_get("events_path")
 
     def fetch_odds(self) -> dict[str, Any]:
-        return self._safe_get("v1/odds")
+        return self._safe_get("odds_path")
 
     def fetch_player_props(self) -> dict[str, Any]:
-        return self._safe_get("v1/player-props")
+        return self._safe_get("player_props_path")
+
+    def fetch_sports(self) -> dict[str, Any]:
+        return self._safe_get("sports_path")
 
     def normalize_payload(self, payload: dict[str, Any]) -> dict[str, Any]:
         odds = payload.get("odds")
@@ -239,6 +343,8 @@ class SharpSportsbookAdapter:
             }
 
         fetch = self.fetch_odds()
+        if (not fetch["ok"]) and fetch.get("blocker") == "http_404":
+            fetch = self.fetch_events()
         if not fetch["ok"]:
             return {
                 "ok": True,
@@ -252,6 +358,8 @@ class SharpSportsbookAdapter:
                 "records_received": 0,
                 "records_valid": 0,
                 "records_rejected": 0,
+                "http_status": fetch.get("http_status"),
+                "diagnostic": fetch.get("diagnostic"),
                 "blockers": fetch["errors"][:10],
                 "timestamp": utc_now_iso(),
             }
@@ -270,7 +378,7 @@ class SharpSportsbookAdapter:
                 rejected += 1
         return {
             "ok": True,
-            "status": "ok",
+            "status": "live_snapshot_complete",
             "provider_id": self.provider_id,
             "provider_enabled": bool(config_state["provider_enabled"]),
             "live_calls_enabled": bool(config_state["live_calls_enabled"]),

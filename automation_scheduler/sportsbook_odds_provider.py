@@ -27,6 +27,8 @@ def normalize_sportsbook_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
         "records_received": int(snapshot.get("records_received", len(records))),
         "records_valid": int(snapshot.get("records_valid", 0)),
         "records_rejected": int(snapshot.get("records_rejected", 0)),
+        "http_status": snapshot.get("http_status"),
+        "diagnostic": snapshot.get("diagnostic"),
         "blockers": list(snapshot.get("blockers", []))[:10],
         "records": records,
         "schema_version": SCHEMA_VERSION,
@@ -85,6 +87,8 @@ def summarize_sportsbook_snapshot(snapshot: dict[str, Any], snapshot_path: str |
         "records_received": int(normalized.get("records_received", 0)),
         "records_valid": int(normalized.get("records_valid", 0)),
         "records_rejected": int(normalized.get("records_rejected", 0)),
+        "http_status": normalized.get("http_status"),
+        "diagnostic": normalized.get("diagnostic"),
         "blockers": list(normalized.get("blockers", []))[:10],
         "snapshot_path": snapshot_path,
     }
