@@ -140,6 +140,10 @@ def _match_key_pairs(decision: dict[str, Any], outcome: dict[str, Any]) -> bool:
     for key in ("decision_id", "review_item_id"):
         if decision.get(key) and outcome.get(key) and str(decision.get(key)) == str(outcome.get(key)):
             return True
+    if decision.get("market_type") and outcome.get("market_type") and str(decision.get("market_type")) != str(outcome.get("market_type")):
+        return False
+    if decision.get("close_time") and outcome.get("close_time") and str(decision.get("close_time")) != str(outcome.get("close_time")):
+        return False
     contract_decision = decision.get("contract_id") or decision.get("ticker")
     contract_outcome = outcome.get("contract_id") or outcome.get("ticker")
     if contract_decision and contract_outcome and str(contract_decision) == str(contract_outcome):

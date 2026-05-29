@@ -26,10 +26,10 @@ class TestCalibration(unittest.TestCase):
 
     def test_outcome_matching_and_partial_coverage(self):
         decisions = [
-            {"decision_id": "d1", "review_item_id": "r1", "provider": "kalshi_prediction_market", "market_type": "prediction_market", "contract_id": "KX1", "implied_probability": 0.7, "liquidity_tier": "low_liquidity", "review_priority_score": 65},
+            {"decision_id": "d1", "review_item_id": "r1", "provider": "kalshi_prediction_market", "market_type": "prediction_market", "contract_id": "KX1", "implied_probability": 0.7, "liquidity_tier": "low_liquidity", "review_priority_score": 65, "close_time": "2026-06-01T00:00:00+00:00"},
             {"decision_id": "d2", "review_item_id": "r2", "provider": "sharp_sportsbook", "market_type": "sports_pregame_main", "ticker": "S1", "implied_probability": 0.4, "review_priority_score": 55},
         ]
-        outcomes = [{"review_item_id": "r1", "provider": "kalshi_prediction_market", "final_outcome": 1, "settled_at": "2026-05-29T00:00:00+00:00"}]
+        outcomes = [{"review_item_id": "r1", "provider": "kalshi_prediction_market", "market_type": "prediction_market", "close_time": "2026-06-01T00:00:00+00:00", "final_outcome": 1, "settled_at": "2026-05-29T00:00:00+00:00"}]
         matched = match_outcomes_to_paper_decisions(decisions, outcomes)
         coverage = summarize_outcome_coverage(decisions, outcomes)
         report = build_calibration_report(paper_decisions=decisions, outcome_records=outcomes, review_items=[])
@@ -40,6 +40,16 @@ class TestCalibration(unittest.TestCase):
         self.assertIn("brier_score", report["metrics"])
         self.assertIn("review_priority_bucket_performance", report["metrics"])
         self.assertIn("low_liquidity", report["metrics"]["performance_by_liquidity_tier"])
+
+    def test_close_time_mismatch_prevents_contract_fallback_match(self):
+        decisions = [
+            {"provider": "kalshi_prediction_market", "market_type": "prediction_market", "contract_id": "KX1", "close_time": "2026-06-01T00:00:00+00:00", "implied_probability": 0.7}
+        ]
+        outcomes = [
+            {"provider": "kalshi_prediction_market", "market_type": "prediction_market", "contract_id": "KX1", "close_time": "2026-06-02T00:00:00+00:00", "final_outcome": 1}
+        ]
+        matched = match_outcomes_to_paper_decisions(decisions, outcomes)
+        self.assertIsNone(matched[0].get("final_outcome"))
 
     def test_no_outcomes_in_store_returns_insufficient_data(self):
         with TemporaryDirectory() as tmp:
