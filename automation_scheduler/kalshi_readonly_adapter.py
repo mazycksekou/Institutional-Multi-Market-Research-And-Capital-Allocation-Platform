@@ -464,7 +464,7 @@ class KalshiReadonlyAdapter:
             "market_id": _safe_str(_coalesce(payload.get("market_id"), payload.get("marketId"), payload.get("ticker"))),
             "event_id": event_id,
             "event_title": _safe_str(_coalesce(payload.get("event_title"), payload.get("eventTitle"), event_row.get("title"), event_row.get("event_title"))),
-            "contract_id": _safe_str(_coalesce(payload.get("contract_id"), payload.get("contractId"), payload.get("series_ticker"), payload.get("seriesTicker"))),
+            "contract_id": _safe_str(_coalesce(payload.get("contract_id"), payload.get("contractId"), payload.get("series_ticker"), payload.get("seriesTicker"), payload.get("ticker"), payload.get("market_ticker"), payload.get("marketTicker"))),
             "contract_title": _safe_str(_coalesce(payload.get("contract_title"), payload.get("contractTitle"), payload.get("subtitle"), payload.get("title"))),
             "ticker": _safe_str(_coalesce(payload.get("ticker"), payload.get("market_ticker"), payload.get("marketTicker"))),
             "yes_bid": yes_bid,
