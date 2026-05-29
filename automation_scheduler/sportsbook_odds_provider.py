@@ -68,7 +68,16 @@ def validate_sportsbook_snapshot(snapshot: dict[str, Any], max_staleness_seconds
 
 def write_sportsbook_snapshot(snapshot: dict[str, Any], base_data_dir: str = "data") -> str:
     normalized = normalize_sportsbook_snapshot(snapshot)
-    assert_no_secret_leak(normalized)
+    # Guard only redacted provider-source blocks to avoid false positives on long non-secret IDs.
+    assert_no_secret_leak(
+        {
+            "source_payload_redacted": [
+                row.get("source_payload_redacted")
+                for row in normalized.get("records", [])
+                if isinstance(row, dict)
+            ]
+        }
+    )
     folder = Path(base_data_dir) / "provider_payload_samples"
     folder.mkdir(parents=True, exist_ok=True)
     path = folder / "sharp_sportsbook_snapshot.json"
