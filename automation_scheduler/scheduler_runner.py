@@ -9,12 +9,19 @@ from model_governance.data_quality_monitor import evaluate_data_quality
 from model_governance.settlement_liquidity_gate import evaluate_settlement_liquidity_gate
 
 from .arbitrage_detector import detect_arbitrage
+from .alert_engine import generate_alert_candidates
+from .backtesting import run_backtesting_scaffold
+from .calibration import run_calibration_scaffold
 from .cross_book_line_comparator import group_cross_book_markets
 from .ev_line_shopper import shop_ev_lines
+from .kalshi_monitor import monitor_kalshi_market
 from .middle_opportunity_detector import detect_middle_opportunity
 from .opportunity_scoring import calculate_opportunity_score, classify_opportunity
+from .paper_decision_ledger import create_paper_decision_record
 from .provider_adapter_base import ProviderAdapterBase
 from .provider_health import summarize_provider_health, write_provider_health_snapshot
+from .market_structure import kalshi_market_structure_signals
+from .kalshi_scoring import score_kalshi_candidate
 from .scheduler_config import get_default_scheduler_config, ensure_runtime_directories
 from .snapshot_store import save_snapshot
 from .snapshot_store import SnapshotStore
@@ -73,6 +80,82 @@ def _kalshi_liquidity_metrics(record: dict[str, Any]) -> tuple[float, bool]:
     open_interest = float(record.get("open_interest") or 0.0)
     low_liquidity = bool(score < KALSHI_LOW_LIQUIDITY_THRESHOLD or volume < 100.0 or open_interest < 100.0)
     return score, low_liquidity
+
+
+def _to_probability(value: Any) -> float | None:
+    try:
+        if value is None:
+            return None
+        parsed = float(value)
+    except (TypeError, ValueError):
+        return None
+    if 0.0 <= parsed <= 1.0:
+        return parsed
+    if 1.0 < parsed <= 100.0:
+        return parsed / 100.0
+    return None
+
+
+def _derive_kalshi_pricing(row: dict[str, Any]) -> dict[str, Any]:
+    yes_price = _to_probability(row.get("yes_price"))
+    no_price = _to_probability(row.get("no_price"))
+    yes_bid = _to_probability(row.get("yes_bid"))
+    yes_ask = _to_probability(row.get("yes_ask"))
+    no_bid = _to_probability(row.get("no_bid"))
+    no_ask = _to_probability(row.get("no_ask"))
+    yes_midpoint = None
+    no_midpoint = None
+    if yes_bid is not None and yes_ask is not None:
+        yes_midpoint = (yes_bid + yes_ask) / 2.0
+    if no_bid is not None and no_ask is not None:
+        no_midpoint = (no_bid + no_ask) / 2.0
+
+    derived_price = False
+    partial_pricing = False
+    price_source = "missing"
+    pricing_quality = "missing"
+    implied_probability = _to_probability(row.get("implied_probability"))
+
+    if yes_price is not None and no_price is not None:
+        price_source = "direct_price"
+        pricing_quality = "complete"
+        if implied_probability is None:
+            implied_probability = yes_price
+    elif yes_midpoint is not None and no_midpoint is not None:
+        yes_price = yes_midpoint
+        no_price = no_midpoint
+        derived_price = True
+        price_source = "bid_ask_midpoint"
+        pricing_quality = "complete"
+        implied_probability = yes_midpoint if implied_probability is None else implied_probability
+    elif yes_midpoint is not None or no_midpoint is not None:
+        partial_pricing = True
+        derived_price = True
+        price_source = "partial_bid_ask"
+        pricing_quality = "partial"
+        if yes_midpoint is not None:
+            yes_price = yes_midpoint
+            if no_price is None:
+                no_price = max(0.0, min(1.0, 1.0 - yes_midpoint))
+            implied_probability = yes_midpoint if implied_probability is None else implied_probability
+        if no_midpoint is not None:
+            no_price = no_midpoint
+            if yes_price is None:
+                yes_price = max(0.0, min(1.0, 1.0 - no_midpoint))
+            implied_probability = (1.0 - no_midpoint) if implied_probability is None else implied_probability
+    else:
+        price_source = "missing"
+        pricing_quality = "missing"
+
+    return {
+        "yes_price": yes_price,
+        "no_price": no_price,
+        "implied_probability": implied_probability,
+        "derived_price": derived_price,
+        "price_source": price_source,
+        "partial_pricing": partial_pricing,
+        "pricing_quality": pricing_quality,
+    }
 
 
 def _collect_provider_placeholders(config: dict[str, Any]) -> dict[str, Any]:
@@ -422,12 +505,14 @@ def _evaluate_kalshi_review_candidates(config: dict[str, Any], kalshi_snapshot: 
     candidates: list[dict[str, Any]] = []
     rejected_reason_counts: dict[str, int] = {}
     flagged_low_liquidity_count = 0
+    flagged_partial_pricing_count = 0
 
     for row in source_records:
         if not isinstance(row, dict):
             rejected_reason_counts["malformed_record"] = rejected_reason_counts.get("malformed_record", 0) + 1
             continue
 
+        pricing = _derive_kalshi_pricing(row)
         rejection_reason: str | None = None
         if _is_kalshi_market_stale(row, now):
             rejection_reason = "stale_market"
@@ -435,7 +520,7 @@ def _evaluate_kalshi_review_candidates(config: dict[str, Any], kalshi_snapshot: 
             rejection_reason = "closed_or_settled_market"
         elif not row.get("contract_id") or not row.get("ticker"):
             rejection_reason = "missing_ticker_or_contract_id"
-        elif row.get("yes_price") is None or row.get("no_price") is None:
+        elif pricing["pricing_quality"] == "missing":
             rejection_reason = "missing_prices"
 
         if rejection_reason:
@@ -445,6 +530,8 @@ def _evaluate_kalshi_review_candidates(config: dict[str, Any], kalshi_snapshot: 
         liquidity_score, low_liquidity = _kalshi_liquidity_metrics(row)
         if low_liquidity:
             flagged_low_liquidity_count += 1
+        if pricing["partial_pricing"]:
+            flagged_partial_pricing_count += 1
 
         settlement_rule = row.get("settlement_rule")
         settlement_status = "present" if settlement_rule else "missing"
@@ -459,10 +546,19 @@ def _evaluate_kalshi_review_candidates(config: dict[str, Any], kalshi_snapshot: 
             prediction_market_resolution_match=bool(settlement_rule),
             liquidity_score=float(max(0.0, min(100.0, liquidity_score * 100.0))),
         )
+        signal_input = {
+            **row,
+            **pricing,
+            "low_liquidity": low_liquidity,
+            "stale_market": _is_kalshi_market_stale(row, now),
+        }
+        market_structure = kalshi_market_structure_signals(signal_input, previous=None)
+        scoring = score_kalshi_candidate(signal_input)
         base = {
             "source": "kalshi_scheduler_review_queue_v1",
             "provider_id": "kalshi_prediction_market",
             "provider": "kalshi_prediction_market",
+            "source_type": "prediction_market",
             "market_type": "prediction_market",
             "sport_or_symbol": "prediction_market",
             "event_id": row.get("event_id"),
@@ -477,9 +573,13 @@ def _evaluate_kalshi_review_candidates(config: dict[str, Any], kalshi_snapshot: 
             "yes_ask": row.get("yes_ask"),
             "no_bid": row.get("no_bid"),
             "no_ask": row.get("no_ask"),
-            "yes_price": row.get("yes_price"),
-            "no_price": row.get("no_price"),
-            "implied_probability": row.get("implied_probability"),
+            "yes_price": pricing["yes_price"],
+            "no_price": pricing["no_price"],
+            "implied_probability": pricing["implied_probability"],
+            "derived_price": pricing["derived_price"],
+            "price_source": pricing["price_source"],
+            "partial_pricing": pricing["partial_pricing"],
+            "pricing_quality": pricing["pricing_quality"],
             "volume": row.get("volume"),
             "open_interest": row.get("open_interest"),
             "liquidity_score": round(liquidity_score, 4),
@@ -502,8 +602,14 @@ def _evaluate_kalshi_review_candidates(config: dict[str, Any], kalshi_snapshot: 
             "auto_bet_enabled": False,
             "auto_trade_enabled": False,
             "stale_after_seconds": KALSHI_STALE_MARKET_SECONDS,
-            "top_reasons": ["prediction_market_review_only"],
-            "blockers": ["human_approval_required"] if low_liquidity else [],
+            "top_reasons": ["prediction_market_review_only", pricing["price_source"]],
+            "reason_codes": ["prediction_market_review_only", pricing["price_source"]],
+            "blockers": ["human_approval_required"] + (["low_liquidity"] if low_liquidity else []),
+            "market_structure_signals": market_structure,
+            "confidence_score": scoring["confidence_score"],
+            "risk_score": scoring["risk_score"],
+            "review_priority_score": scoring["review_priority_score"],
+            "classification": scoring["classification"],
         }
         candidates.append(_build_scored_candidate(base, opportunity_score=71.0 if not low_liquidity else 66.0))
 
@@ -517,6 +623,7 @@ def _evaluate_kalshi_review_candidates(config: dict[str, Any], kalshi_snapshot: 
         "candidates": candidates,
         "rejected_reason_counts": rejected_reason_counts,
         "flagged_low_liquidity_count": flagged_low_liquidity_count,
+        "flagged_partial_pricing_count": flagged_partial_pricing_count,
         "blockers": [],
     }
 
@@ -531,22 +638,41 @@ def run_scheduler_once(*, injected_data: dict[str, Any] | None = None, base_data
     payload = injected_data or {}
     store.save_snapshot("scheduler_runs", ctx["run_id"], payload)
     provider_result = _collect_provider_placeholders(config)
+    previous_kalshi_wrapper = store.load_latest_snapshot("snapshots", "kalshi_latest")
+    previous_kalshi_records = []
+    if isinstance(previous_kalshi_wrapper, dict):
+        previous_payload = previous_kalshi_wrapper.get("payload", {})
+        if isinstance(previous_payload, dict):
+            previous_kalshi_records = list(previous_payload.get("records", []))
     sharp_evaluation = _evaluate_sharp_review_candidates(config, provider_result.get("sharp_snapshot"))
     kalshi_evaluation = _evaluate_kalshi_review_candidates(config, provider_result.get("kalshi_snapshot"))
+    monitor_result = monitor_kalshi_market(
+        previous_snapshot=previous_kalshi_records,
+        current_snapshot=list((provider_result.get("kalshi_snapshot") or {}).get("records", [])),
+        provider="kalshi_prediction_market",
+        config=config,
+    )
     save_snapshot("snapshots", f"sharp_snapshot_{ctx['run_id']}", provider_result.get("sharp_snapshot") or {}, config)
     save_snapshot("snapshots", f"kalshi_snapshot_{ctx['run_id']}", provider_result.get("kalshi_snapshot") or {}, config)
+    save_snapshot("snapshots", "kalshi_latest", provider_result.get("kalshi_snapshot") or {}, config)
     new_items = 0
     watch_recheck_count = 0
-    for candidate in list(sharp_evaluation["candidates"]) + list(kalshi_evaluation["candidates"]):
+    all_candidates = list(sharp_evaluation["candidates"]) + list(kalshi_evaluation["candidates"]) + list(monitor_result.get("candidates", []))
+    for candidate in all_candidates:
         item = build_review_item(candidate, config)
         if item is None:
             continue
         upsert_review_item(config, item)
+        if item.get("provider_id") == "kalshi_prediction_market":
+            create_paper_decision_record(item, snapshot_id=ctx["run_id"], base_data_dir=base_data_dir or "data")
         new_items += 1
         if item.get("recommended_action") == "watch_recheck":
             watch_recheck_count += 1
     queue = list_active_review_items(config)
     review_required_count = len([row for row in queue if row.get("recommended_action") in {"review_required", "urgent_review"}])
+    alerts = generate_alert_candidates(queue, max_alerts=25, time_bucket=ctx["run_id"])
+    backtesting_summary = run_backtesting_scaffold(queue)
+    calibration_summary = run_calibration_scaffold(queue)
     skipped = list(payload.get("skipped_items", [])) + provider_result["skipped"]
     report = write_report(
         config,
@@ -566,15 +692,18 @@ def run_scheduler_once(*, injected_data: dict[str, Any] | None = None, base_data
                 "kalshi_flagged_low_liquidity_count": kalshi_evaluation["flagged_low_liquidity_count"],
                 "kalshi_rejected_reason_counts": kalshi_evaluation["rejected_reason_counts"],
             },
-            "alerts": [],
+            "alerts": alerts,
             "review_items": queue,
             "sharp_candidates": sharp_evaluation["candidates"],
             "kalshi_candidates": kalshi_evaluation["candidates"],
+            "kalshi_watch_candidates": monitor_result.get("candidates", []),
             "skipped_items": skipped,
             "provider_health": provider_result["health"],
             "provider_snapshots": provider_result["snapshots"],
             "errors": [],
             "governance_status": ctx["governance_status"],
+            "backtesting": backtesting_summary,
+            "calibration": calibration_summary,
         },
     )
     write_system_health(
@@ -593,6 +722,8 @@ def run_scheduler_once(*, injected_data: dict[str, Any] | None = None, base_data
             "kalshi_records_rejected": kalshi_evaluation["records_rejected"],
             "kalshi_review_candidates_created": len(kalshi_evaluation["candidates"]),
             "kalshi_flagged_low_liquidity_count": kalshi_evaluation["flagged_low_liquidity_count"],
+            "kalshi_flagged_partial_pricing_count": kalshi_evaluation["flagged_partial_pricing_count"],
+            "kalshi_rejected_reason_counts": kalshi_evaluation["rejected_reason_counts"],
         },
     )
     return {
@@ -612,17 +743,26 @@ def run_scheduler_once(*, injected_data: dict[str, Any] | None = None, base_data
         "sharp_records_received": sharp_evaluation["records_received"],
         "sharp_records_valid": sharp_evaluation["records_valid"],
         "sharp_records_rejected": sharp_evaluation["records_rejected"],
+        "sharp_candidates_created": len(sharp_evaluation["candidates"]),
+        "sharp_blockers": list(sharp_evaluation.get("blockers", [])),
         "kalshi_records_received": kalshi_evaluation["records_received"],
         "kalshi_records_valid": kalshi_evaluation["records_valid"],
         "kalshi_records_rejected": kalshi_evaluation["records_rejected"],
         "candidates_created": new_items,
         "kalshi_candidates_created": len(kalshi_evaluation["candidates"]),
+        "kalshi_watch_items_created": len(monitor_result.get("candidates", [])),
         "kalshi_flagged_low_liquidity_count": kalshi_evaluation["flagged_low_liquidity_count"],
+        "kalshi_flagged_partial_pricing_count": kalshi_evaluation["flagged_partial_pricing_count"],
         "kalshi_rejected_reason_counts": kalshi_evaluation["rejected_reason_counts"],
+        "kalshi_blockers": list(kalshi_evaluation.get("blockers", [])),
         "review_required_count": review_required_count,
         "watch_recheck_count": watch_recheck_count,
         "skipped_items": skipped,
         "skipped_count": len(skipped),
+        "alerts_created": len(alerts),
+        "alerts": alerts,
+        "backtesting": backtesting_summary,
+        "calibration": calibration_summary,
         "report_path": report.get("path"),
         "blockers": list(sharp_evaluation.get("blockers", [])) + list(kalshi_evaluation.get("blockers", [])),
     }

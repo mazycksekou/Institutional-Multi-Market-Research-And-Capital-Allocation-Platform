@@ -2757,8 +2757,20 @@ async def get_automation_scheduler_health():
 
 
 @app.get("/api/automation/review-queue", operation_id="getAutomationSchedulerReviewQueue")
-async def get_automation_scheduler_review_queue(verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=10)):
-    queue = automation_scheduler.get_scheduler_review_queue()
+async def get_automation_scheduler_review_queue(
+    provider: str = Query(default="all"),
+    market_type: str = Query(default="all"),
+    reason: Optional[str] = Query(default=None),
+    verbose: bool = Query(default=False),
+    include_debug: bool = Query(default=False),
+    limit: int = Query(default=10),
+):
+    queue = automation_scheduler.get_scheduler_review_queue(
+        provider=provider,
+        market_type=market_type,
+        reason=reason,
+        limit=min(max(int(limit), 1), 100 if verbose else 10),
+    )
     cap = min(max(int(limit), 1), 100 if verbose else 10)
     compact = compact_review_queue_response(queue, limit=cap)
     if verbose or include_debug:

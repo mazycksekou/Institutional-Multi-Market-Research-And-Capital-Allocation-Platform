@@ -28,3 +28,9 @@ def write_report(config: dict[str, Any], *, report_name: str, payload: dict[str,
     path = report_dir / f"{sanitize_filename(report_name)}.json"
     path.write_text(json.dumps(wrapper, indent=2, sort_keys=True), encoding="utf-8")
     return {"path": str(path), "report_name": report_name, "schema_version": SCHEMA_VERSION}
+
+
+def write_compact_report(config: dict[str, Any], *, report_name: str, payload: dict[str, Any]) -> dict[str, Any]:
+    compact = redact_secrets(payload)
+    path_meta = write_report(config, report_name=report_name, payload=compact)
+    return {"path": path_meta["path"], "report_name": report_name, "schema_version": SCHEMA_VERSION}

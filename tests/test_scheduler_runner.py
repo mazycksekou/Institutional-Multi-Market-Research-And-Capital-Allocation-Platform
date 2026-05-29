@@ -128,7 +128,9 @@ class TestSchedulerRunner(unittest.TestCase):
                     "contract_title": "Contract 5",
                     "ticker": "KXEVENT-5",
                     "yes_price": None,
-                    "no_price": 0.41,
+                    "no_price": None,
+                    "yes_bid": 0.40,
+                    "yes_ask": 0.42,
                     "close_time": (now + timedelta(hours=2)).isoformat(),
                     "status": "open",
                     "settlement_rule": "official_results",
@@ -156,19 +158,20 @@ class TestSchedulerRunner(unittest.TestCase):
                 kalshi_items = [item for item in queue["items"] if item.get("provider_id") == "kalshi_prediction_market"]
 
                 self.assertEqual(result["kalshi_records_received"], 5)
-                self.assertEqual(result["kalshi_records_valid"], 2)
-                self.assertEqual(result["kalshi_records_rejected"], 3)
+                self.assertEqual(result["kalshi_records_valid"], 3)
+                self.assertEqual(result["kalshi_records_rejected"], 2)
                 self.assertEqual(result["kalshi_rejected_reason_counts"]["stale_market"], 1)
                 self.assertEqual(result["kalshi_rejected_reason_counts"]["closed_or_settled_market"], 1)
-                self.assertEqual(result["kalshi_rejected_reason_counts"]["missing_prices"], 1)
-                self.assertEqual(result["kalshi_flagged_low_liquidity_count"], 1)
-                self.assertGreaterEqual(result["kalshi_candidates_created"], 2)
-                self.assertEqual(len(kalshi_items), 2)
-                self.assertEqual(queue["summary"]["kalshi_candidate_count"], 2)
-                self.assertEqual(queue["summary"]["prediction_market_count"], 2)
-                self.assertEqual(queue["summary"]["review_only_count"], 2)
+                self.assertEqual(result["kalshi_flagged_low_liquidity_count"], 2)
+                self.assertEqual(result["kalshi_flagged_partial_pricing_count"], 1)
+                self.assertGreaterEqual(result["kalshi_candidates_created"], 3)
+                self.assertEqual(len(kalshi_items), 3)
+                self.assertEqual(queue["summary"]["kalshi_candidate_count"], 3)
+                self.assertEqual(queue["summary"]["prediction_market_count"], 3)
+                self.assertEqual(queue["summary"]["review_only_count"], 3)
                 self.assertEqual(queue["summary"]["execution_allowed_count"], 0)
-                self.assertEqual(queue["summary"]["flagged_low_liquidity_count"], 1)
+                self.assertEqual(queue["summary"]["flagged_low_liquidity_count"], 2)
+                self.assertEqual(queue["summary"]["flagged_partial_pricing_count"], 1)
                 self.assertTrue(all(item.get("recommendation_status") == "review_only" for item in kalshi_items))
                 self.assertTrue(all(item.get("execution_allowed") is False for item in kalshi_items))
                 self.assertTrue(all(item.get("auto_execution_enabled") is False for item in kalshi_items))

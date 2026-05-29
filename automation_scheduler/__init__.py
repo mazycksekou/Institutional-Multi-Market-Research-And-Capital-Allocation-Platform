@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 from .scheduler_runner import run_scheduler_once
 from .system_health import get_system_health
-from .review_queue import list_active_review_items
+from .review_queue import filter_review_items, list_active_review_items, summarize_review_items
 from .scheduler_config import get_default_scheduler_config, ensure_runtime_directories
 from .backtesting_engine import generate_backtest_report, run_backtest, run_paper_summary
 from .model_performance_report import build_compact_performance_report
@@ -30,25 +33,34 @@ def get_scheduler_health(base_data_dir: str | None = None):
     return get_system_health(config)
 
 
-def get_scheduler_review_queue(base_data_dir: str | None = None):
+def get_scheduler_review_queue(
+    base_data_dir: str | None = None,
+    *,
+    provider: str = "all",
+    market_type: str = "all",
+    reason: str | None = None,
+    limit: int | None = None,
+):
     config = get_default_scheduler_config(base_data_dir=base_data_dir)
     ensure_runtime_directories(config)
     items = list_active_review_items(config)
-    kalshi_items = [item for item in items if item.get("provider_id") == "kalshi_prediction_market"]
-    flagged_low_liquidity = [item for item in kalshi_items if bool(item.get("low_liquidity"))]
-    summary = {
-        "kalshi_candidate_count": len(kalshi_items),
-        "prediction_market_count": len([item for item in items if item.get("market_type") == "prediction_market"]),
-        "review_only_count": len([item for item in items if item.get("recommendation_status") == "review_only"]),
-        "execution_allowed_count": len([item for item in items if bool(item.get("execution_allowed"))]),
-        "flagged_low_liquidity_count": len(flagged_low_liquidity),
-        "rejected_count": 0,
-    }
+    filtered = filter_review_items(items, provider=provider, market_type=market_type, reason=reason)
+    if isinstance(limit, int) and limit > 0:
+        filtered = filtered[:limit]
+    rejected_reason_counts: dict[str, int] = {}
+    health_path = Path(config["paths"]["system_health"]) / "health.json"
+    if health_path.exists():
+        try:
+            health_payload = json.loads(health_path.read_text(encoding="utf-8"))
+            rejected_reason_counts = dict(health_payload.get("kalshi_rejected_reason_counts", {}))
+        except Exception:
+            rejected_reason_counts = {}
+    summary = summarize_review_items(filtered, rejected_reason_counts=rejected_reason_counts)
     return {
         "ok": True,
         "status": "ok",
-        "count": len(items),
-        "items": items,
+        "count": len(filtered),
+        "items": filtered,
         "summary": summary,
         "human_approval_required": True,
         "auto_execution_enabled": False,

@@ -26,11 +26,17 @@ class TestResponseCompactor(unittest.TestCase):
             "count": 1,
             "summary": {
                 "kalshi_candidate_count": 1,
+                "sharp_candidate_count": 0,
                 "prediction_market_count": 1,
+                "sportsbook_count": 0,
                 "review_only_count": 1,
                 "execution_allowed_count": 0,
                 "flagged_low_liquidity_count": 1,
+                "flagged_partial_pricing_count": 1,
                 "rejected_count": 3,
+                "rejected_reason_counts": {"missing_prices": 3},
+                "provider_counts": {"kalshi_prediction_market": 1},
+                "total_count": 1,
             },
             "items": [
                 {
@@ -48,6 +54,8 @@ class TestResponseCompactor(unittest.TestCase):
                     "no_bid": 0.44,
                     "no_ask": 0.46,
                     "implied_probability": 0.55,
+                    "partial_pricing": True,
+                    "price_source": "partial_bid_ask",
                     "volume": 10,
                     "open_interest": 20,
                     "liquidity_score": 0.1,
@@ -67,7 +75,9 @@ class TestResponseCompactor(unittest.TestCase):
         self.assertEqual(c["review_only_count"], 1)
         self.assertEqual(c["execution_allowed_count"], 0)
         self.assertEqual(c["flagged_low_liquidity_count"], 1)
+        self.assertEqual(c["flagged_partial_pricing_count"], 1)
         self.assertEqual(c["rejected_count"], 3)
+        self.assertEqual(c["rejected_reason_counts"]["missing_prices"], 3)
         self.assertEqual(c["items"][0]["recommendation_status"], "review_only")
         self.assertFalse(c["items"][0]["execution_allowed"])
 

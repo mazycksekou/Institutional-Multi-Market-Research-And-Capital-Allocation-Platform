@@ -62,6 +62,7 @@ def build_review_item(candidate: dict[str, Any], config: dict[str, Any]) -> dict
         "updated_at": now,
         "source": candidate.get("source", "scheduler"),
         "provider_id": candidate.get("provider_id", candidate.get("provider", "unknown")),
+        "source_type": candidate.get("source_type", candidate.get("market_type", "unknown")),
         "market_type": candidate.get("market_type", "unknown"),
         "sport_or_symbol": candidate.get("sport_or_symbol", "unknown"),
         "event_id": candidate.get("event_id"),
@@ -83,6 +84,10 @@ def build_review_item(candidate: dict[str, Any], config: dict[str, Any]) -> dict
         "no_ask": candidate.get("no_ask"),
         "yes_price": candidate.get("yes_price"),
         "no_price": candidate.get("no_price"),
+        "price_source": candidate.get("price_source"),
+        "derived_price": bool(candidate.get("derived_price", False)),
+        "partial_pricing": bool(candidate.get("partial_pricing", False)),
+        "pricing_quality": candidate.get("pricing_quality"),
         "candidate_type": candidate.get("candidate_type"),
         "books_compared": candidate.get("books_compared"),
         "best_book": candidate.get("best_book"),
@@ -165,6 +170,9 @@ def build_review_item(candidate: dict[str, Any], config: dict[str, Any]) -> dict
         "opportunity_score": round(opportunity_score, 2),
         "confidence": candidate.get("confidence"),
         "risk": candidate.get("risk"),
+        "confidence_score": candidate.get("confidence_score"),
+        "risk_score": candidate.get("risk_score"),
+        "review_priority_score": candidate.get("review_priority_score"),
         "liquidity": candidate.get("liquidity", 0.5),
         "liquidity_score": candidate.get("liquidity_score"),
         "low_liquidity": bool(candidate.get("low_liquidity", False)),
@@ -178,6 +186,7 @@ def build_review_item(candidate: dict[str, Any], config: dict[str, Any]) -> dict
         "execution_allowed": False,
         "recommendation_status": candidate.get("recommendation_status", "review_only"),
         "reason": candidate.get("reason", ""),
+        "reason_codes": list(candidate.get("reason_codes") or ([] if not candidate.get("reason") else [candidate.get("reason")])),
         "blockers": list(candidate.get("blockers") or []),
         "top_reasons": list(candidate.get("top_reasons") or [])[:5],
         "blocked_reasons": list(candidate.get("blocked_reasons") or []),
@@ -248,3 +257,55 @@ def rescore_review_queue(config: dict[str, Any]) -> list[dict[str, Any]]:
 
 def list_active_review_items(config: dict[str, Any]) -> list[dict[str, Any]]:
     return rescore_review_queue(config)
+
+
+def filter_review_items(
+    items: list[dict[str, Any]],
+    *,
+    provider: str = "all",
+    market_type: str = "all",
+    reason: str | None = None,
+) -> list[dict[str, Any]]:
+    filtered = list(items)
+    provider_key = str(provider or "all").lower()
+    market_key = str(market_type or "all").lower()
+    reason_key = str(reason or "").strip().lower()
+    if provider_key != "all":
+        filtered = [
+            item
+            for item in filtered
+            if str(item.get("provider_id", item.get("provider", ""))).lower() == provider_key
+        ]
+    if market_key != "all":
+        filtered = [item for item in filtered if str(item.get("market_type", "")).lower() == market_key]
+    if reason_key:
+        filtered = [
+            item
+            for item in filtered
+            if reason_key == str(item.get("reason", "")).lower()
+            or reason_key in {str(code).lower() for code in (item.get("reason_codes") or [])}
+        ]
+    return filtered
+
+
+def summarize_review_items(items: list[dict[str, Any]], *, rejected_reason_counts: dict[str, int] | None = None) -> dict[str, Any]:
+    provider_counts: dict[str, int] = {}
+    for item in items:
+        provider_id = str(item.get("provider_id", item.get("provider", "unknown")))
+        provider_counts[provider_id] = provider_counts.get(provider_id, 0) + 1
+    kalshi_items = [item for item in items if item.get("provider_id") == "kalshi_prediction_market"]
+    summary = {
+        "total_count": len(items),
+        "provider_counts": provider_counts,
+        "kalshi_candidate_count": len(kalshi_items),
+        "sharp_candidate_count": len([item for item in items if item.get("provider_id") == "sharp_sportsbook"]),
+        "prediction_market_count": len([item for item in items if item.get("market_type") == "prediction_market"]),
+        "sportsbook_count": len([item for item in items if item.get("market_type") != "prediction_market"]),
+        "review_only_count": len([item for item in items if item.get("recommendation_status") == "review_only"]),
+        "execution_allowed_count": len([item for item in items if bool(item.get("execution_allowed"))]),
+        "flagged_low_liquidity_count": len([item for item in items if bool(item.get("low_liquidity"))]),
+        "flagged_partial_pricing_count": len([item for item in items if bool(item.get("partial_pricing"))]),
+        "rejected_count": int(sum((rejected_reason_counts or {}).values())),
+        "rejected_reason_counts": dict(rejected_reason_counts or {}),
+    }
+    return summary

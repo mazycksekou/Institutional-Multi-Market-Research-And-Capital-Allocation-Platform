@@ -3,7 +3,13 @@ import unittest
 from datetime import datetime, timedelta, timezone
 from tempfile import TemporaryDirectory
 
-from automation_scheduler.review_queue import build_review_item, list_active_review_items, upsert_review_item
+from automation_scheduler.review_queue import (
+    build_review_item,
+    filter_review_items,
+    list_active_review_items,
+    summarize_review_items,
+    upsert_review_item,
+)
 from automation_scheduler.scheduler_config import get_default_scheduler_config
 
 
@@ -66,3 +72,15 @@ class TestReviewQueue(unittest.TestCase):
             with open(queue_path, "w", encoding="utf-8") as handle:
                 json.dump([stale_item], handle)
             self.assertEqual(list_active_review_items(config), [])
+
+    def test_filter_and_summary(self):
+        items = [
+            {"provider_id": "kalshi_prediction_market", "market_type": "prediction_market", "recommendation_status": "review_only", "execution_allowed": False, "low_liquidity": True, "partial_pricing": True, "reason_codes": ["partial_pricing"]},
+            {"provider_id": "sharp_sportsbook", "market_type": "sports_pregame_main", "recommendation_status": "review_only", "execution_allowed": False, "low_liquidity": False, "partial_pricing": False, "reason_codes": ["watch"]},
+        ]
+        only_kalshi = filter_review_items(items, provider="kalshi_prediction_market")
+        self.assertEqual(len(only_kalshi), 1)
+        summary = summarize_review_items(items, rejected_reason_counts={"missing_prices": 2})
+        self.assertEqual(summary["kalshi_candidate_count"], 1)
+        self.assertEqual(summary["flagged_partial_pricing_count"], 1)
+        self.assertEqual(summary["rejected_reason_counts"]["missing_prices"], 2)

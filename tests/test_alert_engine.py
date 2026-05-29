@@ -1,6 +1,6 @@
 import unittest
 
-from automation_scheduler.alert_engine import build_alert
+from automation_scheduler.alert_engine import build_alert, generate_alert_candidates
 from automation_scheduler.scheduler_config import get_default_scheduler_config
 
 
@@ -17,3 +17,14 @@ class TestAlertEngine(unittest.TestCase):
         alert = build_alert({"opportunity_score": 90, "governance_status": "blocked_by_governance"}, thresholds)
         self.assertEqual(alert["recommended_action"], "no_bet")
         self.assertIn("blocked_by_governance", alert["blockers"])
+
+    def test_alert_generation_dedupes(self):
+        alerts = generate_alert_candidates(
+            [
+                {"id": "1", "provider_id": "kalshi_prediction_market", "ticker": "KX-1", "reason_codes": ["probability_move"], "recommendation_status": "review_only"},
+                {"id": "2", "provider_id": "kalshi_prediction_market", "ticker": "KX-1", "reason_codes": ["probability_move"], "recommendation_status": "review_only"},
+            ],
+            time_bucket="bucket1",
+        )
+        self.assertEqual(len(alerts), 1)
+        self.assertFalse(alerts[0]["execution_allowed"])

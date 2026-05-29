@@ -40,6 +40,18 @@ class SnapshotStore:
     def load_latest_snapshot(self, namespace: str, key: str) -> dict[str, Any] | None:
         return self.load_snapshot(namespace, key)
 
+    def list_snapshots(self, namespace: str) -> list[dict[str, Any]]:
+        folder = self._base_dir / sanitize_filename(namespace)
+        if not folder.exists():
+            return []
+        items: list[dict[str, Any]] = []
+        for path in sorted(folder.glob("*.json")):
+            try:
+                items.append(json.loads(path.read_text(encoding="utf-8")))
+            except Exception:
+                continue
+        return items
+
     @staticmethod
     def diff_snapshots(previous: dict[str, Any] | None, current: dict[str, Any] | None) -> dict[str, Any]:
         previous_payload = (previous or {}).get("payload", previous or {})
