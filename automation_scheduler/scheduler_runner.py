@@ -22,6 +22,8 @@ from .report_writer import write_report
 from .review_queue import build_review_item, list_active_review_items, upsert_review_item
 from .system_health import write_system_health
 from .run_context import create_run_context
+from .kalshi_market_provider import get_kalshi_snapshot, summarize_kalshi_snapshot
+from .kalshi_readonly_adapter import KalshiReadonlyAdapter
 from .sharp_sportsbook_adapter import SharpSportsbookAdapter
 from .sportsbook_odds_provider import get_valid_normalized_records, summarize_sportsbook_snapshot
 
@@ -30,6 +32,7 @@ def _collect_provider_placeholders(config: dict[str, Any]) -> dict[str, Any]:
     snapshots = []
     skipped: list[dict[str, str]] = []
     sharp_snapshot: dict[str, Any] | None = None
+    kalshi_snapshot: dict[str, Any] | None = None
     for provider_id, contract in config.get("providers", {}).items():
         if provider_id == "sharp_sportsbook":
             sharp = SharpSportsbookAdapter(contract)
@@ -56,6 +59,34 @@ def _collect_provider_placeholders(config: dict[str, Any]) -> dict[str, Any]:
                 snapshots.append(summarize_sportsbook_snapshot(sharp_snapshot))
             continue
 
+        if provider_id == "kalshi_prediction_market":
+            kalshi = KalshiReadonlyAdapter(contract)
+            config_check = kalshi.validate_config()
+            can_read_live = bool(
+                contract.get("enabled", False)
+                and contract.get("live_calls_enabled", False)
+                and config_check.get("credential_status") == "ok"
+                and config.get("dry_run", True) is True
+                and config.get("auto_execution_enabled", False) is False
+                and contract.get("auto_execution_enabled", False) is False
+                and contract.get("kalshi_order_execution_enabled", False) is False
+            )
+            if can_read_live:
+                kalshi_snapshot = get_kalshi_snapshot(kalshi)
+                snapshots.append(summarize_kalshi_snapshot(kalshi_snapshot))
+            else:
+                kalshi_reason = "dry_run_placeholder"
+                if "provider_disabled" in config_check["blockers"]:
+                    kalshi_reason = "provider_disabled"
+                elif "live_reads_disabled" in config_check["blockers"]:
+                    kalshi_reason = "live_reads_disabled"
+                elif "blocked_missing_credentials" in config_check["blockers"]:
+                    kalshi_reason = "missing_credentials"
+                skipped.append({"provider_id": provider_id, "reason": kalshi_reason})
+                kalshi_snapshot = get_kalshi_snapshot(kalshi)
+                snapshots.append(summarize_kalshi_snapshot(kalshi_snapshot))
+            continue
+
         adapter = ProviderAdapterBase(contract)
         config_check = adapter.validate_config()
         skipped_reason = "dry_run_placeholder"
@@ -73,6 +104,7 @@ def _collect_provider_placeholders(config: dict[str, Any]) -> dict[str, Any]:
         "skipped": skipped,
         "health": summarize_provider_health(config.get("providers", {})),
         "sharp_snapshot": sharp_snapshot,
+        "kalshi_snapshot": kalshi_snapshot,
     }
 
 

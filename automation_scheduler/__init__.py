@@ -9,6 +9,13 @@ from .model_performance_report import build_compact_performance_report
 from .provider_health import summarize_provider_health
 from .provider_registry import get_provider_registry
 from .sharp_sportsbook_adapter import SharpSportsbookAdapter
+from .kalshi_readonly_adapter import KalshiReadonlyAdapter
+from .kalshi_market_provider import (
+    get_kalshi_snapshot,
+    summarize_kalshi_snapshot,
+    validate_kalshi_snapshot,
+    write_kalshi_snapshot,
+)
 from .sportsbook_odds_provider import (
     get_sportsbook_snapshot,
     summarize_sportsbook_snapshot,
@@ -114,6 +121,31 @@ def run_sharp_provider_snapshot(base_data_dir: str | None = None, write_snapshot
     if write_snapshot and int(snapshot.get("records_received", 0)) > 0:
         snapshot_path = write_sportsbook_snapshot(snapshot, base_data_dir=base_data_dir or "data")
     summary = summarize_sportsbook_snapshot(snapshot, snapshot_path=snapshot_path)
+    summary["validation_status"] = validation["status"]
+    summary["validation_errors"] = validation["errors"][:10]
+    return summary
+
+
+def get_kalshi_provider_health(base_data_dir: str | None = None):
+    config = get_default_scheduler_config(base_data_dir=base_data_dir)
+    ensure_runtime_directories(config)
+    contract = dict(config["providers"].get("kalshi_prediction_market", {}))
+    adapter = KalshiReadonlyAdapter(contract)
+    payload = adapter.health_check()
+    return summarize_kalshi_snapshot(payload)
+
+
+def run_kalshi_provider_snapshot(base_data_dir: str | None = None, write_snapshot: bool = True):
+    config = get_default_scheduler_config(base_data_dir=base_data_dir)
+    ensure_runtime_directories(config)
+    contract = dict(config["providers"].get("kalshi_prediction_market", {}))
+    adapter = KalshiReadonlyAdapter(contract)
+    snapshot = get_kalshi_snapshot(adapter)
+    validation = validate_kalshi_snapshot(snapshot)
+    snapshot_path = None
+    if write_snapshot and int(snapshot.get("records_received", 0)) > 0:
+        snapshot_path = write_kalshi_snapshot(snapshot, base_data_dir=base_data_dir or "data")
+    summary = summarize_kalshi_snapshot(snapshot, snapshot_path=snapshot_path)
     summary["validation_status"] = validation["status"]
     summary["validation_errors"] = validation["errors"][:10]
     return summary

@@ -118,3 +118,25 @@ class TestResponseCompactor(unittest.TestCase):
         self.assertTrue(compact["diagnostic"]["secret_redacted"])
         self.assertNotIn("raw_body", str(compact))
         self.assertNotIn("authorization", str(compact).lower())
+
+    def test_kalshi_provider_status_compact_shape(self):
+        compact = compact_provider_status(
+            {
+                "ok": True,
+                "status": "provider_disabled",
+                "provider_id": "kalshi_prediction_market",
+                "provider_enabled": False,
+                "live_calls_enabled": False,
+                "dry_run": True,
+                "credential_status": "missing_credentials",
+                "records_received": 0,
+                "records_valid": 0,
+                "records_rejected": 0,
+                "rejection_reason_counts": {},
+                "blockers": ["provider_disabled"],
+                "provider_payload": {"api_key": "secret-value"},
+            }
+        )
+        self.assertEqual(compact["provider_id"], "kalshi_prediction_market")
+        self.assertNotIn("provider_payload", str(compact))
+        self.assertNotIn("secret-value", str(compact))

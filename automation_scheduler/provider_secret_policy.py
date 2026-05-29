@@ -87,6 +87,8 @@ def list_required_secret_names(provider_id: str) -> list[str]:
     provider = (provider_id or "").strip().lower()
     if provider == "sharp_sportsbook":
         return ["SHARP_API_KEY"]
+    if provider in {"kalshi_prediction_market", "kalshi"}:
+        return ["KALSHI_API_KEY", "KALSHI_API_SECRET"]
     return []
 
 

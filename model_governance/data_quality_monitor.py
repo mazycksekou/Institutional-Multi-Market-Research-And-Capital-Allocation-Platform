@@ -25,6 +25,10 @@ def evaluate_data_quality(**kwargs):
         kwargs.get("provider_id") == "sharp_sportsbook"
         and not kwargs.get("stale_provider_payload", False)
         and kwargs.get("validation_status", "accepted") in {"accepted", "ok"}
+    ) or (
+        kwargs.get("provider_id") == "kalshi_prediction_market"
+        and not kwargs.get("stale_provider_payload", False)
+        and kwargs.get("validation_status", "accepted") in {"accepted", "ok"}
     )
     return {
         "issues": issues,

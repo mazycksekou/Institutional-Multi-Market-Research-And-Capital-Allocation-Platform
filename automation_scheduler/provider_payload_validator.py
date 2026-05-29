@@ -50,6 +50,27 @@ def validate_provider_payload(
         if not payload.get("event_id"):
             errors.append("missing_event_id")
 
+    if provider_type == "prediction_market":
+        if not payload.get("market_id"):
+            errors.append("missing_market_id")
+        if not payload.get("event_id"):
+            errors.append("missing_event_id")
+        if not payload.get("contract_id"):
+            errors.append("missing_contract_id")
+
+        for price_field in ("yes_price", "no_price", "yes_bid", "yes_ask", "no_bid", "no_ask"):
+            if price_field in payload and payload.get(price_field) is not None:
+                if not _is_number(payload.get(price_field)):
+                    errors.append("malformed_price")
+                    continue
+                price_value = float(payload.get(price_field))
+                if price_value < 0 or price_value > 1:
+                    errors.append("malformed_price")
+
+        for numeric_field, malformed_code in (("volume", "malformed_volume"), ("open_interest", "malformed_open_interest")):
+            if numeric_field in payload and payload.get(numeric_field) is not None and not _is_number(payload.get(numeric_field)):
+                errors.append(malformed_code)
+
     if provider_type in {"sportsbook_odds", "player_props"}:
         if not payload.get("market"):
             errors.append("missing_market_name")
@@ -72,4 +93,3 @@ def validate_provider_payload(
         "errors": errors,
         "validation_status": "accepted" if len(errors) == 0 else "rejected",
     }
-

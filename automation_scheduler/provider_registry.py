@@ -18,9 +18,13 @@ def _env_bool(name: str, default: bool = False) -> bool:
 def get_provider_registry() -> dict[str, dict[str, Any]]:
     registry = get_default_provider_contracts()
     sharp_credential_status = credential_status_from_env("sharp_sportsbook")
+    kalshi_credential_status = credential_status_from_env("kalshi_prediction_market")
     sharp_provider_enabled = _env_bool("SHARP_PROVIDER_ENABLED", default=False)
     sharp_live_reads_enabled = _env_bool("SHARP_LIVE_READS_ENABLED", default=False)
     sharp_live_calls_enabled = bool(sharp_provider_enabled and sharp_live_reads_enabled)
+    kalshi_provider_enabled = _env_bool("KALSHI_PROVIDER_ENABLED", default=False)
+    kalshi_live_reads_enabled = _env_bool("KALSHI_LIVE_READS_ENABLED", default=False)
+    kalshi_live_calls_enabled = bool(kalshi_provider_enabled and kalshi_live_reads_enabled)
     registry["sharp_sportsbook"] = {
         "provider_id": "sharp_sportsbook",
         "provider_name": "Sharp Sportsbook",
@@ -46,12 +50,38 @@ def get_provider_registry() -> dict[str, dict[str, Any]]:
         "contract_status": "defined",
         "read_only_mode": True,
     }
+    registry["kalshi_prediction_market"] = {
+        "provider_id": "kalshi_prediction_market",
+        "provider_name": "Kalshi Prediction Market",
+        "provider_type": "prediction_market",
+        "enabled": kalshi_provider_enabled,
+        "dry_run": True,
+        "supports_streaming": False,
+        "supports_polling": True,
+        "min_poll_seconds": 30,
+        "rate_limit_note": "read_only_get_only",
+        "credential_status": kalshi_credential_status["status"],
+        "required_credentials": ["KALSHI_API_KEY", "KALSHI_API_SECRET"],
+        "supported_markets": ["event_contracts", "yes_no_contracts", "binary_markets"],
+        "output_schema_version": "automation_scheduler.v1.kalshi_prediction_market.v1",
+        "last_health_status": "not_checked",
+        "live_calls_enabled": kalshi_live_calls_enabled,
+        "provider_live_calls_enabled": kalshi_live_calls_enabled,
+        "provider_credentials_required": True,
+        "human_approval_required": True,
+        "auto_execution_enabled": False,
+        "auto_bet_enabled": False,
+        "auto_trade_enabled": False,
+        "kalshi_order_execution_enabled": False,
+        "contract_status": "defined",
+        "read_only_mode": True,
+    }
     registry["stock_placeholder"] = dict(registry["stock_price_placeholder"])
     registry["news_placeholder"] = dict(registry["news_events_placeholder"])
     # compatibility aliases
     registry["sportsbooks"] = dict(registry["sportsbook_placeholder"])
     registry["odds_api"] = dict(registry["player_props_placeholder"])
-    registry["kalshi"] = dict(registry["kalshi_placeholder"])
+    registry["kalshi"] = dict(registry["kalshi_prediction_market"])
     registry["alpaca"] = dict(registry["stock_placeholder"])
     registry["news_provider"] = dict(registry["news_placeholder"])
     for key, value in registry.items():

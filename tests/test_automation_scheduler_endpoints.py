@@ -31,3 +31,18 @@ class TestAutomationSchedulerEndpoints(unittest.TestCase):
     def test_run_once_rejects_non_dry_run(self):
         r = self.client.post('/api/automation/run-once', json={'dry_run': False})
         self.assertEqual(r.status_code, 400)
+
+    def test_kalshi_provider_endpoints_compact_default(self):
+        health = self.client.get('/api/providers/kalshi/health')
+        self.assertEqual(health.status_code, 200)
+        health_payload = health.json()
+        self.assertIn('provider_id', health_payload)
+        self.assertEqual(health_payload['provider_id'], 'kalshi_prediction_market')
+        self.assertNotIn('records', health_payload)
+
+        snap = self.client.post('/api/providers/kalshi/snapshot')
+        self.assertEqual(snap.status_code, 200)
+        snap_payload = snap.json()
+        self.assertIn('status', snap_payload)
+        self.assertIn('blockers', snap_payload)
+        self.assertNotIn('api_key', str(snap_payload).lower())

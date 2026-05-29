@@ -94,8 +94,8 @@ def get_default_provider_contracts() -> dict[str, dict[str, Any]]:
             provider_id="kalshi_placeholder",
             provider_name="Kalshi Placeholder",
             provider_type="prediction_market",
-            supports_streaming=True,
-            min_poll_seconds=15,
+            supports_streaming=False,
+            min_poll_seconds=30,
             supported_markets=["yes_no_contracts"],
         ),
         "stock_price_placeholder": build_provider_contract(
@@ -141,4 +141,3 @@ def write_provider_contract_snapshot(base_data_dir: str = "data") -> str:
     path = Path(paths["provider_contracts"]) / "provider_contracts.json"
     path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
     return str(path)
-

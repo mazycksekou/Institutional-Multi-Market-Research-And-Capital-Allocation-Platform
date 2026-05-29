@@ -7,6 +7,8 @@ class TestProviderRegistry(unittest.TestCase):
     def setUp(self):
         os.environ.pop("SHARP_PROVIDER_ENABLED", None)
         os.environ.pop("SHARP_LIVE_READS_ENABLED", None)
+        os.environ.pop("KALSHI_PROVIDER_ENABLED", None)
+        os.environ.pop("KALSHI_LIVE_READS_ENABLED", None)
 
     def test_placeholder_only(self):
         r = get_provider_registry()
@@ -36,3 +38,16 @@ class TestProviderRegistry(unittest.TestCase):
             sharp = get_provider_registry()["sharp_sportsbook"]
             self.assertTrue(sharp["enabled"])
             self.assertTrue(sharp["live_calls_enabled"])
+
+    def test_kalshi_flags_default_to_disabled(self):
+        kalshi = get_provider_registry()["kalshi_prediction_market"]
+        self.assertFalse(kalshi["enabled"])
+        self.assertFalse(kalshi["live_calls_enabled"])
+        self.assertEqual(kalshi["provider_type"], "prediction_market")
+
+    def test_kalshi_provider_enabled_flag_controls_metadata(self):
+        os.environ["KALSHI_PROVIDER_ENABLED"] = "true"
+        os.environ["KALSHI_LIVE_READS_ENABLED"] = "on"
+        kalshi = get_provider_registry()["kalshi_prediction_market"]
+        self.assertTrue(kalshi["enabled"])
+        self.assertTrue(kalshi["live_calls_enabled"])
