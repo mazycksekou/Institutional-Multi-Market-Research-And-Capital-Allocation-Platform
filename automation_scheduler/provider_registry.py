@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from math import ceil
 from typing import Any
 
@@ -7,14 +8,24 @@ from .provider_contracts import get_default_provider_contracts
 from .provider_secret_policy import credential_status_from_env
 
 
+def _env_bool(name: str, default: bool = False) -> bool:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
 def get_provider_registry() -> dict[str, dict[str, Any]]:
     registry = get_default_provider_contracts()
     sharp_credential_status = credential_status_from_env("sharp_sportsbook")
+    sharp_provider_enabled = _env_bool("SHARP_PROVIDER_ENABLED", default=False)
+    sharp_live_reads_enabled = _env_bool("SHARP_LIVE_READS_ENABLED", default=False)
+    sharp_live_calls_enabled = bool(sharp_provider_enabled and sharp_live_reads_enabled)
     registry["sharp_sportsbook"] = {
         "provider_id": "sharp_sportsbook",
         "provider_name": "Sharp Sportsbook",
         "provider_type": "sportsbook_odds",
-        "enabled": False,
+        "enabled": sharp_provider_enabled,
         "dry_run": True,
         "supports_streaming": False,
         "supports_polling": True,
@@ -25,8 +36,8 @@ def get_provider_registry() -> dict[str, dict[str, Any]]:
         "supported_markets": ["moneyline", "spread", "total", "player_props"],
         "output_schema_version": "automation_scheduler.v1.sharp_sportsbook.v1",
         "last_health_status": "not_checked",
-        "live_calls_enabled": False,
-        "provider_live_calls_enabled": False,
+        "live_calls_enabled": sharp_live_calls_enabled,
+        "provider_live_calls_enabled": sharp_live_calls_enabled,
         "provider_credentials_required": True,
         "human_approval_required": True,
         "auto_execution_enabled": False,

@@ -35,11 +35,11 @@ class TestSportsbookOddsProvider(unittest.TestCase):
     def test_dry_run_placeholder_snapshot(self):
         adapter = SharpSportsbookAdapter(get_provider_registry()["sharp_sportsbook"])
         snap = adapter.fetch_snapshot()
-        self.assertEqual(snap["status"], "blocked_missing_credentials")
+        self.assertIn(snap["status"], {"provider_disabled", "live_reads_disabled", "blocked_missing_credentials"})
         normalized = normalize_sportsbook_snapshot(snap)
         summary = summarize_sportsbook_snapshot(normalized)
         compact = compact_provider_status(summary)
-        self.assertIn(compact["status"], {"blocked_missing_credentials", "dry_run_placeholder"})
+        self.assertIn(compact["status"], {"provider_disabled", "live_reads_disabled", "blocked_missing_credentials"})
         self.assertNotIn("source_payload_redacted", str(compact))
 
     def test_validate_snapshot_stale_payload_flagged(self):

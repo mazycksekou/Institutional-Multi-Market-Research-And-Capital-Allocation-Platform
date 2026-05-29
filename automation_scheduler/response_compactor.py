@@ -251,6 +251,7 @@ def compact_provider_status(payload: dict[str, Any]) -> dict[str, Any]:
         "ok": bool(payload.get("ok", True)),
         "status": payload.get("status", "blocked"),
         "provider_id": payload.get("provider_id"),
+        "provider_enabled": bool(payload.get("provider_enabled", False)),
         "dry_run": bool(payload.get("dry_run", True)),
         "live_calls_enabled": bool(payload.get("live_calls_enabled", False)),
         "credential_status": payload.get("credential_status", "missing_credentials"),

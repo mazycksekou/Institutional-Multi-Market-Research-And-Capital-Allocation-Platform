@@ -78,6 +78,7 @@ def summarize_sportsbook_snapshot(snapshot: dict[str, Any], snapshot_path: str |
         "ok": bool(normalized.get("ok", True)),
         "status": normalized.get("status", "dry_run_placeholder"),
         "provider_id": normalized.get("provider_id", "sharp_sportsbook"),
+        "provider_enabled": bool(snapshot.get("provider_enabled", False)),
         "dry_run": bool(normalized.get("dry_run", True)),
         "live_calls_enabled": bool(snapshot.get("live_calls_enabled", not bool(normalized.get("dry_run", True)))),
         "credential_status": snapshot.get("credential_status", "missing_credentials"),

@@ -85,28 +85,28 @@ class SharpSportsbookAdapter:
     def validate_config(self) -> dict[str, Any]:
         blockers: list[str] = []
         credential = credential_status_from_env(self.provider_id)
-        enabled = bool(self.contract.get("enabled", False))
+        provider_enabled = bool(self.contract.get("enabled", False))
         live_call_contract_enabled = bool(self.contract.get("live_calls_enabled", False))
         dry_run = bool(self.contract.get("dry_run", True))
 
-        if not enabled:
+        if not provider_enabled:
             blockers.append("provider_disabled")
         if not self.live_reads_enabled or not live_call_contract_enabled:
             blockers.append("live_reads_disabled")
         if credential["status"] != "ok":
             blockers.append("blocked_missing_credentials")
-        if dry_run:
-            blockers.append("dry_run_placeholder")
         if not self.read_only_mode:
             blockers.append("read_only_required")
 
         ready = len(blockers) == 0
         return {
             "ok": ready,
-            "status": "ready" if ready else "blocked",
+            "status": "read_only_ready" if ready else "blocked",
             "blockers": blockers,
             "credential_status": credential["status"],
             "live_reads_enabled": self.live_reads_enabled,
+            "provider_enabled": provider_enabled,
+            "live_calls_enabled": bool(self.live_reads_enabled and live_call_contract_enabled),
             "provider_live_calls_enabled": bool(ready),
             "dry_run": dry_run,
             "read_only_mode": self.read_only_mode,
@@ -120,7 +120,8 @@ class SharpSportsbookAdapter:
             "provider_id": self.provider_id,
             "provider_name": self.provider_name,
             "dry_run": cfg["dry_run"],
-            "live_calls_enabled": cfg["live_reads_enabled"] and bool(self.contract.get("live_calls_enabled", False)),
+            "provider_enabled": bool(cfg["provider_enabled"]),
+            "live_calls_enabled": bool(cfg["live_calls_enabled"]),
             "credential_status": cfg["credential_status"],
             "records_received": 0,
             "records_valid": 0,
@@ -139,8 +140,10 @@ class SharpSportsbookAdapter:
             return {"ok": False, "status": "blocked_missing_credentials", "records": [], "errors": ["missing_credentials"]}
         if "live_reads_disabled" in cfg["blockers"]:
             return {"ok": True, "status": "live_reads_disabled", "records": [], "errors": []}
+        if "provider_disabled" in cfg["blockers"]:
+            return {"ok": True, "status": "provider_disabled", "records": [], "errors": []}
         if not cfg["ok"]:
-            return {"ok": True, "status": "dry_run_placeholder", "records": [], "errors": cfg["blockers"]}
+            return {"ok": True, "status": "blocked", "records": [], "errors": cfg["blockers"]}
 
         url = f"{self.base_url}/{path.lstrip('/')}"
         try:
@@ -209,25 +212,22 @@ class SharpSportsbookAdapter:
     def fetch_snapshot(self) -> dict[str, Any]:
         config_state = self.validate_config()
         credential_status = config_state["credential_status"]
-        if "blocked_missing_credentials" in config_state["blockers"]:
+        status = "blocked"
+        if "provider_disabled" in config_state["blockers"]:
+            status = "provider_disabled"
+        elif "live_reads_disabled" in config_state["blockers"]:
+            status = "live_reads_disabled"
+        elif "blocked_missing_credentials" in config_state["blockers"]:
+            status = "blocked_missing_credentials"
+        elif "read_only_required" in config_state["blockers"]:
+            status = "blocked"
+        if not config_state["ok"]:
             return {
                 "ok": True,
-                "status": "blocked_missing_credentials",
+                "status": status,
                 "provider_id": self.provider_id,
-                "credential_status": credential_status,
-                "dry_run": True,
-                "records": [],
-                "records_received": 0,
-                "records_valid": 0,
-                "records_rejected": 0,
-                "blockers": config_state["blockers"][:10],
-                "timestamp": utc_now_iso(),
-            }
-        if "live_reads_disabled" in config_state["blockers"] or "dry_run_placeholder" in config_state["blockers"]:
-            return {
-                "ok": True,
-                "status": "dry_run_placeholder",
-                "provider_id": self.provider_id,
+                "provider_enabled": bool(config_state["provider_enabled"]),
+                "live_calls_enabled": bool(config_state["live_calls_enabled"]),
                 "credential_status": credential_status,
                 "dry_run": True,
                 "records": [],
@@ -244,6 +244,8 @@ class SharpSportsbookAdapter:
                 "ok": True,
                 "status": fetch["status"],
                 "provider_id": self.provider_id,
+                "provider_enabled": bool(config_state["provider_enabled"]),
+                "live_calls_enabled": bool(config_state["live_calls_enabled"]),
                 "credential_status": credential_status,
                 "dry_run": False,
                 "records": [],
@@ -270,6 +272,8 @@ class SharpSportsbookAdapter:
             "ok": True,
             "status": "ok",
             "provider_id": self.provider_id,
+            "provider_enabled": bool(config_state["provider_enabled"]),
+            "live_calls_enabled": bool(config_state["live_calls_enabled"]),
             "credential_status": credential_status,
             "dry_run": False,
             "records": normalized,

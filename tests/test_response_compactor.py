@@ -2,7 +2,7 @@ import unittest
 from automation_scheduler.response_compactor import (
     compact_health_response, compact_review_queue_response, compact_run_once_response,
     compact_governance_inventory, compact_governance_report, compact_validation_response,
-    compact_provider_health_response, compact_provider_registry_response,
+    compact_provider_health_response, compact_provider_registry_response, compact_provider_status,
     redact_and_limit_payload,
 )
 
@@ -63,3 +63,23 @@ class TestResponseCompactor(unittest.TestCase):
         self.assertNotIn("raw_payload", str(c))
         h = compact_provider_health_response({"ok": True, "provider_count": 1, "top_provider_statuses": payload["providers"]})
         self.assertIn("provider_count", h)
+
+    def test_provider_status_includes_provider_enabled_and_redacts(self):
+        compact = compact_provider_status(
+            {
+                "ok": True,
+                "status": "read_only_ready",
+                "provider_id": "sharp_sportsbook",
+                "provider_enabled": True,
+                "live_calls_enabled": True,
+                "credential_status": "ok",
+                "records_received": 0,
+                "records_valid": 0,
+                "records_rejected": 0,
+                "blockers": [],
+                "api_key": "secret-value",
+            }
+        )
+        self.assertTrue(compact["provider_enabled"])
+        self.assertTrue(compact["live_calls_enabled"])
+        self.assertNotIn("secret-value", str(compact))
