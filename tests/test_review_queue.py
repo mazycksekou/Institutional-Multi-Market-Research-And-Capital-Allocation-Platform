@@ -1,12 +1,16 @@
 import json
 import unittest
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from tempfile import TemporaryDirectory
 
+from automation_scheduler import get_scheduler_review_queue
 from automation_scheduler.review_queue import (
     build_review_item,
     filter_review_items,
     list_active_review_items,
+    load_review_queue_state,
+    persist_review_queue_snapshot,
     summarize_review_items,
     upsert_review_item,
 )
@@ -40,7 +44,7 @@ class TestReviewQueue(unittest.TestCase):
     def test_stale_and_market_closed_items_drop_out(self):
         with TemporaryDirectory() as tmp:
             config = get_default_scheduler_config(base_data_dir=tmp)
-            queue_path = config["paths"]["review_queue"] + "\\review_queue.json"
+            queue_path = Path(config["paths"]["review_queue"]) / "review_queue.json"
             stale_item = {
                 "schema_version": config["schema_version"],
                 "id": "item1",
@@ -69,7 +73,7 @@ class TestReviewQueue(unittest.TestCase):
                 "market_close_at": (datetime.now(timezone.utc) - timedelta(minutes=5)).isoformat(),
                 "status": "active",
             }
-            with open(queue_path, "w", encoding="utf-8") as handle:
+            with queue_path.open("w", encoding="utf-8") as handle:
                 json.dump([stale_item], handle)
             self.assertEqual(list_active_review_items(config), [])
 
@@ -84,3 +88,93 @@ class TestReviewQueue(unittest.TestCase):
         self.assertEqual(summary["kalshi_candidate_count"], 1)
         self.assertEqual(summary["flagged_partial_pricing_count"], 1)
         self.assertEqual(summary["rejected_reason_counts"]["missing_prices"], 2)
+
+    def test_persisted_queue_roundtrip_and_metadata(self):
+        with TemporaryDirectory() as tmp:
+            config = get_default_scheduler_config(base_data_dir=tmp)
+            items = [
+                {"id": "k1", "provider_id": "kalshi_prediction_market", "market_type": "prediction_market", "execution_allowed": False},
+                {"id": "s1", "provider_id": "sharp_sportsbook", "market_type": "sports_pregame_main", "execution_allowed": False},
+            ]
+            meta = persist_review_queue_snapshot(config, items, run_id="run-123", summary={"total_count": 2})
+            state = load_review_queue_state(config)
+            self.assertEqual(meta["storage_backend"], "file")
+            self.assertEqual(state["storage_backend"], "file")
+            self.assertTrue(state["queue_read_ok"])
+            self.assertEqual(state["latest_run_id"], "run-123")
+            self.assertEqual(state["items_read_count"], 2)
+            self.assertEqual(len(state["items"]), 2)
+            self.assertTrue(str(state["queue_read_path"]).endswith("latest.json"))
+            self.assertNotIn(":", str(meta["queue_write_path"]))
+
+    def test_missing_queue_storage_returns_safe_empty(self):
+        with TemporaryDirectory() as tmp:
+            config = get_default_scheduler_config(base_data_dir=tmp)
+            state = load_review_queue_state(config)
+            self.assertEqual(state["items"], [])
+            self.assertEqual(state["items_read_count"], 0)
+            self.assertTrue(state["queue_read_ok"])
+            self.assertEqual(state["storage_backend"], "file")
+
+    def test_malformed_queue_storage_is_safe(self):
+        with TemporaryDirectory() as tmp:
+            config = get_default_scheduler_config(base_data_dir=tmp)
+            queue_dir = Path(config["paths"]["review_queue"])
+            queue_dir.mkdir(parents=True, exist_ok=True)
+            (queue_dir / "latest.json").write_text("{not-json", encoding="utf-8")
+            (queue_dir / "review_queue.json").write_text("{still-not-json", encoding="utf-8")
+            state = load_review_queue_state(config)
+            self.assertEqual(state["items"], [])
+            self.assertEqual(state["items_read_count"], 0)
+            self.assertFalse(state["queue_read_ok"])
+            self.assertEqual(state["queue_error_category"], "malformed_queue_storage_files")
+
+    def test_get_scheduler_review_queue_reads_persisted_items_and_filters(self):
+        with TemporaryDirectory() as tmp:
+            config = get_default_scheduler_config(base_data_dir=tmp)
+            persist_review_queue_snapshot(
+                config,
+                [
+                    {
+                        "id": "kalshi-1",
+                        "provider_id": "kalshi_prediction_market",
+                        "market_type": "prediction_market",
+                        "recommendation_status": "review_only",
+                        "execution_allowed": False,
+                        "low_liquidity": True,
+                        "partial_pricing": True,
+                        "reason_codes": ["partial_pricing"],
+                        "provider_payload": {"raw": "omit"},
+                        "api_key": "secret",
+                    },
+                    {
+                        "id": "sharp-1",
+                        "provider_id": "sharp_sportsbook",
+                        "market_type": "sports_pregame_main",
+                        "recommendation_status": "review_only",
+                        "execution_allowed": False,
+                        "low_liquidity": False,
+                        "partial_pricing": False,
+                        "reason_codes": ["watch"],
+                    },
+                ],
+                run_id="run-queue",
+                summary={"total_count": 2},
+            )
+            all_items = get_scheduler_review_queue(base_data_dir=tmp, limit=10)
+            self.assertEqual(all_items["summary"]["total_count"], 2)
+            self.assertEqual(all_items["summary"]["kalshi_candidate_count"], 1)
+            self.assertEqual(all_items["summary"]["sharp_candidate_count"], 1)
+            self.assertEqual(all_items["summary"]["review_only_count"], 2)
+            self.assertEqual(all_items["summary"]["execution_allowed_count"], 0)
+            self.assertEqual(all_items["storage_backend"], "file")
+            self.assertTrue(all_items["queue_read_ok"])
+            kalshi_only = get_scheduler_review_queue(base_data_dir=tmp, provider="kalshi_prediction_market", limit=10)
+            self.assertEqual(kalshi_only["summary"]["total_count"], 1)
+            self.assertEqual(kalshi_only["summary"]["kalshi_candidate_count"], 1)
+            prediction_only = get_scheduler_review_queue(base_data_dir=tmp, market_type="prediction_market", limit=10)
+            self.assertEqual(prediction_only["summary"]["total_count"], 1)
+            self.assertEqual(prediction_only["summary"]["prediction_market_count"], 1)
+            rendered = str(all_items["items"])
+            self.assertNotIn("provider_payload", rendered)
+            self.assertNotIn("secret", rendered)

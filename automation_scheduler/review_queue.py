@@ -7,25 +7,167 @@ from typing import Any
 from .cadence_controller import choose_next_check_seconds
 from .market_clock import apply_score_decay, is_market_closed, is_stale, seconds_since
 from .opportunity_scoring import classify_opportunity
-from .scheduler_config import SCHEMA_VERSION, safe_run_id, utc_now_iso
+from .scheduler_config import SCHEMA_VERSION, redact_secrets, safe_run_id, sanitize_filename, utc_now_iso
 
 
 def _queue_path(config: dict[str, Any]) -> Path:
-    path = Path(config["paths"]["review_queue"]) / "review_queue.json"
+    path = _queue_dir(config) / "review_queue.json"
     path.parent.mkdir(parents=True, exist_ok=True)
     return path
 
 
+def _queue_dir(config: dict[str, Any]) -> Path:
+    path = Path(config["paths"]["review_queue"])
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def _latest_queue_path(config: dict[str, Any]) -> Path:
+    return _queue_dir(config) / "latest.json"
+
+
+def _queue_items_dir(config: dict[str, Any]) -> Path:
+    path = _queue_dir(config) / "items"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def _queue_run_path(config: dict[str, Any], run_id: str) -> Path:
+    return _queue_items_dir(config) / f"{sanitize_filename(run_id)}.json"
+
+
+def _project_relative_path(config: dict[str, Any], path: Path) -> str:
+    try:
+        root = Path(config["paths"]["review_queue"]).parent
+        return str(path.resolve().relative_to(root.resolve())).replace("\\", "/")
+    except Exception:
+        return path.name
+
+
+def _read_json_file(path: Path) -> Any | None:
+    if not path.exists():
+        return None
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+
+
+def _atomic_write_json(path: Path, payload: Any) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = path.with_name(f"{path.name}.tmp")
+    tmp_path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
+    tmp_path.replace(path)
+
+
+def _sanitize_persisted_item(item: dict[str, Any]) -> dict[str, Any]:
+    redacted = redact_secrets(dict(item))
+    for key in ("provider_payload", "raw_payload", "external_payload", "source_payload"):
+        redacted.pop(key, None)
+    return redacted
+
+
 def load_review_queue(config: dict[str, Any]) -> list[dict[str, Any]]:
     path = _queue_path(config)
-    if not path.exists():
+    payload = _read_json_file(path)
+    if payload is None:
         return []
-    return json.loads(path.read_text(encoding="utf-8"))
+    if isinstance(payload, list):
+        return [item for item in payload if isinstance(item, dict)]
+    if isinstance(payload, dict) and isinstance(payload.get("items"), list):
+        return [item for item in payload["items"] if isinstance(item, dict)]
+    return []
 
 
 def save_review_queue(config: dict[str, Any], items: list[dict[str, Any]]) -> None:
     path = _queue_path(config)
-    path.write_text(json.dumps(items, indent=2, sort_keys=True), encoding="utf-8")
+    _atomic_write_json(path, items)
+
+
+def persist_review_queue_snapshot(
+    config: dict[str, Any],
+    items: list[dict[str, Any]],
+    *,
+    run_id: str,
+    summary: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    now = utc_now_iso()
+    safe_items = [_sanitize_persisted_item(item) for item in items if isinstance(item, dict)]
+    wrapper = {
+        "schema_version": SCHEMA_VERSION,
+        "storage_backend": "file",
+        "latest_run_id": str(run_id),
+        "last_updated_at": now,
+        "items_written_count": len(safe_items),
+        "summary": dict(summary or {}),
+        "items": safe_items,
+    }
+    latest_path = _latest_queue_path(config)
+    run_path = _queue_run_path(config, str(run_id))
+    save_review_queue(config, safe_items)
+    _atomic_write_json(run_path, wrapper)
+    _atomic_write_json(latest_path, wrapper)
+    return {
+        "storage_backend": "file",
+        "latest_run_id": str(run_id),
+        "last_updated_at": now,
+        "queue_write_path": _project_relative_path(config, latest_path),
+        "queue_items_run_path": _project_relative_path(config, run_path),
+        "items_written_count": len(safe_items),
+    }
+
+
+def load_review_queue_state(config: dict[str, Any]) -> dict[str, Any]:
+    latest_path = _latest_queue_path(config)
+    legacy_path = _queue_path(config)
+    latest_payload = _read_json_file(latest_path)
+    if isinstance(latest_payload, dict):
+        items = latest_payload.get("items")
+        if isinstance(items, list):
+            filtered_items = [item for item in items if isinstance(item, dict)]
+            return {
+                "storage_backend": str(latest_payload.get("storage_backend") or "file"),
+                "latest_run_id": latest_payload.get("latest_run_id"),
+                "last_updated_at": latest_payload.get("last_updated_at"),
+                "queue_read_ok": True,
+                "queue_error_category": None,
+                "queue_read_path": _project_relative_path(config, latest_path),
+                "items_read_count": len(filtered_items),
+                "items": filtered_items,
+            }
+    malformed_latest = latest_path.exists() and latest_payload is None
+    legacy_payload = _read_json_file(legacy_path)
+    if isinstance(legacy_payload, list):
+        filtered_items = [item for item in legacy_payload if isinstance(item, dict)]
+        return {
+            "storage_backend": "file",
+            "latest_run_id": None,
+            "last_updated_at": None,
+            "queue_read_ok": True,
+            "queue_error_category": None,
+            "queue_read_path": _project_relative_path(config, legacy_path),
+            "items_read_count": len(filtered_items),
+            "items": filtered_items,
+        }
+    malformed_legacy = legacy_path.exists() and legacy_payload is None
+    error_category = None
+    if malformed_latest and malformed_legacy:
+        error_category = "malformed_queue_storage_files"
+    elif malformed_latest:
+        error_category = "malformed_latest_queue_file"
+    elif malformed_legacy:
+        error_category = "malformed_legacy_queue_file"
+    return {
+        "storage_backend": "file",
+        "latest_run_id": None,
+        "last_updated_at": None,
+        "queue_read_ok": error_category is None,
+        "queue_error_category": error_category,
+        "queue_read_path": None,
+        "items_read_count": 0,
+        "items": [],
+    }
 
 
 def _review_item_id(candidate: dict[str, Any]) -> str:

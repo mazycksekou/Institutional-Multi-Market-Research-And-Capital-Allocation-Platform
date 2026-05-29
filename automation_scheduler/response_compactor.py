@@ -54,6 +54,11 @@ def compact_health_response(payload: dict[str, Any]) -> dict[str, Any]:
         },
         "blockers": list(payload.get("blockers", []))[:10],
         "top_reasons": list(payload.get("top_reasons", []))[:10],
+        "review_queue_storage_backend": payload.get("review_queue_storage_backend"),
+        "review_queue_total_count": int(payload.get("review_queue_total_count", payload.get("review_queue_count", payload.get("count", 0)))),
+        "review_queue_last_updated_at": payload.get("review_queue_last_updated_at"),
+        "review_queue_latest_run_id": payload.get("review_queue_latest_run_id"),
+        "review_queue_read_ok": bool(payload.get("review_queue_read_ok", True)),
     }
 
 
@@ -133,6 +138,14 @@ def compact_review_queue_response(payload: dict[str, Any], limit: int = 10) -> d
         "flagged_partial_pricing_count": int(summary.get("flagged_partial_pricing_count", 0)),
         "rejected_count": int(summary.get("rejected_count", 0)),
         "rejected_reason_counts": dict(summary.get("rejected_reason_counts", {})),
+        "storage_backend": payload.get("storage_backend", "unknown"),
+        "last_updated_at": payload.get("last_updated_at"),
+        "latest_run_id": payload.get("latest_run_id"),
+        "queue_read_ok": bool(payload.get("queue_read_ok", True)),
+        "queue_error_category": payload.get("queue_error_category"),
+        "queue_read_path": payload.get("queue_read_path"),
+        "items_read_count": int(payload.get("items_read_count", summary.get("total_count", payload.get("count", len(top))))),
+        "compact_filter_applied": bool(payload.get("compact_filter_applied", False)),
         "count": int(payload.get("count", len(top))),
         "items": top,
     }
@@ -168,6 +181,11 @@ def compact_run_once_response(payload: dict[str, Any]) -> dict[str, Any]:
         "candidates_created": int(payload.get("candidates_created", 0)),
         "review_required_count": int(payload.get("review_required_count", 0)),
         "watch_recheck_count": int(payload.get("watch_recheck_count", 0)),
+        "review_queue_items_written": int(payload.get("review_queue_items_written", 0)),
+        "review_queue_storage_backend": payload.get("review_queue_storage_backend"),
+        "review_queue_write_path": payload.get("review_queue_write_path"),
+        "review_queue_latest_run_id": payload.get("review_queue_latest_run_id"),
+        "review_queue_last_updated_at": payload.get("review_queue_last_updated_at"),
         "blockers": list(payload.get("blockers", []))[:10],
         "report_path": (payload.get("report") or {}).get("path") or payload.get("report_path"),
     }

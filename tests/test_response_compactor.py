@@ -9,10 +9,21 @@ from automation_scheduler.response_compactor import (
 
 class TestResponseCompactor(unittest.TestCase):
     def test_default_compact(self):
-        p = {"ok": True, "review_queue_count": 20, "human_approval_required": True, "auto_execution_enabled": False}
+        p = {
+            "ok": True,
+            "review_queue_count": 20,
+            "human_approval_required": True,
+            "auto_execution_enabled": False,
+            "review_queue_storage_backend": "file",
+            "review_queue_latest_run_id": "run-1",
+            "review_queue_read_ok": True,
+        }
         c = compact_health_response(p)
         self.assertIn("counts", c)
         self.assertNotIn("providers", c)
+        self.assertEqual(c["review_queue_storage_backend"], "file")
+        self.assertEqual(c["review_queue_latest_run_id"], "run-1")
+        self.assertTrue(c["review_queue_read_ok"])
 
     def test_limit_enforced(self):
         p = {"ok": True, "count": 50, "items": [{"recommended_action": "watch_recheck"} for _ in range(50)]}
@@ -38,6 +49,12 @@ class TestResponseCompactor(unittest.TestCase):
                 "provider_counts": {"kalshi_prediction_market": 1},
                 "total_count": 1,
             },
+            "storage_backend": "file",
+            "last_updated_at": "2026-05-29T00:00:00+00:00",
+            "latest_run_id": "run-1",
+            "queue_read_ok": True,
+            "queue_read_path": "review_queue/latest.json",
+            "items_read_count": 1,
             "items": [
                 {
                     "provider_id": "kalshi_prediction_market",
@@ -78,6 +95,9 @@ class TestResponseCompactor(unittest.TestCase):
         self.assertEqual(c["flagged_partial_pricing_count"], 1)
         self.assertEqual(c["rejected_count"], 3)
         self.assertEqual(c["rejected_reason_counts"]["missing_prices"], 3)
+        self.assertEqual(c["storage_backend"], "file")
+        self.assertEqual(c["latest_run_id"], "run-1")
+        self.assertTrue(c["queue_read_ok"])
         self.assertEqual(c["items"][0]["recommendation_status"], "review_only")
         self.assertFalse(c["items"][0]["execution_allowed"])
 
@@ -93,6 +113,10 @@ class TestResponseCompactor(unittest.TestCase):
                 "records_with_any_price_signal": 1,
                 "first_record_safe_field_names": ["yes_price", "ticker"],
             },
+            "review_queue_items_written": 2,
+            "review_queue_storage_backend": "file",
+            "review_queue_write_path": "review_queue/latest.json",
+            "review_queue_latest_run_id": "run-2",
             "provider_payload": {"raw": "should_not_show"},
         }
         c = compact_run_once_response(p)
@@ -100,6 +124,8 @@ class TestResponseCompactor(unittest.TestCase):
         self.assertIn("records_received", c)
         self.assertTrue(c["dry_run"])
         self.assertEqual(c["kalshi_price_field_telemetry"]["total_kalshi_records_seen"], 2)
+        self.assertEqual(c["review_queue_items_written"], 2)
+        self.assertEqual(c["review_queue_storage_backend"], "file")
         self.assertNotIn("provider_payload", str(c))
 
     def test_verbose_redaction(self):

@@ -5,7 +5,7 @@ from pathlib import Path
 
 from .scheduler_runner import run_scheduler_once
 from .system_health import get_system_health
-from .review_queue import filter_review_items, list_active_review_items, summarize_review_items
+from .review_queue import filter_review_items, list_active_review_items, load_review_queue_state, summarize_review_items
 from .scheduler_config import get_default_scheduler_config, ensure_runtime_directories
 from .backtesting_engine import generate_backtest_report, run_backtest, run_paper_summary
 from .model_performance_report import build_compact_performance_report
@@ -43,9 +43,26 @@ def get_scheduler_review_queue(
 ):
     config = get_default_scheduler_config(base_data_dir=base_data_dir)
     ensure_runtime_directories(config)
-    items = list_active_review_items(config)
-    filtered = filter_review_items(items, provider=provider, market_type=market_type, reason=reason)
+    queue_state = load_review_queue_state(config)
+    items = list(queue_state.get("items", []))
+    storage_backend = str(queue_state.get("storage_backend") or "unknown")
+    if not items:
+        active_items = list_active_review_items(config)
+        if active_items:
+            items = active_items
+            storage_backend = "in_memory"
+            queue_state = {
+                **queue_state,
+                "storage_backend": storage_backend,
+                "queue_read_ok": True,
+                "queue_error_category": queue_state.get("queue_error_category"),
+                "items_read_count": len(active_items),
+            }
+    filtered_all = filter_review_items(items, provider=provider, market_type=market_type, reason=reason)
+    filtered = list(filtered_all)
+    applied_limit = False
     if isinstance(limit, int) and limit > 0:
+        applied_limit = len(filtered) > limit
         filtered = filtered[:limit]
     rejected_reason_counts: dict[str, int] = {}
     health_path = Path(config["paths"]["system_health"]) / "health.json"
@@ -55,13 +72,21 @@ def get_scheduler_review_queue(
             rejected_reason_counts = dict(health_payload.get("kalshi_rejected_reason_counts", {}))
         except Exception:
             rejected_reason_counts = {}
-    summary = summarize_review_items(filtered, rejected_reason_counts=rejected_reason_counts)
+    summary = summarize_review_items(filtered_all, rejected_reason_counts=rejected_reason_counts)
     return {
         "ok": True,
         "status": "ok",
         "count": len(filtered),
         "items": filtered,
         "summary": summary,
+        "storage_backend": storage_backend,
+        "last_updated_at": queue_state.get("last_updated_at"),
+        "latest_run_id": queue_state.get("latest_run_id"),
+        "queue_read_ok": bool(queue_state.get("queue_read_ok", True)),
+        "queue_error_category": queue_state.get("queue_error_category"),
+        "queue_read_path": queue_state.get("queue_read_path"),
+        "items_read_count": int(queue_state.get("items_read_count", len(items))),
+        "compact_filter_applied": bool(applied_limit or str(provider).lower() != "all" or str(market_type).lower() != "all" or bool(reason)),
         "human_approval_required": True,
         "auto_execution_enabled": False,
     }

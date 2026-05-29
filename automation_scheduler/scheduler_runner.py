@@ -26,7 +26,13 @@ from .scheduler_config import get_default_scheduler_config, ensure_runtime_direc
 from .snapshot_store import save_snapshot
 from .snapshot_store import SnapshotStore
 from .report_writer import write_report
-from .review_queue import build_review_item, list_active_review_items, upsert_review_item
+from .review_queue import (
+    build_review_item,
+    list_active_review_items,
+    persist_review_queue_snapshot,
+    summarize_review_items,
+    upsert_review_item,
+)
 from .system_health import write_system_health
 from .run_context import create_run_context
 from .kalshi_market_provider import get_kalshi_snapshot, summarize_kalshi_snapshot
@@ -1162,6 +1168,13 @@ def run_scheduler_once(*, injected_data: dict[str, Any] | None = None, base_data
         if item.get("recommended_action") == "watch_recheck":
             watch_recheck_count += 1
     queue = list_active_review_items(config)
+    queue_summary = summarize_review_items(queue, rejected_reason_counts=kalshi_evaluation["rejected_reason_counts"])
+    queue_storage = persist_review_queue_snapshot(
+        config,
+        queue,
+        run_id=ctx["run_id"],
+        summary=queue_summary,
+    )
     review_required_count = len([row for row in queue if row.get("recommended_action") in {"review_required", "urgent_review"}])
     alerts = generate_alert_candidates(queue, max_alerts=25, time_bucket=ctx["run_id"])
     backtesting_summary = run_backtesting_scaffold(queue)
@@ -1186,6 +1199,9 @@ def run_scheduler_once(*, injected_data: dict[str, Any] | None = None, base_data
                 "kalshi_flagged_partial_pricing_count": kalshi_evaluation["flagged_partial_pricing_count"],
                 "kalshi_rejected_reason_counts": kalshi_evaluation["rejected_reason_counts"],
                 "kalshi_price_field_telemetry": kalshi_evaluation.get("price_field_telemetry", {}),
+                "review_queue_storage_backend": queue_storage.get("storage_backend"),
+                "review_queue_items_written": queue_storage.get("items_written_count"),
+                "review_queue_latest_run_id": queue_storage.get("latest_run_id"),
             },
             "alerts": alerts,
             "review_items": queue,
@@ -1220,6 +1236,11 @@ def run_scheduler_once(*, injected_data: dict[str, Any] | None = None, base_data
             "kalshi_flagged_partial_pricing_count": kalshi_evaluation["flagged_partial_pricing_count"],
             "kalshi_rejected_reason_counts": kalshi_evaluation["rejected_reason_counts"],
             "kalshi_price_field_telemetry": kalshi_evaluation.get("price_field_telemetry", {}),
+            "review_queue_storage_backend": queue_storage.get("storage_backend"),
+            "review_queue_total_count": len(queue),
+            "review_queue_last_updated_at": queue_storage.get("last_updated_at"),
+            "review_queue_latest_run_id": queue_storage.get("latest_run_id"),
+            "review_queue_read_ok": True,
         },
     )
     return {
@@ -1261,5 +1282,10 @@ def run_scheduler_once(*, injected_data: dict[str, Any] | None = None, base_data
         "backtesting": backtesting_summary,
         "calibration": calibration_summary,
         "report_path": report.get("path"),
+        "review_queue_items_written": int(queue_storage.get("items_written_count", len(queue))),
+        "review_queue_storage_backend": queue_storage.get("storage_backend", "file"),
+        "review_queue_write_path": queue_storage.get("queue_write_path"),
+        "review_queue_latest_run_id": queue_storage.get("latest_run_id"),
+        "review_queue_last_updated_at": queue_storage.get("last_updated_at"),
         "blockers": list(sharp_evaluation.get("blockers", [])) + list(kalshi_evaluation.get("blockers", [])),
     }
