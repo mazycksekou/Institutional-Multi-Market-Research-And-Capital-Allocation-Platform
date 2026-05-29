@@ -424,12 +424,35 @@ class KalshiReadonlyAdapter:
         event_id = _safe_str(_coalesce(payload.get("event_id"), payload.get("eventId"), payload.get("event_ticker"), payload.get("eventTicker")))
         event_row = event_lookup.get(event_id or "", {})
 
-        yes_bid = _to_probability(_coalesce(payload.get("yes_bid"), payload.get("yesBid"), payload.get("best_bid_yes")))
-        yes_ask = _to_probability(_coalesce(payload.get("yes_ask"), payload.get("yesAsk"), payload.get("best_ask_yes")))
-        no_bid = _to_probability(_coalesce(payload.get("no_bid"), payload.get("noBid"), payload.get("best_bid_no")))
-        no_ask = _to_probability(_coalesce(payload.get("no_ask"), payload.get("noAsk"), payload.get("best_ask_no")))
+        yes_bid = _to_probability(
+            _coalesce(
+                payload.get("yes_bid"),
+                payload.get("yesBid"),
+                payload.get("best_bid_yes"),
+                payload.get("yes_bid_dollars"),
+                payload.get("previous_yes_bid_dollars"),
+            )
+        )
+        yes_ask = _to_probability(
+            _coalesce(
+                payload.get("yes_ask"),
+                payload.get("yesAsk"),
+                payload.get("best_ask_yes"),
+                payload.get("yes_ask_dollars"),
+                payload.get("previous_yes_ask_dollars"),
+            )
+        )
+        no_bid = _to_probability(_coalesce(payload.get("no_bid"), payload.get("noBid"), payload.get("best_bid_no"), payload.get("no_bid_dollars")))
+        no_ask = _to_probability(_coalesce(payload.get("no_ask"), payload.get("noAsk"), payload.get("best_ask_no"), payload.get("no_ask_dollars")))
 
-        raw_yes_price = _coalesce(payload.get("yes_price"), payload.get("yesPrice"), payload.get("last_price_yes"), payload.get("lastPriceYes"))
+        raw_yes_price = _coalesce(
+            payload.get("yes_price"),
+            payload.get("yesPrice"),
+            payload.get("last_price_yes"),
+            payload.get("lastPriceYes"),
+            payload.get("last_price_dollars"),
+            payload.get("previous_price_dollars"),
+        )
         raw_no_price = _coalesce(payload.get("no_price"), payload.get("noPrice"), payload.get("last_price_no"), payload.get("lastPriceNo"))
         yes_price: Any = _to_probability(raw_yes_price)
         no_price: Any = _to_probability(raw_no_price)
@@ -474,13 +497,13 @@ class KalshiReadonlyAdapter:
             "yes_price": yes_price,
             "no_price": no_price,
             "implied_probability": implied_probability,
-            "volume": _to_float(_coalesce(payload.get("volume"), payload.get("trade_volume"), payload.get("tradeVolume"))),
-            "open_interest": _to_float(_coalesce(payload.get("open_interest"), payload.get("openInterest"))),
+            "volume": _to_float(_coalesce(payload.get("volume"), payload.get("trade_volume"), payload.get("tradeVolume"), payload.get("volume_fp"), payload.get("volume_24h_fp"))),
+            "open_interest": _to_float(_coalesce(payload.get("open_interest"), payload.get("openInterest"), payload.get("open_interest_fp"))),
             "liquidity_score": liquidity_score,
             "close_time": close_time,
             "status": _safe_str(_coalesce(payload.get("status"), payload.get("market_status"), payload.get("marketStatus"))),
             "settlement_rule": _safe_str(_coalesce(payload.get("settlement_rule"), payload.get("settlementRule"), payload.get("rules_primary"), payload.get("rulesPrimary"), payload.get("resolution_criteria"))),
-            "timestamp": timestamp,
+            "timestamp": _safe_str(_coalesce(timestamp, payload.get("updated_time"), payload.get("created_time"), payload.get("open_time"), utc_now_iso())),
             "source_payload_redacted": redact_mapping(payload),
             "schema_version": SCHEMA_VERSION,
         }

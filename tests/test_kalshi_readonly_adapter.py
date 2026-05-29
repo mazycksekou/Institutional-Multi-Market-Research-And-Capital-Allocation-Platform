@@ -205,6 +205,48 @@ class TestKalshiReadonlyAdapter(unittest.TestCase):
         self.assertIsInstance(sent_params, dict)
 
     @patch("automation_scheduler.kalshi_readonly_adapter.httpx.Client", new=_MockClient)
+    def test_live_normalizes_dollars_based_price_fields(self):
+        now_iso = datetime.now(timezone.utc).isoformat()
+        os.environ["KALSHI_PROVIDER_ENABLED"] = "true"
+        os.environ["KALSHI_LIVE_READS_ENABLED"] = "true"
+        os.environ["KALSHI_API_KEY"] = "kalshi_key_1234567890"
+        os.environ["KALSHI_API_SECRET"] = _TEST_PRIVATE_KEY_PEM
+        contract = dict(self.contract)
+        contract["enabled"] = True
+        contract["live_calls_enabled"] = True
+        contract["dry_run"] = True
+        _MockClient.events_payload = {"events": [{"event_ticker": "EVT-1", "title": "Event 1", "updated_at": now_iso}]}
+        _MockClient.markets_payload = {
+            "markets": [
+                {
+                    "event_ticker": "EVT-1",
+                    "ticker": "KX-1",
+                    "yes_bid_dollars": 0.44,
+                    "yes_ask_dollars": 0.46,
+                    "no_bid_dollars": 0.54,
+                    "no_ask_dollars": 0.56,
+                    "last_price_dollars": 0.45,
+                    "volume_fp": 1200,
+                    "open_interest_fp": 900,
+                    "rules_primary": "official_result",
+                    "close_time": "2026-06-01T00:00:00+00:00",
+                    "updated_time": now_iso,
+                }
+            ]
+        }
+        adapter = KalshiReadonlyAdapter(contract)
+        snapshot = adapter.fetch_snapshot()
+        self.assertEqual(snapshot["records_valid"], 1)
+        row = snapshot["records"][0]
+        self.assertAlmostEqual(row["yes_bid"], 0.44, places=6)
+        self.assertAlmostEqual(row["yes_ask"], 0.46, places=6)
+        self.assertAlmostEqual(row["yes_price"], 0.45, places=6)
+        self.assertEqual(row["volume"], 1200.0)
+        self.assertEqual(row["open_interest"], 900.0)
+        self.assertEqual(row["settlement_rule"], "official_result")
+        self.assertEqual(row["timestamp"], now_iso)
+
+    @patch("automation_scheduler.kalshi_readonly_adapter.httpx.Client", new=_MockClient)
     def test_malformed_prices_are_rejected(self):
         now_iso = datetime.now(timezone.utc).isoformat()
         os.environ["KALSHI_PROVIDER_ENABLED"] = "true"
