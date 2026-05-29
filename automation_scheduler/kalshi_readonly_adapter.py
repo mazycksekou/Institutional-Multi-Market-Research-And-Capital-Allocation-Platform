@@ -99,6 +99,7 @@ class KalshiReadonlyAdapter:
         self.base_url = (os.getenv("KALSHI_API_BASE_URL") or DEFAULT_BASE_URL).strip().rstrip("/")
         self.base_url_present = bool(os.getenv("KALSHI_API_BASE_URL", "").strip())
         self.timeout_seconds = max(1.0, _safe_float(os.getenv("KALSHI_API_TIMEOUT_SECONDS"), DEFAULT_TIMEOUT_SECONDS))
+        self.retry_count = max(0, int(_safe_float(os.getenv("KALSHI_API_RETRY_COUNT"), 0)))
         self.provider_enabled_from_env = _env_bool("KALSHI_PROVIDER_ENABLED", default=False) if os.getenv("KALSHI_PROVIDER_ENABLED") is not None else None
         self.live_reads_enabled = _env_bool("KALSHI_LIVE_READS_ENABLED", default=bool(self.contract.get("live_calls_enabled", False)))
         self.path_config = {
@@ -106,6 +107,31 @@ class KalshiReadonlyAdapter:
             "events_path": os.getenv("KALSHI_EVENTS_PATH", DEFAULT_EVENTS_PATH),
         }
         self.read_only_mode = True
+
+    def _classify_request_error(self, exc: Exception) -> tuple[str, str]:
+        text = str(exc).lower()
+        error_class = exc.__class__.__name__
+        if isinstance(exc, httpx.InvalidURL):
+            return "invalid_url", error_class
+        if isinstance(exc, httpx.ConnectTimeout):
+            return "connect_timeout", error_class
+        if isinstance(exc, httpx.ReadTimeout):
+            return "read_timeout", error_class
+        if isinstance(exc, httpx.TimeoutException):
+            return "read_timeout", error_class
+        if isinstance(exc, httpx.ConnectError):
+            if any(marker in text for marker in ("name or service not known", "getaddrinfo", "nodename nor servname", "temporary failure in name resolution", "no such host", "name does not resolve")):
+                return "dns_error", error_class
+            if any(marker in text for marker in ("ssl", "tls", "certificate", "cert verify", "wrong version number", "handshake")):
+                return "tls_error", error_class
+            return "connection_error", error_class
+        if isinstance(exc, httpx.LocalProtocolError):
+            return "request_build_error", error_class
+        if isinstance(exc, httpx.RequestError):
+            if any(marker in text for marker in ("invalid url", "unsupported url", "unknown url type")):
+                return "invalid_url", error_class
+            return "provider_unreachable", error_class
+        return "unknown_client_error", error_class
 
     def _resolve_url_and_diag(self, path_name: str) -> tuple[str, dict[str, Any]]:
         resolved_path = _normalize_path(self.path_config.get(path_name, ""))
@@ -252,25 +278,56 @@ class KalshiReadonlyAdapter:
                     "records": [],
                     "errors": ["malformed_provider_response"],
                 }
-        except httpx.TimeoutException:
+        except httpx.TimeoutException as exc:
+            category, error_class = self._classify_request_error(exc)
             return {
                 "ok": False,
                 "status": "provider_error",
                 "http_status": None,
-                "blocker": "provider_timeout",
-                "diagnostic": redact_http_diagnostic({**diagnostic, "method": "GET"}),
+                "blocker": category,
+                "diagnostic": redact_http_diagnostic(
+                    {
+                        **diagnostic,
+                        "method": "GET",
+                        "error_class": error_class,
+                        "error_category": category,
+                        "timeout_seconds": self.timeout_seconds,
+                        "retry_count": self.retry_count,
+                    }
+                ),
                 "records": [],
-                "errors": ["provider_timeout"],
+                "errors": [category],
             }
-        except Exception:
+        except Exception as exc:
+            category, error_class = self._classify_request_error(exc)
+            blocker = category if category in {
+                "dns_error",
+                "tls_error",
+                "connect_timeout",
+                "read_timeout",
+                "connection_error",
+                "invalid_url",
+                "request_build_error",
+                "provider_unreachable",
+                "unknown_client_error",
+            } else "provider_unreachable"
             return {
                 "ok": False,
                 "status": "provider_error",
                 "http_status": None,
-                "blocker": "provider_unreachable",
-                "diagnostic": redact_http_diagnostic({**diagnostic, "method": "GET"}),
+                "blocker": blocker,
+                "diagnostic": redact_http_diagnostic(
+                    {
+                        **diagnostic,
+                        "method": "GET",
+                        "error_class": error_class,
+                        "error_category": blocker,
+                        "timeout_seconds": self.timeout_seconds,
+                        "retry_count": self.retry_count,
+                    }
+                ),
                 "records": [],
-                "errors": ["provider_unreachable"],
+                "errors": [blocker],
             }
         return {"ok": True, "status": "ok", "records": self._extract_records(body), "errors": []}
 
@@ -391,7 +448,7 @@ class KalshiReadonlyAdapter:
         events_fetch = self.fetch_events()
         markets_fetch = self.fetch_markets()
         if not events_fetch["ok"] and not markets_fetch["ok"]:
-            blockers = list(events_fetch.get("errors", [])) + list(markets_fetch.get("errors", []))
+            blockers = list(dict.fromkeys(list(events_fetch.get("errors", [])) + list(markets_fetch.get("errors", []))))
             return {
                 "ok": True,
                 "status": "provider_error",

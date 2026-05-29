@@ -115,4 +115,12 @@ def redact_http_diagnostic(payload: Mapping[str, Any]) -> dict[str, Any]:
         "secret_redacted": True,
         "query_redacted": True,
     }
+    if payload.get("error_class") is not None:
+        safe["error_class"] = payload.get("error_class")
+    if payload.get("error_category") is not None:
+        safe["error_category"] = payload.get("error_category")
+    if payload.get("timeout_seconds") is not None:
+        safe["timeout_seconds"] = payload.get("timeout_seconds")
+    if payload.get("retry_count") is not None:
+        safe["retry_count"] = payload.get("retry_count")
     return redact_mapping(safe)

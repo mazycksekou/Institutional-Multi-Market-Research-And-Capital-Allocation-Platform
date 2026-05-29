@@ -22,6 +22,7 @@ class _MockClient:
     markets_payload = {"markets": []}
     events_payload = {"events": []}
     should_timeout = False
+    raise_exception = None
     calls = []
 
     def __init__(self, *args, **kwargs):
@@ -34,6 +35,8 @@ class _MockClient:
         return None
 
     def get(self, url, headers=None, params=None):
+        if self.raise_exception is not None:
+            raise self.raise_exception
         if self.should_timeout:
             raise httpx.TimeoutException("timeout")
         _MockClient.calls.append(("GET", url, headers or {}, params or {}))
@@ -85,6 +88,7 @@ class TestKalshiReadonlyAdapter(unittest.TestCase):
         _MockClient.markets_payload = {"markets": []}
         _MockClient.events_payload = {"events": []}
         _MockClient.should_timeout = False
+        _MockClient.raise_exception = None
         _MockClient.calls = []
 
     def test_defaults_disabled(self):
@@ -222,6 +226,56 @@ class TestKalshiReadonlyAdapter(unittest.TestCase):
         self.assertTrue(diag["secret_redacted"])
         self.assertTrue(diag["query_redacted"])
         self.assertNotIn("authorization", str(diag).lower())
+
+    def test_health_read_only_ready_with_credentials_and_flags(self):
+        os.environ["KALSHI_PROVIDER_ENABLED"] = "true"
+        os.environ["KALSHI_LIVE_READS_ENABLED"] = "true"
+        os.environ["KALSHI_API_KEY"] = "kalshi_key_1234567890"
+        os.environ["KALSHI_API_SECRET"] = "kalshi_secret_1234567890"
+        contract = dict(self.contract)
+        contract["enabled"] = True
+        contract["live_calls_enabled"] = True
+        contract["dry_run"] = True
+        adapter = KalshiReadonlyAdapter(contract)
+        health = adapter.health_check()
+        self.assertEqual(health["status"], "read_only_ready")
+        self.assertEqual(health["credential_status"], "ok")
+        self.assertTrue(health["provider_enabled"])
+        self.assertTrue(health["live_calls_enabled"])
+        self.assertTrue(health["dry_run"])
+        self.assertNotIn("order", str(health).lower())
+        self.assertNotIn("trade", str(health).lower())
+        self.assertNotIn("execution_enabled\": true", str(health).lower())
+
+    @patch("automation_scheduler.kalshi_readonly_adapter.httpx.Client", new=_MockClient)
+    def test_provider_unreachable_is_classified_and_redacted(self):
+        os.environ["KALSHI_PROVIDER_ENABLED"] = "true"
+        os.environ["KALSHI_LIVE_READS_ENABLED"] = "true"
+        os.environ["KALSHI_API_KEY"] = "kalshi_key_1234567890"
+        os.environ["KALSHI_API_SECRET"] = "kalshi_secret_1234567890"
+        contract = dict(self.contract)
+        contract["enabled"] = True
+        contract["live_calls_enabled"] = True
+        contract["dry_run"] = True
+        _MockClient.raise_exception = httpx.ConnectError(
+            "Name or service not known",
+            request=httpx.Request("GET", "https://api.kalshi.com/trade-api/v2/markets"),
+        )
+        adapter = KalshiReadonlyAdapter(contract)
+        snapshot = adapter.fetch_snapshot()
+        self.assertEqual(snapshot["status"], "provider_error")
+        self.assertIn("dns_error", snapshot["blockers"])
+        self.assertEqual(snapshot["http_status"], None)
+        diag = snapshot.get("diagnostic") or {}
+        self.assertEqual(diag.get("error_category"), "dns_error")
+        self.assertEqual(diag.get("method"), "GET")
+        self.assertTrue(diag.get("secret_redacted"))
+        self.assertIn("url_host", diag)
+        self.assertIn("url_path", diag)
+        self.assertIn("timeout_seconds", diag)
+        self.assertIn("retry_count", diag)
+        self.assertNotIn("kalshi_key_1234567890", str(snapshot))
+        self.assertNotIn("kalshi_secret_1234567890", str(snapshot))
 
 
 if __name__ == "__main__":

@@ -79,6 +79,9 @@ class TestKalshiMarketProvider(unittest.TestCase):
         compact = compact_provider_status(summary)
         self.assertNotIn("source_payload_redacted", str(compact))
         self.assertNotIn("authorization", str(compact).lower())
+        self.assertNotIn("auto_execution_enabled", compact)
+        self.assertNotIn("order", str(compact).lower())
+        self.assertNotIn("trade", str(compact).lower())
 
     def test_write_snapshot_and_secret_redaction(self):
         now_iso = datetime.now(timezone.utc).isoformat()

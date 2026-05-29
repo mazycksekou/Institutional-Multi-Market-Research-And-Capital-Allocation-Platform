@@ -140,3 +140,41 @@ class TestResponseCompactor(unittest.TestCase):
         self.assertEqual(compact["provider_id"], "kalshi_prediction_market")
         self.assertNotIn("provider_payload", str(compact))
         self.assertNotIn("secret-value", str(compact))
+
+    def test_kalshi_diagnostic_fields_are_compact_and_bounded(self):
+        compact = compact_provider_status(
+            {
+                "ok": True,
+                "status": "provider_error",
+                "provider_id": "kalshi_prediction_market",
+                "provider_enabled": True,
+                "live_calls_enabled": True,
+                "credential_status": "ok",
+                "http_status": None,
+                "diagnostic": {
+                    "url_host": "api.kalshi.com",
+                    "url_path": "/trade-api/v2/markets",
+                    "method": "GET",
+                    "error_class": "ConnectError",
+                    "error_category": "dns_error",
+                    "timeout_seconds": 8.0,
+                    "retry_count": 0,
+                    "secret_redacted": True,
+                    "authorization": "Bearer hidden",
+                    "raw_body": {"x": 1},
+                },
+                "records_received": 0,
+                "records_valid": 0,
+                "records_rejected": 0,
+                "blockers": ["dns_error"],
+            }
+        )
+        diag = compact["diagnostic"]
+        self.assertEqual(diag["url_host"], "api.kalshi.com")
+        self.assertEqual(diag["error_category"], "dns_error")
+        self.assertEqual(diag["error_class"], "ConnectError")
+        self.assertEqual(diag["timeout_seconds"], 8.0)
+        self.assertEqual(diag["retry_count"], 0)
+        self.assertTrue(diag["secret_redacted"])
+        self.assertNotIn("authorization", str(compact).lower())
+        self.assertNotIn("raw_body", str(compact))

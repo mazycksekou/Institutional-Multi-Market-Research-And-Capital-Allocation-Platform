@@ -264,6 +264,10 @@ def compact_provider_status(payload: dict[str, Any]) -> dict[str, Any]:
             "url_host": diag.get("url_host"),
             "url_path": diag.get("url_path"),
             "method": diag.get("method", "GET"),
+            "error_class": diag.get("error_class"),
+            "error_category": diag.get("error_category"),
+            "timeout_seconds": diag.get("timeout_seconds"),
+            "retry_count": diag.get("retry_count"),
             "secret_redacted": True,
         }
     return {
