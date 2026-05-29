@@ -212,6 +212,8 @@ class TestResponseCompactor(unittest.TestCase):
                 "status": "outcomes_validated",
                 "dry_run": True,
                 "local_persistence": False,
+                "persistence_requested": True,
+                "persistence_blocked_reason": "dry_run",
                 "provider_write": False,
                 "records_received": 1,
                 "records_valid": 1,
@@ -224,6 +226,8 @@ class TestResponseCompactor(unittest.TestCase):
         self.assertTrue(ingest["dry_run"])
         self.assertFalse(ingest["provider_write"])
         self.assertFalse(ingest["auto_execution_enabled"])
+        self.assertTrue(ingest["persistence_requested"])
+        self.assertEqual(ingest["persistence_blocked_reason"], "dry_run")
         self.assertNotIn("secret", str(ingest))
 
         listed = compact_outcomes_response(

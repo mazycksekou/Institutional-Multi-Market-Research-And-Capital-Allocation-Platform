@@ -1,0 +1,33 @@
+﻿{
+  "dry_run": true,
+  "records": [
+    {
+      "provider": "kalshi_prediction_market",
+      "market_type": "prediction_market",
+      "decision_id": "decision_REPLACE_WITH_REAL_ID",
+      "contract_id": "KX_REPLACE_WITH_REAL_CONTRACT",
+      "outcome_status": "settled",
+      "final_outcome": "yes",
+      "settled_at": "2026-05-29T00:00:00+00:00",
+      "source": "local_manual"
+    },
+    {
+      "provider": "sharp_sportsbook",
+      "market_type": "sports_pregame_main",
+      "review_item_id": "review_REPLACE_WITH_REAL_ID",
+      "outcome_status": "settled",
+      "final_outcome": "win",
+      "settled_at": "2026-05-29T00:00:00+00:00",
+      "source": "imported_file"
+    },
+    {
+      "provider": "sharp_sportsbook",
+      "market_type": "sports_pregame_main",
+      "ticker": "REPLACE_WITH_REAL_TICKER_OR_EVENT_KEY",
+      "outcome_status": "void",
+      "final_outcome": "void",
+      "settled_at": "2026-05-29T00:00:00+00:00",
+      "source": "local_manual"
+    }
+  ]
+}

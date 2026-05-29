@@ -37,6 +37,7 @@ class TestAutomationSchedulerEndpoints(unittest.TestCase):
             '/api/automation/outcomes/ingest',
             json={
                 'dry_run': True,
+                'persist': True,
                 'records': [
                     {
                         'provider': 'kalshi_prediction_market',
@@ -56,8 +57,34 @@ class TestAutomationSchedulerEndpoints(unittest.TestCase):
         self.assertTrue(payload['dry_run'])
         self.assertFalse(payload['provider_write'])
         self.assertFalse(payload['persisted'])
+        self.assertEqual(payload['persistence_blocked_reason'], 'dry_run')
         self.assertEqual(payload['records_valid'], 1)
         self.assertNotIn('provider_payload', str(payload))
+
+        rejected = self.client.post(
+            '/api/automation/outcomes/ingest',
+            json={
+                'dry_run': False,
+                'persist': True,
+                'records': [
+                    {
+                        'provider': 'kalshi_prediction_market',
+                        'market_type': 'prediction_market',
+                        'contract_id': 'KXTEST',
+                        'outcome_status': 'settled',
+                        'final_outcome': 'yes',
+                        'settled_at': '2026-05-29T00:00:00+00:00',
+                        'source': 'test_fixture',
+                    }
+                ],
+            },
+        )
+        self.assertEqual(rejected.status_code, 200)
+        rejected_payload = rejected.json()
+        self.assertFalse(rejected_payload['provider_write'])
+        self.assertFalse(rejected_payload['persisted'])
+        self.assertEqual(rejected_payload['records_valid'], 0)
+        self.assertEqual(rejected_payload['rejected_reason_counts']['non_real_source_not_persistable'], 1)
 
         listed = self.client.get('/api/automation/outcomes')
         self.assertEqual(listed.status_code, 200)

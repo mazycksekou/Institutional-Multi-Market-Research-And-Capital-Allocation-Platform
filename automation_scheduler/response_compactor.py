@@ -267,6 +267,8 @@ def compact_outcome_ingest_response(payload: dict[str, Any]) -> dict[str, Any]:
         "dry_run": bool(payload.get("dry_run", True)),
         "local_persistence": bool(payload.get("local_persistence", False)),
         "persisted": bool(payload.get("persisted", False)),
+        "persistence_requested": bool(payload.get("persistence_requested", False)),
+        "persistence_blocked_reason": payload.get("persistence_blocked_reason"),
         "provider_write": False,
         "human_approval_required": True,
         "auto_execution_enabled": False,

@@ -142,11 +142,11 @@ class TestCalibration(unittest.TestCase):
                         "outcome_status": "settled",
                         "final_outcome": "yes",
                         "settled_at": "2026-05-29T00:00:00+00:00",
-                        "source": "test_fixture",
+                        "source": "local_manual",
                     }
                 ],
-                source="test_fixture",
-                dry_run=True,
+                source="local_manual",
+                dry_run=False,
                 persist=True,
                 base_data_dir=tmp,
             )

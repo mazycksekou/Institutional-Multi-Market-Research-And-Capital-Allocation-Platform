@@ -8,9 +8,10 @@ from typing import Any
 from .scheduler_config import SCHEMA_VERSION, safe_run_id, sanitize_filename, utc_now_iso
 
 OUTCOME_SCHEMA_VERSION = f"{SCHEMA_VERSION}.local_outcome_store.v1"
-SUPPORTED_OUTCOME_STATUSES = {"settled", "void", "cancelled", "unknown"}
-SUPPORTED_FINAL_OUTCOMES = {"yes", "no", "win", "loss", "push", "void", "unknown"}
+SUPPORTED_OUTCOME_STATUSES = {"settled", "void", "cancelled"}
+SUPPORTED_FINAL_OUTCOMES = {"yes", "no", "win", "loss", "push", "void"}
 SUPPORTED_SOURCES = {"local_manual", "imported_file", "test_fixture"}
+PERSISTABLE_SOURCES = {"local_manual", "imported_file"}
 _SENSITIVE_KEY_PARTS = ("key", "secret", "token", "password", "auth", "credential", "signature", "header")
 _RAW_PAYLOAD_KEYS = {
     "provider_payload",
@@ -341,10 +342,14 @@ def ingest_outcome_records(
     rows = [row for row in (records or []) if isinstance(row, dict)]
     rejected_reason_counts: dict[str, int] = {}
     valid_rows: list[dict[str, Any]] = []
+    should_persist = bool(persist) and not bool(dry_run)
     for row in rows:
         cleaned, reason = validate_outcome_record(row, source=source)
         if reason:
             rejected_reason_counts[reason] = rejected_reason_counts.get(reason, 0) + 1
+            continue
+        if should_persist and str((cleaned or {}).get("source") or "").lower() not in PERSISTABLE_SOURCES:
+            rejected_reason_counts["non_real_source_not_persistable"] = rejected_reason_counts.get("non_real_source_not_persistable", 0) + 1
             continue
         valid_rows.append(cleaned or {})
 
@@ -353,7 +358,6 @@ def ingest_outcome_records(
     if duplicate_count:
         rejected_reason_counts["duplicate_outcome"] = rejected_reason_counts.get("duplicate_outcome", 0) + duplicate_count
 
-    should_persist = bool(persist)
     batch_id = f"outcome_batch_{safe_run_id('outcome_batch', utc_now_iso() + str(len(batch_rows)))}"
     storage: dict[str, Any] = {
         "storage_backend": "file",
@@ -372,6 +376,8 @@ def ingest_outcome_records(
         "dry_run": bool(dry_run),
         "local_persistence": bool(should_persist and batch_rows),
         "persisted": bool(should_persist and batch_rows),
+        "persistence_requested": bool(persist),
+        "persistence_blocked_reason": "dry_run" if persist and dry_run else None,
         "provider_write": False,
         "human_approval_required": True,
         "auto_execution_enabled": False,
