@@ -18,9 +18,11 @@ class SnapshotStore:
         return folder / f"{sanitize_filename(key)}.json"
 
     def save_snapshot(self, namespace: str, key: str, payload: Any) -> dict[str, Any]:
+        now = utc_now_iso()
         wrapper = {
             "schema_version": SCHEMA_VERSION,
-            "saved_at": utc_now_iso(),
+            "saved_at": now,
+            "received_at": now,
             "namespace": namespace,
             "key": key,
             "payload": redact_secrets(payload),

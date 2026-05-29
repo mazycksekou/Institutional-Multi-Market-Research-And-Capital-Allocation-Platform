@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import defaultdict
 from typing import Any
 
 from .bookmaker_normalizer import normalize_line_value, normalize_offer, normalize_selection_name
@@ -33,6 +34,8 @@ def compare_cross_book_lines(offers: list[dict[str, Any]]) -> dict[str, Any]:
             "odds_spread": 0.0,
             "book_disagreement_score": 0.0,
             "line_match_confidence": 0.0,
+            "candidate_type": "watch_recheck",
+            "reason": "no_valid_offers",
         }
 
     decimals = [(american_to_decimal(offer["odds"]), idx, offer) for idx, offer in enumerate(normalized) if offer.get("odds") not in (None, 0)]
@@ -70,4 +73,42 @@ def compare_cross_book_lines(offers: list[dict[str, Any]]) -> dict[str, Any]:
         "market_identity_confidence": round(sum(identity_scores) / len(identity_scores), 2) if identity_scores else 100.0,
         "stale_data_risk": bool(timestamps and (max(timestamps) - min(timestamps) > 120)),
         "timestamp_mismatch_seconds": (max(timestamps) - min(timestamps)) if timestamps else 0,
+        "candidate_type": "best_line_available",
     }
+
+
+def group_cross_book_markets(offers: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    grouped: dict[tuple[str, str, str, str], list[dict[str, Any]]] = defaultdict(list)
+    for raw in offers:
+        if not isinstance(raw, dict):
+            continue
+        normalized = normalize_offer(raw)
+        event_id = str(raw.get("event_id") or raw.get("event_name") or normalized.get("event_name") or "").strip()
+        market = str(normalized.get("market") or "").strip()
+        selection = str(normalized.get("selection") or "").strip()
+        line = normalize_line_value(raw.get("line"))
+        line_key = "" if line is None else str(line)
+        if not event_id or not market or not selection:
+            continue
+        grouped[(event_id, market, selection, line_key)].append(raw)
+
+    comparisons: list[dict[str, Any]] = []
+    for (event_id, market, selection, line_key), rows in grouped.items():
+        comparison = compare_cross_book_lines(rows)
+        books = {normalize_offer(row).get("bookmaker") for row in rows if isinstance(row, dict)}
+        books.discard(None)
+        if len(books) <= 1:
+            comparison["candidate_type"] = "watch_recheck"
+            comparison["reason"] = "single_book_only"
+        comparisons.append(
+            {
+                "event_id": event_id,
+                "market": market,
+                "selection": selection,
+                "line": None if line_key == "" else normalize_line_value(line_key),
+                "books_compared": len(books),
+                "comparison": comparison,
+                "offers": [normalize_offer(row) for row in rows if isinstance(row, dict)],
+            }
+        )
+    return comparisons

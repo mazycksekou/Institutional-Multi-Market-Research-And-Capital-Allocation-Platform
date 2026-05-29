@@ -61,27 +61,37 @@ def compact_review_queue_response(payload: dict[str, Any], limit: int = 10) -> d
     items = list(payload.get("items", []))[: max(1, min(limit, 10))]
     top = []
     for it in items:
-        top.append({
-            "decision": it.get("recommended_action", "review_required"),
-            "recommended_action": it.get("recommended_action"),
-            "opportunity_score": it.get("opportunity_score"),
-            "confidence": it.get("confidence"),
-            "risk": it.get("risk"),
-            "recommended_kelly_mode": it.get("recommended_kelly_mode"),
-            "final_recommended_stake": it.get("final_recommended_stake"),
-            "final_recommended_stake_percent": it.get("final_recommended_stake_percent"),
-            "stake_confidence_score": it.get("stake_confidence_score"),
-            "blockers": list(it.get("blockers", []))[:10],
-            "next_check_seconds": it.get("recheck_after_seconds"),
-        })
+        top.append(
+            {
+                "candidate_type": it.get("candidate_type"),
+                "provider_id": it.get("provider_id", it.get("provider")),
+                "event_id": it.get("event_id"),
+                "event_name": it.get("event_name"),
+                "sport": it.get("sport"),
+                "league": it.get("league"),
+                "market": it.get("market"),
+                "selection": it.get("selection"),
+                "book": it.get("book"),
+                "best_book": it.get("best_book"),
+                "best_odds": it.get("best_odds"),
+                "best_line": it.get("best_line"),
+                "implied_probability": it.get("implied_probability"),
+                "no_vig_probability": it.get("no_vig_probability"),
+                "ev_percent": it.get("ev_percent"),
+                "opportunity_score": it.get("opportunity_score"),
+                "recommended_action": it.get("recommended_action"),
+                "blockers": list(it.get("blockers", []))[:10],
+                "top_reasons": list(it.get("top_reasons", []))[:5],
+                "human_approval_required": True,
+                "auto_execution_enabled": False,
+            }
+        )
     return {
         "ok": bool(payload.get("ok", True)),
-        "status": "ok",
-        "timestamp": payload.get("updated_at") or payload.get("checked_at"),
-        "dry_run": True,
-        "human_approval_required": bool(payload.get("human_approval_required", True)),
-        "auto_execution_enabled": bool(payload.get("auto_execution_enabled", False)),
-        "counts": {"review_items": int(payload.get("count", len(top)))},
+        "status": payload.get("status", "ok"),
+        "review_required_count": len([item for item in top if item.get("recommended_action") in {"review_required", "urgent_review"}]),
+        "watch_recheck_count": len([item for item in top if item.get("recommended_action") == "watch_recheck"]),
+        "count": int(payload.get("count", len(top))),
         "items": top,
     }
 
@@ -89,20 +99,20 @@ def compact_review_queue_response(payload: dict[str, Any], limit: int = 10) -> d
 def compact_run_once_response(payload: dict[str, Any]) -> dict[str, Any]:
     return {
         "ok": bool(payload.get("ok", True)),
-        "status": "ok" if payload.get("ok", True) else "error",
+        "status": payload.get("status", "ok" if payload.get("ok", True) else "error"),
         "run_id": payload.get("run_id"),
-        "timestamp": payload.get("created_at") or payload.get("checked_at"),
+        "report_id": payload.get("report_id") or payload.get("run_id"),
         "dry_run": bool(payload.get("dry_run", True)),
         "human_approval_required": bool(payload.get("human_approval_required", True)),
         "auto_execution_enabled": bool(payload.get("auto_execution_enabled", False)),
-        "counts": {
-            "review_queue_size": int(payload.get("review_queue_size", 0)),
-            "candidates_processed": int(payload.get("candidates_processed", 0)),
-            "skipped_items": int(payload.get("skipped_count", len(payload.get("skipped_items", [])))),
-        },
-        "report_path": (payload.get("report") or {}).get("path") or payload.get("report_path"),
-        "top_reasons": list(payload.get("monitor_errors", []))[:10],
+        "records_received": int(payload.get("records_received", 0)),
+        "records_valid": int(payload.get("records_valid", 0)),
+        "records_rejected": int(payload.get("records_rejected", 0)),
+        "candidates_created": int(payload.get("candidates_created", 0)),
+        "review_required_count": int(payload.get("review_required_count", 0)),
+        "watch_recheck_count": int(payload.get("watch_recheck_count", 0)),
         "blockers": list(payload.get("blockers", []))[:10],
+        "report_path": (payload.get("report") or {}).get("path") or payload.get("report_path"),
     }
 
 

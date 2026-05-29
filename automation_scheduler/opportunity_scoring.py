@@ -27,6 +27,11 @@ _WEIGHTS = {
     "stale_data_risk_score": 0.01,
     "settlement_risk_score": 0.01,
     "max_loss_score": 0.03,
+    "provider_data_quality_score": 0.03,
+    "book_disagreement_score": 0.03,
+    "stale_data_risk_score": 0.03,
+    "liquidity_placeholder_score": 0.03,
+    "cross_book_score": 0.04,
 }
 
 

@@ -66,6 +66,22 @@ def validate_sportsbook_snapshot(snapshot: dict[str, Any], max_staleness_seconds
     }
 
 
+def get_valid_normalized_records(snapshot: dict[str, Any], max_staleness_seconds: int = 3600 * 12) -> list[dict[str, Any]]:
+    normalized = normalize_sportsbook_snapshot(snapshot)
+    valid_rows: list[dict[str, Any]] = []
+    for row in normalized.get("records", []):
+        if not isinstance(row, dict):
+            continue
+        verdict = validate_provider_payload(
+            "sportsbook_odds",
+            row,
+            max_staleness_seconds=max_staleness_seconds,
+        )
+        if verdict["ok"]:
+            valid_rows.append(row)
+    return valid_rows
+
+
 def write_sportsbook_snapshot(snapshot: dict[str, Any], base_data_dir: str = "data") -> str:
     normalized = normalize_sportsbook_snapshot(snapshot)
     # Guard only redacted provider-source blocks to avoid false positives on long non-secret IDs.

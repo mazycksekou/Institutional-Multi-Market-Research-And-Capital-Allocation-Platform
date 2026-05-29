@@ -20,10 +20,11 @@ class TestResponseCompactor(unittest.TestCase):
         self.assertEqual(len(c["items"]), 10)
 
     def test_run_once_summary_only(self):
-        p = {"ok": True, "run_id": "r1", "report": {"path": "data/reports/r1.json"}, "review_queue_size": 3}
+        p = {"ok": True, "status": "dry_run_complete", "run_id": "r1", "report_path": "data/reports/r1.json", "records_received": 10}
         c = compact_run_once_response(p)
         self.assertIn("report_path", c)
-        self.assertNotIn("report", c)
+        self.assertIn("records_received", c)
+        self.assertTrue(c["dry_run"])
 
     def test_verbose_redaction(self):
         payload = {"api_key": "x", "nested": [{"token": "y"}], "items": list(range(200)), "provider_payload": {"raw": 1}}

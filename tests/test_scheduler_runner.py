@@ -9,5 +9,5 @@ class TestSchedulerRunner(unittest.TestCase):
             result = run_scheduler_once(base_data_dir=tmp, dry_run=True, injected_data={"skipped_items": ["a"]})
             self.assertTrue(result["dry_run"])
             self.assertFalse(result["auto_execution_enabled"])
-            self.assertIn("report", result)
-            self.assertIn("provider_count", result)
+            self.assertIn("report_path", result)
+            self.assertIn("records_received", result)

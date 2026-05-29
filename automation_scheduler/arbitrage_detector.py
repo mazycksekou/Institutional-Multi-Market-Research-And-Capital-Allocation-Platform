@@ -40,17 +40,26 @@ def detect_arbitrage(
         return {"candidate_found": False, "reason": "not_enough_offers", "candidate_type": None}
     if stale_data_risk or _is_stale(offers, max_timestamp_skew_seconds):
         return {"candidate_found": False, "reason": "stale_data", "candidate_type": None}
+    normalized = [normalize_offer(offer) for offer in offers if isinstance(offer, dict)]
+    identity_keys = {
+        (str(offer.get("event_name") or ""), str(offer.get("market") or ""))
+        for offer in normalized
+    }
+    if len(identity_keys) > 1:
+        return {"candidate_found": False, "reason": "mismatched_event_market", "candidate_type": None}
 
     if market_identity_confidence is None:
         confidences = []
-        for index in range(len(offers) - 1):
-            for other in range(index + 1, len(offers)):
-                confidences.append(resolve_market_identity(offers[index], offers[other])["confidence"])
+        for index in range(len(normalized) - 1):
+            for other in range(index + 1, len(normalized)):
+                confidences.append(resolve_market_identity(normalized[index], normalized[other])["confidence"])
         market_identity_confidence = min(confidences) if confidences else 100.0
     if market_identity_confidence < 85:
         return {"candidate_found": False, "reason": "low_market_identity_confidence", "candidate_type": None}
 
-    best_by_selection = _best_prices_by_selection(offers)
+    best_by_selection = _best_prices_by_selection(normalized)
+    if len(best_by_selection) < 2:
+        return {"candidate_found": False, "reason": "same_side_only", "candidate_type": None}
     if len(best_by_selection) not in {2, 3}:
         return {"candidate_found": False, "reason": "unsupported_selection_count", "candidate_type": None}
 

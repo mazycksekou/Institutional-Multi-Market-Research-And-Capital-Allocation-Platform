@@ -30,14 +30,16 @@ def detect_middle_opportunity(
     right = normalize_offer(right_offer)
     market = normalize_market_name(left.get("market"))
     confidence = market_identity_confidence if market_identity_confidence is not None else resolve_market_identity(left, right)["confidence"]
+    if left.get("event_name") != right.get("event_name") or normalize_market_name(right.get("market")) != market:
+        return {"candidate_found": False, "reason": "watch_recheck_market_identity"}
     if confidence < 85:
-        return {"candidate_found": False, "reason": "low_market_identity_confidence"}
+        return {"candidate_found": False, "reason": "watch_recheck_market_identity"}
     if stale_data_risk:
-        return {"candidate_found": False, "reason": "stale_data"}
+        return {"candidate_found": False, "reason": "watch_recheck_stale_data"}
     left_ts = left_offer.get("timestamp")
     right_ts = right_offer.get("timestamp")
     if isinstance(left_ts, (int, float)) and isinstance(right_ts, (int, float)) and abs(int(left_ts) - int(right_ts)) > max_timestamp_skew_seconds:
-        return {"candidate_found": False, "reason": "timestamp_mismatch"}
+        return {"candidate_found": False, "reason": "watch_recheck_timestamp_mismatch"}
 
     left_line = float(left.get("line") or 0)
     right_line = float(right.get("line") or 0)
@@ -60,7 +62,7 @@ def detect_middle_opportunity(
         middle_zone = [round(abs(favorite_line), 4), round(abs(dog_line), 4)]
 
     if middle_width <= 0:
-        return {"candidate_found": False, "reason": "no_middle_width"}
+        return {"candidate_found": False, "reason": "watch_recheck_no_corridor"}
 
     middle_hit_probability = float(
         (model_distribution or {}).get("middle_hit_probability")

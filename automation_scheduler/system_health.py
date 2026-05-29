@@ -72,6 +72,15 @@ def get_system_health(config: dict[str, Any]) -> dict[str, Any]:
     )
     dry_run_provider_mode = True
 
+    sharp_records_received = 0
+    sharp_records_valid = 0
+    sharp_records_rejected = 0
+    sharp_last_snapshot_status = "not_available"
+    sharp_status_candidates = [
+        item for item in review_items if str(item.get("provider_id") or item.get("provider")) == "sharp_sportsbook"
+    ]
+    sharp_review_candidates_created = len(sharp_status_candidates)
+    cross_book_candidates_created = len([item for item in sharp_status_candidates if int(item.get("books_compared") or 0) > 1])
     return {
         "ok": True,
         "schema_version": SCHEMA_VERSION,
@@ -91,6 +100,12 @@ def get_system_health(config: dict[str, Any]) -> dict[str, Any]:
         "live_calls_enabled_count": live_calls_enabled_count,
         "providers_blocked_count": providers_blocked_count,
         "dry_run_provider_mode": dry_run_provider_mode,
+        "sharp_records_received": sharp_records_received,
+        "sharp_records_valid": sharp_records_valid,
+        "sharp_records_rejected": sharp_records_rejected,
+        "sharp_last_snapshot_status": sharp_last_snapshot_status,
+        "sharp_review_candidates_created": sharp_review_candidates_created,
+        "cross_book_candidates_created": cross_book_candidates_created,
         **inventory,
         "governance_audit_status": "ready" if governance_path.exists() else "not_written",
         "models_blocked_due_to_missing_inputs": models_blocked_due_to_missing_inputs,
@@ -111,7 +126,7 @@ def get_system_health(config: dict[str, Any]) -> dict[str, Any]:
 def write_system_health(config: dict[str, Any], extra: dict[str, Any] | None = None) -> dict[str, Any]:
     health = get_system_health(config)
     if extra:
-        health["extra"] = extra
+        health.update(extra)
     path = Path(config["paths"]["system_health"]) / "health.json"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(health, indent=2, sort_keys=True), encoding="utf-8")

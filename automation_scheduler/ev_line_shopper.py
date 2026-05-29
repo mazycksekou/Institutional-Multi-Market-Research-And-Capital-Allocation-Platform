@@ -89,9 +89,19 @@ def shop_ev_lines(
     stale_data_risk: bool = False,
 ) -> dict[str, Any]:
     if model_probability is None:
-        return {"candidate_found": False, "reason": "model_probability_or_fair_probability_required", "ranked_offers": []}
+        return {
+            "candidate_found": False,
+            "reason": "no_probability_context",
+            "candidate_type": "watch_recheck",
+            "ranked_offers": [],
+        }
     if stale_data_risk:
-        return {"candidate_found": False, "reason": "stale_data", "ranked_offers": []}
+        return {
+            "candidate_found": False,
+            "reason": "stale_data",
+            "candidate_type": "watch_recheck",
+            "ranked_offers": [],
+        }
 
     normalized = [normalize_offer(offer) for offer in offers if isinstance(offer, dict)]
     ranked = []
@@ -122,6 +132,7 @@ def shop_ev_lines(
         return {
             "candidate_found": False,
             "reason": "no_positive_ev",
+            "candidate_type": "best_line_available" if best else "watch_recheck",
             "ranked_offers": ranked,
             "best_line_available": best,
         }

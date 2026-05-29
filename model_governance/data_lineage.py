@@ -14,6 +14,9 @@ def create_lineage_record(**kwargs: Any) -> dict[str, Any]:
     record.setdefault("stale_status", "unknown")
     record.setdefault("validation_status", "unknown")
     record.setdefault("redaction_status", "applied")
+    record.setdefault("snapshot_id", "unknown_snapshot")
+    if record.get("provider_id") == "sharp_sportsbook":
+        record.setdefault("provider_type", "sportsbook_odds")
     for key in list(record.keys()):
         if "secret" in key.lower() or "api_key" in key.lower() or "token" in key.lower():
             record[key] = "[REDACTED]"

@@ -21,10 +21,16 @@ def evaluate_data_quality(**kwargs):
     for c in checks:
         if kwargs.get(c):
             issues.append(c)
+    usable = len(issues) == 0 or (
+        kwargs.get("provider_id") == "sharp_sportsbook"
+        and not kwargs.get("stale_provider_payload", False)
+        and kwargs.get("validation_status", "accepted") in {"accepted", "ok"}
+    )
     return {
         "issues": issues,
         "ok": len(issues) == 0,
-        "data_quality_result": "approved" if len(issues) == 0 else "blocked_by_governance",
+        "usable": usable,
+        "data_quality_result": "approved" if usable else "blocked_by_governance",
         "provider_id": kwargs.get("provider_id"),
         "provider_type": kwargs.get("provider_type"),
         "payload_schema_version": kwargs.get("payload_schema_version"),

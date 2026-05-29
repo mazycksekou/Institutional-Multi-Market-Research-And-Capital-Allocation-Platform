@@ -42,7 +42,7 @@ def _review_item_id(candidate: dict[str, Any]) -> str:
 def build_review_item(candidate: dict[str, Any], config: dict[str, Any]) -> dict[str, Any] | None:
     thresholds = config["score_thresholds"]
     opportunity_score = float(candidate.get("opportunity_score", 0))
-    if opportunity_score < float(thresholds["ignore_below"]):
+    if opportunity_score < float(thresholds["watch_threshold"]):
         return None
 
     cadence = choose_next_check_seconds(
@@ -61,10 +61,16 @@ def build_review_item(candidate: dict[str, Any], config: dict[str, Any]) -> dict
         "created_at": str(candidate.get("created_at") or now),
         "updated_at": now,
         "source": candidate.get("source", "scheduler"),
+        "provider_id": candidate.get("provider_id", candidate.get("provider", "unknown")),
         "market_type": candidate.get("market_type", "unknown"),
         "sport_or_symbol": candidate.get("sport_or_symbol", "unknown"),
+        "event_id": candidate.get("event_id"),
+        "event_name": candidate.get("event_name"),
+        "sport": candidate.get("sport"),
+        "league": candidate.get("league"),
         "market": candidate.get("market", "unknown"),
         "selection": candidate.get("selection", "unknown"),
+        "book": candidate.get("book", candidate.get("bookmaker")),
         "odds_or_price": candidate.get("odds_or_price"),
         "candidate_type": candidate.get("candidate_type"),
         "books_compared": candidate.get("books_compared"),
@@ -145,7 +151,7 @@ def build_review_item(candidate: dict[str, Any], config: dict[str, Any]) -> dict
         "opportunity_score": round(opportunity_score, 2),
         "confidence": candidate.get("confidence"),
         "risk": candidate.get("risk"),
-        "liquidity": candidate.get("liquidity"),
+        "liquidity": candidate.get("liquidity", 0.5),
         "recommended_action": recommended_action,
         "recheck_after_seconds": cadence["next_check_seconds"],
         "stale_after_seconds": int(candidate.get("stale_after_seconds") or max(300, cadence["next_check_seconds"] * 4)),
@@ -153,6 +159,7 @@ def build_review_item(candidate: dict[str, Any], config: dict[str, Any]) -> dict
         "auto_execution_enabled": False,
         "reason": candidate.get("reason", ""),
         "blockers": list(candidate.get("blockers") or []),
+        "top_reasons": list(candidate.get("top_reasons") or [])[:5],
         "blocked_reasons": list(candidate.get("blocked_reasons") or []),
         "provider": candidate.get("provider", "unknown"),
         "market_close_at": candidate.get("market_close_at"),
