@@ -208,11 +208,13 @@ class SharpSportsbookAdapter:
 
     def fetch_snapshot(self) -> dict[str, Any]:
         config_state = self.validate_config()
+        credential_status = config_state["credential_status"]
         if "blocked_missing_credentials" in config_state["blockers"]:
             return {
                 "ok": True,
                 "status": "blocked_missing_credentials",
                 "provider_id": self.provider_id,
+                "credential_status": credential_status,
                 "dry_run": True,
                 "records": [],
                 "records_received": 0,
@@ -226,6 +228,7 @@ class SharpSportsbookAdapter:
                 "ok": True,
                 "status": "dry_run_placeholder",
                 "provider_id": self.provider_id,
+                "credential_status": credential_status,
                 "dry_run": True,
                 "records": [],
                 "records_received": 0,
@@ -241,6 +244,7 @@ class SharpSportsbookAdapter:
                 "ok": True,
                 "status": fetch["status"],
                 "provider_id": self.provider_id,
+                "credential_status": credential_status,
                 "dry_run": False,
                 "records": [],
                 "records_received": 0,
@@ -266,6 +270,7 @@ class SharpSportsbookAdapter:
             "ok": True,
             "status": "ok",
             "provider_id": self.provider_id,
+            "credential_status": credential_status,
             "dry_run": False,
             "records": normalized,
             "records_received": len(fetch["records"]),
