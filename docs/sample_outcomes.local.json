@@ -1,33 +1,33 @@
-﻿{
+{
   "dry_run": true,
   "records": [
     {
-      "provider": "kalshi_prediction_market",
-      "market_type": "prediction_market",
-      "decision_id": "decision_REPLACE_WITH_REAL_ID",
       "contract_id": "KX_REPLACE_WITH_REAL_CONTRACT",
-      "outcome_status": "settled",
+      "decision_id": "decision_REPLACE_WITH_REAL_ID",
       "final_outcome": "yes",
+      "market_type": "prediction_market",
+      "outcome_status": "settled",
+      "provider": "kalshi_prediction_market",
       "settled_at": "2026-05-29T00:00:00+00:00",
       "source": "local_manual"
     },
     {
-      "provider": "sharp_sportsbook",
-      "market_type": "sports_pregame_main",
-      "review_item_id": "review_REPLACE_WITH_REAL_ID",
-      "outcome_status": "settled",
       "final_outcome": "win",
+      "market_type": "sports_pregame_main",
+      "outcome_status": "settled",
+      "provider": "sharp_sportsbook",
+      "review_item_id": "review_REPLACE_WITH_REAL_ID",
       "settled_at": "2026-05-29T00:00:00+00:00",
       "source": "imported_file"
     },
     {
-      "provider": "sharp_sportsbook",
-      "market_type": "sports_pregame_main",
-      "ticker": "REPLACE_WITH_REAL_TICKER_OR_EVENT_KEY",
-      "outcome_status": "void",
       "final_outcome": "void",
+      "market_type": "sports_pregame_main",
+      "outcome_status": "void",
+      "provider": "sharp_sportsbook",
       "settled_at": "2026-05-29T00:00:00+00:00",
-      "source": "local_manual"
+      "source": "local_manual",
+      "ticker": "REPLACE_WITH_REAL_TICKER_OR_EVENT_KEY"
     }
   ]
 }
