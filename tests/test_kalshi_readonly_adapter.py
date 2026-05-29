@@ -1,9 +1,12 @@
+import base64
 import os
 import unittest
 from datetime import datetime, timezone
 from unittest.mock import patch
 
 import httpx
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import padding, rsa
 
 from automation_scheduler.kalshi_readonly_adapter import KalshiReadonlyAdapter
 
@@ -59,6 +62,14 @@ class _MockClient:
     def delete(self, *args, **kwargs):
         _MockClient.calls.append(("DELETE", args, kwargs))
         return _MockResponse(405, {"error": "not_allowed"})
+
+
+_TEST_PRIVATE_KEY = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+_TEST_PRIVATE_KEY_PEM = _TEST_PRIVATE_KEY.private_bytes(
+    encoding=serialization.Encoding.PEM,
+    format=serialization.PrivateFormat.PKCS8,
+    encryption_algorithm=serialization.NoEncryption(),
+).decode("utf-8")
 
 
 class TestKalshiReadonlyAdapter(unittest.TestCase):
@@ -128,7 +139,7 @@ class TestKalshiReadonlyAdapter(unittest.TestCase):
         os.environ["KALSHI_PROVIDER_ENABLED"] = "true"
         os.environ["KALSHI_LIVE_READS_ENABLED"] = "true"
         os.environ["KALSHI_API_KEY"] = "kalshi_key_1234567890"
-        os.environ["KALSHI_API_SECRET"] = "kalshi_secret_1234567890"
+        os.environ["KALSHI_API_SECRET"] = _TEST_PRIVATE_KEY_PEM
         contract = dict(self.contract)
         contract["enabled"] = True
         contract["live_calls_enabled"] = True
@@ -179,13 +190,19 @@ class TestKalshiReadonlyAdapter(unittest.TestCase):
         self.assertEqual(row["settlement_rule"], "Resolved by official release")
         self.assertIn("source_payload_redacted", row)
         self.assertNotIn("kalshi_key_1234567890", str(snapshot))
-        self.assertNotIn("kalshi_secret_1234567890", str(snapshot))
+        self.assertNotIn("BEGIN PRIVATE KEY", str(snapshot))
         methods = [call[0] for call in _MockClient.calls]
         self.assertTrue(all(method == "GET" for method in methods))
         self.assertNotIn("POST", methods)
         self.assertNotIn("PUT", methods)
         self.assertNotIn("PATCH", methods)
         self.assertNotIn("DELETE", methods)
+        _, _, sent_headers, sent_params = _MockClient.calls[0]
+        self.assertIn("KALSHI-ACCESS-KEY", sent_headers)
+        self.assertIn("KALSHI-ACCESS-TIMESTAMP", sent_headers)
+        self.assertIn("KALSHI-ACCESS-SIGNATURE", sent_headers)
+        self.assertNotIn("KALSHI-ACCESS-SECRET", sent_headers)
+        self.assertIsInstance(sent_params, dict)
 
     @patch("automation_scheduler.kalshi_readonly_adapter.httpx.Client", new=_MockClient)
     def test_malformed_prices_are_rejected(self):
@@ -193,7 +210,7 @@ class TestKalshiReadonlyAdapter(unittest.TestCase):
         os.environ["KALSHI_PROVIDER_ENABLED"] = "true"
         os.environ["KALSHI_LIVE_READS_ENABLED"] = "true"
         os.environ["KALSHI_API_KEY"] = "kalshi_key_1234567890"
-        os.environ["KALSHI_API_SECRET"] = "kalshi_secret_1234567890"
+        os.environ["KALSHI_API_SECRET"] = _TEST_PRIVATE_KEY_PEM
         contract = dict(self.contract)
         contract["enabled"] = True
         contract["live_calls_enabled"] = True
@@ -237,7 +254,7 @@ class TestKalshiReadonlyAdapter(unittest.TestCase):
         os.environ["KALSHI_PROVIDER_ENABLED"] = "true"
         os.environ["KALSHI_LIVE_READS_ENABLED"] = "true"
         os.environ["KALSHI_API_KEY"] = "kalshi_key_1234567890"
-        os.environ["KALSHI_API_SECRET"] = "kalshi_secret_1234567890"
+        os.environ["KALSHI_API_SECRET"] = _TEST_PRIVATE_KEY_PEM
         contract = dict(self.contract)
         contract["enabled"] = True
         contract["live_calls_enabled"] = True
@@ -258,7 +275,7 @@ class TestKalshiReadonlyAdapter(unittest.TestCase):
         os.environ["KALSHI_PROVIDER_ENABLED"] = "true"
         os.environ["KALSHI_LIVE_READS_ENABLED"] = "true"
         os.environ["KALSHI_API_KEY"] = "kalshi_key_1234567890"
-        os.environ["KALSHI_API_SECRET"] = "kalshi_secret_1234567890"
+        os.environ["KALSHI_API_SECRET"] = _TEST_PRIVATE_KEY_PEM
         contract = dict(self.contract)
         contract["enabled"] = True
         contract["live_calls_enabled"] = True
@@ -281,7 +298,56 @@ class TestKalshiReadonlyAdapter(unittest.TestCase):
         self.assertIn("timeout_seconds", diag)
         self.assertIn("retry_count", diag)
         self.assertNotIn("kalshi_key_1234567890", str(snapshot))
-        self.assertNotIn("kalshi_secret_1234567890", str(snapshot))
+        self.assertNotIn("BEGIN PRIVATE KEY", str(snapshot))
+
+    def test_signature_payload_uses_timestamp_method_and_path_only(self):
+        adapter = KalshiReadonlyAdapter(self.contract)
+        payload = adapter._build_signature_payload(
+            method="GET",
+            url="https://external-api.kalshi.com/trade-api/v2/markets?limit=10",
+            timestamp_ms="1710000000000",
+        )
+        self.assertEqual(payload, b"1710000000000GET/trade-api/v2/markets")
+
+    def test_built_headers_are_http_safe_and_verifiable(self):
+        os.environ["KALSHI_API_KEY"] = "kalshi_key_1234567890"
+        os.environ["KALSHI_API_SECRET"] = _TEST_PRIVATE_KEY_PEM.replace("\n", "\\n")
+        adapter = KalshiReadonlyAdapter(self.contract)
+        headers = adapter._build_headers(method="GET", url="https://external-api.kalshi.com/trade-api/v2/markets")
+        self.assertNotIn("KALSHI-ACCESS-SECRET", headers)
+        for value in headers.values():
+            self.assertIsInstance(value, str)
+            self.assertNotIn("\n", value)
+            self.assertNotIn("\r", value)
+        timestamp = headers["KALSHI-ACCESS-TIMESTAMP"]
+        signature = headers["KALSHI-ACCESS-SIGNATURE"]
+        payload = adapter._build_signature_payload(
+            method="GET",
+            url="https://external-api.kalshi.com/trade-api/v2/markets",
+            timestamp_ms=timestamp,
+        )
+        _TEST_PRIVATE_KEY.public_key().verify(
+            base64.b64decode(signature),
+            payload,
+            padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.DIGEST_LENGTH),
+            hashes.SHA256(),
+        )
+
+    @patch("automation_scheduler.kalshi_readonly_adapter.httpx.Client", new=_MockClient)
+    def test_malformed_credential_shape_returns_blocked_invalid_credentials(self):
+        os.environ["KALSHI_PROVIDER_ENABLED"] = "true"
+        os.environ["KALSHI_LIVE_READS_ENABLED"] = "true"
+        os.environ["KALSHI_API_KEY"] = "kalshi_key_1234567890"
+        os.environ["KALSHI_API_SECRET"] = "not_a_private_key"
+        contract = dict(self.contract)
+        contract["enabled"] = True
+        contract["live_calls_enabled"] = True
+        snapshot = KalshiReadonlyAdapter(contract).fetch_snapshot()
+        self.assertEqual(snapshot["status"], "provider_error")
+        self.assertIn("blocked_invalid_credentials", snapshot["blockers"])
+        self.assertEqual(snapshot.get("http_status"), None)
+        self.assertEqual(snapshot.get("diagnostic", {}).get("error_category"), "request_build_error")
+        self.assertNotIn("not_a_private_key", str(snapshot))
 
 
 if __name__ == "__main__":

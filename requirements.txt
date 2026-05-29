@@ -8,3 +8,4 @@ python-dotenv==1.0.1
 pydantic==2.9.2
 yfinance==0.2.40
 pandas==2.2.2
+cryptography==44.0.1

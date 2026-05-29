@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+import base64
 import os
+import time
 from collections import Counter
 from typing import Any
 from urllib.parse import urlsplit, urlunsplit
 
 import httpx
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import padding
 
 from .provider_payload_validator import validate_provider_payload
 from .provider_secret_policy import credential_status_from_env, redact_http_diagnostic, redact_mapping
@@ -46,6 +50,10 @@ def _normalize_path(path_value: str) -> str:
     if not segments:
         return "/"
     return "/" + "/".join(segments)
+
+
+def _has_control_characters(value: str) -> bool:
+    return any(ord(ch) < 32 or ord(ch) == 127 for ch in value)
 
 
 def _safe_str(value: Any) -> str | None:
@@ -227,14 +235,55 @@ class KalshiReadonlyAdapter:
             "timestamp": utc_now_iso(),
         }
 
-    def _build_headers(self) -> dict[str, str]:
+    def _build_signature_payload(self, method: str, url: str, timestamp_ms: str) -> bytes:
+        split = urlsplit(url)
+        path = split.path or "/"
+        return f"{timestamp_ms}{method.upper()}{path}".encode("utf-8")
+
+    def _build_headers(self, *, method: str, url: str) -> dict[str, str]:
         api_key = os.getenv("KALSHI_API_KEY", "").strip()
-        api_secret = os.getenv("KALSHI_API_SECRET", "").strip()
-        return {
+        raw_secret = os.getenv("KALSHI_API_SECRET", "")
+        if not api_key:
+            raise ValueError("invalid_api_key_format")
+        if _has_control_characters(api_key):
+            raise ValueError("invalid_api_key_format")
+
+        normalized_secret = raw_secret.replace("\\n", "\n").strip()
+        if not normalized_secret or "BEGIN" not in normalized_secret:
+            raise ValueError("invalid_private_key_format")
+        try:
+            private_key = serialization.load_pem_private_key(normalized_secret.encode("utf-8"), password=None)
+        except Exception as exc:  # pragma: no cover - categorized below for tests
+            raise ValueError("invalid_private_key_pem") from exc
+
+        timestamp_ms = str(int(time.time() * 1000))
+        signature_payload = self._build_signature_payload(method, url, timestamp_ms)
+        try:
+            signature_bytes = private_key.sign(
+                signature_payload,
+                padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.DIGEST_LENGTH),
+                hashes.SHA256(),
+            )
+        except Exception as exc:  # pragma: no cover - categorized below for tests
+            raise ValueError("signature_build_error") from exc
+        signature_b64 = base64.b64encode(signature_bytes).decode("ascii")
+        if not signature_b64 or _has_control_characters(signature_b64):
+            raise ValueError("invalid_signature_value")
+
+        headers = {
             "KALSHI-ACCESS-KEY": api_key,
-            "KALSHI-ACCESS-SECRET": api_secret,
+            "KALSHI-ACCESS-TIMESTAMP": timestamp_ms,
+            "KALSHI-ACCESS-SIGNATURE": signature_b64,
             "Accept": "application/json",
         }
+        for header_key, header_value in headers.items():
+            if not isinstance(header_value, str) or not header_value:
+                raise ValueError("invalid_header_value")
+            if _has_control_characters(header_value):
+                raise ValueError("invalid_header_value")
+            if _has_control_characters(str(header_key)):
+                raise ValueError("invalid_header_value")
+        return headers
 
     def _safe_get(self, path_name: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
         cfg = self.validate_config()
@@ -253,8 +302,30 @@ class KalshiReadonlyAdapter:
 
         url, diagnostic = self._resolve_url_and_diag(path_name)
         try:
+            headers = self._build_headers(method="GET", url=url)
+        except ValueError:
+            return {
+                "ok": False,
+                "status": "provider_error",
+                "http_status": None,
+                "blocker": "blocked_invalid_credentials",
+                "diagnostic": redact_http_diagnostic(
+                    {
+                        **diagnostic,
+                        "method": "GET",
+                        "error_class": "CredentialBuildError",
+                        "error_category": "request_build_error",
+                        "timeout_seconds": self.timeout_seconds,
+                        "retry_count": self.retry_count,
+                    }
+                ),
+                "records": [],
+                "errors": ["blocked_invalid_credentials"],
+            }
+
+        try:
             with httpx.Client(timeout=self.timeout_seconds) as client:
-                response = client.get(url, headers=self._build_headers(), params=params or {})
+                response = client.get(url, headers=headers, params=params or {})
             if response.status_code >= 400:
                 blocker = _blocker_from_http_status(int(response.status_code))
                 return {
