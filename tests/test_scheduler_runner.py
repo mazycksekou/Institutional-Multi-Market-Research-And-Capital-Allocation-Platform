@@ -175,3 +175,106 @@ class TestSchedulerRunner(unittest.TestCase):
                 self.assertTrue(all(item.get("recommendation_status") == "review_only" for item in kalshi_items))
                 self.assertTrue(all(item.get("execution_allowed") is False for item in kalshi_items))
                 self.assertTrue(all(item.get("auto_execution_enabled") is False for item in kalshi_items))
+
+    @patch("automation_scheduler.scheduler_runner.SharpSportsbookAdapter.fetch_snapshot")
+    @patch("automation_scheduler.scheduler_runner.KalshiReadonlyAdapter.fetch_snapshot")
+    def test_kalshi_field_shape_variants_and_telemetry(self, mock_kalshi_snapshot, mock_sharp_snapshot):
+        now = datetime.now(timezone.utc)
+        mock_sharp_snapshot.return_value = {
+            "ok": True,
+            "status": "live_snapshot_complete",
+            "provider_id": "sharp_sportsbook",
+            "records_received": 0,
+            "records_valid": 0,
+            "records_rejected": 0,
+            "records": [],
+            "schema_version": "automation_scheduler.v1.sharp_sportsbook.v1",
+            "timestamp": now.isoformat(),
+        }
+        mock_kalshi_snapshot.return_value = {
+            "ok": True,
+            "status": "live_snapshot_complete",
+            "provider_id": "kalshi_prediction_market",
+            "records_received": 5,
+            "records_valid": 5,
+            "records_rejected": 0,
+            "schema_version": "automation_scheduler.v1.kalshi_prediction_market.v1",
+            "records": [
+                {
+                    "contractId": "c_direct",
+                    "marketTicker": "KX-DIRECT",
+                    "yes_price": "55",
+                    "no_price": "45",
+                    "close_time": (now + timedelta(hours=2)).isoformat(),
+                    "status": "open",
+                    "settlement_rule": "official_results",
+                    "timestamp": now.isoformat(),
+                },
+                {
+                    "contract_id": "c_camel",
+                    "ticker": "KX-CAMEL",
+                    "yesBid": "0.47",
+                    "yesAsk": "0.53",
+                    "noBid": "0.47",
+                    "noAsk": "0.53",
+                    "close_time": (now + timedelta(hours=2)).isoformat(),
+                    "status": "open",
+                    "settlement_rule": "official_results",
+                    "timestamp": now.isoformat(),
+                },
+                {
+                    "contract_id": "c_alias",
+                    "market_ticker": "KX-ALIAS",
+                    "bid_yes": 0.45,
+                    "ask_yes": 0.47,
+                    "close_time": (now + timedelta(hours=2)).isoformat(),
+                    "status": "open",
+                    "settlement_rule": "official_results",
+                    "timestamp": now.isoformat(),
+                },
+                {
+                    "contractId": "c_nested",
+                    "eventTicker": "KX-NESTED",
+                    "pricing": {"yes_bid": 0.40, "yes_ask": 0.42, "no_bid": 0.58, "no_ask": 0.60},
+                    "close_time": (now + timedelta(hours=2)).isoformat(),
+                    "status": "open",
+                    "settlement_rule": "official_results",
+                    "timestamp": now.isoformat(),
+                },
+                {
+                    "contract_id": "c_missing",
+                    "ticker": "KX-MISSING",
+                    "close_time": (now + timedelta(hours=2)).isoformat(),
+                    "status": "open",
+                    "settlement_rule": "official_results",
+                    "timestamp": now.isoformat(),
+                },
+            ],
+            "timestamp": now.isoformat(),
+        }
+        with patch.dict(
+            "os.environ",
+            {
+                "SHARP_PROVIDER_ENABLED": "true",
+                "SHARP_LIVE_READS_ENABLED": "true",
+                "SHARP_API_KEY": "sharp_test_key_123",
+                "KALSHI_PROVIDER_ENABLED": "true",
+                "KALSHI_LIVE_READS_ENABLED": "true",
+                "KALSHI_API_KEY": "kalshi_test_key_123",
+                "KALSHI_API_SECRET": "placeholder",
+            },
+            clear=False,
+        ):
+            with TemporaryDirectory() as tmp:
+                result = run_scheduler_once(base_data_dir=tmp, dry_run=True)
+                self.assertEqual(result["kalshi_records_received"], 5)
+                self.assertGreaterEqual(result["kalshi_records_valid"], 4)
+                self.assertLess(result["kalshi_records_rejected"], result["kalshi_records_received"])
+                self.assertEqual(result["kalshi_rejected_reason_counts"].get("missing_prices", 0), 1)
+                self.assertGreater(result["kalshi_candidates_created"], 0)
+                telemetry = result["kalshi_price_field_telemetry"]
+                self.assertEqual(telemetry["total_kalshi_records_seen"], 5)
+                self.assertGreaterEqual(telemetry["records_with_any_price_signal"], 4)
+                self.assertGreaterEqual(telemetry["records_with_direct_yes_price"], 1)
+                self.assertGreaterEqual(telemetry["records_with_bid_ask_midpoint_possible"], 2)
+                self.assertIn("yes_price", telemetry["first_record_safe_field_names"])

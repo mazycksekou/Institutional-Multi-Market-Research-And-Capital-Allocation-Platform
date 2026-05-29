@@ -82,11 +82,25 @@ class TestResponseCompactor(unittest.TestCase):
         self.assertFalse(c["items"][0]["execution_allowed"])
 
     def test_run_once_summary_only(self):
-        p = {"ok": True, "status": "dry_run_complete", "run_id": "r1", "report_path": "data/reports/r1.json", "records_received": 10}
+        p = {
+            "ok": True,
+            "status": "dry_run_complete",
+            "run_id": "r1",
+            "report_path": "data/reports/r1.json",
+            "records_received": 10,
+            "kalshi_price_field_telemetry": {
+                "total_kalshi_records_seen": 2,
+                "records_with_any_price_signal": 1,
+                "first_record_safe_field_names": ["yes_price", "ticker"],
+            },
+            "provider_payload": {"raw": "should_not_show"},
+        }
         c = compact_run_once_response(p)
         self.assertIn("report_path", c)
         self.assertIn("records_received", c)
         self.assertTrue(c["dry_run"])
+        self.assertEqual(c["kalshi_price_field_telemetry"]["total_kalshi_records_seen"], 2)
+        self.assertNotIn("provider_payload", str(c))
 
     def test_verbose_redaction(self):
         payload = {"api_key": "x", "nested": [{"token": "y"}], "items": list(range(200)), "provider_payload": {"raw": 1}}

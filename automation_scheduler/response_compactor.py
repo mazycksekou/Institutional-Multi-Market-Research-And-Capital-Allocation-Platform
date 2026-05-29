@@ -163,6 +163,7 @@ def compact_run_once_response(payload: dict[str, Any]) -> dict[str, Any]:
         "kalshi_flagged_low_liquidity_count": int(payload.get("kalshi_flagged_low_liquidity_count", 0)),
         "kalshi_flagged_partial_pricing_count": int(payload.get("kalshi_flagged_partial_pricing_count", 0)),
         "kalshi_rejected_reason_counts": dict(payload.get("kalshi_rejected_reason_counts", {})),
+        "kalshi_price_field_telemetry": dict(payload.get("kalshi_price_field_telemetry", {})),
         "kalshi_blockers": list(payload.get("kalshi_blockers", []))[:10],
         "candidates_created": int(payload.get("candidates_created", 0)),
         "review_required_count": int(payload.get("review_required_count", 0)),

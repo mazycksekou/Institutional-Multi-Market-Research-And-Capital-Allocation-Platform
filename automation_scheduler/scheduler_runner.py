@@ -36,6 +36,201 @@ from .sportsbook_odds_provider import get_valid_normalized_records, summarize_sp
 
 KALSHI_STALE_MARKET_SECONDS = 60 * 15
 KALSHI_LOW_LIQUIDITY_THRESHOLD = 0.35
+KALSHI_TELEMETRY_TOP_LEVEL_FIELDS = (
+    "contract_id",
+    "contractId",
+    "ticker",
+    "market_ticker",
+    "marketTicker",
+    "event_ticker",
+    "eventTicker",
+    "yes_price",
+    "yesPrice",
+    "yes",
+    "yes_last_price",
+    "yesLastPrice",
+    "price_yes",
+    "priceYes",
+    "no_price",
+    "noPrice",
+    "no",
+    "no_last_price",
+    "noLastPrice",
+    "price_no",
+    "priceNo",
+    "yes_bid",
+    "yesBid",
+    "bid_yes",
+    "bidYes",
+    "yes_bid_price",
+    "yesBidPrice",
+    "yes_ask",
+    "yesAsk",
+    "ask_yes",
+    "askYes",
+    "yes_ask_price",
+    "yesAskPrice",
+    "no_bid",
+    "noBid",
+    "bid_no",
+    "bidNo",
+    "no_bid_price",
+    "noBidPrice",
+    "no_ask",
+    "noAsk",
+    "ask_no",
+    "askNo",
+    "no_ask_price",
+    "noAskPrice",
+    "pricing",
+    "prices",
+    "market",
+)
+KALSHI_NESTED_PRICING_FIELDS = (
+    "yes_price",
+    "yesPrice",
+    "yes",
+    "price_yes",
+    "priceYes",
+    "no_price",
+    "noPrice",
+    "no",
+    "price_no",
+    "priceNo",
+    "yes_bid",
+    "yesBid",
+    "bid_yes",
+    "bidYes",
+    "yes_bid_price",
+    "yesBidPrice",
+    "yes_ask",
+    "yesAsk",
+    "ask_yes",
+    "askYes",
+    "yes_ask_price",
+    "yesAskPrice",
+    "no_bid",
+    "noBid",
+    "bid_no",
+    "bidNo",
+    "no_bid_price",
+    "noBidPrice",
+    "no_ask",
+    "noAsk",
+    "ask_no",
+    "askNo",
+    "no_ask_price",
+    "noAskPrice",
+)
+
+KALSHI_CONTRACT_ID_PATHS = (
+    ("contract_id",),
+    ("contractId",),
+    ("ticker",),
+    ("market_ticker",),
+    ("marketTicker",),
+    ("event_ticker",),
+    ("eventTicker",),
+)
+KALSHI_TICKER_PATHS = (
+    ("ticker",),
+    ("market_ticker",),
+    ("marketTicker",),
+    ("event_ticker",),
+    ("eventTicker",),
+)
+KALSHI_YES_DIRECT_PATHS = (
+    ("yes_price",),
+    ("yesPrice",),
+    ("yes",),
+    ("yes_last_price",),
+    ("yesLastPrice",),
+    ("price_yes",),
+    ("priceYes",),
+    ("pricing", "yes_price"),
+    ("pricing", "yesPrice"),
+    ("pricing", "yes"),
+    ("prices", "yes_price"),
+    ("prices", "yesPrice"),
+    ("prices", "yes"),
+    ("market", "yes_price"),
+    ("market", "yesPrice"),
+    ("market", "yes"),
+)
+KALSHI_NO_DIRECT_PATHS = (
+    ("no_price",),
+    ("noPrice",),
+    ("no",),
+    ("no_last_price",),
+    ("noLastPrice",),
+    ("price_no",),
+    ("priceNo",),
+    ("pricing", "no_price"),
+    ("pricing", "noPrice"),
+    ("pricing", "no"),
+    ("prices", "no_price"),
+    ("prices", "noPrice"),
+    ("prices", "no"),
+    ("market", "no_price"),
+    ("market", "noPrice"),
+    ("market", "no"),
+)
+KALSHI_YES_BID_PATHS = (
+    ("yes_bid",),
+    ("yesBid",),
+    ("bid_yes",),
+    ("bidYes",),
+    ("yes_bid_price",),
+    ("yesBidPrice",),
+    ("pricing", "yes_bid"),
+    ("pricing", "yesBid"),
+    ("prices", "yes_bid"),
+    ("prices", "yesBid"),
+    ("market", "yes_bid"),
+    ("market", "yesBid"),
+)
+KALSHI_YES_ASK_PATHS = (
+    ("yes_ask",),
+    ("yesAsk",),
+    ("ask_yes",),
+    ("askYes",),
+    ("yes_ask_price",),
+    ("yesAskPrice",),
+    ("pricing", "yes_ask"),
+    ("pricing", "yesAsk"),
+    ("prices", "yes_ask"),
+    ("prices", "yesAsk"),
+    ("market", "yes_ask"),
+    ("market", "yesAsk"),
+)
+KALSHI_NO_BID_PATHS = (
+    ("no_bid",),
+    ("noBid",),
+    ("bid_no",),
+    ("bidNo",),
+    ("no_bid_price",),
+    ("noBidPrice",),
+    ("pricing", "no_bid"),
+    ("pricing", "noBid"),
+    ("prices", "no_bid"),
+    ("prices", "noBid"),
+    ("market", "no_bid"),
+    ("market", "noBid"),
+)
+KALSHI_NO_ASK_PATHS = (
+    ("no_ask",),
+    ("noAsk",),
+    ("ask_no",),
+    ("askNo",),
+    ("no_ask_price",),
+    ("noAskPrice",),
+    ("pricing", "no_ask"),
+    ("pricing", "noAsk"),
+    ("prices", "no_ask"),
+    ("prices", "noAsk"),
+    ("market", "no_ask"),
+    ("market", "noAsk"),
+)
 
 
 def _parse_iso_utc(value: Any) -> datetime | None:
@@ -82,6 +277,57 @@ def _kalshi_liquidity_metrics(record: dict[str, Any]) -> tuple[float, bool]:
     return score, low_liquidity
 
 
+def _has_usable_value(value: Any) -> bool:
+    if value is None:
+        return False
+    if isinstance(value, str):
+        return bool(value.strip())
+    return True
+
+
+def _extract_by_path(row: dict[str, Any], path: tuple[str, ...]) -> tuple[Any, str | None]:
+    current: Any = row
+    for key in path:
+        if not isinstance(current, dict) or key not in current:
+            return None, None
+        current = current.get(key)
+    if not _has_usable_value(current):
+        return None, None
+    return current, ".".join(path)
+
+
+def _first_probability_from_paths(row: dict[str, Any], paths: tuple[tuple[str, ...], ...]) -> tuple[float | None, str | None]:
+    for path in paths:
+        raw_value, source_path = _extract_by_path(row, path)
+        if raw_value is None:
+            continue
+        parsed = _to_probability(raw_value)
+        if parsed is not None:
+            return parsed, source_path
+    return None, None
+
+
+def _first_text_from_paths(row: dict[str, Any], paths: tuple[tuple[str, ...], ...]) -> str | None:
+    for path in paths:
+        raw_value, _ = _extract_by_path(row, path)
+        if raw_value is None:
+            continue
+        text = str(raw_value).strip()
+        if text:
+            return text
+    return None
+
+
+def _extract_kalshi_identity(row: dict[str, Any]) -> dict[str, str | None]:
+    contract_id = _first_text_from_paths(row, KALSHI_CONTRACT_ID_PATHS)
+    ticker = _first_text_from_paths(row, KALSHI_TICKER_PATHS)
+    if ticker is None:
+        ticker = contract_id
+    if contract_id is None:
+        contract_id = ticker
+    return {"contract_id": contract_id, "ticker": ticker}
+
+
 def _to_probability(value: Any) -> float | None:
     try:
         if value is None:
@@ -96,13 +342,43 @@ def _to_probability(value: Any) -> float | None:
     return None
 
 
+def _extract_kalshi_pricing_signals(row: dict[str, Any]) -> dict[str, Any]:
+    yes_price, yes_price_path = _first_probability_from_paths(row, KALSHI_YES_DIRECT_PATHS)
+    no_price, no_price_path = _first_probability_from_paths(row, KALSHI_NO_DIRECT_PATHS)
+    yes_bid, yes_bid_path = _first_probability_from_paths(row, KALSHI_YES_BID_PATHS)
+    yes_ask, yes_ask_path = _first_probability_from_paths(row, KALSHI_YES_ASK_PATHS)
+    no_bid, no_bid_path = _first_probability_from_paths(row, KALSHI_NO_BID_PATHS)
+    no_ask, no_ask_path = _first_probability_from_paths(row, KALSHI_NO_ASK_PATHS)
+    signal_sources = [
+        path
+        for path in (yes_price_path, no_price_path, yes_bid_path, yes_ask_path, no_bid_path, no_ask_path)
+        if path
+    ]
+    return {
+        "yes_price": yes_price,
+        "no_price": no_price,
+        "yes_bid": yes_bid,
+        "yes_ask": yes_ask,
+        "no_bid": no_bid,
+        "no_ask": no_ask,
+        "has_direct_yes_price": yes_price is not None,
+        "has_direct_no_price": no_price is not None,
+        "has_yes_bid": yes_bid is not None,
+        "has_yes_ask": yes_ask is not None,
+        "has_no_bid": no_bid is not None,
+        "has_no_ask": no_ask is not None,
+        "signal_sources": signal_sources[:12],
+    }
+
+
 def _derive_kalshi_pricing(row: dict[str, Any]) -> dict[str, Any]:
-    yes_price = _to_probability(row.get("yes_price"))
-    no_price = _to_probability(row.get("no_price"))
-    yes_bid = _to_probability(row.get("yes_bid"))
-    yes_ask = _to_probability(row.get("yes_ask"))
-    no_bid = _to_probability(row.get("no_bid"))
-    no_ask = _to_probability(row.get("no_ask"))
+    extracted = _extract_kalshi_pricing_signals(row)
+    yes_price = extracted["yes_price"]
+    no_price = extracted["no_price"]
+    yes_bid = extracted["yes_bid"]
+    yes_ask = extracted["yes_ask"]
+    no_bid = extracted["no_bid"]
+    no_ask = extracted["no_ask"]
     yes_midpoint = None
     no_midpoint = None
     if yes_bid is not None and yes_ask is not None:
@@ -116,10 +392,19 @@ def _derive_kalshi_pricing(row: dict[str, Any]) -> dict[str, Any]:
     pricing_quality = "missing"
     implied_probability = _to_probability(row.get("implied_probability"))
 
-    if yes_price is not None and no_price is not None:
+    if yes_price is not None or no_price is not None:
         price_source = "direct_price"
-        pricing_quality = "complete"
-        if implied_probability is None:
+        if yes_price is not None and no_price is not None:
+            pricing_quality = "complete"
+        else:
+            partial_pricing = True
+            pricing_quality = "partial"
+            derived_price = True
+            if yes_price is None and no_price is not None:
+                yes_price = max(0.0, min(1.0, 1.0 - no_price))
+            elif no_price is None and yes_price is not None:
+                no_price = max(0.0, min(1.0, 1.0 - yes_price))
+        if implied_probability is None and yes_price is not None:
             implied_probability = yes_price
     elif yes_midpoint is not None and no_midpoint is not None:
         yes_price = yes_midpoint
@@ -150,11 +435,40 @@ def _derive_kalshi_pricing(row: dict[str, Any]) -> dict[str, Any]:
     return {
         "yes_price": yes_price,
         "no_price": no_price,
+        "yes_bid": yes_bid,
+        "yes_ask": yes_ask,
+        "no_bid": no_bid,
+        "no_ask": no_ask,
         "implied_probability": implied_probability,
         "derived_price": derived_price,
         "price_source": price_source,
         "partial_pricing": partial_pricing,
         "pricing_quality": pricing_quality,
+        "has_direct_yes_price": extracted["has_direct_yes_price"],
+        "has_direct_no_price": extracted["has_direct_no_price"],
+        "has_yes_bid": extracted["has_yes_bid"],
+        "has_yes_ask": extracted["has_yes_ask"],
+        "has_no_bid": extracted["has_no_bid"],
+        "has_no_ask": extracted["has_no_ask"],
+        "price_debug_summary": {"signal_sources": extracted["signal_sources"]},
+    }
+
+
+def _build_kalshi_price_field_telemetry() -> dict[str, Any]:
+    return {
+        "total_kalshi_records_seen": 0,
+        "records_with_direct_yes_price": 0,
+        "records_with_direct_no_price": 0,
+        "records_with_yes_bid": 0,
+        "records_with_yes_ask": 0,
+        "records_with_no_bid": 0,
+        "records_with_no_ask": 0,
+        "records_with_bid_ask_midpoint_possible": 0,
+        "records_with_any_price_signal": 0,
+        "records_missing_all_price_signals": 0,
+        "top_level_field_presence_counts": {name: 0 for name in KALSHI_TELEMETRY_TOP_LEVEL_FIELDS},
+        "nested_pricing_object_presence_counts": {"pricing": 0, "prices": 0, "market": 0},
+        "first_record_safe_field_names": [],
     }
 
 
@@ -498,6 +812,8 @@ def _evaluate_kalshi_review_candidates(config: dict[str, Any], kalshi_snapshot: 
             "candidates": [],
             "rejected_reason_counts": {"kalshi_snapshot_missing": 1},
             "flagged_low_liquidity_count": 0,
+            "flagged_partial_pricing_count": 0,
+            "price_field_telemetry": _build_kalshi_price_field_telemetry(),
             "blockers": ["kalshi_snapshot_missing"],
         }
     source_records = list(kalshi_snapshot.get("records", []))
@@ -506,19 +822,69 @@ def _evaluate_kalshi_review_candidates(config: dict[str, Any], kalshi_snapshot: 
     rejected_reason_counts: dict[str, int] = {}
     flagged_low_liquidity_count = 0
     flagged_partial_pricing_count = 0
+    telemetry = _build_kalshi_price_field_telemetry()
 
     for row in source_records:
         if not isinstance(row, dict):
             rejected_reason_counts["malformed_record"] = rejected_reason_counts.get("malformed_record", 0) + 1
             continue
+        telemetry["total_kalshi_records_seen"] += 1
+        if not telemetry["first_record_safe_field_names"]:
+            telemetry["first_record_safe_field_names"] = sorted(
+                [name for name in row.keys() if name in KALSHI_TELEMETRY_TOP_LEVEL_FIELDS]
+            )[:40]
+        for field in KALSHI_TELEMETRY_TOP_LEVEL_FIELDS:
+            if _has_usable_value(row.get(field)):
+                telemetry["top_level_field_presence_counts"][field] += 1
+        for nested_name in ("pricing", "prices", "market"):
+            nested_value = row.get(nested_name)
+            if not isinstance(nested_value, dict):
+                continue
+            telemetry["nested_pricing_object_presence_counts"][nested_name] += 1
+            for nested_field in KALSHI_NESTED_PRICING_FIELDS:
+                compound_name = f"{nested_name}.{nested_field}"
+                if compound_name not in telemetry["top_level_field_presence_counts"]:
+                    telemetry["top_level_field_presence_counts"][compound_name] = 0
+                if _has_usable_value(nested_value.get(nested_field)):
+                    telemetry["top_level_field_presence_counts"][compound_name] += 1
 
         pricing = _derive_kalshi_pricing(row)
+        identity = _extract_kalshi_identity(row)
+        if pricing["has_direct_yes_price"]:
+            telemetry["records_with_direct_yes_price"] += 1
+        if pricing["has_direct_no_price"]:
+            telemetry["records_with_direct_no_price"] += 1
+        if pricing["has_yes_bid"]:
+            telemetry["records_with_yes_bid"] += 1
+        if pricing["has_yes_ask"]:
+            telemetry["records_with_yes_ask"] += 1
+        if pricing["has_no_bid"]:
+            telemetry["records_with_no_bid"] += 1
+        if pricing["has_no_ask"]:
+            telemetry["records_with_no_ask"] += 1
+        has_yes_midpoint = pricing["yes_bid"] is not None and pricing["yes_ask"] is not None
+        has_no_midpoint = pricing["no_bid"] is not None and pricing["no_ask"] is not None
+        if has_yes_midpoint or has_no_midpoint:
+            telemetry["records_with_bid_ask_midpoint_possible"] += 1
+        if any(
+            (
+                pricing["has_direct_yes_price"],
+                pricing["has_direct_no_price"],
+                pricing["has_yes_bid"],
+                pricing["has_yes_ask"],
+                pricing["has_no_bid"],
+                pricing["has_no_ask"],
+            )
+        ):
+            telemetry["records_with_any_price_signal"] += 1
+        else:
+            telemetry["records_missing_all_price_signals"] += 1
         rejection_reason: str | None = None
         if _is_kalshi_market_stale(row, now):
             rejection_reason = "stale_market"
         elif _is_kalshi_market_closed(row, now):
             rejection_reason = "closed_or_settled_market"
-        elif not row.get("contract_id") or not row.get("ticker"):
+        elif not identity["contract_id"] or not identity["ticker"]:
             rejection_reason = "missing_ticker_or_contract_id"
         elif pricing["pricing_quality"] == "missing":
             rejection_reason = "missing_prices"
@@ -527,7 +893,7 @@ def _evaluate_kalshi_review_candidates(config: dict[str, Any], kalshi_snapshot: 
             rejected_reason_counts[rejection_reason] = rejected_reason_counts.get(rejection_reason, 0) + 1
             continue
 
-        liquidity_score, low_liquidity = _kalshi_liquidity_metrics(row)
+        liquidity_score, low_liquidity = _kalshi_liquidity_metrics({**row, **pricing})
         if low_liquidity:
             flagged_low_liquidity_count += 1
         if pricing["partial_pricing"]:
@@ -564,15 +930,15 @@ def _evaluate_kalshi_review_candidates(config: dict[str, Any], kalshi_snapshot: 
             "event_id": row.get("event_id"),
             "event_name": row.get("event_title"),
             "market_id": row.get("market_id"),
-            "market": row.get("market_id") or row.get("ticker"),
-            "selection": row.get("contract_title") or row.get("contract_id"),
-            "contract_id": row.get("contract_id"),
+            "market": row.get("market_id") or identity["ticker"],
+            "selection": row.get("contract_title") or identity["contract_id"],
+            "contract_id": identity["contract_id"],
             "contract_title": row.get("contract_title"),
-            "ticker": row.get("ticker"),
-            "yes_bid": row.get("yes_bid"),
-            "yes_ask": row.get("yes_ask"),
-            "no_bid": row.get("no_bid"),
-            "no_ask": row.get("no_ask"),
+            "ticker": identity["ticker"],
+            "yes_bid": pricing["yes_bid"],
+            "yes_ask": pricing["yes_ask"],
+            "no_bid": pricing["no_bid"],
+            "no_ask": pricing["no_ask"],
             "yes_price": pricing["yes_price"],
             "no_price": pricing["no_price"],
             "implied_probability": pricing["implied_probability"],
@@ -580,6 +946,7 @@ def _evaluate_kalshi_review_candidates(config: dict[str, Any], kalshi_snapshot: 
             "price_source": pricing["price_source"],
             "partial_pricing": pricing["partial_pricing"],
             "pricing_quality": pricing["pricing_quality"],
+            "price_debug_summary": pricing["price_debug_summary"],
             "volume": row.get("volume"),
             "open_interest": row.get("open_interest"),
             "liquidity_score": round(liquidity_score, 4),
@@ -624,6 +991,7 @@ def _evaluate_kalshi_review_candidates(config: dict[str, Any], kalshi_snapshot: 
         "rejected_reason_counts": rejected_reason_counts,
         "flagged_low_liquidity_count": flagged_low_liquidity_count,
         "flagged_partial_pricing_count": flagged_partial_pricing_count,
+        "price_field_telemetry": telemetry,
         "blockers": [],
     }
 
@@ -690,7 +1058,9 @@ def run_scheduler_once(*, injected_data: dict[str, Any] | None = None, base_data
                 "review_required_count": review_required_count,
                 "watch_recheck_count": watch_recheck_count,
                 "kalshi_flagged_low_liquidity_count": kalshi_evaluation["flagged_low_liquidity_count"],
+                "kalshi_flagged_partial_pricing_count": kalshi_evaluation["flagged_partial_pricing_count"],
                 "kalshi_rejected_reason_counts": kalshi_evaluation["rejected_reason_counts"],
+                "kalshi_price_field_telemetry": kalshi_evaluation.get("price_field_telemetry", {}),
             },
             "alerts": alerts,
             "review_items": queue,
@@ -724,6 +1094,7 @@ def run_scheduler_once(*, injected_data: dict[str, Any] | None = None, base_data
             "kalshi_flagged_low_liquidity_count": kalshi_evaluation["flagged_low_liquidity_count"],
             "kalshi_flagged_partial_pricing_count": kalshi_evaluation["flagged_partial_pricing_count"],
             "kalshi_rejected_reason_counts": kalshi_evaluation["rejected_reason_counts"],
+            "kalshi_price_field_telemetry": kalshi_evaluation.get("price_field_telemetry", {}),
         },
     )
     return {
@@ -754,6 +1125,7 @@ def run_scheduler_once(*, injected_data: dict[str, Any] | None = None, base_data
         "kalshi_flagged_low_liquidity_count": kalshi_evaluation["flagged_low_liquidity_count"],
         "kalshi_flagged_partial_pricing_count": kalshi_evaluation["flagged_partial_pricing_count"],
         "kalshi_rejected_reason_counts": kalshi_evaluation["rejected_reason_counts"],
+        "kalshi_price_field_telemetry": kalshi_evaluation.get("price_field_telemetry", {}),
         "kalshi_blockers": list(kalshi_evaluation.get("blockers", [])),
         "review_required_count": review_required_count,
         "watch_recheck_count": watch_recheck_count,
