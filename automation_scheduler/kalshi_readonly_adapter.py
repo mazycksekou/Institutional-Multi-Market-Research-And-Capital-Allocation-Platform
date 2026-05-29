@@ -15,7 +15,7 @@ PROVIDER_ID = "kalshi_prediction_market"
 PROVIDER_TYPE = "prediction_market"
 SCHEMA_VERSION = "automation_scheduler.v1.kalshi_prediction_market.v1"
 DEFAULT_TIMEOUT_SECONDS = 8.0
-DEFAULT_BASE_URL = "https://api.kalshi.com/trade-api/v2"
+DEFAULT_BASE_URL = "https://external-api.kalshi.com/trade-api/v2"
 DEFAULT_MARKETS_PATH = "markets"
 DEFAULT_EVENTS_PATH = "events"
 

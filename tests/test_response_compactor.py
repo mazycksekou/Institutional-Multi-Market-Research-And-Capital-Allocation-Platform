@@ -152,7 +152,7 @@ class TestResponseCompactor(unittest.TestCase):
                 "credential_status": "ok",
                 "http_status": None,
                 "diagnostic": {
-                    "url_host": "api.kalshi.com",
+                    "url_host": "external-api.kalshi.com",
                     "url_path": "/trade-api/v2/markets",
                     "method": "GET",
                     "error_class": "ConnectError",
@@ -170,7 +170,7 @@ class TestResponseCompactor(unittest.TestCase):
             }
         )
         diag = compact["diagnostic"]
-        self.assertEqual(diag["url_host"], "api.kalshi.com")
+        self.assertEqual(diag["url_host"], "external-api.kalshi.com")
         self.assertEqual(diag["error_category"], "dns_error")
         self.assertEqual(diag["error_class"], "ConnectError")
         self.assertEqual(diag["timeout_seconds"], 8.0)

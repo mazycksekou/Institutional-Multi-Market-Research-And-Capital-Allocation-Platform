@@ -218,14 +218,20 @@ class TestKalshiReadonlyAdapter(unittest.TestCase):
         self.assertIn("malformed_price", snapshot["rejection_reason_counts"])
 
     def test_build_kalshi_url_diagnostic_redacted(self):
-        os.environ["KALSHI_API_BASE_URL"] = "https://api.kalshi.com/trade-api/v2/"
+        os.environ["KALSHI_API_BASE_URL"] = "https://external-api.kalshi.com/trade-api/v2/"
         os.environ["KALSHI_MARKETS_PATH"] = "/markets"
         adapter = KalshiReadonlyAdapter(self.contract)
         diag = adapter.build_kalshi_url("markets_path")
-        self.assertEqual(diag["url_host"], "api.kalshi.com")
+        self.assertEqual(diag["url_host"], "external-api.kalshi.com")
         self.assertTrue(diag["secret_redacted"])
         self.assertTrue(diag["query_redacted"])
         self.assertNotIn("authorization", str(diag).lower())
+
+    def test_default_base_url_uses_documented_external_host(self):
+        adapter = KalshiReadonlyAdapter(self.contract)
+        diag = adapter.build_kalshi_url("markets_path")
+        self.assertEqual(diag["url_host"], "external-api.kalshi.com")
+        self.assertEqual(diag["url_path"], "/trade-api/v2/markets")
 
     def test_health_read_only_ready_with_credentials_and_flags(self):
         os.environ["KALSHI_PROVIDER_ENABLED"] = "true"
@@ -259,7 +265,7 @@ class TestKalshiReadonlyAdapter(unittest.TestCase):
         contract["dry_run"] = True
         _MockClient.raise_exception = httpx.ConnectError(
             "Name or service not known",
-            request=httpx.Request("GET", "https://api.kalshi.com/trade-api/v2/markets"),
+            request=httpx.Request("GET", "https://external-api.kalshi.com/trade-api/v2/markets"),
         )
         adapter = KalshiReadonlyAdapter(contract)
         snapshot = adapter.fetch_snapshot()
