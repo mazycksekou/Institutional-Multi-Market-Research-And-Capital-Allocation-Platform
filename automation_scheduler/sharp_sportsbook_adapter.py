@@ -573,14 +573,12 @@ class SharpSportsbookAdapter:
             "decimal_odds": decimal_odds,
             "implied_probability": implied_probability,
             "timestamp": _safe_str(timestamp),
-            "source_payload_redacted": redact_mapping(
-                {
-                    "event": event,
-                    "market": market,
-                    "book": book,
-                    "outcome": outcome,
-                }
-            ),
+            "source_payload_redacted": {
+                "event_keys": sorted(str(k) for k in event.keys())[:40],
+                "market_keys": sorted(str(k) for k in market.keys())[:40],
+                "book_keys": sorted(str(k) for k in book.keys())[:40],
+                "outcome_keys": sorted(str(k) for k in outcome.keys())[:40],
+            },
             "schema_version": SCHEMA_VERSION,
         }
         return normalized, warnings, None
