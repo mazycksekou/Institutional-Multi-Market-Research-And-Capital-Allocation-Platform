@@ -8,6 +8,12 @@ from automation_scheduler.outcome_store import (
     load_outcome_state,
     validate_outcome_record,
 )
+from automation_scheduler.settlement_discovery import (
+    build_outcome_completion_report,
+    classify_kalshi_settlement,
+    discover_kalshi_settlements_for_pending_rows,
+    validate_imported_outcome_rows,
+)
 
 
 class TestOutcomeStore(unittest.TestCase):
@@ -97,6 +103,21 @@ class TestOutcomeStore(unittest.TestCase):
             self.assertFalse(result["persisted"])
             self.assertEqual(load_outcome_records(tmp), [])
 
+    def test_read_only_settlement_source_can_persist_when_valid(self):
+        with TemporaryDirectory() as tmp:
+            result = ingest_outcome_records(
+                [self._record(source="read_only_settlement", evidence_type="explicit_settlement_field", evidence_summary="field_names:settlement_result")],
+                source="read_only_settlement",
+                dry_run=False,
+                persist=True,
+                base_data_dir=tmp,
+            )
+            self.assertEqual(result["records_valid"], 1)
+            self.assertTrue(result["persisted"])
+            stored = load_outcome_records(tmp)[0]
+            self.assertEqual(stored["source"], "read_only_settlement")
+            self.assertEqual(stored["evidence_type"], "explicit_settlement_field")
+
     def test_unknown_labels_rejected_for_real_outcomes(self):
         status_result = ingest_outcome_records([self._record(outcome_status="unknown")], source="local_manual")
         final_result = ingest_outcome_records([self._record(final_outcome="unknown")], source="local_manual")
@@ -124,3 +145,71 @@ class TestOutcomeStore(unittest.TestCase):
             self.assertNotIn("provider_payload", rendered)
             self.assertNotIn("secret", rendered)
             self.assertLessEqual(len(record["notes"]), 240)
+
+    def test_incomplete_pending_rows_do_not_create_completion_candidates(self):
+        report = build_outcome_completion_report(
+            pending_rows=[
+                {
+                    "provider": "kalshi_prediction_market",
+                    "market_type": "prediction_market",
+                    "contract_id": "KXTEST",
+                    "outcome_status": None,
+                    "final_outcome": None,
+                    "settled_at": None,
+                    "source": "local_manual",
+                }
+            ],
+            read_only_records=[],
+            use_kalshi_snapshot=False,
+        )
+        self.assertEqual(report["completion_candidates_count"], 0)
+        self.assertEqual(report["pending_diagnostics"]["rows_missing_final_outcome"], 1)
+
+    def test_kalshi_read_only_explicit_yes_and_no_map_to_outcomes(self):
+        pending = [
+            {"provider": "kalshi_prediction_market", "market_type": "prediction_market", "contract_id": "KXYES"},
+            {"provider": "kalshi_prediction_market", "market_type": "prediction_market", "contract_id": "KXNO"},
+        ]
+        report = discover_kalshi_settlements_for_pending_rows(
+            pending,
+            read_only_records=[
+                {"contract_id": "KXYES", "settlement_result": "yes", "status": "settled", "settlement_time": "2026-05-29T00:00:00+00:00", "yes_price": 0.01},
+                {"contract_id": "KXNO", "settlement_result": "no", "status": "settled", "settlement_time": "2026-05-29T00:00:00+00:00", "yes_price": 0.99},
+            ],
+        )
+        outcomes = {row["contract_id"]: row["final_outcome"] for row in report["completion_candidates"]}
+        self.assertEqual(outcomes["KXYES"], "yes")
+        self.assertEqual(outcomes["KXNO"], "no")
+        self.assertEqual(report["settled_yes_count"], 1)
+        self.assertEqual(report["settled_no_count"], 1)
+
+    def test_kalshi_closed_without_result_and_current_price_do_not_persist(self):
+        classification = classify_kalshi_settlement({"contract_id": "KX", "status": "closed", "yes_price": 1.0})
+        self.assertEqual(classification["classification"], "unknown")
+        report = discover_kalshi_settlements_for_pending_rows(
+            [{"provider": "kalshi_prediction_market", "market_type": "prediction_market", "contract_id": "KX"}],
+            read_only_records=[{"contract_id": "KX", "status": "closed", "yes_price": 1.0, "close_time": "2026-05-29T00:00:00+00:00"}],
+        )
+        self.assertEqual(report["completion_candidates_count"], 0)
+        self.assertEqual(report["unknown_count"], 1)
+
+    def test_kalshi_not_settled_market_does_not_create_candidate(self):
+        report = discover_kalshi_settlements_for_pending_rows(
+            [{"provider": "kalshi_prediction_market", "market_type": "prediction_market", "contract_id": "KXOPEN"}],
+            read_only_records=[{"contract_id": "KXOPEN", "status": "active", "yes_price": 0.99}],
+        )
+        self.assertEqual(report["completion_candidates_count"], 0)
+        self.assertEqual(report["not_settled_count"], 1)
+
+    def test_imported_file_valid_and_invalid_rows(self):
+        result = validate_imported_outcome_rows(
+            [
+                self._record(source="imported_file"),
+                self._record(source="test_fixture"),
+                self._record(source="imported_file", contract_id=None, ticker=None),
+            ]
+        )
+        self.assertEqual(result["valid_rows"], 1)
+        self.assertEqual(result["rejected_rows"], 2)
+        self.assertEqual(result["rejected_reason_counts"]["non_real_source_not_persistable"], 1)
+        self.assertEqual(result["rejected_reason_counts"]["missing_matching_key"], 1)

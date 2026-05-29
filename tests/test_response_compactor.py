@@ -3,6 +3,7 @@ from automation_scheduler.response_compactor import (
     compact_calibration_response,
     compact_outcome_ingest_response,
     compact_outcomes_response,
+    compact_settlement_discovery_response,
     compact_health_response, compact_review_queue_response, compact_run_once_response,
     compact_governance_inventory, compact_governance_report, compact_validation_response,
     compact_provider_health_response, compact_provider_registry_response, compact_provider_status,
@@ -255,6 +256,48 @@ class TestResponseCompactor(unittest.TestCase):
         self.assertEqual(listed["total_count"], 1)
         self.assertEqual(listed["records"][0]["outcome_id"], "o1")
         self.assertNotIn("provider_payload", str(listed))
+
+    def test_settlement_discovery_compact_response_is_safe(self):
+        compact = compact_settlement_discovery_response(
+            {
+                "ok": True,
+                "status": "completion_candidates_ready",
+                "pending_diagnostics": {
+                    "pending_rows_count": 1,
+                    "completed_rows_count": 0,
+                    "rows_with_contract_id": 1,
+                    "rows_missing_final_outcome": 1,
+                },
+                "kalshi_discovery": {
+                    "pending_kalshi_rows": 1,
+                    "read_only_records_checked": 1,
+                    "settled_yes_count": 1,
+                    "settlement_field_presence_counts": {"settlement_result": 1},
+                    "rejected_reason_counts": {},
+                    "provider_payload": {"raw": "drop"},
+                },
+                "imported_file": {"rows_found": 0, "valid_rows": 0, "rejected_rows": 0},
+                "completion_candidates_count": 1,
+                "completion_candidates": [
+                    {
+                        "provider": "kalshi_prediction_market",
+                        "market_type": "prediction_market",
+                        "contract_id": "KX",
+                        "outcome_status": "settled",
+                        "final_outcome": "yes",
+                        "settled_at": "2026-05-29T00:00:00+00:00",
+                        "source": "read_only_settlement",
+                        "evidence_type": "explicit_settlement_field",
+                        "api_key": "secret",
+                    }
+                ],
+            }
+        )
+        self.assertEqual(compact["completion_candidates_count"], 1)
+        self.assertEqual(compact["settled_yes_count"], 1)
+        self.assertFalse(compact["provider_write"])
+        self.assertNotIn("provider_payload", str(compact))
+        self.assertNotIn("secret", str(compact))
 
     def test_verbose_redaction(self):
         payload = {"api_key": "x", "nested": [{"token": "y"}], "items": list(range(200)), "provider_payload": {"raw": 1}}

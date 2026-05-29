@@ -10,8 +10,8 @@ from .scheduler_config import SCHEMA_VERSION, safe_run_id, sanitize_filename, ut
 OUTCOME_SCHEMA_VERSION = f"{SCHEMA_VERSION}.local_outcome_store.v1"
 SUPPORTED_OUTCOME_STATUSES = {"settled", "void", "cancelled"}
 SUPPORTED_FINAL_OUTCOMES = {"yes", "no", "win", "loss", "push", "void"}
-SUPPORTED_SOURCES = {"local_manual", "imported_file", "test_fixture"}
-PERSISTABLE_SOURCES = {"local_manual", "imported_file"}
+SUPPORTED_SOURCES = {"local_manual", "imported_file", "test_fixture", "read_only_settlement"}
+PERSISTABLE_SOURCES = {"local_manual", "imported_file", "read_only_settlement"}
 _SENSITIVE_KEY_PARTS = ("key", "secret", "token", "password", "auth", "credential", "signature", "header")
 _RAW_PAYLOAD_KEYS = {
     "provider_payload",
@@ -203,6 +203,8 @@ def validate_outcome_record(
         "closing_price": safe.get("closing_price"),
         "settlement_price": safe.get("settlement_price"),
         "source": outcome_source,
+        "evidence_type": safe.get("evidence_type"),
+        "evidence_summary": _clean_notes(safe.get("evidence_summary")),
         "created_at": safe.get("created_at") or utc_now_iso(),
         "notes": _clean_notes(safe.get("notes")),
     }

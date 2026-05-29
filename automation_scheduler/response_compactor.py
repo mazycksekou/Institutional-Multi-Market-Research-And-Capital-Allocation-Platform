@@ -304,6 +304,8 @@ def compact_outcomes_response(payload: dict[str, Any], limit: int = 10) -> dict[
                 "final_outcome": row.get("final_outcome"),
                 "settled_at": row.get("settled_at"),
                 "source": row.get("source"),
+                "evidence_type": row.get("evidence_type"),
+                "evidence_summary": row.get("evidence_summary"),
                 "created_at": row.get("created_at"),
             }
         )
@@ -322,6 +324,69 @@ def compact_outcomes_response(payload: dict[str, Any], limit: int = 10) -> dict[
         "outcome_error_category": payload.get("outcome_error_category"),
         "count": len(compact_records),
         "records": compact_records,
+    }
+
+
+def compact_settlement_discovery_response(payload: dict[str, Any], limit: int = 10) -> dict[str, Any]:
+    cap = max(1, min(int(limit or 10), 10))
+    candidates = list(payload.get("completion_candidates", []))[:cap]
+    compact_candidates = []
+    for row in candidates:
+        compact_candidates.append(
+            {
+                "provider": row.get("provider"),
+                "market_type": row.get("market_type"),
+                "decision_id": row.get("decision_id"),
+                "review_item_id": row.get("review_item_id"),
+                "run_id": row.get("run_id"),
+                "ticker": row.get("ticker"),
+                "contract_id": row.get("contract_id"),
+                "outcome_status": row.get("outcome_status"),
+                "final_outcome": row.get("final_outcome"),
+                "settled_at": row.get("settled_at"),
+                "source": row.get("source"),
+                "evidence_type": row.get("evidence_type"),
+                "evidence_summary": row.get("evidence_summary"),
+            }
+        )
+    kalshi = dict(payload.get("kalshi_discovery", {}))
+    imported = dict(payload.get("imported_file", {}))
+    pending = dict(payload.get("pending_diagnostics", {}))
+    return {
+        "ok": bool(payload.get("ok", True)),
+        "status": payload.get("status", "no_completion_candidates"),
+        "provider_write": False,
+        "human_approval_required": True,
+        "auto_execution_enabled": False,
+        "pending_rows_count": int(pending.get("pending_rows_count", 0)),
+        "completed_rows_count": int(pending.get("completed_rows_count", 0)),
+        "rows_with_decision_id": int(pending.get("rows_with_decision_id", 0)),
+        "rows_with_review_item_id": int(pending.get("rows_with_review_item_id", 0)),
+        "rows_with_ticker": int(pending.get("rows_with_ticker", 0)),
+        "rows_with_contract_id": int(pending.get("rows_with_contract_id", 0)),
+        "rows_missing_outcome_status": int(pending.get("rows_missing_outcome_status", 0)),
+        "rows_missing_final_outcome": int(pending.get("rows_missing_final_outcome", 0)),
+        "rows_missing_settled_at": int(pending.get("rows_missing_settled_at", 0)),
+        "pending_kalshi_rows": int(kalshi.get("pending_kalshi_rows", 0)),
+        "read_only_records_checked": int(kalshi.get("read_only_records_checked", 0)),
+        "read_only_records_matched": int(kalshi.get("read_only_records_matched", 0)),
+        "settled_yes_count": int(kalshi.get("settled_yes_count", 0)),
+        "settled_no_count": int(kalshi.get("settled_no_count", 0)),
+        "not_settled_count": int(kalshi.get("not_settled_count", 0)),
+        "unknown_count": int(kalshi.get("unknown_count", 0)),
+        "void_cancelled_count": int(kalshi.get("void_cancelled_count", 0)),
+        "settlement_field_presence_counts": dict(kalshi.get("settlement_field_presence_counts", {})),
+        "rejected_reason_counts": dict(kalshi.get("rejected_reason_counts", {})),
+        "import_rows_found": int(imported.get("rows_found", 0)),
+        "import_valid_rows": int(imported.get("valid_rows", 0)),
+        "import_rejected_rows": int(imported.get("rejected_rows", 0)),
+        "import_rejected_reason_counts": dict(imported.get("rejected_reason_counts", {})),
+        "completion_candidates_count": int(payload.get("completion_candidates_count", 0)),
+        "count": len(compact_candidates),
+        "completion_candidates": compact_candidates,
+        "completion_candidate_path": payload.get("completion_candidate_path"),
+        "compact_response": True,
+        "raw_payload_included": False,
     }
 
 

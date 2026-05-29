@@ -29,6 +29,7 @@ from automation_scheduler.response_compactor import (
     compact_calibration_response,
     compact_outcome_ingest_response,
     compact_outcomes_response,
+    compact_settlement_discovery_response,
     compact_provider_status,
     compact_governance_inventory,
     compact_governance_report,
@@ -939,6 +940,16 @@ class AutomationOutcomeIngestRequest(BaseModel):
     persist: bool = False
     source: str = "local_manual"
     records: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class AutomationSettlementDiscoveryRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", protected_namespaces=())
+
+    dry_run: bool = True
+    pending_rows: list[dict[str, Any]] = Field(default_factory=list)
+    imported_rows: list[dict[str, Any]] = Field(default_factory=list)
+    use_kalshi_snapshot: bool = True
+    write_local_report: bool = False
 
 
 class PerformanceBacktestRequest(BaseModel):
@@ -2825,6 +2836,23 @@ async def get_automation_outcomes_endpoint(verbose: bool = Query(default=False),
     return compact
 
 
+@app.post("/api/automation/outcomes/discover-settlements", operation_id="discoverAutomationOutcomeSettlements")
+async def discover_automation_outcome_settlements_endpoint(payload: AutomationSettlementDiscoveryRequest, verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=10)):
+    if payload.dry_run is not True:
+        raise HTTPException(status_code=400, detail="settlement discovery only supports dry_run=true")
+    result = automation_scheduler.discover_automation_outcome_completions(
+        pending_rows=payload.pending_rows or None,
+        imported_rows=payload.imported_rows or None,
+        use_kalshi_snapshot=payload.use_kalshi_snapshot,
+        write_local_report=payload.write_local_report,
+    )
+    cap = min(max(int(limit), 1), 100 if verbose else 10)
+    compact = compact_settlement_discovery_response(result, limit=cap)
+    if verbose or include_debug:
+        compact["debug"] = redact_and_limit_payload(result, limit=cap, verbose=verbose)
+    return compact
+
+
 @app.post("/api/automation/run-once", operation_id="runAutomationSchedulerOnce")
 async def run_automation_scheduler_once(payload: AutomationRunOnceRequest, verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=10)):
     if payload.dry_run is not True:
@@ -3021,6 +3049,7 @@ PUBLIC_OPENAPI_PATH_METHODS = frozenset({
     ("/api/automation/calibration", "get"),
     ("/api/automation/outcomes", "get"),
     ("/api/automation/outcomes/ingest", "post"),
+    ("/api/automation/outcomes/discover-settlements", "post"),
     ("/api/automation/run-once", "post"),
     ("/api/performance/health", "get"),
     ("/api/performance/report", "get"),

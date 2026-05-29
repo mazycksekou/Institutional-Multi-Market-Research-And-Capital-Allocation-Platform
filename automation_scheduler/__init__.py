@@ -10,6 +10,7 @@ from .scheduler_config import get_default_scheduler_config, ensure_runtime_direc
 from .backtesting_engine import generate_backtest_report, run_backtest, run_paper_summary
 from .calibration import build_calibration_report
 from .outcome_store import ingest_outcome_records, load_outcome_state, summarize_outcomes
+from .settlement_discovery import build_outcome_completion_report, write_outcome_completion_candidates
 from .model_performance_report import build_compact_performance_report
 from .provider_health import summarize_provider_health
 from .provider_registry import get_provider_registry
@@ -167,6 +168,30 @@ def get_automation_outcomes(base_data_dir: str | None = None, limit: int | None 
         "outcome_read_ok": bool(state.get("outcome_read_ok", True)),
         "outcome_error_category": state.get("outcome_error_category"),
     }
+
+
+def discover_automation_outcome_completions(
+    *,
+    pending_rows: list[dict] | None = None,
+    imported_rows: list[dict] | None = None,
+    use_kalshi_snapshot: bool = True,
+    write_local_report: bool = False,
+    base_data_dir: str | None = None,
+):
+    config = get_default_scheduler_config(base_data_dir=base_data_dir)
+    ensure_runtime_directories(config)
+    contract = dict(config["providers"].get("kalshi_prediction_market", {}))
+    adapter = KalshiReadonlyAdapter(contract) if use_kalshi_snapshot else None
+    report = build_outcome_completion_report(
+        pending_rows=pending_rows,
+        imported_rows=imported_rows,
+        adapter=adapter,
+        base_data_dir=base_data_dir or "data",
+        use_kalshi_snapshot=use_kalshi_snapshot,
+    )
+    if write_local_report:
+        report.update(write_outcome_completion_candidates(report, base_data_dir=base_data_dir or "data"))
+    return report
 
 
 def get_provider_health(base_data_dir: str | None = None):

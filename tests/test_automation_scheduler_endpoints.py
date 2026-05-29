@@ -92,6 +92,45 @@ class TestAutomationSchedulerEndpoints(unittest.TestCase):
         self.assertIn('total_count', listed_payload)
         self.assertIn('records', listed_payload)
 
+    def test_settlement_discovery_endpoint_compact_default(self):
+        discovered = self.client.post(
+            '/api/automation/outcomes/discover-settlements',
+            json={
+                'dry_run': True,
+                'use_kalshi_snapshot': False,
+                'pending_rows': [
+                    {
+                        'provider': 'kalshi_prediction_market',
+                        'market_type': 'prediction_market',
+                        'contract_id': 'KXTEST',
+                    }
+                ],
+                'imported_rows': [
+                    {
+                        'provider': 'kalshi_prediction_market',
+                        'market_type': 'prediction_market',
+                        'contract_id': 'KXIMPORT',
+                        'outcome_status': 'settled',
+                        'final_outcome': 'yes',
+                        'settled_at': '2026-05-29T00:00:00+00:00',
+                        'source': 'imported_file',
+                        'provider_payload': {'raw': 'drop'},
+                    }
+                ],
+            },
+        )
+        self.assertEqual(discovered.status_code, 200)
+        payload = discovered.json()
+        self.assertFalse(payload['provider_write'])
+        self.assertFalse(payload['auto_execution_enabled'])
+        self.assertEqual(payload['completion_candidates_count'], 1)
+        self.assertEqual(payload['import_valid_rows'], 1)
+        self.assertNotIn('provider_payload', str(payload))
+
+    def test_settlement_discovery_rejects_non_dry_run(self):
+        rejected = self.client.post('/api/automation/outcomes/discover-settlements', json={'dry_run': False})
+        self.assertEqual(rejected.status_code, 400)
+
     def test_run_once_endpoint_dry_run_only(self):
         r = self.client.post('/api/automation/run-once', json={'dry_run': True, 'run_key': 'endpoint-test'})
         self.assertEqual(r.status_code, 200)
