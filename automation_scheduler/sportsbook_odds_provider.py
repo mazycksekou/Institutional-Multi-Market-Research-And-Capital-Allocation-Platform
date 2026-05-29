@@ -1,0 +1,89 @@
+from __future__ import annotations
+
+import json
+from pathlib import Path
+from typing import Any
+
+from .provider_payload_validator import validate_provider_payload
+from .provider_secret_policy import assert_no_secret_leak
+from .scheduler_config import utc_now_iso
+from .sharp_sportsbook_adapter import SCHEMA_VERSION, SharpSportsbookAdapter
+
+
+def get_sportsbook_snapshot(adapter: SharpSportsbookAdapter | None = None) -> dict[str, Any]:
+    instance = adapter or SharpSportsbookAdapter()
+    return instance.fetch_snapshot()
+
+
+def normalize_sportsbook_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
+    records = list(snapshot.get("records", []))
+    return {
+        "ok": bool(snapshot.get("ok", True)),
+        "status": snapshot.get("status", "dry_run_placeholder"),
+        "provider_id": snapshot.get("provider_id", "sharp_sportsbook"),
+        "provider_name": "Sharp Sportsbook",
+        "received_at": snapshot.get("timestamp") or utc_now_iso(),
+        "dry_run": bool(snapshot.get("dry_run", True)),
+        "records_received": int(snapshot.get("records_received", len(records))),
+        "records_valid": int(snapshot.get("records_valid", 0)),
+        "records_rejected": int(snapshot.get("records_rejected", 0)),
+        "blockers": list(snapshot.get("blockers", []))[:10],
+        "records": records,
+        "schema_version": SCHEMA_VERSION,
+    }
+
+
+def validate_sportsbook_snapshot(snapshot: dict[str, Any], max_staleness_seconds: int = 3600 * 12) -> dict[str, Any]:
+    normalized = normalize_sportsbook_snapshot(snapshot)
+    errors: list[str] = []
+    valid = 0
+    rejected = 0
+    for row in normalized.get("records", []):
+        if not isinstance(row, dict):
+            rejected += 1
+            errors.append("malformed_record")
+            continue
+        verdict = validate_provider_payload(
+            "sportsbook_odds",
+            row,
+            max_staleness_seconds=max_staleness_seconds,
+        )
+        if verdict["ok"]:
+            valid += 1
+        else:
+            rejected += 1
+            errors.extend(verdict["errors"])
+    return {
+        "ok": len(errors) == 0,
+        "status": "accepted" if len(errors) == 0 else "rejected",
+        "records_valid": valid,
+        "records_rejected": rejected,
+        "errors": sorted(set(errors)),
+    }
+
+
+def write_sportsbook_snapshot(snapshot: dict[str, Any], base_data_dir: str = "data") -> str:
+    normalized = normalize_sportsbook_snapshot(snapshot)
+    assert_no_secret_leak(normalized)
+    folder = Path(base_data_dir) / "provider_payload_samples"
+    folder.mkdir(parents=True, exist_ok=True)
+    path = folder / "sharp_sportsbook_snapshot.json"
+    path.write_text(json.dumps(normalized, indent=2, sort_keys=True), encoding="utf-8")
+    return str(path)
+
+
+def summarize_sportsbook_snapshot(snapshot: dict[str, Any], snapshot_path: str | None = None) -> dict[str, Any]:
+    normalized = normalize_sportsbook_snapshot(snapshot)
+    return {
+        "ok": bool(normalized.get("ok", True)),
+        "status": normalized.get("status", "dry_run_placeholder"),
+        "provider_id": normalized.get("provider_id", "sharp_sportsbook"),
+        "dry_run": bool(normalized.get("dry_run", True)),
+        "live_calls_enabled": bool(snapshot.get("live_calls_enabled", not bool(normalized.get("dry_run", True)))),
+        "credential_status": snapshot.get("credential_status", "missing_credentials"),
+        "records_received": int(normalized.get("records_received", 0)),
+        "records_valid": int(normalized.get("records_valid", 0)),
+        "records_rejected": int(normalized.get("records_rejected", 0)),
+        "blockers": list(normalized.get("blockers", []))[:10],
+        "snapshot_path": snapshot_path,
+    }

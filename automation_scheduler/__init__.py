@@ -8,6 +8,13 @@ from .backtesting_engine import generate_backtest_report, run_backtest, run_pape
 from .model_performance_report import build_compact_performance_report
 from .provider_health import summarize_provider_health
 from .provider_registry import get_provider_registry
+from .sharp_sportsbook_adapter import SharpSportsbookAdapter
+from .sportsbook_odds_provider import (
+    get_sportsbook_snapshot,
+    summarize_sportsbook_snapshot,
+    validate_sportsbook_snapshot,
+    write_sportsbook_snapshot,
+)
 
 
 def get_scheduler_health(base_data_dir: str | None = None):
@@ -85,3 +92,28 @@ def get_provider_registry_snapshot(base_data_dir: str | None = None):
         "blockers": ["dry_run_placeholder", "live_calls_disabled"],
         "providers": providers,
     }
+
+
+def get_sharp_provider_health(base_data_dir: str | None = None):
+    config = get_default_scheduler_config(base_data_dir=base_data_dir)
+    ensure_runtime_directories(config)
+    contract = dict(config["providers"].get("sharp_sportsbook", {}))
+    adapter = SharpSportsbookAdapter(contract)
+    payload = adapter.health_check()
+    return summarize_sportsbook_snapshot(payload)
+
+
+def run_sharp_provider_snapshot(base_data_dir: str | None = None, write_snapshot: bool = True):
+    config = get_default_scheduler_config(base_data_dir=base_data_dir)
+    ensure_runtime_directories(config)
+    contract = dict(config["providers"].get("sharp_sportsbook", {}))
+    adapter = SharpSportsbookAdapter(contract)
+    snapshot = get_sportsbook_snapshot(adapter)
+    validation = validate_sportsbook_snapshot(snapshot)
+    snapshot_path = None
+    if write_snapshot:
+        snapshot_path = write_sportsbook_snapshot(snapshot, base_data_dir=base_data_dir or "data")
+    summary = summarize_sportsbook_snapshot(snapshot, snapshot_path=snapshot_path)
+    summary["validation_status"] = validation["status"]
+    summary["validation_errors"] = validation["errors"][:10]
+    return summary

@@ -244,3 +244,19 @@ def compact_provider_registry_response(payload: dict[str, Any], limit: int = 10)
         "blockers": list(payload.get("blockers", []))[:10],
         "top_provider_statuses": compact_items,
     }
+
+
+def compact_provider_status(payload: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "ok": bool(payload.get("ok", True)),
+        "status": payload.get("status", "blocked"),
+        "provider_id": payload.get("provider_id"),
+        "dry_run": bool(payload.get("dry_run", True)),
+        "live_calls_enabled": bool(payload.get("live_calls_enabled", False)),
+        "credential_status": payload.get("credential_status", "missing_credentials"),
+        "records_received": int(payload.get("records_received", 0)),
+        "records_valid": int(payload.get("records_valid", 0)),
+        "records_rejected": int(payload.get("records_rejected", 0)),
+        "blockers": list(payload.get("blockers", []))[:10],
+        "snapshot_path": payload.get("snapshot_path"),
+    }

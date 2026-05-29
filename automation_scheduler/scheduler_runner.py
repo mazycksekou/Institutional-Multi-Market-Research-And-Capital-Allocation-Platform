@@ -11,19 +11,34 @@ from .report_writer import write_report
 from .review_queue import list_active_review_items
 from .system_health import write_system_health
 from .run_context import create_run_context
+from .sharp_sportsbook_adapter import SharpSportsbookAdapter
 
 
 def _collect_provider_placeholders(config: dict[str, Any]) -> dict[str, Any]:
     snapshots = []
     skipped: list[dict[str, str]] = []
     for provider_id, contract in config.get("providers", {}).items():
+        if provider_id == "sharp_sportsbook":
+            sharp = SharpSportsbookAdapter(contract)
+            config_check = sharp.validate_config()
+            sharp_reason = "dry_run_placeholder"
+            if "provider_disabled" in config_check["blockers"]:
+                sharp_reason = "provider_disabled"
+            elif "live_reads_disabled" in config_check["blockers"]:
+                sharp_reason = "live_reads_disabled"
+            elif "blocked_missing_credentials" in config_check["blockers"]:
+                sharp_reason = "missing_credentials"
+            skipped.append({"provider_id": provider_id, "reason": sharp_reason})
+            snapshots.append(sharp.fetch_snapshot())
+            continue
+
         adapter = ProviderAdapterBase(contract)
         config_check = adapter.validate_config()
         skipped_reason = "dry_run_placeholder"
         if "disabled_provider" in config_check["blockers"]:
-            skipped_reason = "disabled_provider"
+            skipped_reason = "provider_disabled"
         elif "live_calls_disabled" in config_check["blockers"]:
-            skipped_reason = "live_calls_disabled"
+            skipped_reason = "live_reads_disabled"
         elif "missing_credentials" in config_check["blockers"]:
             skipped_reason = "missing_credentials"
         skipped.append({"provider_id": provider_id, "reason": skipped_reason})

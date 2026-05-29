@@ -4,10 +4,37 @@ from math import ceil
 from typing import Any
 
 from .provider_contracts import get_default_provider_contracts
+from .provider_secret_policy import credential_status_from_env
 
 
 def get_provider_registry() -> dict[str, dict[str, Any]]:
     registry = get_default_provider_contracts()
+    sharp_credential_status = credential_status_from_env("sharp_sportsbook")
+    registry["sharp_sportsbook"] = {
+        "provider_id": "sharp_sportsbook",
+        "provider_name": "Sharp Sportsbook",
+        "provider_type": "sportsbook_odds",
+        "enabled": False,
+        "dry_run": True,
+        "supports_streaming": False,
+        "supports_polling": True,
+        "min_poll_seconds": 60,
+        "rate_limit_note": "read_only_get_only",
+        "credential_status": sharp_credential_status["status"],
+        "required_credentials": ["SHARP_API_KEY"],
+        "supported_markets": ["moneyline", "spread", "total", "player_props"],
+        "output_schema_version": "automation_scheduler.v1.sharp_sportsbook.v1",
+        "last_health_status": "not_checked",
+        "live_calls_enabled": False,
+        "provider_live_calls_enabled": False,
+        "provider_credentials_required": True,
+        "human_approval_required": True,
+        "auto_execution_enabled": False,
+        "auto_bet_enabled": False,
+        "auto_trade_enabled": False,
+        "contract_status": "defined",
+        "read_only_mode": True,
+    }
     registry["stock_placeholder"] = dict(registry["stock_price_placeholder"])
     registry["news_placeholder"] = dict(registry["news_events_placeholder"])
     # compatibility aliases

@@ -26,6 +26,7 @@ import multi_sport_model_registry
 import model_probability
 import screenshot_intake
 from automation_scheduler.response_compactor import (
+    compact_provider_status,
     compact_governance_inventory,
     compact_governance_report,
     compact_health_response,
@@ -2911,6 +2912,26 @@ async def get_providers_registry_endpoint(verbose: bool = Query(default=False), 
     return compact
 
 
+@app.get("/api/providers/sharp/health", operation_id="getSharpProviderHealth")
+async def get_sharp_provider_health_endpoint(verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=10)):
+    payload = automation_scheduler.get_sharp_provider_health()
+    compact = compact_provider_status(payload)
+    cap = min(max(int(limit), 1), 100 if verbose else 10)
+    if verbose or include_debug:
+        compact["debug"] = redact_and_limit_payload(payload, limit=cap, verbose=verbose)
+    return compact
+
+
+@app.post("/api/providers/sharp/snapshot", operation_id="createSharpProviderSnapshot")
+async def create_sharp_provider_snapshot_endpoint(verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=10)):
+    payload = automation_scheduler.run_sharp_provider_snapshot()
+    compact = compact_provider_status(payload)
+    cap = min(max(int(limit), 1), 100 if verbose else 10)
+    if verbose or include_debug:
+        compact["debug"] = redact_and_limit_payload(payload, limit=cap, verbose=verbose)
+    return compact
+
+
 PUBLIC_OPENAPI_PATH_METHODS = frozenset({
     ("/", "get"),
     ("/health", "get"),
@@ -2925,6 +2946,8 @@ PUBLIC_OPENAPI_PATH_METHODS = frozenset({
     ("/api/performance/paper-summary", "post"),
     ("/api/providers/health", "get"),
     ("/api/providers/registry", "get"),
+    ("/api/providers/sharp/health", "get"),
+    ("/api/providers/sharp/snapshot", "post"),
 })
 
 

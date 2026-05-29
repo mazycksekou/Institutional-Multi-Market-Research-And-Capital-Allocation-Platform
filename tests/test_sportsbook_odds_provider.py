@@ -1,0 +1,105 @@
+import json
+import os
+import tempfile
+import unittest
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+
+from automation_scheduler.provider_registry import get_provider_registry
+from automation_scheduler.response_compactor import compact_provider_status
+from automation_scheduler.scheduler_runner import run_scheduler_once
+from automation_scheduler.sharp_sportsbook_adapter import SharpSportsbookAdapter
+from automation_scheduler.sportsbook_odds_provider import (
+    normalize_sportsbook_snapshot,
+    summarize_sportsbook_snapshot,
+    validate_sportsbook_snapshot,
+    write_sportsbook_snapshot,
+)
+
+
+class TestSportsbookOddsProvider(unittest.TestCase):
+    def setUp(self):
+        os.environ.pop("SHARP_API_KEY", None)
+        os.environ.pop("SHARP_LIVE_READS_ENABLED", None)
+
+    def test_registry_contains_sharp_metadata(self):
+        registry = get_provider_registry()
+        sharp = registry["sharp_sportsbook"]
+        self.assertEqual(sharp["provider_type"], "sportsbook_odds")
+        self.assertFalse(sharp["enabled"])
+        self.assertFalse(sharp["live_calls_enabled"])
+        self.assertTrue(sharp["supports_polling"])
+        self.assertFalse(sharp["supports_streaming"])
+        self.assertEqual(sharp["required_credentials"], ["SHARP_API_KEY"])
+
+    def test_dry_run_placeholder_snapshot(self):
+        adapter = SharpSportsbookAdapter(get_provider_registry()["sharp_sportsbook"])
+        snap = adapter.fetch_snapshot()
+        self.assertEqual(snap["status"], "blocked_missing_credentials")
+        normalized = normalize_sportsbook_snapshot(snap)
+        summary = summarize_sportsbook_snapshot(normalized)
+        compact = compact_provider_status(summary)
+        self.assertIn(compact["status"], {"blocked_missing_credentials", "dry_run_placeholder"})
+        self.assertNotIn("source_payload_redacted", str(compact))
+
+    def test_validate_snapshot_stale_payload_flagged(self):
+        stale = (datetime.now(timezone.utc) - timedelta(days=3)).isoformat()
+        snapshot = {
+            "ok": True,
+            "status": "ok",
+            "provider_id": "sharp_sportsbook",
+            "dry_run": False,
+            "records": [
+                {
+                    "event_id": "evt1",
+                    "market": "moneyline",
+                    "selection": "A",
+                    "odds": -110,
+                    "timestamp": stale,
+                }
+            ],
+        }
+        verdict = validate_sportsbook_snapshot(snapshot)
+        self.assertFalse(verdict["ok"])
+        self.assertIn("stale_timestamp", verdict["errors"])
+
+    def test_write_snapshot_redacts_secrets(self):
+        snapshot = {
+            "ok": True,
+            "status": "ok",
+            "provider_id": "sharp_sportsbook",
+            "dry_run": False,
+            "records": [
+                {
+                    "event_id": "evt1",
+                    "market": "moneyline",
+                    "selection": "A",
+                    "odds": -110,
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "source_payload_redacted": {"api_key": "[redacted]"},
+                }
+            ],
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            path = write_sportsbook_snapshot(snapshot, base_data_dir=tmp)
+            self.assertTrue(path.endswith("sharp_sportsbook_snapshot.json"))
+            saved = json.loads(Path(path).read_text(encoding="utf-8"))
+            self.assertNotIn("sharp_key", str(saved))
+
+    def test_scheduler_skips_when_disabled_or_live_disabled(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            run = run_scheduler_once(base_data_dir=tmp, dry_run=True)
+            reasons = [item["reason"] for item in run["skipped_items"] if item.get("provider_id") == "sharp_sportsbook"]
+            self.assertTrue(reasons)
+            self.assertIn(reasons[0], {"provider_disabled", "live_reads_disabled", "missing_credentials", "dry_run_placeholder"})
+
+    def test_read_only_get_only_no_write_methods(self):
+        source = Path("automation_scheduler/sharp_sportsbook_adapter.py").read_text(encoding="utf-8").lower()
+        self.assertNotIn(".post(", source)
+        self.assertNotIn(".put(", source)
+        self.assertNotIn(".patch(", source)
+        self.assertNotIn(".delete(", source)
+
+
+if __name__ == "__main__":
+    unittest.main()
