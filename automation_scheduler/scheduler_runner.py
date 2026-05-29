@@ -27,6 +27,53 @@ from .kalshi_readonly_adapter import KalshiReadonlyAdapter
 from .sharp_sportsbook_adapter import SharpSportsbookAdapter
 from .sportsbook_odds_provider import get_valid_normalized_records, summarize_sportsbook_snapshot
 
+KALSHI_STALE_MARKET_SECONDS = 60 * 15
+KALSHI_LOW_LIQUIDITY_THRESHOLD = 0.35
+
+
+def _parse_iso_utc(value: Any) -> datetime | None:
+    if not isinstance(value, str) or not value.strip():
+        return None
+    text = value.strip().replace("Z", "+00:00")
+    try:
+        parsed = datetime.fromisoformat(text)
+    except ValueError:
+        return None
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
+
+
+def _is_kalshi_market_closed(record: dict[str, Any], now: datetime) -> bool:
+    status = str(record.get("status") or "").strip().lower()
+    if status in {"closed", "settled", "resolved", "final"}:
+        return True
+    close_time = _parse_iso_utc(record.get("close_time"))
+    return bool(close_time and close_time <= now)
+
+
+def _is_kalshi_market_stale(record: dict[str, Any], now: datetime) -> bool:
+    timestamp = _parse_iso_utc(record.get("timestamp"))
+    if timestamp is None:
+        return True
+    age_seconds = max(0, int((now - timestamp).total_seconds()))
+    return age_seconds >= KALSHI_STALE_MARKET_SECONDS
+
+
+def _kalshi_liquidity_metrics(record: dict[str, Any]) -> tuple[float, bool]:
+    liquidity_score = record.get("liquidity_score")
+    if isinstance(liquidity_score, (int, float)):
+        score = float(liquidity_score)
+    else:
+        yes_bid = record.get("yes_bid")
+        yes_ask = record.get("yes_ask")
+        score = 0.0
+        if isinstance(yes_bid, (int, float)) and isinstance(yes_ask, (int, float)):
+            spread = max(0.0, float(yes_ask) - float(yes_bid))
+            score = max(0.0, min(1.0, 1.0 - spread))
+    volume = float(record.get("volume") or 0.0)
+    open_interest = float(record.get("open_interest") or 0.0)
+    low_liquidity = bool(score < KALSHI_LOW_LIQUIDITY_THRESHOLD or volume < 100.0 or open_interest < 100.0)
+    return score, low_liquidity
+
 
 def _collect_provider_placeholders(config: dict[str, Any]) -> dict[str, Any]:
     snapshots = []
@@ -359,6 +406,121 @@ def _evaluate_sharp_review_candidates(config: dict[str, Any], sharp_snapshot: di
     }
 
 
+def _evaluate_kalshi_review_candidates(config: dict[str, Any], kalshi_snapshot: dict[str, Any] | None) -> dict[str, Any]:
+    if not kalshi_snapshot:
+        return {
+            "records_received": 0,
+            "records_valid": 0,
+            "records_rejected": 0,
+            "candidates": [],
+            "rejected_reason_counts": {"kalshi_snapshot_missing": 1},
+            "flagged_low_liquidity_count": 0,
+            "blockers": ["kalshi_snapshot_missing"],
+        }
+    source_records = list(kalshi_snapshot.get("records", []))
+    now = datetime.now(timezone.utc)
+    candidates: list[dict[str, Any]] = []
+    rejected_reason_counts: dict[str, int] = {}
+    flagged_low_liquidity_count = 0
+
+    for row in source_records:
+        if not isinstance(row, dict):
+            rejected_reason_counts["malformed_record"] = rejected_reason_counts.get("malformed_record", 0) + 1
+            continue
+
+        rejection_reason: str | None = None
+        if _is_kalshi_market_stale(row, now):
+            rejection_reason = "stale_market"
+        elif _is_kalshi_market_closed(row, now):
+            rejection_reason = "closed_or_settled_market"
+        elif not row.get("contract_id") or not row.get("ticker"):
+            rejection_reason = "missing_ticker_or_contract_id"
+        elif row.get("yes_price") is None or row.get("no_price") is None:
+            rejection_reason = "missing_prices"
+
+        if rejection_reason:
+            rejected_reason_counts[rejection_reason] = rejected_reason_counts.get(rejection_reason, 0) + 1
+            continue
+
+        liquidity_score, low_liquidity = _kalshi_liquidity_metrics(row)
+        if low_liquidity:
+            flagged_low_liquidity_count += 1
+
+        settlement_rule = row.get("settlement_rule")
+        settlement_status = "present" if settlement_rule else "missing"
+        quality = evaluate_data_quality(
+            provider_id="kalshi_prediction_market",
+            provider_type="prediction_market",
+            payload_schema_version=kalshi_snapshot.get("schema_version"),
+            validation_status="accepted",
+            stale_provider_payload=False,
+        )
+        settlement = evaluate_settlement_liquidity_gate(
+            prediction_market_resolution_match=bool(settlement_rule),
+            liquidity_score=float(max(0.0, min(100.0, liquidity_score * 100.0))),
+        )
+        base = {
+            "source": "kalshi_scheduler_review_queue_v1",
+            "provider_id": "kalshi_prediction_market",
+            "provider": "kalshi_prediction_market",
+            "market_type": "prediction_market",
+            "sport_or_symbol": "prediction_market",
+            "event_id": row.get("event_id"),
+            "event_name": row.get("event_title"),
+            "market_id": row.get("market_id"),
+            "market": row.get("market_id") or row.get("ticker"),
+            "selection": row.get("contract_title") or row.get("contract_id"),
+            "contract_id": row.get("contract_id"),
+            "contract_title": row.get("contract_title"),
+            "ticker": row.get("ticker"),
+            "yes_bid": row.get("yes_bid"),
+            "yes_ask": row.get("yes_ask"),
+            "no_bid": row.get("no_bid"),
+            "no_ask": row.get("no_ask"),
+            "yes_price": row.get("yes_price"),
+            "no_price": row.get("no_price"),
+            "implied_probability": row.get("implied_probability"),
+            "volume": row.get("volume"),
+            "open_interest": row.get("open_interest"),
+            "liquidity_score": round(liquidity_score, 4),
+            "low_liquidity": bool(low_liquidity),
+            "market_close_at": row.get("close_time"),
+            "close_time": row.get("close_time"),
+            "status_reason": row.get("status"),
+            "settlement_rule": settlement_rule,
+            "settlement_rule_status": settlement_status,
+            "data_quality_status": quality.get("data_quality_result"),
+            "data_quality_result": quality.get("data_quality_result"),
+            "settlement_liquidity_gate_result": settlement.get("gate_result"),
+            "execution_feasibility_score": settlement.get("execution_feasibility_score"),
+            "settlement_rule_status_gate": settlement.get("settlement_rule_status"),
+            "candidate_type": "kalshi_review_candidate",
+            "recommendation_status": "review_only",
+            "execution_allowed": False,
+            "human_approval_required": True,
+            "auto_execution_enabled": False,
+            "auto_bet_enabled": False,
+            "auto_trade_enabled": False,
+            "stale_after_seconds": KALSHI_STALE_MARKET_SECONDS,
+            "top_reasons": ["prediction_market_review_only"],
+            "blockers": ["human_approval_required"] if low_liquidity else [],
+        }
+        candidates.append(_build_scored_candidate(base, opportunity_score=71.0 if not low_liquidity else 66.0))
+
+    records_received = int(kalshi_snapshot.get("records_received", len(source_records)))
+    records_valid = len(candidates)
+    records_rejected = int(sum(rejected_reason_counts.values()))
+    return {
+        "records_received": records_received,
+        "records_valid": records_valid,
+        "records_rejected": records_rejected,
+        "candidates": candidates,
+        "rejected_reason_counts": rejected_reason_counts,
+        "flagged_low_liquidity_count": flagged_low_liquidity_count,
+        "blockers": [],
+    }
+
+
 def run_scheduler_once(*, injected_data: dict[str, Any] | None = None, base_data_dir: str | None = None, dry_run: bool = True, run_key: str | None = None) -> dict[str, Any]:
     if dry_run is not True:
         raise ValueError("automation scheduler run-once only supports dry_run=true")
@@ -370,10 +532,12 @@ def run_scheduler_once(*, injected_data: dict[str, Any] | None = None, base_data
     store.save_snapshot("scheduler_runs", ctx["run_id"], payload)
     provider_result = _collect_provider_placeholders(config)
     sharp_evaluation = _evaluate_sharp_review_candidates(config, provider_result.get("sharp_snapshot"))
+    kalshi_evaluation = _evaluate_kalshi_review_candidates(config, provider_result.get("kalshi_snapshot"))
     save_snapshot("snapshots", f"sharp_snapshot_{ctx['run_id']}", provider_result.get("sharp_snapshot") or {}, config)
+    save_snapshot("snapshots", f"kalshi_snapshot_{ctx['run_id']}", provider_result.get("kalshi_snapshot") or {}, config)
     new_items = 0
     watch_recheck_count = 0
-    for candidate in sharp_evaluation["candidates"]:
+    for candidate in list(sharp_evaluation["candidates"]) + list(kalshi_evaluation["candidates"]):
         item = build_review_item(candidate, config)
         if item is None:
             continue
@@ -393,16 +557,19 @@ def run_scheduler_once(*, injected_data: dict[str, Any] | None = None, base_data
             "dry_run": True,
             "summary": {
                 "review_queue_size": len(queue),
-                "records_received": sharp_evaluation["records_received"],
-                "records_valid": sharp_evaluation["records_valid"],
-                "records_rejected": sharp_evaluation["records_rejected"],
+                "records_received": sharp_evaluation["records_received"] + kalshi_evaluation["records_received"],
+                "records_valid": sharp_evaluation["records_valid"] + kalshi_evaluation["records_valid"],
+                "records_rejected": sharp_evaluation["records_rejected"] + kalshi_evaluation["records_rejected"],
                 "candidates_created": new_items,
                 "review_required_count": review_required_count,
                 "watch_recheck_count": watch_recheck_count,
+                "kalshi_flagged_low_liquidity_count": kalshi_evaluation["flagged_low_liquidity_count"],
+                "kalshi_rejected_reason_counts": kalshi_evaluation["rejected_reason_counts"],
             },
             "alerts": [],
             "review_items": queue,
             "sharp_candidates": sharp_evaluation["candidates"],
+            "kalshi_candidates": kalshi_evaluation["candidates"],
             "skipped_items": skipped,
             "provider_health": provider_result["health"],
             "provider_snapshots": provider_result["snapshots"],
@@ -419,8 +586,13 @@ def run_scheduler_once(*, injected_data: dict[str, Any] | None = None, base_data
             "sharp_records_valid": sharp_evaluation["records_valid"],
             "sharp_records_rejected": sharp_evaluation["records_rejected"],
             "sharp_last_snapshot_status": (provider_result.get("sharp_snapshot") or {}).get("status"),
-            "sharp_review_candidates_created": new_items,
+            "sharp_review_candidates_created": len(sharp_evaluation["candidates"]),
             "cross_book_candidates_created": len([c for c in sharp_evaluation["candidates"] if c.get("books_compared", 0) > 1]),
+            "kalshi_records_received": kalshi_evaluation["records_received"],
+            "kalshi_records_valid": kalshi_evaluation["records_valid"],
+            "kalshi_records_rejected": kalshi_evaluation["records_rejected"],
+            "kalshi_review_candidates_created": len(kalshi_evaluation["candidates"]),
+            "kalshi_flagged_low_liquidity_count": kalshi_evaluation["flagged_low_liquidity_count"],
         },
     )
     return {
@@ -434,14 +606,23 @@ def run_scheduler_once(*, injected_data: dict[str, Any] | None = None, base_data
         "auto_execution_enabled": False,
         "auto_bet_enabled": False,
         "auto_trade_enabled": False,
-        "records_received": sharp_evaluation["records_received"],
-        "records_valid": sharp_evaluation["records_valid"],
-        "records_rejected": sharp_evaluation["records_rejected"],
+        "records_received": sharp_evaluation["records_received"] + kalshi_evaluation["records_received"],
+        "records_valid": sharp_evaluation["records_valid"] + kalshi_evaluation["records_valid"],
+        "records_rejected": sharp_evaluation["records_rejected"] + kalshi_evaluation["records_rejected"],
+        "sharp_records_received": sharp_evaluation["records_received"],
+        "sharp_records_valid": sharp_evaluation["records_valid"],
+        "sharp_records_rejected": sharp_evaluation["records_rejected"],
+        "kalshi_records_received": kalshi_evaluation["records_received"],
+        "kalshi_records_valid": kalshi_evaluation["records_valid"],
+        "kalshi_records_rejected": kalshi_evaluation["records_rejected"],
         "candidates_created": new_items,
+        "kalshi_candidates_created": len(kalshi_evaluation["candidates"]),
+        "kalshi_flagged_low_liquidity_count": kalshi_evaluation["flagged_low_liquidity_count"],
+        "kalshi_rejected_reason_counts": kalshi_evaluation["rejected_reason_counts"],
         "review_required_count": review_required_count,
         "watch_recheck_count": watch_recheck_count,
         "skipped_items": skipped,
         "skipped_count": len(skipped),
         "report_path": report.get("path"),
-        "blockers": sharp_evaluation.get("blockers", []),
+        "blockers": list(sharp_evaluation.get("blockers", [])) + list(kalshi_evaluation.get("blockers", [])),
     }

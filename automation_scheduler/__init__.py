@@ -34,10 +34,22 @@ def get_scheduler_review_queue(base_data_dir: str | None = None):
     config = get_default_scheduler_config(base_data_dir=base_data_dir)
     ensure_runtime_directories(config)
     items = list_active_review_items(config)
+    kalshi_items = [item for item in items if item.get("provider_id") == "kalshi_prediction_market"]
+    flagged_low_liquidity = [item for item in kalshi_items if bool(item.get("low_liquidity"))]
+    summary = {
+        "kalshi_candidate_count": len(kalshi_items),
+        "prediction_market_count": len([item for item in items if item.get("market_type") == "prediction_market"]),
+        "review_only_count": len([item for item in items if item.get("recommendation_status") == "review_only"]),
+        "execution_allowed_count": len([item for item in items if bool(item.get("execution_allowed"))]),
+        "flagged_low_liquidity_count": len(flagged_low_liquidity),
+        "rejected_count": 0,
+    }
     return {
         "ok": True,
+        "status": "ok",
         "count": len(items),
         "items": items,
+        "summary": summary,
         "human_approval_required": True,
         "auto_execution_enabled": False,
     }

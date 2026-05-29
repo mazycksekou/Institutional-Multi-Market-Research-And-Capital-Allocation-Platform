@@ -19,6 +19,58 @@ class TestResponseCompactor(unittest.TestCase):
         c = compact_review_queue_response(p, limit=10)
         self.assertEqual(len(c["items"]), 10)
 
+    def test_review_queue_compact_includes_kalshi_summary_and_review_only_execution_safety(self):
+        payload = {
+            "ok": True,
+            "status": "ok",
+            "count": 1,
+            "summary": {
+                "kalshi_candidate_count": 1,
+                "prediction_market_count": 1,
+                "review_only_count": 1,
+                "execution_allowed_count": 0,
+                "flagged_low_liquidity_count": 1,
+                "rejected_count": 3,
+            },
+            "items": [
+                {
+                    "provider_id": "kalshi_prediction_market",
+                    "market_type": "prediction_market",
+                    "event_id": "evt",
+                    "event_name": "Event",
+                    "market_id": "m1",
+                    "contract_id": "c1",
+                    "ticker": "KX-TICKER",
+                    "yes_price": 0.55,
+                    "no_price": 0.45,
+                    "yes_bid": 0.54,
+                    "yes_ask": 0.56,
+                    "no_bid": 0.44,
+                    "no_ask": 0.46,
+                    "implied_probability": 0.55,
+                    "volume": 10,
+                    "open_interest": 20,
+                    "liquidity_score": 0.1,
+                    "low_liquidity": True,
+                    "close_time": "2026-06-01T00:00:00+00:00",
+                    "status_reason": "open",
+                    "settlement_rule_status": "present",
+                    "data_quality_status": "approved",
+                    "recommended_action": "watch_recheck",
+                    "recommendation_status": "review_only",
+                }
+            ],
+        }
+        c = compact_review_queue_response(payload, limit=10)
+        self.assertEqual(c["kalshi_candidate_count"], 1)
+        self.assertEqual(c["prediction_market_count"], 1)
+        self.assertEqual(c["review_only_count"], 1)
+        self.assertEqual(c["execution_allowed_count"], 0)
+        self.assertEqual(c["flagged_low_liquidity_count"], 1)
+        self.assertEqual(c["rejected_count"], 3)
+        self.assertEqual(c["items"][0]["recommendation_status"], "review_only")
+        self.assertFalse(c["items"][0]["execution_allowed"])
+
     def test_run_once_summary_only(self):
         p = {"ok": True, "status": "dry_run_complete", "run_id": "r1", "report_path": "data/reports/r1.json", "records_received": 10}
         c = compact_run_once_response(p)
