@@ -6,6 +6,8 @@ from .review_queue import list_active_review_items
 from .scheduler_config import get_default_scheduler_config, ensure_runtime_directories
 from .backtesting_engine import generate_backtest_report, run_backtest, run_paper_summary
 from .model_performance_report import build_compact_performance_report
+from .provider_health import summarize_provider_health
+from .provider_registry import get_provider_registry
 
 
 def get_scheduler_health(base_data_dir: str | None = None):
@@ -54,3 +56,32 @@ def get_performance_report(model_id: str, historical_rows_path: str | None = Non
 
 def get_paper_summary(base_data_dir: str | None = None):
     return run_paper_summary(base_data_dir=base_data_dir or "data")
+
+
+def get_provider_health(base_data_dir: str | None = None):
+    config = get_default_scheduler_config(base_data_dir=base_data_dir)
+    ensure_runtime_directories(config)
+    return summarize_provider_health(config["providers"])
+
+
+def get_provider_registry_snapshot(base_data_dir: str | None = None):
+    config = get_default_scheduler_config(base_data_dir=base_data_dir)
+    ensure_runtime_directories(config)
+    providers = list(get_provider_registry().values())
+    blocked_count = sum(
+        1
+        for item in providers
+        if (not bool(item.get("enabled", False))) or (not bool(item.get("live_calls_enabled", False)))
+    )
+    return {
+        "ok": True,
+        "status": "ok",
+        "timestamp": None,
+        "provider_count": len(providers),
+        "enabled_provider_count": sum(1 for item in providers if item.get("enabled")),
+        "live_calls_enabled_count": sum(1 for item in providers if item.get("live_calls_enabled")),
+        "blocked_count": blocked_count,
+        "dry_run": True,
+        "blockers": ["dry_run_placeholder", "live_calls_disabled"],
+        "providers": providers,
+    }

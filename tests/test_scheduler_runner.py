@@ -10,3 +10,4 @@ class TestSchedulerRunner(unittest.TestCase):
             self.assertTrue(result["dry_run"])
             self.assertFalse(result["auto_execution_enabled"])
             self.assertIn("report", result)
+            self.assertIn("provider_count", result)

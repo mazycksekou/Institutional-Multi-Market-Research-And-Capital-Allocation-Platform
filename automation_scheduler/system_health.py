@@ -60,6 +60,17 @@ def get_system_health(config: dict[str, Any]) -> dict[str, Any]:
             latest_report_id = report_files[0].stem
 
     clv_sample_size = sum(int(summary.get("clv_sample_size", 0)) for summary in clv_by_model.values())
+    provider_items = list(config.get("providers", {}).values())
+    enabled_provider_count = sum(1 for provider in provider_items if bool(provider.get("enabled", False)))
+    live_calls_enabled_count = sum(1 for provider in provider_items if bool(provider.get("live_calls_enabled", False)))
+    providers_blocked_count = sum(
+        1
+        for provider in provider_items
+        if (not bool(provider.get("enabled", False)))
+        or (not bool(provider.get("live_calls_enabled", False)))
+        or (provider.get("required_credentials") and provider.get("credential_status") != "ok")
+    )
+    dry_run_provider_mode = True
 
     return {
         "ok": True,
@@ -76,6 +87,10 @@ def get_system_health(config: dict[str, Any]) -> dict[str, Any]:
         "paths_ready": path_status,
         "review_queue_count": len(review_items),
         "provider_count": len(config["providers"]),
+        "enabled_provider_count": enabled_provider_count,
+        "live_calls_enabled_count": live_calls_enabled_count,
+        "providers_blocked_count": providers_blocked_count,
+        "dry_run_provider_mode": dry_run_provider_mode,
         **inventory,
         "governance_audit_status": "ready" if governance_path.exists() else "not_written",
         "models_blocked_due_to_missing_inputs": models_blocked_due_to_missing_inputs,

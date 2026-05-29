@@ -2,6 +2,7 @@ import unittest
 from automation_scheduler.response_compactor import (
     compact_health_response, compact_review_queue_response, compact_run_once_response,
     compact_governance_inventory, compact_governance_report, compact_validation_response,
+    compact_provider_health_response, compact_provider_registry_response,
     redact_and_limit_payload,
 )
 
@@ -41,3 +42,24 @@ class TestResponseCompactor(unittest.TestCase):
         self.assertIn("counts", r)
         v = compact_validation_response({"ok": True, "dry_run": True, "validation": {"blocked_reasons": ["x"]}})
         self.assertIn("decision", v)
+
+    def test_provider_compact_hides_raw_payloads(self):
+        payload = {
+            "ok": True,
+            "provider_count": 1,
+            "providers": [
+                {
+                    "provider_id": "p1",
+                    "provider_type": "sportsbook_odds",
+                    "enabled": False,
+                    "dry_run": True,
+                    "live_calls_enabled": False,
+                    "raw_payload": {"x": 1},
+                }
+            ],
+        }
+        c = compact_provider_registry_response(payload)
+        self.assertIn("top_provider_statuses", c)
+        self.assertNotIn("raw_payload", str(c))
+        h = compact_provider_health_response({"ok": True, "provider_count": 1, "top_provider_statuses": payload["providers"]})
+        self.assertIn("provider_count", h)

@@ -48,6 +48,9 @@ def compact_health_response(payload: dict[str, Any]) -> dict[str, Any]:
         "counts": {
             "review_queue_count": int(payload.get("review_queue_count", payload.get("count", 0))),
             "provider_count": int(payload.get("provider_count", 0)),
+            "enabled_provider_count": int(payload.get("enabled_provider_count", 0)),
+            "live_calls_enabled_count": int(payload.get("live_calls_enabled_count", 0)),
+            "providers_blocked_count": int(payload.get("providers_blocked_count", 0)),
         },
         "blockers": list(payload.get("blockers", []))[:10],
         "top_reasons": list(payload.get("top_reasons", []))[:10],
@@ -194,4 +197,50 @@ def compact_performance_report(payload: dict[str, Any]) -> dict[str, Any]:
         "blocked_reasons": list(payload.get("blocked_reasons", []))[:10],
         "recommended_next_action": payload.get("recommended_next_action", "watch_recheck"),
         "report_path": payload.get("report_path"),
+    }
+
+
+def compact_provider_health_response(payload: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "ok": bool(payload.get("ok", True)),
+        "status": payload.get("status", "ok"),
+        "timestamp": payload.get("timestamp"),
+        "provider_count": int(payload.get("provider_count", 0)),
+        "enabled_provider_count": int(payload.get("enabled_provider_count", 0)),
+        "live_calls_enabled_count": int(payload.get("live_calls_enabled_count", 0)),
+        "blocked_count": int(payload.get("blocked_count", 0)),
+        "dry_run": bool(payload.get("dry_run", True)),
+        "blockers": list(payload.get("blockers", []))[:10],
+        "top_provider_statuses": list(payload.get("top_provider_statuses", []))[:10],
+    }
+
+
+def compact_provider_registry_response(payload: dict[str, Any], limit: int = 10) -> dict[str, Any]:
+    provider_items = list(payload.get("providers", []))[: max(1, min(limit, 10))]
+    compact_items = []
+    for item in provider_items:
+        compact_items.append(
+            {
+                "provider_id": item.get("provider_id"),
+                "provider_type": item.get("provider_type"),
+                "enabled": bool(item.get("enabled", False)),
+                "dry_run": bool(item.get("dry_run", True)),
+                "live_calls_enabled": bool(item.get("live_calls_enabled", False)),
+                "supports_streaming": bool(item.get("supports_streaming", False)),
+                "supports_polling": bool(item.get("supports_polling", True)),
+                "min_poll_seconds": int(item.get("min_poll_seconds", 60)),
+                "contract_status": item.get("contract_status", "defined"),
+            }
+        )
+    return {
+        "ok": bool(payload.get("ok", True)),
+        "status": payload.get("status", "ok"),
+        "timestamp": payload.get("timestamp"),
+        "provider_count": int(payload.get("provider_count", len(payload.get("providers", [])))),
+        "enabled_provider_count": int(payload.get("enabled_provider_count", 0)),
+        "live_calls_enabled_count": int(payload.get("live_calls_enabled_count", 0)),
+        "blocked_count": int(payload.get("blocked_count", 0)),
+        "dry_run": True,
+        "blockers": list(payload.get("blockers", []))[:10],
+        "top_provider_statuses": compact_items,
     }

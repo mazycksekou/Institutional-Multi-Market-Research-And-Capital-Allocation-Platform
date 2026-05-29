@@ -9,3 +9,5 @@ class TestProviderRegistry(unittest.TestCase):
             self.assertIn(key, r)
             self.assertFalse(r[key]["enabled"])
             self.assertNotIn("api_key", str(r[key]).lower())
+            self.assertIn("contract_status", r[key])
+            self.assertIn("capabilities", r[key])

@@ -12,3 +12,5 @@ class TestSystemHealth(unittest.TestCase):
             self.assertTrue(h["dry_run"])
             self.assertTrue(h["human_approval_required"])
             self.assertFalse(h["auto_execution_enabled"])
+            self.assertIn("enabled_provider_count", h)
+            self.assertIn("live_calls_enabled_count", h)
