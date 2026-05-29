@@ -122,6 +122,34 @@ KALSHI_NESTED_PRICING_FIELDS = (
     "no_ask_price",
     "noAskPrice",
 )
+KALSHI_SOURCE_PRICE_FIELDS = (
+    "yes_bid",
+    "yesBid",
+    "best_bid_yes",
+    "yes_ask",
+    "yesAsk",
+    "best_ask_yes",
+    "no_bid",
+    "noBid",
+    "best_bid_no",
+    "no_ask",
+    "noAsk",
+    "best_ask_no",
+    "yes_price",
+    "yesPrice",
+    "last_price_yes",
+    "lastPriceYes",
+    "no_price",
+    "noPrice",
+    "last_price_no",
+    "lastPriceNo",
+    "yes",
+    "no",
+    "price_yes",
+    "priceYes",
+    "price_no",
+    "priceNo",
+)
 
 KALSHI_CONTRACT_ID_PATHS = (
     ("contract_id",),
@@ -469,6 +497,9 @@ def _build_kalshi_price_field_telemetry() -> dict[str, Any]:
         "top_level_field_presence_counts": {name: 0 for name in KALSHI_TELEMETRY_TOP_LEVEL_FIELDS},
         "nested_pricing_object_presence_counts": {"pricing": 0, "prices": 0, "market": 0},
         "first_record_safe_field_names": [],
+        "source_payload_field_presence_counts": {name: 0 for name in KALSHI_SOURCE_PRICE_FIELDS},
+        "source_payload_nested_object_presence_counts": {"pricing": 0, "prices": 0, "market": 0},
+        "source_payload_first_record_safe_field_names": [],
     }
 
 
@@ -847,6 +878,24 @@ def _evaluate_kalshi_review_candidates(config: dict[str, Any], kalshi_snapshot: 
                     telemetry["top_level_field_presence_counts"][compound_name] = 0
                 if _has_usable_value(nested_value.get(nested_field)):
                     telemetry["top_level_field_presence_counts"][compound_name] += 1
+        source_payload = row.get("source_payload_redacted")
+        if isinstance(source_payload, dict):
+            if not telemetry["source_payload_first_record_safe_field_names"]:
+                telemetry["source_payload_first_record_safe_field_names"] = sorted([str(name) for name in source_payload.keys()])[:60]
+            for field in KALSHI_SOURCE_PRICE_FIELDS:
+                if _has_usable_value(source_payload.get(field)):
+                    telemetry["source_payload_field_presence_counts"][field] += 1
+            for nested_name in ("pricing", "prices", "market"):
+                nested_value = source_payload.get(nested_name)
+                if not isinstance(nested_value, dict):
+                    continue
+                telemetry["source_payload_nested_object_presence_counts"][nested_name] += 1
+                for nested_field in KALSHI_NESTED_PRICING_FIELDS:
+                    compound_name = f"{nested_name}.{nested_field}"
+                    if compound_name not in telemetry["source_payload_field_presence_counts"]:
+                        telemetry["source_payload_field_presence_counts"][compound_name] = 0
+                    if _has_usable_value(nested_value.get(nested_field)):
+                        telemetry["source_payload_field_presence_counts"][compound_name] += 1
 
         pricing = _derive_kalshi_pricing(row)
         identity = _extract_kalshi_identity(row)
