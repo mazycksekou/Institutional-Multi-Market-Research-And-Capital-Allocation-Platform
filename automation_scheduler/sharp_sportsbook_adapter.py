@@ -574,10 +574,10 @@ class SharpSportsbookAdapter:
             "implied_probability": implied_probability,
             "timestamp": _safe_str(timestamp),
             "source_payload_redacted": {
-                "event_keys": sorted(str(k) for k in event.keys())[:40],
-                "market_keys": sorted(str(k) for k in market.keys())[:40],
-                "book_keys": sorted(str(k) for k in book.keys())[:40],
-                "outcome_keys": sorted(str(k) for k in outcome.keys())[:40],
+                "event_field_names": sorted(str(k) for k in event.keys())[:40],
+                "market_field_names": sorted(str(k) for k in market.keys())[:40],
+                "book_field_names": sorted(str(k) for k in book.keys())[:40],
+                "outcome_field_names": sorted(str(k) for k in outcome.keys())[:40],
             },
             "schema_version": SCHEMA_VERSION,
         }
@@ -680,8 +680,8 @@ class SharpSportsbookAdapter:
                         rejection_reason_counts["validation_rejected"] += 1
         rejected = int(sum(rejection_reason_counts.values()))
         debug_summary = {
-            "top_level_keys_present": sorted(shape_top_level_keys)[:50],
-            "first_level_nested_key_names": sorted(first_level_nested_keys)[:100],
+            "top_level_field_names_present": sorted(shape_top_level_keys)[:50],
+            "first_level_nested_field_names": sorted(first_level_nested_keys)[:100],
             "candidate_event_count": int(candidate_counts.get("events", 0)),
             "candidate_market_count": int(candidate_counts.get("markets", 0)),
             "candidate_book_count": int(candidate_counts.get("books", 0)),

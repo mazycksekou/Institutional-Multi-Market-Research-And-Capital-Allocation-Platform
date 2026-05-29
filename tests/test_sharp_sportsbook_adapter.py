@@ -148,7 +148,7 @@ class TestSharpSportsbookAdapter(unittest.TestCase):
         rec = result["records"][0]
         self.assertAlmostEqual(rec["implied_probability"], 0.52380952, places=6)
         self.assertEqual(rec["decimal_odds"], 1.909091)
-        self.assertIn("api_key", rec["source_payload_redacted"]["outcome_keys"])
+        self.assertIn("api_key", rec["source_payload_redacted"]["outcome_field_names"])
 
     def test_missing_credentials_do_not_crash(self):
         os.environ["SHARP_LIVE_READS_ENABLED"] = "true"
@@ -240,7 +240,7 @@ class TestSharpSportsbookAdapter(unittest.TestCase):
         self.assertEqual(snapshot["records_rejected"], 1)
         self.assertIn("malformed_odds", snapshot["rejection_reason_counts"])
         debug = snapshot["internal_debug_summary"]
-        self.assertIn("top_level_keys_present", debug)
+        self.assertIn("top_level_field_names_present", debug)
         self.assertIn("candidate_outcome_count", debug)
         self.assertTrue(debug["secret_redacted"])
 
