@@ -11,6 +11,8 @@ class TestMarketStructure(unittest.TestCase):
         )
         self.assertIn("bid_ask_spread", signals)
         self.assertIn("probability_velocity", signals)
+        self.assertEqual(signals["liquidity_tier"], "low_liquidity")
+        self.assertFalse(signals["missing_liquidity_signal"])
 
     def test_sportsbook_signals(self):
         signals = sportsbook_market_structure_signals({"odds": -110, "line": -2.5, "book_disagreement_score": 5}, {"odds": -105, "line": -2.0})

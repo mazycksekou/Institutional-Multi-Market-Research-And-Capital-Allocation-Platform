@@ -42,6 +42,11 @@ class TestResponseCompactor(unittest.TestCase):
                 "sportsbook_count": 0,
                 "review_only_count": 1,
                 "execution_allowed_count": 0,
+                "low_liquidity_count": 1,
+                "missing_liquidity_count": 0,
+                "liquidity_tier_counts": {"low_liquidity": 1},
+                "high_priority_count": 1,
+                "average_review_priority_score": 72.0,
                 "flagged_low_liquidity_count": 1,
                 "flagged_partial_pricing_count": 1,
                 "rejected_count": 3,
@@ -76,6 +81,14 @@ class TestResponseCompactor(unittest.TestCase):
                     "volume": 10,
                     "open_interest": 20,
                     "liquidity_score": 0.1,
+                    "liquidity_policy_version": "kalshi_liquidity_policy_v2",
+                    "liquidity_source": "volume_open_interest_proxy",
+                    "liquidity_tier": "low_liquidity",
+                    "liquidity_reason": "below_low_threshold",
+                    "spread_score": 98,
+                    "pricing_quality_score": 100,
+                    "close_time_score": 85,
+                    "market_structure_score": 94,
                     "low_liquidity": True,
                     "close_time": "2026-06-01T00:00:00+00:00",
                     "status_reason": "open",
@@ -91,6 +104,10 @@ class TestResponseCompactor(unittest.TestCase):
         self.assertEqual(c["prediction_market_count"], 1)
         self.assertEqual(c["review_only_count"], 1)
         self.assertEqual(c["execution_allowed_count"], 0)
+        self.assertEqual(c["low_liquidity_count"], 1)
+        self.assertEqual(c["missing_liquidity_count"], 0)
+        self.assertEqual(c["liquidity_tier_counts"]["low_liquidity"], 1)
+        self.assertEqual(c["high_priority_count"], 1)
         self.assertEqual(c["flagged_low_liquidity_count"], 1)
         self.assertEqual(c["flagged_partial_pricing_count"], 1)
         self.assertEqual(c["rejected_count"], 3)
@@ -98,6 +115,8 @@ class TestResponseCompactor(unittest.TestCase):
         self.assertEqual(c["storage_backend"], "file")
         self.assertEqual(c["latest_run_id"], "run-1")
         self.assertTrue(c["queue_read_ok"])
+        self.assertEqual(c["items"][0]["liquidity_policy_version"], "kalshi_liquidity_policy_v2")
+        self.assertEqual(c["items"][0]["liquidity_tier"], "low_liquidity")
         self.assertEqual(c["items"][0]["recommendation_status"], "review_only")
         self.assertFalse(c["items"][0]["execution_allowed"])
 
@@ -117,6 +136,10 @@ class TestResponseCompactor(unittest.TestCase):
             "review_queue_storage_backend": "file",
             "review_queue_write_path": "review_queue/latest.json",
             "review_queue_latest_run_id": "run-2",
+            "kalshi_liquidity_tier_counts": {"low_liquidity": 1},
+            "kalshi_missing_liquidity_count": 0,
+            "kalshi_high_priority_count": 1,
+            "kalshi_average_review_priority_score": 72.0,
             "provider_payload": {"raw": "should_not_show"},
         }
         c = compact_run_once_response(p)
@@ -126,6 +149,8 @@ class TestResponseCompactor(unittest.TestCase):
         self.assertEqual(c["kalshi_price_field_telemetry"]["total_kalshi_records_seen"], 2)
         self.assertEqual(c["review_queue_items_written"], 2)
         self.assertEqual(c["review_queue_storage_backend"], "file")
+        self.assertEqual(c["kalshi_liquidity_tier_counts"]["low_liquidity"], 1)
+        self.assertEqual(c["kalshi_high_priority_count"], 1)
         self.assertNotIn("provider_payload", str(c))
 
     def test_verbose_redaction(self):

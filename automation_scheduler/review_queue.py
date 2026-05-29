@@ -317,6 +317,18 @@ def build_review_item(candidate: dict[str, Any], config: dict[str, Any]) -> dict
         "review_priority_score": candidate.get("review_priority_score"),
         "liquidity": candidate.get("liquidity", 0.5),
         "liquidity_score": candidate.get("liquidity_score"),
+        "liquidity_policy_version": candidate.get("liquidity_policy_version"),
+        "liquidity_source": candidate.get("liquidity_source"),
+        "liquidity_tier": candidate.get("liquidity_tier"),
+        "liquidity_reason": candidate.get("liquidity_reason"),
+        "low_liquidity_flag": bool(candidate.get("low_liquidity_flag", candidate.get("low_liquidity", False))),
+        "missing_liquidity_flag": bool(candidate.get("missing_liquidity_flag", candidate.get("missing_liquidity", False))),
+        "missing_liquidity": bool(candidate.get("missing_liquidity", candidate.get("missing_liquidity_flag", False))),
+        "liquidity_threshold_used": candidate.get("liquidity_threshold_used"),
+        "spread_score": candidate.get("spread_score"),
+        "pricing_quality_score": candidate.get("pricing_quality_score"),
+        "close_time_score": candidate.get("close_time_score"),
+        "market_structure_score": candidate.get("market_structure_score"),
         "low_liquidity": bool(candidate.get("low_liquidity", False)),
         "volume": candidate.get("volume"),
         "open_interest": candidate.get("open_interest"),
@@ -386,7 +398,7 @@ def rescore_review_queue(config: dict[str, Any]) -> list[dict[str, Any]]:
                 opportunity_score=decayed_score,
                 provider_name=str(item.get("provider") or "news_provider"),
                 config=config,
-                low_liquidity=bool(item.get("liquidity", 0) < 0.35),
+                low_liquidity=bool(item.get("low_liquidity", item.get("low_liquidity_flag", False))),
                 market_closed=False,
             )
             item["recheck_after_seconds"] = cadence["next_check_seconds"]
@@ -436,6 +448,18 @@ def summarize_review_items(items: list[dict[str, Any]], *, rejected_reason_count
         provider_id = str(item.get("provider_id", item.get("provider", "unknown")))
         provider_counts[provider_id] = provider_counts.get(provider_id, 0) + 1
     kalshi_items = [item for item in items if item.get("provider_id") == "kalshi_prediction_market"]
+    liquidity_tier_counts: dict[str, int] = {}
+    review_priority_scores: list[float] = []
+    for item in items:
+        tier = item.get("liquidity_tier")
+        if tier:
+            tier_key = str(tier)
+            liquidity_tier_counts[tier_key] = liquidity_tier_counts.get(tier_key, 0) + 1
+        try:
+            review_priority_scores.append(float(item.get("review_priority_score")))
+        except (TypeError, ValueError):
+            continue
+    average_priority = round(sum(review_priority_scores) / len(review_priority_scores), 4) if review_priority_scores else 0.0
     summary = {
         "total_count": len(items),
         "provider_counts": provider_counts,
@@ -445,6 +469,11 @@ def summarize_review_items(items: list[dict[str, Any]], *, rejected_reason_count
         "sportsbook_count": len([item for item in items if item.get("market_type") != "prediction_market"]),
         "review_only_count": len([item for item in items if item.get("recommendation_status") == "review_only"]),
         "execution_allowed_count": len([item for item in items if bool(item.get("execution_allowed"))]),
+        "low_liquidity_count": len([item for item in items if bool(item.get("low_liquidity", item.get("low_liquidity_flag", False)))]),
+        "missing_liquidity_count": len([item for item in items if bool(item.get("missing_liquidity", item.get("missing_liquidity_flag", False)))]),
+        "liquidity_tier_counts": liquidity_tier_counts,
+        "high_priority_count": len([item for item in items if float(item.get("review_priority_score") or 0.0) >= 70.0]),
+        "average_review_priority_score": average_priority,
         "flagged_low_liquidity_count": len([item for item in items if bool(item.get("low_liquidity"))]),
         "flagged_partial_pricing_count": len([item for item in items if bool(item.get("partial_pricing"))]),
         "rejected_count": int(sum((rejected_reason_counts or {}).values())),

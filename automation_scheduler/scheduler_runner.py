@@ -21,7 +21,7 @@ from .paper_decision_ledger import create_paper_decision_record
 from .provider_adapter_base import ProviderAdapterBase
 from .provider_health import summarize_provider_health, write_provider_health_snapshot
 from .market_structure import kalshi_market_structure_signals
-from .kalshi_scoring import score_kalshi_candidate
+from .kalshi_scoring import KALSHI_LIQUIDITY_POLICY_VERSION, evaluate_kalshi_liquidity_policy, score_kalshi_candidate
 from .scheduler_config import get_default_scheduler_config, ensure_runtime_directories
 from .snapshot_store import save_snapshot
 from .snapshot_store import SnapshotStore
@@ -41,7 +41,6 @@ from .sharp_sportsbook_adapter import SharpSportsbookAdapter
 from .sportsbook_odds_provider import get_valid_normalized_records, summarize_sportsbook_snapshot
 
 KALSHI_STALE_MARKET_SECONDS = 60 * 15
-KALSHI_LOW_LIQUIDITY_THRESHOLD = 0.35
 KALSHI_TELEMETRY_TOP_LEVEL_FIELDS = (
     "contract_id",
     "contractId",
@@ -314,23 +313,6 @@ def _is_kalshi_market_stale(record: dict[str, Any], now: datetime) -> bool:
     return age_seconds >= KALSHI_STALE_MARKET_SECONDS
 
 
-def _kalshi_liquidity_metrics(record: dict[str, Any]) -> tuple[float, bool]:
-    liquidity_score = record.get("liquidity_score")
-    if isinstance(liquidity_score, (int, float)):
-        score = float(liquidity_score)
-    else:
-        yes_bid = record.get("yes_bid")
-        yes_ask = record.get("yes_ask")
-        score = 0.0
-        if isinstance(yes_bid, (int, float)) and isinstance(yes_ask, (int, float)):
-            spread = max(0.0, float(yes_ask) - float(yes_bid))
-            score = max(0.0, min(1.0, 1.0 - spread))
-    volume = float(record.get("volume") or 0.0)
-    open_interest = float(record.get("open_interest") or 0.0)
-    low_liquidity = bool(score < KALSHI_LOW_LIQUIDITY_THRESHOLD or volume < 100.0 or open_interest < 100.0)
-    return score, low_liquidity
-
-
 def _has_usable_value(value: Any) -> bool:
     if value is None:
         return False
@@ -543,10 +525,17 @@ def _build_kalshi_price_field_telemetry() -> dict[str, Any]:
         "records_with_volume": 0,
         "records_with_open_interest": 0,
         "records_with_liquidity": 0,
+        "records_with_direct_liquidity": 0,
+        "records_with_liquidity_proxy": 0,
+        "records_missing_liquidity": 0,
         "records_flagged_low_liquidity": 0,
         "records_low_liquidity_due_to_missing_liquidity": 0,
         "records_low_liquidity_due_to_threshold": 0,
-        "liquidity_threshold_used": KALSHI_LOW_LIQUIDITY_THRESHOLD,
+        "records_low_liquidity_due_to_status": 0,
+        "liquidity_threshold_used": {},
+        "liquidity_policy_version": KALSHI_LIQUIDITY_POLICY_VERSION,
+        "liquidity_source_counts": {},
+        "liquidity_tier_counts": {},
     }
 
 
@@ -957,6 +946,9 @@ def _evaluate_kalshi_review_candidates(config: dict[str, Any], kalshi_snapshot: 
             telemetry["records_with_open_interest"] += 1
         if liquidity_value is not None:
             telemetry["records_with_liquidity"] += 1
+            telemetry["records_with_direct_liquidity"] += 1
+        if volume_value is not None or open_interest_value is not None:
+            telemetry["records_with_liquidity_proxy"] += 1
         if pricing["has_direct_yes_price"]:
             telemetry["records_with_direct_yes_price"] += 1
         if pricing["has_direct_no_price"]:
@@ -1000,19 +992,22 @@ def _evaluate_kalshi_review_candidates(config: dict[str, Any], kalshi_snapshot: 
             rejected_reason_counts[rejection_reason] = rejected_reason_counts.get(rejection_reason, 0) + 1
             continue
 
-        liquidity_score, low_liquidity = _kalshi_liquidity_metrics({**row, **pricing})
+        liquidity_policy = evaluate_kalshi_liquidity_policy({**row, **pricing})
+        liquidity_score = float(liquidity_policy["liquidity_score"])
+        low_liquidity = bool(liquidity_policy["low_liquidity_flag"])
+        missing_liquidity = bool(liquidity_policy["missing_liquidity_flag"])
+        liquidity_source = str(liquidity_policy["liquidity_source"])
+        liquidity_tier = str(liquidity_policy["liquidity_tier"])
+        telemetry["liquidity_source_counts"][liquidity_source] = int(telemetry["liquidity_source_counts"].get(liquidity_source, 0)) + 1
+        telemetry["liquidity_tier_counts"][liquidity_tier] = int(telemetry["liquidity_tier_counts"].get(liquidity_tier, 0)) + 1
+        telemetry["liquidity_threshold_used"] = liquidity_policy["liquidity_threshold_used"]
+        if missing_liquidity:
+            telemetry["records_missing_liquidity"] += 1
+            telemetry["records_low_liquidity_due_to_missing_liquidity"] += 1
         if low_liquidity:
             flagged_low_liquidity_count += 1
             telemetry["records_flagged_low_liquidity"] += 1
-            missing_liquidity_inputs = bool(
-                liquidity_value is None
-                and (volume_value is None or volume_value <= 0.0)
-                and (open_interest_value is None or open_interest_value <= 0.0)
-            )
-            if missing_liquidity_inputs:
-                telemetry["records_low_liquidity_due_to_missing_liquidity"] += 1
-            else:
-                telemetry["records_low_liquidity_due_to_threshold"] += 1
+            telemetry["records_low_liquidity_due_to_threshold"] += 1
         if pricing["partial_pricing"]:
             flagged_partial_pricing_count += 1
 
@@ -1027,12 +1022,15 @@ def _evaluate_kalshi_review_candidates(config: dict[str, Any], kalshi_snapshot: 
         )
         settlement = evaluate_settlement_liquidity_gate(
             prediction_market_resolution_match=bool(settlement_rule),
-            liquidity_score=float(max(0.0, min(100.0, liquidity_score * 100.0))),
+            liquidity_score=float(max(0.0, min(100.0, liquidity_score))),
         )
         signal_input = {
             **row,
             **pricing,
+            **liquidity_policy,
+            "liquidity_score": liquidity_score,
             "low_liquidity": low_liquidity,
+            "missing_liquidity": missing_liquidity,
             "stale_market": _is_kalshi_market_stale(row, now),
         }
         market_structure = kalshi_market_structure_signals(signal_input, previous=None)
@@ -1067,6 +1065,14 @@ def _evaluate_kalshi_review_candidates(config: dict[str, Any], kalshi_snapshot: 
             "volume": row.get("volume"),
             "open_interest": row.get("open_interest"),
             "liquidity_score": round(liquidity_score, 4),
+            "liquidity_policy_version": liquidity_policy["liquidity_policy_version"],
+            "liquidity_source": liquidity_policy["liquidity_source"],
+            "liquidity_tier": liquidity_policy["liquidity_tier"],
+            "liquidity_reason": liquidity_policy["liquidity_reason"],
+            "low_liquidity_flag": bool(liquidity_policy["low_liquidity_flag"]),
+            "missing_liquidity_flag": bool(liquidity_policy["missing_liquidity_flag"]),
+            "missing_liquidity": bool(missing_liquidity),
+            "liquidity_threshold_used": liquidity_policy["liquidity_threshold_used"],
             "low_liquidity": bool(low_liquidity),
             "market_close_at": row.get("close_time"),
             "close_time": row.get("close_time"),
@@ -1090,12 +1096,16 @@ def _evaluate_kalshi_review_candidates(config: dict[str, Any], kalshi_snapshot: 
             "reason_codes": ["prediction_market_review_only", pricing["price_source"]],
             "blockers": ["human_approval_required"] + (["low_liquidity"] if low_liquidity else []),
             "market_structure_signals": market_structure,
+            "spread_score": scoring["spread_score"],
+            "pricing_quality_score": scoring["pricing_quality_score"],
+            "close_time_score": scoring["close_time_score"],
+            "market_structure_score": scoring["market_structure_score"],
             "confidence_score": scoring["confidence_score"],
             "risk_score": scoring["risk_score"],
             "review_priority_score": scoring["review_priority_score"],
             "classification": scoring["classification"],
         }
-        candidates.append(_build_scored_candidate(base, opportunity_score=71.0 if not low_liquidity else 66.0))
+        candidates.append(_build_scored_candidate(base, opportunity_score=max(56.0, float(scoring["review_priority_score"]))))
 
     records_received = int(kalshi_snapshot.get("records_received", len(source_records)))
     records_valid = len(candidates)
@@ -1169,6 +1179,10 @@ def run_scheduler_once(*, injected_data: dict[str, Any] | None = None, base_data
             watch_recheck_count += 1
     queue = list_active_review_items(config)
     queue_summary = summarize_review_items(queue, rejected_reason_counts=kalshi_evaluation["rejected_reason_counts"])
+    kalshi_queue_items = [item for item in queue if item.get("provider_id") == "kalshi_prediction_market"]
+    kalshi_priority_scores = [float(item.get("review_priority_score") or 0.0) for item in kalshi_queue_items]
+    kalshi_high_priority_count = len([score for score in kalshi_priority_scores if score >= 70.0])
+    kalshi_average_review_priority_score = round(sum(kalshi_priority_scores) / len(kalshi_priority_scores), 4) if kalshi_priority_scores else 0.0
     queue_storage = persist_review_queue_snapshot(
         config,
         queue,
@@ -1197,6 +1211,10 @@ def run_scheduler_once(*, injected_data: dict[str, Any] | None = None, base_data
                 "watch_recheck_count": watch_recheck_count,
                 "kalshi_flagged_low_liquidity_count": kalshi_evaluation["flagged_low_liquidity_count"],
                 "kalshi_flagged_partial_pricing_count": kalshi_evaluation["flagged_partial_pricing_count"],
+                "kalshi_liquidity_tier_counts": kalshi_evaluation.get("price_field_telemetry", {}).get("liquidity_tier_counts", {}),
+                "kalshi_missing_liquidity_count": kalshi_evaluation.get("price_field_telemetry", {}).get("records_missing_liquidity", 0),
+                "kalshi_high_priority_count": kalshi_high_priority_count,
+                "kalshi_average_review_priority_score": kalshi_average_review_priority_score,
                 "kalshi_rejected_reason_counts": kalshi_evaluation["rejected_reason_counts"],
                 "kalshi_price_field_telemetry": kalshi_evaluation.get("price_field_telemetry", {}),
                 "review_queue_storage_backend": queue_storage.get("storage_backend"),
@@ -1234,6 +1252,10 @@ def run_scheduler_once(*, injected_data: dict[str, Any] | None = None, base_data
             "kalshi_review_candidates_created": len(kalshi_evaluation["candidates"]),
             "kalshi_flagged_low_liquidity_count": kalshi_evaluation["flagged_low_liquidity_count"],
             "kalshi_flagged_partial_pricing_count": kalshi_evaluation["flagged_partial_pricing_count"],
+            "kalshi_liquidity_tier_counts": kalshi_evaluation.get("price_field_telemetry", {}).get("liquidity_tier_counts", {}),
+            "kalshi_missing_liquidity_count": kalshi_evaluation.get("price_field_telemetry", {}).get("records_missing_liquidity", 0),
+            "kalshi_high_priority_count": kalshi_high_priority_count,
+            "kalshi_average_review_priority_score": kalshi_average_review_priority_score,
             "kalshi_rejected_reason_counts": kalshi_evaluation["rejected_reason_counts"],
             "kalshi_price_field_telemetry": kalshi_evaluation.get("price_field_telemetry", {}),
             "review_queue_storage_backend": queue_storage.get("storage_backend"),
@@ -1270,6 +1292,10 @@ def run_scheduler_once(*, injected_data: dict[str, Any] | None = None, base_data
         "kalshi_watch_items_created": len(monitor_result.get("candidates", [])),
         "kalshi_flagged_low_liquidity_count": kalshi_evaluation["flagged_low_liquidity_count"],
         "kalshi_flagged_partial_pricing_count": kalshi_evaluation["flagged_partial_pricing_count"],
+        "kalshi_liquidity_tier_counts": kalshi_evaluation.get("price_field_telemetry", {}).get("liquidity_tier_counts", {}),
+        "kalshi_missing_liquidity_count": kalshi_evaluation.get("price_field_telemetry", {}).get("records_missing_liquidity", 0),
+        "kalshi_high_priority_count": kalshi_high_priority_count,
+        "kalshi_average_review_priority_score": kalshi_average_review_priority_score,
         "kalshi_rejected_reason_counts": kalshi_evaluation["rejected_reason_counts"],
         "kalshi_price_field_telemetry": kalshi_evaluation.get("price_field_telemetry", {}),
         "kalshi_blockers": list(kalshi_evaluation.get("blockers", [])),

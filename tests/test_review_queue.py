@@ -79,14 +79,18 @@ class TestReviewQueue(unittest.TestCase):
 
     def test_filter_and_summary(self):
         items = [
-            {"provider_id": "kalshi_prediction_market", "market_type": "prediction_market", "recommendation_status": "review_only", "execution_allowed": False, "low_liquidity": True, "partial_pricing": True, "reason_codes": ["partial_pricing"]},
-            {"provider_id": "sharp_sportsbook", "market_type": "sports_pregame_main", "recommendation_status": "review_only", "execution_allowed": False, "low_liquidity": False, "partial_pricing": False, "reason_codes": ["watch"]},
+            {"provider_id": "kalshi_prediction_market", "market_type": "prediction_market", "recommendation_status": "review_only", "execution_allowed": False, "low_liquidity": True, "partial_pricing": True, "reason_codes": ["partial_pricing"], "liquidity_tier": "low_liquidity", "review_priority_score": 72},
+            {"provider_id": "sharp_sportsbook", "market_type": "sports_pregame_main", "recommendation_status": "review_only", "execution_allowed": False, "low_liquidity": False, "partial_pricing": False, "reason_codes": ["watch"], "review_priority_score": 50},
         ]
         only_kalshi = filter_review_items(items, provider="kalshi_prediction_market")
         self.assertEqual(len(only_kalshi), 1)
         summary = summarize_review_items(items, rejected_reason_counts={"missing_prices": 2})
         self.assertEqual(summary["kalshi_candidate_count"], 1)
         self.assertEqual(summary["flagged_partial_pricing_count"], 1)
+        self.assertEqual(summary["low_liquidity_count"], 1)
+        self.assertEqual(summary["liquidity_tier_counts"]["low_liquidity"], 1)
+        self.assertEqual(summary["high_priority_count"], 1)
+        self.assertGreater(summary["average_review_priority_score"], 0)
         self.assertEqual(summary["rejected_reason_counts"]["missing_prices"], 2)
 
     def test_persisted_queue_roundtrip_and_metadata(self):
@@ -142,6 +146,16 @@ class TestReviewQueue(unittest.TestCase):
                         "recommendation_status": "review_only",
                         "execution_allowed": False,
                         "low_liquidity": True,
+                        "missing_liquidity": False,
+                        "liquidity_policy_version": "kalshi_liquidity_policy_v2",
+                        "liquidity_source": "volume_open_interest_proxy",
+                        "liquidity_tier": "low_liquidity",
+                        "liquidity_score": 30,
+                        "spread_score": 95,
+                        "pricing_quality_score": 100,
+                        "risk_score": 42,
+                        "confidence_score": 65,
+                        "review_priority_score": 72,
                         "partial_pricing": True,
                         "reason_codes": ["partial_pricing"],
                         "provider_payload": {"raw": "omit"},
@@ -167,8 +181,14 @@ class TestReviewQueue(unittest.TestCase):
             self.assertEqual(all_items["summary"]["sharp_candidate_count"], 1)
             self.assertEqual(all_items["summary"]["review_only_count"], 2)
             self.assertEqual(all_items["summary"]["execution_allowed_count"], 0)
+            self.assertEqual(all_items["summary"]["low_liquidity_count"], 1)
+            self.assertEqual(all_items["summary"]["missing_liquidity_count"], 0)
+            self.assertEqual(all_items["summary"]["liquidity_tier_counts"]["low_liquidity"], 1)
+            self.assertEqual(all_items["summary"]["high_priority_count"], 1)
             self.assertEqual(all_items["storage_backend"], "file")
             self.assertTrue(all_items["queue_read_ok"])
+            self.assertEqual(all_items["items"][0]["liquidity_policy_version"], "kalshi_liquidity_policy_v2")
+            self.assertEqual(all_items["items"][0]["review_priority_score"], 72)
             kalshi_only = get_scheduler_review_queue(base_data_dir=tmp, provider="kalshi_prediction_market", limit=10)
             self.assertEqual(kalshi_only["summary"]["total_count"], 1)
             self.assertEqual(kalshi_only["summary"]["kalshi_candidate_count"], 1)

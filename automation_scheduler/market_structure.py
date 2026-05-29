@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from .kalshi_scoring import evaluate_kalshi_liquidity_policy
+
 
 def _to_float(value: Any) -> float | None:
     try:
@@ -38,9 +40,10 @@ def kalshi_market_structure_signals(current: dict[str, Any], previous: dict[str,
     prev_oi = _to_float(previous.get("open_interest")) or 0.0
     cur_oi = _to_float(current.get("open_interest")) or 0.0
     prev_liq = _to_float(previous.get("liquidity_score")) or 0.0
-    cur_liq = _to_float(current.get("liquidity_score")) or 0.0
+    policy = evaluate_kalshi_liquidity_policy(current)
+    cur_liq = float(policy["liquidity_score"])
 
-    low_liquidity_signal = bool(cur_liq < 0.35 or cur_volume < 100.0 or cur_oi < 100.0)
+    low_liquidity_signal = bool(policy["low_liquidity_flag"])
     return {
         "bid_ask_spread": spread,
         "spread_percent": None if spread is None else round(spread * 100.0, 6),
@@ -51,6 +54,8 @@ def kalshi_market_structure_signals(current: dict[str, Any], previous: dict[str,
         "liquidity_change": cur_liq - prev_liq,
         "stale_market_signal": bool(current.get("stale_market")),
         "low_liquidity_signal": low_liquidity_signal,
+        "missing_liquidity_signal": bool(policy["missing_liquidity_flag"]),
+        "liquidity_tier": policy["liquidity_tier"],
         "status_change_signal": bool(str(current.get("status") or "") != str(previous.get("status") or "")),
     }
 
