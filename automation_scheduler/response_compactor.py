@@ -205,8 +205,48 @@ def compact_run_once_response(payload: dict[str, Any]) -> dict[str, Any]:
         "review_queue_write_path": payload.get("review_queue_write_path"),
         "review_queue_latest_run_id": payload.get("review_queue_latest_run_id"),
         "review_queue_last_updated_at": payload.get("review_queue_last_updated_at"),
+        "paper_decisions_written": int(payload.get("paper_decisions_written", 0)),
+        "paper_decisions_count": int(payload.get("paper_decisions_count", 0)),
+        "paper_ledger_storage_backend": payload.get("paper_ledger_storage_backend"),
+        "paper_ledger_write_path": payload.get("paper_ledger_write_path"),
+        "paper_ledger_latest_run_id": payload.get("paper_ledger_latest_run_id"),
+        "calibration_status": (payload.get("calibration") or {}).get("status"),
+        "calibration_settled_count": int((payload.get("calibration") or {}).get("settled_count", 0)),
+        "calibration_coverage_rate": float((payload.get("calibration") or {}).get("coverage_rate", 0.0)),
         "blockers": list(payload.get("blockers", []))[:10],
         "report_path": (payload.get("report") or {}).get("path") or payload.get("report_path"),
+    }
+
+
+def compact_calibration_response(payload: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "ok": bool(payload.get("ok", True)),
+        "status": payload.get("status", "insufficient_data"),
+        "schema_version": payload.get("schema_version"),
+        "created_at": payload.get("created_at"),
+        "dry_run": bool(payload.get("dry_run", True)),
+        "human_approval_required": bool(payload.get("human_approval_required", True)),
+        "auto_execution_enabled": bool(payload.get("auto_execution_enabled", False)),
+        "review_items_count": int(payload.get("review_items_count", 0)),
+        "paper_decisions_count": int(payload.get("paper_decisions_count", payload.get("paper_ledger_records_count", 0))),
+        "settled_count": int(payload.get("settled_count", 0)),
+        "pending_count": int(payload.get("pending_count", 0)),
+        "void_count": int(payload.get("void_count", 0)),
+        "coverage_rate": float(payload.get("coverage_rate", 0.0)),
+        "provider_counts": dict(payload.get("provider_counts", {})),
+        "market_type_counts": dict(payload.get("market_type_counts", {})),
+        "liquidity_tier_counts": dict(payload.get("liquidity_tier_counts", {})),
+        "score_bucket_counts": dict(payload.get("score_bucket_counts", {})),
+        "score_field_presence_counts": dict(payload.get("score_field_presence_counts", {})),
+        "settlement_field_presence_counts": dict(payload.get("settlement_field_presence_counts", {})),
+        "records_with_outcome_count": int(payload.get("records_with_outcome_count", 0)),
+        "records_without_outcome_count": int(payload.get("records_without_outcome_count", 0)),
+        "metrics": dict(payload.get("metrics", {})),
+        "next_required_data": list(payload.get("next_required_data", []))[:10],
+        "compact_response": True,
+        "raw_payload_included": False,
+        "execution_allowed_count": 0,
+        "report_path": payload.get("report_path"),
     }
 
 

@@ -21,6 +21,16 @@ class TestAutomationSchedulerEndpoints(unittest.TestCase):
         p = r.json()
         self.assertIn('items', p)
 
+    def test_calibration_endpoint_compact_default(self):
+        r = self.client.get('/api/automation/calibration')
+        self.assertEqual(r.status_code, 200)
+        p = r.json()
+        self.assertIn('status', p)
+        self.assertIn('paper_decisions_count', p)
+        self.assertFalse(p['auto_execution_enabled'])
+        self.assertEqual(p['execution_allowed_count'], 0)
+        self.assertNotIn('provider_payload', str(p))
+
     def test_run_once_endpoint_dry_run_only(self):
         r = self.client.post('/api/automation/run-once', json={'dry_run': True, 'run_key': 'endpoint-test'})
         self.assertEqual(r.status_code, 200)

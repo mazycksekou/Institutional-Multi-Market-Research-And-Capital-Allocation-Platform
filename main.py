@@ -26,6 +26,7 @@ import multi_sport_model_registry
 import model_probability
 import screenshot_intake
 from automation_scheduler.response_compactor import (
+    compact_calibration_response,
     compact_provider_status,
     compact_governance_inventory,
     compact_governance_report,
@@ -2778,6 +2779,16 @@ async def get_automation_scheduler_review_queue(
     return compact
 
 
+@app.get("/api/automation/calibration", operation_id="getAutomationCalibration")
+async def get_automation_calibration_endpoint(verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=10)):
+    payload = automation_scheduler.get_automation_calibration_report()
+    compact = compact_calibration_response(payload)
+    cap = min(max(int(limit), 1), 100 if verbose else 10)
+    if verbose or include_debug:
+        compact["debug"] = redact_and_limit_payload(payload, limit=cap, verbose=verbose)
+    return compact
+
+
 @app.post("/api/automation/run-once", operation_id="runAutomationSchedulerOnce")
 async def run_automation_scheduler_once(payload: AutomationRunOnceRequest, verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=10)):
     if payload.dry_run is not True:
@@ -2971,6 +2982,7 @@ PUBLIC_OPENAPI_PATH_METHODS = frozenset({
     ("/api/debug/auth-status", "get"),
     ("/api/automation/health", "get"),
     ("/api/automation/review-queue", "get"),
+    ("/api/automation/calibration", "get"),
     ("/api/automation/run-once", "post"),
     ("/api/performance/health", "get"),
     ("/api/performance/report", "get"),

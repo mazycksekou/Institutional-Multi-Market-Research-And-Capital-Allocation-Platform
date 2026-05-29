@@ -8,6 +8,7 @@ from .system_health import get_system_health
 from .review_queue import filter_review_items, list_active_review_items, load_review_queue_state, summarize_review_items
 from .scheduler_config import get_default_scheduler_config, ensure_runtime_directories
 from .backtesting_engine import generate_backtest_report, run_backtest, run_paper_summary
+from .calibration import build_calibration_report
 from .model_performance_report import build_compact_performance_report
 from .provider_health import summarize_provider_health
 from .provider_registry import get_provider_registry
@@ -119,6 +120,12 @@ def get_performance_report(model_id: str, historical_rows_path: str | None = Non
 
 def get_paper_summary(base_data_dir: str | None = None):
     return run_paper_summary(base_data_dir=base_data_dir or "data")
+
+
+def get_automation_calibration_report(base_data_dir: str | None = None):
+    config = get_default_scheduler_config(base_data_dir=base_data_dir)
+    ensure_runtime_directories(config)
+    return build_calibration_report(base_data_dir=base_data_dir or "data", write_report=True)
 
 
 def get_provider_health(base_data_dir: str | None = None):

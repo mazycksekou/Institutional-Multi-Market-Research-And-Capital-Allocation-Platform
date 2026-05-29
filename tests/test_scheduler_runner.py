@@ -4,6 +4,7 @@ from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 from automation_scheduler import get_scheduler_review_queue
+from automation_scheduler.paper_decision_ledger import load_paper_decisions
 from automation_scheduler.scheduler_runner import run_scheduler_once
 
 
@@ -194,6 +195,100 @@ class TestSchedulerRunner(unittest.TestCase):
                 self.assertTrue(all(item.get("recommendation_status") == "review_only" for item in kalshi_items))
                 self.assertTrue(all(item.get("execution_allowed") is False for item in kalshi_items))
                 self.assertTrue(all(item.get("auto_execution_enabled") is False for item in kalshi_items))
+                paper_decisions = load_paper_decisions(tmp)
+                self.assertEqual(len(paper_decisions), queue["summary"]["total_count"])
+                self.assertTrue(all(decision["paper_only"] for decision in paper_decisions))
+                self.assertTrue(all(decision["execution_allowed"] is False for decision in paper_decisions))
+                self.assertTrue(all(decision.get("review_priority_score") is not None for decision in paper_decisions))
+
+    @patch("automation_scheduler.scheduler_runner.monitor_kalshi_market")
+    @patch("automation_scheduler.scheduler_runner._evaluate_kalshi_review_candidates")
+    @patch("automation_scheduler.scheduler_runner._evaluate_sharp_review_candidates")
+    @patch("automation_scheduler.scheduler_runner._collect_provider_placeholders")
+    def test_run_once_persists_paper_decisions_for_sharp_and_kalshi_review_items(
+        self,
+        mock_collect,
+        mock_sharp_eval,
+        mock_kalshi_eval,
+        mock_monitor,
+    ):
+        mock_collect.return_value = {
+            "sharp_snapshot": {"records": []},
+            "kalshi_snapshot": {"records": []},
+            "skipped": [],
+            "health": [],
+            "snapshots": [],
+        }
+        mock_sharp_eval.return_value = {
+            "records_received": 1,
+            "records_valid": 1,
+            "records_rejected": 0,
+            "candidates": [
+                {
+                    "source": "test",
+                    "provider_id": "sharp_sportsbook",
+                    "provider": "sharp_sportsbook",
+                    "source_type": "sportsbook",
+                    "market_type": "sports_pregame_main",
+                    "sport_or_symbol": "MLB",
+                    "event_id": "evt-sharp",
+                    "event_name": "Sharp Event",
+                    "market": "moneyline",
+                    "selection": "Team A",
+                    "implied_probability": 0.52,
+                    "opportunity_score": 60,
+                    "reason_codes": ["watch"],
+                    "recommendation_status": "review_only",
+                    "execution_allowed": False,
+                }
+            ],
+            "blockers": [],
+        }
+        mock_kalshi_eval.return_value = {
+            "records_received": 1,
+            "records_valid": 1,
+            "records_rejected": 0,
+            "candidates": [
+                {
+                    "source": "test",
+                    "provider_id": "kalshi_prediction_market",
+                    "provider": "kalshi_prediction_market",
+                    "source_type": "prediction_market",
+                    "market_type": "prediction_market",
+                    "sport_or_symbol": "prediction_market",
+                    "market": "KX",
+                    "selection": "Contract",
+                    "ticker": "KX",
+                    "contract_id": "KX",
+                    "yes_price": 0.55,
+                    "price_source": "direct_price",
+                    "implied_probability": 0.55,
+                    "liquidity_tier": "low_liquidity",
+                    "liquidity_score": 40,
+                    "review_priority_score": 62,
+                    "opportunity_score": 62,
+                    "reason_codes": ["prediction_market_review_only"],
+                    "recommendation_status": "review_only",
+                    "execution_allowed": False,
+                    "human_approval_required": True,
+                }
+            ],
+            "rejected_reason_counts": {},
+            "flagged_low_liquidity_count": 1,
+            "flagged_partial_pricing_count": 0,
+            "price_field_telemetry": {"liquidity_tier_counts": {"low_liquidity": 1}, "records_missing_liquidity": 0},
+            "blockers": [],
+        }
+        mock_monitor.return_value = {"candidates": []}
+        with TemporaryDirectory() as tmp:
+            result = run_scheduler_once(base_data_dir=tmp, dry_run=True)
+            decisions = load_paper_decisions(tmp)
+            providers = {decision["provider"] for decision in decisions}
+            self.assertEqual(result["review_queue_items_written"], 2)
+            self.assertEqual(result["paper_decisions_written"], 2)
+            self.assertEqual(result["paper_ledger_storage_backend"], "file")
+            self.assertEqual(providers, {"sharp_sportsbook", "kalshi_prediction_market"})
+            self.assertEqual(result["calibration"]["status"], "insufficient_data")
 
     @patch("automation_scheduler.scheduler_runner.SharpSportsbookAdapter.fetch_snapshot")
     @patch("automation_scheduler.scheduler_runner.KalshiReadonlyAdapter.fetch_snapshot")

@@ -11,13 +11,13 @@ from model_governance.settlement_liquidity_gate import evaluate_settlement_liqui
 from .arbitrage_detector import detect_arbitrage
 from .alert_engine import generate_alert_candidates
 from .backtesting import run_backtesting_scaffold
-from .calibration import run_calibration_scaffold
+from .calibration import build_calibration_report
 from .cross_book_line_comparator import group_cross_book_markets
 from .ev_line_shopper import shop_ev_lines
 from .kalshi_monitor import monitor_kalshi_market
 from .middle_opportunity_detector import detect_middle_opportunity
 from .opportunity_scoring import calculate_opportunity_score, classify_opportunity
-from .paper_decision_ledger import create_paper_decision_record
+from .paper_decision_ledger import load_paper_decisions, persist_paper_decisions_for_review_items
 from .provider_adapter_base import ProviderAdapterBase
 from .provider_health import summarize_provider_health, write_provider_health_snapshot
 from .market_structure import kalshi_market_structure_signals
@@ -1172,8 +1172,6 @@ def run_scheduler_once(*, injected_data: dict[str, Any] | None = None, base_data
         if item is None:
             continue
         upsert_review_item(config, item)
-        if item.get("provider_id") == "kalshi_prediction_market":
-            create_paper_decision_record(item, snapshot_id=ctx["run_id"], base_data_dir=base_data_dir or "data")
         new_items += 1
         if item.get("recommended_action") == "watch_recheck":
             watch_recheck_count += 1
@@ -1189,10 +1187,24 @@ def run_scheduler_once(*, injected_data: dict[str, Any] | None = None, base_data
         run_id=ctx["run_id"],
         summary=queue_summary,
     )
+    expected_report_path = f"reports/scheduler_run_{ctx['run_id']}.json"
+    paper_ledger_storage = persist_paper_decisions_for_review_items(
+        queue,
+        run_id=ctx["run_id"],
+        snapshot_id=ctx["run_id"],
+        report_path=expected_report_path,
+        base_data_dir=base_data_dir or "data",
+    )
     review_required_count = len([row for row in queue if row.get("recommended_action") in {"review_required", "urgent_review"}])
     alerts = generate_alert_candidates(queue, max_alerts=25, time_bucket=ctx["run_id"])
-    backtesting_summary = run_backtesting_scaffold(queue)
-    calibration_summary = run_calibration_scaffold(queue)
+    paper_decisions = [item for item in load_paper_decisions(base_data_dir or "data") if isinstance(item, dict)]
+    backtesting_summary = run_backtesting_scaffold(paper_decisions)
+    calibration_summary = build_calibration_report(
+        base_data_dir=base_data_dir or "data",
+        paper_decisions=paper_decisions,
+        review_items=queue,
+        write_report=True,
+    )
     skipped = list(payload.get("skipped_items", [])) + provider_result["skipped"]
     report = write_report(
         config,
@@ -1220,6 +1232,9 @@ def run_scheduler_once(*, injected_data: dict[str, Any] | None = None, base_data
                 "review_queue_storage_backend": queue_storage.get("storage_backend"),
                 "review_queue_items_written": queue_storage.get("items_written_count"),
                 "review_queue_latest_run_id": queue_storage.get("latest_run_id"),
+                "paper_decisions_written": paper_ledger_storage.get("paper_decisions_written"),
+                "paper_ledger_storage_backend": paper_ledger_storage.get("storage_backend"),
+                "paper_ledger_latest_run_id": paper_ledger_storage.get("latest_run_id"),
             },
             "alerts": alerts,
             "review_items": queue,
@@ -1231,6 +1246,7 @@ def run_scheduler_once(*, injected_data: dict[str, Any] | None = None, base_data
             "provider_snapshots": provider_result["snapshots"],
             "errors": [],
             "governance_status": ctx["governance_status"],
+            "paper_decision_ledger": paper_ledger_storage,
             "backtesting": backtesting_summary,
             "calibration": calibration_summary,
         },
@@ -1263,6 +1279,14 @@ def run_scheduler_once(*, injected_data: dict[str, Any] | None = None, base_data
             "review_queue_last_updated_at": queue_storage.get("last_updated_at"),
             "review_queue_latest_run_id": queue_storage.get("latest_run_id"),
             "review_queue_read_ok": True,
+            "paper_decisions_count": len(paper_decisions),
+            "paper_decisions_written": paper_ledger_storage.get("paper_decisions_written"),
+            "paper_ledger_storage_backend": paper_ledger_storage.get("storage_backend"),
+            "paper_ledger_last_updated_at": paper_ledger_storage.get("last_updated_at"),
+            "paper_ledger_latest_run_id": paper_ledger_storage.get("latest_run_id"),
+            "calibration_status": calibration_summary.get("status"),
+            "calibration_settled_count": calibration_summary.get("settled_count"),
+            "calibration_coverage_rate": calibration_summary.get("coverage_rate"),
         },
     )
     return {
@@ -1313,5 +1337,11 @@ def run_scheduler_once(*, injected_data: dict[str, Any] | None = None, base_data
         "review_queue_write_path": queue_storage.get("queue_write_path"),
         "review_queue_latest_run_id": queue_storage.get("latest_run_id"),
         "review_queue_last_updated_at": queue_storage.get("last_updated_at"),
+        "paper_decisions_written": int(paper_ledger_storage.get("paper_decisions_written", len(paper_decisions))),
+        "paper_decisions_count": len(paper_decisions),
+        "paper_ledger_storage_backend": paper_ledger_storage.get("storage_backend", "file"),
+        "paper_ledger_write_path": paper_ledger_storage.get("paper_ledger_write_path"),
+        "paper_ledger_latest_run_id": paper_ledger_storage.get("latest_run_id"),
+        "paper_ledger_last_updated_at": paper_ledger_storage.get("last_updated_at"),
         "blockers": list(sharp_evaluation.get("blockers", [])) + list(kalshi_evaluation.get("blockers", [])),
     }

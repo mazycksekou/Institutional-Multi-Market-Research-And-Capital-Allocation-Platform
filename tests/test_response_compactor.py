@@ -1,5 +1,6 @@
 import unittest
 from automation_scheduler.response_compactor import (
+    compact_calibration_response,
     compact_health_response, compact_review_queue_response, compact_run_once_response,
     compact_governance_inventory, compact_governance_report, compact_validation_response,
     compact_provider_health_response, compact_provider_registry_response, compact_provider_status,
@@ -140,6 +141,12 @@ class TestResponseCompactor(unittest.TestCase):
             "kalshi_missing_liquidity_count": 0,
             "kalshi_high_priority_count": 1,
             "kalshi_average_review_priority_score": 72.0,
+            "paper_decisions_written": 2,
+            "paper_decisions_count": 2,
+            "paper_ledger_storage_backend": "file",
+            "paper_ledger_write_path": "paper_ledger/latest.json",
+            "paper_ledger_latest_run_id": "run-2",
+            "calibration": {"status": "insufficient_data", "settled_count": 0, "coverage_rate": 0.0},
             "provider_payload": {"raw": "should_not_show"},
         }
         c = compact_run_once_response(p)
@@ -149,9 +156,46 @@ class TestResponseCompactor(unittest.TestCase):
         self.assertEqual(c["kalshi_price_field_telemetry"]["total_kalshi_records_seen"], 2)
         self.assertEqual(c["review_queue_items_written"], 2)
         self.assertEqual(c["review_queue_storage_backend"], "file")
+        self.assertEqual(c["paper_decisions_written"], 2)
+        self.assertEqual(c["paper_ledger_storage_backend"], "file")
+        self.assertEqual(c["calibration_status"], "insufficient_data")
         self.assertEqual(c["kalshi_liquidity_tier_counts"]["low_liquidity"], 1)
         self.assertEqual(c["kalshi_high_priority_count"], 1)
         self.assertNotIn("provider_payload", str(c))
+
+    def test_calibration_compact_response_is_bounded_and_safe(self):
+        compact = compact_calibration_response(
+            {
+                "ok": True,
+                "status": "insufficient_data",
+                "dry_run": True,
+                "human_approval_required": True,
+                "auto_execution_enabled": False,
+                "review_items_count": 2,
+                "paper_decisions_count": 2,
+                "settled_count": 0,
+                "pending_count": 2,
+                "void_count": 0,
+                "coverage_rate": 0.0,
+                "provider_counts": {"kalshi_prediction_market": 1, "sharp_sportsbook": 1},
+                "market_type_counts": {"prediction_market": 1},
+                "liquidity_tier_counts": {"low_liquidity": 1},
+                "score_bucket_counts": {"60-80": 1},
+                "score_field_presence_counts": {"review_priority_score": 1},
+                "settlement_field_presence_counts": {"final_outcome": 0},
+                "metrics": {},
+                "next_required_data": ["settlement_results"],
+                "provider_payload": {"raw": "drop"},
+                "api_secret": "secret",
+            }
+        )
+        self.assertEqual(compact["status"], "insufficient_data")
+        self.assertEqual(compact["paper_decisions_count"], 2)
+        self.assertEqual(compact["execution_allowed_count"], 0)
+        self.assertTrue(compact["compact_response"])
+        rendered = str(compact)
+        self.assertNotIn("provider_payload", rendered)
+        self.assertNotIn("secret", rendered)
 
     def test_verbose_redaction(self):
         payload = {"api_key": "x", "nested": [{"token": "y"}], "items": list(range(200)), "provider_payload": {"raw": 1}}
