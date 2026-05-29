@@ -247,6 +247,39 @@ class TestKalshiReadonlyAdapter(unittest.TestCase):
         self.assertEqual(row["timestamp"], now_iso)
 
     @patch("automation_scheduler.kalshi_readonly_adapter.httpx.Client", new=_MockClient)
+    def test_dollars_bid_ask_can_derive_midpoint_when_last_price_missing(self):
+        now_iso = datetime.now(timezone.utc).isoformat()
+        os.environ["KALSHI_PROVIDER_ENABLED"] = "true"
+        os.environ["KALSHI_LIVE_READS_ENABLED"] = "true"
+        os.environ["KALSHI_API_KEY"] = "kalshi_key_1234567890"
+        os.environ["KALSHI_API_SECRET"] = _TEST_PRIVATE_KEY_PEM
+        contract = dict(self.contract)
+        contract["enabled"] = True
+        contract["live_calls_enabled"] = True
+        contract["dry_run"] = True
+        _MockClient.events_payload = {"events": [{"event_ticker": "EVT-1", "title": "Event 1", "updated_at": now_iso}]}
+        _MockClient.markets_payload = {
+            "markets": [
+                {
+                    "event_ticker": "EVT-1",
+                    "ticker": "KX-2",
+                    "yes_bid_dollars": 0.30,
+                    "yes_ask_dollars": 0.34,
+                    "no_bid_dollars": 0.66,
+                    "no_ask_dollars": 0.70,
+                    "close_time": "2026-06-01T00:00:00+00:00",
+                    "updated_time": now_iso,
+                }
+            ]
+        }
+        adapter = KalshiReadonlyAdapter(contract)
+        snapshot = adapter.fetch_snapshot()
+        self.assertEqual(snapshot["records_valid"], 1)
+        row = snapshot["records"][0]
+        self.assertAlmostEqual(row["yes_price"], 0.32, places=6)
+        self.assertAlmostEqual(row["no_price"], 0.68, places=6)
+
+    @patch("automation_scheduler.kalshi_readonly_adapter.httpx.Client", new=_MockClient)
     def test_malformed_prices_are_rejected(self):
         now_iso = datetime.now(timezone.utc).isoformat()
         os.environ["KALSHI_PROVIDER_ENABLED"] = "true"

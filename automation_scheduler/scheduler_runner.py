@@ -149,7 +149,27 @@ KALSHI_SOURCE_PRICE_FIELDS = (
     "priceYes",
     "price_no",
     "priceNo",
+    "yes_bid_dollars",
+    "yes_ask_dollars",
+    "no_bid_dollars",
+    "no_ask_dollars",
+    "last_price_dollars",
+    "open_interest_fp",
+    "volume_fp",
+    "open_interest",
+    "volume",
+    "liquidity_dollars",
 )
+KALSHI_EXPECTED_SOURCE_FIELDS = (
+    "yes_bid_dollars",
+    "yes_ask_dollars",
+    "no_bid_dollars",
+    "no_ask_dollars",
+    "last_price_dollars",
+    "open_interest_fp",
+    "volume_fp",
+)
+KALSHI_SOURCE_LIQUIDITY_FIELDS = ("volume", "open_interest", "liquidity_dollars", "open_interest_fp", "volume_fp")
 
 KALSHI_CONTRACT_ID_PATHS = (
     ("contract_id",),
@@ -370,6 +390,15 @@ def _to_probability(value: Any) -> float | None:
     return None
 
 
+def _to_float_or_none(value: Any) -> float | None:
+    try:
+        if value is None:
+            return None
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
 def _extract_kalshi_pricing_signals(row: dict[str, Any]) -> dict[str, Any]:
     yes_price, yes_price_path = _first_probability_from_paths(row, KALSHI_YES_DIRECT_PATHS)
     no_price, no_price_path = _first_probability_from_paths(row, KALSHI_NO_DIRECT_PATHS)
@@ -500,6 +529,18 @@ def _build_kalshi_price_field_telemetry() -> dict[str, Any]:
         "source_payload_field_presence_counts": {name: 0 for name in KALSHI_SOURCE_PRICE_FIELDS},
         "source_payload_nested_object_presence_counts": {"pricing": 0, "prices": 0, "market": 0},
         "source_payload_first_record_safe_field_names": [],
+        "accepted_source_field_names": [],
+        "missing_expected_source_fields": list(KALSHI_EXPECTED_SOURCE_FIELDS),
+        "unexpected_source_field_count": 0,
+        "pricing_signal_field_count": 0,
+        "liquidity_signal_field_count": 0,
+        "records_with_volume": 0,
+        "records_with_open_interest": 0,
+        "records_with_liquidity": 0,
+        "records_flagged_low_liquidity": 0,
+        "records_low_liquidity_due_to_missing_liquidity": 0,
+        "records_low_liquidity_due_to_threshold": 0,
+        "liquidity_threshold_used": KALSHI_LOW_LIQUIDITY_THRESHOLD,
     }
 
 
@@ -854,6 +895,7 @@ def _evaluate_kalshi_review_candidates(config: dict[str, Any], kalshi_snapshot: 
     flagged_low_liquidity_count = 0
     flagged_partial_pricing_count = 0
     telemetry = _build_kalshi_price_field_telemetry()
+    source_payload_seen_fields: set[str] = set()
 
     for row in source_records:
         if not isinstance(row, dict):
@@ -882,6 +924,7 @@ def _evaluate_kalshi_review_candidates(config: dict[str, Any], kalshi_snapshot: 
         if isinstance(source_payload, dict):
             if not telemetry["source_payload_first_record_safe_field_names"]:
                 telemetry["source_payload_first_record_safe_field_names"] = sorted([str(name) for name in source_payload.keys()])[:60]
+            source_payload_seen_fields.update(str(name) for name in source_payload.keys())
             for field in KALSHI_SOURCE_PRICE_FIELDS:
                 if _has_usable_value(source_payload.get(field)):
                     telemetry["source_payload_field_presence_counts"][field] += 1
@@ -899,6 +942,15 @@ def _evaluate_kalshi_review_candidates(config: dict[str, Any], kalshi_snapshot: 
 
         pricing = _derive_kalshi_pricing(row)
         identity = _extract_kalshi_identity(row)
+        volume_value = _to_float_or_none(row.get("volume"))
+        open_interest_value = _to_float_or_none(row.get("open_interest"))
+        liquidity_value = _to_float_or_none(row.get("liquidity_score"))
+        if volume_value is not None and volume_value > 0:
+            telemetry["records_with_volume"] += 1
+        if open_interest_value is not None and open_interest_value > 0:
+            telemetry["records_with_open_interest"] += 1
+        if liquidity_value is not None:
+            telemetry["records_with_liquidity"] += 1
         if pricing["has_direct_yes_price"]:
             telemetry["records_with_direct_yes_price"] += 1
         if pricing["has_direct_no_price"]:
@@ -945,6 +997,16 @@ def _evaluate_kalshi_review_candidates(config: dict[str, Any], kalshi_snapshot: 
         liquidity_score, low_liquidity = _kalshi_liquidity_metrics({**row, **pricing})
         if low_liquidity:
             flagged_low_liquidity_count += 1
+            telemetry["records_flagged_low_liquidity"] += 1
+            missing_liquidity_inputs = bool(
+                liquidity_value is None
+                and (volume_value is None or volume_value <= 0.0)
+                and (open_interest_value is None or open_interest_value <= 0.0)
+            )
+            if missing_liquidity_inputs:
+                telemetry["records_low_liquidity_due_to_missing_liquidity"] += 1
+            else:
+                telemetry["records_low_liquidity_due_to_threshold"] += 1
         if pricing["partial_pricing"]:
             flagged_partial_pricing_count += 1
 
@@ -1032,6 +1094,20 @@ def _evaluate_kalshi_review_candidates(config: dict[str, Any], kalshi_snapshot: 
     records_received = int(kalshi_snapshot.get("records_received", len(source_records)))
     records_valid = len(candidates)
     records_rejected = int(sum(rejected_reason_counts.values()))
+    telemetry["accepted_source_field_names"] = sorted(
+        [name for name in KALSHI_EXPECTED_SOURCE_FIELDS if int(telemetry["source_payload_field_presence_counts"].get(name, 0)) > 0]
+    )
+    telemetry["missing_expected_source_fields"] = sorted(
+        [name for name in KALSHI_EXPECTED_SOURCE_FIELDS if name not in telemetry["accepted_source_field_names"]]
+    )
+    expected_source_field_set = set(KALSHI_EXPECTED_SOURCE_FIELDS)
+    telemetry["unexpected_source_field_count"] = len([name for name in source_payload_seen_fields if name not in expected_source_field_set])
+    telemetry["pricing_signal_field_count"] = len(
+        [name for name, count in telemetry["source_payload_field_presence_counts"].items() if count and ("price" in name or "bid" in name or "ask" in name or name in {"yes", "no"})]
+    )
+    telemetry["liquidity_signal_field_count"] = len(
+        [name for name in KALSHI_SOURCE_LIQUIDITY_FIELDS if int(telemetry["source_payload_field_presence_counts"].get(name, 0)) > 0]
+    )
     return {
         "records_received": records_received,
         "records_valid": records_valid,

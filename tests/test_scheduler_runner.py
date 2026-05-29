@@ -278,3 +278,97 @@ class TestSchedulerRunner(unittest.TestCase):
                 self.assertGreaterEqual(telemetry["records_with_direct_yes_price"], 1)
                 self.assertGreaterEqual(telemetry["records_with_bid_ask_midpoint_possible"], 2)
                 self.assertIn("yes_price", telemetry["first_record_safe_field_names"])
+                self.assertIn("liquidity_threshold_used", telemetry)
+                self.assertIn("records_flagged_low_liquidity", telemetry)
+
+    @patch("automation_scheduler.scheduler_runner.SharpSportsbookAdapter.fetch_snapshot")
+    @patch("automation_scheduler.scheduler_runner.KalshiReadonlyAdapter.fetch_snapshot")
+    def test_kalshi_low_liquidity_diagnostics_distinguish_missing_vs_threshold(self, mock_kalshi_snapshot, mock_sharp_snapshot):
+        now = datetime.now(timezone.utc)
+        mock_sharp_snapshot.return_value = {
+            "ok": True,
+            "status": "live_snapshot_complete",
+            "provider_id": "sharp_sportsbook",
+            "records_received": 0,
+            "records_valid": 0,
+            "records_rejected": 0,
+            "records": [],
+            "timestamp": now.isoformat(),
+        }
+        mock_kalshi_snapshot.return_value = {
+            "ok": True,
+            "status": "live_snapshot_complete",
+            "provider_id": "kalshi_prediction_market",
+            "records_received": 3,
+            "records_valid": 3,
+            "records_rejected": 0,
+            "records": [
+                {
+                    "contract_id": "c_ok",
+                    "ticker": "KX-OK",
+                    "yes_price": 0.51,
+                    "no_price": 0.49,
+                    "yes_bid": 0.50,
+                    "yes_ask": 0.52,
+                    "no_bid": 0.48,
+                    "no_ask": 0.50,
+                    "volume": 5000,
+                    "open_interest": 4000,
+                    "liquidity_score": 0.95,
+                    "close_time": (now + timedelta(hours=2)).isoformat(),
+                    "status": "open",
+                    "timestamp": now.isoformat(),
+                    "source_payload_redacted": {"volume_fp": 5000, "open_interest_fp": 4000, "yes_bid_dollars": 0.50, "yes_ask_dollars": 0.52, "no_bid_dollars": 0.48, "no_ask_dollars": 0.50, "last_price_dollars": 0.51},
+                },
+                {
+                    "contract_id": "c_threshold",
+                    "ticker": "KX-THRESH",
+                    "yes_price": 0.40,
+                    "no_price": 0.60,
+                    "yes_bid": 0.39,
+                    "yes_ask": 0.41,
+                    "no_bid": 0.59,
+                    "no_ask": 0.61,
+                    "volume": 0,
+                    "open_interest": 0,
+                    "liquidity_score": 0.9,
+                    "close_time": (now + timedelta(hours=2)).isoformat(),
+                    "status": "open",
+                    "timestamp": now.isoformat(),
+                    "source_payload_redacted": {"volume_fp": 0, "open_interest_fp": 0, "yes_bid_dollars": 0.39, "yes_ask_dollars": 0.41, "no_bid_dollars": 0.59, "no_ask_dollars": 0.61, "last_price_dollars": 0.40},
+                },
+                {
+                    "contract_id": "c_missing",
+                    "ticker": "KX-MISS",
+                    "yes_price": 0.45,
+                    "no_price": 0.55,
+                    "close_time": (now + timedelta(hours=2)).isoformat(),
+                    "status": "open",
+                    "timestamp": now.isoformat(),
+                    "source_payload_redacted": {"yes_bid_dollars": 0.44, "yes_ask_dollars": 0.46, "no_bid_dollars": 0.54, "no_ask_dollars": 0.56, "last_price_dollars": 0.45},
+                },
+            ],
+            "timestamp": now.isoformat(),
+        }
+        with patch.dict(
+            "os.environ",
+            {
+                "SHARP_PROVIDER_ENABLED": "true",
+                "SHARP_LIVE_READS_ENABLED": "true",
+                "SHARP_API_KEY": "sharp_test_key_123",
+                "KALSHI_PROVIDER_ENABLED": "true",
+                "KALSHI_LIVE_READS_ENABLED": "true",
+                "KALSHI_API_KEY": "kalshi_test_key_123",
+                "KALSHI_API_SECRET": "placeholder",
+            },
+            clear=False,
+        ):
+            with TemporaryDirectory() as tmp:
+                result = run_scheduler_once(base_data_dir=tmp, dry_run=True)
+                telemetry = result["kalshi_price_field_telemetry"]
+                self.assertEqual(telemetry["records_flagged_low_liquidity"], 2)
+                self.assertEqual(telemetry["records_low_liquidity_due_to_threshold"], 1)
+                self.assertEqual(telemetry["records_low_liquidity_due_to_missing_liquidity"], 1)
+                self.assertEqual(telemetry["records_with_volume"], 1)
+                self.assertEqual(telemetry["records_with_open_interest"], 1)
+                self.assertEqual(telemetry["records_with_liquidity"], 2)
