@@ -205,6 +205,33 @@ class TestSharpSportsbookAdapter(unittest.TestCase):
         self.assertAlmostEqual(normalized["implied_probability"], 0.4, places=6)
         self.assertIn("odds_format_decimal", warnings)
 
+    def test_live_flat_shape_aliases_normalize(self):
+        adapter = SharpSportsbookAdapter(self.contract)
+        normalized, warnings, reject = adapter._normalize_flattened_row(
+            {
+                "event": {
+                    "event_id": "evt_live",
+                    "sport": "baseball",
+                    "league": "MLB",
+                    "event_start_time": "2026-05-28T00:00:00+00:00",
+                    "sportsbook": "sharp",
+                },
+                "market": {
+                    "market_type": "moneyline",
+                    "selection": "Home",
+                    "odds_american": -115,
+                    "wire_received_at": "2026-05-28T00:00:00+00:00",
+                },
+                "book": {},
+                "outcome": {},
+            }
+        )
+        self.assertIsNone(reject)
+        self.assertEqual(normalized["market"], "moneyline")
+        self.assertEqual(normalized["odds"], -115)
+        self.assertGreater(normalized["implied_probability"], 0)
+        self.assertIn("fallback_event_name", warnings)
+
     @patch("automation_scheduler.sharp_sportsbook_adapter.httpx.Client", new=_MockClient)
     def test_rejection_reason_counts_and_debug_summary(self):
         os.environ["SHARP_API_KEY"] = "sharp_key_1234567890"

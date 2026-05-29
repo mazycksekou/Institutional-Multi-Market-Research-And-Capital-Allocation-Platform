@@ -421,6 +421,8 @@ class SharpSportsbookAdapter:
         event_id = _coalesce(
             event.get("event_id"),
             event.get("eventId"),
+            event.get("event_uuid"),
+            event.get("external_event_id"),
             event.get("id"),
             event.get("game_id"),
             event.get("gameId"),
@@ -437,6 +439,10 @@ class SharpSportsbookAdapter:
             market.get("market"),
             market.get("market_name"),
             market.get("marketName"),
+            market.get("market_type"),
+            market.get("market_segment"),
+            market.get("stat_category"),
+            market.get("market_ref"),
             market.get("name"),
             market.get("type"),
             outcome.get("market"),
@@ -469,9 +475,11 @@ class SharpSportsbookAdapter:
                 outcome.get("price"),
                 outcome.get("price_american"),
                 outcome.get("priceAmerican"),
+                outcome.get("odds_american"),
                 market.get("odds"),
                 market.get("american_odds"),
                 market.get("americanOdds"),
+                market.get("odds_american"),
             )
         )
         decimal_odds = _to_decimal(
@@ -481,10 +489,12 @@ class SharpSportsbookAdapter:
                 outcome.get("price_decimal"),
                 outcome.get("priceDecimal"),
                 outcome.get("decimal"),
+                outcome.get("odds_decimal"),
                 market.get("decimal_odds"),
                 market.get("decimalOdds"),
                 market.get("price_decimal"),
                 market.get("priceDecimal"),
+                market.get("odds_decimal"),
             )
         )
 
@@ -500,11 +510,12 @@ class SharpSportsbookAdapter:
             implied_probability = _implied_probability_from_decimal(decimal_odds)
             warnings.append("odds_format_decimal")
 
-        sport = _coalesce(event.get("sport"), event.get("sport_name"), event.get("sportName"), event.get("sport_key"))
+        sport = _coalesce(event.get("sport"), event.get("sport_name"), event.get("sportName"), event.get("sport_key"), event.get("sport_ref"))
         league = _coalesce(
             event.get("league"),
             event.get("league_name"),
             event.get("leagueName"),
+            event.get("league_ref"),
             event.get("competition"),
             event.get("competitionName"),
             event.get("tournament"),
@@ -532,6 +543,7 @@ class SharpSportsbookAdapter:
             event.get("startsAt"),
             event.get("commence_time"),
             event.get("scheduled"),
+            event.get("event_start_time"),
         )
         if start_time is None:
             start_time = utc_now_iso()
@@ -550,6 +562,9 @@ class SharpSportsbookAdapter:
             event.get("timestamp"),
             event.get("updated_at"),
             event.get("updatedAt"),
+            event.get("wire_received_at"),
+            event.get("last_seen_at"),
+            event.get("odds_changed_at"),
             utc_now_iso(),
         )
         if not _safe_str(timestamp):
@@ -565,7 +580,18 @@ class SharpSportsbookAdapter:
             "league": _safe_str(league),
             "event_name": _safe_str(event_name),
             "start_time": _safe_str(start_time),
-            "book": _safe_str(_coalesce(book.get("book"), book.get("name"), book.get("sportsbook"), book.get("key"), "sharp")),
+            "book": _safe_str(
+                _coalesce(
+                    book.get("book"),
+                    book.get("name"),
+                    book.get("sportsbook"),
+                    book.get("label"),
+                    book.get("id"),
+                    event.get("sportsbook"),
+                    event.get("sportsbook_ref"),
+                    "sharp",
+                )
+            ),
             "market": _safe_str(market_name),
             "selection": _safe_str(selection),
             "line": _coalesce(outcome.get("line"), outcome.get("point"), market.get("line"), market.get("point")),
