@@ -1,6 +1,8 @@
 import unittest
 from automation_scheduler.response_compactor import (
     compact_calibration_response,
+    compact_outcome_ingest_response,
+    compact_outcomes_response,
     compact_health_response, compact_review_queue_response, compact_run_once_response,
     compact_governance_inventory, compact_governance_report, compact_validation_response,
     compact_provider_health_response, compact_provider_registry_response, compact_provider_status,
@@ -173,6 +175,10 @@ class TestResponseCompactor(unittest.TestCase):
                 "auto_execution_enabled": False,
                 "review_items_count": 2,
                 "paper_decisions_count": 2,
+                "outcome_records_count": 1,
+                "matched_outcomes_count": 1,
+                "unmatched_outcomes_count": 0,
+                "ambiguous_matches_count": 0,
                 "settled_count": 0,
                 "pending_count": 2,
                 "void_count": 0,
@@ -191,11 +197,60 @@ class TestResponseCompactor(unittest.TestCase):
         )
         self.assertEqual(compact["status"], "insufficient_data")
         self.assertEqual(compact["paper_decisions_count"], 2)
+        self.assertEqual(compact["outcome_records_count"], 1)
+        self.assertEqual(compact["matched_outcomes_count"], 1)
         self.assertEqual(compact["execution_allowed_count"], 0)
         self.assertTrue(compact["compact_response"])
         rendered = str(compact)
         self.assertNotIn("provider_payload", rendered)
         self.assertNotIn("secret", rendered)
+
+    def test_outcome_ingest_and_list_compact_responses_are_safe(self):
+        ingest = compact_outcome_ingest_response(
+            {
+                "ok": True,
+                "status": "outcomes_validated",
+                "dry_run": True,
+                "local_persistence": False,
+                "provider_write": False,
+                "records_received": 1,
+                "records_valid": 1,
+                "records_rejected": 0,
+                "duplicate_count": 0,
+                "outcome_records_written": 0,
+                "api_key": "secret",
+            }
+        )
+        self.assertTrue(ingest["dry_run"])
+        self.assertFalse(ingest["provider_write"])
+        self.assertFalse(ingest["auto_execution_enabled"])
+        self.assertNotIn("secret", str(ingest))
+
+        listed = compact_outcomes_response(
+            {
+                "ok": True,
+                "summary": {
+                    "total_count": 1,
+                    "provider_counts": {"kalshi_prediction_market": 1},
+                    "outcome_status_counts": {"settled": 1},
+                    "final_outcome_counts": {"yes": 1},
+                },
+                "records": [
+                    {
+                        "outcome_id": "o1",
+                        "provider": "kalshi_prediction_market",
+                        "market_type": "prediction_market",
+                        "contract_id": "KX",
+                        "outcome_status": "settled",
+                        "final_outcome": "yes",
+                        "provider_payload": {"raw": "drop"},
+                    }
+                ],
+            }
+        )
+        self.assertEqual(listed["total_count"], 1)
+        self.assertEqual(listed["records"][0]["outcome_id"], "o1")
+        self.assertNotIn("provider_payload", str(listed))
 
     def test_verbose_redaction(self):
         payload = {"api_key": "x", "nested": [{"token": "y"}], "items": list(range(200)), "provider_payload": {"raw": 1}}

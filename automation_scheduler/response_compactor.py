@@ -229,12 +229,18 @@ def compact_calibration_response(payload: dict[str, Any]) -> dict[str, Any]:
         "auto_execution_enabled": bool(payload.get("auto_execution_enabled", False)),
         "review_items_count": int(payload.get("review_items_count", 0)),
         "paper_decisions_count": int(payload.get("paper_decisions_count", payload.get("paper_ledger_records_count", 0))),
+        "outcome_records_count": int(payload.get("outcome_records_count", 0)),
+        "matched_outcomes_count": int(payload.get("matched_outcomes_count", payload.get("matched_outcome_count", 0))),
+        "unmatched_outcomes_count": int(payload.get("unmatched_outcomes_count", payload.get("unmatched_outcome_count", 0))),
+        "ambiguous_matches_count": int(payload.get("ambiguous_matches_count", 0)),
         "settled_count": int(payload.get("settled_count", 0)),
         "pending_count": int(payload.get("pending_count", 0)),
         "void_count": int(payload.get("void_count", 0)),
         "coverage_rate": float(payload.get("coverage_rate", 0.0)),
         "provider_counts": dict(payload.get("provider_counts", {})),
         "market_type_counts": dict(payload.get("market_type_counts", {})),
+        "outcome_provider_counts": dict(payload.get("outcome_provider_counts", {})),
+        "outcome_status_counts": dict(payload.get("outcome_status_counts", {})),
         "liquidity_tier_counts": dict(payload.get("liquidity_tier_counts", {})),
         "score_bucket_counts": dict(payload.get("score_bucket_counts", {})),
         "score_field_presence_counts": dict(payload.get("score_field_presence_counts", {})),
@@ -242,11 +248,78 @@ def compact_calibration_response(payload: dict[str, Any]) -> dict[str, Any]:
         "records_with_outcome_count": int(payload.get("records_with_outcome_count", 0)),
         "records_without_outcome_count": int(payload.get("records_without_outcome_count", 0)),
         "metrics": dict(payload.get("metrics", {})),
+        "warnings": list(payload.get("warnings", []))[:10],
         "next_required_data": list(payload.get("next_required_data", []))[:10],
+        "storage_backend": payload.get("storage_backend"),
+        "latest_batch_id": payload.get("latest_batch_id"),
+        "outcome_read_ok": bool(payload.get("outcome_read_ok", True)),
         "compact_response": True,
         "raw_payload_included": False,
         "execution_allowed_count": 0,
         "report_path": payload.get("report_path"),
+    }
+
+
+def compact_outcome_ingest_response(payload: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "ok": bool(payload.get("ok", True)),
+        "status": payload.get("status", "outcomes_validated"),
+        "dry_run": bool(payload.get("dry_run", True)),
+        "local_persistence": bool(payload.get("local_persistence", False)),
+        "persisted": bool(payload.get("persisted", False)),
+        "provider_write": False,
+        "human_approval_required": True,
+        "auto_execution_enabled": False,
+        "records_received": int(payload.get("records_received", 0)),
+        "records_valid": int(payload.get("records_valid", 0)),
+        "records_rejected": int(payload.get("records_rejected", 0)),
+        "rejected_reason_counts": dict(payload.get("rejected_reason_counts", {})),
+        "duplicate_count": int(payload.get("duplicate_count", 0)),
+        "outcome_records_written": int(payload.get("outcome_records_written", 0)),
+        "storage_backend": payload.get("storage_backend", "file"),
+        "latest_batch_id": payload.get("latest_batch_id"),
+        "last_updated_at": payload.get("last_updated_at"),
+        "outcome_write_path": payload.get("outcome_write_path"),
+    }
+
+
+def compact_outcomes_response(payload: dict[str, Any], limit: int = 10) -> dict[str, Any]:
+    cap = max(1, min(int(limit or 10), 10))
+    records = list(payload.get("records", payload.get("items", [])))[:cap]
+    compact_records = []
+    for row in records:
+        compact_records.append(
+            {
+                "outcome_id": row.get("outcome_id"),
+                "provider": row.get("provider"),
+                "market_type": row.get("market_type"),
+                "ticker": row.get("ticker"),
+                "contract_id": row.get("contract_id"),
+                "review_item_id": row.get("review_item_id"),
+                "decision_id": row.get("decision_id"),
+                "run_id": row.get("run_id"),
+                "outcome_status": row.get("outcome_status"),
+                "final_outcome": row.get("final_outcome"),
+                "settled_at": row.get("settled_at"),
+                "source": row.get("source"),
+                "created_at": row.get("created_at"),
+            }
+        )
+    summary = dict(payload.get("summary", {}))
+    return {
+        "ok": bool(payload.get("ok", True)),
+        "status": payload.get("status", "ok"),
+        "total_count": int(summary.get("total_count", payload.get("total_count", len(records)))),
+        "provider_counts": dict(summary.get("provider_counts", {})),
+        "outcome_status_counts": dict(summary.get("outcome_status_counts", {})),
+        "final_outcome_counts": dict(summary.get("final_outcome_counts", {})),
+        "latest_batch_id": payload.get("latest_batch_id"),
+        "storage_backend": payload.get("storage_backend", "file"),
+        "last_updated_at": payload.get("last_updated_at"),
+        "outcome_read_ok": bool(payload.get("outcome_read_ok", True)),
+        "outcome_error_category": payload.get("outcome_error_category"),
+        "count": len(compact_records),
+        "records": compact_records,
     }
 
 

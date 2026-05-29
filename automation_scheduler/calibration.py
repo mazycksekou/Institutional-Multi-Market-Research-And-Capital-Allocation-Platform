@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from .outcome_store import load_outcome_records, load_outcome_state, summarize_outcomes
 from .paper_decision_ledger import load_paper_decisions, summarize_paper_decisions, to_float_or_none
 from .review_queue import load_review_queue_state
 from .scheduler_config import SCHEMA_VERSION, sanitize_filename, utc_now_iso
@@ -27,12 +28,6 @@ def _read_json(path: Path) -> Any | None:
         return json.loads(path.read_text(encoding="utf-8"))
     except Exception:
         return None
-
-
-def _outcome_dir(base_data_dir: str = "data") -> Path:
-    path = Path(base_data_dir) / "outcomes"
-    path.mkdir(parents=True, exist_ok=True)
-    return path
 
 
 def _report_dir(base_data_dir: str = "data") -> Path:
@@ -119,42 +114,73 @@ def _score_bucket_counts(rows: list[dict[str, Any]]) -> dict[str, int]:
     return counts
 
 
-def load_outcome_records(base_data_dir: str = "data") -> list[dict[str, Any]]:
-    outcomes_dir = _outcome_dir(base_data_dir)
-    rows: list[dict[str, Any]] = []
-    for path in sorted(outcomes_dir.glob("*.json")):
-        payload = _read_json(path)
-        if isinstance(payload, list):
-            rows.extend([row for row in payload if isinstance(row, dict)])
-        elif isinstance(payload, dict):
-            if isinstance(payload.get("items"), list):
-                rows.extend([row for row in payload["items"] if isinstance(row, dict)])
-            elif isinstance(payload.get("outcomes"), list):
-                rows.extend([row for row in payload["outcomes"] if isinstance(row, dict)])
-            else:
-                rows.append(payload)
-    return rows
+def _market_key(row: dict[str, Any]) -> str | None:
+    value = row.get("contract_id") or row.get("ticker")
+    return str(value) if value is not None and str(value).strip() else None
 
 
-def _match_key_pairs(decision: dict[str, Any], outcome: dict[str, Any]) -> bool:
+def _match_rank(decision: dict[str, Any], outcome: dict[str, Any]) -> int:
     for key in ("decision_id", "review_item_id"):
         if decision.get(key) and outcome.get(key) and str(decision.get(key)) == str(outcome.get(key)):
-            return True
+            return 100 if key == "decision_id" else 90
+    decision_market_type = decision.get("market_type")
+    outcome_market_type = outcome.get("market_type")
+    if decision_market_type and outcome_market_type and str(decision_market_type) != str(outcome_market_type):
+        return 0
+    decision_provider = decision.get("provider")
+    outcome_provider = outcome.get("provider")
+    if decision_provider and outcome_provider and str(decision_provider) != str(outcome_provider):
+        return 0
     if decision.get("market_type") and outcome.get("market_type") and str(decision.get("market_type")) != str(outcome.get("market_type")):
-        return False
+        return 0
     if decision.get("close_time") and outcome.get("close_time") and str(decision.get("close_time")) != str(outcome.get("close_time")):
-        return False
-    contract_decision = decision.get("contract_id") or decision.get("ticker")
-    contract_outcome = outcome.get("contract_id") or outcome.get("ticker")
-    if contract_decision and contract_outcome and str(contract_decision) == str(contract_outcome):
-        if str(decision.get("provider") or "") == str(outcome.get("provider") or decision.get("provider") or ""):
-            return True
+        return 0
+    contract_decision = _market_key(decision)
+    contract_outcome = _market_key(outcome)
+    if contract_decision and contract_outcome and contract_decision == contract_outcome:
+        if decision.get("close_time") and outcome.get("close_time"):
+            return 85
+        if decision_provider and outcome_provider and decision_market_type and outcome_market_type:
+            return 80
     if decision.get("run_id") and outcome.get("run_id") and str(decision.get("run_id")) == str(outcome.get("run_id")):
-        ticker_decision = decision.get("ticker") or decision.get("contract_id")
-        ticker_outcome = outcome.get("ticker") or outcome.get("contract_id")
-        if ticker_decision and ticker_outcome and str(ticker_decision) == str(ticker_outcome):
-            return True
-    return False
+        if contract_decision and contract_outcome and contract_decision == contract_outcome:
+            return 70
+    return 0
+
+
+def _parse_settled_at(value: Any) -> str:
+    return str(value or "")
+
+
+def _best_outcome_match(decision: dict[str, Any], outcomes: list[dict[str, Any]]) -> tuple[dict[str, Any] | None, str]:
+    ranked = [(outcome, _match_rank(decision, outcome)) for outcome in outcomes]
+    ranked = [(outcome, rank) for outcome, rank in ranked if rank > 0]
+    if not ranked:
+        return None, "unmatched"
+    best_rank = max(rank for _, rank in ranked)
+    best = [outcome for outcome, rank in ranked if rank == best_rank]
+    if len(best) == 1:
+        return best[0], "matched"
+    sorted_best = sorted(best, key=lambda outcome: (_parse_settled_at(outcome.get("settled_at")), str(outcome.get("outcome_id") or "")), reverse=True)
+    if len(sorted_best) >= 2:
+        first_key = (_parse_settled_at(sorted_best[0].get("settled_at")), str(sorted_best[0].get("outcome_id") or ""))
+        second_key = (_parse_settled_at(sorted_best[1].get("settled_at")), str(sorted_best[1].get("outcome_id") or ""))
+        if first_key == second_key:
+            return None, "ambiguous"
+    return sorted_best[0], "matched_newest"
+
+
+def _paper_result_for(final_outcome: Any) -> str | None:
+    text = str(final_outcome or "").strip().lower()
+    if text in {"yes", "win"}:
+        return "win"
+    if text in {"no", "loss"}:
+        return "loss"
+    if text == "push":
+        return "push"
+    if text == "void":
+        return "void"
+    return None
 
 
 def match_outcomes_to_paper_decisions(
@@ -164,17 +190,40 @@ def match_outcomes_to_paper_decisions(
     matched: list[dict[str, Any]] = []
     for decision in decisions:
         row = dict(decision)
-        outcome_match = next((outcome for outcome in outcomes if _match_key_pairs(row, outcome)), None)
+        outcome_match, match_status = _best_outcome_match(row, outcomes)
+        row["outcome_match_status"] = match_status
         if outcome_match:
             status = outcome_match.get("outcome_status") or outcome_match.get("settlement_status") or "settled"
             row["outcome_status"] = status
             row["settled_at"] = outcome_match.get("settled_at", row.get("settled_at"))
             row["final_outcome"] = outcome_match.get("final_outcome", row.get("final_outcome"))
-            row["paper_result"] = outcome_match.get("paper_result", row.get("paper_result"))
+            row["paper_result"] = outcome_match.get("paper_result", row.get("paper_result")) or _paper_result_for(row.get("final_outcome"))
             row["paper_roi_estimate"] = outcome_match.get("paper_roi_estimate", row.get("paper_roi_estimate"))
             row["calibration_bucket"] = outcome_match.get("calibration_bucket", row.get("calibration_bucket"))
+            row["matched_outcome_id"] = outcome_match.get("outcome_id") or "|".join(
+                [
+                    str(outcome_match.get("provider") or "unknown"),
+                    str(outcome_match.get("market_type") or "unknown"),
+                    str(_market_key(outcome_match) or outcome_match.get("decision_id") or outcome_match.get("review_item_id") or "unknown"),
+                    str(outcome_match.get("settled_at") or "unknown"),
+                ]
+            )
         matched.append(row)
     return matched
+
+
+def _outcome_match_diagnostics(decisions: list[dict[str, Any]], outcomes: list[dict[str, Any]]) -> dict[str, int]:
+    matched_decisions = match_outcomes_to_paper_decisions(decisions, outcomes) if outcomes else list(decisions)
+    matched_outcome_ids = {str(row.get("matched_outcome_id")) for row in matched_decisions if row.get("matched_outcome_id")}
+    ambiguous = len([row for row in matched_decisions if row.get("outcome_match_status") == "ambiguous"])
+    outcome_ids = {str(row.get("outcome_id")) for row in outcomes if row.get("outcome_id")}
+    return {
+        "matched_outcomes_count": len(matched_outcome_ids),
+        "unmatched_outcomes_count": len([row for row in outcomes if row.get("outcome_id") and str(row.get("outcome_id")) not in matched_outcome_ids])
+        if outcome_ids
+        else max(0, len(outcomes) - len(matched_outcome_ids)),
+        "ambiguous_matches_count": ambiguous,
+    }
 
 
 def summarize_outcome_coverage(
@@ -192,14 +241,22 @@ def summarize_outcome_coverage(
     ]
     void = [row for row in rows if str(row.get("outcome_status") or "").lower() in {"void", "cancelled"}]
     total = len(rows)
+    diagnostics = _outcome_match_diagnostics(decisions, outcomes) if outcomes else {
+        "matched_outcomes_count": 0,
+        "unmatched_outcomes_count": 0,
+        "ambiguous_matches_count": 0,
+    }
     return {
         "sample_size": total,
         "settled_count": len(settled),
         "pending_count": len(pending),
         "void_count": len(void),
         "coverage_rate": round(len(settled) / total, 6) if total else 0.0,
-        "matched_outcome_count": len(settled),
-        "unmatched_outcome_count": max(0, len(outcomes) - len(settled)),
+        "matched_outcome_count": diagnostics["matched_outcomes_count"],
+        "matched_outcomes_count": diagnostics["matched_outcomes_count"],
+        "unmatched_outcome_count": diagnostics["unmatched_outcomes_count"],
+        "unmatched_outcomes_count": diagnostics["unmatched_outcomes_count"],
+        "ambiguous_matches_count": diagnostics["ambiguous_matches_count"],
     }
 
 
@@ -295,6 +352,14 @@ def _next_required_data(status: str) -> list[str]:
     return []
 
 
+def _warnings_for_status(status: str) -> list[str]:
+    if status == "partial_calibration":
+        return ["insufficient_sample"]
+    if status == "insufficient_data":
+        return ["missing_settlement_results"]
+    return []
+
+
 def build_calibration_report(
     *,
     base_data_dir: str = "data",
@@ -312,6 +377,8 @@ def build_calibration_report(
     queue_state = load_review_queue_state({"paths": {"review_queue": str(Path(base_data_dir) / "review_queue")}})
     queue_items = review_items if review_items is not None else list(queue_state.get("items", []))
     ledger_summary = summarize_paper_decisions(decisions)
+    outcome_summary = summarize_outcomes(outcomes)
+    outcome_state = load_outcome_state(base_data_dir)
     report = {
         "ok": True,
         "schema_version": CALIBRATION_SCHEMA_VERSION,
@@ -322,12 +389,18 @@ def build_calibration_report(
         "auto_execution_enabled": False,
         "review_items_count": len(queue_items),
         "paper_decisions_count": len(decisions),
+        "outcome_records_count": len(outcomes),
+        "matched_outcomes_count": coverage["matched_outcomes_count"],
+        "unmatched_outcomes_count": coverage["unmatched_outcomes_count"],
+        "ambiguous_matches_count": coverage["ambiguous_matches_count"],
         "review_items_available_count": len(queue_items),
         "paper_ledger_records_count": len(decisions),
         "records_with_outcome_count": coverage["settled_count"],
         "records_without_outcome_count": max(0, len(decisions) - coverage["settled_count"]),
         "provider_counts": ledger_summary["provider_counts"],
         "market_type_counts": ledger_summary["market_type_counts"],
+        "outcome_provider_counts": outcome_summary["provider_counts"],
+        "outcome_status_counts": outcome_summary["outcome_status_counts"],
         "liquidity_tier_counts": ledger_summary["liquidity_tier_counts"],
         "score_field_presence_counts": ledger_summary["score_field_presence_counts"],
         "settlement_field_presence_counts": ledger_summary["settlement_field_presence_counts"],
@@ -338,7 +411,11 @@ def build_calibration_report(
         "void_count": coverage["void_count"],
         "coverage_rate": coverage["coverage_rate"],
         "metrics": metrics if status != "insufficient_data" else {},
+        "warnings": _warnings_for_status(status),
         "next_required_data": _next_required_data(status),
+        "storage_backend": outcome_state.get("storage_backend", "file"),
+        "latest_batch_id": outcome_state.get("latest_batch_id"),
+        "outcome_read_ok": bool(outcome_state.get("outcome_read_ok", True)),
         "compact_response": True,
         "raw_payload_included": False,
     }
@@ -361,5 +438,6 @@ def run_calibration_scaffold(rows: list[dict[str, Any]] | None = None) -> dict[s
         "coverage_rate": report["coverage_rate"],
         "insufficient_data": report["status"] == "insufficient_data",
         "metrics": report["metrics"],
+        "warnings": report["warnings"],
         "next_required_data": report["next_required_data"],
     }

@@ -9,6 +9,7 @@ from .review_queue import filter_review_items, list_active_review_items, load_re
 from .scheduler_config import get_default_scheduler_config, ensure_runtime_directories
 from .backtesting_engine import generate_backtest_report, run_backtest, run_paper_summary
 from .calibration import build_calibration_report
+from .outcome_store import ingest_outcome_records, load_outcome_state, summarize_outcomes
 from .model_performance_report import build_compact_performance_report
 from .provider_health import summarize_provider_health
 from .provider_registry import get_provider_registry
@@ -126,6 +127,46 @@ def get_automation_calibration_report(base_data_dir: str | None = None):
     config = get_default_scheduler_config(base_data_dir=base_data_dir)
     ensure_runtime_directories(config)
     return build_calibration_report(base_data_dir=base_data_dir or "data", write_report=True)
+
+
+def ingest_automation_outcomes(
+    records: list[dict],
+    *,
+    source: str = "local_manual",
+    dry_run: bool = True,
+    persist: bool = False,
+    base_data_dir: str | None = None,
+):
+    config = get_default_scheduler_config(base_data_dir=base_data_dir)
+    ensure_runtime_directories(config)
+    return ingest_outcome_records(
+        records,
+        source=source,
+        dry_run=dry_run,
+        persist=persist,
+        base_data_dir=base_data_dir or "data",
+    )
+
+
+def get_automation_outcomes(base_data_dir: str | None = None, limit: int | None = None):
+    config = get_default_scheduler_config(base_data_dir=base_data_dir)
+    ensure_runtime_directories(config)
+    state = load_outcome_state(base_data_dir or "data")
+    records = list(state.get("items", []))
+    summary = summarize_outcomes(records)
+    cap = limit if isinstance(limit, int) and limit > 0 else len(records)
+    return {
+        "ok": True,
+        "status": "ok",
+        "total_count": len(records),
+        "records": records[:cap],
+        "summary": summary,
+        "storage_backend": state.get("storage_backend", "file"),
+        "latest_batch_id": state.get("latest_batch_id"),
+        "last_updated_at": state.get("last_updated_at"),
+        "outcome_read_ok": bool(state.get("outcome_read_ok", True)),
+        "outcome_error_category": state.get("outcome_error_category"),
+    }
 
 
 def get_provider_health(base_data_dir: str | None = None):

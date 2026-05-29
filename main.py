@@ -27,6 +27,8 @@ import model_probability
 import screenshot_intake
 from automation_scheduler.response_compactor import (
     compact_calibration_response,
+    compact_outcome_ingest_response,
+    compact_outcomes_response,
     compact_provider_status,
     compact_governance_inventory,
     compact_governance_report,
@@ -928,6 +930,15 @@ class AutomationRunOnceRequest(BaseModel):
     dry_run: bool = True
     run_key: Optional[str] = None
     injected_data: dict[str, Any] = Field(default_factory=dict)
+
+
+class AutomationOutcomeIngestRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", protected_namespaces=())
+
+    dry_run: bool = True
+    persist: bool = False
+    source: str = "local_manual"
+    records: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class PerformanceBacktestRequest(BaseModel):
@@ -2789,6 +2800,31 @@ async def get_automation_calibration_endpoint(verbose: bool = Query(default=Fals
     return compact
 
 
+@app.post("/api/automation/outcomes/ingest", operation_id="ingestAutomationOutcomes")
+async def ingest_automation_outcomes_endpoint(payload: AutomationOutcomeIngestRequest, verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=10)):
+    result = automation_scheduler.ingest_automation_outcomes(
+        payload.records,
+        source=payload.source,
+        dry_run=payload.dry_run,
+        persist=payload.persist,
+    )
+    compact = compact_outcome_ingest_response(result)
+    cap = min(max(int(limit), 1), 100 if verbose else 10)
+    if verbose or include_debug:
+        compact["debug"] = redact_and_limit_payload(result, limit=cap, verbose=verbose)
+    return compact
+
+
+@app.get("/api/automation/outcomes", operation_id="getAutomationOutcomes")
+async def get_automation_outcomes_endpoint(verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=10)):
+    cap = min(max(int(limit), 1), 100 if verbose else 10)
+    payload = automation_scheduler.get_automation_outcomes(limit=cap)
+    compact = compact_outcomes_response(payload, limit=cap)
+    if verbose or include_debug:
+        compact["debug"] = redact_and_limit_payload(payload, limit=cap, verbose=verbose)
+    return compact
+
+
 @app.post("/api/automation/run-once", operation_id="runAutomationSchedulerOnce")
 async def run_automation_scheduler_once(payload: AutomationRunOnceRequest, verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=10)):
     if payload.dry_run is not True:
@@ -2983,6 +3019,8 @@ PUBLIC_OPENAPI_PATH_METHODS = frozenset({
     ("/api/automation/health", "get"),
     ("/api/automation/review-queue", "get"),
     ("/api/automation/calibration", "get"),
+    ("/api/automation/outcomes", "get"),
+    ("/api/automation/outcomes/ingest", "post"),
     ("/api/automation/run-once", "post"),
     ("/api/performance/health", "get"),
     ("/api/performance/report", "get"),

@@ -27,9 +27,43 @@ class TestAutomationSchedulerEndpoints(unittest.TestCase):
         p = r.json()
         self.assertIn('status', p)
         self.assertIn('paper_decisions_count', p)
+        self.assertIn('outcome_records_count', p)
         self.assertFalse(p['auto_execution_enabled'])
         self.assertEqual(p['execution_allowed_count'], 0)
         self.assertNotIn('provider_payload', str(p))
+
+    def test_outcome_endpoints_compact_default(self):
+        ingest = self.client.post(
+            '/api/automation/outcomes/ingest',
+            json={
+                'dry_run': True,
+                'records': [
+                    {
+                        'provider': 'kalshi_prediction_market',
+                        'market_type': 'prediction_market',
+                        'contract_id': 'KXTEST',
+                        'outcome_status': 'settled',
+                        'final_outcome': 'yes',
+                        'settled_at': '2026-05-29T00:00:00+00:00',
+                        'source': 'test_fixture',
+                        'provider_payload': {'raw': 'drop'},
+                    }
+                ],
+            },
+        )
+        self.assertEqual(ingest.status_code, 200)
+        payload = ingest.json()
+        self.assertTrue(payload['dry_run'])
+        self.assertFalse(payload['provider_write'])
+        self.assertFalse(payload['persisted'])
+        self.assertEqual(payload['records_valid'], 1)
+        self.assertNotIn('provider_payload', str(payload))
+
+        listed = self.client.get('/api/automation/outcomes')
+        self.assertEqual(listed.status_code, 200)
+        listed_payload = listed.json()
+        self.assertIn('total_count', listed_payload)
+        self.assertIn('records', listed_payload)
 
     def test_run_once_endpoint_dry_run_only(self):
         r = self.client.post('/api/automation/run-once', json={'dry_run': True, 'run_key': 'endpoint-test'})

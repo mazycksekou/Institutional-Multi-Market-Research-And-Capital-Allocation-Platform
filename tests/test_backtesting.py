@@ -22,3 +22,13 @@ class TestBacktesting(unittest.TestCase):
         )
         self.assertEqual(result["status"], "partial_calibration")
         self.assertEqual(result["settled_count"], 1)
+
+    def test_void_and_missing_probability_do_not_fabricate_metrics(self):
+        result = run_backtesting_scaffold(
+            [
+                {"provider": "kalshi", "implied_probability": 0.7, "outcome_status": "void", "final_outcome": "void"},
+                {"provider": "sharp", "final_outcome": "win"},
+            ]
+        )
+        self.assertEqual(result["status"], "partial_calibration")
+        self.assertEqual(result["metrics"], {})
