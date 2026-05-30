@@ -3,6 +3,10 @@ from automation_scheduler.response_compactor import (
     compact_calibration_collector_response,
     compact_calibration_response,
     compact_deepseek_review_response,
+    compact_institutional_execution_response,
+    compact_institutional_lab_health_response,
+    compact_institutional_lab_run_response,
+    compact_institutional_report_response,
     compact_outcome_ingest_response,
     compact_outcomes_response,
     compact_settlement_discovery_response,
@@ -375,6 +379,52 @@ class TestResponseCompactor(unittest.TestCase):
         self.assertFalse(compact["raw_payload_included"])
         self.assertNotIn("secret", str(compact))
         self.assertNotIn("'raw_payload':", str(compact))
+
+    def test_institutional_lab_compactors_force_execution_safety(self):
+        health = compact_institutional_lab_health_response({"ok": True, "provider_write": True, "execution_allowed": True})
+        self.assertFalse(health["provider_write"])
+        self.assertFalse(health["execution_allowed"])
+        self.assertFalse(health["live_execution_enabled"])
+
+        run = compact_institutional_lab_run_response(
+            {
+                "ok": True,
+                "status": "completed",
+                "run_id": "run-1",
+                "records_read": 1,
+                "records_normalized": 1,
+                "calibration": {"status": "insufficient_data", "next_required_data": ["x"]},
+                "execution_simulation": {"execution_desk_status": "simulation_only", "simulated_ticket_created": True},
+                "records": [{"sidecar_id": "s1", "provider_payload": {"raw": "drop"}, "execution_allowed": True}],
+                "provider_write": True,
+            }
+        )
+        self.assertFalse(run["provider_write"])
+        self.assertFalse(run["execution_allowed"])
+        self.assertFalse(run["live_execution_enabled"])
+        self.assertEqual(run["actual_orders_submitted"], 0)
+        self.assertNotIn("provider_payload", str(run))
+
+        execution = compact_institutional_execution_response(
+            {
+                "ok": True,
+                "status": "simulated",
+                "actual_order_submitted": True,
+                "actual_bet_submitted": True,
+                "provider_write": True,
+                "execution_allowed": True,
+            }
+        )
+        self.assertFalse(execution["actual_order_submitted"])
+        self.assertFalse(execution["actual_bet_submitted"])
+        self.assertFalse(execution["provider_write"])
+        self.assertFalse(execution["execution_allowed"])
+
+        report = compact_institutional_report_response(
+            {"ok": True, "actual_orders_submitted": 9, "provider_write": True, "execution_allowed": True}
+        )
+        self.assertEqual(report["actual_orders_submitted"], 0)
+        self.assertFalse(report["provider_write"])
 
     def test_verbose_redaction(self):
         payload = {"api_key": "x", "nested": [{"token": "y"}], "items": list(range(200)), "provider_payload": {"raw": 1}}

@@ -237,3 +237,149 @@ class TestAutomationSchedulerEndpoints(unittest.TestCase):
         self.assertIn('status', snap_payload)
         self.assertIn('blockers', snap_payload)
         self.assertNotIn('api_key', str(snap_payload).lower())
+
+    def test_institutional_lab_health_endpoint_is_safe(self):
+        r = self.client.get("/api/automation/institutional-lab/health")
+        self.assertEqual(r.status_code, 200)
+        payload = r.json()
+        self.assertTrue(payload["ok"])
+        self.assertFalse(payload["provider_write"])
+        self.assertFalse(payload["execution_allowed"])
+        self.assertFalse(payload["live_execution_enabled"])
+        self.assertTrue(payload["simulation_only"])
+
+    def test_institutional_lab_run_endpoint_compact_default(self):
+        with patch(
+            "automation_scheduler.run_institutional_lab",
+            return_value={
+                "ok": True,
+                "status": "completed",
+                "run_id": "run-1",
+                "created_at": "2026-05-30T12:00:00+00:00",
+                "lock_acquired": True,
+                "records_read": 1,
+                "records_normalized": 1,
+                "records_with_outcomes": 0,
+                "outcome_records_count": 0,
+                "matched_outcomes_count": 0,
+                "source_counts": {"prediction_market": 1, "stock": 0, "bond": 0, "major_asset": 0, "sportsbook": 0},
+                "status_by_asset_class": {"prediction_market": "insufficient_data"},
+                "calibration": {"status": "insufficient_data", "next_required_data": ["settlement_results"]},
+                "risk_summary": {"risk_records_count": 1},
+                "deepseek_review": {"status": "disabled"},
+                "execution_simulation": {"execution_desk_status": "simulation_only", "simulated_ticket_created": False},
+                "records": [{"sidecar_id": "s1", "asset_class": "prediction_market", "provider": "kalshi_prediction_market"}],
+                "provider_payload": {"raw": "drop"},
+            },
+        ):
+            r = self.client.post("/api/automation/institutional-lab/run", json={"dry_run": True})
+        self.assertEqual(r.status_code, 200)
+        payload = r.json()
+        self.assertEqual(payload["records_normalized"], 1)
+        self.assertFalse(payload["provider_write"])
+        self.assertFalse(payload["execution_allowed"])
+        self.assertFalse(payload["live_execution_enabled"])
+        self.assertEqual(payload["actual_orders_submitted"], 0)
+        self.assertNotIn("provider_payload", str(payload))
+
+    def test_institutional_lab_rejects_non_dry_run(self):
+        r = self.client.post("/api/automation/institutional-lab/run", json={"dry_run": False})
+        self.assertEqual(r.status_code, 400)
+
+    def test_institutional_execution_simulation_endpoint_accepts_simulation_only(self):
+        with patch(
+            "automation_scheduler.simulate_institutional_execution",
+            return_value={
+                "ok": True,
+                "status": "simulated",
+                "execution_desk_status": "simulation_only",
+                "candidate_id": "candidate-1",
+                "asset_class": "prediction_market",
+                "provider": "kalshi_prediction_market",
+                "pre_trade_checks_passed": False,
+                "risk_blocks": ["insufficient_calibration_sample"],
+                "simulated_ticket_created": True,
+                "actual_order_submitted": False,
+                "actual_bet_submitted": False,
+                "actual_trade_submitted": False,
+                "provider_write": False,
+                "execution_allowed": False,
+                "live_execution_enabled": False,
+            },
+        ):
+            r = self.client.post(
+                "/api/automation/institutional-lab/execution-desk/simulate",
+                json={
+                    "simulation_only": True,
+                    "live_execution_requested": False,
+                    "candidate_id": "candidate-1",
+                    "asset_class": "prediction_market",
+                    "provider": "kalshi_prediction_market",
+                    "human_command": "simulate_only",
+                    "max_theoretical_risk": 0,
+                    "submit_live_order": False,
+                },
+            )
+        self.assertEqual(r.status_code, 200)
+        payload = r.json()
+        self.assertEqual(payload["execution_desk_status"], "simulation_only")
+        self.assertFalse(payload["actual_order_submitted"])
+        self.assertFalse(payload["actual_bet_submitted"])
+        self.assertFalse(payload["actual_trade_submitted"])
+        self.assertFalse(payload["provider_write"])
+
+    def test_institutional_execution_simulation_rejects_live_flags(self):
+        r = self.client.post(
+            "/api/automation/institutional-lab/execution-desk/simulate",
+            json={"simulation_only": False, "live_execution_requested": True, "submit_live_order": True},
+        )
+        self.assertEqual(r.status_code, 400)
+        detail = r.json()["detail"]
+        self.assertFalse(detail["provider_write"])
+        self.assertFalse(detail["execution_allowed"])
+        self.assertFalse(detail["live_execution_enabled"])
+        self.assertFalse(detail["actual_order_submitted"])
+
+    def test_institutional_deepseek_endpoint_disabled_does_not_crash(self):
+        with patch(
+            "automation_scheduler.run_institutional_deepseek_review",
+            return_value={
+                "ok": True,
+                "status": "disabled",
+                "enabled": False,
+                "local_server_reachable": False,
+                "json_schema_valid": True,
+                "reviewer_side_effects": "none",
+                "provider_write": False,
+                "review": {
+                    "summary": "disabled",
+                    "crosscheck_status": "pass",
+                    "risk_flags": [],
+                    "valuation_mismatches": [],
+                    "missing_inputs": [],
+                    "data_quality_notes": [],
+                    "recommended_action": "continue_collecting",
+                    "confidence": 0.0,
+                    "must_not_execute": True,
+                },
+            },
+        ):
+            r = self.client.post("/api/automation/institutional-lab/deepseek-review", json={})
+        self.assertEqual(r.status_code, 200)
+        payload = r.json()
+        self.assertEqual(payload["status"], "disabled")
+        self.assertFalse(payload["provider_write"])
+        self.assertEqual(payload["reviewer_side_effects"], "none")
+
+    def test_institutional_report_and_audit_endpoints_compact(self):
+        with patch("automation_scheduler.get_institutional_lab_report", return_value={"ok": True, "status": "not_run"}):
+            report = self.client.get("/api/automation/institutional-lab/report")
+        self.assertEqual(report.status_code, 200)
+        self.assertFalse(report.json()["provider_write"])
+        with patch(
+            "automation_scheduler.get_institutional_lab_audit",
+            return_value={"ok": True, "status": "ok", "total_count": 1, "count": 1, "items": [{"audit_id": "a1"}]},
+        ):
+            audit = self.client.get("/api/automation/institutional-lab/audit")
+        self.assertEqual(audit.status_code, 200)
+        self.assertEqual(audit.json()["count"], 1)

@@ -321,3 +321,64 @@ def run_kalshi_provider_snapshot(base_data_dir: str | None = None, write_snapsho
     summary["validation_status"] = validation["status"]
     summary["validation_errors"] = validation["errors"][:10]
     return summary
+
+
+def get_institutional_lab_health(base_data_dir: str | None = None):
+    from .institutional_cross_asset_lab import get_institutional_lab_health as _health
+
+    return _health(base_data_dir=base_data_dir or "data")
+
+
+def run_institutional_lab(
+    *,
+    dry_run: bool = True,
+    asset_classes: list[str] | None = None,
+    read_existing_outputs_only: bool = True,
+    persist_lab_report: bool = True,
+    persist_outcomes: bool = False,
+    deepseek_review: bool = False,
+    execution_simulation: bool = False,
+    base_data_dir: str | None = None,
+):
+    from .institutional_cross_asset_lab import run_institutional_lab as _run
+
+    return _run(
+        dry_run=dry_run,
+        asset_classes=asset_classes,
+        read_existing_outputs_only=read_existing_outputs_only,
+        persist_lab_report=persist_lab_report,
+        persist_outcomes=persist_outcomes,
+        deepseek_review=deepseek_review,
+        execution_simulation=execution_simulation,
+        base_data_dir=base_data_dir or "data",
+    )
+
+
+def get_institutional_lab_report(base_data_dir: str | None = None):
+    from .institutional_cross_asset_lab import get_institutional_lab_report as _report
+
+    return _report(base_data_dir=base_data_dir or "data")
+
+
+def get_institutional_lab_daily_report(base_data_dir: str | None = None, report_date: str | None = None):
+    from .institutional_cross_asset_lab import get_institutional_lab_daily_report as _daily
+
+    return _daily(base_data_dir=base_data_dir or "data", report_date=report_date)
+
+
+def run_institutional_deepseek_review(*, report: dict | None = None, enabled: bool | None = None, base_data_dir: str | None = None):
+    from .institutional_deepseek_review import run_deepseek_sidecar_review
+
+    return run_deepseek_sidecar_review(report=report or {}, enabled=enabled, base_data_dir=base_data_dir or "data")
+
+
+def simulate_institutional_execution(payload: dict, *, base_data_dir: str | None = None):
+    from .institutional_execution_desk import simulate_execution
+
+    return simulate_execution(payload, base_data_dir=base_data_dir or "data")
+
+
+def get_institutional_lab_audit(base_data_dir: str | None = None, limit: int = 100):
+    from .institutional_cross_asset_lab import get_institutional_lab_audit as _audit
+
+    return _audit(base_data_dir=base_data_dir or "data", limit=limit)
