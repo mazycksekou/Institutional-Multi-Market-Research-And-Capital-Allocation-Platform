@@ -159,7 +159,11 @@ class TestAutomationSchedulerEndpoints(unittest.TestCase):
                 "selected_medium_term": 1,
                 "selected_long_term": 0,
                 "new_contracts_added": 3,
+                "daily_new_contract_target": 250,
+                "daily_new_contract_hard_cap": 500,
+                "daily_remaining_capacity": 247,
                 "records_checked": 0,
+                "records_rechecked_today": 0,
                 "explicit_settlement_count": 0,
                 "total_outcome_records_count": 0,
                 "matched_outcomes_count": 0,
@@ -178,12 +182,68 @@ class TestAutomationSchedulerEndpoints(unittest.TestCase):
         self.assertEqual(r.status_code, 200)
         payload = r.json()
         self.assertEqual(payload["markets_scanned"], 10)
+        self.assertEqual(payload["daily_new_contract_target"], 250)
+        self.assertEqual(payload["daily_new_contract_hard_cap"], 500)
         self.assertFalse(payload["provider_write"])
         self.assertEqual(payload["execution_allowed_count"], 0)
         self.assertFalse(payload["auto_execution_enabled"])
         self.assertFalse(payload["kalshi_order_execution_enabled"])
         self.assertNotIn("provider_payload", str(payload))
         self.assertNotIn("source_payload", str(payload))
+
+    def test_calibration_collector_endpoint_accepts_adaptive_throughput_request(self):
+        with patch(
+            "automation_scheduler.run_automation_calibration_collector",
+            return_value={
+                "ok": True,
+                "status": "collector_cycle_complete",
+                "dry_run": True,
+                "markets_scanned": 25000,
+                "daily_new_contract_target": 250,
+                "daily_new_contract_hard_cap": 500,
+                "new_contracts_selected": 50,
+                "provider_write": False,
+                "execution_allowed_count": 0,
+            },
+        ) as mocked:
+            r = self.client.post(
+                "/api/automation/calibration-collector/run",
+                json={
+                    "dry_run": True,
+                    "persist_outcomes": False,
+                    "max_new_contracts": 50,
+                    "target_daily_new_contracts": 250,
+                    "hard_cap_daily_new_contracts": 500,
+                    "max_markets_scanned": 25000,
+                    "adaptive_throttle": True,
+                },
+            )
+        self.assertEqual(r.status_code, 200)
+        kwargs = mocked.call_args.kwargs
+        self.assertEqual(kwargs["max_new_contracts"], 50)
+        self.assertEqual(kwargs["target_daily_new_contracts"], 250)
+        self.assertEqual(kwargs["hard_cap_daily_new_contracts"], 500)
+        self.assertEqual(kwargs["max_markets_scanned"], 25000)
+        self.assertTrue(kwargs["adaptive_throttle"])
+
+    def test_calibration_collector_endpoint_rejects_unsafe_cap(self):
+        with patch(
+            "automation_scheduler.run_automation_calibration_collector",
+            return_value={
+                "ok": False,
+                "status": "invalid_request",
+                "errors": ["hard_cap_daily_new_contracts_exceeds_configured_cap"],
+                "provider_write": False,
+                "execution_allowed_count": 0,
+            },
+        ):
+            r = self.client.post(
+                "/api/automation/calibration-collector/run",
+                json={"dry_run": True, "hard_cap_daily_new_contracts": 999999},
+            )
+        self.assertEqual(r.status_code, 400)
+        self.assertFalse(r.json()["detail"]["provider_write"])
+        self.assertEqual(r.json()["detail"]["execution_allowed_count"], 0)
 
     def test_deepseek_review_endpoint_compact_default(self):
         with patch(

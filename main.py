@@ -963,11 +963,14 @@ class AutomationCalibrationCollectorRunRequest(BaseModel):
 
     dry_run: bool = True
     persist_outcomes: bool = False
-    max_new_contracts: Optional[int] = 25
-    target_daily_new_contracts: Optional[int] = 100
+    max_new_contracts: Optional[int] = 50
+    target_daily_new_contracts: Optional[int] = 250
+    hard_cap_daily_new_contracts: Optional[int] = 500
+    max_markets_scanned: Optional[int] = 25000
     include_short_term: bool = True
     include_medium_term: bool = True
     include_long_term: bool = True
+    adaptive_throttle: bool = True
     deepseek_review: bool = False
 
 
@@ -2929,11 +2932,16 @@ async def run_automation_calibration_collector_endpoint(payload: AutomationCalib
         persist_outcomes=payload.persist_outcomes,
         max_new_contracts=payload.max_new_contracts,
         target_daily_new_contracts=payload.target_daily_new_contracts,
+        hard_cap_daily_new_contracts=payload.hard_cap_daily_new_contracts,
+        max_markets_scanned=payload.max_markets_scanned,
         include_short_term=payload.include_short_term,
         include_medium_term=payload.include_medium_term,
         include_long_term=payload.include_long_term,
+        adaptive_throttle=payload.adaptive_throttle,
         deepseek_review=payload.deepseek_review,
     )
+    if not bool(result.get("ok", True)) and result.get("status") == "invalid_request":
+        raise HTTPException(status_code=400, detail=compact_calibration_collector_response(result, limit=limit))
     cap = min(max(int(limit), 1), 100 if verbose else 10)
     compact = compact_calibration_collector_response(result, limit=cap)
     if verbose or include_debug:

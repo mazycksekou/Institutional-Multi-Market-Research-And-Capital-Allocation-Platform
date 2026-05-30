@@ -26,6 +26,14 @@ KALSHI_PROVIDER = "kalshi_prediction_market"
 WATCHLIST_BUCKETS = ("short_term", "medium_term", "long_term", "unresolved")
 SAFE_STATUS_VALUES = {"active", "open", "initialized", "trading"}
 SETTLED_CLASSIFICATIONS = {"settled_yes", "settled_no", "void_or_cancelled"}
+DEFAULT_DAILY_NEW_CONTRACT_TARGET = 250
+DEFAULT_DAILY_NEW_CONTRACT_HARD_CAP = 500
+DEFAULT_MAX_NEW_CONTRACTS_PER_CYCLE = 50
+DEFAULT_MAX_MARKETS_SCANNED_PER_CYCLE = 25000
+DEFAULT_ACTIVE_UNRESOLVED_WATCHLIST_LIMIT = 1000
+DEFAULT_CLOSED_UNKNOWN_BACKLOG_LIMIT = 500
+LOWER_LIQUIDITY_TIERS = {"missing", "unknown", "very_low_liquidity", "low_liquidity", "very_low", "low"}
+UNUSABLE_PRICING_VALUES = {"missing", "unusable", "invalid", "unknown"}
 VALUATION_FIELDS = (
     "liquidity_score",
     "spread_score",
@@ -53,26 +61,40 @@ def _env_int(name: str, default: int) -> int:
 
 
 def collector_policy_from_env() -> dict[str, Any]:
+    configured_hard_cap = max(1, _env_int("KALSHI_CALIBRATION_MAX_DAILY_NEW_CONTRACTS_HARD_CAP", DEFAULT_DAILY_NEW_CONTRACT_HARD_CAP))
+    legacy_daily_target = _env_int("KALSHI_CALIBRATION_MAX_NEW_CONTRACTS_PER_DAY", DEFAULT_DAILY_NEW_CONTRACT_TARGET)
+    target_daily = _env_int("KALSHI_CALIBRATION_TARGET_DAILY_NEW_CONTRACTS", legacy_daily_target)
+    target_daily = max(0, min(target_daily, configured_hard_cap))
+    per_cycle = max(1, min(_env_int("KALSHI_CALIBRATION_MAX_NEW_CONTRACTS_PER_CYCLE", DEFAULT_MAX_NEW_CONTRACTS_PER_CYCLE), configured_hard_cap))
     return {
         "collector_enabled": _env_bool("KALSHI_CALIBRATION_COLLECTOR_ENABLED", True),
-        "max_markets_scanned_per_cycle": _env_int("KALSHI_CALIBRATION_MAX_MARKETS_SCANNED_PER_CYCLE", 10000),
-        "max_new_contracts_per_cycle": _env_int("KALSHI_CALIBRATION_MAX_NEW_CONTRACTS_PER_CYCLE", 25),
-        "max_new_contracts_per_day": _env_int("KALSHI_CALIBRATION_MAX_NEW_CONTRACTS_PER_DAY", 100),
+        "max_markets_scanned_per_cycle": max(1, _env_int("KALSHI_CALIBRATION_MAX_MARKETS_SCANNED_PER_CYCLE", DEFAULT_MAX_MARKETS_SCANNED_PER_CYCLE)),
+        "max_new_contracts_per_cycle": per_cycle,
+        "target_daily_new_contracts": target_daily,
+        "hard_cap_daily_new_contracts": configured_hard_cap,
+        "max_new_contracts_per_day": target_daily,
         "recheck_interval_minutes": _env_int("KALSHI_CALIBRATION_RECHECK_INTERVAL_MINUTES", 15),
-        "max_recheck_hours_after_close": _env_int("KALSHI_CALIBRATION_MAX_RECHECK_HOURS_AFTER_CLOSE", 48),
-        "short_term_window_hours": _env_int("KALSHI_CALIBRATION_SHORT_TERM_WINDOW_HOURS", 24),
-        "medium_term_window_days": _env_int("KALSHI_CALIBRATION_MEDIUM_TERM_WINDOW_DAYS", 7),
-        "long_term_window_days": _env_int("KALSHI_CALIBRATION_LONG_TERM_WINDOW_DAYS", 30),
+        "fast_recheck_interval_minutes": _env_int("KALSHI_CALIBRATION_FAST_RECHECK_INTERVAL_MINUTES", 5),
+        "max_recheck_hours_after_close": _env_int("KALSHI_CALIBRATION_MAX_RECHECK_HOURS_AFTER_CLOSE", 72),
+        "short_term_window_hours": _env_int("KALSHI_CALIBRATION_SHORT_TERM_WINDOW_HOURS", 48),
+        "medium_term_window_days": _env_int("KALSHI_CALIBRATION_MEDIUM_TERM_WINDOW_DAYS", 14),
+        "long_term_window_days": _env_int("KALSHI_CALIBRATION_LONG_TERM_WINDOW_DAYS", 60),
         "min_target_outcomes": _env_int("KALSHI_CALIBRATION_MIN_TARGET_OUTCOMES", 30),
         "good_target_outcomes": _env_int("KALSHI_CALIBRATION_GOOD_TARGET_OUTCOMES", 100),
         "strong_target_outcomes": _env_int("KALSHI_CALIBRATION_STRONG_TARGET_OUTCOMES", 300),
-        "short_term_allocation": 0.70,
-        "medium_term_allocation": 0.20,
-        "long_term_allocation": 0.10,
+        "long_term_target_outcomes": _env_int("KALSHI_CALIBRATION_LONG_TERM_TARGET_OUTCOMES", 1000),
+        "short_term_allocation": 0.80,
+        "medium_term_allocation": 0.15,
+        "long_term_allocation": 0.05,
+        "exploration_sample_fraction": 0.10,
+        "min_pricing_quality_score": float(_env_int("KALSHI_CALIBRATION_MIN_PRICING_QUALITY_SCORE", 1)),
+        "max_active_unresolved_watchlist": _env_int("KALSHI_CALIBRATION_MAX_ACTIVE_UNRESOLVED_WATCHLIST", DEFAULT_ACTIVE_UNRESOLVED_WATCHLIST_LIMIT),
+        "max_closed_unknown_backlog": _env_int("KALSHI_CALIBRATION_MAX_CLOSED_UNKNOWN_BACKLOG", DEFAULT_CLOSED_UNKNOWN_BACKLOG_LIMIT),
         "public_base_url": os.getenv("KALSHI_PUBLIC_BASE_URL", DEFAULT_PUBLIC_BASE_URL).strip().rstrip("/"),
         "public_page_limit": min(1000, max(1, _env_int("KALSHI_CALIBRATION_PUBLIC_PAGE_LIMIT", 1000))),
         "request_timeout_seconds": max(1, _env_int("KALSHI_CALIBRATION_REQUEST_TIMEOUT_SECONDS", 12)),
         "lock_stale_minutes": max(5, _env_int("KALSHI_CALIBRATION_LOCK_STALE_MINUTES", 10)),
+        "adaptive_throttle_enabled": _env_bool("KALSHI_CALIBRATION_ADAPTIVE_THROTTLE", True),
     }
 
 
@@ -148,6 +170,22 @@ def _score(value: Any) -> float:
         return 0.0
 
 
+def _avg(values: list[float]) -> float:
+    clean = [float(value) for value in values if value is not None]
+    return round(sum(clean) / len(clean), 4) if clean else 0.0
+
+
+def _progress(total: int, target: int) -> dict[str, Any]:
+    target = max(1, int(target))
+    total = max(0, int(total))
+    return {
+        "count": total,
+        "target": target,
+        "remaining": max(0, target - total),
+        "pct": round(min(1.0, total / target), 4),
+    }
+
+
 def _safe_list(value: Any, limit: int = 25) -> list[Any]:
     return list(value or [])[:limit] if isinstance(value, list) else []
 
@@ -171,6 +209,8 @@ def _compact_contract(row: dict[str, Any], *, bucket: str | None = None) -> dict
         "confidence_score": row.get("confidence_score"),
         "review_priority_score": row.get("review_priority_score"),
         "liquidity_tier": row.get("liquidity_tier"),
+        "exploration_sample": bool(row.get("exploration_sample", False)),
+        "exploration_reason": row.get("exploration_reason"),
         "reason_codes": _safe_list(row.get("reason_codes"), 10),
         "implied_probability": row.get("implied_probability"),
         "observed_price": row.get("observed_price") if row.get("observed_price") is not None else row.get("yes_price"),
@@ -267,7 +307,14 @@ def _load_daily_state(base_data_dir: str, day: str) -> dict[str, Any]:
     payload = _read_json(_daily_path(base_data_dir, day))
     if isinstance(payload, dict):
         payload.setdefault("sampled_tickers", [])
+        policy = collector_policy_from_env()
+        payload.setdefault("daily_new_contract_target", int(policy["target_daily_new_contracts"]))
+        payload.setdefault("daily_new_contract_hard_cap", int(policy["hard_cap_daily_new_contracts"]))
+        payload.setdefault("daily_new_contract_limit", int(policy["target_daily_new_contracts"]))
+        payload.setdefault("new_contracts_added_today", int(payload.get("new_contracts_added", 0) or 0))
+        payload.setdefault("daily_remaining_capacity", max(0, int(payload.get("daily_new_contract_target", 0) or 0) - len(payload.get("sampled_tickers") or [])))
         return payload
+    policy = collector_policy_from_env()
     return {
         "schema_version": COLLECTOR_SCHEMA_VERSION,
         "date": day,
@@ -278,10 +325,15 @@ def _load_daily_state(base_data_dir: str, day: str) -> dict[str, Any]:
         "selected_medium_term": 0,
         "selected_long_term": 0,
         "new_contracts_added": 0,
-        "daily_new_contract_limit": collector_policy_from_env()["max_new_contracts_per_day"],
-        "daily_new_contracts_remaining": collector_policy_from_env()["max_new_contracts_per_day"],
+        "daily_new_contract_target": int(policy["target_daily_new_contracts"]),
+        "daily_new_contract_hard_cap": int(policy["hard_cap_daily_new_contracts"]),
+        "daily_new_contract_limit": int(policy["target_daily_new_contracts"]),
+        "daily_new_contracts_remaining": int(policy["target_daily_new_contracts"]),
+        "new_contracts_added_today": 0,
+        "daily_remaining_capacity": int(policy["target_daily_new_contracts"]),
         "sampled_tickers": [],
         "records_checked": 0,
+        "records_rechecked_today": 0,
         "explicit_settlement_count": 0,
         "settled_yes_count": 0,
         "settled_no_count": 0,
@@ -289,7 +341,17 @@ def _load_daily_state(base_data_dir: str, day: str) -> dict[str, Any]:
         "unknown_count": 0,
         "not_settled_count": 0,
         "outcomes_persisted": 0,
+        "outcomes_persisted_today": 0,
         "duplicate_outcomes_skipped": 0,
+        "exploration_sample_count": 0,
+        "quality_gate_rejection_count": 0,
+        "duplicate_contracts_skipped": 0,
+        "liquidity_tier_counts": {},
+        "liquidity_score_sum": 0.0,
+        "pricing_quality_score_sum": 0.0,
+        "quality_sample_count": 0,
+        "average_liquidity_score": 0.0,
+        "average_pricing_quality_score": 0.0,
         "provider_write": False,
         "execution_allowed_count": 0,
         "auto_execution_enabled": False,
@@ -305,11 +367,18 @@ def _write_daily_markdown(base_data_dir: str, daily: dict[str, Any]) -> str:
         f"- cycles_run: {daily.get('cycles_run', 0)}",
         f"- markets_scanned: {daily.get('markets_scanned', 0)}",
         f"- eligible_contracts_found: {daily.get('eligible_contracts_found', 0)}",
+        f"- daily_new_contract_target: {daily.get('daily_new_contract_target', daily.get('daily_new_contract_limit', 0))}",
+        f"- daily_new_contract_hard_cap: {daily.get('daily_new_contract_hard_cap', 0)}",
         f"- new_contracts_added: {daily.get('new_contracts_added', 0)}",
+        f"- daily_remaining_capacity: {daily.get('daily_remaining_capacity', daily.get('daily_new_contracts_remaining', 0))}",
         f"- selected_short_term: {daily.get('selected_short_term', 0)}",
         f"- selected_medium_term: {daily.get('selected_medium_term', 0)}",
         f"- selected_long_term: {daily.get('selected_long_term', 0)}",
         f"- unresolved_count: {daily.get('unresolved_count', 0)}",
+        f"- closed_unknown: {daily.get('closed_unknown', 0)}",
+        f"- stale_unknown: {daily.get('stale_unknown', 0)}",
+        f"- recheck_due_now: {daily.get('recheck_due_now', 0)}",
+        f"- next_suggested_recheck_time: {daily.get('next_suggested_recheck_time')}",
         f"- explicit_settlement_count: {daily.get('explicit_settlement_count', 0)}",
         f"- outcomes_persisted: {daily.get('outcomes_persisted', 0)}",
         f"- total_outcome_records_count: {daily.get('total_outcome_records_count', 0)}",
@@ -333,16 +402,51 @@ def write_daily_report(base_data_dir: str = "data", *, day: str | None = None, c
     outcomes = load_outcome_records(base_data_dir)
     calibration = calibration_report or build_calibration_report(base_data_dir=base_data_dir, write_report=True)
     policy = collector_policy_from_env()
+    backlog = _watchlist_backlog_summary(base_data_dir, policy)
+    target = int(daily.get("daily_new_contract_target", policy["target_daily_new_contracts"]) or policy["target_daily_new_contracts"])
+    hard_cap = int(daily.get("daily_new_contract_hard_cap", policy["hard_cap_daily_new_contracts"]) or policy["hard_cap_daily_new_contracts"])
+    sampled_count = len(daily.get("sampled_tickers") or [])
+    total_outcomes = len(outcomes)
+    quality_count = int(daily.get("quality_sample_count", 0) or 0)
+    average_liquidity = round(float(daily.get("liquidity_score_sum", 0.0) or 0.0) / quality_count, 4) if quality_count else float(daily.get("average_liquidity_score", 0.0) or 0.0)
+    average_pricing = round(float(daily.get("pricing_quality_score_sum", 0.0) or 0.0) / quality_count, 4) if quality_count else float(daily.get("average_pricing_quality_score", 0.0) or 0.0)
     daily.update(
         {
             "watchlist_size": sum(len(watchlists.get(bucket, [])) for bucket in ("short_term", "medium_term", "long_term")),
+            "short_term_watchlist_count": len(watchlists.get("short_term", [])),
+            "medium_term_watchlist_count": len(watchlists.get("medium_term", [])),
+            "long_term_watchlist_count": len(watchlists.get("long_term", [])),
             "unresolved_count": len(unresolved),
-            "total_outcome_records_count": len(outcomes),
+            "daily_new_contract_target": target,
+            "daily_new_contract_hard_cap": hard_cap,
+            "new_contracts_added_today": int(daily.get("new_contracts_added", 0) or 0),
+            "daily_remaining_capacity": max(0, target - sampled_count),
+            "records_rechecked_today": int(daily.get("records_checked", 0) or 0),
+            "outcomes_persisted_today": int(daily.get("outcomes_persisted", 0) or 0),
+            "total_outcome_records_count": total_outcomes,
             "matched_outcomes_count": int(calibration.get("matched_outcomes_count", 0)),
+            "progress_to_100": _progress(total_outcomes, 100),
+            "progress_to_300": _progress(total_outcomes, 300),
+            "progress_to_1000": _progress(total_outcomes, 1000),
+            "settlement_backlog": backlog,
+            "unresolved_open": int(backlog.get("unresolved_open", 0)),
+            "closed_unknown": int(backlog.get("closed_unknown", 0)),
+            "not_settled": int(backlog.get("not_settled", 0)),
+            "stale_unknown": int(backlog.get("stale_unknown", 0)),
+            "recheck_due_now": int(backlog.get("recheck_due_now", 0)),
+            "next_suggested_recheck_time": backlog.get("next_suggested_recheck_time"),
+            "average_liquidity_score": average_liquidity,
+            "average_pricing_quality_score": average_pricing,
+            "liquidity_tier_counts": dict(daily.get("liquidity_tier_counts", {})),
+            "exploration_sample_count": int(daily.get("exploration_sample_count", 0) or 0),
+            "duplicate_skipped_count": int(daily.get("duplicate_contracts_skipped", 0) or 0),
+            "quality_gate_rejection_count": int(daily.get("quality_gate_rejection_count", 0) or 0),
             "calibration_status": calibration.get("status"),
             "coverage_rate": float(calibration.get("coverage_rate", 0.0)),
             "insufficient_sample": _insufficient_sample(calibration, policy),
             "next_required_data": list(calibration.get("next_required_data", [])),
+            "storage_backend": "file",
+            "persistence_warning_if_ephemeral": "file_storage_requires_persistent_disk_for_cross_deploy_durability",
             "provider_write": False,
             "execution_allowed_count": 0,
             "auto_execution_enabled": False,
@@ -501,6 +605,79 @@ def _fetch_public_market_by_ticker(ticker: str, policy: dict[str, Any]) -> dict[
         return {"ok": False, "status": "provider_unreachable", "ticker": ticker}
 
 
+def _invalid_request_response(errors: list[str], *, dry_run: bool, persist_outcomes: bool) -> dict[str, Any]:
+    return {
+        "ok": False,
+        "status": "invalid_request",
+        "errors": errors[:10],
+        "dry_run": bool(dry_run),
+        "persist_outcomes": bool(persist_outcomes),
+        "provider_write": False,
+        "execution_allowed_count": 0,
+        "auto_execution_enabled": False,
+        "kalshi_order_execution_enabled": False,
+        "human_approval_required": True,
+        "paper_only": True,
+        "raw_payload_included": False,
+    }
+
+
+def _apply_request_policy(
+    policy: dict[str, Any],
+    *,
+    max_new_contracts: int | None,
+    target_daily_new_contracts: int | None,
+    hard_cap_daily_new_contracts: int | None,
+    max_markets_scanned: int | None,
+    adaptive_throttle: bool | None,
+) -> tuple[dict[str, Any] | None, list[str]]:
+    errors: list[str] = []
+    configured_hard_cap = int(policy["hard_cap_daily_new_contracts"])
+    requested_hard_cap = configured_hard_cap if hard_cap_daily_new_contracts is None else int(hard_cap_daily_new_contracts)
+    if requested_hard_cap <= 0:
+        errors.append("hard_cap_daily_new_contracts_must_be_positive")
+    if requested_hard_cap > configured_hard_cap:
+        errors.append("hard_cap_daily_new_contracts_exceeds_configured_cap")
+
+    requested_target = int(target_daily_new_contracts if target_daily_new_contracts is not None else policy["target_daily_new_contracts"])
+    if requested_target < 0:
+        errors.append("target_daily_new_contracts_must_not_be_negative")
+
+    requested_cycle = int(max_new_contracts if max_new_contracts is not None else policy["max_new_contracts_per_cycle"])
+    if requested_cycle < 0:
+        errors.append("max_new_contracts_must_not_be_negative")
+
+    requested_scan = int(max_markets_scanned if max_markets_scanned is not None else policy["max_markets_scanned_per_cycle"])
+    configured_scan = int(policy["max_markets_scanned_per_cycle"])
+    if requested_scan <= 0:
+        errors.append("max_markets_scanned_must_be_positive")
+    if requested_scan > configured_scan:
+        errors.append("max_markets_scanned_exceeds_configured_cap")
+
+    if errors:
+        return None, errors
+
+    effective_hard_cap = min(requested_hard_cap, configured_hard_cap)
+    effective_target = min(max(0, requested_target), effective_hard_cap)
+    effective_cycle = min(max(0, requested_cycle), int(policy["max_new_contracts_per_cycle"]), effective_hard_cap)
+    effective_policy = dict(policy)
+    effective_policy.update(
+        {
+            "requested_daily_new_contract_target": requested_target,
+            "requested_daily_new_contract_hard_cap": requested_hard_cap,
+            "requested_max_new_contracts_per_cycle": requested_cycle,
+            "requested_max_markets_scanned_per_cycle": requested_scan,
+            "target_daily_new_contracts": effective_target,
+            "max_new_contracts_per_day": effective_target,
+            "hard_cap_daily_new_contracts": effective_hard_cap,
+            "max_new_contracts_per_cycle": effective_cycle,
+            "max_markets_scanned_per_cycle": min(requested_scan, configured_scan),
+            "adaptive_throttle_enabled": bool(policy.get("adaptive_throttle_enabled", True) if adaptive_throttle is None else adaptive_throttle),
+        }
+    )
+    return effective_policy, []
+
+
 def _bucket_for_close(close_time: datetime, now: datetime, policy: dict[str, Any]) -> str | None:
     hours = (close_time - now).total_seconds() / 3600.0
     if hours < 0:
@@ -535,6 +712,33 @@ def _is_selectable(row: dict[str, Any], now: datetime, policy: dict[str, Any]) -
     return True, None
 
 
+def _quality_gate(row: dict[str, Any], policy: dict[str, Any]) -> tuple[bool, str | None, str | None]:
+    market_type = str(row.get("market_type") or row.get("source_type") or "prediction_market").strip().lower()
+    if market_type and market_type != "prediction_market":
+        return False, "unsupported_market_type", None
+
+    pricing_quality = str(row.get("pricing_quality") or "").strip().lower()
+    pricing_score = _score(row.get("pricing_quality_score"))
+    if pricing_quality in UNUSABLE_PRICING_VALUES or pricing_score < float(policy.get("min_pricing_quality_score", 1)):
+        return False, "unusable_pricing_quality", None
+
+    settlement_quality = row.get("settlement_quality_score")
+    if isinstance(settlement_quality, str) and settlement_quality.strip().lower() in {"unknown", "unusable"}:
+        return False, "settlement_quality_unknown", None
+    settlement_status = str(row.get("settlement_rule_status") or row.get("settlement_rule_status_gate") or "").strip().lower()
+    if settlement_status in {"unknown", "ambiguous", "unsupported"}:
+        return False, "settlement_quality_unknown", None
+
+    tier = str(row.get("liquidity_tier") or "").strip().lower()
+    missing_liquidity = bool(row.get("missing_liquidity") or row.get("missing_liquidity_flag"))
+    low_liquidity = bool(row.get("low_liquidity") or row.get("low_liquidity_flag"))
+    if missing_liquidity or tier in LOWER_LIQUIDITY_TIERS or not tier:
+        return True, None, "missing_or_low_liquidity"
+    if low_liquidity:
+        return True, None, "low_liquidity"
+    return True, None, None
+
+
 def _existing_sampled_keys(base_data_dir: str, day_state: dict[str, Any]) -> set[str]:
     keys = {str(value) for value in list(day_state.get("sampled_tickers") or []) if value}
     for rows in load_all_watchlists(base_data_dir).values():
@@ -565,8 +769,9 @@ def _select_candidates(
     existing_keys = _existing_sampled_keys(base_data_dir, day_state)
     daily_sampled = {str(value) for value in list(day_state.get("sampled_tickers") or []) if value}
     daily_remaining = max(0, int(target_daily_new_contracts) - len(daily_sampled))
-    cap = max(0, min(int(max_new_contracts), daily_remaining, int(policy["max_new_contracts_per_day"])))
+    cap = max(0, min(int(max_new_contracts), daily_remaining, int(policy["hard_cap_daily_new_contracts"])))
     buckets: dict[str, list[dict[str, Any]]] = {"short_term": [], "medium_term": [], "long_term": []}
+    exploration_buckets: dict[str, list[dict[str, Any]]] = {"short_term": [], "medium_term": [], "long_term": []}
     rejected = Counter()
     duplicate_contracts_skipped = 0
     seen_this_cycle: set[str] = set()
@@ -579,6 +784,10 @@ def _select_candidates(
         if key in existing_keys or key in seen_this_cycle:
             duplicate_contracts_skipped += 1
             rejected["duplicate_contract"] += 1
+            continue
+        quality_ok, quality_reason, exploration_reason = _quality_gate(row, policy)
+        if not quality_ok:
+            rejected[str(quality_reason or "quality_gate_rejected")] += 1
             continue
         close_time = _parse_time(row.get("close_time") or row.get("market_close_at"))
         bucket = _bucket_for_close(close_time or now, now, policy)
@@ -594,14 +803,21 @@ def _select_candidates(
         if bucket in buckets:
             copy = dict(row)
             copy["collector_bucket"] = bucket
-            buckets[bucket].append(copy)
+            if exploration_reason:
+                copy["exploration_sample"] = True
+                copy["exploration_reason"] = exploration_reason
+                exploration_buckets[bucket].append(copy)
+            else:
+                copy["exploration_sample"] = False
+                buckets[bucket].append(copy)
             seen_this_cycle.add(key)
 
-    for bucket in buckets:
-        buckets[bucket] = sorted(
-            buckets[bucket],
-            key=lambda item: (-_score(item.get("review_priority_score")), str(item.get("close_time") or ""), str(_market_key(item) or "")),
-        )
+    for bucket_map in (buckets, exploration_buckets):
+        for bucket in bucket_map:
+            bucket_map[bucket] = sorted(
+                bucket_map[bucket],
+                key=lambda item: (-_score(item.get("review_priority_score")), str(item.get("close_time") or ""), str(_market_key(item) or "")),
+            )
 
     selected: dict[str, list[dict[str, Any]]] = {"short_term": [], "medium_term": [], "long_term": []}
     if cap > 0:
@@ -627,16 +843,41 @@ def _select_candidates(
                 selected[bucket].append(row)
                 selected_keys.add(key)
                 remaining -= 1
+        exploration_cap = int(cap * float(policy.get("exploration_sample_fraction", 0.10)))
+        exploration_added = 0
+        for bucket in ("short_term", "medium_term", "long_term"):
+            if remaining <= 0 or exploration_added >= exploration_cap:
+                break
+            for row in exploration_buckets[bucket]:
+                if remaining <= 0 or exploration_added >= exploration_cap:
+                    break
+                key = str(_market_key(row))
+                if key in selected_keys:
+                    continue
+                selected[bucket].append(row)
+                selected_keys.add(key)
+                remaining -= 1
+                exploration_added += 1
 
     flat = [row for bucket in ("short_term", "medium_term", "long_term") for row in selected[bucket]]
+    liquidity_scores = [_score(row.get("liquidity_score")) for row in flat if row.get("liquidity_score") is not None]
+    pricing_scores = [_score(row.get("pricing_quality_score")) for row in flat if row.get("pricing_quality_score") is not None]
+    liquidity_tiers = Counter(str(row.get("liquidity_tier") or "missing") for row in flat)
     return {
-        "eligible_contracts_found": sum(len(rows) for rows in buckets.values()),
+        "eligible_contracts_found": sum(len(rows) for rows in buckets.values()) + sum(len(rows) for rows in exploration_buckets.values()),
         "selected": selected,
         "selected_flat": flat,
         "rejected_reason_counts": dict(rejected),
         "duplicate_contracts_skipped": duplicate_contracts_skipped,
         "daily_new_contracts_remaining": max(0, daily_remaining - len(flat)),
         "daily_new_contract_limit": int(target_daily_new_contracts),
+        "daily_new_contract_hard_cap": int(policy["hard_cap_daily_new_contracts"]),
+        "exploration_sample_count": len([row for row in flat if row.get("exploration_sample")]),
+        "exploration_candidates_found": sum(len(rows) for rows in exploration_buckets.values()),
+        "quality_gate_rejection_count": sum(count for reason, count in rejected.items() if reason in {"unusable_pricing_quality", "settlement_quality_unknown", "unsupported_market_type"}),
+        "average_liquidity_score": _avg(liquidity_scores),
+        "average_pricing_quality_score": _avg(pricing_scores),
+        "liquidity_tier_counts": dict(liquidity_tiers),
     }
 
 
@@ -723,6 +964,8 @@ def _selected_to_review_items(config: dict[str, Any], selected_rows: list[dict[s
         item["kalshi_order_execution_enabled"] = False
         item["human_approval_required"] = True
         item["collector_bucket"] = row.get("collector_bucket")
+        item["exploration_sample"] = bool(row.get("exploration_sample", False))
+        item["exploration_reason"] = row.get("exploration_reason")
         items.append(item)
     return items
 
@@ -755,6 +998,29 @@ def _watchlist_item(item: dict[str, Any], decision: dict[str, Any] | None, *, ru
     return compact
 
 
+def _recheck_delay_minutes(close_time: datetime, now: datetime, policy: dict[str, Any]) -> int:
+    age_minutes = max(0.0, (now - close_time).total_seconds() / 60.0)
+    if age_minutes < 30:
+        return int(policy.get("fast_recheck_interval_minutes", 5))
+    if age_minutes < 6 * 60:
+        return int(policy.get("recheck_interval_minutes", 15))
+    if age_minutes < 24 * 60:
+        return 30
+    return 120
+
+
+def _next_recheck_time_for(row: dict[str, Any], now: datetime, policy: dict[str, Any]) -> datetime | None:
+    close_time = _parse_time(row.get("close_time") or row.get("market_close_at"))
+    if close_time is None:
+        return None
+    if now < close_time + timedelta(seconds=5):
+        return close_time + timedelta(seconds=5)
+    last_checked = _parse_time(row.get("last_checked_at"))
+    if last_checked:
+        return last_checked + timedelta(minutes=_recheck_delay_minutes(close_time, now, policy))
+    return close_time + timedelta(seconds=5)
+
+
 def _due_for_recheck(row: dict[str, Any], now: datetime, policy: dict[str, Any]) -> tuple[bool, str | None]:
     close_time = _parse_time(row.get("close_time") or row.get("market_close_at"))
     if close_time is None:
@@ -762,11 +1028,74 @@ def _due_for_recheck(row: dict[str, Any], now: datetime, policy: dict[str, Any])
     if now < close_time + timedelta(seconds=5):
         return False, "before_first_recheck"
     if now > close_time + timedelta(hours=int(policy["max_recheck_hours_after_close"])):
-        return False, "stale"
+        return False, "stale_unknown"
+    next_recheck = _parse_time(row.get("next_recheck_time"))
+    if next_recheck and now < next_recheck:
+        return False, "before_next_recheck"
     last_checked = _parse_time(row.get("last_checked_at"))
-    if last_checked and now < last_checked + timedelta(minutes=int(policy["recheck_interval_minutes"])):
+    if last_checked and now < last_checked + timedelta(minutes=_recheck_delay_minutes(close_time, now, policy)):
         return False, "interval_not_elapsed"
     return True, None
+
+
+def _watchlist_backlog_summary(base_data_dir: str, policy: dict[str, Any]) -> dict[str, Any]:
+    now = datetime.now(timezone.utc)
+    watchlists = load_all_watchlists(base_data_dir)
+    by_key: dict[str, dict[str, Any]] = {}
+    for bucket in WATCHLIST_BUCKETS:
+        for row in watchlists.get(bucket, []):
+            key = _market_key(row)
+            if key:
+                by_key[str(key)] = row
+    completed_keys = {str(_market_key(row)) for row in load_outcome_records(base_data_dir) if _market_key(row)}
+    unresolved_open = 0
+    closed_unknown = 0
+    not_settled = 0
+    stale_unknown = 0
+    recheck_due_now = 0
+    next_times: list[datetime] = []
+    bucket_counts = Counter()
+    for key, row in by_key.items():
+        if key in completed_keys:
+            continue
+        bucket_counts[str(row.get("collector_bucket") or "unresolved")] += 1
+        close_time = _parse_time(row.get("close_time") or row.get("market_close_at"))
+        classification = str(row.get("settlement_discovery_classification") or "").lower()
+        if classification == "not_settled":
+            not_settled += 1
+        if close_time is None or now < close_time:
+            unresolved_open += 1
+        elif now > close_time + timedelta(hours=int(policy["max_recheck_hours_after_close"])):
+            stale_unknown += 1
+        else:
+            closed_unknown += 1
+        due, reason = _due_for_recheck(row, now, policy)
+        if due:
+            recheck_due_now += 1
+            next_times.append(now)
+        elif reason != "stale_unknown":
+            next_time = _next_recheck_time_for(row, now, policy)
+            if next_time:
+                next_times.append(next_time)
+    active_unresolved = len([key for key in by_key if key not in completed_keys])
+    next_time = min(next_times) if next_times else None
+    return {
+        "watchlist_size": active_unresolved,
+        "active_unresolved_watchlist": active_unresolved,
+        "short_term_watchlist_count": int(bucket_counts.get("short_term", 0)),
+        "medium_term_watchlist_count": int(bucket_counts.get("medium_term", 0)),
+        "long_term_watchlist_count": int(bucket_counts.get("long_term", 0)),
+        "unresolved_open": unresolved_open,
+        "closed_unknown": closed_unknown,
+        "not_settled": not_settled,
+        "stale_unknown": stale_unknown,
+        "recheck_due_now": recheck_due_now,
+        "next_suggested_recheck_time": _iso(next_time) if next_time else None,
+        "new_collection_blocked_by_backlog": bool(
+            active_unresolved >= int(policy["max_active_unresolved_watchlist"])
+            or closed_unknown >= int(policy["max_closed_unknown_backlog"])
+        ),
+    }
 
 
 def _recheck_unresolved(
@@ -793,8 +1122,9 @@ def _recheck_unresolved(
         if key in completed_keys:
             continue
         is_due, reason = _due_for_recheck(row, now, policy)
-        if reason == "stale":
-            row["settlement_discovery_classification"] = "stale"
+        if reason == "stale_unknown":
+            row["settlement_discovery_classification"] = "stale_unknown"
+            row["outcome_status"] = "unknown"
             stale.append(row)
             continue
         if is_due:
@@ -856,7 +1186,7 @@ def _recheck_unresolved(
         row["recheck_count"] = int(row.get("recheck_count", 0) or 0) + 1
         row["settlement_discovery_classification"] = classification.get("classification")
         row["completion_candidate_ready"] = key in completed_candidate_keys
-        row["next_recheck_time"] = _iso(now + timedelta(minutes=int(policy["recheck_interval_minutes"])))
+        row["next_recheck_time"] = _iso(now + timedelta(minutes=_recheck_delay_minutes(_parse_time(row.get("close_time") or row.get("market_close_at")) or now, now, policy)))
         if key in completed_candidate_keys and (not dry_run) and (int(persist_result.get("outcome_records_written", 0)) > 0 or int(persist_result.get("duplicate_count", 0)) > 0):
             completed = dict(row)
             completed["outcome_status"] = classification.get("outcome_status")
@@ -898,16 +1228,29 @@ def run_collector_cycle(
     persist_outcomes: bool = False,
     max_new_contracts: int | None = None,
     target_daily_new_contracts: int | None = None,
+    hard_cap_daily_new_contracts: int | None = None,
+    max_markets_scanned: int | None = None,
     include_short_term: bool = True,
     include_medium_term: bool = True,
     include_long_term: bool = True,
+    adaptive_throttle: bool | None = None,
     deepseek_review: bool = False,
     base_data_dir: str = "data",
     read_only_records: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
-    policy = collector_policy_from_env()
-    max_new_contracts = int(max_new_contracts if max_new_contracts is not None else policy["max_new_contracts_per_cycle"])
-    target_daily_new_contracts = int(target_daily_new_contracts if target_daily_new_contracts is not None else policy["max_new_contracts_per_day"])
+    base_policy = collector_policy_from_env()
+    policy, policy_errors = _apply_request_policy(
+        base_policy,
+        max_new_contracts=max_new_contracts,
+        target_daily_new_contracts=target_daily_new_contracts,
+        hard_cap_daily_new_contracts=hard_cap_daily_new_contracts,
+        max_markets_scanned=max_markets_scanned,
+        adaptive_throttle=adaptive_throttle,
+    )
+    if policy_errors or policy is None:
+        return _invalid_request_response(policy_errors, dry_run=dry_run, persist_outcomes=persist_outcomes)
+    max_new_contracts = int(policy["max_new_contracts_per_cycle"])
+    target_daily_new_contracts = int(policy["target_daily_new_contracts"])
     if not bool(policy["collector_enabled"]):
         return {
             "ok": True,
@@ -939,11 +1282,34 @@ def run_collector_cycle(
         day = datetime.now(timezone.utc).date().isoformat()
         day_state = _load_daily_state(base_data_dir, day)
         adapter = KalshiReadonlyAdapter(dict(config["providers"].get(KALSHI_PROVIDER, {})))
-        if read_only_records is not None:
+        recheck = _recheck_unresolved(base_data_dir, policy, persist_outcomes=persist_outcomes, dry_run=dry_run)
+        pre_backlog = _watchlist_backlog_summary(base_data_dir, policy)
+        daily_sampled = {str(value) for value in list(day_state.get("sampled_tickers") or []) if value}
+        daily_remaining_capacity = max(0, min(target_daily_new_contracts, int(policy["hard_cap_daily_new_contracts"])) - len(daily_sampled))
+        adaptive_throttle_reasons: list[str] = []
+        effective_max_new_contracts = min(max_new_contracts, daily_remaining_capacity)
+        if pre_backlog.get("new_collection_blocked_by_backlog"):
+            adaptive_throttle_reasons.append("settlement_backlog_limit_reached")
+            effective_max_new_contracts = 0
+        if daily_remaining_capacity <= 0:
+            adaptive_throttle_reasons.append("daily_target_reached")
+            effective_max_new_contracts = 0
+
+        if effective_max_new_contracts <= 0 and read_only_records is None:
+            scan = {"status": "new_collection_paused", "markets_scanned": 0, "records": [], "blockers": []}
+        elif read_only_records is not None:
             normalized_records = _normalize_records(read_only_records, adapter)
             scan = {"status": "injected_records", "markets_scanned": len(normalized_records), "records": normalized_records, "blockers": []}
         else:
             scan = _fetch_public_markets(policy, adapter=adapter)
+        provider_blockers = list(scan.get("blockers", []))[:10]
+        if bool(policy.get("adaptive_throttle_enabled", True)) and provider_blockers:
+            if any(str(blocker) in {"http_429", "read_timeout", "provider_unreachable"} for blocker in provider_blockers):
+                adaptive_throttle_reasons.append("provider_rate_or_availability_limit")
+                effective_max_new_contracts = 0
+            else:
+                adaptive_throttle_reasons.append("provider_error_throttle")
+                effective_max_new_contracts = min(effective_max_new_contracts, max(1, effective_max_new_contracts // 2))
 
         evaluation = _evaluate_kalshi_review_candidates(
             config,
@@ -958,12 +1324,15 @@ def run_collector_cycle(
             base_data_dir=base_data_dir,
             day_state=day_state,
             policy=policy,
-            max_new_contracts=max_new_contracts,
+            max_new_contracts=effective_max_new_contracts,
             target_daily_new_contracts=target_daily_new_contracts,
             include_short_term=include_short_term,
             include_medium_term=include_medium_term,
             include_long_term=include_long_term,
         )
+        duplicate_denominator = int(selection.get("eligible_contracts_found", 0)) + int(selection.get("duplicate_contracts_skipped", 0))
+        if duplicate_denominator > 0 and int(selection.get("duplicate_contracts_skipped", 0)) / duplicate_denominator > 0.30:
+            adaptive_throttle_reasons.append("high_duplicate_rate")
         selected_rows = list(selection["selected_flat"])
         selected_items = _selected_to_review_items(config, selected_rows, run_id=cycle_id)
         paper_storage: dict[str, Any] = {"paper_decisions_written": 0, "paper_decisions_total_count": len(load_paper_decisions(base_data_dir)), "decisions": []}
@@ -971,7 +1340,6 @@ def run_collector_cycle(
         watchlist_storage: dict[str, Any] = {}
         completed_storage: dict[str, Any] = {}
 
-        recheck = _recheck_unresolved(base_data_dir, policy, persist_outcomes=persist_outcomes, dry_run=dry_run)
         decisions_by_review: dict[str, dict[str, Any]] = {}
         if not dry_run and selected_items:
             report_path = f"outcomes/collector/items/{cycle_id}.json"
@@ -1007,6 +1375,8 @@ def run_collector_cycle(
 
         calibration = build_calibration_report(base_data_dir=base_data_dir, write_report=not dry_run)
         outcomes = load_outcome_records(base_data_dir)
+        post_backlog = _watchlist_backlog_summary(base_data_dir, policy) if not dry_run else pre_backlog
+        total_outcomes = len(outcomes)
         selected_counts = {bucket: len(selection["selected"][bucket]) for bucket in ("short_term", "medium_term", "long_term")}
         selection_rejections = Counter(selection["rejected_reason_counts"])
         for reason, count in dict(evaluation.get("rejected_reason_counts", {})).items():
@@ -1030,11 +1400,24 @@ def run_collector_cycle(
             "selected_long_term": selected_counts["long_term"],
             "new_contracts_added": len(selected_items) if not dry_run else 0,
             "new_contracts_selected": len(selected_items),
+            "daily_new_contract_target": int(selection["daily_new_contract_limit"]),
+            "daily_new_contract_hard_cap": int(selection["daily_new_contract_hard_cap"]),
             "daily_new_contract_limit": int(selection["daily_new_contract_limit"]),
             "daily_new_contracts_remaining": int(selection["daily_new_contracts_remaining"]),
+            "daily_remaining_capacity": int(selection["daily_new_contracts_remaining"]),
+            "effective_max_new_contracts": int(effective_max_new_contracts),
+            "adaptive_throttle_enabled": bool(policy.get("adaptive_throttle_enabled", True)),
+            "adaptive_throttle_reasons": adaptive_throttle_reasons,
             "duplicate_contracts_skipped": int(selection["duplicate_contracts_skipped"]),
             "selection_rejected_reason_counts": dict(selection_rejections),
+            "quality_gate_rejection_count": int(selection.get("quality_gate_rejection_count", 0)),
+            "exploration_sample_count": int(selection.get("exploration_sample_count", 0)),
+            "exploration_candidates_found": int(selection.get("exploration_candidates_found", 0)),
+            "average_liquidity_score": float(selection.get("average_liquidity_score", 0.0)),
+            "average_pricing_quality_score": float(selection.get("average_pricing_quality_score", 0.0)),
+            "liquidity_tier_counts": dict(selection.get("liquidity_tier_counts", {})),
             "records_checked": int(recheck["records_checked"]),
+            "records_rechecked_today": int(recheck["records_checked"]),
             "read_only_records_matched": int(recheck["read_only_records_matched"]),
             "explicit_settlement_count": int(recheck["explicit_settlement_count"]),
             "settled_yes_count": int(recheck["settled_yes_count"]),
@@ -1052,9 +1435,13 @@ def run_collector_cycle(
                 "duplicate_count": int(recheck["dry_run_ingest"].get("duplicate_count", 0)),
             },
             "outcomes_persisted": int(recheck["outcomes_persisted"]),
+            "outcomes_persisted_today": int(recheck["outcomes_persisted"]),
             "duplicate_outcomes_skipped": int(recheck["duplicate_outcomes_skipped"]),
-            "total_outcome_records_count": len(outcomes),
+            "total_outcome_records_count": total_outcomes,
             "matched_outcomes_count": int(calibration.get("matched_outcomes_count", 0)),
+            "progress_to_100": _progress(total_outcomes, 100),
+            "progress_to_300": _progress(total_outcomes, 300),
+            "progress_to_1000": _progress(total_outcomes, 1000),
             "calibration_status": calibration.get("status"),
             "coverage_rate": float(calibration.get("coverage_rate", 0.0)),
             "insufficient_sample": _insufficient_sample(calibration, policy),
@@ -1063,14 +1450,29 @@ def run_collector_cycle(
                 "min_target_outcomes": int(policy["min_target_outcomes"]),
                 "good_target_outcomes": int(policy["good_target_outcomes"]),
                 "strong_target_outcomes": int(policy["strong_target_outcomes"]),
+                "long_term_target_outcomes": int(policy["long_term_target_outcomes"]),
             },
+            "settlement_backlog": post_backlog,
+            "watchlist_size": int(post_backlog.get("watchlist_size", 0)),
+            "unresolved_open": int(post_backlog.get("unresolved_open", 0)),
+            "closed_unknown": int(post_backlog.get("closed_unknown", 0)),
+            "stale_unknown": int(post_backlog.get("stale_unknown", 0)),
+            "recheck_due_now": int(post_backlog.get("recheck_due_now", 0)),
+            "next_suggested_recheck_time": post_backlog.get("next_suggested_recheck_time"),
+            "storage_backend": "file",
+            "persistence_warning_if_ephemeral": "file_storage_requires_persistent_disk_for_cross_deploy_durability",
             "collector_policy": {
                 "max_markets_scanned_per_cycle": int(policy["max_markets_scanned_per_cycle"]),
                 "max_new_contracts_per_cycle": int(policy["max_new_contracts_per_cycle"]),
+                "target_daily_new_contracts": int(policy["target_daily_new_contracts"]),
+                "hard_cap_daily_new_contracts": int(policy["hard_cap_daily_new_contracts"]),
                 "max_new_contracts_per_day": int(policy["max_new_contracts_per_day"]),
                 "recheck_interval_minutes": int(policy["recheck_interval_minutes"]),
+                "fast_recheck_interval_minutes": int(policy["fast_recheck_interval_minutes"]),
                 "max_recheck_hours_after_close": int(policy["max_recheck_hours_after_close"]),
-                "short_medium_long_allocation": "70/20/10",
+                "short_medium_long_allocation": "80/15/5",
+                "max_active_unresolved_watchlist": int(policy["max_active_unresolved_watchlist"]),
+                "max_closed_unknown_backlog": int(policy["max_closed_unknown_backlog"]),
             },
             "provider_write": False,
             "execution_allowed_count": 0,
@@ -1102,10 +1504,29 @@ def run_collector_cycle(
             day_state["selected_medium_term"] = int(day_state.get("selected_medium_term", 0) or 0) + cycle_report["selected_medium_term"]
             day_state["selected_long_term"] = int(day_state.get("selected_long_term", 0) or 0) + cycle_report["selected_long_term"]
             day_state["new_contracts_added"] = int(day_state.get("new_contracts_added", 0) or 0) + cycle_report["new_contracts_added"]
+            day_state["new_contracts_added_today"] = day_state["new_contracts_added"]
             day_state["daily_new_contract_limit"] = int(target_daily_new_contracts)
+            day_state["daily_new_contract_target"] = int(target_daily_new_contracts)
+            day_state["daily_new_contract_hard_cap"] = int(policy["hard_cap_daily_new_contracts"])
             day_state["daily_new_contracts_remaining"] = max(0, int(target_daily_new_contracts) - len(sampled))
+            day_state["daily_remaining_capacity"] = day_state["daily_new_contracts_remaining"]
+            day_state["duplicate_contracts_skipped"] = int(day_state.get("duplicate_contracts_skipped", 0) or 0) + cycle_report["duplicate_contracts_skipped"]
+            day_state["quality_gate_rejection_count"] = int(day_state.get("quality_gate_rejection_count", 0) or 0) + cycle_report["quality_gate_rejection_count"]
+            day_state["exploration_sample_count"] = int(day_state.get("exploration_sample_count", 0) or 0) + cycle_report["exploration_sample_count"]
+            tier_counts = Counter(dict(day_state.get("liquidity_tier_counts", {})))
+            tier_counts.update(dict(cycle_report.get("liquidity_tier_counts", {})))
+            day_state["liquidity_tier_counts"] = dict(tier_counts)
+            selected_quality_rows = list(selected_items)
+            day_state["liquidity_score_sum"] = float(day_state.get("liquidity_score_sum", 0.0) or 0.0) + sum(_score(row.get("liquidity_score")) for row in selected_quality_rows)
+            day_state["pricing_quality_score_sum"] = float(day_state.get("pricing_quality_score_sum", 0.0) or 0.0) + sum(_score(row.get("pricing_quality_score")) for row in selected_quality_rows)
+            day_state["quality_sample_count"] = int(day_state.get("quality_sample_count", 0) or 0) + len(selected_quality_rows)
+            if int(day_state["quality_sample_count"]) > 0:
+                day_state["average_liquidity_score"] = round(float(day_state["liquidity_score_sum"]) / int(day_state["quality_sample_count"]), 4)
+                day_state["average_pricing_quality_score"] = round(float(day_state["pricing_quality_score_sum"]) / int(day_state["quality_sample_count"]), 4)
             for field in ("records_checked", "explicit_settlement_count", "settled_yes_count", "settled_no_count", "void_cancelled_count", "unknown_count", "not_settled_count", "outcomes_persisted", "duplicate_outcomes_skipped"):
                 day_state[field] = int(day_state.get(field, 0) or 0) + int(cycle_report[field])
+            day_state["records_rechecked_today"] = day_state["records_checked"]
+            day_state["outcomes_persisted_today"] = day_state["outcomes_persisted"]
             day_state["deepseek_review_status"] = cycle_report["deepseek_review_status"]
             _atomic_write_json(_daily_path(base_data_dir, day), day_state)
             daily_report = write_daily_report(base_data_dir, day=day, calibration_report=calibration)
@@ -1145,6 +1566,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--daily-report", action="store_true")
     parser.add_argument("--max-new-contracts", type=int, default=None)
     parser.add_argument("--target-daily-new-contracts", type=int, default=None)
+    parser.add_argument("--hard-cap-daily-new-contracts", type=int, default=None)
+    parser.add_argument("--max-markets-scanned", type=int, default=None)
+    parser.add_argument("--disable-adaptive-throttle", action="store_true")
     parser.add_argument("--base-data-dir", default="data")
     args = parser.parse_args(argv)
     if args.daily_report and not args.run_once:
@@ -1158,6 +1582,9 @@ def main(argv: list[str] | None = None) -> int:
         persist_outcomes=bool(args.persist_outcomes),
         max_new_contracts=args.max_new_contracts,
         target_daily_new_contracts=args.target_daily_new_contracts,
+        hard_cap_daily_new_contracts=args.hard_cap_daily_new_contracts,
+        max_markets_scanned=args.max_markets_scanned,
+        adaptive_throttle=not bool(args.disable_adaptive_throttle),
         base_data_dir=args.base_data_dir,
     )
     print(json.dumps(result, indent=2, sort_keys=True))

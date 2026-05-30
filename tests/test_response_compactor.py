@@ -321,15 +321,33 @@ class TestResponseCompactor(unittest.TestCase):
                 "selected_medium_term": 1,
                 "selected_long_term": 0,
                 "new_contracts_added": 3,
+                "daily_new_contract_target": 250,
+                "daily_new_contract_hard_cap": 500,
+                "daily_remaining_capacity": 247,
                 "records_checked": 1,
+                "records_rechecked_today": 1,
                 "explicit_settlement_count": 1,
                 "settled_yes_count": 1,
                 "outcomes_persisted": 1,
+                "outcomes_persisted_today": 1,
                 "total_outcome_records_count": 7,
                 "matched_outcomes_count": 7,
+                "progress_to_100": {"count": 7, "target": 100},
+                "progress_to_300": {"count": 7, "target": 300},
+                "progress_to_1000": {"count": 7, "target": 1000},
                 "calibration_status": "partial_calibration",
                 "coverage_rate": 0.7,
                 "insufficient_sample": True,
+                "watchlist_size": 12,
+                "closed_unknown": 2,
+                "next_suggested_recheck_time": "2026-05-30T00:15:00Z",
+                "average_liquidity_score": 72.5,
+                "average_pricing_quality_score": 81.0,
+                "liquidity_tier_counts": {"adequate_liquidity": 3},
+                "exploration_sample_count": 1,
+                "quality_gate_rejection_count": 2,
+                "storage_backend": "file",
+                "persistence_warning_if_ephemeral": "warning",
                 "next_required_data": ["additional_settlement_results"],
                 "provider_write": True,
                 "execution_allowed_count": 99,
@@ -343,6 +361,11 @@ class TestResponseCompactor(unittest.TestCase):
         self.assertFalse(compact["auto_execution_enabled"])
         self.assertFalse(compact["kalshi_order_execution_enabled"])
         self.assertEqual(compact["explicit_settlement_count"], 1)
+        self.assertEqual(compact["daily_new_contract_target"], 250)
+        self.assertEqual(compact["daily_new_contract_hard_cap"], 500)
+        self.assertEqual(compact["progress_to_100"]["count"], 7)
+        self.assertEqual(compact["watchlist_size"], 12)
+        self.assertEqual(compact["liquidity_tier_counts"]["adequate_liquidity"], 3)
         rendered = str(compact)
         self.assertNotIn("source_payload", rendered)
         self.assertNotIn("secret", rendered)
