@@ -935,3 +935,198 @@ def compact_provider_status(payload: dict[str, Any]) -> dict[str, Any]:
         "blockers": list(payload.get("blockers", []))[:10],
         "snapshot_path": payload.get("snapshot_path"),
     }
+
+
+def _compact_data_source_lane(lane: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "lane_id": lane.get("lane_id"),
+        "module": lane.get("module"),
+        "sport_or_asset": lane.get("sport_or_asset"),
+        "category": lane.get("category"),
+        "lane_status": lane.get("lane_status"),
+        "assigned_research_lane": bool(lane.get("assigned_research_lane", True)),
+        "source_candidate_count": len(lane.get("source_candidates") or []),
+        "verified_source_count": len(lane.get("verified_sources") or []),
+        "future_source_candidate_count": len(lane.get("future_source_candidates") or []),
+        "rejected_source_count": len(lane.get("rejected_sources") or []),
+        "required_model_inputs": list(lane.get("required_model_inputs") or [])[:20],
+        "outcome_fields_required": list(lane.get("outcome_fields_required") or [])[:20],
+        "historical_backfill_fields_required": list(lane.get("historical_backfill_fields_required") or [])[:20],
+        "adapter_status": lane.get("adapter_status"),
+        "coverage_score": int(lane.get("coverage_score") or 0),
+        "freshness_score": int(lane.get("freshness_score") or 0),
+        "outcome_availability_score": int(lane.get("outcome_availability_score") or 0),
+        "terms_risk_score": int(lane.get("terms_risk_score") or 0),
+        "external_research_priority_score": int(lane.get("external_research_priority_score") or 0),
+        "needs_external_research": lane.get("lane_status") in {"needs_external_research", "candidate_sources_available", "future_vendor_needed", "blocked_pending_source"},
+    }
+
+
+def _compact_data_source_source(source: dict[str, Any]) -> dict[str, Any]:
+    quality = dict(source.get("quality") or {})
+    return {
+        "source_id": source.get("source_id"),
+        "source_name": source.get("source_name"),
+        "lane_id": source.get("lane_id"),
+        "module": source.get("module"),
+        "source_access_type": source.get("source_access_type"),
+        "current_phase_allowed": bool(source.get("current_phase_allowed", False)),
+        "future_source_candidate": bool(source.get("future_source_candidate", False)),
+        "requires_budget_approval": bool(source.get("requires_budget_approval", False)),
+        "requires_account": bool(source.get("requires_account", False)),
+        "requires_api_key": bool(source.get("requires_api_key", False)),
+        "requires_terms_review": bool(source.get("requires_terms_review", True)),
+        "requires_provider_write": bool(source.get("requires_provider_write", False)),
+        "requires_execution_account": bool(source.get("requires_execution_account", False)),
+        "requires_brokerage_account": bool(source.get("requires_brokerage_account", False)),
+        "requires_sportsbook_account": bool(source.get("requires_sportsbook_account", False)),
+        "requires_paid_subscription": bool(source.get("requires_paid_subscription", False)),
+        "trial_only": bool(source.get("trial_only", False)),
+        "credit_card_required": bool(source.get("credit_card_required", False)),
+        "approval_status": source.get("approval_status"),
+        "enabled": bool(source.get("enabled", False)),
+        "adapter_status": source.get("adapter_status"),
+        "coverage": dict(source.get("coverage") or {}),
+        "freshness": dict(source.get("freshness") or {}),
+        "limits": dict(source.get("limits") or {}),
+        "legal_terms": dict(source.get("legal_terms") or {}),
+        "model_mapping": {
+            "supported_model_modules": list((source.get("model_mapping") or {}).get("supported_model_modules") or [])[:20],
+            "model_inputs_supported": list((source.get("model_mapping") or {}).get("model_inputs_supported") or [])[:30],
+            "missing_model_inputs": list((source.get("model_mapping") or {}).get("missing_model_inputs") or [])[:30],
+            "join_keys": list((source.get("model_mapping") or {}).get("join_keys") or [])[:20],
+            "outcome_fields_available": list((source.get("model_mapping") or {}).get("outcome_fields_available") or [])[:20],
+            "historical_backfill_fields_available": list((source.get("model_mapping") or {}).get("historical_backfill_fields_available") or [])[:20],
+        },
+        "quality": {
+            "source_reliability_score": quality.get("source_reliability_score"),
+            "freshness_score": quality.get("freshness_score"),
+            "coverage_score": quality.get("coverage_score"),
+            "completeness_score": quality.get("completeness_score"),
+            "join_quality_score": quality.get("join_quality_score"),
+            "model_input_fill_rate": quality.get("model_input_fill_rate"),
+            "terms_risk_score": quality.get("terms_risk_score"),
+            "rate_limit_risk_score": quality.get("rate_limit_risk_score"),
+            "historical_depth_score": quality.get("historical_depth_score"),
+            "outcome_availability_score": quality.get("outcome_availability_score"),
+            "external_research_priority_score": quality.get("external_research_priority_score"),
+            "current_phase_usability_score": quality.get("current_phase_usability_score"),
+            "future_value_score": quality.get("future_value_score"),
+            "quality_tier": quality.get("quality_tier"),
+        },
+        "verified_at": source.get("verified_at"),
+    }
+
+
+def compact_data_source_registry_response(payload: dict[str, Any], limit: int = 10) -> dict[str, Any]:
+    cap = max(1, min(int(limit or 10), 100))
+    lanes = list(payload.get("lanes") or [])
+    sources = list(payload.get("sources") or [])
+    return {
+        "ok": bool(payload.get("ok", True)),
+        "status": payload.get("status", "ok"),
+        "schema_version": payload.get("schema_version"),
+        "created_at": payload.get("created_at"),
+        "module_filter": payload.get("module_filter"),
+        "total_lanes": int(payload.get("total_lanes", len(lanes))),
+        "lanes_with_verified_sources": int(payload.get("lanes_with_verified_sources", 0)),
+        "lanes_with_candidate_sources": int(payload.get("lanes_with_candidate_sources", 0)),
+        "lanes_needing_external_research": int(payload.get("lanes_needing_external_research", 0)),
+        "lanes_blocked_pending_source": int(payload.get("lanes_blocked_pending_source", 0)),
+        "lanes_future_vendor_needed": int(payload.get("lanes_future_vendor_needed", 0)),
+        "total_sources": int(payload.get("total_sources", len(sources))),
+        "current_phase_allowed_count": int(payload.get("current_phase_allowed_count", 0)),
+        "candidate_count": int(payload.get("candidate_count", 0)),
+        "needs_terms_review_count": int(payload.get("needs_terms_review_count", 0)),
+        "future_source_candidate_count": int(payload.get("future_source_candidate_count", 0)),
+        "rejected_count": int(payload.get("rejected_count", 0)),
+        "modules_fully_covered": list(payload.get("modules_fully_covered") or [])[:cap],
+        "modules_partially_covered": list(payload.get("modules_partially_covered") or [])[:cap],
+        "modules_without_verified_source": list(payload.get("modules_without_verified_source") or [])[:cap],
+        "top_missing_fields_by_module": dict(list(dict(payload.get("top_missing_fields_by_module") or {}).items())[:cap]),
+        "open_external_research_tasks": int(payload.get("open_external_research_tasks", 0)),
+        "recommended_next_adapters": list(payload.get("recommended_next_adapters") or [])[:cap],
+        "lanes": [_compact_data_source_lane(lane) for lane in lanes[:cap]],
+        "sources": [_compact_data_source_source(source) for source in sources[:cap]],
+        "storage": _compact_storage_health(payload),
+        "latest_path": payload.get("latest_path"),
+        "item_path": payload.get("item_path"),
+        "report_path": payload.get("report_path"),
+        "daily_path": payload.get("daily_path"),
+        "research_lanes_latest_path": payload.get("research_lanes_latest_path"),
+        "verification_errors": list(payload.get("verification_errors") or [])[:cap],
+        "provider_write": False,
+        "execution_allowed": False,
+        "live_execution_enabled": False,
+        "auto_execution_enabled": False,
+        "kalshi_order_execution_enabled": False,
+        "sportsbook_bet_execution_enabled": False,
+        "broker_order_execution_enabled": False,
+        "actual_orders_submitted": 0,
+        "actual_bets_submitted": 0,
+        "actual_trades_submitted": 0,
+        "raw_payload_included": False,
+        "compact_response": True,
+    }
+
+
+def compact_data_source_coverage_response(payload: dict[str, Any], limit: int = 10) -> dict[str, Any]:
+    cap = max(1, min(int(limit or 10), 100))
+    modules = list(payload.get("modules") or [])
+    return {
+        "ok": bool(payload.get("ok", True)),
+        "status": payload.get("status", "ok"),
+        "total_modules": int(payload.get("total_modules", len(modules))),
+        "modules_fully_covered": list(payload.get("modules_fully_covered") or [])[:cap],
+        "modules_partially_covered": list(payload.get("modules_partially_covered") or [])[:cap],
+        "modules_without_verified_source": list(payload.get("modules_without_verified_source") or [])[:cap],
+        "modules": modules[:cap],
+        "provider_write": False,
+        "execution_allowed": False,
+        "live_execution_enabled": False,
+        "raw_payload_included": False,
+        "compact_response": True,
+    }
+
+
+def compact_data_source_research_lanes_response(payload: dict[str, Any], limit: int = 10) -> dict[str, Any]:
+    cap = max(1, min(int(limit or 10), 100))
+    return {
+        "ok": bool(payload.get("ok", True)),
+        "status": payload.get("status", "ok"),
+        "total_tasks": int(payload.get("total_tasks", 0)),
+        "open_tasks": int(payload.get("open_tasks", 0)),
+        "priority_counts": dict(payload.get("priority_counts") or {}),
+        "tasks": list(payload.get("tasks") or [])[:cap],
+        "provider_write": False,
+        "execution_allowed": False,
+        "live_execution_enabled": False,
+        "raw_payload_included": False,
+        "compact_response": True,
+    }
+
+
+def compact_data_source_health_response(payload: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "ok": bool(payload.get("ok", True)),
+        "status": payload.get("status", "ok"),
+        "schema_version": payload.get("schema_version"),
+        "total_lanes": int(payload.get("total_lanes", 0)),
+        "total_sources": int(payload.get("total_sources", 0)),
+        "lanes_with_candidate_sources": int(payload.get("lanes_with_candidate_sources", 0)),
+        "lanes_needing_external_research": int(payload.get("lanes_needing_external_research", 0)),
+        "needs_terms_review_count": int(payload.get("needs_terms_review_count", 0)),
+        "future_source_candidate_count": int(payload.get("future_source_candidate_count", 0)),
+        "storage": _compact_storage_health(payload),
+        "provider_write": False,
+        "execution_allowed": False,
+        "live_execution_enabled": False,
+        "auto_execution_enabled": False,
+        "kalshi_order_execution_enabled": False,
+        "sportsbook_bet_execution_enabled": False,
+        "broker_order_execution_enabled": False,
+        "actual_orders_submitted": 0,
+        "actual_bets_submitted": 0,
+        "actual_trades_submitted": 0,
+        "raw_payload_included": False,
+    }

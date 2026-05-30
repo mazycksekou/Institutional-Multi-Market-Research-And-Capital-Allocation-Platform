@@ -2,6 +2,10 @@ import unittest
 from automation_scheduler.response_compactor import (
     compact_calibration_collector_response,
     compact_calibration_response,
+    compact_data_source_coverage_response,
+    compact_data_source_health_response,
+    compact_data_source_registry_response,
+    compact_data_source_research_lanes_response,
     compact_deepseek_review_response,
     compact_institutional_execution_response,
     compact_institutional_lab_health_response,
@@ -44,6 +48,77 @@ class TestResponseCompactor(unittest.TestCase):
         self.assertTrue(c["review_queue_read_ok"])
         self.assertEqual(c["storage"]["env_var"], "AUTOMATION_DATA_DIR")
         self.assertEqual(c["storage"]["data_dir"], "/var/data")
+
+    def test_data_source_compactors_are_safe_and_bounded(self):
+        registry = {
+            "ok": True,
+            "status": "verified",
+            "schema_version": "data_source_registry_v1",
+            "total_lanes": 1,
+            "total_sources": 1,
+            "current_phase_allowed_count": 1,
+            "needs_terms_review_count": 0,
+            "future_source_candidate_count": 0,
+            "lanes": [
+                {
+                    "lane_id": "basketball_nba",
+                    "module": "basketball_nba",
+                    "sport_or_asset": "NBA",
+                    "category": "sport",
+                    "lane_status": "candidate_sources_available",
+                    "source_candidates": [{"source_id": "src"}],
+                    "verified_sources": [],
+                    "future_source_candidates": [],
+                    "required_model_inputs": ["schedule"],
+                    "outcome_fields_required": ["final_result"],
+                    "adapter_status": "planned",
+                    "coverage_score": 50,
+                }
+            ],
+            "sources": [
+                {
+                    "source_id": "src",
+                    "source_name": "Source",
+                    "lane_id": "basketball_nba",
+                    "module": "basketball_nba",
+                    "source_access_type": "open_public",
+                    "current_phase_allowed": True,
+                    "approval_status": "approved_for_research",
+                    "enabled": False,
+                    "coverage": {},
+                    "freshness": {},
+                    "limits": {},
+                    "legal_terms": {},
+                    "model_mapping": {"join_keys": ["game_id"]},
+                    "quality": {"coverage_score": 50, "current_phase_usability_score": 60},
+                    "api_key": "secret",
+                    "provider_payload": {"raw": "drop"},
+                }
+            ],
+            "storage_health": {
+                "env_var": "AUTOMATION_DATA_DIR",
+                "data_dir": "/var/data",
+                "backend": "file",
+                "configured": True,
+                "read_ok": True,
+                "write_ok": True,
+            },
+        }
+        compact = compact_data_source_registry_response(registry, limit=10)
+        self.assertEqual(compact["total_lanes"], 1)
+        self.assertFalse(compact["provider_write"])
+        self.assertFalse(compact["execution_allowed"])
+        self.assertFalse(compact["live_execution_enabled"])
+        self.assertEqual(compact["storage"]["env_var"], "AUTOMATION_DATA_DIR")
+        self.assertNotIn("secret", str(compact))
+        self.assertNotIn("provider_payload", str(compact))
+
+        coverage = compact_data_source_coverage_response({"modules": [{"lane_id": "basketball_nba"}]})
+        self.assertFalse(coverage["provider_write"])
+        research = compact_data_source_research_lanes_response({"tasks": [{"research_task_id": "find_source_for_basketball_nba"}]})
+        self.assertFalse(research["execution_allowed"])
+        health = compact_data_source_health_response({"ok": True, "total_lanes": 1, "storage_health": registry["storage_health"]})
+        self.assertEqual(health["storage"]["data_dir"], "/var/data")
 
     def test_limit_enforced(self):
         p = {"ok": True, "count": 50, "items": [{"recommended_action": "watch_recheck"} for _ in range(50)]}

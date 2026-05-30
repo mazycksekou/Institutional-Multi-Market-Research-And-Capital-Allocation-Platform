@@ -30,6 +30,10 @@ from automation_scheduler.response_compactor import (
     compact_calibration_response,
     compact_calibration_collector_response,
     compact_deepseek_review_response,
+    compact_data_source_coverage_response,
+    compact_data_source_health_response,
+    compact_data_source_registry_response,
+    compact_data_source_research_lanes_response,
     compact_outcome_ingest_response,
     compact_outcomes_response,
     compact_settlement_discovery_response,
@@ -997,6 +1001,13 @@ class AutomationDeepSeekReviewRequest(BaseModel):
     daily_report: dict[str, Any] = Field(default_factory=dict)
     calibration_report: dict[str, Any] = Field(default_factory=dict)
     sampled_contracts: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class DataSourceVerifyRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", protected_namespaces=())
+
+    module: Optional[str] = None
+    persist_report: bool = True
 
 
 class InstitutionalLabRunRequest(BaseModel):
@@ -3004,6 +3015,67 @@ async def automation_deepseek_review_endpoint(payload: AutomationDeepSeekReviewR
     return compact
 
 
+@app.get("/api/automation/data-sources/registry", operation_id="getAutomationDataSourceRegistry")
+async def get_data_source_registry_endpoint(
+    module: Optional[str] = Query(default=None),
+    verbose: bool = Query(default=False),
+    include_debug: bool = Query(default=False),
+    limit: int = Query(default=100),
+):
+    payload = automation_scheduler.get_data_source_registry_snapshot(module=module)
+    cap = min(max(int(limit), 1), 100)
+    compact = compact_data_source_registry_response(payload, limit=cap)
+    if verbose or include_debug:
+        compact["debug"] = redact_and_limit_payload(payload, limit=cap, verbose=verbose)
+    return compact
+
+
+@app.get("/api/automation/data-sources/coverage", operation_id="getAutomationDataSourceCoverage")
+async def get_data_source_coverage_endpoint(
+    module: Optional[str] = Query(default=None),
+    verbose: bool = Query(default=False),
+    include_debug: bool = Query(default=False),
+    limit: int = Query(default=100),
+):
+    payload = automation_scheduler.get_data_source_coverage_snapshot(module=module)
+    cap = min(max(int(limit), 1), 100)
+    compact = compact_data_source_coverage_response(payload, limit=cap)
+    if verbose or include_debug:
+        compact["debug"] = redact_and_limit_payload(payload, limit=cap, verbose=verbose)
+    return compact
+
+
+@app.get("/api/automation/data-sources/research-lanes", operation_id="getAutomationDataSourceResearchLanes")
+async def get_data_source_research_lanes_endpoint(
+    module: Optional[str] = Query(default=None),
+    verbose: bool = Query(default=False),
+    include_debug: bool = Query(default=False),
+    limit: int = Query(default=100),
+):
+    payload = automation_scheduler.get_data_source_research_lanes_snapshot(module=module)
+    cap = min(max(int(limit), 1), 100)
+    compact = compact_data_source_research_lanes_response(payload, limit=cap)
+    if verbose or include_debug:
+        compact["debug"] = redact_and_limit_payload(payload, limit=cap, verbose=verbose)
+    return compact
+
+
+@app.get("/api/automation/data-sources/health", operation_id="getAutomationDataSourceHealth")
+async def get_data_source_health_endpoint():
+    payload = automation_scheduler.get_data_source_registry_health()
+    return compact_data_source_health_response(payload)
+
+
+@app.post("/api/automation/data-sources/verify", operation_id="verifyAutomationDataSourceRegistry")
+async def verify_data_source_registry_endpoint(payload: DataSourceVerifyRequest, verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=100)):
+    result = automation_scheduler.verify_data_source_registry(module=payload.module, persist_report=payload.persist_report)
+    cap = min(max(int(limit), 1), 100)
+    compact = compact_data_source_registry_response(result, limit=cap)
+    if verbose or include_debug:
+        compact["debug"] = redact_and_limit_payload(result, limit=cap, verbose=verbose)
+    return compact
+
+
 @app.get("/api/automation/institutional-lab/health", operation_id="getInstitutionalLabHealth")
 async def get_institutional_lab_health_endpoint():
     payload = automation_scheduler.get_institutional_lab_health()
@@ -3299,6 +3371,11 @@ PUBLIC_OPENAPI_PATH_METHODS = frozenset({
     ("/api/automation/calibration-collector/run", "post"),
     ("/api/automation/calibration-collector/scheduled-run", "post"),
     ("/api/automation/deepseek-review", "post"),
+    ("/api/automation/data-sources/registry", "get"),
+    ("/api/automation/data-sources/coverage", "get"),
+    ("/api/automation/data-sources/research-lanes", "get"),
+    ("/api/automation/data-sources/health", "get"),
+    ("/api/automation/data-sources/verify", "post"),
     ("/api/automation/institutional-lab/health", "get"),
     ("/api/automation/institutional-lab/run", "post"),
     ("/api/automation/institutional-lab/report", "get"),

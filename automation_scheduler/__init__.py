@@ -417,3 +417,61 @@ def get_institutional_lab_audit(base_data_dir: str | None = None, limit: int = 1
     from .institutional_cross_asset_lab import get_institutional_lab_audit as _audit
 
     return _audit(base_data_dir=_data_dir(base_data_dir), limit=limit)
+
+
+def get_data_source_registry_snapshot(*, module: str | None = None, base_data_dir: str | None = None):
+    from .data_source_registry import build_registry_report
+
+    return build_registry_report(module=module)
+
+
+def get_data_source_coverage_snapshot(*, module: str | None = None, base_data_dir: str | None = None):
+    from .data_source_registry import build_registry
+    from .model_input_coverage import build_coverage_report
+
+    registry = build_registry(module=module)
+    return build_coverage_report(registry=registry)
+
+
+def get_data_source_research_lanes_snapshot(*, module: str | None = None, base_data_dir: str | None = None):
+    from .data_source_registry import build_registry
+    from .data_source_research_lanes import build_research_tasks
+
+    registry = build_registry(module=module)
+    return build_research_tasks(registry.get("lanes", []))
+
+
+def get_data_source_registry_health(base_data_dir: str | None = None):
+    from .data_source_registry import build_registry_report, summarize_registry
+
+    report = build_registry_report()
+    summary = summarize_registry(report)
+    return {
+        "ok": True,
+        "status": "ok",
+        "schema_version": report.get("schema_version"),
+        "total_lanes": summary["total_lanes"],
+        "total_sources": summary["total_sources"],
+        "lanes_with_candidate_sources": summary["lanes_with_candidate_sources"],
+        "lanes_needing_external_research": summary["lanes_needing_external_research"],
+        "needs_terms_review_count": summary["needs_terms_review_count"],
+        "future_source_candidate_count": summary["future_source_candidate_count"],
+        "storage_health": get_storage_health(),
+        "provider_write": False,
+        "execution_allowed": False,
+        "live_execution_enabled": False,
+        "auto_execution_enabled": False,
+        "kalshi_order_execution_enabled": False,
+        "sportsbook_bet_execution_enabled": False,
+        "broker_order_execution_enabled": False,
+        "actual_orders_submitted": 0,
+        "actual_bets_submitted": 0,
+        "actual_trades_submitted": 0,
+        "raw_payload_included": False,
+    }
+
+
+def verify_data_source_registry(*, module: str | None = None, persist_report: bool = True, base_data_dir: str | None = None):
+    from .data_source_registry import verify_registry
+
+    return verify_registry(module=module, persist_report=persist_report, base_data_dir=_data_dir(base_data_dir))
