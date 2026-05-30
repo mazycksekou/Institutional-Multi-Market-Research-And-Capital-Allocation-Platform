@@ -156,3 +156,70 @@ class TestCalibration(unittest.TestCase):
             self.assertEqual(report["matched_outcomes_count"], 1)
             self.assertEqual(report["settled_count"], 1)
             self.assertIn("brier_score", report["metrics"])
+
+    def test_historical_paper_batches_match_after_latest_is_overwritten(self):
+        with TemporaryDirectory() as tmp:
+            persist_paper_decisions_for_review_items(
+                [
+                    {
+                        "id": "old-review",
+                        "provider_id": "kalshi_prediction_market",
+                        "market_type": "prediction_market",
+                        "contract_id": "KXOLD",
+                        "ticker": "KXOLD",
+                        "implied_probability": 0.7,
+                        "liquidity_tier": "low_liquidity",
+                        "review_priority_score": 60,
+                        "execution_allowed": False,
+                    }
+                ],
+                run_id="close_soon_original",
+                base_data_dir=tmp,
+            )
+            from automation_scheduler.outcome_store import ingest_outcome_records
+
+            ingest_outcome_records(
+                [
+                    {
+                        "provider": "kalshi_prediction_market",
+                        "market_type": "prediction_market",
+                        "contract_id": "KXOLD",
+                        "ticker": "KXOLD",
+                        "review_item_id": "old-review",
+                        "run_id": "close_soon_original",
+                        "outcome_status": "settled",
+                        "final_outcome": "yes",
+                        "settled_at": "2026-05-29T00:00:00+00:00",
+                        "source": "read_only_settlement",
+                        "evidence_type": "explicit_settlement_field",
+                        "evidence_summary": "field_names:settlement_result",
+                    }
+                ],
+                source="read_only_settlement",
+                dry_run=False,
+                persist=True,
+                base_data_dir=tmp,
+            )
+            persist_paper_decisions_for_review_items(
+                [
+                    {
+                        "id": "new-review",
+                        "provider_id": "kalshi_prediction_market",
+                        "market_type": "prediction_market",
+                        "contract_id": "KXNEW",
+                        "ticker": "KXNEW",
+                        "implied_probability": 0.4,
+                        "liquidity_tier": "adequate_liquidity",
+                        "review_priority_score": 80,
+                        "execution_allowed": False,
+                    }
+                ],
+                run_id="kalshi_calibration_new",
+                base_data_dir=tmp,
+            )
+            report = build_calibration_report(base_data_dir=tmp)
+            self.assertEqual(report["paper_decisions_count"], 2)
+            self.assertEqual(report["outcome_records_count"], 1)
+            self.assertEqual(report["matched_outcomes_count"], 1)
+            self.assertEqual(report["settled_count"], 1)
+            self.assertEqual(report["status"], "partial_calibration")

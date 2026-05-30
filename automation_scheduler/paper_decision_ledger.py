@@ -67,6 +67,45 @@ def _read_json(path: Path) -> Any | None:
         return None
 
 
+def _items_from_payload(payload: Any) -> list[dict[str, Any]]:
+    if isinstance(payload, list):
+        return [item for item in payload if isinstance(item, dict)]
+    if isinstance(payload, dict) and isinstance(payload.get("items"), list):
+        return [item for item in payload["items"] if isinstance(item, dict)]
+    return []
+
+
+def _decision_dedupe_key(item: dict[str, Any]) -> str:
+    if item.get("decision_id"):
+        return f"decision:{item.get('decision_id')}"
+    seed = "|".join(
+        [
+            str(item.get("run_id") or "unknown_run"),
+            str(item.get("review_item_id") or "unknown_review_item"),
+            str(item.get("provider") or item.get("provider_id") or "unknown_provider"),
+            str(item.get("market_type") or item.get("source_type") or "unknown_market_type"),
+            str(item.get("ticker") or item.get("contract_id") or "unknown_contract"),
+        ]
+    )
+    return f"fallback:{seed}"
+
+
+def _dedupe_decisions(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    by_key: dict[str, dict[str, Any]] = {}
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        by_key[_decision_dedupe_key(item)] = item
+    return sorted(
+        by_key.values(),
+        key=lambda row: (
+            str(row.get("created_at") or ""),
+            str(row.get("run_id") or ""),
+            str(row.get("decision_id") or ""),
+        ),
+    )
+
+
 def _safe_scalar(value: Any) -> Any:
     if isinstance(value, (str, int, float, bool)) or value is None:
         return value
@@ -181,15 +220,14 @@ def _save_legacy_decisions(items: list[dict[str, Any]], base_data_dir: str = "da
 
 
 def load_paper_decisions(base_data_dir: str = "data") -> list[dict[str, Any]]:
-    latest = _read_json(_latest_path(base_data_dir))
-    if isinstance(latest, dict) and isinstance(latest.get("items"), list):
-        return [item for item in latest["items"] if isinstance(item, dict)]
-    legacy = _read_json(_legacy_path(base_data_dir))
-    if isinstance(legacy, list):
-        return [item for item in legacy if isinstance(item, dict)]
-    if isinstance(legacy, dict) and isinstance(legacy.get("items"), list):
-        return [item for item in legacy["items"] if isinstance(item, dict)]
-    return []
+    items: list[dict[str, Any]] = []
+    items_dir = _items_dir(base_data_dir)
+    if items_dir.exists():
+        for path in sorted(items_dir.glob("*.json")):
+            items.extend(_items_from_payload(_read_json(path)))
+    items.extend(_items_from_payload(_read_json(_legacy_path(base_data_dir))))
+    items.extend(_items_from_payload(_read_json(_latest_path(base_data_dir))))
+    return _dedupe_decisions(items)
 
 
 def load_paper_decision_state(base_data_dir: str = "data") -> dict[str, Any]:
