@@ -27,6 +27,8 @@ import model_probability
 import screenshot_intake
 from automation_scheduler.response_compactor import (
     compact_calibration_response,
+    compact_calibration_collector_response,
+    compact_deepseek_review_response,
     compact_outcome_ingest_response,
     compact_outcomes_response,
     compact_settlement_discovery_response,
@@ -950,6 +952,28 @@ class AutomationSettlementDiscoveryRequest(BaseModel):
     imported_rows: list[dict[str, Any]] = Field(default_factory=list)
     use_kalshi_snapshot: bool = True
     write_local_report: bool = False
+
+
+class AutomationCalibrationCollectorRunRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", protected_namespaces=())
+
+    dry_run: bool = True
+    persist_outcomes: bool = False
+    max_new_contracts: Optional[int] = 25
+    target_daily_new_contracts: Optional[int] = 100
+    include_short_term: bool = True
+    include_medium_term: bool = True
+    include_long_term: bool = True
+    deepseek_review: bool = False
+
+
+class AutomationDeepSeekReviewRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", protected_namespaces=())
+
+    collector_cycle_report: dict[str, Any] = Field(default_factory=dict)
+    daily_report: dict[str, Any] = Field(default_factory=dict)
+    calibration_report: dict[str, Any] = Field(default_factory=dict)
+    sampled_contracts: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class PerformanceBacktestRequest(BaseModel):
@@ -2853,6 +2877,40 @@ async def discover_automation_outcome_settlements_endpoint(payload: AutomationSe
     return compact
 
 
+@app.post("/api/automation/calibration-collector/run", operation_id="runAutomationCalibrationCollector")
+async def run_automation_calibration_collector_endpoint(payload: AutomationCalibrationCollectorRunRequest, verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=10)):
+    result = automation_scheduler.run_automation_calibration_collector(
+        dry_run=payload.dry_run,
+        persist_outcomes=payload.persist_outcomes,
+        max_new_contracts=payload.max_new_contracts,
+        target_daily_new_contracts=payload.target_daily_new_contracts,
+        include_short_term=payload.include_short_term,
+        include_medium_term=payload.include_medium_term,
+        include_long_term=payload.include_long_term,
+        deepseek_review=payload.deepseek_review,
+    )
+    cap = min(max(int(limit), 1), 100 if verbose else 10)
+    compact = compact_calibration_collector_response(result, limit=cap)
+    if verbose or include_debug:
+        compact["debug"] = redact_and_limit_payload(result, limit=cap, verbose=verbose)
+    return compact
+
+
+@app.post("/api/automation/deepseek-review", operation_id="reviewAutomationWithDeepSeek")
+async def automation_deepseek_review_endpoint(payload: AutomationDeepSeekReviewRequest, verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=10)):
+    result = automation_scheduler.run_automation_deepseek_review(
+        collector_cycle_report=payload.collector_cycle_report,
+        daily_report=payload.daily_report,
+        calibration_report=payload.calibration_report,
+        sampled_contracts=payload.sampled_contracts,
+    )
+    cap = min(max(int(limit), 1), 100 if verbose else 10)
+    compact = compact_deepseek_review_response(result)
+    if verbose or include_debug:
+        compact["debug"] = redact_and_limit_payload(result, limit=cap, verbose=verbose)
+    return compact
+
+
 @app.post("/api/automation/run-once", operation_id="runAutomationSchedulerOnce")
 async def run_automation_scheduler_once(payload: AutomationRunOnceRequest, verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=10)):
     if payload.dry_run is not True:
@@ -3050,6 +3108,8 @@ PUBLIC_OPENAPI_PATH_METHODS = frozenset({
     ("/api/automation/outcomes", "get"),
     ("/api/automation/outcomes/ingest", "post"),
     ("/api/automation/outcomes/discover-settlements", "post"),
+    ("/api/automation/calibration-collector/run", "post"),
+    ("/api/automation/deepseek-review", "post"),
     ("/api/automation/run-once", "post"),
     ("/api/performance/health", "get"),
     ("/api/performance/report", "get"),

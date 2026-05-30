@@ -194,6 +194,56 @@ def discover_automation_outcome_completions(
     return report
 
 
+def run_automation_calibration_collector(
+    *,
+    dry_run: bool = True,
+    persist_outcomes: bool = False,
+    max_new_contracts: int | None = None,
+    target_daily_new_contracts: int | None = None,
+    include_short_term: bool = True,
+    include_medium_term: bool = True,
+    include_long_term: bool = True,
+    deepseek_review: bool = False,
+    base_data_dir: str | None = None,
+):
+    from .calibration_collector import run_collector_cycle
+
+    return run_collector_cycle(
+        dry_run=dry_run,
+        persist_outcomes=persist_outcomes,
+        max_new_contracts=max_new_contracts,
+        target_daily_new_contracts=target_daily_new_contracts,
+        include_short_term=include_short_term,
+        include_medium_term=include_medium_term,
+        include_long_term=include_long_term,
+        deepseek_review=deepseek_review,
+        base_data_dir=base_data_dir or "data",
+    )
+
+
+def get_automation_collector_daily_report(base_data_dir: str | None = None):
+    from .calibration_collector import write_daily_report
+
+    return write_daily_report(base_data_dir=base_data_dir or "data")
+
+
+def run_automation_deepseek_review(
+    *,
+    collector_cycle_report: dict | None = None,
+    daily_report: dict | None = None,
+    calibration_report: dict | None = None,
+    sampled_contracts: list[dict] | None = None,
+):
+    from .deepseek_reviewer import run_deepseek_review
+
+    return run_deepseek_review(
+        collector_cycle_report=collector_cycle_report,
+        daily_report=daily_report,
+        calibration_report=calibration_report,
+        sampled_contracts=sampled_contracts,
+    )
+
+
 def get_provider_health(base_data_dir: str | None = None):
     config = get_default_scheduler_config(base_data_dir=base_data_dir)
     ensure_runtime_directories(config)

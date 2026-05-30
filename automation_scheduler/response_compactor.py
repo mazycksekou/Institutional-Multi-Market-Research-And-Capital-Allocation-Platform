@@ -12,7 +12,7 @@ def _redact(payload: Any) -> Any:
             lk = str(k).lower()
             if any(s in lk for s in _SECRET_KEYS):
                 out[k] = "[redacted]"
-            elif lk in {"provider_payload", "raw_payload", "external_payload"}:
+            elif lk in {"provider_payload", "raw_payload", "external_payload", "source_payload", "source_payload_redacted", "raw_provider_payload", "raw_kalshi_payload", "raw_sharp_payload"}:
                 out[k] = "[omitted]"
             else:
                 out[k] = _redact(v)
@@ -385,6 +385,134 @@ def compact_settlement_discovery_response(payload: dict[str, Any], limit: int = 
         "count": len(compact_candidates),
         "completion_candidates": compact_candidates,
         "completion_candidate_path": payload.get("completion_candidate_path"),
+        "compact_response": True,
+        "raw_payload_included": False,
+    }
+
+
+def compact_calibration_collector_response(payload: dict[str, Any], limit: int = 10) -> dict[str, Any]:
+    contracts = list(payload.get("selected_contracts", []))[: max(1, min(int(limit or 10), 10))]
+    safe_contracts = []
+    contract_fields = (
+        "ticker",
+        "contract_id",
+        "event_id",
+        "event_name",
+        "market_id",
+        "market_type",
+        "collector_bucket",
+        "close_time",
+        "status",
+        "observed_price",
+        "implied_probability",
+        "yes_price",
+        "no_price",
+        "yes_bid",
+        "yes_ask",
+        "volume",
+        "open_interest",
+        "liquidity_score",
+        "spread_score",
+        "pricing_quality_score",
+        "close_time_score",
+        "market_structure_score",
+        "risk_score",
+        "confidence_score",
+        "review_priority_score",
+        "liquidity_tier",
+        "reason_codes",
+        "recommended_action",
+        "paper_only",
+        "execution_allowed",
+    )
+    for row in contracts:
+        if not isinstance(row, dict):
+            continue
+        safe_contracts.append({field: _redact(row.get(field)) for field in contract_fields if field in row})
+    return {
+        "ok": bool(payload.get("ok", True)),
+        "status": payload.get("status", "collector_cycle_complete"),
+        "cycle_id": payload.get("cycle_id"),
+        "dry_run": bool(payload.get("dry_run", True)),
+        "persist_outcomes": bool(payload.get("persist_outcomes", False)),
+        "lock_acquired": bool(payload.get("lock_acquired", False)),
+        "skipped_due_to_lock": bool(payload.get("skipped_due_to_lock", False)),
+        "markets_scanned": int(payload.get("markets_scanned", 0)),
+        "eligible_contracts_found": int(payload.get("eligible_contracts_found", 0)),
+        "selected_short_term": int(payload.get("selected_short_term", 0)),
+        "selected_medium_term": int(payload.get("selected_medium_term", 0)),
+        "selected_long_term": int(payload.get("selected_long_term", 0)),
+        "new_contracts_added": int(payload.get("new_contracts_added", 0)),
+        "new_contracts_selected": int(payload.get("new_contracts_selected", 0)),
+        "daily_new_contract_limit": int(payload.get("daily_new_contract_limit", 0)),
+        "daily_new_contracts_remaining": int(payload.get("daily_new_contracts_remaining", 0)),
+        "duplicate_contracts_skipped": int(payload.get("duplicate_contracts_skipped", 0)),
+        "duplicate_outcomes_skipped": int(payload.get("duplicate_outcomes_skipped", 0)),
+        "records_checked": int(payload.get("records_checked", 0)),
+        "read_only_records_matched": int(payload.get("read_only_records_matched", 0)),
+        "explicit_settlement_count": int(payload.get("explicit_settlement_count", 0)),
+        "settled_yes_count": int(payload.get("settled_yes_count", 0)),
+        "settled_no_count": int(payload.get("settled_no_count", 0)),
+        "void_cancelled_count": int(payload.get("void_cancelled_count", 0)),
+        "unknown_count": int(payload.get("unknown_count", 0)),
+        "not_settled_count": int(payload.get("not_settled_count", 0)),
+        "no_match_count": int(payload.get("no_match_count", 0)),
+        "stale_count": int(payload.get("stale_count", 0)),
+        "dry_run_ingest": dict(payload.get("dry_run_ingest", {})),
+        "outcomes_persisted": int(payload.get("outcomes_persisted", 0)),
+        "total_outcome_records_count": int(payload.get("total_outcome_records_count", 0)),
+        "matched_outcomes_count": int(payload.get("matched_outcomes_count", 0)),
+        "calibration_status": payload.get("calibration_status"),
+        "coverage_rate": float(payload.get("coverage_rate", 0.0)),
+        "insufficient_sample": bool(payload.get("insufficient_sample", False)),
+        "next_required_data": list(payload.get("next_required_data", []))[:10],
+        "deepseek_review_status": payload.get("deepseek_review_status", "not_requested"),
+        "provider_write": False,
+        "execution_allowed_count": 0,
+        "auto_execution_enabled": False,
+        "kalshi_order_execution_enabled": False,
+        "human_approval_required": True,
+        "paper_only": True,
+        "collector_policy": dict(payload.get("collector_policy", {})),
+        "sample_targets": dict(payload.get("sample_targets", {})),
+        "selection_rejected_reason_counts": dict(payload.get("selection_rejected_reason_counts", {})),
+        "provider_blockers": list(payload.get("provider_blockers", []))[:10],
+        "cycle_report_path": payload.get("cycle_report_path"),
+        "latest_cycle_path": payload.get("latest_cycle_path"),
+        "daily_report_path": payload.get("daily_report_path"),
+        "daily_markdown_path": payload.get("daily_markdown_path"),
+        "count": len(safe_contracts),
+        "selected_contracts": safe_contracts,
+        "compact_response": True,
+        "raw_payload_included": False,
+    }
+
+
+def compact_deepseek_review_response(payload: dict[str, Any]) -> dict[str, Any]:
+    review = dict(payload.get("review", {}))
+    return {
+        "ok": bool(payload.get("ok", True)),
+        "status": payload.get("status", "disabled"),
+        "enabled": bool(payload.get("enabled", False)),
+        "local_server_reachable": bool(payload.get("local_server_reachable", False)),
+        "json_schema_valid": bool(payload.get("json_schema_valid", False)),
+        "rejected_reason": payload.get("rejected_reason"),
+        "forbidden_actions_rejected": bool(payload.get("forbidden_actions_rejected", False)),
+        "reviewer_side_effects": "none",
+        "provider_write": False,
+        "auto_execution_enabled": False,
+        "kalshi_order_execution_enabled": False,
+        "review": {
+            "summary": review.get("summary"),
+            "crosscheck_status": review.get("crosscheck_status"),
+            "risk_flags": list(review.get("risk_flags", []))[:50],
+            "valuation_mismatches": list(review.get("valuation_mismatches", []))[:50],
+            "missing_inputs": list(review.get("missing_inputs", []))[:50],
+            "data_quality_notes": list(review.get("data_quality_notes", []))[:50],
+            "recommended_action": review.get("recommended_action"),
+            "confidence": float(review.get("confidence", 0.0) or 0.0),
+            "must_not_execute": True,
+        },
         "compact_response": True,
         "raw_payload_included": False,
     }

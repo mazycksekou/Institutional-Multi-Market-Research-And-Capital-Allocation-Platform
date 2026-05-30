@@ -88,6 +88,28 @@ class TestOutcomeStore(unittest.TestCase):
             self.assertEqual(result["persistence_blocked_reason"], "dry_run")
             self.assertEqual(load_outcome_records(tmp), [])
 
+    def test_dry_run_required_before_local_persistence(self):
+        with TemporaryDirectory() as tmp:
+            result = ingest_outcome_records(
+                [
+                    self._record(
+                        source="read_only_settlement",
+                        evidence_type="explicit_settlement_field",
+                        evidence_summary="field_names:settlement_result",
+                    )
+                ],
+                source="read_only_settlement",
+                dry_run=True,
+                persist=True,
+                base_data_dir=tmp,
+            )
+            self.assertEqual(result["records_valid"], 1)
+            self.assertFalse(result["persisted"])
+            self.assertFalse(result["local_persistence"])
+            self.assertEqual(result["outcome_records_written"], 0)
+            self.assertEqual(result["persistence_blocked_reason"], "dry_run")
+            self.assertEqual(load_outcome_records(tmp), [])
+
     def test_persisted_live_records_reject_test_fixture_source(self):
         with TemporaryDirectory() as tmp:
             result = ingest_outcome_records(

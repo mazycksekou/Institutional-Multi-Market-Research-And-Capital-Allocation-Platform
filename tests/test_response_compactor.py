@@ -1,6 +1,8 @@
 import unittest
 from automation_scheduler.response_compactor import (
+    compact_calibration_collector_response,
     compact_calibration_response,
+    compact_deepseek_review_response,
     compact_outcome_ingest_response,
     compact_outcomes_response,
     compact_settlement_discovery_response,
@@ -298,6 +300,81 @@ class TestResponseCompactor(unittest.TestCase):
         self.assertFalse(compact["provider_write"])
         self.assertNotIn("provider_payload", str(compact))
         self.assertNotIn("secret", str(compact))
+
+    def test_calibration_collector_compact_response_is_safe(self):
+        compact = compact_calibration_collector_response(
+            {
+                "ok": True,
+                "status": "collector_cycle_complete",
+                "cycle_id": "cycle-1",
+                "dry_run": False,
+                "persist_outcomes": True,
+                "markets_scanned": 10,
+                "eligible_contracts_found": 3,
+                "selected_short_term": 2,
+                "selected_medium_term": 1,
+                "selected_long_term": 0,
+                "new_contracts_added": 3,
+                "records_checked": 1,
+                "explicit_settlement_count": 1,
+                "settled_yes_count": 1,
+                "outcomes_persisted": 1,
+                "total_outcome_records_count": 7,
+                "matched_outcomes_count": 7,
+                "calibration_status": "partial_calibration",
+                "coverage_rate": 0.7,
+                "insufficient_sample": True,
+                "next_required_data": ["additional_settlement_results"],
+                "provider_write": True,
+                "execution_allowed_count": 99,
+                "auto_execution_enabled": True,
+                "kalshi_order_execution_enabled": True,
+                "selected_contracts": [{"ticker": "KX", "source_payload": {"raw": "drop"}, "api_key": "secret"}],
+            }
+        )
+        self.assertFalse(compact["provider_write"])
+        self.assertEqual(compact["execution_allowed_count"], 0)
+        self.assertFalse(compact["auto_execution_enabled"])
+        self.assertFalse(compact["kalshi_order_execution_enabled"])
+        self.assertEqual(compact["explicit_settlement_count"], 1)
+        rendered = str(compact)
+        self.assertNotIn("source_payload", rendered)
+        self.assertNotIn("secret", rendered)
+
+    def test_deepseek_review_compact_response_is_safe(self):
+        compact = compact_deepseek_review_response(
+            {
+                "ok": True,
+                "status": "review_complete",
+                "enabled": True,
+                "local_server_reachable": True,
+                "json_schema_valid": True,
+                "provider_write": True,
+                "auto_execution_enabled": True,
+                "kalshi_order_execution_enabled": True,
+                "review": {
+                    "summary": "ok",
+                    "crosscheck_status": "pass",
+                    "risk_flags": [],
+                    "valuation_mismatches": [],
+                    "missing_inputs": [],
+                    "data_quality_notes": [],
+                    "recommended_action": "continue_collecting",
+                    "confidence": 0.4,
+                    "must_not_execute": False,
+                    "api_key": "secret",
+                },
+                "raw_payload": {"x": 1},
+            }
+        )
+        self.assertFalse(compact["provider_write"])
+        self.assertFalse(compact["auto_execution_enabled"])
+        self.assertFalse(compact["kalshi_order_execution_enabled"])
+        self.assertEqual(compact["reviewer_side_effects"], "none")
+        self.assertTrue(compact["review"]["must_not_execute"])
+        self.assertFalse(compact["raw_payload_included"])
+        self.assertNotIn("secret", str(compact))
+        self.assertNotIn("'raw_payload':", str(compact))
 
     def test_verbose_redaction(self):
         payload = {"api_key": "x", "nested": [{"token": "y"}], "items": list(range(200)), "provider_payload": {"raw": 1}}

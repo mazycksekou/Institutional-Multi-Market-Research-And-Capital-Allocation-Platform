@@ -1,4 +1,6 @@
 import unittest
+from unittest.mock import patch
+
 from fastapi.testclient import TestClient
 from main import app
 
@@ -141,6 +143,85 @@ class TestAutomationSchedulerEndpoints(unittest.TestCase):
     def test_run_once_rejects_non_dry_run(self):
         r = self.client.post('/api/automation/run-once', json={'dry_run': False})
         self.assertEqual(r.status_code, 400)
+
+    def test_calibration_collector_endpoint_compact_default(self):
+        with patch(
+            "automation_scheduler.run_automation_calibration_collector",
+            return_value={
+                "ok": True,
+                "status": "collector_cycle_complete",
+                "cycle_id": "cycle-1",
+                "dry_run": True,
+                "persist_outcomes": False,
+                "markets_scanned": 10,
+                "eligible_contracts_found": 3,
+                "selected_short_term": 2,
+                "selected_medium_term": 1,
+                "selected_long_term": 0,
+                "new_contracts_added": 3,
+                "records_checked": 0,
+                "explicit_settlement_count": 0,
+                "total_outcome_records_count": 0,
+                "matched_outcomes_count": 0,
+                "calibration_status": "insufficient_data",
+                "coverage_rate": 0.0,
+                "insufficient_sample": True,
+                "next_required_data": ["additional_settlement_results"],
+                "provider_payload": {"raw": "drop"},
+                "selected_contracts": [{"ticker": "KX", "source_payload": {"raw": "drop"}}],
+            },
+        ):
+            r = self.client.post(
+                "/api/automation/calibration-collector/run",
+                json={"dry_run": True, "persist_outcomes": False, "max_new_contracts": 3},
+            )
+        self.assertEqual(r.status_code, 200)
+        payload = r.json()
+        self.assertEqual(payload["markets_scanned"], 10)
+        self.assertFalse(payload["provider_write"])
+        self.assertEqual(payload["execution_allowed_count"], 0)
+        self.assertFalse(payload["auto_execution_enabled"])
+        self.assertFalse(payload["kalshi_order_execution_enabled"])
+        self.assertNotIn("provider_payload", str(payload))
+        self.assertNotIn("source_payload", str(payload))
+
+    def test_deepseek_review_endpoint_compact_default(self):
+        with patch(
+            "automation_scheduler.run_automation_deepseek_review",
+            return_value={
+                "ok": True,
+                "status": "disabled",
+                "enabled": False,
+                "local_server_reachable": False,
+                "json_schema_valid": True,
+                "forbidden_actions_rejected": False,
+                "reviewer_side_effects": "none",
+                "provider_write": False,
+                "auto_execution_enabled": False,
+                "kalshi_order_execution_enabled": False,
+                "review": {
+                    "summary": "disabled",
+                    "crosscheck_status": "pass",
+                    "risk_flags": [],
+                    "valuation_mismatches": [],
+                    "missing_inputs": [],
+                    "data_quality_notes": [],
+                    "recommended_action": "continue_collecting",
+                    "confidence": 0.0,
+                    "must_not_execute": True,
+                },
+                "raw_payload": {"x": 1},
+            },
+        ):
+            r = self.client.post("/api/automation/deepseek-review", json={})
+        self.assertEqual(r.status_code, 200)
+        payload = r.json()
+        self.assertEqual(payload["status"], "disabled")
+        self.assertFalse(payload["provider_write"])
+        self.assertEqual(payload["reviewer_side_effects"], "none")
+        self.assertTrue(payload["review"]["must_not_execute"])
+        self.assertFalse(payload["raw_payload_included"])
+        self.assertNotIn("'raw_payload':", str(payload))
 
     def test_kalshi_provider_endpoints_compact_default(self):
         health = self.client.get('/api/providers/kalshi/health')
