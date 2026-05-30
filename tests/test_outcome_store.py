@@ -1,5 +1,7 @@
+import json
 import unittest
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from automation_scheduler.outcome_store import (
@@ -40,6 +42,23 @@ class TestOutcomeStore(unittest.TestCase):
             self.assertTrue(state["outcome_read_ok"])
             self.assertEqual(state["items_read_count"], 1)
             self.assertEqual(len(load_outcome_records(tmp)), 1)
+
+    def test_reads_historical_item_batches_when_latest_is_overwritten(self):
+        with TemporaryDirectory() as tmp:
+            first = ingest_outcome_records([self._record(contract_id="KXOLD", ticker="KXOLD")], source="local_manual", dry_run=False, persist=True, base_data_dir=tmp)
+            second = ingest_outcome_records([self._record(contract_id="KXNEW", ticker="KXNEW", settled_at="2026-05-29T00:01:00+00:00")], source="local_manual", dry_run=False, persist=True, base_data_dir=tmp)
+            latest_path = Path(tmp) / "outcomes" / "latest.json"
+            latest_payload = json.loads(latest_path.read_text(encoding="utf-8"))
+            latest_payload["items"] = [row for row in latest_payload["items"] if row["contract_id"] == "KXNEW"]
+            latest_payload["total_count"] = 1
+            latest_path.write_text(json.dumps(latest_payload), encoding="utf-8")
+
+            records = load_outcome_records(tmp)
+            contracts = {row["contract_id"] for row in records}
+            self.assertEqual(first["outcome_records_written"], 1)
+            self.assertEqual(second["outcome_records_written"], 1)
+            self.assertEqual(contracts, {"KXOLD", "KXNEW"})
+            self.assertEqual(load_outcome_state(tmp)["items_read_count"], 2)
 
     def test_invalid_outcome_status_rejected(self):
         result = ingest_outcome_records([self._record(outcome_status="bad")], source="local_manual")

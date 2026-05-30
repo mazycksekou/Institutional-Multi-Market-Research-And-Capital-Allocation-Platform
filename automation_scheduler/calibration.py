@@ -119,6 +119,19 @@ def _market_key(row: dict[str, Any]) -> str | None:
     return str(value) if value is not None and str(value).strip() else None
 
 
+def _outcome_identity(outcome: dict[str, Any]) -> str:
+    if outcome.get("outcome_id"):
+        return str(outcome.get("outcome_id"))
+    return "|".join(
+        [
+            str(outcome.get("provider") or "unknown"),
+            str(outcome.get("market_type") or "unknown"),
+            str(_market_key(outcome) or outcome.get("decision_id") or outcome.get("review_item_id") or "unknown"),
+            str(outcome.get("settled_at") or "unknown"),
+        ]
+    )
+
+
 def _match_rank(decision: dict[str, Any], outcome: dict[str, Any]) -> int:
     for key in ("decision_id", "review_item_id"):
         if decision.get(key) and outcome.get(key) and str(decision.get(key)) == str(outcome.get(key)):
@@ -200,29 +213,73 @@ def match_outcomes_to_paper_decisions(
             row["paper_result"] = outcome_match.get("paper_result", row.get("paper_result")) or _paper_result_for(row.get("final_outcome"))
             row["paper_roi_estimate"] = outcome_match.get("paper_roi_estimate", row.get("paper_roi_estimate"))
             row["calibration_bucket"] = outcome_match.get("calibration_bucket", row.get("calibration_bucket"))
-            row["matched_outcome_id"] = outcome_match.get("outcome_id") or "|".join(
-                [
-                    str(outcome_match.get("provider") or "unknown"),
-                    str(outcome_match.get("market_type") or "unknown"),
-                    str(_market_key(outcome_match) or outcome_match.get("decision_id") or outcome_match.get("review_item_id") or "unknown"),
-                    str(outcome_match.get("settled_at") or "unknown"),
-                ]
-            )
+            row["matched_outcome_id"] = _outcome_identity(outcome_match)
         matched.append(row)
     return matched
 
 
-def _outcome_match_diagnostics(decisions: list[dict[str, Any]], outcomes: list[dict[str, Any]]) -> dict[str, int]:
+def _unmatched_outcome_reason_counts(
+    decisions: list[dict[str, Any]],
+    outcomes: list[dict[str, Any]],
+    matched_outcome_ids: set[str],
+) -> dict[str, int]:
+    decision_ids = {str(row.get("decision_id")) for row in decisions if row.get("decision_id")}
+    review_item_ids = {str(row.get("review_item_id")) for row in decisions if row.get("review_item_id")}
+    run_ids = {str(row.get("run_id")) for row in decisions if row.get("run_id")}
+    provider_market_contracts = {
+        (
+            str(row.get("provider") or ""),
+            str(row.get("market_type") or ""),
+            str(_market_key(row) or ""),
+            str(row.get("close_time") or ""),
+        )
+        for row in decisions
+        if _market_key(row)
+    }
+    provider_market_contracts_without_close = {(provider, market_type, market_key) for provider, market_type, market_key, _ in provider_market_contracts}
+    counts: dict[str, int] = {}
+    for outcome in outcomes:
+        if _outcome_identity(outcome) in matched_outcome_ids:
+            continue
+        reasons: list[str] = []
+        decision_id = str(outcome.get("decision_id") or "")
+        review_item_id = str(outcome.get("review_item_id") or "")
+        run_id = str(outcome.get("run_id") or "")
+        provider_contract = (
+            str(outcome.get("provider") or ""),
+            str(outcome.get("market_type") or ""),
+            str(_market_key(outcome) or ""),
+            str(outcome.get("close_time") or ""),
+        )
+        provider_contract_without_close = provider_contract[:3]
+        if decision_id and decision_id not in decision_ids:
+            reasons.append("decision_id_not_found")
+        if review_item_id and review_item_id not in review_item_ids:
+            reasons.append("review_item_id_not_found")
+        if run_id and run_id not in run_ids:
+            reasons.append("run_id_not_found")
+        if not decision_id and not review_item_id and not _market_key(outcome):
+            reasons.append("missing_match_key")
+        elif provider_contract not in provider_market_contracts and provider_contract_without_close not in provider_market_contracts_without_close:
+            reasons.append("provider_ticker_contract_not_found")
+        if not reasons:
+            reasons.append("no_matching_paper_decision")
+        for reason in reasons:
+            counts[reason] = counts.get(reason, 0) + 1
+    return counts
+
+
+def _outcome_match_diagnostics(decisions: list[dict[str, Any]], outcomes: list[dict[str, Any]]) -> dict[str, Any]:
     matched_decisions = match_outcomes_to_paper_decisions(decisions, outcomes) if outcomes else list(decisions)
     matched_outcome_ids = {str(row.get("matched_outcome_id")) for row in matched_decisions if row.get("matched_outcome_id")}
     ambiguous = len([row for row in matched_decisions if row.get("outcome_match_status") == "ambiguous"])
-    outcome_ids = {str(row.get("outcome_id")) for row in outcomes if row.get("outcome_id")}
+    outcome_ids = {_outcome_identity(row) for row in outcomes}
+    unmatched_count = len([row for row in outcomes if _outcome_identity(row) not in matched_outcome_ids])
     return {
         "matched_outcomes_count": len(matched_outcome_ids),
-        "unmatched_outcomes_count": len([row for row in outcomes if row.get("outcome_id") and str(row.get("outcome_id")) not in matched_outcome_ids])
-        if outcome_ids
-        else max(0, len(outcomes) - len(matched_outcome_ids)),
+        "unmatched_outcomes_count": unmatched_count if outcome_ids else max(0, len(outcomes) - len(matched_outcome_ids)),
         "ambiguous_matches_count": ambiguous,
+        "unmatched_reason_counts": _unmatched_outcome_reason_counts(decisions, outcomes, matched_outcome_ids),
     }
 
 
@@ -245,6 +302,7 @@ def summarize_outcome_coverage(
         "matched_outcomes_count": 0,
         "unmatched_outcomes_count": 0,
         "ambiguous_matches_count": 0,
+        "unmatched_reason_counts": {},
     }
     return {
         "sample_size": total,
@@ -257,6 +315,7 @@ def summarize_outcome_coverage(
         "unmatched_outcome_count": diagnostics["unmatched_outcomes_count"],
         "unmatched_outcomes_count": diagnostics["unmatched_outcomes_count"],
         "ambiguous_matches_count": diagnostics["ambiguous_matches_count"],
+        "unmatched_reason_counts": diagnostics["unmatched_reason_counts"],
     }
 
 
@@ -392,6 +451,7 @@ def build_calibration_report(
         "outcome_records_count": len(outcomes),
         "matched_outcomes_count": coverage["matched_outcomes_count"],
         "unmatched_outcomes_count": coverage["unmatched_outcomes_count"],
+        "unmatched_reason_counts": coverage["unmatched_reason_counts"],
         "ambiguous_matches_count": coverage["ambiguous_matches_count"],
         "review_items_available_count": len(queue_items),
         "paper_ledger_records_count": len(decisions),

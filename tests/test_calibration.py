@@ -223,3 +223,32 @@ class TestCalibration(unittest.TestCase):
             self.assertEqual(report["matched_outcomes_count"], 1)
             self.assertEqual(report["settled_count"], 1)
             self.assertEqual(report["status"], "partial_calibration")
+
+    def test_unmatched_outcomes_include_reason_counts(self):
+        decisions = [
+            {
+                "decision_id": "decision_1",
+                "review_item_id": "review_1",
+                "provider": "kalshi_prediction_market",
+                "market_type": "prediction_market",
+                "contract_id": "KXMATCH",
+                "ticker": "KXMATCH",
+                "implied_probability": 0.6,
+            }
+        ]
+        outcomes = [
+            {
+                "outcome_id": "outcome_1",
+                "provider": "kalshi_prediction_market",
+                "market_type": "prediction_market",
+                "contract_id": "KXOTHER",
+                "ticker": "KXOTHER",
+                "outcome_status": "settled",
+                "final_outcome": "yes",
+                "settled_at": "2026-05-29T00:00:00+00:00",
+            }
+        ]
+        report = build_calibration_report(paper_decisions=decisions, outcome_records=outcomes, review_items=[])
+        self.assertEqual(report["matched_outcomes_count"], 0)
+        self.assertEqual(report["unmatched_outcomes_count"], 1)
+        self.assertEqual(report["unmatched_reason_counts"]["provider_ticker_contract_not_found"], 1)

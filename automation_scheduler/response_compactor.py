@@ -232,6 +232,7 @@ def compact_calibration_response(payload: dict[str, Any]) -> dict[str, Any]:
         "outcome_records_count": int(payload.get("outcome_records_count", 0)),
         "matched_outcomes_count": int(payload.get("matched_outcomes_count", payload.get("matched_outcome_count", 0))),
         "unmatched_outcomes_count": int(payload.get("unmatched_outcomes_count", payload.get("unmatched_outcome_count", 0))),
+        "unmatched_reason_counts": dict(payload.get("unmatched_reason_counts", {})),
         "ambiguous_matches_count": int(payload.get("ambiguous_matches_count", 0)),
         "settled_count": int(payload.get("settled_count", 0)),
         "pending_count": int(payload.get("pending_count", 0)),

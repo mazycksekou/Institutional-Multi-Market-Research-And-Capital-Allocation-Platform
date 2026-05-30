@@ -71,6 +71,14 @@ def _project_relative_path(base_data_dir: str, path: Path) -> str:
         return path.name
 
 
+def _items_from_payload(payload: Any) -> list[dict[str, Any]]:
+    if isinstance(payload, list):
+        return [row for row in payload if isinstance(row, dict)]
+    if isinstance(payload, dict) and isinstance(payload.get("items"), list):
+        return [row for row in payload["items"] if isinstance(row, dict)]
+    return []
+
+
 def _safe_scalar(value: Any) -> Any:
     if isinstance(value, (str, int, float, bool)) or value is None:
         return value
@@ -134,6 +142,16 @@ def _natural_key(record: dict[str, Any]) -> str:
             str(record.get("settled_at") or "unknown"),
         ]
     )
+
+
+def _dedupe_loaded_records(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    by_key: dict[str, dict[str, Any]] = {}
+    for row in records:
+        if not isinstance(row, dict):
+            continue
+        key = str(row.get("outcome_id") or _natural_key(row))
+        by_key[key] = row
+    return sorted(by_key.values(), key=lambda item: (str(item.get("settled_at") or ""), str(item.get("outcome_id") or "")))
 
 
 def _derive_outcome_id(record: dict[str, Any]) -> str:
@@ -212,26 +230,25 @@ def validate_outcome_record(
 
 
 def load_outcome_records(base_data_dir: str = "data") -> list[dict[str, Any]]:
-    latest = _read_json(_latest_path(base_data_dir))
-    if isinstance(latest, dict) and isinstance(latest.get("items"), list):
-        return [row for row in latest["items"] if isinstance(row, dict)]
-    legacy = _read_json(_legacy_path(base_data_dir))
-    if isinstance(legacy, list):
-        return [row for row in legacy if isinstance(row, dict)]
-    if isinstance(legacy, dict) and isinstance(legacy.get("items"), list):
-        return [row for row in legacy["items"] if isinstance(row, dict)]
-    return []
+    records: list[dict[str, Any]] = []
+    items_dir = _items_dir(base_data_dir)
+    if items_dir.exists():
+        for path in sorted(items_dir.glob("*.json")):
+            records.extend(_items_from_payload(_read_json(path)))
+    records.extend(_items_from_payload(_read_json(_legacy_path(base_data_dir))))
+    records.extend(_items_from_payload(_read_json(_latest_path(base_data_dir))))
+    return _dedupe_loaded_records(records)
 
 
 def load_outcome_state(base_data_dir: str = "data") -> dict[str, Any]:
     latest_path = _latest_path(base_data_dir)
     latest = _read_json(latest_path)
-    if isinstance(latest, dict) and isinstance(latest.get("items"), list):
-        items = [row for row in latest["items"] if isinstance(row, dict)]
+    items = load_outcome_records(base_data_dir)
+    if items:
         return {
-            "storage_backend": str(latest.get("storage_backend") or "file"),
-            "latest_batch_id": latest.get("latest_batch_id"),
-            "last_updated_at": latest.get("last_updated_at"),
+            "storage_backend": str(latest.get("storage_backend") or "file") if isinstance(latest, dict) else "file",
+            "latest_batch_id": latest.get("latest_batch_id") if isinstance(latest, dict) else None,
+            "last_updated_at": latest.get("last_updated_at") if isinstance(latest, dict) else None,
             "outcome_read_ok": True,
             "outcome_error_category": None,
             "outcome_read_path": _project_relative_path(base_data_dir, latest_path),
@@ -239,19 +256,6 @@ def load_outcome_state(base_data_dir: str = "data") -> dict[str, Any]:
             "items": items,
         }
     malformed_latest = latest_path.exists() and latest is None
-    legacy = _read_json(_legacy_path(base_data_dir))
-    if isinstance(legacy, list):
-        items = [row for row in legacy if isinstance(row, dict)]
-        return {
-            "storage_backend": "file",
-            "latest_batch_id": None,
-            "last_updated_at": None,
-            "outcome_read_ok": True,
-            "outcome_error_category": None,
-            "outcome_read_path": _project_relative_path(base_data_dir, _legacy_path(base_data_dir)),
-            "items_read_count": len(items),
-            "items": items,
-        }
     return {
         "storage_backend": "file",
         "latest_batch_id": None,

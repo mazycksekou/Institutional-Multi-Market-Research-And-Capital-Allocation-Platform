@@ -5,8 +5,10 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest.mock import patch
 
+from automation_scheduler.calibration import build_calibration_report
 from automation_scheduler.calibration_collector import run_collector_cycle, write_daily_report
-from automation_scheduler.outcome_store import load_outcome_records
+from automation_scheduler.outcome_store import ingest_outcome_records, load_outcome_records
+from automation_scheduler.paper_decision_ledger import persist_paper_decisions_for_review_items
 
 
 def _market(ticker, close_time, *, price="0.5000", status="active"):
@@ -147,6 +149,62 @@ class TestCalibrationCollector(unittest.TestCase):
             self.assertEqual(result["outcomes_persisted"], 1)
             self.assertEqual(load_outcome_records(tmp)[0]["final_outcome"], "yes")
             self.assertFalse(result["provider_write"])
+
+    def test_collector_preserves_historical_matches_and_daily_matches_calibration(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            persist_paper_decisions_for_review_items(
+                [
+                    {
+                        "id": "historical-review",
+                        "provider_id": "kalshi_prediction_market",
+                        "market_type": "prediction_market",
+                        "contract_id": "KXHIST",
+                        "ticker": "KXHIST",
+                        "implied_probability": 0.7,
+                        "execution_allowed": False,
+                    }
+                ],
+                run_id="close_soon_historical",
+                base_data_dir=tmp,
+            )
+            ingest_outcome_records(
+                [
+                    {
+                        "provider": "kalshi_prediction_market",
+                        "market_type": "prediction_market",
+                        "contract_id": "KXHIST",
+                        "ticker": "KXHIST",
+                        "review_item_id": "historical-review",
+                        "run_id": "close_soon_historical",
+                        "outcome_status": "settled",
+                        "final_outcome": "no",
+                        "settled_at": "2026-05-29T00:00:00+00:00",
+                        "source": "read_only_settlement",
+                        "evidence_type": "explicit_settlement_field",
+                    }
+                ],
+                source="read_only_settlement",
+                dry_run=False,
+                persist=True,
+                base_data_dir=tmp,
+            )
+            result = run_collector_cycle(
+                dry_run=False,
+                persist_outcomes=True,
+                max_new_contracts=0,
+                target_daily_new_contracts=0,
+                base_data_dir=tmp,
+                read_only_records=[],
+            )
+            calibration = build_calibration_report(base_data_dir=tmp)
+            daily = json.loads((Path(tmp) / "outcomes" / "collector" / "daily" / f"{datetime.now(timezone.utc).date().isoformat()}.json").read_text(encoding="utf-8"))
+
+            self.assertEqual(result["matched_outcomes_count"], calibration["matched_outcomes_count"])
+            self.assertEqual(daily["matched_outcomes_count"], calibration["matched_outcomes_count"])
+            self.assertEqual(calibration["matched_outcomes_count"], 1)
+            self.assertEqual(calibration["paper_decisions_count"], 1)
+            self.assertFalse(result["provider_write"])
+            self.assertEqual(result["execution_allowed_count"], 0)
 
     def test_daily_report_writes_compact_safety_fields(self):
         with tempfile.TemporaryDirectory() as tmp:

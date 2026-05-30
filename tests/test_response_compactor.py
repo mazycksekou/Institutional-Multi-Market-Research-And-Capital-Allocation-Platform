@@ -185,6 +185,7 @@ class TestResponseCompactor(unittest.TestCase):
                 "outcome_records_count": 1,
                 "matched_outcomes_count": 1,
                 "unmatched_outcomes_count": 0,
+                "unmatched_reason_counts": {"provider_ticker_contract_not_found": 1},
                 "ambiguous_matches_count": 0,
                 "settled_count": 0,
                 "pending_count": 2,
@@ -206,6 +207,7 @@ class TestResponseCompactor(unittest.TestCase):
         self.assertEqual(compact["paper_decisions_count"], 2)
         self.assertEqual(compact["outcome_records_count"], 1)
         self.assertEqual(compact["matched_outcomes_count"], 1)
+        self.assertEqual(compact["unmatched_reason_counts"]["provider_ticker_contract_not_found"], 1)
         self.assertEqual(compact["execution_allowed_count"], 0)
         self.assertTrue(compact["compact_response"])
         rendered = str(compact)
