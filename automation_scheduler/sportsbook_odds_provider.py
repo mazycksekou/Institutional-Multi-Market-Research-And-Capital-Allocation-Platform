@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from .data_paths import resolve_base_data_dir
 from .provider_payload_validator import validate_provider_payload
 from .provider_secret_policy import assert_no_secret_leak
 from .scheduler_config import utc_now_iso
@@ -83,6 +84,7 @@ def get_valid_normalized_records(snapshot: dict[str, Any], max_staleness_seconds
 
 
 def write_sportsbook_snapshot(snapshot: dict[str, Any], base_data_dir: str = "data") -> str:
+    base_root = resolve_base_data_dir(base_data_dir)
     normalized = normalize_sportsbook_snapshot(snapshot)
     # Guard only redacted provider-source blocks to avoid false positives on long non-secret IDs.
     assert_no_secret_leak(
@@ -94,7 +96,7 @@ def write_sportsbook_snapshot(snapshot: dict[str, Any], base_data_dir: str = "da
             ]
         }
     )
-    folder = Path(base_data_dir) / "provider_payload_samples"
+    folder = base_root / "data_sources" / "provider_payload_samples"
     folder.mkdir(parents=True, exist_ok=True)
     path = folder / "sharp_sportsbook_snapshot.json"
     path.write_text(json.dumps(normalized, indent=2, sort_keys=True), encoding="utf-8")

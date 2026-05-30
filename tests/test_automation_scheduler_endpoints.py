@@ -15,6 +15,8 @@ class TestAutomationSchedulerEndpoints(unittest.TestCase):
         p = r.json()
         self.assertTrue(p['ok'])
         self.assertIn('counts', p)
+        self.assertEqual(p["storage"]["env_var"], "AUTOMATION_DATA_DIR")
+        self.assertEqual(p["storage"]["backend"], "file")
         self.assertNotIn('health', p)
 
     def test_review_queue_endpoint_compact_default(self):
@@ -30,6 +32,7 @@ class TestAutomationSchedulerEndpoints(unittest.TestCase):
         self.assertIn('status', p)
         self.assertIn('paper_decisions_count', p)
         self.assertIn('outcome_records_count', p)
+        self.assertEqual(p["storage"]["env_var"], "AUTOMATION_DATA_DIR")
         self.assertFalse(p['auto_execution_enabled'])
         self.assertEqual(p['execution_allowed_count'], 0)
         self.assertNotIn('provider_payload', str(p))
@@ -93,6 +96,7 @@ class TestAutomationSchedulerEndpoints(unittest.TestCase):
         listed_payload = listed.json()
         self.assertIn('total_count', listed_payload)
         self.assertIn('records', listed_payload)
+        self.assertEqual(listed_payload["storage"]["env_var"], "AUTOMATION_DATA_DIR")
 
     def test_settlement_discovery_endpoint_compact_default(self):
         discovered = self.client.post(
@@ -173,6 +177,7 @@ class TestAutomationSchedulerEndpoints(unittest.TestCase):
                 "next_required_data": ["additional_settlement_results"],
                 "provider_payload": {"raw": "drop"},
                 "selected_contracts": [{"ticker": "KX", "source_payload": {"raw": "drop"}}],
+                "storage_health": {"env_var": "AUTOMATION_DATA_DIR", "data_dir": "/var/data", "backend": "file", "configured": True, "read_ok": True, "write_ok": True},
             },
         ):
             r = self.client.post(
@@ -188,6 +193,7 @@ class TestAutomationSchedulerEndpoints(unittest.TestCase):
         self.assertEqual(payload["execution_allowed_count"], 0)
         self.assertFalse(payload["auto_execution_enabled"])
         self.assertFalse(payload["kalshi_order_execution_enabled"])
+        self.assertEqual(payload["storage"]["env_var"], "AUTOMATION_DATA_DIR")
         self.assertNotIn("provider_payload", str(payload))
         self.assertNotIn("source_payload", str(payload))
 
@@ -244,6 +250,26 @@ class TestAutomationSchedulerEndpoints(unittest.TestCase):
         self.assertEqual(r.status_code, 400)
         self.assertFalse(r.json()["detail"]["provider_write"])
         self.assertEqual(r.json()["detail"]["execution_allowed_count"], 0)
+
+    def test_calibration_collector_scheduled_endpoint_requires_token(self):
+        with patch.dict("os.environ", {"COLLECTOR_CRON_TOKEN": "endpoint-secret"}, clear=False):
+            r = self.client.post("/api/automation/calibration-collector/scheduled-run", json={})
+        self.assertEqual(r.status_code, 401)
+        self.assertNotIn("endpoint-secret", r.text)
+
+    def test_calibration_collector_scheduled_endpoint_rejects_unsafe_flags(self):
+        with patch.dict("os.environ", {"COLLECTOR_CRON_TOKEN": "endpoint-secret"}, clear=False):
+            r = self.client.post(
+                "/api/automation/calibration-collector/scheduled-run",
+                headers={"X-Collector-Token": "endpoint-secret"},
+                json={"provider_write": True, "live_execution_requested": True, "submit_live_order": True},
+            )
+        self.assertEqual(r.status_code, 400)
+        detail = r.json()["detail"]
+        self.assertFalse(detail["provider_write"])
+        self.assertEqual(detail["execution_allowed_count"], 0)
+        self.assertFalse(detail["live_execution_enabled"])
+        self.assertNotIn("endpoint-secret", r.text)
 
     def test_deepseek_review_endpoint_compact_default(self):
         with patch(

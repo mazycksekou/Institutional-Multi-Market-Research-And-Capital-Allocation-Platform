@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from .data_paths import get_runtime_data_path
 from .scheduler_config import sanitize_filename, utc_now_iso
 
 
@@ -55,7 +56,8 @@ def replay_rows(rows: list[dict[str, Any]], model_id: str = "unknown_model") -> 
 
 
 def write_replay_result(result: dict[str, Any], base_dir: str = "data/backtests") -> str:
-    directory = Path(base_dir)
+    normalized = str(base_dir).replace("\\", "/").rstrip("/")
+    directory = get_runtime_data_path("backtests") if normalized == "data/backtests" else Path(base_dir)
     directory.mkdir(parents=True, exist_ok=True)
     model_id = sanitize_filename(str(result.get("model_id") or "unknown_model"))
     replay_id = sanitize_filename(str(result.get("replayed_at") or utc_now_iso()))
@@ -73,4 +75,3 @@ def summarize_replay_result(result: dict[str, Any]) -> dict[str, Any]:
         "settled_count": len(settled),
         "status": "backtest_complete" if rows else "needs_more_sample",
     }
-

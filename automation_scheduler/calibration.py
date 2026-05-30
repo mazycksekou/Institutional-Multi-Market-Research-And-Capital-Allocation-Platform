@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from .data_paths import get_storage_health, resolve_base_data_dir
 from .outcome_store import load_outcome_records, load_outcome_state, summarize_outcomes
 from .paper_decision_ledger import load_paper_decisions, summarize_paper_decisions, to_float_or_none
 from .review_queue import load_review_queue_state
@@ -31,7 +32,7 @@ def _read_json(path: Path) -> Any | None:
 
 
 def _report_dir(base_data_dir: str = "data") -> Path:
-    path = Path(base_data_dir) / "calibration_reports"
+    path = resolve_base_data_dir(base_data_dir) / "calibration"
     path.mkdir(parents=True, exist_ok=True)
     return path
 
@@ -44,8 +45,9 @@ def _atomic_write_json(path: Path, payload: Any) -> None:
 
 
 def _project_relative_path(base_data_dir: str, path: Path) -> str:
+    root = resolve_base_data_dir(base_data_dir)
     try:
-        return str(path.resolve().relative_to(Path(base_data_dir).resolve())).replace("\\", "/")
+        return str(path.resolve().relative_to(root.resolve())).replace("\\", "/")
     except Exception:
         return path.name
 
@@ -427,6 +429,8 @@ def build_calibration_report(
     review_items: list[dict[str, Any]] | None = None,
     write_report: bool = False,
 ) -> dict[str, Any]:
+    base_root = resolve_base_data_dir(base_data_dir)
+    base_data_dir = str(base_root)
     decisions = [row for row in (paper_decisions if paper_decisions is not None else load_paper_decisions(base_data_dir)) if isinstance(row, dict)]
     outcomes = [row for row in (outcome_records if outcome_records is not None else load_outcome_records(base_data_dir)) if isinstance(row, dict)]
     matched = match_outcomes_to_paper_decisions(decisions, outcomes) if outcomes else decisions
@@ -474,6 +478,7 @@ def build_calibration_report(
         "warnings": _warnings_for_status(status),
         "next_required_data": _next_required_data(status),
         "storage_backend": outcome_state.get("storage_backend", "file"),
+        "storage_health": get_storage_health(),
         "latest_batch_id": outcome_state.get("latest_batch_id"),
         "outcome_read_ok": bool(outcome_state.get("outcome_read_ok", True)),
         "compact_response": True,

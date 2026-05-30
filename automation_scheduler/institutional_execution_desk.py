@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from .data_paths import resolve_base_data_dir
 from .institutional_audit_ledger import append_audit_record
 from .institutional_cross_asset_adapters import compact_redact, read_existing_outputs
 from .institutional_cross_asset_calibration import build_calibration_by_asset_class
@@ -42,7 +43,7 @@ class ExecutionDeskRejected(ValueError):
 
 
 def _execution_dir(base_data_dir: str = "data") -> Path:
-    path = Path(base_data_dir) / "institutional_lab" / "execution_sim"
+    path = resolve_base_data_dir(base_data_dir) / "institutional_lab" / "execution_sim"
     path.mkdir(parents=True, exist_ok=True)
     return path
 
@@ -97,6 +98,7 @@ def simulate_execution(
     base_data_dir: str = "data",
     persist: bool = True,
 ) -> dict[str, Any]:
+    base_data_dir = str(resolve_base_data_dir(base_data_dir))
     validate_simulation_request(payload)
     available_records = records if records is not None else read_existing_outputs(
         base_data_dir=base_data_dir,
@@ -170,7 +172,7 @@ def simulate_execution(
         _atomic_write_json(path, compact_redact(result))
         latest = _execution_dir(base_data_dir) / "latest.json"
         _atomic_write_json(latest, compact_redact(result))
-        result["execution_sim_path"] = str(path.relative_to(Path(base_data_dir))).replace("\\", "/")
+        result["execution_sim_path"] = str(path.relative_to(resolve_base_data_dir(base_data_dir))).replace("\\", "/")
     return result
 
 

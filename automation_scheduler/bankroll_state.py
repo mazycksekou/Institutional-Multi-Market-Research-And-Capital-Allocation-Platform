@@ -5,9 +5,13 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
+from .data_paths import get_runtime_data_path
 
 SCHEMA_VERSION = "bankroll_state_v1"
-ROOT = Path("data/bankroll")
+
+
+def _root() -> Path:
+    return get_runtime_data_path("bankroll")
 
 
 def _redact(payload: Any) -> Any:
@@ -42,9 +46,10 @@ def default_bankroll_state(starting_bankroll: float = 10000.0) -> dict[str, Any]
 
 
 def save_bankroll_state(state: dict[str, Any], path: Path | None = None) -> Path:
-    ROOT.mkdir(parents=True, exist_ok=True)
+    root = _root()
+    root.mkdir(parents=True, exist_ok=True)
     data = _redact(state)
-    p = path or (ROOT / f"{data.get('bankroll_id', 'bankroll')}.json")
+    p = path or (root / f"{data.get('bankroll_id', 'bankroll')}.json")
     p.write_text(json.dumps(data, indent=2, sort_keys=True), encoding="utf-8")
     return p
 

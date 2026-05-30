@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from .data_paths import resolve_base_data_dir
 from .calibration_tracker import (
     calculate_brier_score,
     calculate_expected_calibration_error,
@@ -83,6 +84,7 @@ def run_backtest(
     rows: list[dict[str, Any]] | None = None,
     base_data_dir: str = "data",
 ) -> dict[str, Any]:
+    base_data_dir = str(resolve_base_data_dir(base_data_dir))
     Path(base_data_dir, "clv").mkdir(parents=True, exist_ok=True)
     Path(base_data_dir, "calibration").mkdir(parents=True, exist_ok=True)
     source_rows = list(rows or [])
@@ -185,6 +187,7 @@ def run_backtest(
 
 
 def run_paper_summary(base_data_dir: str = "data") -> dict[str, Any]:
+    base_data_dir = str(resolve_base_data_dir(base_data_dir))
     ledger_base = str(Path(base_data_dir) / "paper_ledger")
     ledger_entries = load_paper_ledger(base_dir=ledger_base)
     summary = summarize_paper_ledger(base_dir=ledger_base)
@@ -206,6 +209,7 @@ def generate_backtest_report(
     rows: list[dict[str, Any]] | None = None,
     base_data_dir: str = "data",
 ) -> dict[str, Any]:
+    base_data_dir = str(resolve_base_data_dir(base_data_dir))
     result = run_backtest(model_id=model_id, historical_rows_path=historical_rows_path, rows=rows, base_data_dir=base_data_dir)
     report = write_model_performance_report(result, base_dir=str(Path(base_data_dir) / "performance_reports"))
     compact = build_compact_performance_report(report["full_report"], report["report_path"])

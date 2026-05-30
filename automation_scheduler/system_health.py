@@ -6,6 +6,7 @@ from typing import Any
 
 from model_governance.model_inventory import inventory_counts
 from .clv_tracker import summarize_clv_by_model
+from .data_paths import get_storage_health, resolve_base_data_dir
 from .paper_trade_ledger import load_paper_ledger
 from .review_queue import load_review_queue_state
 from .scheduler_config import SCHEMA_VERSION, utc_now_iso
@@ -15,7 +16,8 @@ def get_system_health(config: dict[str, Any]) -> dict[str, Any]:
     queue_state = load_review_queue_state(config)
     review_items = list(queue_state.get("items", []))
     path_status = {name: Path(path).exists() for name, path in config["paths"].items()}
-    governance_path = Path("data") / "governance_audit"
+    data_root = resolve_base_data_dir(str(Path(config["paths"]["review_queue"]).parent))
+    governance_path = data_root / "governance_audit"
     inventory = inventory_counts()
     models_blocked_due_to_missing_inputs = 0
     models_blocked_due_to_stale_data = 0
@@ -41,7 +43,7 @@ def get_system_health(config: dict[str, Any]) -> dict[str, Any]:
         if str(item.get("kelly_gate_result", "")).startswith("blocked"):
             models_blocked_due_to_Kelly += 1
 
-    paper_entries = load_paper_ledger()
+    paper_entries = load_paper_ledger(base_dir=str(Path(config["paths"]["paper_ledger"])))
     settled_paper_entries = [entry for entry in paper_entries if str(entry.get("settlement_status")) == "settled"]
     clv_by_model = summarize_clv_by_model(paper_entries)
     models_with_positive_clv = sum(
@@ -54,7 +56,7 @@ def get_system_health(config: dict[str, Any]) -> dict[str, Any]:
     )
 
     latest_report_id = None
-    reports_dir = Path("data/performance_reports")
+    reports_dir = Path(config["paths"].get("performance_reports", data_root / "performance_reports"))
     if reports_dir.exists():
         report_files = sorted(reports_dir.glob("*.json"), key=lambda p: p.stat().st_mtime, reverse=True)
         if report_files:
@@ -95,6 +97,8 @@ def get_system_health(config: dict[str, Any]) -> dict[str, Any]:
         "alert_only_mode": config["alert_only_mode"],
         "cross_book_engine_enabled": True,
         "paths_ready": path_status,
+        "storage_backend": "file",
+        "storage_health": get_storage_health(),
         "review_queue_count": len(review_items),
         "review_queue_storage_backend": queue_state.get("storage_backend", "unknown"),
         "review_queue_total_count": len(review_items),

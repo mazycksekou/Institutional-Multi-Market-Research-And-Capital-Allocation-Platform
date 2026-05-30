@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from .data_paths import resolve_base_data_dir
 from .institutional_cross_asset_scores import complete_institutional_scores, to_float
 from .outcome_store import load_outcome_records
 from .paper_decision_ledger import load_paper_decisions
@@ -431,7 +432,7 @@ def _read_csv_rows(path: Path) -> list[dict[str, Any]]:
 
 
 def _read_optional_asset_rows(base_data_dir: str, names: tuple[str, ...]) -> list[dict[str, Any]]:
-    root = Path(base_data_dir)
+    root = resolve_base_data_dir(base_data_dir)
     rows: list[dict[str, Any]] = []
     for name in names:
         path = root / name
@@ -447,6 +448,7 @@ def read_existing_outputs(
     base_data_dir: str = "data",
     asset_classes: list[str] | tuple[str, ...] | None = None,
 ) -> dict[str, Any]:
+    base_data_dir = str(resolve_base_data_dir(base_data_dir))
     requested = {str(asset) for asset in (asset_classes or ASSET_CLASSES)}
     unknown = requested - set(ASSET_CLASSES)
     requested = requested & set(ASSET_CLASSES)

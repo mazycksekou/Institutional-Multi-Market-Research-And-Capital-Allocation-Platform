@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from .data_paths import resolve_base_data_dir
 from .kalshi_readonly_adapter import SCHEMA_VERSION, KalshiReadonlyAdapter
 from .provider_payload_validator import validate_provider_payload
 from .provider_secret_policy import assert_no_secret_leak
@@ -66,6 +67,7 @@ def validate_kalshi_snapshot(snapshot: dict[str, Any], max_staleness_seconds: in
 
 
 def write_kalshi_snapshot(snapshot: dict[str, Any], base_data_dir: str = "data") -> str:
+    base_root = resolve_base_data_dir(base_data_dir)
     normalized = normalize_kalshi_snapshot(snapshot)
     assert_no_secret_leak(
         {
@@ -76,7 +78,7 @@ def write_kalshi_snapshot(snapshot: dict[str, Any], base_data_dir: str = "data")
             ]
         }
     )
-    folder = Path(base_data_dir) / "provider_payload_samples"
+    folder = base_root / "data_sources" / "provider_payload_samples"
     folder.mkdir(parents=True, exist_ok=True)
     path = folder / "kalshi_prediction_market_snapshot.json"
     path.write_text(json.dumps(normalized, indent=2, sort_keys=True), encoding="utf-8")

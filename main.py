@@ -25,6 +25,7 @@ import market_pricing
 import multi_sport_model_registry
 import model_probability
 import screenshot_intake
+from automation_scheduler.data_paths import get_runtime_data_path, get_automation_data_dir
 from automation_scheduler.response_compactor import (
     compact_calibration_response,
     compact_calibration_collector_response,
@@ -82,9 +83,9 @@ DEFAULT_BOOKMAKERS = os.getenv(
 )
 DEFAULT_REGIONS = os.getenv("DEFAULT_REGIONS", "us")
 DEFAULT_MARKETS = "h2h,spreads,totals"
-DATA_DIR = Path("data")
-DATA_DIR.mkdir(exist_ok=True)
-BETS_FILE = DATA_DIR / "bets.csv"
+DATA_DIR = get_automation_data_dir()
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+BETS_FILE = get_runtime_data_path("bets.csv")
 
 SPORT_ALIASES = {
     "mlb": "baseball_mlb",
@@ -971,6 +972,21 @@ class AutomationCalibrationCollectorRunRequest(BaseModel):
     include_medium_term: bool = True
     include_long_term: bool = True
     adaptive_throttle: bool = True
+    deepseek_review: bool = False
+
+
+class AutomationCalibrationCollectorScheduledRunRequest(BaseModel):
+    model_config = ConfigDict(extra="allow", protected_namespaces=())
+
+    trigger_type: Optional[str] = "scheduled_endpoint"
+    target_daily_new_contracts: Optional[int] = 250
+    hard_cap_daily_new_contracts: Optional[int] = 500
+    max_new_contracts_per_cycle: Optional[int] = 50
+    max_markets_scanned: Optional[int] = 25000
+    adaptive_throttle: bool = True
+    include_short_term: bool = True
+    include_medium_term: bool = True
+    include_long_term: bool = True
     deepseek_review: bool = False
 
 
@@ -2949,6 +2965,30 @@ async def run_automation_calibration_collector_endpoint(payload: AutomationCalib
     return compact
 
 
+@app.post("/api/automation/calibration-collector/scheduled-run", operation_id="runScheduledAutomationCalibrationCollector")
+async def run_automation_calibration_collector_scheduled_endpoint(
+    payload: AutomationCalibrationCollectorScheduledRunRequest,
+    x_collector_token: Optional[str] = Header(default=None, alias="X-Collector-Token"),
+    verbose: bool = Query(default=False),
+    include_debug: bool = Query(default=False),
+    limit: int = Query(default=10),
+):
+    from automation_scheduler.collector_scheduled_runner import validate_cron_token
+
+    ok, status_code, rejection = validate_cron_token(x_collector_token)
+    if not ok:
+        raise HTTPException(status_code=status_code, detail=compact_calibration_collector_response(rejection or {}, limit=limit))
+    request_payload = payload.model_dump()
+    result = automation_scheduler.run_automation_calibration_collector_scheduled(request_payload)
+    if not bool(result.get("ok", True)) and result.get("status") == "invalid_request":
+        raise HTTPException(status_code=400, detail=compact_calibration_collector_response(result, limit=limit))
+    cap = min(max(int(limit), 1), 100 if verbose else 10)
+    compact = compact_calibration_collector_response(result, limit=cap)
+    if verbose or include_debug:
+        compact["debug"] = redact_and_limit_payload(result, limit=cap, verbose=verbose)
+    return compact
+
+
 @app.post("/api/automation/deepseek-review", operation_id="reviewAutomationWithDeepSeek")
 async def automation_deepseek_review_endpoint(payload: AutomationDeepSeekReviewRequest, verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=10)):
     result = automation_scheduler.run_automation_deepseek_review(
@@ -3257,6 +3297,7 @@ PUBLIC_OPENAPI_PATH_METHODS = frozenset({
     ("/api/automation/outcomes/ingest", "post"),
     ("/api/automation/outcomes/discover-settlements", "post"),
     ("/api/automation/calibration-collector/run", "post"),
+    ("/api/automation/calibration-collector/scheduled-run", "post"),
     ("/api/automation/deepseek-review", "post"),
     ("/api/automation/institutional-lab/health", "get"),
     ("/api/automation/institutional-lab/run", "post"),

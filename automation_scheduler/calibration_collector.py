@@ -11,6 +11,7 @@ from typing import Any
 import httpx
 
 from .calibration import build_calibration_report
+from .data_paths import get_storage_health, resolve_base_data_dir
 from .deepseek_reviewer import run_deepseek_review
 from .kalshi_readonly_adapter import KalshiReadonlyAdapter
 from .outcome_store import ingest_outcome_records, load_outcome_records
@@ -106,13 +107,13 @@ def _insufficient_sample(calibration: dict[str, Any], policy: dict[str, Any]) ->
 
 
 def _collector_root(base_data_dir: str) -> Path:
-    path = Path(base_data_dir) / "outcomes" / "collector"
+    path = resolve_base_data_dir(base_data_dir) / "collector_scheduler"
     path.mkdir(parents=True, exist_ok=True)
     return path
 
 
 def _watchlist_root(base_data_dir: str) -> Path:
-    path = Path(base_data_dir) / "outcomes" / "watchlists"
+    path = resolve_base_data_dir(base_data_dir) / "collector_scheduler" / "watchlists"
     path.mkdir(parents=True, exist_ok=True)
     return path
 
@@ -134,8 +135,9 @@ def _read_json(path: Path) -> Any | None:
 
 
 def _project_relative(base_data_dir: str, path: Path) -> str:
+    root = resolve_base_data_dir(base_data_dir)
     try:
-        return str(path.resolve().relative_to(Path(base_data_dir).resolve())).replace("\\", "/")
+        return str(path.resolve().relative_to(root.resolve())).replace("\\", "/")
     except Exception:
         return str(path).replace("\\", "/")
 
@@ -395,6 +397,7 @@ def _write_daily_markdown(base_data_dir: str, daily: dict[str, Any]) -> str:
 
 
 def write_daily_report(base_data_dir: str = "data", *, day: str | None = None, calibration_report: dict[str, Any] | None = None) -> dict[str, Any]:
+    base_data_dir = str(resolve_base_data_dir(base_data_dir))
     day = day or datetime.now(timezone.utc).date().isoformat()
     daily = _load_daily_state(base_data_dir, day)
     watchlists = load_all_watchlists(base_data_dir)
@@ -410,6 +413,7 @@ def write_daily_report(base_data_dir: str = "data", *, day: str | None = None, c
     quality_count = int(daily.get("quality_sample_count", 0) or 0)
     average_liquidity = round(float(daily.get("liquidity_score_sum", 0.0) or 0.0) / quality_count, 4) if quality_count else float(daily.get("average_liquidity_score", 0.0) or 0.0)
     average_pricing = round(float(daily.get("pricing_quality_score_sum", 0.0) or 0.0) / quality_count, 4) if quality_count else float(daily.get("average_pricing_quality_score", 0.0) or 0.0)
+    storage_health = get_storage_health()
     daily.update(
         {
             "watchlist_size": sum(len(watchlists.get(bucket, [])) for bucket in ("short_term", "medium_term", "long_term")),
@@ -446,7 +450,8 @@ def write_daily_report(base_data_dir: str = "data", *, day: str | None = None, c
             "insufficient_sample": _insufficient_sample(calibration, policy),
             "next_required_data": list(calibration.get("next_required_data", [])),
             "storage_backend": "file",
-            "persistence_warning_if_ephemeral": "file_storage_requires_persistent_disk_for_cross_deploy_durability",
+            "storage_health": storage_health,
+            "persistence_warning_if_ephemeral": storage_health.get("persistence_warning"),
             "provider_write": False,
             "execution_allowed_count": 0,
             "auto_execution_enabled": False,
@@ -606,6 +611,7 @@ def _fetch_public_market_by_ticker(ticker: str, policy: dict[str, Any]) -> dict[
 
 
 def _invalid_request_response(errors: list[str], *, dry_run: bool, persist_outcomes: bool) -> dict[str, Any]:
+    storage_health = get_storage_health()
     return {
         "ok": False,
         "status": "invalid_request",
@@ -618,6 +624,9 @@ def _invalid_request_response(errors: list[str], *, dry_run: bool, persist_outco
         "kalshi_order_execution_enabled": False,
         "human_approval_required": True,
         "paper_only": True,
+        "storage_backend": "file",
+        "storage_health": storage_health,
+        "persistence_warning_if_ephemeral": storage_health.get("persistence_warning"),
         "raw_payload_included": False,
     }
 
@@ -1238,6 +1247,7 @@ def run_collector_cycle(
     base_data_dir: str = "data",
     read_only_records: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
+    base_data_dir = str(resolve_base_data_dir(base_data_dir))
     base_policy = collector_policy_from_env()
     policy, policy_errors = _apply_request_policy(
         base_policy,
@@ -1251,6 +1261,7 @@ def run_collector_cycle(
         return _invalid_request_response(policy_errors, dry_run=dry_run, persist_outcomes=persist_outcomes)
     max_new_contracts = int(policy["max_new_contracts_per_cycle"])
     target_daily_new_contracts = int(policy["target_daily_new_contracts"])
+    storage_health = get_storage_health()
     if not bool(policy["collector_enabled"]):
         return {
             "ok": True,
@@ -1261,6 +1272,9 @@ def run_collector_cycle(
             "auto_execution_enabled": False,
             "kalshi_order_execution_enabled": False,
             "human_approval_required": True,
+            "storage_backend": "file",
+            "storage_health": storage_health,
+            "persistence_warning_if_ephemeral": storage_health.get("persistence_warning"),
         }
     config = get_default_scheduler_config(base_data_dir=base_data_dir)
     ensure_runtime_directories(config)
@@ -1276,6 +1290,9 @@ def run_collector_cycle(
             "execution_allowed_count": 0,
             "auto_execution_enabled": False,
             "kalshi_order_execution_enabled": False,
+            "storage_backend": "file",
+            "storage_health": storage_health,
+            "persistence_warning_if_ephemeral": storage_health.get("persistence_warning"),
         }
 
     try:
@@ -1463,7 +1480,8 @@ def run_collector_cycle(
             "recheck_due_now": int(post_backlog.get("recheck_due_now", 0)),
             "next_suggested_recheck_time": post_backlog.get("next_suggested_recheck_time"),
             "storage_backend": "file",
-            "persistence_warning_if_ephemeral": "file_storage_requires_persistent_disk_for_cross_deploy_durability",
+            "storage_health": storage_health,
+            "persistence_warning_if_ephemeral": storage_health.get("persistence_warning"),
             "collector_policy": {
                 "max_markets_scanned_per_cycle": int(policy["max_markets_scanned_per_cycle"]),
                 "max_new_contracts_per_cycle": int(policy["max_new_contracts_per_cycle"]),

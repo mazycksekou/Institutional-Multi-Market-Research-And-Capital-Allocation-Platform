@@ -5,6 +5,22 @@ from typing import Any
 _SECRET_KEYS = ("key", "secret", "token", "password", "auth", "credential", "signature", "header")
 
 
+def _compact_storage_health(payload: dict[str, Any]) -> dict[str, Any]:
+    storage = payload.get("storage_health") or payload.get("storage") or {}
+    if not isinstance(storage, dict):
+        storage = {}
+    return {
+        "env_var": storage.get("env_var", "AUTOMATION_DATA_DIR"),
+        "data_dir": storage.get("data_dir"),
+        "backend": storage.get("backend", payload.get("storage_backend", "file")),
+        "configured": bool(storage.get("configured", False)),
+        "render_persistent_disk_expected": bool(storage.get("render_persistent_disk_expected", False)),
+        "persistence_warning": storage.get("persistence_warning") or payload.get("persistence_warning_if_ephemeral"),
+        "read_ok": bool(storage.get("read_ok", True)),
+        "write_ok": bool(storage.get("write_ok", True)),
+    }
+
+
 def _redact(payload: Any) -> Any:
     if isinstance(payload, dict):
         out: dict[str, Any] = {}
@@ -59,6 +75,7 @@ def compact_health_response(payload: dict[str, Any]) -> dict[str, Any]:
         "review_queue_last_updated_at": payload.get("review_queue_last_updated_at"),
         "review_queue_latest_run_id": payload.get("review_queue_latest_run_id"),
         "review_queue_read_ok": bool(payload.get("review_queue_read_ok", True)),
+        "storage": _compact_storage_health(payload),
     }
 
 
@@ -161,6 +178,7 @@ def compact_review_queue_response(payload: dict[str, Any], limit: int = 10) -> d
         "queue_read_path": payload.get("queue_read_path"),
         "items_read_count": int(payload.get("items_read_count", summary.get("total_count", payload.get("count", len(top))))),
         "compact_filter_applied": bool(payload.get("compact_filter_applied", False)),
+        "storage": _compact_storage_health(payload),
         "count": int(payload.get("count", len(top))),
         "items": top,
     }
@@ -252,6 +270,7 @@ def compact_calibration_response(payload: dict[str, Any]) -> dict[str, Any]:
         "warnings": list(payload.get("warnings", []))[:10],
         "next_required_data": list(payload.get("next_required_data", []))[:10],
         "storage_backend": payload.get("storage_backend"),
+        "storage": _compact_storage_health(payload),
         "latest_batch_id": payload.get("latest_batch_id"),
         "outcome_read_ok": bool(payload.get("outcome_read_ok", True)),
         "compact_response": True,
@@ -280,6 +299,7 @@ def compact_outcome_ingest_response(payload: dict[str, Any]) -> dict[str, Any]:
         "duplicate_count": int(payload.get("duplicate_count", 0)),
         "outcome_records_written": int(payload.get("outcome_records_written", 0)),
         "storage_backend": payload.get("storage_backend", "file"),
+        "storage": _compact_storage_health(payload),
         "latest_batch_id": payload.get("latest_batch_id"),
         "last_updated_at": payload.get("last_updated_at"),
         "outcome_write_path": payload.get("outcome_write_path"),
@@ -320,6 +340,7 @@ def compact_outcomes_response(payload: dict[str, Any], limit: int = 10) -> dict[
         "final_outcome_counts": dict(summary.get("final_outcome_counts", {})),
         "latest_batch_id": payload.get("latest_batch_id"),
         "storage_backend": payload.get("storage_backend", "file"),
+        "storage": _compact_storage_health(payload),
         "last_updated_at": payload.get("last_updated_at"),
         "outcome_read_ok": bool(payload.get("outcome_read_ok", True)),
         "outcome_error_category": payload.get("outcome_error_category"),
@@ -494,12 +515,19 @@ def compact_calibration_collector_response(payload: dict[str, Any], limit: int =
         "exploration_sample_count": int(payload.get("exploration_sample_count", 0)),
         "quality_gate_rejection_count": int(payload.get("quality_gate_rejection_count", 0)),
         "storage_backend": payload.get("storage_backend"),
+        "storage": _compact_storage_health(payload),
         "persistence_warning_if_ephemeral": payload.get("persistence_warning_if_ephemeral"),
         "errors": list(payload.get("errors", []))[:10],
         "provider_write": False,
         "execution_allowed_count": 0,
         "auto_execution_enabled": False,
         "kalshi_order_execution_enabled": False,
+        "sportsbook_bet_execution_enabled": False,
+        "broker_order_execution_enabled": False,
+        "live_execution_enabled": False,
+        "actual_orders_submitted": 0,
+        "actual_bets_submitted": 0,
+        "actual_trades_submitted": 0,
         "human_approval_required": True,
         "paper_only": True,
         "collector_policy": dict(payload.get("collector_policy", {})),
@@ -569,6 +597,8 @@ def compact_institutional_lab_health_response(payload: dict[str, Any]) -> dict[s
         "paper_only": True,
         "review_only": True,
         "simulation_only": True,
+        "storage_backend": payload.get("storage_backend", "file"),
+        "storage": _compact_storage_health(payload),
         "raw_payload_included": False,
     }
 

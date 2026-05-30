@@ -6,6 +6,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
+from .data_paths import get_storage_health, resolve_base_data_dir
 from .institutional_audit_ledger import append_audit_record, load_audit_records
 from .institutional_cross_asset_adapters import ASSET_CLASSES, compact_redact, read_existing_outputs
 from .institutional_cross_asset_calibration import build_calibration_by_asset_class
@@ -34,7 +35,7 @@ LAB_SAFETY_FLAGS = {
 
 
 def _lab_root(base_data_dir: str = "data") -> Path:
-    path = Path(base_data_dir) / "institutional_lab"
+    path = resolve_base_data_dir(base_data_dir) / "institutional_lab"
     path.mkdir(parents=True, exist_ok=True)
     for child in ("items", "daily", "reports", "audit", "execution_sim", "locks"):
         (path / child).mkdir(parents=True, exist_ok=True)
@@ -97,6 +98,7 @@ def _release_lock(base_data_dir: str, run_id: str) -> None:
 
 
 def get_institutional_lab_health(*, base_data_dir: str = "data") -> dict[str, Any]:
+    base_data_dir = str(resolve_base_data_dir(base_data_dir))
     latest = load_latest_report(base_data_dir=base_data_dir)
     audit = load_audit_records(base_data_dir=base_data_dir, limit=1)
     return {
@@ -107,6 +109,8 @@ def get_institutional_lab_health(*, base_data_dir: str = "data") -> dict[str, An
         "latest_status": latest.get("status", "not_run"),
         "audit_records_count": int(audit.get("total_count", 0)),
         "lock_present": _lock_path(base_data_dir).exists(),
+        "storage_backend": "file",
+        "storage_health": get_storage_health(),
         "raw_payload_included": False,
         **LAB_SAFETY_FLAGS,
     }
@@ -128,6 +132,7 @@ def run_institutional_lab(
     execution_simulation: bool = False,
     base_data_dir: str = "data",
 ) -> dict[str, Any]:
+    base_data_dir = str(resolve_base_data_dir(base_data_dir))
     if dry_run is not True:
         raise ValueError("institutional lab only supports dry_run=true")
     if read_existing_outputs_only is not True:
@@ -247,12 +252,15 @@ def run_institutional_lab(
 
 
 def get_institutional_lab_report(*, base_data_dir: str = "data") -> dict[str, Any]:
+    base_data_dir = str(resolve_base_data_dir(base_data_dir))
     return load_latest_report(base_data_dir=base_data_dir)
 
 
 def get_institutional_lab_daily_report(*, base_data_dir: str = "data", report_date: str | None = None) -> dict[str, Any]:
+    base_data_dir = str(resolve_base_data_dir(base_data_dir))
     return load_daily_report(base_data_dir=base_data_dir, report_date=report_date)
 
 
 def get_institutional_lab_audit(*, base_data_dir: str = "data", limit: int = 100) -> dict[str, Any]:
+    base_data_dir = str(resolve_base_data_dir(base_data_dir))
     return load_audit_records(base_data_dir=base_data_dir, limit=limit)

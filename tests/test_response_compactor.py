@@ -27,6 +27,14 @@ class TestResponseCompactor(unittest.TestCase):
             "review_queue_storage_backend": "file",
             "review_queue_latest_run_id": "run-1",
             "review_queue_read_ok": True,
+            "storage_health": {
+                "env_var": "AUTOMATION_DATA_DIR",
+                "data_dir": "/var/data",
+                "backend": "file",
+                "configured": True,
+                "read_ok": True,
+                "write_ok": True,
+            },
         }
         c = compact_health_response(p)
         self.assertIn("counts", c)
@@ -34,6 +42,8 @@ class TestResponseCompactor(unittest.TestCase):
         self.assertEqual(c["review_queue_storage_backend"], "file")
         self.assertEqual(c["review_queue_latest_run_id"], "run-1")
         self.assertTrue(c["review_queue_read_ok"])
+        self.assertEqual(c["storage"]["env_var"], "AUTOMATION_DATA_DIR")
+        self.assertEqual(c["storage"]["data_dir"], "/var/data")
 
     def test_limit_enforced(self):
         p = {"ok": True, "count": 50, "items": [{"recommended_action": "watch_recheck"} for _ in range(50)]}
@@ -347,6 +357,14 @@ class TestResponseCompactor(unittest.TestCase):
                 "exploration_sample_count": 1,
                 "quality_gate_rejection_count": 2,
                 "storage_backend": "file",
+                "storage_health": {
+                    "env_var": "AUTOMATION_DATA_DIR",
+                    "data_dir": "/var/data",
+                    "backend": "file",
+                    "configured": True,
+                    "read_ok": True,
+                    "write_ok": True,
+                },
                 "persistence_warning_if_ephemeral": "warning",
                 "next_required_data": ["additional_settlement_results"],
                 "provider_write": True,
@@ -366,6 +384,9 @@ class TestResponseCompactor(unittest.TestCase):
         self.assertEqual(compact["progress_to_100"]["count"], 7)
         self.assertEqual(compact["watchlist_size"], 12)
         self.assertEqual(compact["liquidity_tier_counts"]["adequate_liquidity"], 3)
+        self.assertEqual(compact["storage"]["env_var"], "AUTOMATION_DATA_DIR")
+        self.assertEqual(compact["storage"]["data_dir"], "/var/data")
+        self.assertEqual(compact["actual_orders_submitted"], 0)
         rendered = str(compact)
         self.assertNotIn("source_payload", rendered)
         self.assertNotIn("secret", rendered)

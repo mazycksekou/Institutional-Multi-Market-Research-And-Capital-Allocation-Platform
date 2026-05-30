@@ -4,11 +4,13 @@ import json
 from pathlib import Path
 from typing import Any
 
+from .data_paths import get_runtime_data_path
 from .scheduler_config import sanitize_filename, utc_now_iso
 
 
 def _report_directory(base_dir: str = "data/performance_reports") -> Path:
-    path = Path(base_dir)
+    normalized = str(base_dir).replace("\\", "/").rstrip("/")
+    path = get_runtime_data_path("performance_reports") if normalized == "data/performance_reports" else Path(base_dir)
     path.mkdir(parents=True, exist_ok=True)
     return path
 
@@ -44,4 +46,3 @@ def build_compact_performance_report(report: dict[str, Any], report_path: str) -
         "recommended_next_action": report.get("recommended_next_action", "watch_recheck"),
         "report_path": report_path,
     }
-

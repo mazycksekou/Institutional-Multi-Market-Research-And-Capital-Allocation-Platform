@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from .data_paths import get_storage_health, resolve_base_data_dir
 from .scheduler_runner import run_scheduler_once
 from .system_health import get_system_health
 from .review_queue import filter_review_items, list_active_review_items, load_review_queue_state, summarize_review_items
@@ -30,8 +31,13 @@ from .sportsbook_odds_provider import (
 )
 
 
+def _data_dir(base_data_dir: str | None = None) -> str:
+    return str(resolve_base_data_dir(base_data_dir))
+
+
 def get_scheduler_health(base_data_dir: str | None = None):
-    config = get_default_scheduler_config(base_data_dir=base_data_dir)
+    base = _data_dir(base_data_dir)
+    config = get_default_scheduler_config(base_data_dir=base)
     ensure_runtime_directories(config)
     return get_system_health(config)
 
@@ -44,7 +50,8 @@ def get_scheduler_review_queue(
     reason: str | None = None,
     limit: int | None = None,
 ):
-    config = get_default_scheduler_config(base_data_dir=base_data_dir)
+    base = _data_dir(base_data_dir)
+    config = get_default_scheduler_config(base_data_dir=base)
     ensure_runtime_directories(config)
     queue_state = load_review_queue_state(config)
     items = list(queue_state.get("items", []))
@@ -90,44 +97,49 @@ def get_scheduler_review_queue(
         "queue_read_path": queue_state.get("queue_read_path"),
         "items_read_count": int(queue_state.get("items_read_count", len(items))),
         "compact_filter_applied": bool(applied_limit or str(provider).lower() != "all" or str(market_type).lower() != "all" or bool(reason)),
+        "storage_health": get_storage_health(),
         "human_approval_required": True,
         "auto_execution_enabled": False,
     }
 
 
 def get_performance_health(base_data_dir: str | None = None):
-    config = get_default_scheduler_config(base_data_dir=base_data_dir)
+    base = _data_dir(base_data_dir)
+    config = get_default_scheduler_config(base_data_dir=base)
     ensure_runtime_directories(config)
     return get_system_health(config)
 
 
 def run_performance_backtest(model_id: str, historical_rows_path: str | None = None, rows: list[dict] | None = None, base_data_dir: str | None = None):
+    base = _data_dir(base_data_dir)
     return generate_backtest_report(
         model_id=model_id,
         historical_rows_path=historical_rows_path,
         rows=rows,
-        base_data_dir=base_data_dir or "data",
+        base_data_dir=base,
     )
 
 
 def get_performance_report(model_id: str, historical_rows_path: str | None = None, rows: list[dict] | None = None, base_data_dir: str | None = None):
+    base = _data_dir(base_data_dir)
     result = generate_backtest_report(
         model_id=model_id,
         historical_rows_path=historical_rows_path,
         rows=rows,
-        base_data_dir=base_data_dir or "data",
+        base_data_dir=base,
     )
     return result["compact_report"]
 
 
 def get_paper_summary(base_data_dir: str | None = None):
-    return run_paper_summary(base_data_dir=base_data_dir or "data")
+    return run_paper_summary(base_data_dir=_data_dir(base_data_dir))
 
 
 def get_automation_calibration_report(base_data_dir: str | None = None):
-    config = get_default_scheduler_config(base_data_dir=base_data_dir)
+    base = _data_dir(base_data_dir)
+    config = get_default_scheduler_config(base_data_dir=base)
     ensure_runtime_directories(config)
-    return build_calibration_report(base_data_dir=base_data_dir or "data", write_report=True)
+    return build_calibration_report(base_data_dir=base, write_report=True)
 
 
 def ingest_automation_outcomes(
@@ -138,21 +150,23 @@ def ingest_automation_outcomes(
     persist: bool = False,
     base_data_dir: str | None = None,
 ):
-    config = get_default_scheduler_config(base_data_dir=base_data_dir)
+    base = _data_dir(base_data_dir)
+    config = get_default_scheduler_config(base_data_dir=base)
     ensure_runtime_directories(config)
     return ingest_outcome_records(
         records,
         source=source,
         dry_run=dry_run,
         persist=persist,
-        base_data_dir=base_data_dir or "data",
+        base_data_dir=base,
     )
 
 
 def get_automation_outcomes(base_data_dir: str | None = None, limit: int | None = None):
-    config = get_default_scheduler_config(base_data_dir=base_data_dir)
+    base = _data_dir(base_data_dir)
+    config = get_default_scheduler_config(base_data_dir=base)
     ensure_runtime_directories(config)
-    state = load_outcome_state(base_data_dir or "data")
+    state = load_outcome_state(base)
     records = list(state.get("items", []))
     summary = summarize_outcomes(records)
     cap = limit if isinstance(limit, int) and limit > 0 else len(records)
@@ -167,6 +181,7 @@ def get_automation_outcomes(base_data_dir: str | None = None, limit: int | None 
         "last_updated_at": state.get("last_updated_at"),
         "outcome_read_ok": bool(state.get("outcome_read_ok", True)),
         "outcome_error_category": state.get("outcome_error_category"),
+        "storage_health": get_storage_health(),
     }
 
 
@@ -178,7 +193,8 @@ def discover_automation_outcome_completions(
     write_local_report: bool = False,
     base_data_dir: str | None = None,
 ):
-    config = get_default_scheduler_config(base_data_dir=base_data_dir)
+    base = _data_dir(base_data_dir)
+    config = get_default_scheduler_config(base_data_dir=base)
     ensure_runtime_directories(config)
     contract = dict(config["providers"].get("kalshi_prediction_market", {}))
     adapter = KalshiReadonlyAdapter(contract) if use_kalshi_snapshot else None
@@ -186,11 +202,11 @@ def discover_automation_outcome_completions(
         pending_rows=pending_rows,
         imported_rows=imported_rows,
         adapter=adapter,
-        base_data_dir=base_data_dir or "data",
+        base_data_dir=base,
         use_kalshi_snapshot=use_kalshi_snapshot,
     )
     if write_local_report:
-        report.update(write_outcome_completion_candidates(report, base_data_dir=base_data_dir or "data"))
+        report.update(write_outcome_completion_candidates(report, base_data_dir=base))
     return report
 
 
@@ -211,6 +227,7 @@ def run_automation_calibration_collector(
 ):
     from .calibration_collector import run_collector_cycle
 
+    base = _data_dir(base_data_dir)
     return run_collector_cycle(
         dry_run=dry_run,
         persist_outcomes=persist_outcomes,
@@ -223,14 +240,20 @@ def run_automation_calibration_collector(
         include_long_term=include_long_term,
         adaptive_throttle=adaptive_throttle,
         deepseek_review=deepseek_review,
-        base_data_dir=base_data_dir or "data",
+        base_data_dir=base,
     )
+
+
+def run_automation_calibration_collector_scheduled(payload: dict | None = None, *, base_data_dir: str | None = None):
+    from .collector_scheduled_runner import run_scheduled_collector_cycle
+
+    return run_scheduled_collector_cycle(payload, base_data_dir=_data_dir(base_data_dir))
 
 
 def get_automation_collector_daily_report(base_data_dir: str | None = None):
     from .calibration_collector import write_daily_report
 
-    return write_daily_report(base_data_dir=base_data_dir or "data")
+    return write_daily_report(base_data_dir=_data_dir(base_data_dir))
 
 
 def run_automation_deepseek_review(
@@ -251,13 +274,15 @@ def run_automation_deepseek_review(
 
 
 def get_provider_health(base_data_dir: str | None = None):
-    config = get_default_scheduler_config(base_data_dir=base_data_dir)
+    base = _data_dir(base_data_dir)
+    config = get_default_scheduler_config(base_data_dir=base)
     ensure_runtime_directories(config)
     return summarize_provider_health(config["providers"])
 
 
 def get_provider_registry_snapshot(base_data_dir: str | None = None):
-    config = get_default_scheduler_config(base_data_dir=base_data_dir)
+    base = _data_dir(base_data_dir)
+    config = get_default_scheduler_config(base_data_dir=base)
     ensure_runtime_directories(config)
     providers = list(get_provider_registry().values())
     blocked_count = sum(
@@ -280,7 +305,8 @@ def get_provider_registry_snapshot(base_data_dir: str | None = None):
 
 
 def get_sharp_provider_health(base_data_dir: str | None = None):
-    config = get_default_scheduler_config(base_data_dir=base_data_dir)
+    base = _data_dir(base_data_dir)
+    config = get_default_scheduler_config(base_data_dir=base)
     ensure_runtime_directories(config)
     contract = dict(config["providers"].get("sharp_sportsbook", {}))
     adapter = SharpSportsbookAdapter(contract)
@@ -289,7 +315,8 @@ def get_sharp_provider_health(base_data_dir: str | None = None):
 
 
 def run_sharp_provider_snapshot(base_data_dir: str | None = None, write_snapshot: bool = True):
-    config = get_default_scheduler_config(base_data_dir=base_data_dir)
+    base = _data_dir(base_data_dir)
+    config = get_default_scheduler_config(base_data_dir=base)
     ensure_runtime_directories(config)
     contract = dict(config["providers"].get("sharp_sportsbook", {}))
     adapter = SharpSportsbookAdapter(contract)
@@ -297,7 +324,7 @@ def run_sharp_provider_snapshot(base_data_dir: str | None = None, write_snapshot
     validation = validate_sportsbook_snapshot(snapshot)
     snapshot_path = None
     if write_snapshot and int(snapshot.get("records_received", 0)) > 0:
-        snapshot_path = write_sportsbook_snapshot(snapshot, base_data_dir=base_data_dir or "data")
+        snapshot_path = write_sportsbook_snapshot(snapshot, base_data_dir=base)
     summary = summarize_sportsbook_snapshot(snapshot, snapshot_path=snapshot_path)
     summary["validation_status"] = validation["status"]
     summary["validation_errors"] = validation["errors"][:10]
@@ -305,7 +332,8 @@ def run_sharp_provider_snapshot(base_data_dir: str | None = None, write_snapshot
 
 
 def get_kalshi_provider_health(base_data_dir: str | None = None):
-    config = get_default_scheduler_config(base_data_dir=base_data_dir)
+    base = _data_dir(base_data_dir)
+    config = get_default_scheduler_config(base_data_dir=base)
     ensure_runtime_directories(config)
     contract = dict(config["providers"].get("kalshi_prediction_market", {}))
     adapter = KalshiReadonlyAdapter(contract)
@@ -314,7 +342,8 @@ def get_kalshi_provider_health(base_data_dir: str | None = None):
 
 
 def run_kalshi_provider_snapshot(base_data_dir: str | None = None, write_snapshot: bool = True):
-    config = get_default_scheduler_config(base_data_dir=base_data_dir)
+    base = _data_dir(base_data_dir)
+    config = get_default_scheduler_config(base_data_dir=base)
     ensure_runtime_directories(config)
     contract = dict(config["providers"].get("kalshi_prediction_market", {}))
     adapter = KalshiReadonlyAdapter(contract)
@@ -322,7 +351,7 @@ def run_kalshi_provider_snapshot(base_data_dir: str | None = None, write_snapsho
     validation = validate_kalshi_snapshot(snapshot)
     snapshot_path = None
     if write_snapshot and int(snapshot.get("records_received", 0)) > 0:
-        snapshot_path = write_kalshi_snapshot(snapshot, base_data_dir=base_data_dir or "data")
+        snapshot_path = write_kalshi_snapshot(snapshot, base_data_dir=base)
     summary = summarize_kalshi_snapshot(snapshot, snapshot_path=snapshot_path)
     summary["validation_status"] = validation["status"]
     summary["validation_errors"] = validation["errors"][:10]
@@ -332,7 +361,7 @@ def run_kalshi_provider_snapshot(base_data_dir: str | None = None, write_snapsho
 def get_institutional_lab_health(base_data_dir: str | None = None):
     from .institutional_cross_asset_lab import get_institutional_lab_health as _health
 
-    return _health(base_data_dir=base_data_dir or "data")
+    return _health(base_data_dir=_data_dir(base_data_dir))
 
 
 def run_institutional_lab(
@@ -356,35 +385,35 @@ def run_institutional_lab(
         persist_outcomes=persist_outcomes,
         deepseek_review=deepseek_review,
         execution_simulation=execution_simulation,
-        base_data_dir=base_data_dir or "data",
+        base_data_dir=_data_dir(base_data_dir),
     )
 
 
 def get_institutional_lab_report(base_data_dir: str | None = None):
     from .institutional_cross_asset_lab import get_institutional_lab_report as _report
 
-    return _report(base_data_dir=base_data_dir or "data")
+    return _report(base_data_dir=_data_dir(base_data_dir))
 
 
 def get_institutional_lab_daily_report(base_data_dir: str | None = None, report_date: str | None = None):
     from .institutional_cross_asset_lab import get_institutional_lab_daily_report as _daily
 
-    return _daily(base_data_dir=base_data_dir or "data", report_date=report_date)
+    return _daily(base_data_dir=_data_dir(base_data_dir), report_date=report_date)
 
 
 def run_institutional_deepseek_review(*, report: dict | None = None, enabled: bool | None = None, base_data_dir: str | None = None):
     from .institutional_deepseek_review import run_deepseek_sidecar_review
 
-    return run_deepseek_sidecar_review(report=report or {}, enabled=enabled, base_data_dir=base_data_dir or "data")
+    return run_deepseek_sidecar_review(report=report or {}, enabled=enabled, base_data_dir=_data_dir(base_data_dir))
 
 
 def simulate_institutional_execution(payload: dict, *, base_data_dir: str | None = None):
     from .institutional_execution_desk import simulate_execution
 
-    return simulate_execution(payload, base_data_dir=base_data_dir or "data")
+    return simulate_execution(payload, base_data_dir=_data_dir(base_data_dir))
 
 
 def get_institutional_lab_audit(base_data_dir: str | None = None, limit: int = 100):
     from .institutional_cross_asset_lab import get_institutional_lab_audit as _audit
 
-    return _audit(base_data_dir=base_data_dir or "data", limit=limit)
+    return _audit(base_data_dir=_data_dir(base_data_dir), limit=limit)

@@ -6,6 +6,7 @@ from typing import Any
 
 import httpx
 
+from .data_paths import resolve_base_data_dir
 from .institutional_audit_ledger import append_audit_record
 from .institutional_cross_asset_adapters import compact_redact
 
@@ -113,6 +114,7 @@ def run_deepseek_sidecar_review(
     base_data_dir: str = "data",
     persist_audit: bool = True,
 ) -> dict[str, Any]:
+    base_data_dir = str(resolve_base_data_dir(base_data_dir))
     is_enabled = bool(enabled) if enabled is not None else os.getenv("INSTITUTIONAL_DEEPSEEK_REVIEW_ENABLED", "false").lower() in {"1", "true", "yes"}
     compact_report = compact_redact(report or {})
     base = {

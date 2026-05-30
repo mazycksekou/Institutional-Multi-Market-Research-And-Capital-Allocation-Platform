@@ -4,12 +4,13 @@ import json
 from pathlib import Path
 from typing import Any
 
+from .data_paths import resolve_base_data_dir
 from .institutional_cross_asset_adapters import compact_redact
 from .scheduler_config import sanitize_filename, utc_now_iso
 
 
 def _lab_root(base_data_dir: str = "data") -> Path:
-    path = Path(base_data_dir) / "institutional_lab"
+    path = resolve_base_data_dir(base_data_dir) / "institutional_lab"
     path.mkdir(parents=True, exist_ok=True)
     return path
 
@@ -26,8 +27,9 @@ def _atomic_write_json(path: Path, payload: Any) -> None:
 
 
 def _rel(base_data_dir: str, path: Path) -> str:
+    root = resolve_base_data_dir(base_data_dir)
     try:
-        return str(path.resolve().relative_to(Path(base_data_dir).resolve())).replace("\\", "/")
+        return str(path.resolve().relative_to(root.resolve())).replace("\\", "/")
     except Exception:
         return path.name
 

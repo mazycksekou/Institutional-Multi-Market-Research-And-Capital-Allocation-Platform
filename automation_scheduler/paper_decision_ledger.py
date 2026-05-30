@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from .data_paths import resolve_base_data_dir
 from .scheduler_config import SCHEMA_VERSION, safe_run_id, sanitize_filename, utc_now_iso
 
 LEDGER_SCHEMA_VERSION = f"{SCHEMA_VERSION}.paper_decision_ledger.v2"
@@ -21,7 +22,7 @@ _RAW_PAYLOAD_KEYS = {
 
 
 def _ledger_dir(base_data_dir: str = "data") -> Path:
-    path = Path(base_data_dir) / "paper_ledger"
+    path = resolve_base_data_dir(base_data_dir) / "paper_ledger"
     path.mkdir(parents=True, exist_ok=True)
     return path
 
@@ -45,8 +46,9 @@ def _run_path(base_data_dir: str, run_id: str) -> Path:
 
 
 def _project_relative_path(base_data_dir: str, path: Path) -> str:
+    root = resolve_base_data_dir(base_data_dir)
     try:
-        return str(path.resolve().relative_to(Path(base_data_dir).resolve())).replace("\\", "/")
+        return str(path.resolve().relative_to(root.resolve())).replace("\\", "/")
     except Exception:
         return path.name
 

@@ -5,6 +5,7 @@ import uuid
 from pathlib import Path
 from typing import Any
 
+from .data_paths import get_paper_ledger_dir
 from .scheduler_config import SCHEMA_VERSION, redact_secrets as _redact_secrets, utc_now_iso
 
 
@@ -12,7 +13,8 @@ LEDGER_SCHEMA_VERSION = f"{SCHEMA_VERSION}.paper_ledger.v1"
 
 
 def _ledger_path(base_dir: str = "data/paper_ledger") -> Path:
-    directory = Path(base_dir)
+    normalized = str(base_dir).replace("\\", "/").rstrip("/")
+    directory = get_paper_ledger_dir() if normalized in {"data/paper_ledger", "data"} else Path(base_dir)
     directory.mkdir(parents=True, exist_ok=True)
     return directory / "paper_ledger.json"
 
@@ -165,4 +167,3 @@ def summarize_paper_ledger(base_dir: str = "data/paper_ledger") -> dict[str, Any
 
 def redact_secrets(payload: Any) -> Any:
     return _redact_secrets(payload)
-

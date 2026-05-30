@@ -107,7 +107,7 @@ class TestCalibrationCollector(unittest.TestCase):
     def test_persists_only_explicit_rechecked_outcomes_after_dry_run(self):
         with tempfile.TemporaryDirectory() as tmp:
             close_time = self._past(hours=1)
-            watchlist_dir = Path(tmp) / "outcomes" / "watchlists"
+            watchlist_dir = Path(tmp) / "collector_scheduler" / "watchlists"
             watchlist_dir.mkdir(parents=True)
             item = {
                 "provider": "kalshi_prediction_market",
@@ -198,7 +198,7 @@ class TestCalibrationCollector(unittest.TestCase):
                 read_only_records=[],
             )
             calibration = build_calibration_report(base_data_dir=tmp)
-            daily = json.loads((Path(tmp) / "outcomes" / "collector" / "daily" / f"{datetime.now(timezone.utc).date().isoformat()}.json").read_text(encoding="utf-8"))
+            daily = json.loads((Path(tmp) / "collector_scheduler" / "daily" / f"{datetime.now(timezone.utc).date().isoformat()}.json").read_text(encoding="utf-8"))
 
             self.assertEqual(result["matched_outcomes_count"], calibration["matched_outcomes_count"])
             self.assertEqual(daily["matched_outcomes_count"], calibration["matched_outcomes_count"])
@@ -215,8 +215,8 @@ class TestCalibrationCollector(unittest.TestCase):
             self.assertIn("progress_to_100", report)
             self.assertIn("new_contracts_added_today", report)
             self.assertIn("outcomes_persisted_today", report)
-            self.assertTrue((Path(tmp) / "outcomes" / "collector" / "daily" / "2026-05-30.json").exists())
-            self.assertTrue((Path(tmp) / "outcomes" / "collector" / "daily" / "2026-05-30.md").exists())
+            self.assertTrue((Path(tmp) / "collector_scheduler" / "daily" / "2026-05-30.json").exists())
+            self.assertTrue((Path(tmp) / "collector_scheduler" / "daily" / "2026-05-30.md").exists())
 
     def test_high_throughput_target_250_and_hard_cap_500_enforced(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -260,7 +260,7 @@ class TestCalibrationCollector(unittest.TestCase):
 
     def test_closed_unresolved_rechecked_before_new_samples(self):
         with tempfile.TemporaryDirectory() as tmp:
-            watchlist_dir = Path(tmp) / "outcomes" / "watchlists"
+            watchlist_dir = Path(tmp) / "collector_scheduler" / "watchlists"
             watchlist_dir.mkdir(parents=True)
             item = {
                 "provider": "kalshi_prediction_market",
@@ -301,7 +301,7 @@ class TestCalibrationCollector(unittest.TestCase):
 
     def test_unknown_and_price_only_rechecks_do_not_persist(self):
         with tempfile.TemporaryDirectory() as tmp:
-            watchlist_dir = Path(tmp) / "outcomes" / "watchlists"
+            watchlist_dir = Path(tmp) / "collector_scheduler" / "watchlists"
             watchlist_dir.mkdir(parents=True)
             item = {
                 "provider": "kalshi_prediction_market",
@@ -415,7 +415,7 @@ class TestCalibrationCollector(unittest.TestCase):
 
     def test_backlog_limit_stops_new_collection(self):
         with tempfile.TemporaryDirectory() as tmp:
-            watchlist_dir = Path(tmp) / "outcomes" / "watchlists"
+            watchlist_dir = Path(tmp) / "collector_scheduler" / "watchlists"
             watchlist_dir.mkdir(parents=True)
             rows = [
                 {

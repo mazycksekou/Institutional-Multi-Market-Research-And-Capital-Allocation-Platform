@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from .data_paths import resolve_base_data_dir
 from .scheduler_config import SCHEMA_VERSION, utc_now_iso
 
 PROVIDER_CONTRACT_SCHEMA_VERSION = f"{SCHEMA_VERSION}.provider_contracts.v1"
@@ -20,10 +21,12 @@ PROVIDER_TYPES = (
 
 
 def ensure_provider_runtime_directories(base_data_dir: str = "data") -> dict[str, str]:
+    root = resolve_base_data_dir(base_data_dir)
+    data_sources = root / "data_sources"
     paths = {
-        "provider_health": str(Path(base_data_dir) / "provider_health"),
-        "provider_contracts": str(Path(base_data_dir) / "provider_contracts"),
-        "provider_payload_samples": str(Path(base_data_dir) / "provider_payload_samples"),
+        "provider_health": str(data_sources / "provider_health"),
+        "provider_contracts": str(data_sources / "provider_contracts"),
+        "provider_payload_samples": str(data_sources / "provider_payload_samples"),
     }
     for path in paths.values():
         Path(path).mkdir(parents=True, exist_ok=True)

@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
+from .data_paths import get_storage_health, resolve_base_data_dir
 from .scheduler_config import SCHEMA_VERSION, safe_run_id, sanitize_filename, utc_now_iso
 
 OUTCOME_SCHEMA_VERSION = f"{SCHEMA_VERSION}.local_outcome_store.v1"
@@ -25,7 +26,7 @@ _RAW_PAYLOAD_KEYS = {
 
 
 def _outcome_dir(base_data_dir: str = "data") -> Path:
-    path = Path(base_data_dir) / "outcomes"
+    path = resolve_base_data_dir(base_data_dir) / "outcomes"
     path.mkdir(parents=True, exist_ok=True)
     return path
 
@@ -65,8 +66,9 @@ def _read_json(path: Path) -> Any | None:
 
 
 def _project_relative_path(base_data_dir: str, path: Path) -> str:
+    root = resolve_base_data_dir(base_data_dir)
     try:
-        return str(path.resolve().relative_to(Path(base_data_dir).resolve())).replace("\\", "/")
+        return str(path.resolve().relative_to(root.resolve())).replace("\\", "/")
     except Exception:
         return path.name
 
@@ -345,6 +347,7 @@ def ingest_outcome_records(
     persist: bool = False,
     base_data_dir: str = "data",
 ) -> dict[str, Any]:
+    base_data_dir = str(resolve_base_data_dir(base_data_dir))
     rows = [row for row in (records or []) if isinstance(row, dict)]
     rejected_reason_counts: dict[str, int] = {}
     valid_rows: list[dict[str, Any]] = []
@@ -394,6 +397,7 @@ def ingest_outcome_records(
         "duplicate_count": duplicate_count,
         "outcome_records_written": int(storage.get("outcome_records_written", 0)),
         "storage_backend": storage.get("storage_backend", "file"),
+        "storage_health": get_storage_health(),
         "latest_batch_id": storage.get("latest_batch_id"),
         "last_updated_at": storage.get("last_updated_at"),
         "outcome_write_path": storage.get("outcome_write_path"),

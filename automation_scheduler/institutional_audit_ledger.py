@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from .data_paths import resolve_base_data_dir
 from .institutional_cross_asset_adapters import compact_redact
 from .scheduler_config import hash_payload, safe_run_id, sanitize_filename, utc_now_iso
 
@@ -20,7 +21,7 @@ AUDIT_ACTION_TYPES = {
 
 
 def _audit_dir(base_data_dir: str = "data") -> Path:
-    path = Path(base_data_dir) / "institutional_lab" / "audit"
+    path = resolve_base_data_dir(base_data_dir) / "institutional_lab" / "audit"
     path.mkdir(parents=True, exist_ok=True)
     return path
 
@@ -136,7 +137,7 @@ def append_audit_record(
     return {
         "ok": True,
         "audit_id": record["audit_id"],
-        "audit_path": str(path.relative_to(Path(base_data_dir))).replace("\\", "/"),
+        "audit_path": str(path.relative_to(resolve_base_data_dir(base_data_dir))).replace("\\", "/"),
         "record": record,
     }
 

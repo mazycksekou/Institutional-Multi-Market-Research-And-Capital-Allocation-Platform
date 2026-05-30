@@ -5,6 +5,7 @@ from pathlib import Path
 from statistics import median
 from typing import Any
 
+from .data_paths import get_runtime_data_path
 from .scheduler_config import SCHEMA_VERSION, redact_secrets, sanitize_filename, utc_now_iso
 
 def _to_float(value: Any, default: float = 0.0) -> float:
@@ -124,7 +125,8 @@ def build_clv_record(payload: dict[str, Any]) -> dict[str, Any]:
 
 def write_clv_record(payload: dict[str, Any], *, base_dir: str = "data/reports") -> dict[str, Any]:
     record = build_clv_record(payload)
-    directory = Path(base_dir)
+    normalized = str(base_dir).replace("\\", "/").rstrip("/")
+    directory = get_runtime_data_path("reports") if normalized == "data/reports" else Path(base_dir)
     directory.mkdir(parents=True, exist_ok=True)
     name = sanitize_filename(f"clv_{payload.get('event', 'event')}_{payload.get('selection', 'selection')}")
     path = directory / f"{name}.json"

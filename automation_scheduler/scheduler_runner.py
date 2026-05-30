@@ -12,6 +12,7 @@ from .arbitrage_detector import detect_arbitrage
 from .alert_engine import generate_alert_candidates
 from .backtesting import run_backtesting_scaffold
 from .calibration import build_calibration_report
+from .data_paths import resolve_base_data_dir
 from .cross_book_line_comparator import group_cross_book_markets
 from .ev_line_shopper import shop_ev_lines
 from .kalshi_monitor import monitor_kalshi_market
@@ -1140,6 +1141,7 @@ def _evaluate_kalshi_review_candidates(config: dict[str, Any], kalshi_snapshot: 
 def run_scheduler_once(*, injected_data: dict[str, Any] | None = None, base_data_dir: str | None = None, dry_run: bool = True, run_key: str | None = None) -> dict[str, Any]:
     if dry_run is not True:
         raise ValueError("automation scheduler run-once only supports dry_run=true")
+    base_data_dir = str(resolve_base_data_dir(base_data_dir))
     config = get_default_scheduler_config(base_data_dir=base_data_dir)
     ensure_runtime_directories(config)
     ctx = create_run_context(config)
@@ -1193,14 +1195,14 @@ def run_scheduler_once(*, injected_data: dict[str, Any] | None = None, base_data
         run_id=ctx["run_id"],
         snapshot_id=ctx["run_id"],
         report_path=expected_report_path,
-        base_data_dir=base_data_dir or "data",
+        base_data_dir=base_data_dir,
     )
     review_required_count = len([row for row in queue if row.get("recommended_action") in {"review_required", "urgent_review"}])
     alerts = generate_alert_candidates(queue, max_alerts=25, time_bucket=ctx["run_id"])
-    paper_decisions = [item for item in load_paper_decisions(base_data_dir or "data") if isinstance(item, dict)]
+    paper_decisions = [item for item in load_paper_decisions(base_data_dir) if isinstance(item, dict)]
     backtesting_summary = run_backtesting_scaffold(paper_decisions)
     calibration_summary = build_calibration_report(
-        base_data_dir=base_data_dir or "data",
+        base_data_dir=base_data_dir,
         paper_decisions=paper_decisions,
         review_items=queue,
         write_report=True,

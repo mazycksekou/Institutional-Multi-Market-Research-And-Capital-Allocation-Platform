@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 import re
 import uuid
 import hashlib
@@ -60,9 +59,10 @@ def ensure_runtime_directories(config: dict[str, Any]) -> dict[str, str]:
 
 
 def get_default_scheduler_config(base_data_dir: str | None = None) -> dict[str, Any]:
+    from .data_paths import resolve_base_data_dir
     from .provider_registry import get_provider_registry
 
-    root = Path(base_data_dir or os.getenv("AUTOMATION_SCHEDULER_DATA_DIR", "data"))
+    root = resolve_base_data_dir(base_data_dir)
     cfg = {
         "schema_version": SCHEMA_VERSION,
         "dry_run": True,
@@ -78,12 +78,22 @@ def get_default_scheduler_config(base_data_dir: str | None = None) -> dict[str, 
             "snapshots": str(root / "snapshots"),
             "reports": str(root / "reports"),
             "review_queue": str(root / "review_queue"),
+            "paper_ledger": str(root / "paper_ledger"),
+            "outcomes": str(root / "outcomes"),
+            "collector_scheduler": str(root / "collector_scheduler"),
+            "institutional_lab": str(root / "institutional_lab"),
+            "data_sources": str(root / "data_sources"),
+            "calibration": str(root / "calibration"),
             "audit_log": str(root / "audit_log"),
             "system_health": str(root / "system_health"),
             "scheduler_runs": str(root / "scheduler_runs"),
-            "provider_health": str(root / "provider_health"),
-            "provider_contracts": str(root / "provider_contracts"),
-            "provider_payload_samples": str(root / "provider_payload_samples"),
+            "provider_health": str(root / "data_sources" / "provider_health"),
+            "provider_contracts": str(root / "data_sources" / "provider_contracts"),
+            "provider_payload_samples": str(root / "data_sources" / "provider_payload_samples"),
+            "performance_reports": str(root / "performance_reports"),
+            "backtests": str(root / "backtests"),
+            "clv": str(root / "clv"),
+            "bankroll": str(root / "bankroll"),
         },
         "score_thresholds": {"ignore_below": 55, "watch_threshold": 55, "review_threshold": 70, "urgent_threshold": 85},
         "cadence_profiles": {

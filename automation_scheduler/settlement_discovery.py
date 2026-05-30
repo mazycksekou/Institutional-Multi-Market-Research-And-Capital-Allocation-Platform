@@ -5,6 +5,7 @@ from collections import Counter
 from pathlib import Path
 from typing import Any
 
+from .data_paths import resolve_base_data_dir
 from .kalshi_readonly_adapter import KalshiReadonlyAdapter
 from .outcome_store import PERSISTABLE_SOURCES, validate_outcome_record
 from .scheduler_config import sanitize_filename, utc_now_iso
@@ -37,7 +38,7 @@ _VOID_STATUS_VALUES = {"void", "cancelled", "canceled"}
 
 
 def _outcome_dir(base_data_dir: str) -> Path:
-    path = Path(base_data_dir) / "outcomes"
+    path = resolve_base_data_dir(base_data_dir) / "outcomes"
     path.mkdir(parents=True, exist_ok=True)
     return path
 
