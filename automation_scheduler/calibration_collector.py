@@ -1304,7 +1304,10 @@ def run_collector_cycle(
             scan = _fetch_public_markets(policy, adapter=adapter)
         provider_blockers = list(scan.get("blockers", []))[:10]
         if bool(policy.get("adaptive_throttle_enabled", True)) and provider_blockers:
-            if any(str(blocker) in {"http_429", "read_timeout", "provider_unreachable"} for blocker in provider_blockers):
+            if any(str(blocker) == "http_429" for blocker in provider_blockers):
+                adaptive_throttle_reasons.append("provider_rate_or_availability_limit")
+                effective_max_new_contracts = 0
+            elif int(scan.get("markets_scanned", 0) or 0) <= 0 and any(str(blocker) in {"read_timeout", "provider_unreachable"} for blocker in provider_blockers):
                 adaptive_throttle_reasons.append("provider_rate_or_availability_limit")
                 effective_max_new_contracts = 0
             else:

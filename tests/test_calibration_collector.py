@@ -6,7 +6,8 @@ from pathlib import Path
 from unittest.mock import patch
 
 from automation_scheduler.calibration import build_calibration_report
-from automation_scheduler.calibration_collector import _select_candidates, collector_policy_from_env, run_collector_cycle, write_daily_report
+from automation_scheduler.calibration_collector import _normalize_records, _select_candidates, collector_policy_from_env, run_collector_cycle, write_daily_report
+from automation_scheduler.kalshi_readonly_adapter import KalshiReadonlyAdapter
 from automation_scheduler.outcome_store import ingest_outcome_records, load_outcome_records
 from automation_scheduler.paper_decision_ledger import persist_paper_decisions_for_review_items
 
@@ -396,6 +397,21 @@ class TestCalibrationCollector(unittest.TestCase):
                 )
             self.assertEqual(result["new_contracts_selected"], 0)
             self.assertIn("provider_rate_or_availability_limit", result["adaptive_throttle_reasons"])
+
+    def test_partial_provider_timeout_reduces_but_does_not_zero_collection(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            records = _normalize_records([_market(f"KXPARTIAL{i}", self._future(hours=2)) for i in range(50)], KalshiReadonlyAdapter({}))
+            scan = {"status": "provider_error", "markets_scanned": 50, "records": records, "blockers": ["read_timeout"]}
+            with patch("automation_scheduler.calibration_collector._fetch_public_markets", return_value=scan):
+                result = run_collector_cycle(
+                    dry_run=True,
+                    max_new_contracts=50,
+                    target_daily_new_contracts=250,
+                    base_data_dir=tmp,
+                )
+            self.assertEqual(result["effective_max_new_contracts"], 25)
+            self.assertEqual(result["new_contracts_selected"], 25)
+            self.assertIn("provider_error_throttle", result["adaptive_throttle_reasons"])
 
     def test_backlog_limit_stops_new_collection(self):
         with tempfile.TemporaryDirectory() as tmp:
