@@ -1,0 +1,7 @@
+pytest
+pytest-cov
+requests
+python-dotenv
+rich
+tabulate
+
