@@ -110,7 +110,8 @@ class TestResponseCompactor(unittest.TestCase):
         self.assertFalse(compact["execution_allowed"])
         self.assertFalse(compact["live_execution_enabled"])
         self.assertEqual(compact["storage"]["env_var"], "AUTOMATION_DATA_DIR")
-        self.assertNotIn("secret", str(compact))
+        self.assertFalse(compact["secrets_included"])
+        self.assertNotIn("api_key", compact["sources"][0])
         self.assertNotIn("provider_payload", str(compact))
 
         coverage = compact_data_source_coverage_response({"modules": [{"lane_id": "basketball_nba"}]})

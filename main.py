@@ -31,9 +31,12 @@ from automation_scheduler.response_compactor import (
     compact_calibration_collector_response,
     compact_deepseek_review_response,
     compact_data_source_coverage_response,
+    compact_data_source_env_vars_response,
     compact_data_source_health_response,
+    compact_data_source_priorities_response,
     compact_data_source_registry_response,
     compact_data_source_research_lanes_response,
+    compact_public_apis_expansion_report_response,
     compact_outcome_ingest_response,
     compact_outcomes_response,
     compact_settlement_discovery_response,
@@ -3060,6 +3063,37 @@ async def get_data_source_research_lanes_endpoint(
     return compact
 
 
+@app.get("/api/automation/data-sources/env-vars", operation_id="getAutomationDataSourceEnvVars")
+async def get_data_source_env_vars_endpoint(
+    module: Optional[str] = Query(default=None),
+    limit: int = Query(default=500),
+):
+    payload = automation_scheduler.get_data_source_env_var_registry(module=module)
+    cap = min(max(int(limit), 1), 500)
+    return compact_data_source_env_vars_response(payload, limit=cap)
+
+
+@app.get("/api/automation/data-sources/priorities", operation_id="getAutomationDataSourcePriorities")
+async def get_data_source_priorities_endpoint(
+    module: Optional[str] = Query(default=None),
+    limit: int = Query(default=50),
+):
+    cap = min(max(int(limit), 1), 100)
+    payload = automation_scheduler.get_data_source_priorities_snapshot(module=module, limit=cap)
+    return compact_data_source_priorities_response(payload, limit=cap)
+
+
+@app.get("/api/automation/data-sources/public-apis-expansion-report", operation_id="getPublicApisExpansionReport")
+async def get_public_apis_expansion_report_endpoint(
+    module: Optional[str] = Query(default=None),
+    persist_report: bool = Query(default=False),
+    limit: int = Query(default=100),
+):
+    cap = min(max(int(limit), 1), 100)
+    payload = automation_scheduler.get_public_apis_expansion_report(module=module, persist_report=persist_report)
+    return compact_public_apis_expansion_report_response(payload, limit=cap)
+
+
 @app.get("/api/automation/data-sources/health", operation_id="getAutomationDataSourceHealth")
 async def get_data_source_health_endpoint():
     payload = automation_scheduler.get_data_source_registry_health()
@@ -3374,6 +3408,9 @@ PUBLIC_OPENAPI_PATH_METHODS = frozenset({
     ("/api/automation/data-sources/registry", "get"),
     ("/api/automation/data-sources/coverage", "get"),
     ("/api/automation/data-sources/research-lanes", "get"),
+    ("/api/automation/data-sources/env-vars", "get"),
+    ("/api/automation/data-sources/priorities", "get"),
+    ("/api/automation/data-sources/public-apis-expansion-report", "get"),
     ("/api/automation/data-sources/health", "get"),
     ("/api/automation/data-sources/verify", "post"),
     ("/api/automation/institutional-lab/health", "get"),

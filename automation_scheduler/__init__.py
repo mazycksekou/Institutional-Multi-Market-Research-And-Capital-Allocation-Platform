@@ -441,6 +441,27 @@ def get_data_source_research_lanes_snapshot(*, module: str | None = None, base_d
     return build_research_tasks(registry.get("lanes", []))
 
 
+def get_data_source_env_var_registry(*, module: str | None = None, base_data_dir: str | None = None):
+    from .data_source_registry import build_env_var_registry
+
+    return build_env_var_registry(module=module)
+
+
+def get_data_source_priorities_snapshot(*, module: str | None = None, limit: int = 50, base_data_dir: str | None = None):
+    from .data_source_registry import build_source_priorities
+
+    return build_source_priorities(module=module, limit=limit)
+
+
+def get_public_apis_expansion_report(*, module: str | None = None, persist_report: bool = False, base_data_dir: str | None = None):
+    from .data_source_registry import build_public_apis_expansion_report, write_public_apis_expansion_report
+
+    report = build_public_apis_expansion_report(module=module)
+    if persist_report:
+        report.update(write_public_apis_expansion_report(report, base_data_dir=_data_dir(base_data_dir)))
+    return report
+
+
 def get_data_source_registry_health(base_data_dir: str | None = None):
     from .data_source_registry import build_registry_report, summarize_registry
 
@@ -452,6 +473,12 @@ def get_data_source_registry_health(base_data_dir: str | None = None):
         "schema_version": report.get("schema_version"),
         "total_lanes": summary["total_lanes"],
         "total_sources": summary["total_sources"],
+        "enabled_source_count": summary.get("enabled_source_count", 0),
+        "source_counts_by_category": summary.get("source_counts_by_category", {}),
+        "key_required_source_count": summary.get("key_required_source_count", 0),
+        "oauth_required_source_count": summary.get("oauth_required_source_count", 0),
+        "provider_write_enabled_count": summary.get("provider_write_enabled_count", 0),
+        "execution_allowed_count": summary.get("execution_allowed_count", 0),
         "lanes_with_candidate_sources": summary["lanes_with_candidate_sources"],
         "lanes_needing_external_research": summary["lanes_needing_external_research"],
         "needs_terms_review_count": summary["needs_terms_review_count"],
@@ -464,10 +491,14 @@ def get_data_source_registry_health(base_data_dir: str | None = None):
         "kalshi_order_execution_enabled": False,
         "sportsbook_bet_execution_enabled": False,
         "broker_order_execution_enabled": False,
+        "crypto_trade_execution_enabled": False,
+        "stock_trade_execution_enabled": False,
         "actual_orders_submitted": 0,
         "actual_bets_submitted": 0,
         "actual_trades_submitted": 0,
+        "actual_crypto_swaps_submitted": 0,
         "raw_payload_included": False,
+        "secrets_included": False,
     }
 
 

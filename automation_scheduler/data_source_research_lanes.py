@@ -32,6 +32,10 @@ TASK_ACCEPTANCE_CRITERIA = [
 
 
 def _task_priority(lane: dict[str, Any]) -> str:
+    if lane.get("module_priority") == "highest":
+        return "highest"
+    if lane.get("module_priority") == "high":
+        return "high"
     status = str(lane.get("lane_status") or "")
     if status in {"needs_external_research", "future_vendor_needed"}:
         return "high"
@@ -44,7 +48,7 @@ def _needs_task(lane: dict[str, Any]) -> bool:
     if lane.get("lane_status") in {"needs_external_research", "candidate_sources_available", "future_vendor_needed", "blocked_pending_source"}:
         return True
     for source in list(lane.get("source_candidates") or []) + list(lane.get("future_source_candidates") or []):
-        if source.get("requires_terms_review") or source.get("approval_status") in {"needs_terms_review", "candidate", "future_candidate"}:
+        if source.get("requires_terms_review") or source.get("approval_status") in {"needs_terms_review", "needs_review", "candidate", "future_candidate"}:
             return True
     return False
 

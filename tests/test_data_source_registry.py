@@ -55,11 +55,19 @@ class TestDataSourceRegistry(unittest.TestCase):
         source = self.sources[0]
         for key in (
             "source_id",
+            "display_name",
+            "module_lane",
+            "source_category",
             "source_access_type",
+            "auth_type",
+            "env_var_name",
             "current_phase_allowed",
             "future_source_candidate",
             "approval_status",
             "enabled",
+            "provider_write",
+            "execution_allowed",
+            "raw_payload_persistence_allowed",
             "coverage",
             "freshness",
             "limits",
@@ -71,6 +79,28 @@ class TestDataSourceRegistry(unittest.TestCase):
         self.assertFalse(self.report["provider_write"])
         self.assertFalse(self.report["execution_allowed"])
         self.assertFalse(self.report["live_execution_enabled"])
+
+    def test_expanded_public_api_sources_are_registered_and_disabled(self):
+        source_ids = {source["source_id"] for source in self.sources}
+        for source_id in (
+            "collegefootballdata_ncaaf",
+            "mlb_stats_api",
+            "nhl_public_api",
+            "coingecko_crypto_prices",
+            "binance_public_market_data",
+            "defillama",
+            "alpha_vantage_market_data",
+            "sec_edgar_data",
+            "fred_macro_rates",
+            "open_meteo",
+            "marketaux",
+        ):
+            self.assertIn(source_id, source_ids)
+        for source in self.sources:
+            self.assertFalse(source["enabled"])
+            self.assertFalse(source["provider_write"])
+            self.assertFalse(source["execution_allowed"])
+            self.assertFalse(source["raw_payload_persistence_allowed"])
 
 
 if __name__ == "__main__":

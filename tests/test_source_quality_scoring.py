@@ -111,6 +111,43 @@ class TestSourceQualityScoring(unittest.TestCase):
         self.assertFalse(source["current_phase_allowed"])
         self.assertEqual(source["quality"]["current_phase_usability_score"], 0)
 
+    def test_crypto_priority_candidate_scores_signal_depth(self):
+        source = _source(
+            source_id="crypto_priority",
+            source_name="Crypto Priority",
+            lane_id="cryptocurrency_edge_lab",
+            module="cryptocurrency_edge_lab",
+            source_category="crypto",
+            source_access_type="open_public",
+            requires_terms_review=False,
+            coverage=_default_coverage(historical=True, live=True, order_book=True, onchain=True, dex=True, final_results=True),
+            model_inputs_supported=["ohlcv", "order_book_depth", "onchain_signals", "dex_liquidity", "stablecoin_flows"],
+            join_keys=["asset_symbol", "timestamp"],
+            outcome_fields_available=["forward_return"],
+            historical_backfill_fields_available=["timestamp", "close"],
+        )
+        self.assertGreaterEqual(source["quality"]["crypto_signal_value_score"], 70)
+        self.assertGreaterEqual(source["quality"]["calibration_value_score"], 70)
+        self.assertIn(source["quality"]["quality_tier"], {"candidate", "research_only", "high_priority_adapter", "institutional_priority"})
+
+    def test_stock_priority_candidate_scores_fundamental_depth(self):
+        source = _source(
+            source_id="stock_priority",
+            source_name="Stock Priority",
+            lane_id="institutional_stock_pro_analyst",
+            module="institutional_stock_pro_analyst",
+            source_category="stock/fundamentals",
+            source_access_type="open_public",
+            requires_terms_review=False,
+            coverage=_default_coverage(historical=True, live=True, fundamentals=True, filings=True, earnings=True, final_results=True),
+            model_inputs_supported=["fundamentals", "sec_filings", "earnings", "valuation"],
+            join_keys=["symbol", "cik"],
+            outcome_fields_available=["final_price"],
+            historical_backfill_fields_available=["filing_date", "period_end"],
+        )
+        self.assertGreaterEqual(source["quality"]["stock_signal_value_score"], 70)
+        self.assertGreaterEqual(source["quality"]["SEC_mapping_score"], 80)
+
 
 if __name__ == "__main__":
     unittest.main()

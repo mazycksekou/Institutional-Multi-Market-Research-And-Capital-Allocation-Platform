@@ -29,6 +29,10 @@ READ_ONLY_RENDER_ENDPOINTS = (
     "/api/automation/data-sources/health",
     "/api/automation/data-sources/registry",
     "/api/automation/data-sources/coverage",
+    "/api/automation/data-sources/research-lanes",
+    "/api/automation/data-sources/env-vars",
+    "/api/automation/data-sources/priorities",
+    "/api/automation/data-sources/public-apis-expansion-report",
     "/api/automation/institutional-lab/health",
 )
 REQUIRED_COMMITS = {

@@ -23,7 +23,8 @@ class TestDataSourceEndpoints(unittest.TestCase):
         self.assertFalse(payload["provider_write"])
         self.assertFalse(payload["execution_allowed"])
         self.assertFalse(payload["live_execution_enabled"])
-        self.assertNotIn("secret", str(payload).lower())
+        self.assertFalse(payload["secrets_included"])
+        self.assertNotIn("do-not-leak", str(payload).lower())
         self.assertNotIn("provider_payload", str(payload).lower())
 
     def test_registry_endpoint_module_filter_accepts_nba(self):
@@ -32,6 +33,15 @@ class TestDataSourceEndpoints(unittest.TestCase):
         payload = response.json()
         self.assertEqual(payload["total_lanes"], 1)
         self.assertEqual(payload["lanes"][0]["lane_id"], "basketball_nba")
+
+    def test_registry_endpoint_module_filter_accepts_stock_and_crypto_lanes(self):
+        stock = self.client.get("/api/automation/data-sources/registry?module=institutional_stock_pro_analyst&limit=100")
+        crypto = self.client.get("/api/automation/data-sources/registry?module=cryptocurrency_edge_lab&limit=100")
+        self.assertEqual(stock.status_code, 200)
+        self.assertEqual(crypto.status_code, 200)
+        self.assertEqual(stock.json()["lanes"][0]["lane_id"], "institutional_stock_pro_analyst")
+        self.assertEqual(crypto.json()["lanes"][0]["lane_id"], "cryptocurrency_edge_lab")
+        self.assertEqual(crypto.json()["lanes"][0]["module_priority"], "highest")
 
     def test_coverage_endpoint_works(self):
         response = self.client.get("/api/automation/data-sources/coverage?limit=100")
@@ -55,7 +65,30 @@ class TestDataSourceEndpoints(unittest.TestCase):
         payload = response.json()
         self.assertTrue(payload["ok"])
         self.assertEqual(payload["storage"]["env_var"], "AUTOMATION_DATA_DIR")
+        self.assertEqual(payload["enabled_source_count"], 0)
         self.assertFalse(payload["provider_write"])
+
+    def test_env_vars_endpoint_returns_names_only(self):
+        with patch.dict(os.environ, {"ALPHA_VANTAGE_API_KEY": "do-not-leak"}, clear=False):
+            response = self.client.get("/api/automation/data-sources/env-vars?module=institutional_stock_pro_analyst&limit=200")
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        text = str(payload)
+        self.assertIn("ALPHA_VANTAGE_API_KEY", text)
+        self.assertIn("key_is_configured", payload["env_vars"][0])
+        self.assertNotIn("do-not-leak", text)
+        self.assertNotIn("key_value", text.lower())
+        self.assertFalse(payload["provider_write"])
+
+    def test_priorities_and_expansion_report_endpoints_work(self):
+        priorities = self.client.get("/api/automation/data-sources/priorities?limit=25")
+        report = self.client.get("/api/automation/data-sources/public-apis-expansion-report?limit=100")
+        self.assertEqual(priorities.status_code, 200)
+        self.assertEqual(report.status_code, 200)
+        self.assertIn("priorities", priorities.json())
+        self.assertGreater(report.json()["sources_added"], 0)
+        self.assertEqual(report.json()["enabled_source_count"], 0)
+        self.assertFalse(report.json()["provider_write"])
 
     def test_verify_endpoint_works_and_persists_report_under_data_root(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -66,6 +99,9 @@ class TestDataSourceEndpoints(unittest.TestCase):
         self.assertEqual(payload["status"], "verified")
         self.assertEqual(payload["storage"]["env_var"], "AUTOMATION_DATA_DIR")
         self.assertIn("data_sources/latest.json", payload["latest_path"])
+        self.assertIn("data_sources/public_apis_expansion/latest.json", payload["public_apis_expansion_latest_path"])
+        self.assertIn("data_sources/public_apis_expansion/daily/", payload["public_apis_expansion_daily_json_path"])
+        self.assertIn("data_sources/public_apis_expansion/daily/", payload["public_apis_expansion_daily_markdown_path"])
         self.assertFalse(payload["provider_write"])
         self.assertFalse(payload["raw_payload_included"])
 

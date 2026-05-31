@@ -31,7 +31,14 @@ BLOCKING_FLAGS = {
     "credit_card_required",
 }
 
-QUALITY_TIERS = ("unusable", "candidate", "usable", "strong", "institutional")
+QUALITY_TIERS = (
+    "unusable",
+    "research_only",
+    "candidate",
+    "usable_after_review",
+    "high_priority_adapter",
+    "institutional_priority",
+)
 
 
 def _clamp(value: float | int | None) -> int:
@@ -61,6 +68,8 @@ def _cadence_score(cadence: str | None) -> int:
 
 def score_source(source: dict[str, Any], required_inputs: list[str] | None = None) -> dict[str, Any]:
     access_type = str(source.get("source_access_type") or "unknown")
+    source_category = str(source.get("source_category") or source.get("category") or "")
+    module = str(source.get("module") or source.get("module_lane") or source.get("lane_id") or "")
     coverage = dict(source.get("coverage") or {})
     freshness = dict(source.get("freshness") or {})
     limits = dict(source.get("limits") or {})
@@ -92,6 +101,8 @@ def score_source(source: dict[str, Any], required_inputs: list[str] | None = Non
     if access_type in {"open_dataset", "manual_import"}:
         rate_limit_risk = min(rate_limit_risk, 25)
 
+    forbidden_actions = list(source.get("forbidden_actions") or [])
+    trading_capable = bool(source.get("requires_execution_account") or source.get("requires_brokerage_account") or source.get("requires_sportsbook_account") or forbidden_actions)
     blocked = access_type in FUTURE_ONLY_ACCESS_TYPES or any(bool(source.get(flag, False)) for flag in BLOCKING_FLAGS)
     unknown_terms = terms_risk >= 70
     current_phase_allowed = (
@@ -99,6 +110,8 @@ def score_source(source: dict[str, Any], required_inputs: list[str] | None = Non
         and access_type in CURRENT_PHASE_ACCESS_TYPES
         and not blocked
         and not bool(source.get("requires_provider_write", False))
+        and not bool(source.get("execution_allowed", False))
+        and not trading_capable
     )
     approved = str(source.get("approval_status") or "candidate") == "approved_for_research"
     current_usability = 0
@@ -110,6 +123,36 @@ def score_source(source: dict[str, Any], required_inputs: list[str] | None = Non
     future_value = _clamp((coverage_score * 0.35) + (completeness_score * 0.2) + (len(historical_fields) * 6) + (len(outcome_fields) * 8) + (len(join_keys) * 5))
     if access_type in FUTURE_ONLY_ACCESS_TYPES:
         future_value = max(future_value, 45)
+    if access_type in {"open_public", "free_key", "free_tier", "open_dataset"} and not trading_capable:
+        future_value = max(future_value, 60)
+
+    adapter_complexity = 45
+    if access_type in {"open_dataset", "open_public"}:
+        adapter_complexity = 25
+    if bool(source.get("requires_oauth", False)):
+        adapter_complexity = max(adapter_complexity, 70)
+    if access_type in FUTURE_ONLY_ACCESS_TYPES:
+        adapter_complexity = max(adapter_complexity, 80)
+    calibration_value = _clamp((quality_signal := (len(outcome_fields) * 12 + len(historical_fields) * 7 + len(join_keys) * 8)) + (30 if coverage.get("historical") else 0) + (25 if coverage.get("final_results") or coverage.get("settlements") else 0))
+    stock_signal = 0
+    if source_category in {"finance", "stock/fundamentals", "macro/rates/bonds"} or module in {"stocks", "ETFs", "institutional_stock_pro_analyst"}:
+        stock_signal = _clamp(
+            (25 if coverage.get("fundamentals") else 0)
+            + (20 if coverage.get("historical") else 0)
+            + (15 if coverage.get("live") else 0)
+            + (20 if "fundamentals" in supported_inputs else 0)
+            + (20 if "sec_filings" in supported_inputs or "earnings" in supported_inputs else 0)
+        )
+    crypto_signal = 0
+    if source_category == "crypto" or module == "cryptocurrency_edge_lab":
+        crypto_signal = _clamp(
+            (25 if coverage.get("historical") else 0)
+            + (20 if coverage.get("live") else 0)
+            + (20 if "ohlcv" in supported_inputs else 0)
+            + (15 if "order_book_depth" in supported_inputs else 0)
+            + (15 if "onchain_signals" in supported_inputs or "tvl" in supported_inputs else 0)
+            + (15 if not trading_capable else 0)
+        )
 
     quality = {
         "source_reliability_score": _clamp(70 if approved else 45 if access_type != "unknown" else 15),
@@ -125,6 +168,21 @@ def score_source(source: dict[str, Any], required_inputs: list[str] | None = Non
         "external_research_priority_score": 0,
         "current_phase_usability_score": current_usability,
         "future_value_score": future_value,
+        "adapter_complexity_score": _clamp(adapter_complexity),
+        "calibration_value_score": calibration_value,
+        "stock_signal_value_score": stock_signal,
+        "fundamental_depth_score": _clamp(80 if coverage.get("fundamentals") or "fundamentals" in supported_inputs else 15),
+        "valuation_coverage_score": _clamp(75 if "valuation" in supported_inputs or coverage.get("fundamentals") else 10),
+        "earnings_event_score": _clamp(75 if "earnings" in supported_inputs else 10),
+        "SEC_mapping_score": _clamp(85 if "sec_filings" in supported_inputs or "cik" in join_keys else 10),
+        "liquidity_market_depth_score": _clamp(75 if coverage.get("live") and ("volume" in supported_inputs or "order_book_depth" in supported_inputs) else 25),
+        "crypto_signal_value_score": crypto_signal,
+        "exchange_depth_score": _clamp(80 if "exchange_volume" in supported_inputs or "order_book_depth" in supported_inputs else 15),
+        "onchain_depth_score": _clamp(80 if "onchain_signals" in supported_inputs else 15),
+        "order_book_depth_score": _clamp(80 if "order_book_depth" in supported_inputs else 15),
+        "funding_open_interest_score": _clamp(80 if "funding_rates" in supported_inputs or "open_interest" in supported_inputs else 10),
+        "dex_liquidity_score": _clamp(80 if "dex_liquidity" in supported_inputs or "tvl" in supported_inputs else 10),
+        "stablecoin_flow_score": _clamp(80 if "stablecoin_flows" in supported_inputs else 10),
     }
     quality["quality_tier"] = quality_tier(quality, source)
     return quality
@@ -132,17 +190,23 @@ def score_source(source: dict[str, Any], required_inputs: list[str] | None = Non
 
 def quality_tier(quality: dict[str, Any], source: dict[str, Any] | None = None) -> str:
     source = source or {}
-    if any(bool(source.get(flag, False)) for flag in BLOCKING_FLAGS) or str(source.get("source_access_type") or "") in {"unknown"}:
+    access_type = str(source.get("source_access_type") or "")
+    if any(bool(source.get(flag, False)) for flag in BLOCKING_FLAGS) or access_type in {"unknown"}:
         return "unusable"
     if int(quality.get("terms_risk_score") or 0) >= 70:
         return "candidate"
     usability = int(quality.get("current_phase_usability_score") or 0)
-    if usability >= 90:
-        return "institutional"
-    if usability >= 75:
-        return "strong"
+    future_value = int(quality.get("future_value_score") or 0)
+    calibration_value = int(quality.get("calibration_value_score") or 0)
+    signal_value = max(int(quality.get("stock_signal_value_score") or 0), int(quality.get("crypto_signal_value_score") or 0))
+    if usability >= 90 or (future_value >= 85 and calibration_value >= 75 and signal_value >= 70):
+        return "institutional_priority"
+    if usability >= 75 or (future_value >= 75 and signal_value >= 60):
+        return "high_priority_adapter"
     if usability >= 55:
-        return "usable"
+        return "usable_after_review"
+    if future_value >= 35:
+        return "research_only"
     return "candidate"
 
 

@@ -30,7 +30,7 @@ class TestDataSourceResearchLanes(unittest.TestCase):
         for lane_id, task in self.tasks.items():
             self.assertEqual(task["research_task_id"], f"find_source_for_{lane_id}")
             self.assertEqual(task["status"], "open")
-            self.assertIn(task["priority"], {"high", "medium", "low"})
+            self.assertIn(task["priority"], {"highest", "high", "medium", "low"})
             self.assertIn("required_model_inputs", task["required_data"])
             self.assertIn("outcome_fields_required", task["required_data"])
             self.assertIn("historical_backfill_fields_required", task["required_data"])
