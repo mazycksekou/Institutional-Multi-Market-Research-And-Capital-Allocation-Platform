@@ -1034,6 +1034,13 @@ class NcaafCfbdVerifyRequest(BaseModel):
     week: Optional[int] = None
     max_records: int = 5
     fetch_live_sample: bool = False
+    sample_profile: str = "games_tiny"
+    max_provider_calls: int = 1
+    include_games: bool = True
+    include_team_stats: bool = False
+    include_advanced_stats: bool = False
+    include_rankings: bool = False
+    include_lines: bool = False
 
 
 class InstitutionalLabRunRequest(BaseModel):
@@ -3168,6 +3175,13 @@ async def verify_ncaaf_cfbd_adapter_endpoint(
         week=payload.week,
         max_records=payload.max_records,
         fetch_live_sample=payload.fetch_live_sample,
+        sample_profile=payload.sample_profile,
+        max_provider_calls=payload.max_provider_calls,
+        include_games=payload.include_games,
+        include_team_stats=payload.include_team_stats,
+        include_advanced_stats=payload.include_advanced_stats,
+        include_rankings=payload.include_rankings,
+        include_lines=payload.include_lines,
     )
     cap = min(max(int(limit), 1), 100 if verbose else 10)
     compact = compact_cfbd_adapter_verification_response(result)

@@ -540,6 +540,13 @@ def verify_ncaaf_cfbd_adapter(
     week: int | None = None,
     max_records: int = 5,
     fetch_live_sample: bool = False,
+    sample_profile: str = "games_tiny",
+    max_provider_calls: int | None = None,
+    include_games: bool = True,
+    include_team_stats: bool = False,
+    include_advanced_stats: bool = False,
+    include_rankings: bool = False,
+    include_lines: bool = False,
     base_data_dir: str | None = None,
 ):
     from .ncaaf_collegefootballdata_adapter import verify_ncaaf_cfbd_adapter as _verify
@@ -550,5 +557,12 @@ def verify_ncaaf_cfbd_adapter(
         week=week,
         max_records=max_records,
         fetch_live_sample=fetch_live_sample,
+        sample_profile=sample_profile,
+        max_provider_calls=max_provider_calls,
+        include_games=include_games,
+        include_team_stats=include_team_stats,
+        include_advanced_stats=include_advanced_stats,
+        include_rankings=include_rankings,
+        include_lines=include_lines,
         base_data_dir=_data_dir(base_data_dir),
     )

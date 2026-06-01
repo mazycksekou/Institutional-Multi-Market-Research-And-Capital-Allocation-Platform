@@ -22,6 +22,10 @@ MODULE = "americanfootball_ncaaf"
 REPORT_RELATIVE_DIR = ("data_sources", "adapters", "ncaaf_cfbd")
 DEFAULT_MAX_RECORDS = 5
 MAX_RECORDS_HARD_CAP = 25
+DEFAULT_MAX_PROVIDER_CALLS = 1
+MAX_PROVIDER_CALLS_HARD_CAP = 3
+SAMPLE_PROFILE_GAMES_TINY = "games_tiny"
+SAMPLE_PROFILE_TARGETED_ADVANCED_TINY = "targeted_advanced_tiny"
 
 _SAFE_BOOL_KEY_FIELDS = {
     "api_key_configured",
@@ -70,6 +74,14 @@ def _effective_max_records(max_records: int | None) -> int:
     except (TypeError, ValueError):
         requested = DEFAULT_MAX_RECORDS
     return max(1, min(requested, MAX_RECORDS_HARD_CAP))
+
+
+def _effective_max_provider_calls(max_provider_calls: int | None) -> int:
+    try:
+        requested = int(max_provider_calls if max_provider_calls is not None else DEFAULT_MAX_PROVIDER_CALLS)
+    except (TypeError, ValueError):
+        requested = DEFAULT_MAX_PROVIDER_CALLS
+    return max(1, min(requested, MAX_PROVIDER_CALLS_HARD_CAP))
 
 
 def _present(value: Any) -> bool:
@@ -357,6 +369,92 @@ def fetch_cfbd_tiny_sample(
     }
 
 
+def _extract_records_from_body(body: bytes) -> list[dict[str, Any]]:
+    try:
+        parsed = json.loads(body.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        parsed = []
+    if isinstance(parsed, dict):
+        records = parsed.get("games") or parsed.get("data") or parsed.get("items") or []
+    else:
+        records = parsed
+    if not isinstance(records, list):
+        return []
+    return [row for row in records if isinstance(row, dict)]
+
+
+def fetch_cfbd_endpoint_sample(
+    *,
+    endpoint_id: str,
+    path: str,
+    query: dict[str, Any],
+    max_records: int = DEFAULT_MAX_RECORDS,
+    dry_run: bool = True,
+) -> dict[str, Any]:
+    max_records_effective = _effective_max_records(max_records)
+    query_clean = {key: str(value) for key, value in query.items() if value is not None}
+    url = f"{CFBD_API_BASE_URL}{path}?{urllib.parse.urlencode(query_clean)}"
+    request = urllib.request.Request(url, headers=get_cfbd_headers(), method="GET")
+    try:
+        with urllib.request.urlopen(request, timeout=10) as response:
+            body = response.read()
+    except urllib.error.HTTPError as exc:
+        status_code = int(getattr(exc, "code", 0) or 0)
+        if status_code == 429:
+            status = "rate_limited"
+        elif status_code in {401, 403}:
+            status = "auth_error"
+        else:
+            status = "http_error"
+        return {
+            "ok": False,
+            "status": status,
+            "endpoint_id": endpoint_id,
+            "path": path,
+            "http_status": status_code,
+            "records": [],
+            "records_received": 0,
+            "max_records_effective": max_records_effective,
+            "dry_run": bool(dry_run),
+            "provider_write": False,
+            "execution_allowed": False,
+            "raw_payload_included": False,
+            "secrets_included": False,
+        }
+    except urllib.error.URLError as exc:
+        return {
+            "ok": False,
+            "status": "network_error",
+            "endpoint_id": endpoint_id,
+            "path": path,
+            "error_class": type(exc).__name__,
+            "records": [],
+            "records_received": 0,
+            "max_records_effective": max_records_effective,
+            "dry_run": bool(dry_run),
+            "provider_write": False,
+            "execution_allowed": False,
+            "raw_payload_included": False,
+            "secrets_included": False,
+        }
+
+    records = _extract_records_from_body(body)[:max_records_effective]
+    return {
+        "ok": True,
+        "status": "sample_fetched",
+        "endpoint_id": endpoint_id,
+        "path": path,
+        "records": records,
+        "records_received": len(records),
+        "max_records_effective": max_records_effective,
+        "dry_run": bool(dry_run),
+        "provider_write": False,
+        "execution_allowed": False,
+        "raw_payload_included": False,
+        "secrets_included": False,
+    }
+
+
 def normalize_cfbd_game_record(raw_record: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(raw_record, dict):
         return {}
@@ -445,6 +543,10 @@ def normalize_cfbd_advanced_record(raw_record: dict[str, Any]) -> dict[str, Any]
     defensive_success_allowed = _compact_number(_first(defense, "successRate", "success_rate") or _first(raw_record, "defensive_success_rate_allowed"))
     offensive_explosiveness = _compact_number(_first(offense, "explosiveness") or _first(raw_record, "offensive_explosiveness"))
     defensive_explosiveness_allowed = _compact_number(_first(defense, "explosiveness") or _first(raw_record, "defensive_explosiveness_allowed"))
+    offensive_plays = _compact_number(_first(offense, "plays", "playCount", "play_count") or _first(raw_record, "offensive_plays"))
+    defensive_plays = _compact_number(_first(defense, "plays", "playCount", "play_count") or _first(raw_record, "defensive_plays"))
+    offensive_drives = _compact_number(_first(offense, "drives", "driveCount", "drive_count") or _first(raw_record, "offensive_drives"))
+    defensive_drives = _compact_number(_first(defense, "drives", "driveCount", "drive_count") or _first(raw_record, "defensive_drives"))
     side = _safe_str(_first(raw_record, "side", "homeAway", "home_away"))
     side_key = str(side or "").lower().strip()
 
@@ -465,6 +567,10 @@ def normalize_cfbd_advanced_record(raw_record: dict[str, Any]) -> dict[str, Any]
         "defensive_success_rate_allowed": defensive_success_allowed,
         "offensive_explosiveness": offensive_explosiveness,
         "defensive_explosiveness_allowed": defensive_explosiveness_allowed,
+        "offensive_plays": offensive_plays,
+        "defensive_plays": defensive_plays,
+        "offensive_drives": offensive_drives,
+        "defensive_drives": defensive_drives,
     }
     if side_key in {"home", "away"}:
         prefix = side_key
@@ -475,9 +581,159 @@ def normalize_cfbd_advanced_record(raw_record: dict[str, Any]) -> dict[str, Any]
             f"{prefix}_defensive_success_rate_allowed": defensive_success_allowed,
             f"{prefix}_explosiveness": offensive_explosiveness,
             f"{prefix}_explosiveness_allowed": defensive_explosiveness_allowed,
+            f"{prefix}_plays_per_game": offensive_plays,
         }
         normalized.update({key: value for key, value in direct_fields.items() if value is not None})
     return {key: value for key, value in normalized.items() if value is not None}
+
+
+def _havoc_rate(value: Any) -> int | float | None:
+    if isinstance(value, dict):
+        return _compact_number(_first(value, "havocRate", "havoc_rate", "total", "totalHavocRate", "total_havoc_rate", "havoc"))
+    return _compact_number(value)
+
+
+def normalize_cfbd_havoc_record(raw_record: dict[str, Any]) -> dict[str, Any]:
+    if not isinstance(raw_record, dict):
+        return {}
+    offense = raw_record.get("offense") if isinstance(raw_record.get("offense"), dict) else {}
+    defense = raw_record.get("defense") if isinstance(raw_record.get("defense"), dict) else {}
+    offensive_havoc_allowed = _havoc_rate(offense) or _compact_number(_first(raw_record, "offensive_havoc_allowed", "offensiveHavocAllowed"))
+    defensive_havoc = _havoc_rate(defense) or _compact_number(_first(raw_record, "defensive_havoc_rate", "defensiveHavocRate"))
+    side = _safe_str(_first(raw_record, "side", "homeAway", "home_away"))
+    side_key = str(side or "").lower().strip()
+    normalized = {
+        "provider_record_type": "havoc",
+        "source_id": SOURCE_ID,
+        "provider_id": PROVIDER_ID,
+        "game_id": _safe_str(_first(raw_record, "game_id", "gameId", "id")),
+        "event_id": _safe_str(_first(raw_record, "game_id", "gameId", "id")),
+        "season": _safe_int(_first(raw_record, "season", "year")),
+        "week": _safe_int(_first(raw_record, "week")),
+        "team": _safe_str(_first(raw_record, "team", "school")),
+        "opponent": _safe_str(_first(raw_record, "opponent")),
+        "home_away": side,
+        "offensive_havoc_allowed": offensive_havoc_allowed,
+        "defensive_havoc_rate": defensive_havoc,
+    }
+    if side_key in {"home", "away"}:
+        normalized.update(
+            {
+                f"{side_key}_havoc_rate": defensive_havoc,
+                f"{side_key}_havoc_allowed": offensive_havoc_allowed,
+            }
+        )
+    return {key: value for key, value in normalized.items() if value is not None}
+
+
+def normalize_cfbd_sp_rating_record(raw_record: dict[str, Any]) -> dict[str, Any]:
+    if not isinstance(raw_record, dict):
+        return {}
+    special_teams = raw_record.get("specialTeams") if isinstance(raw_record.get("specialTeams"), dict) else raw_record.get("special_teams")
+    if not isinstance(special_teams, dict):
+        special_teams = {}
+    normalized = {
+        "provider_record_type": "sp_rating",
+        "source_id": SOURCE_ID,
+        "provider_id": PROVIDER_ID,
+        "season": _safe_int(_first(raw_record, "season", "year")),
+        "team": _safe_str(_first(raw_record, "team", "school")),
+        "conference": _safe_str(_first(raw_record, "conference")),
+        "power_rating": _compact_number(_first(raw_record, "rating", "sp", "powerRating", "power_rating")),
+        "special_teams_rating": _compact_number(_first(special_teams, "rating", "overall", "value")),
+        "strength_of_schedule": _compact_number(_first(raw_record, "sos", "strengthOfSchedule", "strength_of_schedule")),
+    }
+    return {key: value for key, value in normalized.items() if value is not None}
+
+
+def _team_key(value: Any) -> str:
+    return str(value or "").strip().casefold()
+
+
+def _game_context(records: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    context: dict[str, dict[str, Any]] = {}
+    for row in records:
+        game_id = _safe_str(row.get("game_id") or row.get("event_id"))
+        if not game_id:
+            continue
+        context[game_id] = {
+            "home_team": row.get("home_team"),
+            "away_team": row.get("away_team"),
+            "home_points": row.get("home_points"),
+            "away_points": row.get("away_points"),
+        }
+    return context
+
+
+def _infer_side(record: dict[str, Any], games_by_id: dict[str, dict[str, Any]]) -> str | None:
+    side = str(record.get("home_away") or "").strip().lower()
+    if side in {"home", "away"}:
+        return side
+    game = games_by_id.get(str(record.get("game_id") or record.get("event_id") or ""))
+    if not game:
+        return None
+    team = _team_key(record.get("team"))
+    if team and team == _team_key(game.get("home_team")):
+        return "home"
+    if team and team == _team_key(game.get("away_team")):
+        return "away"
+    return None
+
+
+def _safe_rate(numerator: Any, denominator: Any) -> int | float | None:
+    top = _safe_float(numerator)
+    bottom = _safe_float(denominator)
+    if top is None or bottom in (None, 0):
+        return None
+    return _compact_number(top / bottom)
+
+
+def _apply_side_context(record: dict[str, Any], games_by_id: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    row = dict(record)
+    side = _infer_side(row, games_by_id)
+    if side not in {"home", "away"}:
+        return row
+    row["home_away"] = side
+    game = games_by_id.get(str(row.get("game_id") or row.get("event_id") or "")) or {}
+    points = game.get("home_points") if side == "home" else game.get("away_points")
+    opponent_points = game.get("away_points") if side == "home" else game.get("home_points")
+    direct_fields = {
+        f"{side}_offensive_epa_per_play": row.get("offensive_epa_per_play"),
+        f"{side}_defensive_epa_per_play": row.get("defensive_epa_per_play"),
+        f"{side}_success_rate": row.get("offensive_success_rate"),
+        f"{side}_defensive_success_rate_allowed": row.get("defensive_success_rate_allowed"),
+        f"{side}_explosiveness": row.get("offensive_explosiveness"),
+        f"{side}_explosiveness_allowed": row.get("defensive_explosiveness_allowed"),
+        f"{side}_plays_per_game": row.get("offensive_plays"),
+        f"{side}_points_per_drive": row.get("points_per_drive") or _safe_rate(points, row.get("offensive_drives")),
+        f"{side}_points_allowed_per_drive": row.get("points_allowed_per_drive") or _safe_rate(opponent_points, row.get("defensive_drives")),
+        f"{side}_havoc_rate": row.get("defensive_havoc_rate"),
+        f"{side}_havoc_allowed": row.get("offensive_havoc_allowed"),
+        f"{side}_power_rating": row.get("power_rating"),
+        f"{side}_special_teams_rating": row.get("special_teams_rating"),
+        f"{side}_strength_of_schedule": row.get("strength_of_schedule"),
+    }
+    row.update({key: value for key, value in direct_fields.items() if value is not None})
+    return row
+
+
+def _apply_rating_side_context(records: list[dict[str, Any]], game_records: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    by_team = {_team_key(row.get("team")): row for row in records if row.get("team")}
+    normalized: list[dict[str, Any]] = []
+    for game in game_records:
+        for side, team_key_name in (("home", "home_team"), ("away", "away_team")):
+            rating = by_team.get(_team_key(game.get(team_key_name)))
+            if not rating:
+                continue
+            row = {
+                **rating,
+                "game_id": game.get("game_id"),
+                "event_id": game.get("event_id"),
+                "week": game.get("week"),
+                "home_away": side,
+            }
+            normalized.append(_apply_side_context(row, _game_context([game])))
+    return normalized
 
 
 def _contract_fields() -> tuple[list[str], list[str]]:
@@ -617,6 +873,190 @@ def score_cfbd_sample_quality(records: list[dict[str, Any]]) -> dict[str, Any]:
     return quality
 
 
+def _endpoint_query(season: int | None, week: int | None, *, include_week: bool = True) -> dict[str, Any]:
+    query = {
+        "year": season or datetime.now(timezone.utc).year,
+        "seasonType": "regular",
+    }
+    if include_week and week is not None:
+        query["week"] = week
+    return query
+
+
+def _targeted_endpoint_plan(
+    *,
+    season: int | None,
+    week: int | None,
+    include_games: bool,
+    include_team_stats: bool,
+    include_advanced_stats: bool,
+    include_rankings: bool,
+    include_lines: bool,
+) -> list[dict[str, Any]]:
+    endpoints: list[dict[str, Any]] = []
+    if include_games:
+        endpoints.append({"endpoint_id": "games", "path": "/games", "query": _endpoint_query(season, week)})
+    if include_advanced_stats:
+        endpoints.append({"endpoint_id": "advanced_stats", "path": "/stats/game/advanced", "query": _endpoint_query(season, week)})
+    if include_team_stats:
+        endpoints.append({"endpoint_id": "team_havoc_stats", "path": "/stats/game/havoc", "query": _endpoint_query(season, week)})
+    if include_rankings:
+        endpoints.append({"endpoint_id": "sp_ratings", "path": "/ratings/sp", "query": _endpoint_query(season, None, include_week=False)})
+    if include_lines:
+        endpoints.append({"endpoint_id": "lines", "path": "/lines", "query": _endpoint_query(season, week)})
+    return endpoints
+
+
+def _normalize_endpoint_records(
+    endpoint_id: str,
+    raw_records: list[dict[str, Any]],
+    game_records: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    games_by_id = _game_context(game_records)
+    if endpoint_id == "games":
+        return [row for row in (normalize_cfbd_game_record(record) for record in raw_records) if row]
+    if endpoint_id == "advanced_stats":
+        return [
+            _apply_side_context(row, games_by_id)
+            for row in (normalize_cfbd_advanced_record(record) for record in raw_records)
+            if row
+        ]
+    if endpoint_id == "team_havoc_stats":
+        return [
+            _apply_side_context(row, games_by_id)
+            for row in (normalize_cfbd_havoc_record(record) for record in raw_records)
+            if row
+        ]
+    if endpoint_id == "sp_ratings":
+        ratings = [row for row in (normalize_cfbd_sp_rating_record(record) for record in raw_records) if row]
+        return _apply_rating_side_context(ratings, game_records)
+    return []
+
+
+def _fields_mapped_by_endpoint(records_by_endpoint: dict[str, list[dict[str, Any]]]) -> dict[str, list[str]]:
+    mapped: dict[str, list[str]] = {}
+    for endpoint_id, records in records_by_endpoint.items():
+        mapped[endpoint_id] = map_cfbd_to_ncaaf_model_inputs(records)["covered_model_inputs"]
+    return mapped
+
+
+def fetch_cfbd_targeted_advanced_sample(
+    *,
+    season: int | None = None,
+    week: int | None = None,
+    max_records: int = DEFAULT_MAX_RECORDS,
+    max_provider_calls: int | None = None,
+    dry_run: bool = True,
+    include_games: bool = True,
+    include_team_stats: bool = True,
+    include_advanced_stats: bool = True,
+    include_rankings: bool = False,
+    include_lines: bool = False,
+) -> dict[str, Any]:
+    max_records_effective = _effective_max_records(max_records)
+    max_provider_calls_effective = _effective_max_provider_calls(max_provider_calls)
+    endpoints = _targeted_endpoint_plan(
+        season=season,
+        week=week,
+        include_games=include_games,
+        include_team_stats=include_team_stats,
+        include_advanced_stats=include_advanced_stats,
+        include_rankings=include_rankings,
+        include_lines=include_lines,
+    )
+    api_key = os.getenv(CFBD_API_KEY_ENV, "").strip()
+    if not api_key:
+        return {
+            "ok": True,
+            "status": "missing_api_key",
+            "records": [],
+            "records_by_endpoint": {},
+            "records_received_by_endpoint": {},
+            "records_normalized_by_endpoint": {},
+            "fields_mapped_by_endpoint": {},
+            "provider_calls_made": 0,
+            "max_provider_calls_effective": max_provider_calls_effective,
+            "endpoints_called": [],
+            "skipped_endpoints_due_to_call_budget": [],
+            "missing_api_key": True,
+            "fetch_live_sample_performed": False,
+            "provider_write": False,
+            "execution_allowed": False,
+            "raw_payload_included": False,
+            "secrets_included": False,
+        }
+
+    endpoints_called: list[str] = []
+    skipped_due_budget: list[str] = []
+    provider_errors: list[dict[str, Any]] = []
+    records_by_endpoint: dict[str, list[dict[str, Any]]] = {}
+    records_received_by_endpoint: dict[str, int] = {}
+    records_normalized_by_endpoint: dict[str, int] = {}
+    game_records: list[dict[str, Any]] = []
+    fetch_ok = True
+    fetch_status = "sample_fetched"
+
+    for index, endpoint in enumerate(endpoints):
+        if len(endpoints_called) >= max_provider_calls_effective:
+            skipped_due_budget.extend(str(item["endpoint_id"]) for item in endpoints[index:])
+            break
+        endpoint_id = str(endpoint["endpoint_id"])
+        sample = fetch_cfbd_endpoint_sample(
+            endpoint_id=endpoint_id,
+            path=str(endpoint["path"]),
+            query=dict(endpoint["query"]),
+            max_records=max_records_effective,
+            dry_run=dry_run,
+        )
+        endpoints_called.append(endpoint_id)
+        records_received_by_endpoint[endpoint_id] = int(sample.get("records_received", 0) or 0)
+        if not bool(sample.get("ok", True)):
+            fetch_ok = False
+            fetch_status = str(sample.get("status") or "provider_error")
+            provider_errors.append(
+                {
+                    "endpoint_id": endpoint_id,
+                    "status": fetch_status,
+                    "http_status": sample.get("http_status"),
+                    "error_class": sample.get("error_class"),
+                }
+            )
+            break
+        raw_records = list(sample.get("records") or [])
+        normalized = _normalize_endpoint_records(endpoint_id, raw_records, game_records)
+        if endpoint_id == "games":
+            game_records = normalized
+        records_by_endpoint[endpoint_id] = normalized
+        records_normalized_by_endpoint[endpoint_id] = len(normalized)
+
+    combined_records: list[dict[str, Any]] = []
+    for rows in records_by_endpoint.values():
+        combined_records.extend(rows)
+
+    return {
+        "ok": fetch_ok,
+        "status": fetch_status,
+        "records": combined_records,
+        "records_by_endpoint": records_by_endpoint,
+        "records_received_by_endpoint": records_received_by_endpoint,
+        "records_normalized_by_endpoint": records_normalized_by_endpoint,
+        "fields_mapped_by_endpoint": _fields_mapped_by_endpoint(records_by_endpoint),
+        "provider_calls_made": len(endpoints_called),
+        "max_provider_calls_effective": max_provider_calls_effective,
+        "endpoints_called": endpoints_called,
+        "skipped_endpoints_due_to_call_budget": skipped_due_budget,
+        "provider_errors": provider_errors,
+        "missing_api_key": False,
+        "fetch_live_sample_performed": bool(endpoints_called and not provider_errors),
+        "max_records_effective": max_records_effective,
+        "dry_run": bool(dry_run),
+        "provider_write": False,
+        "execution_allowed": False,
+        "raw_payload_included": False,
+        "secrets_included": False,
+    }
+
+
 def _report_root(base_data_dir: str | Path | None = None) -> Path:
     root = resolve_base_data_dir(base_data_dir)
     path = root
@@ -638,6 +1078,8 @@ def _markdown_report(report: dict[str, Any]) -> str:
         f"- enabled: {str(bool(report.get('enabled'))).lower()}",
         f"- fetch_live_sample_requested: {str(bool(report.get('fetch_live_sample_requested'))).lower()}",
         f"- fetch_live_sample_performed: {str(bool(report.get('fetch_live_sample_performed'))).lower()}",
+        f"- provider_calls_made: {report.get('provider_calls_made', 0)}",
+        f"- endpoints_called: {','.join(list(report.get('endpoints_called') or []))}",
         f"- sample_records_received: {report.get('sample_records_received')}",
         f"- sample_records_normalized: {report.get('sample_records_normalized')}",
         f"- coverage_score: {report.get('coverage_score')}",
@@ -694,31 +1136,97 @@ def verify_ncaaf_cfbd_adapter(
     week: int | None = None,
     max_records: int = DEFAULT_MAX_RECORDS,
     fetch_live_sample: bool = False,
+    sample_profile: str = SAMPLE_PROFILE_GAMES_TINY,
+    max_provider_calls: int | None = None,
+    include_games: bool = True,
+    include_team_stats: bool = False,
+    include_advanced_stats: bool = False,
+    include_rankings: bool = False,
+    include_lines: bool = False,
     base_data_dir: str | Path | None = None,
 ) -> dict[str, Any]:
     max_records_effective = _effective_max_records(max_records)
+    max_provider_calls_effective = _effective_max_provider_calls(max_provider_calls)
     config_status = verify_cfbd_access_config()
-    raw_records: list[dict[str, Any]] = []
+    normalized_records: list[dict[str, Any]] = []
+    normalized_records_by_endpoint: dict[str, list[dict[str, Any]]] = {}
+    records_received_by_endpoint: dict[str, int] = {}
+    records_normalized_by_endpoint: dict[str, int] = {}
+    fields_mapped_by_endpoint: dict[str, list[str]] = {}
+    skipped_due_budget: list[str] = []
+    provider_errors: list[dict[str, Any]] = []
+    endpoints_called: list[str] = []
+    provider_calls_made = 0
     fetch_status = "not_requested"
     fetch_performed = False
     fetch_ok = True
+    targeted_requested = (
+        str(sample_profile or SAMPLE_PROFILE_GAMES_TINY) == SAMPLE_PROFILE_TARGETED_ADVANCED_TINY
+        or include_team_stats
+        or include_advanced_stats
+        or include_rankings
+        or include_lines
+    )
     if fetch_live_sample:
-        sample = fetch_cfbd_tiny_sample(
-            season=season,
-            week=week,
-            max_records=max_records_effective,
-            dry_run=dry_run,
-        )
+        if targeted_requested:
+            sample = fetch_cfbd_targeted_advanced_sample(
+                season=season,
+                week=week,
+                max_records=max_records_effective,
+                max_provider_calls=max_provider_calls_effective,
+                dry_run=dry_run,
+                include_games=include_games,
+                include_team_stats=include_team_stats,
+                include_advanced_stats=include_advanced_stats,
+                include_rankings=include_rankings,
+                include_lines=include_lines,
+            )
+            normalized_records = list(sample.get("records") or [])
+            normalized_records_by_endpoint = {
+                str(key): list(value or [])
+                for key, value in dict(sample.get("records_by_endpoint") or {}).items()
+            }
+            records_received_by_endpoint = dict(sample.get("records_received_by_endpoint") or {})
+            records_normalized_by_endpoint = dict(sample.get("records_normalized_by_endpoint") or {})
+            fields_mapped_by_endpoint = dict(sample.get("fields_mapped_by_endpoint") or {})
+            skipped_due_budget = list(sample.get("skipped_endpoints_due_to_call_budget") or [])
+            provider_errors = list(sample.get("provider_errors") or [])
+            endpoints_called = list(sample.get("endpoints_called") or [])
+            provider_calls_made = int(sample.get("provider_calls_made", 0) or 0)
+        else:
+            sample = fetch_cfbd_tiny_sample(
+                season=season,
+                week=week,
+                max_records=max_records_effective,
+                dry_run=dry_run,
+            )
+            raw_records = list(sample.get("records") or [])
+            games = [normalize_cfbd_game_record(row) for row in raw_records]
+            games = [row for row in games if row]
+            normalized_records = games
+            normalized_records_by_endpoint = {"games": games} if games else {}
+            records_received_by_endpoint = {"games": len(raw_records)} if raw_records else {}
+            records_normalized_by_endpoint = {"games": len(games)} if games else {}
+            fields_mapped_by_endpoint = _fields_mapped_by_endpoint(normalized_records_by_endpoint)
+            if not bool(sample.get("missing_api_key", False)):
+                provider_calls_made = 1
+                endpoints_called = ["games"]
+            if bool(sample.get("fetch_live_sample_performed", False)):
+                endpoints_called = ["games"]
         fetch_status = str(sample.get("status") or "unknown")
         fetch_performed = bool(sample.get("fetch_live_sample_performed", False))
         fetch_ok = bool(sample.get("ok", True))
-        raw_records = list(sample.get("records") or [])
 
-    normalized_records = [normalize_cfbd_game_record(row) for row in raw_records]
     normalized_records = [row for row in normalized_records if row]
+    baseline_records = list(normalized_records_by_endpoint.get("games") or [])
+    baseline_mapping = map_cfbd_to_ncaaf_model_inputs(baseline_records)
     mapping = map_cfbd_to_ncaaf_model_inputs(normalized_records)
     quality = score_cfbd_sample_quality(normalized_records)
     missing_api_key = bool(config_status.get("missing_api_key", True))
+    newly_supported = [
+        field for field in mapping["covered_model_inputs"]
+        if field not in set(baseline_mapping["covered_model_inputs"])
+    ]
     if fetch_live_sample and missing_api_key:
         adapter_status = "missing_api_key"
     elif fetch_live_sample and not fetch_ok:
@@ -745,17 +1253,33 @@ def verify_ncaaf_cfbd_adapter(
         "dry_run": bool(dry_run),
         "season": season,
         "week": week,
+        "sample_profile": sample_profile or SAMPLE_PROFILE_GAMES_TINY,
         "max_records_requested": max_records,
         "max_records_effective": max_records_effective,
+        "max_provider_calls_requested": max_provider_calls if max_provider_calls is not None else DEFAULT_MAX_PROVIDER_CALLS,
+        "max_provider_calls_effective": max_provider_calls_effective,
+        "include_games": bool(include_games),
+        "include_team_stats": bool(include_team_stats),
+        "include_advanced_stats": bool(include_advanced_stats),
+        "include_rankings": bool(include_rankings),
+        "include_lines": bool(include_lines),
         "fetch_live_sample_requested": bool(fetch_live_sample),
         "fetch_live_sample_performed": fetch_performed,
+        "provider_calls_made": provider_calls_made,
+        "endpoints_called": endpoints_called,
+        "skipped_endpoints_due_to_call_budget": skipped_due_budget,
+        "provider_errors": provider_errors,
         "missing_api_key": missing_api_key,
         "api_key_configured": bool(config_status.get("api_key_configured", False)),
-        "sample_records_received": len(raw_records),
+        "sample_records_received": sum(int(value or 0) for value in records_received_by_endpoint.values()),
         "sample_records_normalized": len(normalized_records),
         "normalized_sample_records": normalized_records[:max_records_effective],
+        "records_received_by_endpoint": records_received_by_endpoint,
+        "records_normalized_by_endpoint": records_normalized_by_endpoint,
+        "fields_mapped_by_endpoint": fields_mapped_by_endpoint,
         "model_inputs_supported": mapping["model_inputs_supported"],
         "covered_model_inputs": mapping["covered_model_inputs"],
+        "newly_supported_model_inputs": newly_supported,
         "missing_model_inputs": mapping["missing_model_inputs"],
         "missing_required_inputs": mapping["missing_required_inputs"],
         "missing_optional_inputs": mapping["missing_optional_inputs"],
@@ -763,8 +1287,14 @@ def verify_ncaaf_cfbd_adapter(
         "historical_backfill_fields_available": mapping["historical_backfill_fields_available"],
         "backfill_fields_available": mapping["backfill_fields_available"],
         "join_keys": mapping["join_keys"],
+        "coverage_score_before": baseline_mapping["coverage_score"],
+        "coverage_score_after": mapping["coverage_score"],
         "coverage_score": mapping["coverage_score"],
+        "calibration_readiness_before": baseline_mapping["calibration_readiness_score"],
+        "calibration_readiness_after": mapping["calibration_readiness_score"],
         "calibration_readiness_score": mapping["calibration_readiness_score"],
+        "cfbd_alone_supports_ncaaf_calibration": not bool(mapping["missing_required_inputs"]),
+        "sportsdataverse_cfb_still_needed": bool(mapping["missing_required_inputs"]),
         "quality_scores": quality,
         "terms_review_required": bool(config_status.get("terms_review_required", True)),
         "live_sample_required": bool(quality.get("live_sample_required", True)),
