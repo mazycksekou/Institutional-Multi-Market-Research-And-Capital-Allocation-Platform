@@ -10,7 +10,7 @@ from typing import Any
 
 from .calibration import _match_rank
 from .data_paths import get_storage_health, resolve_base_data_dir
-from .outcome_store import ingest_outcome_records, load_outcome_records, validate_outcome_record
+from .outcome_store import OUTCOME_SCHEMA_VERSION, load_outcome_records, validate_outcome_record
 from .paper_decision_ledger import load_paper_decisions
 from .scheduler_config import SCHEMA_VERSION, safe_run_id, sanitize_filename, utc_now_iso
 
@@ -492,6 +492,41 @@ def _atomic_write_json(path: Path, payload: Any) -> None:
     tmp.replace(path)
 
 
+def _transactional_write_json(writes: list[tuple[Path, Any]]) -> None:
+    snapshots: dict[Path, bytes | None] = {}
+    tmp_paths: list[Path] = []
+    for path, _ in writes:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        snapshots[path] = path.read_bytes() if path.exists() else None
+
+    try:
+        for path, payload in writes:
+            tmp = path.with_name(f"{path.name}.{uuid.uuid4().hex}.tmp")
+            tmp.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
+            tmp_paths.append(tmp)
+        for (path, _), tmp in zip(writes, tmp_paths):
+            tmp.replace(path)
+    except Exception:
+        for tmp in tmp_paths:
+            try:
+                tmp.unlink()
+            except FileNotFoundError:
+                pass
+            except Exception:
+                pass
+        for path, snapshot in snapshots.items():
+            try:
+                if snapshot is None:
+                    if path.exists():
+                        path.unlink()
+                else:
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    path.write_bytes(snapshot)
+            except Exception:
+                pass
+        raise
+
+
 def _migration_dir(base_data_dir: str = "data") -> Path:
     path = resolve_base_data_dir(base_data_dir) / "outcomes" / "migration"
     path.mkdir(parents=True, exist_ok=True)
@@ -668,15 +703,84 @@ def _write_supporting_paper_decisions(base_data_dir: str, records: list[dict[str
     return {"paper_decisions_written": len(records), "paper_ledger_items_path": str(path)}
 
 
-def _write_import_audit(base_data_dir: str, payload: dict[str, Any], import_run_id: str) -> str:
+def _supporting_paper_decision_write(base_data_dir: str, records: list[dict[str, Any]], import_run_id: str) -> tuple[list[tuple[Path, Any]], dict[str, Any]]:
+    if not records:
+        return [], {"paper_decisions_written": 0, "paper_ledger_items_path": None}
+    root = resolve_base_data_dir(base_data_dir) / "paper_ledger" / "items"
+    path = root / f"{sanitize_filename(import_run_id)}_supporting_paper_decisions.json"
+    wrapper = {
+        "schema_version": MIGRATION_SCHEMA_VERSION,
+        "storage_backend": "file",
+        "latest_run_id": import_run_id,
+        "last_updated_at": utc_now_iso(),
+        "items_written_count": len(records),
+        "items": records,
+        "provider_write": False,
+        "execution_allowed": False,
+        "raw_payload_included": False,
+        "secrets_included": False,
+    }
+    return [(path, wrapper)], {"paper_decisions_written": len(records), "paper_ledger_items_path": str(path)}
+
+
+def _prepared_outcome_state_writes(
+    base_data_dir: str,
+    existing_outcomes: list[dict[str, Any]],
+    records: list[dict[str, Any]],
+    import_run_id: str,
+) -> tuple[list[tuple[Path, Any]], list[dict[str, Any]], dict[str, int]]:
+    rejected_reason_counts: Counter[str] = Counter()
+    cleaned_rows: list[dict[str, Any]] = []
+    for record in records:
+        cleaned, reason = validate_outcome_record(_outcome_to_store_record(record), source="read_only_settlement")
+        if reason:
+            rejected_reason_counts[str(reason)] += 1
+            continue
+        cleaned_rows.append(cleaned or {})
+    if rejected_reason_counts:
+        return [], [], dict(rejected_reason_counts)
+
+    all_items = sorted(
+        existing_outcomes + cleaned_rows,
+        key=lambda item: (str(item.get("settled_at") or ""), str(item.get("outcome_id") or "")),
+    )
+    now = utc_now_iso()
+    batch_id = f"outcome_import_{safe_run_id('outcome_import', import_run_id + str(len(cleaned_rows)))}"
+    wrapper = {
+        "schema_version": OUTCOME_SCHEMA_VERSION,
+        "storage_backend": "file",
+        "latest_batch_id": batch_id,
+        "last_updated_at": now,
+        "items_written_count": len(cleaned_rows),
+        "total_count": len(all_items),
+        "items": all_items,
+        "provider_write": False,
+        "execution_allowed": False,
+        "raw_payload_included": False,
+        "secrets_included": False,
+    }
+    batch_wrapper = {
+        **wrapper,
+        "items": cleaned_rows,
+        "batch_count": len(cleaned_rows),
+    }
+    root = resolve_base_data_dir(base_data_dir) / "outcomes"
+    writes = [
+        (root / "latest.json", wrapper),
+        (root / "items" / f"{sanitize_filename(batch_id)}.json", batch_wrapper),
+        (root / "outcomes.json", all_items),
+    ]
+    return writes, cleaned_rows, {}
+
+
+def _import_audit_write(base_data_dir: str, payload: dict[str, Any], import_run_id: str) -> tuple[list[tuple[Path, Any]], str]:
     root = resolve_base_data_dir(base_data_dir) / "outcomes" / "migration" / "import_audit"
     path = root / "items" / f"{sanitize_filename(import_run_id)}.json"
     safe = {key: value for key, value in payload.items() if key not in {"accepted_records", "records"}}
+    safe["audit_report_path"] = str(path)
     safe["raw_payload_included"] = False
     safe["secrets_included"] = False
-    _atomic_write_json(path, safe)
-    _atomic_write_json(root / "latest.json", safe)
-    return str(path)
+    return [(path, safe), (root / "latest.json", safe)], str(path)
 
 
 def import_local_settlement_records(
@@ -728,11 +832,21 @@ def import_local_settlement_records(
     supporting = [row for row in paper_result["records"] if _paper_decision_key(row) not in existing_paper_keys]
     combined_paper = existing_paper + supporting
     matched_count, unmatched_count = _match_count(to_insert, combined_paper)
+    projected_matched_count, projected_unmatched_count = _match_count(existing_outcomes + to_insert, combined_paper)
+    if to_insert:
+        outcome_writes, prepared_outcomes, outcome_rejections = _prepared_outcome_state_writes(
+            base,
+            existing_outcomes,
+            to_insert,
+            import_run_id,
+        )
+    else:
+        outcome_writes, prepared_outcomes, outcome_rejections = [], [], {}
+    rejected_reason_counts.update(outcome_rejections)
 
     should_persist = bool(persist) and not bool(dry_run)
     blocked_reason = None
     inserted_count = 0
-    audit_path = None
     paper_write = {"paper_decisions_written": 0, "paper_ledger_items_path": None}
     if rejected_reason_counts:
         blocked_reason = "validation_failed"
@@ -746,18 +860,13 @@ def import_local_settlement_records(
         blocked_reason = "dry_run"
 
     if should_persist and to_insert:
-        paper_write = _write_supporting_paper_decisions(base, supporting, import_run_id)
-        ingest_records = [_outcome_to_store_record(row) for row in to_insert]
-        ingest = ingest_outcome_records(
-            ingest_records,
-            source="read_only_settlement",
-            dry_run=False,
-            persist=True,
-            base_data_dir=base,
-        )
-        inserted_count = int(ingest.get("outcome_records_written", 0))
+        paper_writes, paper_write = _supporting_paper_decision_write(base, supporting, import_run_id)
+        inserted_count = len(prepared_outcomes)
     elif should_persist and not to_insert:
+        paper_writes = []
         inserted_count = 0
+    else:
+        paper_writes = []
 
     after_count = len(existing_outcomes) + (inserted_count if should_persist else len(to_insert))
     status = "outcomes_imported" if should_persist and inserted_count else "outcomes_import_validated"
@@ -779,6 +888,8 @@ def import_local_settlement_records(
         unmatched_count=unmatched_count,
         render_existing_outcomes_count=len(existing_outcomes),
         render_outcomes_after_import_if_persisted=after_count,
+        projected_matched_outcomes_count=projected_matched_count,
+        projected_unmatched_outcomes_count=projected_unmatched_count,
         base_data_dir=base,
         persistence_blocked_reason=blocked_reason,
         supporting_paper_decisions_received=len(supporting_paper_decisions or []),
@@ -787,8 +898,38 @@ def import_local_settlement_records(
         paper_ledger_items_path=paper_write.get("paper_ledger_items_path"),
     )
     if should_persist:
-        audit_path = _write_import_audit(base, response, import_run_id)
+        audit_writes, audit_path = _import_audit_write(base, response, import_run_id)
         response["audit_report_path"] = audit_path
+        try:
+            _transactional_write_json(outcome_writes + paper_writes + audit_writes)
+        except Exception as exc:
+            return _import_response(
+                status="persistence_failed",
+                dry_run=dry_run,
+                persist=persist,
+                migration_version=migration_version,
+                records_received=len(records or []),
+                records_valid=len(valid_records),
+                records_rejected=sum(rejected_reason_counts.values()),
+                rejected_reason_counts=dict(rejected_reason_counts),
+                duplicate_count=len(duplicates) + int(deduped["duplicate_count"]),
+                would_insert_count=len(to_insert),
+                inserted_count=0,
+                matched_paper_decision_count=matched_count,
+                unmatched_count=unmatched_count,
+                render_existing_outcomes_count=len(existing_outcomes),
+                render_outcomes_after_import_if_persisted=len(existing_outcomes),
+                projected_matched_outcomes_count=projected_matched_count,
+                projected_unmatched_outcomes_count=projected_unmatched_count,
+                base_data_dir=base,
+                persistence_blocked_reason="write_failed_atomic_rollback",
+                supporting_paper_decisions_received=len(supporting_paper_decisions or []),
+                supporting_paper_decisions_valid=len(paper_result["records"]),
+                supporting_paper_decisions_written=0,
+                paper_ledger_items_path=None,
+                persistence_error_category=type(exc).__name__,
+                persistence_error=str(exc)[:240],
+            )
     return response
 
 
@@ -810,14 +951,18 @@ def _import_response(
     unmatched_count: int = 0,
     render_existing_outcomes_count: int = 0,
     render_outcomes_after_import_if_persisted: int = 0,
+    projected_matched_outcomes_count: int = 0,
+    projected_unmatched_outcomes_count: int = 0,
     persistence_blocked_reason: str | None = None,
     supporting_paper_decisions_received: int = 0,
     supporting_paper_decisions_valid: int = 0,
     supporting_paper_decisions_written: int = 0,
     paper_ledger_items_path: str | None = None,
+    persistence_error_category: str | None = None,
+    persistence_error: str | None = None,
 ) -> dict[str, Any]:
     return {
-        "ok": status not in {"invalid_request", "validation_failed", "unmatched_paper_decisions"},
+        "ok": status not in {"invalid_request", "validation_failed", "unmatched_paper_decisions", "persistence_failed"},
         "status": status,
         "dry_run": bool(dry_run),
         "persist": bool(persist),
@@ -832,9 +977,17 @@ def _import_response(
         "unmatched_count": int(unmatched_count),
         "render_existing_outcomes_count": int(render_existing_outcomes_count),
         "render_outcomes_after_import_if_persisted": int(render_outcomes_after_import_if_persisted),
+        "render_outcomes_after_import": int(render_outcomes_after_import_if_persisted),
+        "projected_render_outcome_count": int(render_outcomes_after_import_if_persisted),
+        "projected_matched_outcomes_count": int(projected_matched_outcomes_count),
+        "projected_unmatched_outcomes_count": int(projected_unmatched_outcomes_count),
+        "matched_outcomes_after_import": int(projected_matched_outcomes_count),
+        "unmatched_outcomes_after_import": int(projected_unmatched_outcomes_count),
         "migration_version": migration_version,
         "audit_report_path": None,
         "persistence_blocked_reason": persistence_blocked_reason,
+        "persistence_error_category": persistence_error_category,
+        "persistence_error": persistence_error,
         "supporting_paper_decisions_received": int(supporting_paper_decisions_received),
         "supporting_paper_decisions_valid": int(supporting_paper_decisions_valid),
         "supporting_paper_decisions_written": int(supporting_paper_decisions_written),

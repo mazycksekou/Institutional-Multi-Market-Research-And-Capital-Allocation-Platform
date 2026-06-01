@@ -142,6 +142,8 @@ class TestResponseCompactor(unittest.TestCase):
             "unmatched_count": 0,
             "render_existing_outcomes_count": 4,
             "render_outcomes_after_import_if_persisted": 36,
+            "projected_matched_outcomes_count": 36,
+            "projected_unmatched_outcomes_count": 0,
             "migration_version": "kalshi_outcome_migration_v1",
             "storage_health": {
                 "env_var": "AUTOMATION_DATA_DIR",
@@ -158,6 +160,9 @@ class TestResponseCompactor(unittest.TestCase):
         rendered = str(compact)
         self.assertEqual(compact["records_received"], 32)
         self.assertEqual(compact["would_insert_count"], 32)
+        self.assertEqual(compact["projected_render_outcome_count"], 36)
+        self.assertEqual(compact["projected_matched_outcomes_count"], 36)
+        self.assertEqual(compact["projected_unmatched_outcomes_count"], 0)
         self.assertFalse(compact["provider_write"])
         self.assertFalse(compact["execution_allowed"])
         self.assertEqual(compact["execution_allowed_count"], 0)

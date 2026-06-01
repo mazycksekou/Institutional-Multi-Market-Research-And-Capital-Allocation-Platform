@@ -15,6 +15,8 @@ from automation_scheduler.outcome_migration import (
     validate_migration_outcome,
     write_migration_package,
 )
+from automation_scheduler import outcome_migration as migration_module
+from automation_scheduler.calibration import build_calibration_report
 from automation_scheduler.outcome_store import ingest_outcome_records, load_outcome_records
 from automation_scheduler.paper_decision_ledger import load_paper_decisions
 from automation_scheduler.paper_decision_ledger import persist_paper_decisions_for_review_items
@@ -195,6 +197,22 @@ class TestOutcomeMigration(unittest.TestCase):
             self.assertEqual(result["supporting_paper_decisions_written"], 1)
             self.assertEqual(stored_tickers, {"KXEXISTING", "KXNEW"})
 
+            second = import_local_settlement_records(
+                [
+                    self._outcome_record(ticker="KXEXISTING", contract_id="KXEXISTING"),
+                    self._outcome_record(ticker="KXNEW", contract_id="KXNEW", decision_id="decision_new", review_item_id="review_new"),
+                ],
+                supporting_paper_decisions=[paper],
+                dry_run=False,
+                persist=True,
+                base_data_dir=tmp,
+            )
+
+            self.assertEqual(second["duplicate_count"], 2)
+            self.assertEqual(second["would_insert_count"], 0)
+            self.assertEqual(second["inserted_count"], 0)
+            self.assertEqual(len(load_outcome_records(tmp)), 2)
+
     def test_import_blocks_unmatched_outcomes_before_persist(self):
         with TemporaryDirectory() as tmp:
             result = import_local_settlement_records(
@@ -208,6 +226,86 @@ class TestOutcomeMigration(unittest.TestCase):
             self.assertEqual(result["status"], "unmatched_paper_decisions")
             self.assertEqual(result["unmatched_count"], 1)
             self.assertEqual(load_outcome_records(tmp), [])
+
+    def test_imported_supporting_paper_decisions_are_visible_to_calibration(self):
+        with TemporaryDirectory() as tmp:
+            paper = {"decision_id": "decision_1", "review_item_id": "review_1", "provider": "kalshi_prediction_market", "market_type": "prediction_market", "ticker": "KXTEST", "contract_id": "KXTEST", "execution_allowed": False, "paper_only": True}
+            result = import_local_settlement_records(
+                [self._outcome_record()],
+                supporting_paper_decisions=[paper],
+                dry_run=False,
+                persist=True,
+                base_data_dir=tmp,
+            )
+            report = build_calibration_report(base_data_dir=tmp)
+
+            self.assertEqual(result["inserted_count"], 1)
+            self.assertEqual(result["projected_matched_outcomes_count"], 1)
+            self.assertEqual(report["outcome_records_count"], 1)
+            self.assertEqual(report["paper_ledger_records_count"], 1)
+            self.assertEqual(report["matched_outcomes_count"], 1)
+            self.assertEqual(report["unmatched_outcomes_count"], 0)
+
+    def test_transactional_write_rolls_back_partial_replace(self):
+        with TemporaryDirectory() as tmp:
+            first = Path(tmp) / "first.json"
+            second = Path(tmp) / "second.json"
+            first.write_text(json.dumps({"old": 1}), encoding="utf-8")
+            second.write_text(json.dumps({"old": 2}), encoding="utf-8")
+            original_replace = Path.replace
+            calls = {"count": 0}
+
+            def flaky_replace(path, target):
+                calls["count"] += 1
+                if calls["count"] == 2:
+                    raise OSError("forced transaction failure")
+                return original_replace(path, target)
+
+            with patch.object(Path, "replace", flaky_replace):
+                with self.assertRaises(OSError):
+                    migration_module._transactional_write_json(
+                        [
+                            (first, {"new": 1}),
+                            (second, {"new": 2}),
+                        ]
+                    )
+
+            self.assertEqual(json.loads(first.read_text(encoding="utf-8")), {"old": 1})
+            self.assertEqual(json.loads(second.read_text(encoding="utf-8")), {"old": 2})
+
+    def test_import_write_failure_rolls_back_outcomes_and_paper_decisions(self):
+        with TemporaryDirectory() as tmp:
+            ingest_outcome_records(
+                [self._outcome_record(ticker="KXEXISTING", contract_id="KXEXISTING")],
+                source="read_only_settlement",
+                dry_run=False,
+                persist=True,
+                base_data_dir=tmp,
+            )
+            paper = {"decision_id": "decision_new", "review_item_id": "review_new", "provider": "kalshi_prediction_market", "market_type": "prediction_market", "ticker": "KXNEW", "contract_id": "KXNEW", "execution_allowed": False, "paper_only": True}
+            original_replace = Path.replace
+            calls = {"count": 0}
+
+            def flaky_replace(path, target):
+                calls["count"] += 1
+                if calls["count"] == 2:
+                    raise OSError("forced import transaction failure")
+                return original_replace(path, target)
+
+            with patch.object(Path, "replace", flaky_replace):
+                result = import_local_settlement_records(
+                    [self._outcome_record(ticker="KXNEW", contract_id="KXNEW", decision_id="decision_new", review_item_id="review_new")],
+                    supporting_paper_decisions=[paper],
+                    dry_run=False,
+                    persist=True,
+                    base_data_dir=tmp,
+                )
+
+            self.assertFalse(result["ok"])
+            self.assertEqual(result["status"], "persistence_failed")
+            self.assertEqual(result["inserted_count"], 0)
+            self.assertEqual({row["ticker"] for row in load_outcome_records(tmp)}, {"KXEXISTING"})
+            self.assertEqual(load_paper_decisions(tmp), [])
 
 
 if __name__ == "__main__":

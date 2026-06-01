@@ -73,6 +73,8 @@ class TestOutcomeImportEndpoint(unittest.TestCase):
                 self.assertEqual(payload["inserted_count"], 0)
                 self.assertEqual(payload["matched_paper_decision_count"], 1)
                 self.assertEqual(payload["unmatched_count"], 0)
+                self.assertEqual(payload["projected_render_outcome_count"], 1)
+                self.assertEqual(payload["projected_matched_outcomes_count"], 1)
                 self.assertFalse(payload["provider_write"])
                 self.assertFalse(payload["execution_allowed"])
                 self.assertEqual(payload["execution_allowed_count"], 0)
@@ -156,6 +158,31 @@ class TestOutcomeImportEndpoint(unittest.TestCase):
                 self.assertEqual(payload["inserted_count"], 1)
                 self.assertEqual(payload["render_outcomes_after_import_if_persisted"], 2)
                 self.assertEqual(stored_tickers, {"KXEXISTING", "KXNEW"})
+
+    def test_persist_import_write_failure_rolls_back_atomically(self):
+        with TemporaryDirectory() as tmp:
+            env = {"AUTOMATION_DATA_DIR": tmp, "COLLECTOR_CRON_TOKEN": "endpoint-secret"}
+            with patch.dict(os.environ, env, clear=False):
+                with patch("automation_scheduler.outcome_migration._transactional_write_json", side_effect=OSError("forced atomic failure")):
+                    response = self._post(
+                        {
+                            "dry_run": False,
+                            "persist": True,
+                            "source": "local_repo_migration",
+                            "migration_version": "kalshi_outcome_migration_v1",
+                            "records": [self._outcome_record()],
+                            "supporting_paper_decisions": [self._paper()],
+                        },
+                        headers={"X-Collector-Token": "endpoint-secret"},
+                    )
+                payload = response.json()
+
+                self.assertEqual(response.status_code, 200)
+                self.assertFalse(payload["ok"])
+                self.assertEqual(payload["status"], "persistence_failed")
+                self.assertEqual(payload["inserted_count"], 0)
+                self.assertEqual(load_outcome_records(tmp), [])
+                self.assertEqual(load_paper_decisions(tmp), [])
 
     def test_invalid_raw_payload_and_secret_like_fields_are_rejected_safely(self):
         with TemporaryDirectory() as tmp:

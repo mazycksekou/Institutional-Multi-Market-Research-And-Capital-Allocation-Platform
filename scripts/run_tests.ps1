@@ -39,6 +39,9 @@ function Invoke-PytestRequired {
 function Invoke-Compile {
     $Modules = @(
         "automation_scheduler/ops_workflow.py",
+        "automation_scheduler/outcome_migration.py",
+        "automation_scheduler/outcome_store.py",
+        "automation_scheduler/paper_decision_ledger.py",
         "scripts/ops_check.py",
         "automation_scheduler/data_paths.py",
         "automation_scheduler/response_compactor.py",
@@ -83,4 +86,3 @@ switch ($Mode) {
 }
 
 exit 0
-
