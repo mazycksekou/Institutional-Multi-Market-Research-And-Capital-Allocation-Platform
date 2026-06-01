@@ -90,6 +90,25 @@ class TestDataSourceEndpoints(unittest.TestCase):
         self.assertEqual(report.json()["enabled_source_count"], 0)
         self.assertFalse(report.json()["provider_write"])
 
+    def test_data_availability_tiers_endpoint_works_and_persists_compact_report(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            with patch.dict(os.environ, {"AUTOMATION_DATA_DIR": tmp}, clear=False):
+                response = self.client.get("/api/automation/data-sources/data-availability/tiers?persist_report=true&limit=100")
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["total_modules"], len(MANDATORY_LANES))
+        modules = {row["module"]: row for row in payload["modules"]}
+        self.assertIn("americanfootball_ncaaf", modules)
+        self.assertIn("current_best_tier", modules["americanfootball_ncaaf"])
+        self.assertEqual(payload["enabled_source_count"], 0)
+        self.assertEqual(payload["paid_source_enabled_count"], 0)
+        self.assertIn("data_sources/data_availability/latest.json", payload["latest_path"])
+        self.assertFalse(payload["provider_write"])
+        self.assertFalse(payload["execution_allowed"])
+        self.assertFalse(payload["raw_payload_included"])
+        self.assertFalse(payload["secrets_included"])
+        self.assertNotIn("provider_payload", str(payload).lower())
+
     def test_verify_endpoint_works_and_persists_report_under_data_root(self):
         with tempfile.TemporaryDirectory() as tmp:
             with patch.dict(os.environ, {"AUTOMATION_DATA_DIR": tmp}, clear=False):

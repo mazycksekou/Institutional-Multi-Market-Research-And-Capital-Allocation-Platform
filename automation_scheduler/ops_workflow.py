@@ -33,6 +33,7 @@ READ_ONLY_RENDER_ENDPOINTS = (
     "/api/automation/data-sources/env-vars",
     "/api/automation/data-sources/priorities",
     "/api/automation/data-sources/public-apis-expansion-report",
+    "/api/automation/data-sources/data-availability/tiers",
     "/api/automation/institutional-lab/health",
 )
 REQUIRED_COMMITS = {
@@ -48,6 +49,8 @@ CRITICAL_IMPORTS = (
     "automation_scheduler.calibration",
     "automation_scheduler.outcome_migration",
     "automation_scheduler.response_compactor",
+    "automation_scheduler.data_availability_tiers",
+    "automation_scheduler.derived_feature_planner",
 )
 FALSE_SAFETY_FLAGS = (
     "provider_write",

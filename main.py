@@ -30,6 +30,7 @@ from automation_scheduler.response_compactor import (
     compact_calibration_response,
     compact_calibration_collector_response,
     compact_cfbd_adapter_verification_response,
+    compact_data_availability_tiers_response,
     compact_deepseek_review_response,
     compact_data_source_coverage_response,
     compact_data_source_env_vars_response,
@@ -3153,6 +3154,22 @@ async def get_public_apis_expansion_report_endpoint(
     return compact_public_apis_expansion_report_response(payload, limit=cap)
 
 
+@app.get("/api/automation/data-sources/data-availability/tiers", operation_id="getAutomationDataAvailabilityTiers")
+async def get_data_availability_tiers_endpoint(
+    module: Optional[str] = Query(default=None),
+    persist_report: bool = Query(default=False),
+    verbose: bool = Query(default=False),
+    include_debug: bool = Query(default=False),
+    limit: int = Query(default=100),
+):
+    cap = min(max(int(limit), 1), 100)
+    payload = automation_scheduler.get_data_availability_tiers_report(module=module, persist_report=persist_report)
+    compact = compact_data_availability_tiers_response(payload, limit=cap)
+    if verbose or include_debug:
+        compact["debug"] = redact_and_limit_payload(payload, limit=cap, verbose=verbose)
+    return compact
+
+
 @app.get("/api/automation/data-sources/health", operation_id="getAutomationDataSourceHealth")
 async def get_data_source_health_endpoint():
     payload = automation_scheduler.get_data_source_registry_health()
@@ -3502,6 +3519,7 @@ PUBLIC_OPENAPI_PATH_METHODS = frozenset({
     ("/api/automation/data-sources/env-vars", "get"),
     ("/api/automation/data-sources/priorities", "get"),
     ("/api/automation/data-sources/public-apis-expansion-report", "get"),
+    ("/api/automation/data-sources/data-availability/tiers", "get"),
     ("/api/automation/data-sources/health", "get"),
     ("/api/automation/data-sources/adapters/ncaaf/cfbd/verify", "post"),
     ("/api/automation/data-sources/verify", "post"),

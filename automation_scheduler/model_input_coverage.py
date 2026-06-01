@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from .data_availability_tiers import build_prediction_calibration_metadata, fields_from_lane
+
 
 def _missing_inputs(lane: dict[str, Any]) -> list[str]:
     required = set(lane.get("required_model_inputs") or [])
@@ -15,6 +17,10 @@ def build_module_coverage(lane: dict[str, Any], research_tasks: list[dict[str, A
     lane_id = str(lane.get("lane_id") or lane.get("module") or "unknown")
     tasks = [task for task in (research_tasks or []) if task.get("lane_id") == lane_id]
     missing = _missing_inputs(lane)
+    availability = build_prediction_calibration_metadata(
+        module=str(lane.get("module") or lane_id),
+        available_fields=fields_from_lane(lane),
+    )
     return {
         "module": lane.get("module", lane_id),
         "lane_id": lane_id,
@@ -32,6 +38,7 @@ def build_module_coverage(lane: dict[str, Any], research_tasks: list[dict[str, A
         "external_research_tasks": [task.get("research_task_id") for task in tasks],
         "coverage_score": int(lane.get("coverage_score") or 0),
         "adapter_plan": lane.get("adapter_status", "blocked_pending_source"),
+        **availability,
     }
 
 

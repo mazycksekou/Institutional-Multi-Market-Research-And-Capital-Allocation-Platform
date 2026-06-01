@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from .data_paths import get_data_sources_dir, get_storage_health, resolve_base_data_dir
+from .budget_gates import build_budget_gate, default_approval_status
 from .scheduler_config import sanitize_filename
 from .source_quality_scoring import FUTURE_ONLY_ACCESS_TYPES, score_lane, score_source
 
@@ -410,23 +411,30 @@ def _source(
     if source_access_type not in ACCESS_TYPES:
         source_access_type = "unknown"
     future_only = source_access_type in FUTURE_ONLY_ACCESS_TYPES or bool(future_source_candidate)
-    requires_budget_approval = bool(future_only or requires_paid_subscription)
     if approval_status is None:
-        if future_only:
-            approval_status = "future_candidate"
-        elif requires_terms_review:
-            approval_status = "needs_review"
-        elif current_phase_allowed and verified_at:
-            approval_status = "approved_for_research"
-        else:
-            approval_status = "candidate"
+        approval_status = default_approval_status(
+            source_access_type=source_access_type,
+            future_source_candidate=future_only,
+            requires_paid_subscription=requires_paid_subscription,
+            requires_terms_review=requires_terms_review,
+            current_phase_allowed=current_phase_allowed,
+            verified_at=verified_at,
+        )
     env_names = [env_var_name] if isinstance(env_var_name, str) else list(env_var_name or [])
     requires_api_key = bool(requires_api_key or env_names)
+    budget_gate = build_budget_gate(
+        source_access_type=source_access_type,
+        requires_api_key=requires_api_key,
+        requires_paid_subscription=bool(requires_paid_subscription or future_only),
+        future_source_candidate=future_only,
+        approval_status=approval_status,
+    )
     current_phase_safe = bool(
         current_phase_allowed
         and approval_status == "approved_for_research"
         and verified_at
         and not future_only
+        and not budget_gate["requires_budget_approval"]
         and not requires_paid_subscription
         and not requires_execution_account
         and not requires_brokerage_account
@@ -450,7 +458,14 @@ def _source(
         "cors_status": cors_status,
         "current_phase_allowed": current_phase_safe,
         "future_source_candidate": bool(future_only),
-        "requires_budget_approval": requires_budget_approval,
+        "requires_budget_approval": bool(budget_gate["requires_budget_approval"]),
+        "verification_phase_allowed": bool(budget_gate["verification_phase_allowed"]),
+        "call_budget_level": budget_gate["call_budget_level"],
+        "max_provider_calls_default": int(budget_gate["max_provider_calls_default"]),
+        "max_provider_calls_hard_cap": int(budget_gate["max_provider_calls_hard_cap"]),
+        "paid_upgrade_required": bool(budget_gate["paid_upgrade_required"]),
+        "paid_upgrade_allowed": False,
+        "substantial_usage_allowed": False,
         "requires_account": bool(requires_account),
         "requires_api_key": bool(requires_api_key),
         "requires_oauth": bool(requires_oauth),
@@ -963,7 +978,7 @@ def _apply_public_api_expansion(collection: dict[str, list[dict[str, Any]]]) -> 
             requires_oauth=bool(spec.get("requires_oauth", False)),
             requires_terms_review=bool(spec.get("requires_terms_review", True)),
             requires_paid_subscription=bool(spec.get("requires_paid_subscription", False)),
-            approval_status="future_candidate" if spec.get("future_source_candidate") else "needs_review",
+            approval_status="not_approved" if (spec.get("future_source_candidate") or str(spec.get("source_access_type") or "") in FUTURE_ONLY_ACCESS_TYPES) else "needs_review",
             adapter_status=str(spec.get("adapter_status") or "not_started"),
             coverage=_coverage_for_source_category(category),
             cadence=str(spec.get("cadence") or "daily"),
@@ -1675,6 +1690,10 @@ def verify_registry(*, module: str | None = None, persist_report: bool = True, b
             errors.append(f"execution_allowed_source:{src.get('source_id')}")
         if src.get("raw_payload_persistence_allowed"):
             errors.append(f"raw_payload_persistence_allowed:{src.get('source_id')}")
+        if src.get("paid_upgrade_allowed"):
+            errors.append(f"paid_upgrade_allowed:{src.get('source_id')}")
+        if src.get("substantial_usage_allowed"):
+            errors.append(f"substantial_usage_allowed:{src.get('source_id')}")
     report.update(
         {
             "status": "verified" if not errors else "verification_failed",

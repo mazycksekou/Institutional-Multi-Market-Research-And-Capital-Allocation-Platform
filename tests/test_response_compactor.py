@@ -3,6 +3,7 @@ from automation_scheduler.response_compactor import (
     compact_calibration_collector_response,
     compact_calibration_response,
     compact_cfbd_adapter_verification_response,
+    compact_data_availability_tiers_response,
     compact_data_source_coverage_response,
     compact_data_source_health_response,
     compact_data_source_registry_response,
@@ -122,6 +123,47 @@ class TestResponseCompactor(unittest.TestCase):
         self.assertFalse(research["execution_allowed"])
         health = compact_data_source_health_response({"ok": True, "total_lanes": 1, "storage_health": registry["storage_health"]})
         self.assertEqual(health["storage"]["data_dir"], "/var/data")
+
+    def test_data_availability_compactor_is_safe_and_bounded(self):
+        compact = compact_data_availability_tiers_response(
+            {
+                "ok": True,
+                "status": "ok",
+                "schema_version": "data_availability_tiers_v1",
+                "total_modules": 1,
+                "enabled_source_count": 0,
+                "paid_source_enabled_count": 0,
+                "latest_path": "data_sources/data_availability/latest.json",
+                "modules": [
+                    {
+                        "module": "americanfootball_ncaaf",
+                        "current_best_tier": "TIER_0_OUTCOME_BACKFILL",
+                        "supported_tiers": ["TIER_0_OUTCOME_BACKFILL"],
+                        "unsupported_tiers": ["TIER_1_BASIC_FORM"],
+                        "fields_available": ["game_id", "final_score"],
+                        "fields_missing": ["epa", "injuries"],
+                        "derived_features_available": ["final_margin"],
+                        "derived_features_blocked": [{"feature": "rolling_margin", "reason": "insufficient_history"}],
+                        "calibration_buckets_available": ["americanfootball_ncaaf.tier_0_outcome_backfill"],
+                        "confidence_cap": 0.55,
+                        "confidence_cap_reason": "missing_advanced_stats_cap",
+                        "paid_action_blocked": True,
+                        "recommended_no_spend_next_step": "derive Tier 1 rolling form from existing schedule/results history",
+                        "provider_payload": {"raw": "drop"},
+                        "api_key": "do-not-leak",
+                    }
+                ],
+            }
+        )
+        self.assertEqual(compact["total_modules"], 1)
+        self.assertEqual(compact["enabled_source_count"], 0)
+        self.assertEqual(compact["paid_source_enabled_count"], 0)
+        self.assertFalse(compact["provider_write"])
+        self.assertFalse(compact["execution_allowed"])
+        self.assertFalse(compact["raw_payload_included"])
+        self.assertFalse(compact["secrets_included"])
+        self.assertNotIn("provider_payload", str(compact))
+        self.assertNotIn("do-not-leak", str(compact))
 
     def test_cfbd_adapter_verification_compactor_is_safe(self):
         compact = compact_cfbd_adapter_verification_response(

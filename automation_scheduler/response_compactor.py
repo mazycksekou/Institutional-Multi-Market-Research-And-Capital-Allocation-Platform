@@ -1043,6 +1043,13 @@ def _compact_data_source_source(source: dict[str, Any]) -> dict[str, Any]:
         "current_phase_allowed": bool(source.get("current_phase_allowed", False)),
         "future_source_candidate": bool(source.get("future_source_candidate", False)),
         "requires_budget_approval": bool(source.get("requires_budget_approval", False)),
+        "verification_phase_allowed": bool(source.get("verification_phase_allowed", False)),
+        "call_budget_level": source.get("call_budget_level"),
+        "max_provider_calls_default": int(source.get("max_provider_calls_default", 0) or 0),
+        "max_provider_calls_hard_cap": int(source.get("max_provider_calls_hard_cap", 0) or 0),
+        "paid_upgrade_required": bool(source.get("paid_upgrade_required", False)),
+        "paid_upgrade_allowed": False,
+        "substantial_usage_allowed": False,
         "requires_account": bool(source.get("requires_account", False)),
         "requires_api_key": bool(source.get("requires_api_key", False)),
         "requires_oauth": bool(source.get("requires_oauth", False)),
@@ -1208,6 +1215,72 @@ def compact_data_source_coverage_response(payload: dict[str, Any], limit: int = 
     }
 
 
+def compact_data_availability_tiers_response(payload: dict[str, Any], limit: int = 100) -> dict[str, Any]:
+    cap = max(1, min(int(limit or 100), 100))
+    modules = list(payload.get("modules") or [])
+    rows = []
+    for row in modules[:cap]:
+        rows.append(
+            {
+                "module": row.get("module"),
+                "current_best_tier": row.get("current_best_tier"),
+                "supported_tiers": list(row.get("supported_tiers") or [])[:5],
+                "unsupported_tiers": list(row.get("unsupported_tiers") or [])[:5],
+                "fields_available": list(row.get("fields_available") or [])[:80],
+                "fields_missing": list(row.get("fields_missing") or [])[:80],
+                "derived_features_available": list(row.get("derived_features_available") or [])[:30],
+                "derived_features_blocked": list(row.get("derived_features_blocked") or [])[:30],
+                "calibration_buckets_available": list(row.get("calibration_buckets_available") or [])[:10],
+                "calibration_bucket": row.get("calibration_bucket"),
+                "missing_critical_inputs": list(row.get("missing_critical_inputs") or [])[:30],
+                "missing_advanced_inputs": list(row.get("missing_advanced_inputs") or [])[:30],
+                "confidence_cap": float(row.get("confidence_cap", 0.0) or 0.0),
+                "confidence_cap_reason": row.get("confidence_cap_reason"),
+                "budget_required_for_next_layer": bool(row.get("budget_required_for_next_layer", False)),
+                "requires_budget_approval": bool(row.get("requires_budget_approval", False)),
+                "next_free_action": row.get("next_free_action"),
+                "paid_action_blocked": bool(row.get("paid_action_blocked", True)),
+                "recommended_no_spend_next_step": row.get("recommended_no_spend_next_step"),
+                "data_not_available_warning": row.get("data_not_available_warning"),
+            }
+        )
+    return {
+        "ok": bool(payload.get("ok", True)),
+        "status": payload.get("status", "ok"),
+        "schema_version": payload.get("schema_version"),
+        "created_at": payload.get("created_at"),
+        "module_filter": payload.get("module_filter"),
+        "total_modules": int(payload.get("total_modules", len(modules))),
+        "modules": rows,
+        "enabled_source_count": int(payload.get("enabled_source_count", 0) or 0),
+        "paid_source_enabled_count": int(payload.get("paid_source_enabled_count", 0) or 0),
+        "paid_action_blocked": True,
+        "recommended_no_spend_next_step": payload.get("recommended_no_spend_next_step", "no-call audit of existing source reports"),
+        "latest_path": payload.get("latest_path"),
+        "item_path": payload.get("item_path"),
+        "daily_json_path": payload.get("daily_json_path"),
+        "daily_markdown_path": payload.get("daily_markdown_path"),
+        "storage": _compact_storage_health(payload),
+        "provider_write": False,
+        "execution_allowed": False,
+        "execution_allowed_count": 0,
+        "live_execution_enabled": False,
+        "auto_execution_enabled": False,
+        "kalshi_order_execution_enabled": False,
+        "sportsbook_bet_execution_enabled": False,
+        "broker_order_execution_enabled": False,
+        "crypto_trade_execution_enabled": False,
+        "stock_trade_execution_enabled": False,
+        "actual_orders_submitted": 0,
+        "actual_bets_submitted": 0,
+        "actual_trades_submitted": 0,
+        "actual_crypto_swaps_submitted": 0,
+        "raw_payload_included": False,
+        "secrets_included": False,
+        "compact_response": True,
+    }
+
+
 def compact_data_source_research_lanes_response(payload: dict[str, Any], limit: int = 10) -> dict[str, Any]:
     cap = max(1, min(int(limit or 10), 100))
     return {
@@ -1271,6 +1344,13 @@ def compact_cfbd_adapter_verification_response(payload: dict[str, Any]) -> dict[
         "source_access_type": payload.get("source_access_type"),
         "current_phase_allowed": bool(payload.get("current_phase_allowed", False)),
         "verification_phase_allowed": bool(payload.get("verification_phase_allowed", True)),
+        "requires_budget_approval": bool(payload.get("requires_budget_approval", False)),
+        "call_budget_level": payload.get("call_budget_level"),
+        "max_provider_calls_default": int(payload.get("max_provider_calls_default", 0) or 0),
+        "max_provider_calls_hard_cap": int(payload.get("max_provider_calls_hard_cap", 3) or 3),
+        "paid_upgrade_required": bool(payload.get("paid_upgrade_required", False)),
+        "paid_upgrade_allowed": False,
+        "substantial_usage_allowed": False,
         "approval_status": payload.get("approval_status"),
         "enabled": False,
         "dry_run": bool(payload.get("dry_run", True)),

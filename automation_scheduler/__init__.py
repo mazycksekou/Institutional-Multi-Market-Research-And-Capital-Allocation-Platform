@@ -487,6 +487,16 @@ def get_public_apis_expansion_report(*, module: str | None = None, persist_repor
     return report
 
 
+def get_data_availability_tiers_report(*, module: str | None = None, persist_report: bool = False, base_data_dir: str | None = None):
+    from .data_availability_tiers import build_data_availability_report, write_data_availability_report
+    from .data_source_registry import build_registry
+
+    report = build_data_availability_report(registry=build_registry(module=module), module=module)
+    if persist_report:
+        report.update(write_data_availability_report(report, base_data_dir=_data_dir(base_data_dir)))
+    return report
+
+
 def get_data_source_registry_health(base_data_dir: str | None = None):
     from .data_source_registry import build_registry_report, summarize_registry
 

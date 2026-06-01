@@ -72,6 +72,11 @@ class TestModelInputCoverage(unittest.TestCase):
         self.assertEqual(ncaaf["verified_sources"], [])
         self.assertIn("schedule", ncaaf["required_inputs"])
         self.assertIn("stable_event_id", ncaaf["required_inputs"])
+        self.assertEqual(ncaaf["data_availability_tier"], "TIER_0_OUTCOME_BACKFILL")
+        self.assertIn("americanfootball_ncaaf.tier_0_outcome_backfill", ncaaf["calibration_bucket"])
+        self.assertIn("epa", ncaaf["missing_advanced_inputs"])
+        self.assertGreater(ncaaf["confidence_penalty_applied"], 0)
+        self.assertLessEqual(ncaaf["confidence_cap"], 0.55)
 
     def test_coverage_report_is_safe(self):
         self.assertFalse(self.coverage["provider_write"])
