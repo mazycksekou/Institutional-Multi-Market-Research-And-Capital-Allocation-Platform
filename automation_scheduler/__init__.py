@@ -531,3 +531,24 @@ def verify_data_source_registry(*, module: str | None = None, persist_report: bo
     from .data_source_registry import verify_registry
 
     return verify_registry(module=module, persist_report=persist_report, base_data_dir=_data_dir(base_data_dir))
+
+
+def verify_ncaaf_cfbd_adapter(
+    *,
+    dry_run: bool = True,
+    season: int | None = None,
+    week: int | None = None,
+    max_records: int = 5,
+    fetch_live_sample: bool = False,
+    base_data_dir: str | None = None,
+):
+    from .ncaaf_collegefootballdata_adapter import verify_ncaaf_cfbd_adapter as _verify
+
+    return _verify(
+        dry_run=dry_run,
+        season=season,
+        week=week,
+        max_records=max_records,
+        fetch_live_sample=fetch_live_sample,
+        base_data_dir=_data_dir(base_data_dir),
+    )

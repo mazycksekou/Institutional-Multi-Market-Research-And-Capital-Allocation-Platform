@@ -105,6 +105,51 @@ class TestDataSourceEndpoints(unittest.TestCase):
         self.assertFalse(payload["provider_write"])
         self.assertFalse(payload["raw_payload_included"])
 
+    def test_ncaaf_cfbd_adapter_metadata_only_endpoint_is_safe(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            with patch.dict(os.environ, {"AUTOMATION_DATA_DIR": tmp}, clear=False):
+                os.environ.pop("CFBD_API_KEY", None)
+                with patch("automation_scheduler.ncaaf_collegefootballdata_adapter.urllib.request.urlopen") as urlopen:
+                    response = self.client.post(
+                        "/api/automation/data-sources/adapters/ncaaf/cfbd/verify",
+                        json={"dry_run": True, "fetch_live_sample": False, "max_records": 5},
+                    )
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["source_id"], "collegefootballdata")
+        self.assertEqual(payload["module"], "americanfootball_ncaaf")
+        self.assertEqual(payload["adapter_status"], "metadata_only_verified")
+        self.assertFalse(payload["enabled"])
+        self.assertFalse(payload["fetch_live_sample_performed"])
+        self.assertFalse(payload["provider_write"])
+        self.assertFalse(payload["execution_allowed"])
+        self.assertFalse(payload["raw_payload_included"])
+        self.assertFalse(payload["secrets_included"])
+        self.assertIn("latest_path", payload["report_paths"])
+        self.assertNotIn("api_key", str(payload).lower().replace("missing_api_key", "").replace("api_key_configured", ""))
+        urlopen.assert_not_called()
+
+    def test_ncaaf_cfbd_adapter_missing_key_live_request_is_clean(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            with patch.dict(os.environ, {"AUTOMATION_DATA_DIR": tmp}, clear=False):
+                os.environ.pop("CFBD_API_KEY", None)
+                with patch("automation_scheduler.ncaaf_collegefootballdata_adapter.urllib.request.urlopen") as urlopen:
+                    response = self.client.post(
+                        "/api/automation/data-sources/adapters/ncaaf/cfbd/verify",
+                        json={"dry_run": True, "fetch_live_sample": True, "max_records": 5},
+                    )
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["adapter_status"], "missing_api_key")
+        self.assertTrue(payload["missing_api_key"])
+        self.assertFalse(payload["fetch_live_sample_performed"])
+        self.assertFalse(payload["provider_write"])
+        self.assertFalse(payload["execution_allowed"])
+        self.assertFalse(payload["raw_payload_included"])
+        self.assertFalse(payload["secrets_included"])
+        urlopen.assert_not_called()
+
     def test_no_regression_institutional_lab_and_execution_safety(self):
         health = self.client.get("/api/automation/institutional-lab/health")
         self.assertEqual(health.status_code, 200)

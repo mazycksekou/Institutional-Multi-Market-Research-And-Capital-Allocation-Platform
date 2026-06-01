@@ -66,6 +66,13 @@ class TestModelInputCoverage(unittest.TestCase):
         self.assertEqual(nba["verified_sources"], [])
         self.assertIn("basketball_nba", self.coverage["modules_without_verified_source"])
 
+    def test_ncaaf_collegefootballdata_candidate_remains_disabled(self):
+        ncaaf = self.modules["americanfootball_ncaaf"]
+        self.assertIn("collegefootballdata", ncaaf["candidate_sources"])
+        self.assertEqual(ncaaf["verified_sources"], [])
+        self.assertIn("schedule", ncaaf["required_inputs"])
+        self.assertIn("stable_event_id", ncaaf["required_inputs"])
+
     def test_coverage_report_is_safe(self):
         self.assertFalse(self.coverage["provider_write"])
         self.assertFalse(self.coverage["execution_allowed"])

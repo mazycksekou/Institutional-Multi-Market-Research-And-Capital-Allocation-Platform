@@ -29,6 +29,7 @@ from automation_scheduler.data_paths import get_runtime_data_path, get_automatio
 from automation_scheduler.response_compactor import (
     compact_calibration_response,
     compact_calibration_collector_response,
+    compact_cfbd_adapter_verification_response,
     compact_deepseek_review_response,
     compact_data_source_coverage_response,
     compact_data_source_env_vars_response,
@@ -1023,6 +1024,16 @@ class DataSourceVerifyRequest(BaseModel):
 
     module: Optional[str] = None
     persist_report: bool = True
+
+
+class NcaafCfbdVerifyRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", protected_namespaces=())
+
+    dry_run: bool = True
+    season: Optional[int] = None
+    week: Optional[int] = None
+    max_records: int = 5
+    fetch_live_sample: bool = False
 
 
 class InstitutionalLabRunRequest(BaseModel):
@@ -3141,6 +3152,30 @@ async def get_data_source_health_endpoint():
     return compact_data_source_health_response(payload)
 
 
+@app.post(
+    "/api/automation/data-sources/adapters/ncaaf/cfbd/verify",
+    operation_id="verifyNcaafCfbdAdapter",
+)
+async def verify_ncaaf_cfbd_adapter_endpoint(
+    payload: NcaafCfbdVerifyRequest,
+    verbose: bool = Query(default=False),
+    include_debug: bool = Query(default=False),
+    limit: int = Query(default=10),
+):
+    result = automation_scheduler.verify_ncaaf_cfbd_adapter(
+        dry_run=payload.dry_run,
+        season=payload.season,
+        week=payload.week,
+        max_records=payload.max_records,
+        fetch_live_sample=payload.fetch_live_sample,
+    )
+    cap = min(max(int(limit), 1), 100 if verbose else 10)
+    compact = compact_cfbd_adapter_verification_response(result)
+    if verbose or include_debug:
+        compact["debug"] = redact_and_limit_payload(result, limit=cap, verbose=verbose)
+    return compact
+
+
 @app.post("/api/automation/data-sources/verify", operation_id="verifyAutomationDataSourceRegistry")
 async def verify_data_source_registry_endpoint(payload: DataSourceVerifyRequest, verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=100)):
     result = automation_scheduler.verify_data_source_registry(module=payload.module, persist_report=payload.persist_report)
@@ -3454,6 +3489,7 @@ PUBLIC_OPENAPI_PATH_METHODS = frozenset({
     ("/api/automation/data-sources/priorities", "get"),
     ("/api/automation/data-sources/public-apis-expansion-report", "get"),
     ("/api/automation/data-sources/health", "get"),
+    ("/api/automation/data-sources/adapters/ncaaf/cfbd/verify", "post"),
     ("/api/automation/data-sources/verify", "post"),
     ("/api/automation/institutional-lab/health", "get"),
     ("/api/automation/institutional-lab/run", "post"),

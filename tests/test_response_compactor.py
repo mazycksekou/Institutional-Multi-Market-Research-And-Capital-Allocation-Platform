@@ -2,6 +2,7 @@ import unittest
 from automation_scheduler.response_compactor import (
     compact_calibration_collector_response,
     compact_calibration_response,
+    compact_cfbd_adapter_verification_response,
     compact_data_source_coverage_response,
     compact_data_source_health_response,
     compact_data_source_registry_response,
@@ -121,6 +122,48 @@ class TestResponseCompactor(unittest.TestCase):
         self.assertFalse(research["execution_allowed"])
         health = compact_data_source_health_response({"ok": True, "total_lanes": 1, "storage_health": registry["storage_health"]})
         self.assertEqual(health["storage"]["data_dir"], "/var/data")
+
+    def test_cfbd_adapter_verification_compactor_is_safe(self):
+        compact = compact_cfbd_adapter_verification_response(
+            {
+                "ok": True,
+                "adapter_status": "metadata_only_verified",
+                "source_id": "collegefootballdata",
+                "module": "americanfootball_ncaaf",
+                "source_access_type": "free_key",
+                "approval_status": "needs_review",
+                "enabled": True,
+                "fetch_live_sample_requested": False,
+                "fetch_live_sample_performed": False,
+                "missing_api_key": True,
+                "sample_records_received": 0,
+                "sample_records_normalized": 0,
+                "model_inputs_supported": ["home_team"],
+                "missing_model_inputs": ["home_offensive_epa_per_play"],
+                "quality_scores": {"coverage_score": 0, "calibration_readiness_score": 0},
+                "raw_payload": {"provider": "drop"},
+                "api_key": "secret-value",
+                "storage_health": {
+                    "env_var": "AUTOMATION_DATA_DIR",
+                    "data_dir": "/var/data",
+                    "backend": "file",
+                    "configured": True,
+                    "read_ok": True,
+                    "write_ok": True,
+                },
+            }
+        )
+        self.assertFalse(compact["enabled"])
+        self.assertFalse(compact["provider_write"])
+        self.assertFalse(compact["execution_allowed"])
+        self.assertEqual(compact["execution_allowed_count"], 0)
+        self.assertFalse(compact["raw_payload_included"])
+        self.assertFalse(compact["secrets_included"])
+        self.assertEqual(compact["storage"]["data_dir"], "/var/data")
+        rendered = str(compact)
+        self.assertNotIn("secret-value", rendered)
+        self.assertNotIn("'raw_payload':", rendered)
+        self.assertNotIn("drop", rendered)
 
     def test_limit_enforced(self):
         p = {"ok": True, "count": 50, "items": [{"recommended_action": "watch_recheck"} for _ in range(50)]}
