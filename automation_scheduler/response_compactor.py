@@ -306,6 +306,51 @@ def compact_outcome_ingest_response(payload: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def compact_outcome_import_response(payload: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "ok": bool(payload.get("ok", True)),
+        "status": payload.get("status", "outcomes_import_validated"),
+        "dry_run": bool(payload.get("dry_run", True)),
+        "persist": bool(payload.get("persist", False)),
+        "records_received": int(payload.get("records_received", 0)),
+        "records_valid": int(payload.get("records_valid", 0)),
+        "records_rejected": int(payload.get("records_rejected", 0)),
+        "rejected_reason_counts": dict(payload.get("rejected_reason_counts", {})),
+        "duplicate_count": int(payload.get("duplicate_count", 0)),
+        "would_insert_count": int(payload.get("would_insert_count", 0)),
+        "inserted_count": int(payload.get("inserted_count", 0)),
+        "matched_paper_decision_count": int(payload.get("matched_paper_decision_count", 0)),
+        "unmatched_count": int(payload.get("unmatched_count", 0)),
+        "render_existing_outcomes_count": int(payload.get("render_existing_outcomes_count", 0)),
+        "render_outcomes_after_import_if_persisted": int(payload.get("render_outcomes_after_import_if_persisted", 0)),
+        "migration_version": payload.get("migration_version"),
+        "audit_report_path": payload.get("audit_report_path"),
+        "persistence_blocked_reason": payload.get("persistence_blocked_reason"),
+        "supporting_paper_decisions_received": int(payload.get("supporting_paper_decisions_received", 0)),
+        "supporting_paper_decisions_valid": int(payload.get("supporting_paper_decisions_valid", 0)),
+        "supporting_paper_decisions_written": int(payload.get("supporting_paper_decisions_written", 0)),
+        "paper_ledger_items_path": payload.get("paper_ledger_items_path"),
+        "storage_backend": payload.get("storage_backend", "file"),
+        "storage": _compact_storage_health(payload),
+        "provider_write": False,
+        "execution_allowed": False,
+        "execution_allowed_count": 0,
+        "live_execution_enabled": False,
+        "auto_execution_enabled": False,
+        "kalshi_order_execution_enabled": False,
+        "sportsbook_bet_execution_enabled": False,
+        "broker_order_execution_enabled": False,
+        "crypto_trade_execution_enabled": False,
+        "stock_trade_execution_enabled": False,
+        "actual_orders_submitted": 0,
+        "actual_bets_submitted": 0,
+        "actual_trades_submitted": 0,
+        "actual_crypto_swaps_submitted": 0,
+        "raw_payload_included": False,
+        "secrets_included": False,
+    }
+
+
 def compact_outcomes_response(payload: dict[str, Any], limit: int = 10) -> dict[str, Any]:
     cap = max(1, min(int(limit or 10), 10))
     records = list(payload.get("records", payload.get("items", [])))[:cap]

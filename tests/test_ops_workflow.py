@@ -157,6 +157,30 @@ class TestOpsWorkflow(unittest.TestCase):
         self.assertNotIn("top-secret-token", encoded)
         self.assertNotIn("top-secret-render-key", encoded)
 
+    def test_outcome_reconcile_mode_reports_mismatch_warning(self):
+        with patch(
+            "automation_scheduler.ops_workflow.check_outcome_reconciliation",
+            return_value={
+                "ok": True,
+                "status": "local_render_state_mismatch",
+                "local_package_count": 32,
+                "render_outcomes_count": 4,
+                "would_insert_count": 32,
+                "unmatched_count": 0,
+                "provider_write": False,
+                "execution_allowed": False,
+                "execution_allowed_count": 0,
+                "raw_payload_included": False,
+                "secrets_included": False,
+            },
+        ):
+            report = ops_workflow.run_ops_check(mode="outcome-reconcile", base_url="https://example.test", write_report=False)
+
+        self.assertEqual(report["outcome_reconciliation_status"]["status"], "local_render_state_mismatch")
+        self.assertEqual(report["blocker_classification"]["primary"], "local_render_state_mismatch")
+        self.assertEqual(report["blocker_classification"]["recommended_action"], "run_outcome_migration_dry_run")
+        self.assertTrue(report["safety_status"]["ok"])
+
     def test_raw_payload_fields_are_removed(self):
         sanitized = ops_workflow._sanitize_payload(
             {
@@ -171,4 +195,3 @@ class TestOpsWorkflow(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

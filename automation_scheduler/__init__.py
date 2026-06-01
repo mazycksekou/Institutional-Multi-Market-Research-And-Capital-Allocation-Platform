@@ -11,6 +11,7 @@ from .scheduler_config import get_default_scheduler_config, ensure_runtime_direc
 from .backtesting_engine import generate_backtest_report, run_backtest, run_paper_summary
 from .calibration import build_calibration_report
 from .outcome_store import ingest_outcome_records, load_outcome_state, summarize_outcomes
+from .outcome_migration import import_local_settlement_records
 from .settlement_discovery import build_outcome_completion_report, write_outcome_completion_candidates
 from .model_performance_report import build_compact_performance_report
 from .provider_health import summarize_provider_health
@@ -156,6 +157,30 @@ def ingest_automation_outcomes(
     return ingest_outcome_records(
         records,
         source=source,
+        dry_run=dry_run,
+        persist=persist,
+        base_data_dir=base,
+    )
+
+
+def import_local_settlement_outcomes(
+    records: list[dict],
+    *,
+    supporting_paper_decisions: list[dict] | None = None,
+    source: str = "local_repo_migration",
+    migration_version: str = "kalshi_outcome_migration_v1",
+    dry_run: bool = True,
+    persist: bool = False,
+    base_data_dir: str | None = None,
+):
+    base = _data_dir(base_data_dir)
+    config = get_default_scheduler_config(base_data_dir=base)
+    ensure_runtime_directories(config)
+    return import_local_settlement_records(
+        records,
+        supporting_paper_decisions=supporting_paper_decisions,
+        source=source,
+        migration_version=migration_version,
         dry_run=dry_run,
         persist=persist,
         base_data_dir=base,

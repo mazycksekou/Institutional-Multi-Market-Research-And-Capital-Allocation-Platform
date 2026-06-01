@@ -38,6 +38,7 @@ from automation_scheduler.response_compactor import (
     compact_data_source_research_lanes_response,
     compact_public_apis_expansion_report_response,
     compact_outcome_ingest_response,
+    compact_outcome_import_response,
     compact_outcomes_response,
     compact_settlement_discovery_response,
     compact_provider_status,
@@ -954,6 +955,17 @@ class AutomationOutcomeIngestRequest(BaseModel):
     persist: bool = False
     source: str = "local_manual"
     records: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class AutomationOutcomeLocalSettlementImportRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", protected_namespaces=())
+
+    dry_run: bool = True
+    persist: bool = False
+    source: str = "local_repo_migration"
+    migration_version: str = "kalshi_outcome_migration_v1"
+    records: list[dict[str, Any]] = Field(default_factory=list)
+    supporting_paper_decisions: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class AutomationSettlementDiscoveryRequest(BaseModel):
@@ -2928,6 +2940,35 @@ async def ingest_automation_outcomes_endpoint(payload: AutomationOutcomeIngestRe
     return compact
 
 
+@app.post("/api/automation/outcomes/import-local-settlements", operation_id="importLocalKalshiSettlements")
+async def import_local_kalshi_settlements_endpoint(
+    payload: AutomationOutcomeLocalSettlementImportRequest,
+    x_collector_token: Optional[str] = Header(default=None, alias="X-Collector-Token"),
+    verbose: bool = Query(default=False),
+    include_debug: bool = Query(default=False),
+    limit: int = Query(default=10),
+):
+    if payload.persist and not payload.dry_run:
+        from automation_scheduler.collector_scheduled_runner import validate_cron_token
+
+        ok, status_code, rejection = validate_cron_token(x_collector_token)
+        if not ok:
+            raise HTTPException(status_code=status_code, detail=compact_outcome_import_response(rejection or {}))
+    result = automation_scheduler.import_local_settlement_outcomes(
+        payload.records,
+        supporting_paper_decisions=payload.supporting_paper_decisions,
+        source=payload.source,
+        migration_version=payload.migration_version,
+        dry_run=payload.dry_run,
+        persist=payload.persist,
+    )
+    compact = compact_outcome_import_response(result)
+    cap = min(max(int(limit), 1), 100 if verbose else 10)
+    if verbose or include_debug:
+        compact["debug"] = redact_and_limit_payload(result, limit=cap, verbose=verbose)
+    return compact
+
+
 @app.get("/api/automation/outcomes", operation_id="getAutomationOutcomes")
 async def get_automation_outcomes_endpoint(verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=10)):
     cap = min(max(int(limit), 1), 100 if verbose else 10)
@@ -3401,6 +3442,7 @@ PUBLIC_OPENAPI_PATH_METHODS = frozenset({
     ("/api/automation/calibration", "get"),
     ("/api/automation/outcomes", "get"),
     ("/api/automation/outcomes/ingest", "post"),
+    ("/api/automation/outcomes/import-local-settlements", "post"),
     ("/api/automation/outcomes/discover-settlements", "post"),
     ("/api/automation/calibration-collector/run", "post"),
     ("/api/automation/calibration-collector/scheduled-run", "post"),

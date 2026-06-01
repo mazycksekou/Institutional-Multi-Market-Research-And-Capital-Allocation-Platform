@@ -12,6 +12,7 @@ from automation_scheduler.response_compactor import (
     compact_institutional_lab_run_response,
     compact_institutional_report_response,
     compact_outcome_ingest_response,
+    compact_outcome_import_response,
     compact_outcomes_response,
     compact_settlement_discovery_response,
     compact_health_response, compact_review_queue_response, compact_run_once_response,
@@ -125,6 +126,45 @@ class TestResponseCompactor(unittest.TestCase):
         p = {"ok": True, "count": 50, "items": [{"recommended_action": "watch_recheck"} for _ in range(50)]}
         c = compact_review_queue_response(p, limit=10)
         self.assertEqual(len(c["items"]), 10)
+
+    def test_outcome_import_compactor_preserves_safety_flags_and_omits_raw_payloads(self):
+        payload = {
+            "ok": True,
+            "status": "outcomes_import_validated",
+            "dry_run": True,
+            "persist": False,
+            "records_received": 32,
+            "records_valid": 32,
+            "records_rejected": 0,
+            "duplicate_count": 0,
+            "would_insert_count": 32,
+            "matched_paper_decision_count": 32,
+            "unmatched_count": 0,
+            "render_existing_outcomes_count": 4,
+            "render_outcomes_after_import_if_persisted": 36,
+            "migration_version": "kalshi_outcome_migration_v1",
+            "storage_health": {
+                "env_var": "AUTOMATION_DATA_DIR",
+                "data_dir": "/var/data",
+                "backend": "file",
+                "configured": True,
+                "read_ok": True,
+                "write_ok": True,
+            },
+            "raw_payload": {"drop": "provider-body"},
+            "api_key": "secret",
+        }
+        compact = compact_outcome_import_response(payload)
+        rendered = str(compact)
+        self.assertEqual(compact["records_received"], 32)
+        self.assertEqual(compact["would_insert_count"], 32)
+        self.assertFalse(compact["provider_write"])
+        self.assertFalse(compact["execution_allowed"])
+        self.assertEqual(compact["execution_allowed_count"], 0)
+        self.assertFalse(compact["raw_payload_included"])
+        self.assertFalse(compact["secrets_included"])
+        self.assertNotIn("provider-body", rendered)
+        self.assertNotIn("api_key", rendered)
 
     def test_review_queue_compact_includes_kalshi_summary_and_review_only_execution_safety(self):
         payload = {

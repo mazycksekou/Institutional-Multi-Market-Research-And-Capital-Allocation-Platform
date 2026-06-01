@@ -27,6 +27,7 @@ def _text_summary(report: dict[str, Any]) -> str:
     cron = report.get("cron_status") or {}
     calibration = report.get("calibration_status") or {}
     datasources = report.get("datasource_status") or {}
+    reconciliation = report.get("outcome_reconciliation_status") or {}
     safety = report.get("safety_status") or {}
     paths = ((report.get("ops_report_write") or {}).get("paths") or {}) if isinstance(report.get("ops_report_write"), dict) else {}
     lines = [
@@ -39,6 +40,7 @@ def _text_summary(report: dict[str, Any]) -> str:
         _line("render", f"{render.get('status')} ok={render.get('ok')}"),
         _line("cron", f"{cron.get('status')} latest={cron.get('latest_cycle_id')} cycles_24h={cron.get('cycles_last_24h')} http_429={cron.get('repeated_http_429_count')}"),
         _line("calibration", f"{calibration.get('status')} matched={calibration.get('matched_outcomes_count')} outcomes={calibration.get('outcome_records_count')}"),
+        _line("outcome_reconcile", f"{reconciliation.get('status')} local={reconciliation.get('local_package_count')} render={reconciliation.get('render_outcomes_count')} would_insert={reconciliation.get('would_insert_count')} unmatched={reconciliation.get('unmatched_count')}"),
         _line("datasources", f"{datasources.get('status')} sources={datasources.get('total_sources')} enabled={datasources.get('source_enabled_count')}"),
         _line("safety", f"{safety.get('status')} critical={len(safety.get('critical') or [])} warnings={len(safety.get('warnings') or [])}"),
         _line("raw_payload_included", report.get("raw_payload_included")),
@@ -61,7 +63,7 @@ def _exit_code(report: dict[str, Any], fail_on_critical: bool) -> int:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Run unified betting-stock-api ops checks.")
-    parser.add_argument("--mode", choices=["local", "render", "cron", "calibration", "datasources", "safety", "full"], default="local")
+    parser.add_argument("--mode", choices=["local", "render", "cron", "calibration", "datasources", "safety", "outcome-reconcile", "full"], default="local")
     parser.add_argument("--base-url", default=None)
     parser.add_argument("--output", choices=["json", "text"], default="text")
     parser.add_argument("--write-report", action="store_true")
@@ -99,4 +101,3 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

@@ -46,6 +46,7 @@ CRITICAL_IMPORTS = (
     "automation_scheduler.collector_scheduled_runner",
     "automation_scheduler.calibration_collector",
     "automation_scheduler.calibration",
+    "automation_scheduler.outcome_migration",
     "automation_scheduler.response_compactor",
 )
 FALSE_SAFETY_FLAGS = (
@@ -358,6 +359,72 @@ def safe_get_json(url: str, timeout: int = 20) -> dict[str, Any]:
         return {
             "ok": False,
             "status": status,
+            "error_category": "render_auth_problem" if status_code in {401, 403} else "render_endpoint_failure",
+            "status_code": status_code,
+            "url": safe_url,
+            "elapsed_ms": round((time.monotonic() - started) * 1000, 2),
+            "error": _safe_error(exc),
+            "data": None,
+        }
+    except (urllib.error.URLError, TimeoutError, socket.timeout, OSError) as exc:
+        return {
+            "ok": False,
+            "status": "local_sandbox_network_unavailable",
+            "error_category": "local_sandbox_network_unavailable",
+            "status_code": None,
+            "url": safe_url,
+            "elapsed_ms": round((time.monotonic() - started) * 1000, 2),
+            "error": _safe_error(exc),
+            "data": None,
+        }
+
+
+def safe_post_json(url: str, payload: dict[str, Any], timeout: int = 20) -> dict[str, Any]:
+    started = time.monotonic()
+    safe_url = _safe_url(url)
+    request = urllib.request.Request(
+        url,
+        data=json.dumps(payload).encode("utf-8"),
+        headers={"Accept": "application/json", "Content-Type": "application/json", "User-Agent": "betting-stock-api-ops-check/1.0"},
+        method="POST",
+    )
+    try:
+        response = urllib.request.urlopen(request, timeout=timeout)
+        try:
+            status_code = int(getattr(response, "status", getattr(response, "code", 0)) or 0)
+            body = response.read()
+        finally:
+            close = getattr(response, "close", None)
+            if callable(close):
+                close()
+        elapsed_ms = round((time.monotonic() - started) * 1000, 2)
+        try:
+            data = json.loads(body.decode("utf-8-sig"))
+        except Exception as exc:
+            return {
+                "ok": False,
+                "status": "malformed_json",
+                "error_category": "code_defect",
+                "status_code": status_code,
+                "url": safe_url,
+                "elapsed_ms": elapsed_ms,
+                "error": _safe_error(exc),
+                "data": None,
+            }
+        return {
+            "ok": 200 <= status_code < 300,
+            "status": "ok" if 200 <= status_code < 300 else "render_endpoint_failure",
+            "error_category": None if 200 <= status_code < 300 else "render_endpoint_failure",
+            "status_code": status_code,
+            "url": safe_url,
+            "elapsed_ms": elapsed_ms,
+            "data": _sanitize_payload(data),
+        }
+    except urllib.error.HTTPError as exc:
+        status_code = int(getattr(exc, "code", 0) or 0)
+        return {
+            "ok": False,
+            "status": "render_auth_problem" if status_code in {401, 403} else ("missing_endpoint" if status_code == 404 else "render_endpoint_failure"),
             "error_category": "render_auth_problem" if status_code in {401, 403} else "render_endpoint_failure",
             "status_code": status_code,
             "url": safe_url,
@@ -770,6 +837,86 @@ def check_data_source_registry(base_url: str | None = None) -> dict[str, Any]:
         return {"ok": False, "status": "code_defect", "error": _safe_error(exc), "raw_payload_included": False, "secrets_included": False}
 
 
+def check_outcome_reconciliation(base_url: str | None = None, *, timeout: int = 30) -> dict[str, Any]:
+    try:
+        from .outcome_migration import build_kalshi_outcome_migration_package
+
+        package = build_kalshi_outcome_migration_package()
+    except Exception as exc:
+        return {"ok": False, "status": "code_defect", "error": _safe_error(exc), "raw_payload_included": False, "secrets_included": False}
+
+    records = list(package.get("records") or [])
+    result: dict[str, Any] = {
+        "ok": True,
+        "status": "local_package_built",
+        "local_package_count": len(records),
+        "invalid_local_count": int(package.get("records_rejected", 0) or 0),
+        "duplicate_count": int(package.get("duplicate_count", 0) or 0),
+        "supporting_paper_decision_count": int(package.get("supporting_paper_decision_count", 0) or 0),
+        "render_outcomes_count": None,
+        "overlap_count": None,
+        "local_only_count": None,
+        "render_only_count": None,
+        "would_insert_count": None,
+        "matched_after_import_estimate": None,
+        "progress_to_100_after_import": None,
+        "progress_to_300_after_import": None,
+        "progress_to_1000_after_import": None,
+        "recommendation": "set_APP_BASE_URL_and_run_dry_run_import",
+        "provider_write": False,
+        "execution_allowed": False,
+        "execution_allowed_count": 0,
+        "live_execution_enabled": False,
+        "auto_execution_enabled": False,
+        "raw_payload_included": False,
+        "secrets_included": False,
+    }
+    if not base_url:
+        return result
+
+    payload = {
+        "dry_run": True,
+        "persist": False,
+        "source": "local_repo_migration",
+        "migration_version": package.get("migration_version"),
+        "records": records,
+        "supporting_paper_decisions": list(package.get("supporting_paper_decisions") or []),
+    }
+    dry_run = safe_post_json(_join_url(base_url, "/api/automation/outcomes/import-local-settlements"), payload, timeout=timeout)
+    calibration = check_calibration_status(base_url)
+    if not dry_run.get("ok"):
+        result.update({"ok": False, "status": dry_run.get("status"), "error_category": dry_run.get("error_category"), "recommendation": "deploy_import_endpoint_then_rerun"})
+        return result
+    data = dry_run.get("data") if isinstance(dry_run.get("data"), dict) else {}
+    current_matched = _as_int(calibration.get("matched_outcomes_count"), 0)
+    projected_matched = current_matched + _as_int(data.get("matched_paper_decision_count"), 0)
+    render_existing = _as_int(data.get("render_existing_outcomes_count"), 0)
+    would_insert = _as_int(data.get("would_insert_count"), 0)
+    duplicate_count = _as_int(data.get("duplicate_count"), 0)
+    result.update(
+        {
+            "status": "local_render_state_mismatch" if would_insert > 0 else "in_sync",
+            "render_outcomes_count": render_existing,
+            "overlap_count": max(0, len(records) - would_insert - duplicate_count),
+            "local_only_count": would_insert,
+            "render_only_count": None,
+            "would_insert_count": would_insert,
+            "records_received": _as_int(data.get("records_received"), 0),
+            "records_valid": _as_int(data.get("records_valid"), 0),
+            "records_rejected": _as_int(data.get("records_rejected"), 0),
+            "matched_paper_decision_count": _as_int(data.get("matched_paper_decision_count"), 0),
+            "unmatched_count": _as_int(data.get("unmatched_count"), 0),
+            "projected_outcomes_after_import": _as_int(data.get("render_outcomes_after_import_if_persisted"), render_existing + would_insert),
+            "matched_after_import_estimate": projected_matched,
+            "progress_to_100_after_import": _progress(projected_matched, 100),
+            "progress_to_300_after_import": _progress(projected_matched, 300),
+            "progress_to_1000_after_import": _progress(projected_matched, 1000),
+            "recommendation": "fix_paper_ledger_matching_before_import" if _as_int(data.get("unmatched_count"), 0) > 0 else ("user_approval_required_to_persist_import" if would_insert > 0 else "no_import_needed"),
+        }
+    )
+    return result
+
+
 def check_safety_flags(payloads: list[Any] | tuple[Any, ...] | Any) -> dict[str, Any]:
     payload_list = list(payloads) if isinstance(payloads, (list, tuple)) else [payloads]
     observed: dict[str, list[Any]] = {key: [] for key in (*FALSE_SAFETY_FLAGS, *ZERO_SAFETY_FLAGS, *TRUE_SAFETY_FLAGS)}
@@ -884,6 +1031,10 @@ def classify_blockers(report: dict[str, Any]) -> dict[str, Any]:
     if calibration and calibration_state not in {"not_run", "skipped_config_missing"} and calibration.get("ok") is not None and _as_int(calibration.get("matched_outcomes_count"), 0) <= 0:
         blockers.append({"type": "insufficient_settlement_data", "severity": "warning", "detail": "no matched outcomes available"})
 
+    reconciliation = report.get("outcome_reconciliation_status") if isinstance(report.get("outcome_reconciliation_status"), dict) else {}
+    if reconciliation and reconciliation.get("status") == "local_render_state_mismatch":
+        blockers.append({"type": "local_render_state_mismatch", "severity": "warning", "detail": f"would_insert={reconciliation.get('would_insert_count')}"})
+
     if not blockers:
         primary = "verification_ok"
         action = "continue using ops workflow checks"
@@ -900,6 +1051,8 @@ def classify_blockers(report: dict[str, Any]) -> dict[str, Any]:
             action = "fix AUTOMATION_DATA_DIR and Render persistent disk configuration"
         elif primary == "safety_failure":
             action = "stop and fix enabled execution/provider-write flags"
+        elif primary == "local_render_state_mismatch":
+            action = "run_outcome_migration_dry_run"
         else:
             action = "inspect the classified failing check and fix the reported defect"
     return {
@@ -915,6 +1068,7 @@ def _markdown_report(report: dict[str, Any]) -> str:
     storage = report.get("storage_status") or {}
     cron = report.get("cron_status") or {}
     calibration = report.get("calibration_status") or {}
+    reconciliation = report.get("outcome_reconciliation_status") or {}
     lines = [
         f"# Ops Check {report.get('run_id')}",
         "",
@@ -929,6 +1083,8 @@ def _markdown_report(report: dict[str, Any]) -> str:
         f"- cron_status: {cron.get('status')}",
         f"- latest_cycle_id: {cron.get('latest_cycle_id')}",
         f"- matched_outcomes_count: {calibration.get('matched_outcomes_count')}",
+        f"- outcome_reconcile_status: {reconciliation.get('status')}",
+        f"- outcome_reconcile_would_insert: {reconciliation.get('would_insert_count')}",
         f"- raw_payload_included: {report.get('raw_payload_included')}",
         f"- secrets_included: {report.get('secrets_included')}",
         "",
@@ -1023,6 +1179,7 @@ def run_ops_check(
         "cron_status": {"ok": None, "status": "not_run"},
         "calibration_status": {"ok": None, "status": "not_run"},
         "datasource_status": {"ok": None, "status": "not_run"},
+        "outcome_reconciliation_status": {"ok": None, "status": "not_run"},
         "safety_status": {"ok": None, "status": "not_run"},
         "test_status": {"ok": None, "status": "not_run"},
         "raw_payload_included": False,
@@ -1062,7 +1219,12 @@ def run_ops_check(
         datasource_status = check_data_source_registry(datasource_base)
         report["datasource_status"] = datasource_status
         safety_payloads.append(datasource_status)
-    if mode in {"safety", "full", "local", "render", "cron", "calibration", "datasources"}:
+    if mode in {"outcome-reconcile", "full"}:
+        reconcile_base = None if skip_network or not resolved_base_url else resolved_base_url
+        reconciliation_status = check_outcome_reconciliation(reconcile_base, timeout=timeout)
+        report["outcome_reconciliation_status"] = reconciliation_status
+        safety_payloads.append(reconciliation_status)
+    if mode in {"safety", "full", "local", "render", "cron", "calibration", "datasources", "outcome-reconcile"}:
         report["safety_status"] = check_safety_flags(safety_payloads)
 
     report["completed_at"] = utc_now_iso()
