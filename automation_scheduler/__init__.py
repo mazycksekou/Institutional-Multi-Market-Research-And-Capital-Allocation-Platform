@@ -30,10 +30,112 @@ from .sportsbook_odds_provider import (
     validate_sportsbook_snapshot,
     write_sportsbook_snapshot,
 )
+from .broker_quality_scoring import build_broker_quality_report
+from .candlestick_pattern_detector import detect_candlestick_patterns
+from .micro_outcome_calibration import build_micro_calibration_report
+from .pattern_calibration import build_pattern_calibration_report
+from .pattern_review_queue import load_pattern_review_queue
+from .small_account_strategy import SAFETY_FLAGS, run_small_account_review
+from .cross_asset_manifold_router import (
+    get_manifold_calibration_snapshot,
+    get_manifold_cluster_snapshot,
+    get_manifold_trap_snapshot,
+    map_manifold_endpoint_item,
+    run_cross_asset_manifold_review,
+)
 
 
 def _data_dir(base_data_dir: str | None = None) -> str:
     return str(resolve_base_data_dir(base_data_dir))
+
+
+def run_small_account_pattern_detection(
+    items: list[dict] | None = None,
+    *,
+    base_data_dir: str | None = None,
+):
+    rows = [row for row in (items or []) if isinstance(row, dict)]
+    detections = []
+    for row in rows:
+        context = {
+            "asset_symbol": row.get("asset_symbol") or row.get("symbol") or row.get("ticker") or "UNKNOWN",
+            "asset_type": row.get("asset_type") or "stock",
+            "timeframe": row.get("timeframe") or "unknown",
+            "detected_at": row.get("detected_at"),
+            "vwap": row.get("vwap"),
+            "opening_range_high": row.get("opening_range_high"),
+            "previous_close": row.get("previous_close"),
+            "pullback_high": row.get("pullback_high"),
+            "prior_high": row.get("prior_high"),
+            "breakout_confirmation_score": row.get("breakout_confirmation_score", 50.0),
+        }
+        detections.extend(detect_candlestick_patterns(row.get("candles") or [], context))
+    return {
+        "ok": True,
+        "status": "patterns_detected",
+        "items_scanned": len(rows),
+        "detections_created": len(detections),
+        "detections": detections,
+        **SAFETY_FLAGS,
+    }
+
+
+def run_small_account_review_cycle(
+    items: list[dict] | None = None,
+    *,
+    session_state: dict | None = None,
+    persist_queue: bool = False,
+    base_data_dir: str | None = None,
+):
+    return run_small_account_review(
+        items,
+        session_state=session_state,
+        persist_queue=persist_queue,
+        base_data_dir=_data_dir(base_data_dir),
+    )
+
+
+def get_small_account_pattern_review_queue(base_data_dir: str | None = None, limit: int | None = None):
+    return load_pattern_review_queue(base_data_dir=_data_dir(base_data_dir), limit=limit)
+
+
+def get_small_account_pattern_calibration(records: list[dict] | None = None, base_data_dir: str | None = None):
+    return build_pattern_calibration_report(records=records or [])
+
+
+def get_small_account_micro_outcome_calibration(records: list[dict] | None = None, base_data_dir: str | None = None):
+    return build_micro_calibration_report(records=records or [])
+
+
+def get_broker_quality(base_data_dir: str | None = None):
+    return build_broker_quality_report()
+
+
+def get_balance_sheet_risk(symbol: str, base_data_dir: str | None = None):
+    from .balance_sheet_risk import evaluate_balance_sheet
+
+    base = resolve_base_data_dir(base_data_dir)
+    sample_path = base / "small_account_review" / "balance_sheet_samples.json"
+    samples = {}
+    if sample_path.exists():
+        try:
+            payload = json.loads(sample_path.read_text(encoding="utf-8"))
+            if isinstance(payload, dict):
+                samples = payload
+        except Exception:
+            samples = {}
+    key = str(symbol or "").upper()
+    row = samples.get(key) if isinstance(samples, dict) else None
+    result = evaluate_balance_sheet(row if isinstance(row, dict) else {})
+    return {
+        "ok": True,
+        "status": "DATA_INSUFFICIENT" if result["data_insufficient"] else "ok",
+        "symbol": key,
+        "source": "local_sample" if isinstance(row, dict) else "local_sample_missing",
+        "balance_sheet_risk": result,
+        "storage_health": get_storage_health(),
+        **SAFETY_FLAGS,
+    }
 
 
 def get_scheduler_health(base_data_dir: str | None = None):
@@ -141,6 +243,59 @@ def get_automation_calibration_report(base_data_dir: str | None = None):
     config = get_default_scheduler_config(base_data_dir=base)
     ensure_runtime_directories(config)
     return build_calibration_report(base_data_dir=base, write_report=True)
+
+
+def map_automation_manifold_item(
+    item: dict,
+    *,
+    historical_records: list[dict] | None = None,
+    base_data_dir: str | None = None,
+):
+    base = _data_dir(base_data_dir)
+    config = get_default_scheduler_config(base_data_dir=base)
+    ensure_runtime_directories(config)
+    return map_manifold_endpoint_item(item, historical_records=historical_records, base_data_dir=base)
+
+
+def get_automation_manifold_clusters(*, base_data_dir: str | None = None, limit: int = 25):
+    base = _data_dir(base_data_dir)
+    config = get_default_scheduler_config(base_data_dir=base)
+    ensure_runtime_directories(config)
+    return get_manifold_cluster_snapshot(base_data_dir=base, limit=limit)
+
+
+def get_automation_manifold_calibration(*, base_data_dir: str | None = None, limit: int = 25):
+    base = _data_dir(base_data_dir)
+    config = get_default_scheduler_config(base_data_dir=base)
+    ensure_runtime_directories(config)
+    return get_manifold_calibration_snapshot(base_data_dir=base, limit=limit)
+
+
+def get_automation_manifold_no_bet_traps(*, base_data_dir: str | None = None, limit: int = 25):
+    base = _data_dir(base_data_dir)
+    config = get_default_scheduler_config(base_data_dir=base)
+    ensure_runtime_directories(config)
+    return get_manifold_trap_snapshot(base_data_dir=base, limit=limit)
+
+
+def run_automation_cross_asset_manifold_review(
+    items: list[dict] | None,
+    *,
+    historical_records: list[dict] | None = None,
+    persist: bool = True,
+    max_items: int = 250,
+    base_data_dir: str | None = None,
+):
+    base = _data_dir(base_data_dir)
+    config = get_default_scheduler_config(base_data_dir=base)
+    ensure_runtime_directories(config)
+    return run_cross_asset_manifold_review(
+        items,
+        historical_records=historical_records,
+        persist=persist,
+        max_items=max_items,
+        base_data_dir=base,
+    )
 
 
 def ingest_automation_outcomes(

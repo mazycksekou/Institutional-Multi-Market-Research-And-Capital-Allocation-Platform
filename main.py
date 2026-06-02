@@ -42,6 +42,13 @@ from automation_scheduler.response_compactor import (
     compact_outcome_ingest_response,
     compact_outcome_import_response,
     compact_outcomes_response,
+    compact_balance_sheet_risk_response,
+    compact_broker_quality_response,
+    compact_micro_outcome_calibration_response,
+    compact_pattern_calibration_response,
+    compact_pattern_detection_response,
+    compact_pattern_review_queue_response,
+    compact_small_account_review_response,
     compact_settlement_discovery_response,
     compact_provider_status,
     compact_governance_inventory,
@@ -51,6 +58,8 @@ from automation_scheduler.response_compactor import (
     compact_institutional_lab_health_response,
     compact_institutional_lab_run_response,
     compact_institutional_report_response,
+    compact_manifold_map_response,
+    compact_manifold_review_response,
     compact_performance_health,
     compact_performance_report,
     compact_provider_health_response,
@@ -1018,6 +1027,39 @@ class AutomationDeepSeekReviewRequest(BaseModel):
     daily_report: dict[str, Any] = Field(default_factory=dict)
     calibration_report: dict[str, Any] = Field(default_factory=dict)
     sampled_contracts: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class AutomationManifoldMapRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", protected_namespaces=())
+
+    item: dict[str, Any] = Field(default_factory=dict)
+    historical_records: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class AutomationCrossAssetManifoldReviewRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", protected_namespaces=())
+
+    dry_run: bool = True
+    persist: bool = True
+    max_items: int = 250
+    items: list[dict[str, Any]] = Field(default_factory=list)
+    historical_records: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class AutomationPatternDetectRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", protected_namespaces=())
+
+    dry_run: bool = True
+    items: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class AutomationSmallAccountReviewRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", protected_namespaces=())
+
+    dry_run: bool = True
+    persist_queue: bool = False
+    session_state: dict[str, Any] = Field(default_factory=dict)
+    items: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class DataSourceVerifyRequest(BaseModel):
@@ -3076,6 +3118,128 @@ async def automation_deepseek_review_endpoint(payload: AutomationDeepSeekReviewR
     if verbose or include_debug:
         compact["debug"] = redact_and_limit_payload(result, limit=cap, verbose=verbose)
     return compact
+
+
+@app.post("/api/automation/manifold-map", operation_id="mapAutomationManifoldState")
+async def automation_manifold_map_endpoint(payload: AutomationManifoldMapRequest, verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=10)):
+    result = automation_scheduler.map_automation_manifold_item(
+        payload.item,
+        historical_records=payload.historical_records or None,
+    )
+    compact = compact_manifold_map_response(result)
+    cap = min(max(int(limit), 1), 100 if verbose else 10)
+    if verbose or include_debug:
+        compact["debug"] = redact_and_limit_payload(result, limit=cap, verbose=verbose)
+    return compact
+
+
+@app.get("/api/automation/manifold-clusters", operation_id="getAutomationManifoldClusters")
+async def automation_manifold_clusters_endpoint(verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=25)):
+    cap = min(max(int(limit), 1), 100 if verbose else 25)
+    result = automation_scheduler.get_automation_manifold_clusters(limit=cap)
+    if verbose or include_debug:
+        result["debug"] = redact_and_limit_payload(result, limit=cap, verbose=verbose)
+    return result
+
+
+@app.get("/api/automation/manifold-calibration", operation_id="getAutomationManifoldCalibration")
+async def automation_manifold_calibration_endpoint(verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=25)):
+    cap = min(max(int(limit), 1), 100 if verbose else 25)
+    result = automation_scheduler.get_automation_manifold_calibration(limit=cap)
+    if verbose or include_debug:
+        result["debug"] = redact_and_limit_payload(result, limit=cap, verbose=verbose)
+    return result
+
+
+@app.get("/api/automation/manifold-no-bet-traps", operation_id="getAutomationManifoldNoBetTraps")
+async def automation_manifold_no_bet_traps_endpoint(verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=25)):
+    cap = min(max(int(limit), 1), 100 if verbose else 25)
+    result = automation_scheduler.get_automation_manifold_no_bet_traps(limit=cap)
+    if verbose or include_debug:
+        result["debug"] = redact_and_limit_payload(result, limit=cap, verbose=verbose)
+    return result
+
+
+@app.post("/api/automation/cross-asset-manifold-review", operation_id="reviewAutomationCrossAssetManifold")
+async def automation_cross_asset_manifold_review_endpoint(payload: AutomationCrossAssetManifoldReviewRequest, verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=10)):
+    if payload.dry_run is not True:
+        raise HTTPException(status_code=400, detail="cross-asset manifold review only supports dry_run=true")
+    result = automation_scheduler.run_automation_cross_asset_manifold_review(
+        payload.items,
+        historical_records=payload.historical_records or None,
+        persist=bool(payload.persist),
+        max_items=payload.max_items,
+    )
+    cap = min(max(int(limit), 1), 100 if verbose else 10)
+    compact = compact_manifold_review_response(result, limit=cap)
+    if verbose or include_debug:
+        compact["debug"] = redact_and_limit_payload(result, limit=cap, verbose=verbose)
+    return compact
+
+
+@app.post("/api/automation/pattern-detect", operation_id="detectSmallAccountPatterns")
+async def detect_small_account_patterns_endpoint(payload: AutomationPatternDetectRequest, verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=10)):
+    if payload.dry_run is not True:
+        raise HTTPException(status_code=400, detail="pattern detection only supports dry_run=true")
+    result = automation_scheduler.run_small_account_pattern_detection(payload.items)
+    cap = min(max(int(limit), 1), 100 if verbose else 10)
+    compact = compact_pattern_detection_response(result, limit=cap)
+    if verbose or include_debug:
+        compact["debug"] = redact_and_limit_payload(result, limit=cap, verbose=verbose)
+    return compact
+
+
+@app.post("/api/automation/small-account-review", operation_id="runSmallAccountReview")
+async def run_small_account_review_endpoint(payload: AutomationSmallAccountReviewRequest, verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=10)):
+    if payload.dry_run is not True:
+        raise HTTPException(status_code=400, detail="small-account review only supports dry_run=true")
+    result = automation_scheduler.run_small_account_review_cycle(
+        payload.items,
+        session_state=payload.session_state,
+        persist_queue=payload.persist_queue,
+    )
+    cap = min(max(int(limit), 1), 100 if verbose else 10)
+    compact = compact_small_account_review_response(result, limit=cap)
+    if verbose or include_debug:
+        compact["debug"] = redact_and_limit_payload(result, limit=cap, verbose=verbose)
+    return compact
+
+
+@app.get("/api/automation/pattern-review-queue", operation_id="getSmallAccountPatternReviewQueue")
+async def get_small_account_pattern_review_queue_endpoint(verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=10)):
+    cap = min(max(int(limit), 1), 100 if verbose else 10)
+    payload = automation_scheduler.get_small_account_pattern_review_queue(limit=cap)
+    compact = compact_pattern_review_queue_response(payload, limit=cap)
+    if verbose or include_debug:
+        compact["debug"] = redact_and_limit_payload(payload, limit=cap, verbose=verbose)
+    return compact
+
+
+@app.get("/api/automation/pattern-calibration", operation_id="getSmallAccountPatternCalibration")
+async def get_small_account_pattern_calibration_endpoint(limit: int = Query(default=10)):
+    cap = min(max(int(limit), 1), 100)
+    payload = automation_scheduler.get_small_account_pattern_calibration()
+    return compact_pattern_calibration_response(payload, limit=cap)
+
+
+@app.get("/api/automation/micro-outcome-calibration", operation_id="getSmallAccountMicroOutcomeCalibration")
+async def get_small_account_micro_outcome_calibration_endpoint(limit: int = Query(default=10)):
+    cap = min(max(int(limit), 1), 100)
+    payload = automation_scheduler.get_small_account_micro_outcome_calibration()
+    return compact_micro_outcome_calibration_response(payload, limit=cap)
+
+
+@app.get("/api/automation/broker-quality", operation_id="getSmallAccountBrokerQuality")
+async def get_small_account_broker_quality_endpoint(limit: int = Query(default=10)):
+    cap = min(max(int(limit), 1), 100)
+    payload = automation_scheduler.get_broker_quality()
+    return compact_broker_quality_response(payload, limit=cap)
+
+
+@app.get("/api/automation/balance-sheet-risk/{symbol}", operation_id="getSmallAccountBalanceSheetRisk")
+async def get_small_account_balance_sheet_risk_endpoint(symbol: str):
+    payload = automation_scheduler.get_balance_sheet_risk(symbol)
+    return compact_balance_sheet_risk_response(payload)
 
 
 @app.get("/api/automation/data-sources/registry", operation_id="getAutomationDataSourceRegistry")

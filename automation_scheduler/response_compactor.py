@@ -28,7 +28,24 @@ def _redact(payload: Any) -> Any:
             lk = str(k).lower()
             if any(s in lk for s in _SECRET_KEYS):
                 out[k] = "[redacted]"
-            elif lk in {"provider_payload", "raw_payload", "external_payload", "source_payload", "source_payload_redacted", "raw_provider_payload", "raw_kalshi_payload", "raw_sharp_payload"}:
+            elif lk in {
+                "provider_payload",
+                "raw_payload",
+                "external_payload",
+                "source_payload",
+                "source_payload_redacted",
+                "raw_provider_payload",
+                "raw_kalshi_payload",
+                "raw_sharp_payload",
+                "order_payload",
+                "broker_order_payload",
+                "sportsbook_bet_payload",
+                "kalshi_order_payload",
+                "crypto_trade_payload",
+                "trade_payload",
+                "execution_payload",
+                "executable_order_payload",
+            }:
                 out[k] = "[omitted]"
             else:
                 out[k] = _redact(v)
@@ -51,6 +68,101 @@ def redact_and_limit_payload(payload: Any, limit: int = 10, verbose: bool = Fals
                 compact[k] = compact[k][:cap]
         return compact
     return safe
+
+
+def _compact_manifold_item(item: dict[str, Any]) -> dict[str, Any]:
+    source = item.get("source_summary") if isinstance(item.get("source_summary"), dict) else {}
+    return {
+        "asset_symbol": source.get("asset_symbol"),
+        "asset_type": item.get("asset_type"),
+        "market_type": item.get("market_type"),
+        "manifold_cluster_id": item.get("manifold_cluster_id"),
+        "manifold_cluster_name": item.get("manifold_cluster_name"),
+        "manifold_family": item.get("manifold_family"),
+        "nearest_historical_neighbors": int(item.get("nearest_historical_neighbors", 0) or 0),
+        "neighbor_sample_size": int(item.get("neighbor_sample_size", 0) or 0),
+        "centroid_distance": item.get("centroid_distance"),
+        "nearest_neighbor_distance": item.get("nearest_neighbor_distance"),
+        "out_of_distribution_score": item.get("out_of_distribution_score"),
+        "out_of_distribution_risk": item.get("out_of_distribution_risk"),
+        "historical_win_rate": item.get("historical_win_rate"),
+        "historical_roi": item.get("historical_roi"),
+        "calibration_status": item.get("calibration_status"),
+        "insufficient_sample": bool(item.get("insufficient_sample", True)),
+        "liquidity_quality": item.get("liquidity_quality"),
+        "cluster_reliability_score": item.get("cluster_reliability_score"),
+        "no_bet_trap_score": item.get("no_bet_trap_score"),
+        "no_trade_trap_score": item.get("no_trade_trap_score"),
+        "review_priority_adjustment": item.get("review_priority_adjustment"),
+        "recommended_action": item.get("recommended_action"),
+        "execution_allowed": False,
+        "provider_write": False,
+        "live_execution_enabled": False,
+        "auto_execution": False,
+        "auto_execution_enabled": False,
+        "human_approval_required": True,
+        "actual_orders_submitted": 0,
+        "actual_bets_submitted": 0,
+        "actual_trades_submitted": 0,
+    }
+
+
+def compact_manifold_map_response(payload: dict[str, Any]) -> dict[str, Any]:
+    item = payload.get("item") if isinstance(payload.get("item"), dict) else payload
+    return {
+        "ok": bool(payload.get("ok", True)),
+        "status": payload.get("status", "manifold_map_complete"),
+        "provider_write": False,
+        "execution_allowed": False,
+        "live_execution_enabled": False,
+        "auto_execution": False,
+        "auto_execution_enabled": False,
+        "human_approval_required": True,
+        "actual_orders_submitted": 0,
+        "actual_bets_submitted": 0,
+        "actual_trades_submitted": 0,
+        "item": _compact_manifold_item(item),
+        "raw_payload_included": False,
+        "sensitive_fields_included": False,
+        "secrets_included": False,
+    }
+
+
+def compact_manifold_review_response(payload: dict[str, Any], limit: int = 10) -> dict[str, Any]:
+    cap = max(1, min(int(limit or 10), 100))
+    sample = payload.get("sample_items")
+    if not isinstance(sample, list):
+        sample = [_compact_manifold_item(item) for item in payload.get("items", []) if isinstance(item, dict)]
+    return {
+        "ok": bool(payload.get("ok", True)),
+        "status": payload.get("status", "manifold_review_complete"),
+        "provider_write": False,
+        "execution_allowed": False,
+        "live_execution_enabled": False,
+        "auto_execution": False,
+        "auto_execution_enabled": False,
+        "human_approval_required": True,
+        "actual_orders_submitted": 0,
+        "actual_bets_submitted": 0,
+        "actual_trades_submitted": 0,
+        "items_scanned": int(payload.get("items_scanned", 0) or 0),
+        "items_mapped": int(payload.get("items_mapped", 0) or 0),
+        "active_review_count": int(payload.get("active_review_count", 0) or 0),
+        "watchlist_review_count": int(payload.get("watchlist_review_count", 0) or 0),
+        "low_priority_review_count": int(payload.get("low_priority_review_count", 0) or 0),
+        "no_review_count": int(payload.get("no_review_count", 0) or 0),
+        "data_insufficient_count": int(payload.get("data_insufficient_count", 0) or 0),
+        "no_bet_trap_count": int(payload.get("no_bet_trap_count", 0) or 0),
+        "no_trade_trap_count": int(payload.get("no_trade_trap_count", 0) or 0),
+        "out_of_distribution_count": int(payload.get("out_of_distribution_count", 0) or 0),
+        "execution_allowed_count": 0,
+        "sample_items": sample[:cap],
+        "storage_backend": payload.get("storage_backend", "file"),
+        "storage": _compact_storage_health(payload),
+        "raw_payload_included": False,
+        "sensitive_fields_included": False,
+        "secrets_included": False,
+    }
 
 
 def compact_health_response(payload: dict[str, Any]) -> dict[str, Any]:
@@ -181,6 +293,361 @@ def compact_review_queue_response(payload: dict[str, Any], limit: int = 10) -> d
         "storage": _compact_storage_health(payload),
         "count": int(payload.get("count", len(top))),
         "items": top,
+    }
+
+
+def _compact_pattern_item(item: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "asset_symbol": item.get("asset_symbol"),
+        "asset_type": item.get("asset_type"),
+        "timeframe": item.get("timeframe"),
+        "pattern_name": item.get("pattern_name"),
+        "queue_status": item.get("queue_status"),
+        "review_priority_score": item.get("review_priority_score"),
+        "liquidity_score": item.get("liquidity_score"),
+        "liquidity_tier": item.get("liquidity_tier"),
+        "pattern_quality_score": item.get("pattern_quality_score"),
+        "risk_reward_ratio": item.get("risk_reward_ratio"),
+        "breakeven_win_rate": item.get("breakeven_win_rate"),
+        "balance_sheet_risk_score": item.get("balance_sheet_risk_score"),
+        "micro_calibration_score": item.get("micro_calibration_score"),
+        "trade_window_calibration_score": item.get("trade_window_calibration_score"),
+        "data_resolution": item.get("data_resolution"),
+        "sub_5m_windows_supported": str(item.get("data_resolution") or "").lower() in {"tick", "ticks", "quote", "quotes", "sub_minute", "sub_minute_bars", "1m", "1m_candles", "minute"},
+        "unsupported_windows": list(item.get("unsupported_windows") or []),
+        "no_trade_reasons": list(item.get("no_trade_reasons") or [])[:10],
+        "review_reasons": list(item.get("review_reasons") or [])[:10],
+        "risk_warnings": list(item.get("risk_warnings") or [])[:10],
+        "provider_write": False,
+        "execution_allowed": False,
+        "live_execution_enabled": False,
+        "auto_execution": False,
+        "auto_execution_enabled": False,
+        "human_approval_required": True,
+        "actual_orders_submitted": 0,
+        "actual_bets_submitted": 0,
+        "actual_trades_submitted": 0,
+    }
+
+
+def compact_pattern_detection_response(payload: dict[str, Any], limit: int = 10) -> dict[str, Any]:
+    cap = max(1, min(int(limit or 10), 100))
+    detections = []
+    for row in list(payload.get("detections") or [])[:cap]:
+        if not isinstance(row, dict):
+            continue
+        detections.append(
+            {
+                "detection_id": row.get("detection_id"),
+                "asset_symbol": row.get("asset_symbol"),
+                "asset_type": row.get("asset_type"),
+                "timeframe": row.get("timeframe"),
+                "pattern_id": row.get("pattern_id"),
+                "pattern_name": row.get("pattern_name"),
+                "pattern_family": row.get("pattern_family"),
+                "direction": row.get("direction"),
+                "detected_at": row.get("detected_at"),
+                "trigger_price": row.get("trigger_price"),
+                "invalidation_price": row.get("invalidation_price"),
+                "target_price": row.get("target_price"),
+                "pattern_quality_score": row.get("pattern_quality_score"),
+                "pattern_base_priority_score": row.get("pattern_base_priority_score"),
+                "volume_confirmation_score": row.get("volume_confirmation_score"),
+                "breakout_confirmation_score": row.get("breakout_confirmation_score"),
+                "failed_pattern_risk": row.get("failed_pattern_risk"),
+                "entry_trigger_price": row.get("entry_trigger_price"),
+                "stop_loss_level": row.get("stop_loss_level"),
+                "reward_risk_ratio": row.get("reward_risk_ratio"),
+            }
+        )
+    return {
+        "ok": bool(payload.get("ok", True)),
+        "status": payload.get("status", "patterns_detected"),
+        "items_scanned": int(payload.get("items_scanned", 0)),
+        "detections_created": int(payload.get("detections_created", len(detections))),
+        "detections": detections,
+        "provider_write": False,
+        "execution_allowed": False,
+        "live_execution_enabled": False,
+        "auto_execution": False,
+        "auto_execution_enabled": False,
+        "human_approval_required": True,
+        "actual_orders_submitted": 0,
+        "actual_bets_submitted": 0,
+        "actual_trades_submitted": 0,
+        "raw_payload_included": False,
+        "secrets_included": False,
+        "compact_response": True,
+    }
+
+
+def compact_pattern_review_queue_response(payload: dict[str, Any], limit: int = 10) -> dict[str, Any]:
+    cap = max(1, min(int(limit or 10), 100))
+    items = [_compact_pattern_item(item) for item in list(payload.get("items") or [])[:cap] if isinstance(item, dict)]
+    summary = dict(payload.get("summary") or {})
+    return {
+        "ok": bool(payload.get("ok", True)),
+        "status": payload.get("status", "ok"),
+        "count": int(payload.get("count", len(items))),
+        "total_count": int(summary.get("total_count", payload.get("count", len(items)))),
+        "active_review_count": int(summary.get("active_review_count", 0)),
+        "watchlist_review_count": int(summary.get("watchlist_review_count", 0)),
+        "low_priority_review_count": int(summary.get("low_priority_review_count", 0)),
+        "no_review_count": int(summary.get("no_review_count", 0)),
+        "no_trade_count": int(summary.get("no_trade_count", 0)),
+        "data_insufficient_count": int(summary.get("data_insufficient_count", 0)),
+        "status_counts": dict(summary.get("status_counts") or {}),
+        "pattern_counts": dict(summary.get("pattern_counts") or {}),
+        "liquidity_tier_counts": dict(summary.get("liquidity_tier_counts") or {}),
+        "items": items,
+        "storage_backend": payload.get("storage_backend", "file"),
+        "last_updated_at": payload.get("last_updated_at"),
+        "latest_run_id": payload.get("latest_run_id"),
+        "queue_read_ok": bool(payload.get("queue_read_ok", True)),
+        "queue_error_category": payload.get("queue_error_category"),
+        "storage": _compact_storage_health(payload),
+        "provider_write": False,
+        "execution_allowed": False,
+        "execution_allowed_count": 0,
+        "live_execution_enabled": False,
+        "auto_execution": False,
+        "auto_execution_enabled": False,
+        "human_approval_required": True,
+        "broker_order_execution_enabled": False,
+        "crypto_trade_execution_enabled": False,
+        "stock_trade_execution_enabled": False,
+        "actual_orders_submitted": 0,
+        "actual_bets_submitted": 0,
+        "actual_trades_submitted": 0,
+        "raw_payload_included": False,
+        "secrets_included": False,
+        "compact_response": True,
+    }
+
+
+def compact_small_account_review_response(payload: dict[str, Any], limit: int = 10) -> dict[str, Any]:
+    cap = max(1, min(int(limit or 10), 100))
+    items = [_compact_pattern_item(item) for item in list(payload.get("items") or [])[:cap] if isinstance(item, dict)]
+    analyst = payload.get("local_analyst_review") if isinstance(payload.get("local_analyst_review"), dict) else {}
+    return {
+        "ok": bool(payload.get("ok", True)),
+        "status": payload.get("status", "review_candidates_created"),
+        "provider_write": False,
+        "execution_allowed": False,
+        "live_execution_enabled": False,
+        "auto_execution": False,
+        "auto_execution_enabled": False,
+        "human_approval_required": True,
+        "items_scanned": int(payload.get("items_scanned", 0)),
+        "detections_created": int(payload.get("detections_created", 0)),
+        "review_queue_count": int(payload.get("review_queue_count", len(items))),
+        "active_review_count": int(payload.get("active_review_count", 0)),
+        "watchlist_review_count": int(payload.get("watchlist_review_count", 0)),
+        "no_review_count": int(payload.get("no_review_count", 0)),
+        "sample_items": items,
+        "local_analyst_review": {
+            "status": analyst.get("status"),
+            "enabled": bool(analyst.get("enabled", False)),
+            "external_model_called": False,
+            "recommended_action": analyst.get("recommended_action"),
+            "must_not_execute": True,
+            "reviewer_side_effects": "none",
+            "provider_write": False,
+            "execution_allowed": False,
+            "live_execution_enabled": False,
+            "auto_execution": False,
+            "auto_execution_enabled": False,
+            "human_approval_required": True,
+            "actual_orders_submitted": 0,
+            "actual_bets_submitted": 0,
+            "actual_trades_submitted": 0,
+        },
+        "persisted": bool(payload.get("persisted", False)),
+        "storage_backend": payload.get("storage_backend"),
+        "queue_write_path": payload.get("queue_write_path"),
+        "broker_order_execution_enabled": False,
+        "crypto_trade_execution_enabled": False,
+        "stock_trade_execution_enabled": False,
+        "actual_orders_submitted": 0,
+        "actual_bets_submitted": 0,
+        "actual_trades_submitted": 0,
+        "raw_payload_included": False,
+        "secrets_included": False,
+        "compact_response": True,
+    }
+
+
+def compact_pattern_calibration_response(payload: dict[str, Any], limit: int = 10) -> dict[str, Any]:
+    cap = max(1, min(int(limit or 10), 100))
+    segments = dict(payload.get("segments") or {})
+    segment_rows = []
+    for key, value in list(segments.items())[:cap]:
+        row = dict(value or {})
+        row["segment_key"] = key
+        segment_rows.append(row)
+    return {
+        "ok": bool(payload.get("ok", True)),
+        "status": payload.get("status", "insufficient_data"),
+        "created_at": payload.get("created_at"),
+        "record_count": int(payload.get("record_count", 0)),
+        "settled_count": int(payload.get("settled_count", 0)),
+        "sample_size": int(payload.get("sample_size", 0)),
+        "insufficient_sample": bool(payload.get("insufficient_sample", True)),
+        "performance_metrics": dict(payload.get("performance_metrics") or {}),
+        "segments": segment_rows,
+        "next_required_data": list(payload.get("next_required_data") or [])[:10],
+        "provider_write": False,
+        "execution_allowed": False,
+        "live_execution_enabled": False,
+        "auto_execution": False,
+        "auto_execution_enabled": False,
+        "human_approval_required": True,
+        "actual_orders_submitted": 0,
+        "actual_bets_submitted": 0,
+        "actual_trades_submitted": 0,
+        "raw_payload_included": False,
+        "secrets_included": False,
+        "compact_response": True,
+    }
+
+
+def compact_micro_outcome_calibration_response(payload: dict[str, Any], limit: int = 10) -> dict[str, Any]:
+    cap = max(1, min(int(limit or 10), 100))
+    records = []
+    for row in list(payload.get("records") or [])[:cap]:
+        if not isinstance(row, dict):
+            continue
+        records.append(
+            {
+                "detection_id": row.get("detection_id"),
+                "asset_symbol": row.get("asset_symbol"),
+                "pattern_id": row.get("pattern_id"),
+                "outcome_window": row.get("outcome_window"),
+                "data_resolution": row.get("data_resolution"),
+                "outcome_status": row.get("outcome_status"),
+                "final_outcome": row.get("final_outcome"),
+                "requested_window_seconds": row.get("requested_window_seconds"),
+                "effective_window_seconds": row.get("effective_window_seconds"),
+                "delayed_by_seconds": row.get("delayed_by_seconds"),
+                "delay_source": row.get("delay_source"),
+                "usable_for_calibration": bool(row.get("usable_for_calibration", False)),
+                "price_at_window": row.get("price_at_window"),
+                "max_favorable_excursion": row.get("max_favorable_excursion"),
+                "max_adverse_excursion": row.get("max_adverse_excursion"),
+                "data_resolution_insufficient": bool(row.get("data_resolution_insufficient", False)),
+            }
+        )
+    segments = dict(payload.get("segments") or {})
+    return {
+        "ok": bool(payload.get("ok", True)),
+        "status": payload.get("status", "insufficient_data"),
+        "created_at": payload.get("created_at"),
+        "detection_id": payload.get("detection_id"),
+        "data_resolution": payload.get("data_resolution"),
+        "record_count": int(payload.get("record_count", len(records))),
+        "settled_count": int(payload.get("settled_count", 0)),
+        "sample_size": int(payload.get("sample_size", 0)),
+        "insufficient_sample": bool(payload.get("insufficient_sample", True)),
+        "status_counts": dict(payload.get("status_counts") or {}),
+        "unsupported_windows": list(payload.get("unsupported_windows") or [])[:10],
+        "records": records,
+        "segments": dict(list(segments.items())[:cap]),
+        "provider_write": False,
+        "execution_allowed": False,
+        "live_execution_enabled": False,
+        "auto_execution": False,
+        "auto_execution_enabled": False,
+        "human_approval_required": True,
+        "actual_orders_submitted": 0,
+        "actual_bets_submitted": 0,
+        "actual_trades_submitted": 0,
+        "raw_payload_included": False,
+        "secrets_included": False,
+        "compact_response": True,
+    }
+
+
+def compact_broker_quality_response(payload: dict[str, Any], limit: int = 10) -> dict[str, Any]:
+    cap = max(1, min(int(limit or 10), 100))
+    brokers = []
+    for row in list(payload.get("brokers") or [])[:cap]:
+        if not isinstance(row, dict):
+            continue
+        brokers.append(
+            {
+                "broker_name": row.get("broker_name"),
+                "provider_type": row.get("provider_type"),
+                "asset_types_supported": list(row.get("asset_types_supported") or [])[:10],
+                "broker_quality_score": row.get("broker_quality_score"),
+                "broker_status": row.get("broker_status"),
+                "paper_or_sandbox_support": bool(row.get("paper_or_sandbox_support", False)),
+                "execution_restriction_risk": row.get("execution_restriction_risk"),
+                "compliance_risk_score": row.get("compliance_risk_score"),
+                "source_access_type": row.get("source_access_type"),
+                "current_phase_allowed": bool(row.get("current_phase_allowed", False)),
+                "future_paid_candidate": bool(row.get("future_paid_candidate", False)),
+                "requires_budget_approval": bool(row.get("requires_budget_approval", False)),
+                "approval_status": row.get("approval_status"),
+                "enabled": False,
+            }
+        )
+    return {
+        "ok": bool(payload.get("ok", True)),
+        "status": payload.get("status", "ok"),
+        "broker_count": int(payload.get("broker_count", len(brokers))),
+        "status_counts": dict(payload.get("status_counts") or {}),
+        "brokers": brokers,
+        "provider_write": False,
+        "execution_allowed": False,
+        "live_execution_enabled": False,
+        "auto_execution": False,
+        "auto_execution_enabled": False,
+        "human_approval_required": True,
+        "actual_orders_submitted": 0,
+        "actual_bets_submitted": 0,
+        "actual_trades_submitted": 0,
+        "raw_payload_included": False,
+        "secrets_included": False,
+        "compact_response": True,
+    }
+
+
+def compact_balance_sheet_risk_response(payload: dict[str, Any]) -> dict[str, Any]:
+    risk = dict(payload.get("balance_sheet_risk") or {})
+    return {
+        "ok": bool(payload.get("ok", True)),
+        "status": payload.get("status", "DATA_INSUFFICIENT"),
+        "symbol": payload.get("symbol"),
+        "source": payload.get("source"),
+        "data_insufficient": bool(risk.get("data_insufficient", True)),
+        "current_ratio": risk.get("current_ratio"),
+        "quick_ratio": risk.get("quick_ratio"),
+        "debt_to_equity": risk.get("debt_to_equity"),
+        "cash_to_debt": risk.get("cash_to_debt"),
+        "cash_runway_score": risk.get("cash_runway_score"),
+        "dilution_risk_score": risk.get("dilution_risk_score"),
+        "offering_risk_score": risk.get("offering_risk_score"),
+        "goodwill_risk_score": risk.get("goodwill_risk_score"),
+        "preferred_stock_risk_score": risk.get("preferred_stock_risk_score"),
+        "balance_sheet_quality_score": risk.get("balance_sheet_quality_score"),
+        "fundamental_risk_score": risk.get("fundamental_risk_score"),
+        "balance_sheet_risk_bucket": risk.get("balance_sheet_risk_bucket"),
+        "risk_blockers": list(risk.get("risk_blockers") or [])[:10],
+        "risk_warnings": list(risk.get("risk_warnings") or [])[:10],
+        "force_status": risk.get("force_status"),
+        "storage": _compact_storage_health(payload),
+        "provider_write": False,
+        "execution_allowed": False,
+        "live_execution_enabled": False,
+        "auto_execution": False,
+        "auto_execution_enabled": False,
+        "human_approval_required": True,
+        "actual_orders_submitted": 0,
+        "actual_bets_submitted": 0,
+        "actual_trades_submitted": 0,
+        "raw_payload_included": False,
+        "secrets_included": False,
+        "compact_response": True,
     }
 
 

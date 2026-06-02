@@ -679,10 +679,31 @@ class TestResponseCompactor(unittest.TestCase):
         self.assertFalse(report["provider_write"])
 
     def test_verbose_redaction(self):
-        payload = {"api_key": "x", "nested": [{"token": "y"}], "items": list(range(200)), "provider_payload": {"raw": 1}}
+        payload = {
+            "api_key": "x",
+            "nested": [{"token": "y"}],
+            "items": list(range(200)),
+            "provider_payload": {"raw": 1},
+            "order_payload": {"side": "BUY", "secret": "z"},
+            "broker_order_payload": {"symbol": "ABC"},
+            "sportsbook_bet_payload": {"selection": "HOME"},
+            "kalshi_order_payload": {"ticker": "KX"},
+            "crypto_trade_payload": {"swap": True},
+            "trade_payload": {"side": "SELL"},
+            "execution_payload": {"order_type": "market"},
+            "executable_order_payload": {"qty": 100},
+        }
         c = redact_and_limit_payload(payload, limit=25, verbose=True)
         self.assertEqual(c["api_key"], "[redacted]")
         self.assertEqual(c["provider_payload"], "[omitted]")
+        self.assertEqual(c["order_payload"], "[omitted]")
+        self.assertEqual(c["broker_order_payload"], "[omitted]")
+        self.assertEqual(c["sportsbook_bet_payload"], "[omitted]")
+        self.assertEqual(c["kalshi_order_payload"], "[omitted]")
+        self.assertEqual(c["crypto_trade_payload"], "[omitted]")
+        self.assertEqual(c["trade_payload"], "[omitted]")
+        self.assertEqual(c["execution_payload"], "[omitted]")
+        self.assertEqual(c["executable_order_payload"], "[omitted]")
         self.assertEqual(len(c["items"]), 25)
 
     def test_inventory_not_full_by_default(self):
