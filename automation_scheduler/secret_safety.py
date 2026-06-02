@@ -55,7 +55,6 @@ SECRET_VALUE_PATTERNS = (
     re.compile(r"\bbearer\s+[A-Za-z0-9._\-]{12,}\b", re.IGNORECASE),
     re.compile(r"\btoken\s+[A-Za-z0-9._\-]{12,}\b", re.IGNORECASE),
     re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----.*?-----END [A-Z ]*PRIVATE KEY-----", re.DOTALL),
-    re.compile(r"\b[A-Za-z0-9_\-=]{32,}\b"),
 )
 
 
@@ -67,6 +66,8 @@ def is_secret_key(key: str) -> bool:
 def looks_like_secret_value(value: str) -> bool:
     text = str(value or "")
     if not text.strip():
+        return False
+    if re.fullmatch(r"[a-f0-9]{32,128}", text.strip()):
         return False
     return any(pattern.search(text) for pattern in SECRET_VALUE_PATTERNS)
 

@@ -65,3 +65,6 @@ data/*.db
 *data
 # Logs
 *.log
+
+# Generated local reports
+reports/
