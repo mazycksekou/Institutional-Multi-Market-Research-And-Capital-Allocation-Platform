@@ -552,6 +552,110 @@ def run_golf_impact_diagnostics(
     )
 
 
+def get_combat_impact_readiness():
+    from .combat_impact_readiness import build_combat_impact_readiness
+
+    return build_combat_impact_readiness()
+
+
+def run_combat_impact_diagnostics(
+    *,
+    sport: str = "combat_sports",
+    market_type: str = "moneyline",
+    bout_context: dict | None = None,
+    fighter_a_context: dict | None = None,
+    fighter_b_context: dict | None = None,
+    striking_context: dict | None = None,
+    grappling_context: dict | None = None,
+    phase_context: dict | None = None,
+    damage_context: dict | None = None,
+    pace_cardio_context: dict | None = None,
+    matchup_context: dict | None = None,
+    ruleset_context: dict | None = None,
+    judging_referee_context: dict | None = None,
+    availability_context: dict | None = None,
+    incentive_context: dict | None = None,
+    calibration_context: dict | None = None,
+    film_tracking_context: dict | None = None,
+    dry_run: bool = True,
+):
+    from .combat_impact_report import build_combat_impact_diagnostics
+
+    return build_combat_impact_diagnostics(
+        sport=sport,
+        market_type=market_type,
+        bout_context=bout_context or {},
+        fighter_a_context=fighter_a_context or {},
+        fighter_b_context=fighter_b_context or {},
+        striking_context=striking_context or {},
+        grappling_context=grappling_context or {},
+        phase_context=phase_context or {},
+        damage_context=damage_context or {},
+        pace_cardio_context=pace_cardio_context or {},
+        matchup_context=matchup_context or {},
+        ruleset_context=ruleset_context or {},
+        judging_referee_context=judging_referee_context or {},
+        availability_context=availability_context or {},
+        incentive_context=incentive_context or {},
+        calibration_context=calibration_context or {},
+        film_tracking_context=film_tracking_context or {},
+        dry_run=dry_run,
+    )
+
+
+def get_tennis_impact_readiness():
+    from .tennis_impact_readiness import build_tennis_impact_readiness
+
+    return build_tennis_impact_readiness()
+
+
+def run_tennis_impact_diagnostics(
+    *,
+    sport: str = "tennis",
+    market_type: str = "moneyline",
+    match_context: dict | None = None,
+    player_a_context: dict | None = None,
+    player_b_context: dict | None = None,
+    serve_context: dict | None = None,
+    return_context: dict | None = None,
+    surface_context: dict | None = None,
+    format_context: dict | None = None,
+    pressure_context: dict | None = None,
+    tiebreak_context: dict | None = None,
+    matchup_context: dict | None = None,
+    conditions_context: dict | None = None,
+    availability_context: dict | None = None,
+    incentive_context: dict | None = None,
+    calibration_context: dict | None = None,
+    point_context: dict | None = None,
+    tracking_context: dict | None = None,
+    dry_run: bool = True,
+):
+    from .tennis_impact_report import build_tennis_impact_diagnostics
+
+    return build_tennis_impact_diagnostics(
+        sport=sport,
+        market_type=market_type,
+        match_context=match_context or {},
+        player_a_context=player_a_context or {},
+        player_b_context=player_b_context or {},
+        serve_context=serve_context or {},
+        return_context=return_context or {},
+        surface_context=surface_context or {},
+        format_context=format_context or {},
+        pressure_context=pressure_context or {},
+        tiebreak_context=tiebreak_context or {},
+        matchup_context=matchup_context or {},
+        conditions_context=conditions_context or {},
+        availability_context=availability_context or {},
+        incentive_context=incentive_context or {},
+        calibration_context=calibration_context or {},
+        point_context=point_context or {},
+        tracking_context=tracking_context or {},
+        dry_run=dry_run,
+    )
+
+
 def get_strategy_registry_snapshot(base_data_dir: str | None = None):
     from .strategy_registry import compact_strategy_registry
 

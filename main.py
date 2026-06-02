@@ -49,6 +49,8 @@ from automation_scheduler.response_compactor import (
     compact_basketball_player_impact_readiness_response,
     compact_basketball_player_impact_response,
     compact_broker_quality_response,
+    compact_combat_impact_diagnostics_response,
+    compact_combat_impact_readiness_response,
     compact_micro_outcome_calibration_response,
     compact_pattern_calibration_response,
     compact_pattern_detection_response,
@@ -83,6 +85,8 @@ from automation_scheduler.response_compactor import (
     compact_soccer_impact_diagnostics_response,
     compact_soccer_impact_readiness_response,
     compact_strategy_readiness_response,
+    compact_tennis_impact_diagnostics_response,
+    compact_tennis_impact_readiness_response,
     compact_validation_response,
     redact_and_limit_payload,
 )
@@ -1223,6 +1227,53 @@ class AutomationGolfImpactDiagnosticsRequest(BaseModel):
     incentive_context: dict[str, Any] = Field(default_factory=dict)
     calibration_context: dict[str, Any] = Field(default_factory=dict)
     simulation_context: dict[str, Any] = Field(default_factory=dict)
+    tracking_context: dict[str, Any] = Field(default_factory=dict)
+
+
+class AutomationCombatImpactDiagnosticsRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", protected_namespaces=())
+
+    sport: str = "combat_sports"
+    market_type: str = "moneyline"
+    dry_run: bool = True
+    bout_context: dict[str, Any] = Field(default_factory=dict)
+    fighter_a_context: dict[str, Any] = Field(default_factory=dict)
+    fighter_b_context: dict[str, Any] = Field(default_factory=dict)
+    striking_context: dict[str, Any] = Field(default_factory=dict)
+    grappling_context: dict[str, Any] = Field(default_factory=dict)
+    phase_context: dict[str, Any] = Field(default_factory=dict)
+    damage_context: dict[str, Any] = Field(default_factory=dict)
+    pace_cardio_context: dict[str, Any] = Field(default_factory=dict)
+    matchup_context: dict[str, Any] = Field(default_factory=dict)
+    ruleset_context: dict[str, Any] = Field(default_factory=dict)
+    judging_referee_context: dict[str, Any] = Field(default_factory=dict)
+    availability_context: dict[str, Any] = Field(default_factory=dict)
+    incentive_context: dict[str, Any] = Field(default_factory=dict)
+    calibration_context: dict[str, Any] = Field(default_factory=dict)
+    film_tracking_context: dict[str, Any] = Field(default_factory=dict)
+
+
+class AutomationTennisImpactDiagnosticsRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", protected_namespaces=())
+
+    sport: str = "tennis"
+    market_type: str = "moneyline"
+    dry_run: bool = True
+    match_context: dict[str, Any] = Field(default_factory=dict)
+    player_a_context: dict[str, Any] = Field(default_factory=dict)
+    player_b_context: dict[str, Any] = Field(default_factory=dict)
+    serve_context: dict[str, Any] = Field(default_factory=dict)
+    return_context: dict[str, Any] = Field(default_factory=dict)
+    surface_context: dict[str, Any] = Field(default_factory=dict)
+    format_context: dict[str, Any] = Field(default_factory=dict)
+    pressure_context: dict[str, Any] = Field(default_factory=dict)
+    tiebreak_context: dict[str, Any] = Field(default_factory=dict)
+    matchup_context: dict[str, Any] = Field(default_factory=dict)
+    conditions_context: dict[str, Any] = Field(default_factory=dict)
+    availability_context: dict[str, Any] = Field(default_factory=dict)
+    incentive_context: dict[str, Any] = Field(default_factory=dict)
+    calibration_context: dict[str, Any] = Field(default_factory=dict)
+    point_context: dict[str, Any] = Field(default_factory=dict)
     tracking_context: dict[str, Any] = Field(default_factory=dict)
 
 
@@ -3492,6 +3543,107 @@ async def automation_golf_impact_diagnostics_endpoint(
     return compact
 
 
+@app.get("/api/automation/combat-impact-readiness", operation_id="getAutomationCombatImpactReadiness")
+async def get_automation_combat_impact_readiness_endpoint(
+    verbose: bool = Query(default=False),
+    include_debug: bool = Query(default=False),
+    limit: int = Query(default=50),
+):
+    cap = min(max(int(limit), 1), 100 if verbose else 50)
+    payload = automation_scheduler.get_combat_impact_readiness()
+    compact = compact_combat_impact_readiness_response(payload, limit=cap)
+    if verbose or include_debug:
+        compact["debug"] = redact_and_limit_payload(payload, limit=cap, verbose=verbose)
+    return compact
+
+
+@app.post("/api/automation/combat-impact-diagnostics", operation_id="runAutomationCombatImpactDiagnostics")
+async def automation_combat_impact_diagnostics_endpoint(
+    payload: AutomationCombatImpactDiagnosticsRequest,
+    verbose: bool = Query(default=False),
+    include_debug: bool = Query(default=False),
+    limit: int = Query(default=10),
+):
+    if payload.dry_run is not True:
+        raise HTTPException(status_code=400, detail="combat impact diagnostics only supports dry_run=true")
+    cap = min(max(int(limit), 1), 100 if verbose else 10)
+    result = automation_scheduler.run_combat_impact_diagnostics(
+        sport=payload.sport,
+        market_type=payload.market_type,
+        bout_context=payload.bout_context,
+        fighter_a_context=payload.fighter_a_context,
+        fighter_b_context=payload.fighter_b_context,
+        striking_context=payload.striking_context,
+        grappling_context=payload.grappling_context,
+        phase_context=payload.phase_context,
+        damage_context=payload.damage_context,
+        pace_cardio_context=payload.pace_cardio_context,
+        matchup_context=payload.matchup_context,
+        ruleset_context=payload.ruleset_context,
+        judging_referee_context=payload.judging_referee_context,
+        availability_context=payload.availability_context,
+        incentive_context=payload.incentive_context,
+        calibration_context=payload.calibration_context,
+        film_tracking_context=payload.film_tracking_context,
+        dry_run=True,
+    )
+    compact = compact_combat_impact_diagnostics_response(result, limit=cap)
+    if verbose or include_debug:
+        compact["debug"] = redact_and_limit_payload(result, limit=cap, verbose=verbose)
+    return compact
+
+
+@app.get("/api/automation/tennis-impact-readiness", operation_id="getAutomationTennisImpactReadiness")
+async def get_automation_tennis_impact_readiness_endpoint(
+    verbose: bool = Query(default=False),
+    include_debug: bool = Query(default=False),
+    limit: int = Query(default=50),
+):
+    cap = min(max(int(limit), 1), 100 if verbose else 50)
+    payload = automation_scheduler.get_tennis_impact_readiness()
+    compact = compact_tennis_impact_readiness_response(payload, limit=cap)
+    if verbose or include_debug:
+        compact["debug"] = redact_and_limit_payload(payload, limit=cap, verbose=verbose)
+    return compact
+
+
+@app.post("/api/automation/tennis-impact-diagnostics", operation_id="runAutomationTennisImpactDiagnostics")
+async def automation_tennis_impact_diagnostics_endpoint(
+    payload: AutomationTennisImpactDiagnosticsRequest,
+    verbose: bool = Query(default=False),
+    include_debug: bool = Query(default=False),
+    limit: int = Query(default=10),
+):
+    if payload.dry_run is not True:
+        raise HTTPException(status_code=400, detail="tennis impact diagnostics only supports dry_run=true")
+    cap = min(max(int(limit), 1), 100 if verbose else 10)
+    result = automation_scheduler.run_tennis_impact_diagnostics(
+        sport=payload.sport,
+        market_type=payload.market_type,
+        match_context=payload.match_context,
+        player_a_context=payload.player_a_context,
+        player_b_context=payload.player_b_context,
+        serve_context=payload.serve_context,
+        return_context=payload.return_context,
+        surface_context=payload.surface_context,
+        format_context=payload.format_context,
+        pressure_context=payload.pressure_context,
+        tiebreak_context=payload.tiebreak_context,
+        matchup_context=payload.matchup_context,
+        conditions_context=payload.conditions_context,
+        availability_context=payload.availability_context,
+        incentive_context=payload.incentive_context,
+        calibration_context=payload.calibration_context,
+        point_context=payload.point_context,
+        tracking_context=payload.tracking_context,
+        dry_run=True,
+    )
+    compact = compact_tennis_impact_diagnostics_response(result, limit=cap)
+    if verbose or include_debug:
+        compact["debug"] = redact_and_limit_payload(result, limit=cap, verbose=verbose)
+    return compact
+
+
 @app.post("/api/automation/extreme-signal-diagnostics", operation_id="runAutomationExtremeSignalDiagnostics")
 async def automation_extreme_signal_diagnostics_endpoint(
     payload: AutomationExtremeSignalDiagnosticsRequest,
@@ -4334,6 +4486,10 @@ PUBLIC_OPENAPI_PATH_METHODS = frozenset({
     ("/api/automation/baseball-impact-diagnostics", "post"),
     ("/api/automation/golf-impact-readiness", "get"),
     ("/api/automation/golf-impact-diagnostics", "post"),
+    ("/api/automation/combat-impact-readiness", "get"),
+    ("/api/automation/combat-impact-diagnostics", "post"),
+    ("/api/automation/tennis-impact-readiness", "get"),
+    ("/api/automation/tennis-impact-diagnostics", "post"),
     ("/api/automation/advanced-red-team-report", "get"),
     ("/api/automation/extreme-randomness-report", "get"),
     ("/api/automation/extreme-signal-diagnostics", "post"),

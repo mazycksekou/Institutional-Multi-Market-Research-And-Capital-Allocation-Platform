@@ -1462,6 +1462,277 @@ def compact_golf_impact_diagnostics_response(payload: dict[str, Any], limit: int
     }
 
 
+def _compact_combat_section(section: Any, keys: list[str], limit: int = 10) -> dict[str, Any]:
+    row = section if isinstance(section, dict) else {}
+    out: dict[str, Any] = {}
+    for key in keys:
+        value = row.get(key)
+        if isinstance(value, list):
+            out[key] = value[:limit]
+        elif isinstance(value, dict):
+            out[key] = redact_and_limit_payload(value, limit=limit)
+        else:
+            out[key] = value
+    return out
+
+
+def compact_combat_impact_readiness_response(payload: dict[str, Any], limit: int = 50) -> dict[str, Any]:
+    cap = max(1, min(int(limit or 50), 100))
+    no_spend = payload.get("no_spend_policy") if isinstance(payload.get("no_spend_policy"), dict) else {}
+    return {
+        "ok": bool(payload.get("ok", True)),
+        "status": payload.get("status", "combat_impact_readiness"),
+        "supported_sports": list(payload.get("supported_sports") or [])[:cap],
+        "supported_markets": list(payload.get("supported_markets") or [])[:cap],
+        "supported_phases": list(payload.get("supported_phases") or [])[:cap],
+        "data_tier_requirements": redact_and_limit_payload(payload.get("data_tier_requirements") or {}, limit=cap),
+        "mma_readiness": redact_and_limit_payload(payload.get("mma_readiness") or {}, limit=cap),
+        "ufc_readiness": redact_and_limit_payload(payload.get("ufc_readiness") or {}, limit=cap),
+        "boxing_readiness": redact_and_limit_payload(payload.get("boxing_readiness") or {}, limit=cap),
+        "missing_data_by_market": redact_and_limit_payload(payload.get("missing_data_by_market") or {}, limit=cap),
+        "calibration_requirements": list(payload.get("calibration_requirements") or [])[:cap],
+        "no_spend_policy": {
+            "paid_provider_required": _safe_policy_bool(no_spend.get("paid_provider_required", False)),
+            "new_api_keys_required": _safe_policy_bool(no_spend.get("new_api_keys_required", False)),
+            "film_tracking_optional": _safe_policy_bool(no_spend.get("film_tracking_optional", True)),
+            "external_provider_calls_in_tests": _safe_policy_bool(no_spend.get("external_provider_calls_in_tests", False)),
+        },
+        "forbidden_features": list(payload.get("forbidden_features") or [])[:cap],
+        "provider_write": False,
+        "execution_allowed": False,
+        "live_execution_enabled": False,
+        "auto_execution": False,
+        "auto_execution_enabled": False,
+        "human_approval_required": True,
+        "owner_approval_required": True,
+        "actual_orders_submitted": 0,
+        "actual_bets_submitted": 0,
+        "actual_trades_submitted": 0,
+        "raw_payload_included": False,
+        "raw_payload_exposed": False,
+        "secrets_included": False,
+        "compact_response": True,
+    }
+
+
+def compact_combat_impact_diagnostics_response(payload: dict[str, Any], limit: int = 10) -> dict[str, Any]:
+    cap = max(1, min(int(limit or 10), 100))
+    data = payload.get("data_availability") if isinstance(payload.get("data_availability"), dict) else {}
+    market = payload.get("market_relevance") if isinstance(payload.get("market_relevance"), dict) else {}
+    calibration = payload.get("calibration") if isinstance(payload.get("calibration"), dict) else {}
+    red_team = payload.get("red_team") if isinstance(payload.get("red_team"), dict) else {}
+    return {
+        "ok": bool(payload.get("ok", True)),
+        "status": payload.get("status", "combat_phase_control_impact_complete"),
+        "sport": payload.get("sport"),
+        "market_type": payload.get("market_type"),
+        "data_tier": int(payload.get("data_tier", 0) or 0),
+        "tier_name": payload.get("tier_name"),
+        "fighter_level_allowed": bool(payload.get("fighter_level_allowed", False)),
+        "phase_control_allowed": bool(payload.get("phase_control_allowed", False)),
+        "damage_durability_allowed": bool(payload.get("damage_durability_allowed", False)),
+        "judging_referee_allowed": bool(payload.get("judging_referee_allowed", False)),
+        "combat_impact_score": payload.get("combat_impact_score", 0.0),
+        "recommended_review_status": payload.get("recommended_review_status"),
+        "striking_impact": _compact_combat_section(payload.get("striking_impact"), ["striking_impact_score", "volume_score", "accuracy_score", "defense_score", "power_score", "knockdown_threat_score", "damage_absorption_risk_score", "boxing_punch_profile_score", "striking_prop_relevance", "ko_tko_relevance_modifier", "over_under_rounds_modifier", "insufficient_sample", "limited_proxy", "punch_tracking_fabricated", "missing_inputs", "no_bet_reasons"], cap),
+        "grappling_control_impact": _compact_combat_section(payload.get("grappling_control_impact"), ["grappling_impact_score", "takedown_threat_score", "takedown_defense_score", "control_time_score", "top_control_score", "bottom_survival_score", "scramble_score", "submission_threat_score", "submission_defense_score", "ground_damage_score", "grappling_prop_relevance", "submission_relevance_modifier", "decision_relevance_modifier", "control_time_fabricated", "submission_quality_fabricated", "missing_inputs", "no_bet_reasons"], cap),
+        "phase_control_context": _compact_combat_section(payload.get("phase_control_context"), ["phase_control_score", "preferred_phase", "fighter_a_phase_edges", "fighter_b_phase_edges", "phase_volatility_score", "phase_mismatch_reasons", "market_relevance_modifier", "phase_control_fabricated", "missing_inputs", "no_bet_reasons"], cap),
+        "damage_durability_context": _compact_combat_section(payload.get("damage_durability_context"), ["damage_threat_score", "durability_risk_score", "chin_risk_score", "body_damage_risk_score", "leg_damage_risk_score", "cut_stoppage_risk_score", "doctor_stoppage_risk_score", "attritional_damage_score", "finish_volatility_score", "durability_fabricated", "medical_suspension_fabricated", "missing_inputs", "no_bet_reasons"], cap),
+        "pace_cardio_context": _compact_combat_section(payload.get("pace_cardio_context"), ["pace_score", "cardio_score", "round_progression_score", "late_fight_risk_score", "five_round_readiness_score", "gas_tank_warning_score", "over_under_rounds_modifier", "late_finish_relevance", "round_decline_fabricated", "weight_cut_fabricated", "missing_inputs", "no_bet_reasons"], cap),
+        "matchup_context": _compact_combat_section(payload.get("matchup_context"), ["matchup_advantage_score", "matchup_risk_score", "striking_matchup_score", "grappling_matchup_score", "phase_matchup_score", "durability_matchup_score", "cardio_matchup_score", "tactical_mismatch_reasons", "market_specific_matchup_notes", "stance_fabricated", "reach_fabricated", "no_bet_reasons"], cap),
+        "availability_context": _compact_combat_section(payload.get("availability_context"), ["availability_score", "injury_risk_score", "weight_cut_risk_score", "short_notice_risk_score", "layoff_risk_score", "camp_stability_score", "age_curve_risk_score", "fight_week_stability_score", "confidence_cap_reason", "injury_status_fabricated", "weight_cut_fabricated", "camp_context_fabricated", "health_fabricated", "missing_inputs", "no_bet_reasons"], cap),
+        "ruleset_referee_judging_context": _compact_combat_section(payload.get("ruleset_referee_judging_context"), ["ruleset_context_score", "five_round_context_score", "referee_stoppage_modifier", "referee_standup_modifier", "judging_volatility_score", "decision_market_risk_score", "draw_or_split_decision_risk_score", "ruleset", "referee_tendency_fabricated", "judge_tendency_fabricated", "missing_inputs", "no_bet_reasons"], cap),
+        "incentive_context": _compact_combat_section(payload.get("incentive_context"), ["incentive_context_status", "incentive_behavior_score", "motivation_alignment_score", "finish_chase_risk", "narrative_overfit_risk", "retirement_or_shutdown_risk", "confidence_modifier", "market_relevance_modifier", "incentive_is_standalone_edge", "no_bet_reasons"], cap),
+        "market_relevance": _compact_combat_section(market, ["market_relevance_scores", "strongest_market_links", "weak_market_links", "no_bet_market_reasons", "moneyline_relevance", "method_relevance", "round_total_relevance", "distance_relevance", "fighter_prop_relevance", "boxing_prop_relevance", "market_confidence_caps", "selected_market_type", "selected_market_relevance_score"], cap),
+        "calibration_status": payload.get("calibration_status", calibration.get("calibration_status", "insufficient_data")),
+        "calibration": _compact_combat_section(calibration, ["calibration_status", "sample_size", "matched_outcomes_count", "insufficient_sample", "hit_rate", "false_positive_rate", "confidence_cap", "exact_round_extra_conservative", "split_decision_extra_conservative", "next_required_data", "calibration_buckets"], cap),
+        "data_availability": _compact_combat_section(data, ["status", "sport", "data_tier", "tier_name", "fighter_level_allowed", "striking_level_allowed", "grappling_level_allowed", "phase_control_allowed", "damage_durability_allowed", "judging_referee_allowed", "calibration_allowed", "available_field_groups", "missing_field_groups", "confidence_cap", "confidence_cap_reason", "no_fabrication", "phase_control_not_fabricated", "punch_tracking_not_fabricated", "grappling_control_not_fabricated", "durability_not_fabricated", "injury_status_not_fabricated", "weight_cut_not_fabricated", "camp_context_not_fabricated", "referee_tendency_not_fabricated", "judge_tendency_not_fabricated", "next_data_to_collect"], cap),
+        "red_team": _compact_combat_section(red_team, ["red_team_status", "downgrade_score", "recommended_action_adjustment", "no_bet_reasons", "red_team_reasons", "missing_inputs", "confidence_cap_reason", "red_team_only"], cap),
+        "markets_to_review": list(payload.get("markets_to_review") or [])[:cap],
+        "no_bet_reasons": list(payload.get("no_bet_reasons") or [])[:cap],
+        "missing_inputs": list(payload.get("missing_inputs") or [])[:cap],
+        "next_data_to_collect": list(payload.get("next_data_to_collect") or [])[:cap],
+        "provider_write": False,
+        "execution_allowed": False,
+        "live_execution_enabled": False,
+        "auto_execution": False,
+        "auto_execution_enabled": False,
+        "human_approval_required": True,
+        "owner_approval_required": True,
+        "actual_orders_submitted": 0,
+        "actual_bets_submitted": 0,
+        "actual_trades_submitted": 0,
+        "raw_payload_included": False,
+        "raw_payload_exposed": False,
+        "secrets_included": False,
+        "compact_response": True,
+    }
+
+
+def _compact_tennis_section(section: Any, keys: list[str], limit: int = 10) -> dict[str, Any]:
+    row = section if isinstance(section, dict) else {}
+    out: dict[str, Any] = {}
+    for key in keys:
+        value = row.get(key)
+        if isinstance(value, list):
+            out[key] = value[:limit]
+        elif isinstance(value, dict):
+            out[key] = redact_and_limit_payload(value, limit=limit)
+        else:
+            out[key] = value
+    return out
+
+
+def compact_tennis_impact_readiness_response(payload: dict[str, Any], limit: int = 50) -> dict[str, Any]:
+    cap = max(1, min(int(limit or 50), 100))
+    no_spend = payload.get("no_spend_policy") if isinstance(payload.get("no_spend_policy"), dict) else {}
+    return {
+        "ok": bool(payload.get("ok", True)),
+        "status": payload.get("status", "tennis_impact_readiness"),
+        "supported_sports": list(payload.get("supported_sports") or [])[:cap],
+        "supported_markets": list(payload.get("supported_markets") or [])[:cap],
+        "supported_contexts": list(payload.get("supported_contexts") or [])[:cap],
+        "data_tier_requirements": redact_and_limit_payload(payload.get("data_tier_requirements") or {}, limit=cap),
+        "tennis_readiness": redact_and_limit_payload(payload.get("tennis_readiness") or {}, limit=cap),
+        "atp_readiness": redact_and_limit_payload(payload.get("atp_readiness") or {}, limit=cap),
+        "wta_readiness": redact_and_limit_payload(payload.get("wta_readiness") or {}, limit=cap),
+        "missing_data_by_market": redact_and_limit_payload(payload.get("missing_data_by_market") or {}, limit=cap),
+        "calibration_requirements": list(payload.get("calibration_requirements") or [])[:cap],
+        "no_spend_policy": {
+            "paid_provider_required": _safe_policy_bool(no_spend.get("paid_provider_required", False)),
+            "new_provider_calls_added": _safe_policy_bool(no_spend.get("new_provider_calls_added", False)),
+            "mandatory_api_key_required": _safe_policy_bool(no_spend.get("mandatory_api_key_required", False)),
+            "heavy_ml_training_added": _safe_policy_bool(no_spend.get("heavy_ml_training_added", False)),
+            "model_training_added": _safe_policy_bool(no_spend.get("model_training_added", False)),
+        },
+        "forbidden_features": list(payload.get("forbidden_features") or [])[:cap],
+        "provider_write": False,
+        "execution_allowed": False,
+        "live_execution_enabled": False,
+        "auto_execution": False,
+        "auto_execution_enabled": False,
+        "human_approval_required": True,
+        "owner_approval_required": True,
+        "actual_orders_submitted": 0,
+        "actual_bets_submitted": 0,
+        "actual_trades_submitted": 0,
+        "raw_payload_included": False,
+        "raw_payload_exposed": False,
+        "secrets_included": False,
+        "compact_response": True,
+    }
+
+
+def compact_tennis_impact_diagnostics_response(payload: dict[str, Any], limit: int = 10) -> dict[str, Any]:
+    cap = max(1, min(int(limit or 10), 100))
+    data = payload.get("data_availability") if isinstance(payload.get("data_availability"), dict) else {}
+    serve = payload.get("serve_impact") if isinstance(payload.get("serve_impact"), dict) else {}
+    ret = payload.get("return_impact") if isinstance(payload.get("return_impact"), dict) else {}
+    surface = payload.get("surface_context") if isinstance(payload.get("surface_context"), dict) else {}
+    fmt = payload.get("format_markov_context") if isinstance(payload.get("format_markov_context"), dict) else {}
+    matchup = payload.get("matchup_context") if isinstance(payload.get("matchup_context"), dict) else {}
+    pressure = payload.get("pressure_tiebreak_context") if isinstance(payload.get("pressure_tiebreak_context"), dict) else {}
+    availability = payload.get("availability_context") if isinstance(payload.get("availability_context"), dict) else {}
+    incentive = payload.get("incentive_context") if isinstance(payload.get("incentive_context"), dict) else {}
+    market = payload.get("market_relevance") if isinstance(payload.get("market_relevance"), dict) else {}
+    calibration = payload.get("calibration") if isinstance(payload.get("calibration"), dict) else {}
+    red_team = payload.get("red_team") if isinstance(payload.get("red_team"), dict) else {}
+    return {
+        "ok": bool(payload.get("ok", True)),
+        "status": payload.get("status", "tennis_serve_return_impact_complete"),
+        "sport": payload.get("sport"),
+        "market_type": payload.get("market_type"),
+        "data_tier": int(payload.get("data_tier", 0) or 0),
+        "tier_name": payload.get("tier_name"),
+        "player_level_allowed": bool(payload.get("player_level_allowed", False)),
+        "serve_return_allowed": bool(payload.get("serve_return_allowed", False)),
+        "surface_matchup_allowed": bool(payload.get("surface_matchup_allowed", False)),
+        "point_level_allowed": bool(payload.get("point_level_allowed", False)),
+        "tracking_level_allowed": bool(payload.get("tracking_level_allowed", False)),
+        "tennis_impact_score": payload.get("tennis_impact_score", 0.0),
+        "recommended_review_status": payload.get("recommended_review_status"),
+        "serve_impact": _compact_tennis_section(
+            serve,
+            ["serve_impact_score", "hold_stability_score", "first_serve_score", "second_serve_resilience_score", "ace_pressure_score", "double_fault_risk_score", "break_point_save_score", "service_game_volatility_score", "surface_adjusted_serve_score", "ace_prop_relevance", "double_fault_prop_relevance", "total_games_modifier", "serve_placement_fabricated", "serve_speed_fabricated", "confidence_cap_reason", "insufficient_sample", "limited_proxy", "missing_inputs", "no_bet_reasons"],
+            cap,
+        ),
+        "return_impact": _compact_tennis_section(
+            ret,
+            ["return_impact_score", "break_threat_score", "first_serve_return_score", "second_serve_attack_score", "break_point_conversion_score", "return_pressure_score", "return_game_volatility_score", "surface_adjusted_return_score", "break_prop_relevance", "under_total_modifier", "game_handicap_modifier", "return_depth_fabricated", "confidence_cap_reason", "insufficient_sample", "limited_proxy", "missing_inputs", "no_bet_reasons"],
+            cap,
+        ),
+        "surface_context": _compact_tennis_section(
+            surface,
+            ["surface_fit_score", "court_speed_fit_score", "indoor_outdoor_fit_score", "altitude_conditions_score", "surface_hold_break_modifier", "total_games_surface_modifier", "tiebreak_surface_modifier", "court_speed_fabricated", "ball_type_fabricated", "weather_conditions_fabricated", "missing_inputs", "no_bet_reasons"],
+            cap,
+        ),
+        "format_markov_context": _compact_tennis_section(
+            fmt,
+            ["markov_context_score", "hold_break_balance_score", "match_win_relevance_score", "set_market_relevance_score", "total_games_relevance_score", "tiebreak_relevance_score", "correct_score_relevance_score", "game_handicap_relevance_score", "format_confidence_cap", "best_of", "markov_distribution_fabricated", "limited_proxy", "insufficient_sample", "missing_inputs", "no_bet_reasons"],
+            cap,
+        ),
+        "matchup_context": _compact_tennis_section(
+            matchup,
+            ["matchup_advantage_score", "matchup_risk_score", "serve_matchup_score", "return_matchup_score", "rally_matchup_score", "handedness_matchup_score", "handedness_fabricated", "shot_pattern_fabricated", "head_to_head_weight", "tactical_mismatch_reasons", "no_bet_reasons", "market_specific_matchup_notes", "moneyline_relevance", "total_games_relevance", "handicap_relevance", "player_prop_relevance", "missing_inputs"],
+            cap,
+        ),
+        "pressure_tiebreak_context": _compact_tennis_section(
+            pressure,
+            ["pressure_score", "break_point_pressure_score", "tiebreak_skill_score", "tiebreak_likelihood_modifier", "first_set_pressure_score", "close_set_volatility_score", "pressure_confidence_cap", "clutch_is_standalone_edge", "missing_inputs", "no_bet_reasons"],
+            cap,
+        ),
+        "availability_context": _compact_tennis_section(
+            availability,
+            ["availability_score", "injury_risk_score", "retirement_risk_score", "fatigue_score", "schedule_load_score", "travel_adjustment_score", "surface_transition_risk_score", "confidence_cap_reason", "injury_status_fabricated", "retirement_risk_fabricated", "missing_inputs", "no_bet_reasons"],
+            cap,
+        ),
+        "incentive_context": _compact_tennis_section(
+            incentive,
+            ["incentive_context_status", "incentive_behavior_score", "motivation_alignment_score", "narrative_overfit_risk", "retirement_or_shutdown_risk", "confidence_modifier", "market_relevance_modifier", "incentive_is_standalone_edge", "motivation_fabricated", "missing_inputs", "no_bet_reasons"],
+            cap,
+        ),
+        "market_relevance": _compact_tennis_section(
+            market,
+            ["market_relevance_scores", "strongest_market_links", "weak_market_links", "no_bet_market_reasons", "moneyline_relevance", "handicap_relevance", "total_games_relevance", "set_market_relevance", "tiebreak_relevance", "player_prop_relevance", "selected_market_type", "selected_market_relevance_score", "market_confidence_caps"],
+            cap,
+        ),
+        "calibration_status": payload.get("calibration_status", calibration.get("calibration_status", "insufficient_data")),
+        "calibration": _compact_tennis_section(
+            calibration,
+            ["calibration_status", "sample_size", "matched_outcomes_count", "insufficient_sample", "hit_rate", "false_positive_rate", "confidence_cap", "next_required_data", "calibration_buckets", "correct_score_extra_conservative", "tiebreak_extra_conservative"],
+            cap,
+        ),
+        "data_availability": _compact_tennis_section(
+            data,
+            ["status", "sport", "data_tier", "tier_name", "player_level_allowed", "serve_return_allowed", "surface_matchup_allowed", "point_level_allowed", "tracking_level_allowed", "calibration_allowed", "available_field_groups", "missing_field_groups", "confidence_cap", "confidence_cap_reason", "no_fabrication", "next_data_to_collect"],
+            cap,
+        ),
+        "red_team": _compact_tennis_section(
+            red_team,
+            ["red_team_status", "downgrade_score", "recommended_action_adjustment", "no_bet_reasons", "red_team_reasons", "missing_inputs", "confidence_cap_reason", "red_team_only"],
+            cap,
+        ),
+        "markets_to_review": list(payload.get("markets_to_review") or [])[:cap],
+        "no_bet_reasons": list(payload.get("no_bet_reasons") or [])[:cap],
+        "missing_inputs": list(payload.get("missing_inputs") or [])[:cap],
+        "next_data_to_collect": list(payload.get("next_data_to_collect") or [])[:cap],
+        "provider_write": False,
+        "execution_allowed": False,
+        "live_execution_enabled": False,
+        "auto_execution": False,
+        "auto_execution_enabled": False,
+        "human_approval_required": True,
+        "owner_approval_required": True,
+        "actual_orders_submitted": 0,
+        "actual_bets_submitted": 0,
+        "actual_trades_submitted": 0,
+        "raw_payload_included": False,
+        "raw_payload_exposed": False,
+        "secrets_included": False,
+        "compact_response": True,
+    }
+
+
 def compact_health_response(payload: dict[str, Any]) -> dict[str, Any]:
     return {
         "ok": bool(payload.get("ok", True)),
