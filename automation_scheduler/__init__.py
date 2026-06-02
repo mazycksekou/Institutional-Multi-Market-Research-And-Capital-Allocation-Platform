@@ -321,6 +321,7 @@ def run_football_impact_diagnostics(
     availability_context: dict | None = None,
     incentive_context: dict | None = None,
     calibration_context: dict | None = None,
+    tracking_context: dict | None = None,
     dry_run: bool = True,
 ):
     from .football_impact_report import build_football_impact_diagnostics
@@ -336,6 +337,7 @@ def run_football_impact_diagnostics(
         availability_context=availability_context or {},
         incentive_context=incentive_context or {},
         calibration_context=calibration_context or {},
+        tracking_context=tracking_context or {},
         dry_run=dry_run,
     )
 
@@ -410,6 +412,28 @@ def get_strategy_readiness(base_data_dir: str | None = None):
     from .strategy_readiness_report import build_strategy_readiness_report
 
     return build_strategy_readiness_report(base_data_dir=_data_dir(base_data_dir))
+
+
+def get_basketball_player_impact_readiness(base_data_dir: str | None = None):
+    from .basketball_player_impact_readiness import build_basketball_player_impact_readiness
+
+    return build_basketball_player_impact_readiness(base_data_dir=_data_dir(base_data_dir))
+
+
+def run_automation_basketball_player_impact(
+    candidate: dict | None = None,
+    *,
+    outcome_records: list[dict] | None = None,
+    red_team_provider: str | None = None,
+    base_data_dir: str | None = None,
+):
+    from .basketball_player_impact import run_basketball_player_impact
+
+    return run_basketball_player_impact(
+        candidate or {},
+        outcome_records=outcome_records or [],
+        red_team_provider=red_team_provider,
+    )
 
 
 def get_strategy_disagreements(*, base_data_dir: str | None = None, limit: int = 100):

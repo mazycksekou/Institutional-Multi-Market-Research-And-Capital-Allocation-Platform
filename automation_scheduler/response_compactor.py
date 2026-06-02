@@ -69,6 +69,7 @@ def _redact(payload: Any) -> Any:
                 "broker_order",
                 "sportsbook_wager",
                 "sportsbook_bet",
+                "sportsbook_ticket",
                 "kalshi_order",
                 "crypto_order",
                 "provider_write_payload",
@@ -414,6 +415,7 @@ def compact_football_impact_readiness_response(payload: dict[str, Any], limit: i
         "missing_data_by_sport": redact_and_limit_payload(payload.get("missing_data_by_sport") or {}, limit=cap),
         "calibration_requirements": list(payload.get("calibration_requirements") or [])[:cap],
         "no_spend_policy": redact_and_limit_payload(payload.get("no_spend_policy") or {}, limit=cap),
+        "forbidden_features": list(payload.get("forbidden_features") or [])[:cap],
         "provider_write": False,
         "execution_allowed": False,
         "live_execution_enabled": False,
@@ -442,15 +444,18 @@ def compact_football_impact_diagnostics_response(payload: dict[str, Any], limit:
     incentive = payload.get("incentive_context") if isinstance(payload.get("incentive_context"), dict) else {}
     market = payload.get("market_relevance") if isinstance(payload.get("market_relevance"), dict) else {}
     calibration = payload.get("calibration") if isinstance(payload.get("calibration"), dict) else {}
+    red_team = payload.get("red_team") if isinstance(payload.get("red_team"), dict) else {}
     return {
         "ok": bool(payload.get("ok", True)),
-        "status": payload.get("status", "football_impact_diagnostics_complete"),
+        "status": payload.get("status", "football_player_impact_complete"),
         "sport": payload.get("sport"),
         "market_type": payload.get("market_type"),
         "data_tier": int(payload.get("data_tier", 0) or 0),
         "tier_name": payload.get("tier_name"),
         "player_level_allowed": bool(payload.get("player_level_allowed", False)),
         "tracking_level_allowed": bool(payload.get("tracking_level_allowed", False)),
+        "football_impact_score": payload.get("football_impact_score", 0.0),
+        "recommended_review_status": payload.get("recommended_review_status", payload.get("recommended_action_adjustment")),
         "play_drive_impact": _compact_football_section(
             play,
             [
@@ -511,7 +516,7 @@ def compact_football_impact_diagnostics_response(payload: dict[str, Any], limit:
         ),
         "market_relevance": _compact_football_section(
             market,
-            ["market_relevance_scores", "strongest_market_links", "weak_market_links", "no_bet_market_reasons", "player_prop_relevance", "team_market_relevance", "selected_market_type", "selected_market_relevance_score", "weather_adjusted_markets", "pressure_adjusted_markets"],
+            ["market_relevance_scores", "strongest_market_links", "weak_market_links", "no_bet_market_reasons", "player_prop_relevance", "team_market_relevance", "market_confidence_caps", "selected_market_type", "selected_market_relevance_score", "weather_adjusted_markets", "pressure_adjusted_markets"],
             cap,
         ),
         "calibration_status": payload.get("calibration_status", "insufficient_data"),
@@ -522,10 +527,16 @@ def compact_football_impact_diagnostics_response(payload: dict[str, Any], limit:
         ),
         "data_availability": _compact_football_section(
             data,
-            ["sport", "data_tier", "tier_name", "available_field_groups", "missing_field_groups", "player_level_allowed", "tracking_level_allowed", "calibration_allowed", "no_fabrication", "next_data_to_collect", "ncaaf_tracking_not_assumed"],
+            ["status", "sport", "data_tier", "tier_name", "available_field_groups", "missing_field_groups", "player_level_allowed", "team_level_allowed", "tracking_level_allowed", "calibration_allowed", "confidence_cap", "confidence_cap_reason", "no_fabrication", "next_data_to_collect", "ncaaf_tracking_not_assumed"],
+            cap,
+        ),
+        "red_team": _compact_football_section(
+            red_team,
+            ["red_team_status", "downgrade_score", "recommended_action_adjustment", "no_bet_reasons", "red_team_reasons", "missing_inputs", "confidence_cap_reason", "red_team_only"],
             cap,
         ),
         "recommended_action_adjustment": payload.get("recommended_action_adjustment"),
+        "markets_to_review": list(payload.get("markets_to_review") or [])[:cap],
         "no_bet_reasons": list(payload.get("no_bet_reasons") or [])[:cap],
         "missing_inputs": list(payload.get("missing_inputs") or [])[:cap],
         "next_data_to_collect": list(payload.get("next_data_to_collect") or [])[:cap],
@@ -647,6 +658,195 @@ def compact_strategy_readiness_response(payload: dict[str, Any], limit: int = 50
         "next_recommended_strategy_to_promote": payload.get("next_recommended_strategy_to_promote"),
         "next_recommended_strategy_to_demote": payload.get("next_recommended_strategy_to_demote"),
         "strategies": _redact(strategies),
+        "raw_payload_included": False,
+        "raw_payload_exposed": False,
+        "secrets_included": False,
+        "secrets_detected": False,
+        "compact_response": True,
+    }
+
+
+def compact_basketball_player_impact_readiness_response(payload: dict[str, Any], limit: int = 20) -> dict[str, Any]:
+    cap = max(1, min(int(limit or 20), 100))
+    return {
+        "ok": bool(payload.get("ok", True)),
+        "status": payload.get("status", "basketball_player_impact_readiness"),
+        "supported_sports": list(payload.get("supported_sports") or [])[:cap],
+        "feasible_now": list(payload.get("feasible_now") or [])[:cap],
+        "not_implemented": list(payload.get("not_implemented") or [])[:cap],
+        "possession_impact_ready": bool(payload.get("possession_impact_ready", False)),
+        "tracking_opportunity_ready": bool(payload.get("tracking_opportunity_ready", False)),
+        "role_context_ready": bool(payload.get("role_context_ready", False)),
+        "lineup_matchup_ready": bool(payload.get("lineup_matchup_ready", False)),
+        "availability_minutes_ready": bool(payload.get("availability_minutes_ready", False)),
+        "incentive_context_ready": bool(payload.get("incentive_context_ready", False)),
+        "market_relevance_ready": bool(payload.get("market_relevance_ready", False)),
+        "calibration_ready": bool(payload.get("calibration_ready", False)),
+        "red_team_ready": bool(payload.get("red_team_ready", False)),
+        "sport_contracts": _redact(payload.get("sport_contracts") if isinstance(payload.get("sport_contracts"), dict) else {}),
+        "next_required_data": list(payload.get("next_required_data") or [])[:cap],
+        "provider_write": False,
+        "execution_allowed": False,
+        "live_execution_enabled": False,
+        "auto_execution": False,
+        "auto_execution_enabled": False,
+        "human_approval_required": True,
+        "owner_approval_required": True,
+        "sportsbook_bet_execution_enabled": False,
+        "raw_payload_included": False,
+        "raw_payload_exposed": False,
+        "secrets_included": False,
+        "secrets_detected": False,
+        "compact_response": True,
+    }
+
+
+def _compact_basketball_submodule(payload: dict[str, Any] | None, keys: list[str]) -> dict[str, Any]:
+    row = payload if isinstance(payload, dict) else {}
+    out = {key: row.get(key) for key in keys if key in row}
+    for key in list(out):
+        if isinstance(out[key], list):
+            out[key] = out[key][:20]
+    out.update(
+        {
+            "provider_write": False,
+            "execution_allowed": False,
+            "live_execution_enabled": False,
+            "auto_execution": False,
+            "human_approval_required": True,
+            "owner_approval_required": True,
+        }
+    )
+    return _redact(out)
+
+
+def compact_basketball_player_impact_response(payload: dict[str, Any], limit: int = 20) -> dict[str, Any]:
+    cap = max(1, min(int(limit or 20), 100))
+    market_scores = payload.get("market_relevance_scores") if isinstance(payload.get("market_relevance_scores"), dict) else {}
+    return {
+        "ok": bool(payload.get("ok", True)),
+        "status": payload.get("status", "basketball_player_impact_complete"),
+        "sport": payload.get("sport"),
+        "league": payload.get("league"),
+        "sport_contract_id": payload.get("sport_contract_id"),
+        "calibration_bucket_prefix": payload.get("calibration_bucket_prefix"),
+        "legacy_sport_alias": payload.get("legacy_sport_alias"),
+        "player_id": payload.get("player_id"),
+        "player_name_optional_redacted": payload.get("player_name_optional_redacted"),
+        "team_id": payload.get("team_id"),
+        "opponent_id": payload.get("opponent_id"),
+        "player_impact_score": payload.get("player_impact_score", 0.0),
+        "possession_impact_score": payload.get("possession_impact_score", 0.0),
+        "tracking_opportunity_score": payload.get("tracking_opportunity_score", 0.0),
+        "role_adjusted_efficiency_score": payload.get("role_adjusted_efficiency_score", 0.0),
+        "lineup_fit_score": payload.get("lineup_fit_score", 0.0),
+        "matchup_fit_score": payload.get("matchup_fit_score", 0.0),
+        "availability_score": payload.get("availability_score", 0.0),
+        "minutes_stability_score": payload.get("minutes_stability_score", 0.0),
+        "incentive_context_score": payload.get("incentive_context_score", 0.0),
+        "market_relevance_scores": dict(list(market_scores.items())[:cap]),
+        "calibration_status": payload.get("calibration_status"),
+        "insufficient_sample": bool(payload.get("insufficient_sample", True)),
+        "recommended_review_status": payload.get("recommended_review_status"),
+        "markets_to_review": list(payload.get("markets_to_review") or [])[:cap],
+        "markets_to_avoid": list(payload.get("markets_to_avoid") or [])[:cap],
+        "missing_inputs": list(payload.get("missing_inputs") or [])[:cap],
+        "fatal_safety_violations": list(payload.get("fatal_safety_violations") or [])[:cap],
+        "possession_impact": _compact_basketball_submodule(
+            payload.get("possession_impact"),
+            [
+                "possession_impact_score",
+                "offensive_possession_impact",
+                "defensive_possession_impact",
+                "possession_impact_confidence",
+                "possession_impact_status",
+                "possession_impact_missing_inputs",
+            ],
+        ),
+        "tracking_opportunity": _compact_basketball_submodule(
+            payload.get("tracking_opportunity"),
+            [
+                "tracking_opportunity_score",
+                "touch_opportunity_score",
+                "creation_opportunity_score",
+                "assist_opportunity_score",
+                "rebound_opportunity_score",
+                "shooting_opportunity_score",
+                "tracking_status",
+                "tracking_missing_inputs",
+            ],
+        ),
+        "role_context": _compact_basketball_submodule(
+            payload.get("role_context"),
+            [
+                "player_role",
+                "role_confidence",
+                "role_adjusted_efficiency_score",
+                "role_fit_score",
+                "role_stability_score",
+                "role_change_detected",
+            ],
+        ),
+        "lineup_matchup_context": _compact_basketball_submodule(
+            payload.get("lineup_matchup_context"),
+            [
+                "lineup_fit_score",
+                "matchup_fit_score",
+                "projected_minutes_context",
+                "closing_lineup_probability",
+                "teammate_absence_usage_shift",
+                "blowout_minutes_risk",
+                "pace_context_score",
+                "lineup_matchup_status",
+            ],
+        ),
+        "availability_minutes": _compact_basketball_submodule(
+            payload.get("availability_minutes"),
+            [
+                "availability_score",
+                "minutes_stability_score",
+                "projected_minutes_confidence",
+                "rotation_trust_score",
+                "load_management_risk",
+                "foul_trouble_risk",
+                "injury_risk_score",
+                "availability_status",
+            ],
+        ),
+        "incentive_context": _compact_basketball_submodule(
+            payload.get("incentive_context"),
+            [
+                "incentive_context_score",
+                "incentive_usage_pressure",
+                "incentive_minutes_pressure",
+                "incentive_stat_chase_risk",
+                "incentive_team_alignment_score",
+                "incentive_market_relevance",
+                "incentive_warning_flags",
+                "incentive_status",
+            ],
+        ),
+        "red_team": _compact_basketball_submodule(
+            payload.get("red_team"),
+            [
+                "player_impact_red_team_status",
+                "red_team_provider",
+                "red_team_only",
+                "red_team_reasons",
+                "red_team_downgrade",
+                "missing_data_requested",
+                "approval_granted",
+                "bet_slip_created",
+            ],
+        ),
+        "provider_write": False,
+        "execution_allowed": False,
+        "live_execution_enabled": False,
+        "auto_execution": False,
+        "auto_execution_enabled": False,
+        "human_approval_required": True,
+        "owner_approval_required": True,
+        "sportsbook_bet_execution_enabled": False,
         "raw_payload_included": False,
         "raw_payload_exposed": False,
         "secrets_included": False,

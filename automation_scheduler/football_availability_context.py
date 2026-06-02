@@ -21,11 +21,14 @@ AVAILABILITY_INPUTS = (
     "route_share_recent",
     "route_share_trend",
     "carry_share_recent",
+    "carry_share_trend",
     "target_share_recent",
+    "target_share_trend",
     "offensive_line_continuity",
     "defensive_line_continuity",
     "starting_qb_status",
     "backup_qb_quality_proxy",
+    "depth_chart_change",
     "short_week",
     "rest_days",
     "travel_distance",
@@ -75,6 +78,8 @@ def evaluate_football_availability_context(row: dict[str, Any] | None = None) ->
     trend_stability = clamp(100.0 - (abs(snap_trend) + abs(route_trend)) * 220.0)
     snap_stability = weighted_average(((snap, 0.7), (trend_stability, 0.55)))
     role_stability = weighted_average(((snap_stability, 0.7), (route, 0.35), (carry, 0.25), (target, 0.25)))
+    depth_change_raw = str(source.get("depth_chart_change") or source.get("depth_chart_status") or "").strip().lower().replace(" ", "_")
+    depth_chart_risk = 78.0 if depth_change_raw in {"starter_out", "demotion", "rotation_uncertain", "new_starter"} else 35.0 if depth_change_raw else 0.0
     ol_continuity = score_from_range(source.get("offensive_line_continuity"), low=0.0, high=100.0)
     dl_continuity = score_from_range(source.get("defensive_line_continuity"), low=0.0, high=100.0)
     rest_days = safe_float(source.get("rest_days"))
@@ -103,6 +108,7 @@ def evaluate_football_availability_context(row: dict[str, Any] | None = None) ->
         (
             (100.0 - injury_risk, 0.9),
             (100.0 - qb_risk, 0.75),
+            (100.0 - depth_chart_risk, 0.35),
             (snap_stability, 0.5),
             (role_stability, 0.4),
             (ol_continuity, 0.25),
@@ -125,7 +131,17 @@ def evaluate_football_availability_context(row: dict[str, Any] | None = None) ->
             "snap_share_instability" if (snap_stability or 100.0) < 45.0 else None,
             "short_week_rest_travel_risk" if (rest_travel_risk or 0.0) >= 45.0 else None,
             "wind_impacts_passing_kicking_totals" if wind >= 15.0 else None,
+            "depth_chart_change_role_risk" if depth_chart_risk >= 65.0 else None,
             "offensive_line_continuity_risk" if ol_continuity is not None and ol_continuity < 45.0 else None,
+        ],
+        limit=12,
+    )
+    no_bet = compact_list(
+        [
+            injury_reason if injury_risk >= 70.0 else None,
+            *qb_flags,
+            "snap_or_route_role_instability" if (snap_stability or 100.0) < 45.0 or (role_stability or 100.0) < 45.0 else None,
+            "severe_wind_weather_caps_market_confidence" if (weather_adjustment or 0.0) >= 65.0 else None,
         ],
         limit=12,
     )
@@ -136,12 +152,14 @@ def evaluate_football_availability_context(row: dict[str, Any] | None = None) ->
             "snap_stability_score": round(clamp(snap_stability or 0.0), 2),
             "role_stability_score": round(clamp(role_stability or 0.0), 2),
             "injury_risk_score": round(clamp(injury_risk), 2),
+            "depth_chart_risk_score": round(clamp(depth_chart_risk), 2),
             "rest_travel_risk_score": round(clamp(rest_travel_risk or 0.0), 2),
             "weather_adjustment_score": round(clamp(weather_adjustment or 0.0), 2),
             "wind_risk_score": round(clamp(wind_risk), 2),
             "starting_qb_market_risk_score": round(clamp(qb_risk), 2),
             "confidence_cap_reason": cap_reason,
             "market_wide_risk_flags": flags,
+            "no_bet_reasons": no_bet,
             "missing_inputs": compact_list(missing_fields(source, AVAILABILITY_INPUTS), limit=35),
         },
         source_payload=source,

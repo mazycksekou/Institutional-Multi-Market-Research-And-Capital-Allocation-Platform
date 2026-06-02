@@ -44,6 +44,8 @@ from automation_scheduler.response_compactor import (
     compact_outcome_import_response,
     compact_outcomes_response,
     compact_balance_sheet_risk_response,
+    compact_basketball_player_impact_readiness_response,
+    compact_basketball_player_impact_response,
     compact_broker_quality_response,
     compact_micro_outcome_calibration_response,
     compact_pattern_calibration_response,
@@ -1086,6 +1088,15 @@ class AutomationAdvancedShapeDiagnosticsRequest(BaseModel):
     persist: bool = False
 
 
+class AutomationBasketballPlayerImpactRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", protected_namespaces=())
+
+    dry_run: bool = True
+    candidate: dict[str, Any] = Field(default_factory=dict)
+    outcome_records: list[dict[str, Any]] = Field(default_factory=list)
+    red_team_provider: Optional[str] = None
+
+
 class AutomationExtremeSignalDiagnosticsRequest(BaseModel):
     model_config = ConfigDict(extra="forbid", protected_namespaces=())
 
@@ -1109,6 +1120,7 @@ class AutomationFootballImpactDiagnosticsRequest(BaseModel):
     availability_context: dict[str, Any] = Field(default_factory=dict)
     incentive_context: dict[str, Any] = Field(default_factory=dict)
     calibration_context: dict[str, Any] = Field(default_factory=dict)
+    tracking_context: dict[str, Any] = Field(default_factory=dict)
 
 
 class AutomationManifoldMapRequest(BaseModel):
@@ -3061,6 +3073,41 @@ async def get_automation_strategy_readiness_endpoint(verbose: bool = Query(defau
     return compact
 
 
+@app.get("/api/automation/basketball-player-impact-readiness", operation_id="getAutomationBasketballPlayerImpactReadiness")
+async def get_automation_basketball_player_impact_readiness_endpoint(
+    verbose: bool = Query(default=False),
+    include_debug: bool = Query(default=False),
+    limit: int = Query(default=20),
+):
+    cap = min(max(int(limit), 1), 100 if verbose else 20)
+    payload = automation_scheduler.get_basketball_player_impact_readiness()
+    compact = compact_basketball_player_impact_readiness_response(payload, limit=cap)
+    if verbose or include_debug:
+        compact["debug"] = redact_and_limit_payload(payload, limit=cap, verbose=verbose)
+    return compact
+
+
+@app.post("/api/automation/basketball-player-impact", operation_id="runAutomationBasketballPlayerImpact")
+async def automation_basketball_player_impact_endpoint(
+    payload: AutomationBasketballPlayerImpactRequest,
+    verbose: bool = Query(default=False),
+    include_debug: bool = Query(default=False),
+    limit: int = Query(default=20),
+):
+    if payload.dry_run is not True:
+        raise HTTPException(status_code=400, detail="basketball player-impact analysis only supports dry_run=true")
+    cap = min(max(int(limit), 1), 100 if verbose else 20)
+    result = automation_scheduler.run_automation_basketball_player_impact(
+        candidate=payload.candidate,
+        outcome_records=payload.outcome_records,
+        red_team_provider=payload.red_team_provider,
+    )
+    compact = compact_basketball_player_impact_response(result, limit=cap)
+    if verbose or include_debug:
+        compact["debug"] = redact_and_limit_payload(result, limit=cap, verbose=verbose)
+    return compact
+
+
 @app.get("/api/automation/advanced-red-team-report", operation_id="getAutomationAdvancedRedTeamReport")
 async def get_automation_advanced_red_team_report_endpoint(
     provider: Optional[str] = Query(default=None),
@@ -3130,6 +3177,7 @@ async def automation_football_impact_diagnostics_endpoint(
         availability_context=payload.availability_context,
         incentive_context=payload.incentive_context,
         calibration_context=payload.calibration_context,
+        tracking_context=payload.tracking_context,
         dry_run=True,
     )
     compact = compact_football_impact_diagnostics_response(result, limit=cap)
@@ -3968,6 +4016,8 @@ PUBLIC_OPENAPI_PATH_METHODS = frozenset({
     ("/api/automation/security-readiness", "get"),
     ("/api/automation/intelligence-readiness", "get"),
     ("/api/automation/strategy-readiness", "get"),
+    ("/api/automation/basketball-player-impact-readiness", "get"),
+    ("/api/automation/basketball-player-impact", "post"),
     ("/api/automation/football-impact-readiness", "get"),
     ("/api/automation/football-impact-diagnostics", "post"),
     ("/api/automation/advanced-red-team-report", "get"),

@@ -20,6 +20,7 @@ from .football_impact_schema import (
     normalize_football_sport,
 )
 from .football_incentive_context import evaluate_football_incentive_context
+from .football_impact_red_team import evaluate_football_impact_red_team
 from .football_market_relevance import evaluate_football_market_relevance
 from .football_matchup_context import evaluate_football_matchup_context
 from .football_personnel_context import evaluate_football_personnel_context
@@ -46,8 +47,12 @@ def _recommended_action(
 ) -> str:
     if data_tier <= 0:
         return "DATA_INSUFFICIENT"
+    if market_type in PLAYER_PROP_MARKETS and not player_level_allowed:
+        return "DATA_INSUFFICIENT"
     if no_bet_reasons:
         return "NO_BET"
+    if calibration_status == "calibration_ready" and selected_market_relevance >= 70.0:
+        return "ACTIVE_REVIEW"
     if calibration_status == "insufficient_data":
         return "CALIBRATION_ONLY"
     if market_type in PLAYER_PROP_MARKETS:
@@ -72,6 +77,7 @@ def build_football_impact_diagnostics(
     incentive_context: dict[str, Any] | None = None,
     calibration_context: dict[str, Any] | None = None,
     dry_run: bool = True,
+    tracking_context: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     normalized_sport = normalize_football_sport(sport)
     market = normalize_football_market(market_type)
@@ -86,6 +92,7 @@ def build_football_impact_diagnostics(
         "availability_context": availability_context or {},
         "incentive_context": incentive_context or {},
         "calibration_context": calibration_context or {},
+        "tracking_context": tracking_context or {},
         "dry_run": dry_run,
     }
     availability = evaluate_football_data_availability(
@@ -98,6 +105,7 @@ def build_football_impact_diagnostics(
         availability_context=availability_context,
         incentive_context=incentive_context,
         calibration_context=calibration_context,
+        tracking_context=tracking_context,
         market_type=market,
     )
     data_tier = int(availability.get("data_tier", 0) or 0)
@@ -135,13 +143,26 @@ def build_football_impact_diagnostics(
     )
     no_bet_reasons = compact_list(
         [
+            *(avail.get("no_bet_reasons") or []),
             *(matchup.get("no_bet_reasons") or []),
             *(market_relevance.get("no_bet_market_reasons") or []),
             *(incentive.get("no_bet_reasons") or []),
-            "player_level_data_required_for_player_prop" if market in PLAYER_PROP_MARKETS and not availability.get("player_level_allowed") else None,
         ],
         limit=25,
     )
+    red_team = evaluate_football_impact_red_team(
+        sport=normalized_sport,
+        data_availability=availability,
+        play_drive_impact=play_drive,
+        role_impact=role,
+        matchup_context=matchup,
+        availability_context=avail,
+        incentive_context=incentive,
+        market_relevance=market_relevance,
+        calibration=calibration,
+        tracking_context=tracking_context or {},
+    )
+    no_bet_reasons = compact_list([*no_bet_reasons, *(red_team.get("no_bet_reasons") or [])], limit=30)
     selected_relevance = float(market_relevance.get("selected_market_relevance_score", 0.0) or 0.0)
     action = _recommended_action(
         data_tier=data_tier,
@@ -151,13 +172,35 @@ def build_football_impact_diagnostics(
         player_level_allowed=bool(availability.get("player_level_allowed", False)),
         selected_market_relevance=selected_relevance,
     )
+    red_team_adjustment = str(red_team.get("recommended_action_adjustment") or "NO_CHANGE")
+    if red_team_adjustment == "NO_BET":
+        action = "NO_BET"
+    elif red_team_adjustment == "DATA_INSUFFICIENT" and action not in {"NO_BET", "DATA_INSUFFICIENT"}:
+        action = "DATA_INSUFFICIENT"
+    elif red_team_adjustment == "WATCHLIST_REVIEW" and action == "ACTIVE_REVIEW":
+        action = "WATCHLIST_REVIEW"
+    if market in PLAYER_PROP_MARKETS and not availability.get("player_level_allowed"):
+        action = "DATA_INSUFFICIENT"
     if action not in ALLOWED_FOOTBALL_ACTIONS:
         action = "CALIBRATION_ONLY"
     missing = _combine_missing(play_drive, role, personnel, matchup, avail, incentive)
-    next_data = compact_list([*(availability.get("next_data_to_collect") or []), *(calibration.get("next_required_data") or [])], limit=30)
+    missing = compact_list([*missing, *(red_team.get("missing_inputs") or [])], limit=60)
+    next_data = compact_list([*(availability.get("next_data_to_collect") or []), *(calibration.get("next_required_data") or []), *(red_team.get("missing_inputs") or [])], limit=30)
+    football_score = (
+        float(play_drive.get("play_impact_score", 0.0) or 0.0) * 0.30
+        + float(play_drive.get("drive_impact_score", 0.0) or 0.0) * 0.20
+        + float(role.get("role_impact_score", 0.0) or 0.0) * 0.18
+        + float(matchup.get("matchup_advantage_score", 0.0) or 0.0) * 0.12
+        + float(avail.get("availability_score", 0.0) or 0.0) * 0.12
+        + selected_relevance * 0.08
+    )
+    football_score = max(0.0, min(100.0, football_score - float(red_team.get("downgrade_score", 0.0) or 0.0) * 0.25))
+    markets_to_review = []
+    if action not in {"NO_BET", "DATA_INSUFFICIENT"}:
+        markets_to_review = market_relevance.get("strongest_market_links") or []
     result = {
         "ok": True,
-        "status": "football_impact_diagnostics_complete",
+        "status": "football_player_impact_complete",
         "sport": normalized_sport,
         "market_type": market,
         "data_tier": data_tier,
@@ -174,7 +217,11 @@ def build_football_impact_diagnostics(
         "market_relevance": market_relevance,
         "calibration_status": calibration.get("calibration_status", "insufficient_data"),
         "calibration": calibration,
+        "red_team": red_team,
+        "football_impact_score": round(football_score, 2),
+        "recommended_review_status": action,
         "recommended_action_adjustment": action,
+        "markets_to_review": compact_list(markets_to_review, limit=12),
         "no_bet_reasons": no_bet_reasons,
         "missing_inputs": missing,
         "next_data_to_collect": next_data,
@@ -232,6 +279,14 @@ def build_football_impact_readiness() -> dict[str, Any]:
             "tracking_required": False,
             "heavy_ml_training_added": False,
         },
+        "forbidden_features": [
+            "live_execution",
+            "provider_write",
+            "paid_provider_required",
+            "fabricated_tracking",
+            "fabricated_calibration",
+            "automatic_betting",
+        ],
         "recommended_initial_use": [
             "NCAAF team_unit_drive_review_when_play_drive_data_exists",
             "NFL role_player_prop_review_when_snap_route_target_context_exists",

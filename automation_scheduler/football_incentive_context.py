@@ -8,6 +8,7 @@ from .football_impact_schema import boolish, clamp, compact_list, finalize_footb
 INCENTIVE_INPUTS = (
     "contract_year",
     "known_bonus_thresholds",
+    "bonus_progress_context",
     "award_race_context",
     "playoff_elimination_status",
     "seeding_motivation",
@@ -49,6 +50,7 @@ def evaluate_football_incentive_context(row: dict[str, Any] | None = None) -> di
                 "team_alignment_score": 0.0,
                 "narrative_overfit_risk": "unknown",
                 "confidence_modifier": 0.0,
+                "market_relevance_modifier": {"modifier_only": True},
                 "no_bet_reasons": [],
                 "incentive_is_standalone_edge": False,
                 "bonus_threshold_fabricated": False,
@@ -57,7 +59,7 @@ def evaluate_football_incentive_context(row: dict[str, Any] | None = None) -> di
             },
             source_payload=source,
         )
-    bonus_pressure, threshold_known = _threshold_pressure(source.get("known_bonus_thresholds"))
+    bonus_pressure, threshold_known = _threshold_pressure(source.get("known_bonus_thresholds") or source.get("bonus_progress_context"))
     contract_pressure = weighted_average(((70.0 if boolish(source.get("contract_year")) else 0.0, 0.45), (bonus_pressure, 0.75)))
     award_pressure = score_from_range(source.get("award_race_context"), low=0.0, high=100.0)
     record_pressure = score_from_range(source.get("record_chasing_context"), low=0.0, high=100.0)
@@ -102,6 +104,11 @@ def evaluate_football_incentive_context(row: dict[str, Any] | None = None) -> di
         no_bet.append("draft_incentive_or_tanking_context_caps_team_market_confidence")
     if boolish(source.get("known_bonus_thresholds")) and not threshold_known:
         no_bet.append("bonus_threshold_claim_not_verified")
+    market_modifier = {
+        "player_prop_relevance_adjustment": 6.0 if stat_chase >= 60.0 and (team_alignment or 0.0) >= 35.0 else 0.0,
+        "team_market_confidence_adjustment": -8.0 if stat_chase >= 60.0 and (team_alignment or 0.0) < 45.0 else 0.0,
+        "modifier_only": True,
+    }
 
     return finalize_football_response(
         {
@@ -111,6 +118,7 @@ def evaluate_football_incentive_context(row: dict[str, Any] | None = None) -> di
             "team_alignment_score": round(clamp(team_alignment or 0.0), 2),
             "narrative_overfit_risk": narrative_overfit,
             "confidence_modifier": round(confidence_modifier, 2),
+            "market_relevance_modifier": market_modifier,
             "no_bet_reasons": compact_list(no_bet, limit=10),
             "incentive_is_standalone_edge": False,
             "bonus_threshold_fabricated": False,

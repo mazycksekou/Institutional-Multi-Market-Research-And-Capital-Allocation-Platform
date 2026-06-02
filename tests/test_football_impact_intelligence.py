@@ -159,7 +159,7 @@ class TestFootballRoleImpact(unittest.TestCase):
 
     def test_17_unknown_role_caps_confidence(self):
         result = evaluate_football_role_impact({"role": "slot_machine", "target_share": 0.2})
-        self.assertEqual(result["role"], "unknown")
+        self.assertEqual(result["role"], "UNKNOWN")
         self.assertLessEqual(result["role_confidence_cap"], 25)
 
 
@@ -423,6 +423,188 @@ class TestFootballCalibrationSafetyAndEndpoints(unittest.TestCase):
         self.assertIn("americanfootball_nfl", payload["supported_sports"])
         self.assertIn("americanfootball_ncaaf", payload["supported_sports"])
         self.assertFalse(payload["execution_allowed"])
+
+    def test_56_red_team_ncaaf_tracking_overclaim_is_downgraded(self):
+        result = build_football_impact_diagnostics(
+            sport="americanfootball_ncaaf",
+            market_type="receiving_yards",
+            player_context={"role": "WR", "snap_share_recent": 0.9, "target_share": 0.24},
+            tracking_context={"separation_proxy": 2.1},
+        )
+        self.assertIn("ncaaf_player_tracking_overclaim", result["red_team"]["red_team_reasons"])
+        self.assertIn(result["recommended_review_status"], {"NO_BET", "DATA_INSUFFICIENT", "CALIBRATION_ONLY"})
+
+    def test_57_red_team_injury_uncertainty_is_downgraded(self):
+        result = build_football_impact_diagnostics(
+            sport="americanfootball_nfl",
+            market_type="receiving_yards",
+            player_context={"role": "WR", "snap_share_recent": 0.9, "target_share": 0.24},
+            availability_context={"injury_status": "questionable", "practice_status": "limited"},
+        )
+        self.assertIn("injury_uncertainty_overconfidence", result["red_team"]["red_team_reasons"])
+
+    def test_58_red_team_weather_overfit_is_downgraded(self):
+        result = build_football_impact_diagnostics(
+            sport="americanfootball_nfl",
+            market_type="total",
+            play_drive_context=_nfl_play_context(),
+            availability_context={"wind_mph": 26},
+        )
+        self.assertIn("weather_overfit", result["red_team"]["red_team_reasons"])
+
+    def test_59_red_team_narrative_incentive_overfit_is_downgraded(self):
+        result = build_football_impact_diagnostics(
+            sport="americanfootball_nfl",
+            market_type="anytime_td",
+            player_context={"role": "RB", "snap_share_recent": 0.72, "carry_share_recent": 0.58},
+            incentive_context={"revenge_narrative_context": 90},
+        )
+        self.assertIn("narrative_incentive_overfit", result["red_team"]["red_team_reasons"])
+
+    def test_60_red_team_small_sample_epa_overfit_is_downgraded(self):
+        result = build_football_impact_diagnostics(
+            sport="americanfootball_nfl",
+            market_type="spread",
+            play_drive_context=_nfl_play_context(plays_sample_size=12, epa_per_play=0.18),
+        )
+        self.assertIn("small_sample_epa_overfit", result["red_team"]["red_team_reasons"])
+
+    def test_61_calibration_missing_prevents_overconfident_active_review(self):
+        result = build_football_impact_diagnostics(
+            sport="americanfootball_nfl",
+            market_type="spread",
+            play_drive_context=_nfl_play_context(epa_per_play=0.18, success_rate=0.54),
+            availability_context={"starting_qb_status": "active", "injury_status": "healthy"},
+        )
+        self.assertEqual(result["calibration_status"], "insufficient_data")
+        self.assertNotEqual(result["recommended_review_status"], "ACTIVE_REVIEW")
+
+    def test_62_readiness_lists_forbidden_features(self):
+        payload = self.client.get("/api/automation/football-impact-readiness").json()
+        self.assertIn("live_execution", payload["forbidden_features"])
+        self.assertIn("fabricated_tracking", payload["forbidden_features"])
+        self.assertFalse(payload["provider_write"])
+
+    def test_63_first_half_markets_are_supported(self):
+        payload = self.client.get("/api/automation/football-impact-readiness").json()
+        self.assertIn("first_half_spread", payload["supported_markets"])
+        self.assertIn("first_half_total", payload["supported_markets"])
+
+    def test_64_tracking_context_is_accepted_by_endpoint(self):
+        response = self.client.post(
+            "/api/automation/football-impact-diagnostics",
+            json={
+                "dry_run": True,
+                "sport": "americanfootball_nfl",
+                "market_type": "receiving_yards",
+                "player_context": {"role": "WR", "snap_share_recent": 0.9, "target_share": 0.24},
+                "tracking_context": {"separation_proxy": 1.5},
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()["tracking_level_allowed"])
+
+    def test_65_missing_player_context_still_allows_team_level_tier_2(self):
+        result = build_football_impact_diagnostics(sport="americanfootball_nfl", market_type="spread", play_drive_context=_nfl_play_context())
+        self.assertTrue(result["data_availability"]["team_level_allowed"])
+        self.assertFalse(result["data_availability"]["player_level_allowed"])
+
+    def test_66_basketball_impact_endpoints_still_pass(self):
+        readiness = self.client.get("/api/automation/basketball-player-impact-readiness")
+        diagnostic = self.client.post("/api/automation/basketball-player-impact", json={"dry_run": True, "candidate": {"sport": "basketball_nba"}})
+        self.assertEqual(readiness.status_code, 200)
+        self.assertEqual(diagnostic.status_code, 200)
+        self.assertFalse(diagnostic.json()["execution_allowed"])
+
+    def test_67_compactor_drops_sportsbook_ticket_and_raw_response(self):
+        result = build_football_impact_diagnostics(
+            sport="americanfootball_nfl",
+            market_type="spread",
+            team_context={"team": "A", "sportsbook_ticket": {"stake": 500}, "raw_response": {"secret": "drop"}},
+        )
+        compact = compact_football_impact_diagnostics_response(result)
+        rendered = str(compact)
+        self.assertNotIn("sportsbook_ticket", rendered)
+        self.assertNotIn("raw_response", rendered)
+        self.assertNotIn("stake", rendered)
+
+    def test_68_forbidden_execute_action_is_blocked(self):
+        result = build_football_impact_diagnostics(
+            sport="americanfootball_nfl",
+            team_context={"team": "A", "recommended_action": "PLACE_BET", "provider_write": True},
+        )
+        self.assertNotIn(result["recommended_review_status"], {"EXECUTE", "PLACE_BET", "PROVIDER_WRITE"})
+        self.assertFalse(result["provider_write"])
+
+    def test_69_player_prop_without_player_data_is_data_insufficient(self):
+        result = build_football_impact_diagnostics(sport="americanfootball_nfl", market_type="passing_yards", play_drive_context=_nfl_play_context())
+        self.assertEqual(result["recommended_review_status"], "DATA_INSUFFICIENT")
+
+    def test_70_nfl_tier_4_tracking_is_optional_not_required(self):
+        with_tracking = evaluate_football_data_availability(
+            "americanfootball_nfl",
+            player_context={"role": "WR", "snap_share_recent": 0.9},
+            tracking_context={"separation_proxy": 1.4},
+        )
+        without_tracking = evaluate_football_data_availability("americanfootball_nfl", player_context={"role": "WR", "snap_share_recent": 0.9})
+        self.assertEqual(with_tracking["data_tier"], 4)
+        self.assertEqual(without_tracking["data_tier"], 3)
+
+    def test_71_first_half_total_relevance_is_emitted(self):
+        result = evaluate_football_market_relevance(
+            market_type="first_half_total",
+            play_drive_impact={"pace_volume_score": 76, "play_impact_score": 70, "explosiveness_score": 72, "red_zone_score": 66},
+            availability_context={"wind_risk_score": 5, "weather_adjustment_score": 8},
+        )
+        self.assertIn("first_half_total", result["market_relevance_scores"])
+
+    def test_72_field_goal_market_capped_by_wind(self):
+        result = evaluate_football_market_relevance(
+            market_type="field_goals",
+            play_drive_impact={"drive_impact_score": 65, "red_zone_score": 35},
+            availability_context={"wind_risk_score": 85, "weather_adjustment_score": 75},
+        )
+        self.assertIn("field_goals", result["market_confidence_caps"])
+
+    def test_73_kicker_role_links_to_field_goals(self):
+        result = evaluate_football_role_impact({"role": "K", "snap_share_recent": 1.0})
+        self.assertEqual(result["role"], "K")
+        self.assertIn("field_goals", result["player_market_relevance"])
+
+    def test_74_punter_role_links_to_field_position(self):
+        result = evaluate_football_role_impact({"role": "P", "snap_share_recent": 1.0})
+        self.assertEqual(result["role"], "P")
+        self.assertIn("field_position", result["player_market_relevance"])
+
+    def test_75_endpoint_include_debug_does_not_leak_secret(self):
+        response = self.client.post(
+            "/api/automation/football-impact-diagnostics?include_debug=true",
+            json={"dry_run": True, "sport": "americanfootball_nfl", "team_context": {"team": "A", "authorization": "Bearer secretsecretsecret"}},
+        )
+        rendered = str(response.json())
+        self.assertNotIn("secretsecretsecret", rendered)
+        self.assertFalse(response.json()["secrets_included"])
+
+    def test_76_calibration_ready_can_enable_active_review_without_execution(self):
+        result = build_football_impact_diagnostics(
+            sport="americanfootball_nfl",
+            market_type="spread",
+            play_drive_context=_nfl_play_context(epa_per_play=0.18, success_rate=0.54),
+            availability_context={"starting_qb_status": "active", "injury_status": "healthy"},
+            calibration_context={"matched_outcomes_count": 120},
+        )
+        self.assertIn(result["recommended_review_status"], {"ACTIVE_REVIEW", "TEAM_MARKET_REVIEW_ONLY"})
+        self.assertFalse(result["execution_allowed"])
+
+    def test_77_red_team_output_cannot_enable_execution(self):
+        result = build_football_impact_diagnostics(
+            sport="americanfootball_ncaaf",
+            market_type="receiving_yards",
+            player_context={"role": "WR", "snap_share_recent": 0.9},
+            tracking_context={"separation_proxy": 2.2},
+        )
+        self.assertFalse(result["red_team"]["execution_allowed"])
+        self.assertFalse(result["red_team"]["provider_write"])
 
 
 if __name__ == "__main__":

@@ -18,6 +18,8 @@ FOOTBALL_MARKETS = (
     "moneyline",
     "total",
     "team_total",
+    "first_half_spread",
+    "first_half_total",
     "passing_yards",
     "passing_tds",
     "interceptions",
@@ -92,6 +94,7 @@ def evaluate_football_market_relevance(
     incentive_behavior = _score(incentive_context, "incentive_behavior_score")
     stat_chase = _score(incentive_context, "stat_chase_risk")
     team_alignment = _score(incentive_context, "team_alignment_score")
+    market_modifier = incentive_context.get("market_relevance_modifier") if isinstance(incentive_context.get("market_relevance_modifier"), dict) else {}
     weather_safe = 100.0 - weather
     wind_safe = 100.0 - wind
 
@@ -115,6 +118,16 @@ def evaluate_football_market_relevance(
         "team_total": weighted_average(((drive, 0.75), (red_zone, 0.65), (play, 0.45), (availability, 0.45), (weather_safe, 0.65), (team_alignment, 0.25))) or 0.0,
         "defensive_prop": weighted_average(((role_impact_score if role in {"DL", "EDGE", "LB", "CB", "S"} else 0.0, 0.65), (role_usage, 0.45), (matchup_risk, 0.45), (snap_stability, 0.45))) or 0.0,
     }
+    scores["first_half_spread"] = weighted_average(((scores["spread"], 0.75), (play, 0.35), (100.0 - qb_market_risk, 0.55))) or 0.0
+    scores["first_half_total"] = weighted_average(((scores["total"], 0.75), (pace, 0.35), (weather_safe, 0.55))) or 0.0
+    player_adjustment = float(market_modifier.get("player_prop_relevance_adjustment", 0.0) or 0.0)
+    team_adjustment = float(market_modifier.get("team_market_confidence_adjustment", 0.0) or 0.0)
+    for player_market in PLAYER_PROP_MARKETS:
+        if player_market in scores:
+            scores[player_market] += player_adjustment
+    for team_market in TEAM_MARKETS:
+        if team_market in scores:
+            scores[team_market] += team_adjustment
     scores = {key: round(clamp(value), 2) for key, value in scores.items()}
     no_bet = []
     if wind >= 65.0:
@@ -127,6 +140,13 @@ def evaluate_football_market_relevance(
         no_bet.extend(list(matchup_context.get("no_bet_reasons") or [])[:5])
     if incentive_context.get("no_bet_reasons"):
         no_bet.extend(list(incentive_context.get("no_bet_reasons") or [])[:5])
+    caps = {}
+    if wind >= 65.0:
+        caps.update({"passing_yards": "wind_cap", "field_goals": "wind_cap", "total": "wind_cap"})
+    if qb_market_risk >= 65.0:
+        caps.update({"spread": "starting_qb_uncertainty_cap", "moneyline": "starting_qb_uncertainty_cap", "team_total": "starting_qb_uncertainty_cap"})
+    if role_volatility >= 70.0:
+        caps["player_props"] = "role_volatility_cap"
 
     strongest = _top_links(scores, threshold=58.0)
     weak = [key for key, value in scores.items() if value < 35.0][:8]
@@ -152,6 +172,7 @@ def evaluate_football_market_relevance(
             "no_bet_market_reasons": compact_list(no_bet, limit=15),
             "player_prop_relevance": player_prop_relevance,
             "team_market_relevance": team_market_relevance,
+            "market_confidence_caps": caps,
             "selected_market_type": market,
             "selected_market_relevance_score": round(clamp(selected_market_score), 2),
             "weather_adjusted_markets": compact_list(["passing_yards", "field_goals", "total", "longest_reception"] if wind >= 45.0 else [], limit=10),
