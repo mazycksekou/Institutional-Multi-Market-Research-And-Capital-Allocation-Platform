@@ -342,6 +342,106 @@ def run_football_impact_diagnostics(
     )
 
 
+def get_hockey_impact_readiness():
+    from .hockey_impact_readiness import build_hockey_impact_readiness
+
+    return build_hockey_impact_readiness()
+
+
+def run_hockey_impact_diagnostics(
+    *,
+    sport: str = "icehockey_nhl",
+    market_type: str = "moneyline",
+    game_context: dict | None = None,
+    team_context: dict | None = None,
+    skater_context: dict | None = None,
+    goalie_context: dict | None = None,
+    line_context: dict | None = None,
+    pair_context: dict | None = None,
+    special_teams_context: dict | None = None,
+    transition_context: dict | None = None,
+    shot_quality_context: dict | None = None,
+    matchup_context: dict | None = None,
+    availability_context: dict | None = None,
+    incentive_context: dict | None = None,
+    calibration_context: dict | None = None,
+    tracking_context: dict | None = None,
+    dry_run: bool = True,
+):
+    from .hockey_impact_report import build_hockey_impact_diagnostics
+
+    return build_hockey_impact_diagnostics(
+        sport=sport,
+        market_type=market_type,
+        game_context=game_context or {},
+        team_context=team_context or {},
+        skater_context=skater_context or {},
+        goalie_context=goalie_context or {},
+        line_context=line_context or {},
+        pair_context=pair_context or {},
+        special_teams_context=special_teams_context or {},
+        transition_context=transition_context or {},
+        shot_quality_context=shot_quality_context or {},
+        matchup_context=matchup_context or {},
+        availability_context=availability_context or {},
+        incentive_context=incentive_context or {},
+        calibration_context=calibration_context or {},
+        tracking_context=tracking_context or {},
+        dry_run=dry_run,
+    )
+
+
+def get_baseball_impact_readiness():
+    from .baseball_impact_readiness import build_baseball_impact_readiness
+
+    return build_baseball_impact_readiness()
+
+
+def run_baseball_impact_diagnostics(
+    *,
+    sport: str = "baseball_mlb",
+    market_type: str = "moneyline",
+    game_context: dict | None = None,
+    team_context: dict | None = None,
+    pitcher_context: dict | None = None,
+    batter_context: dict | None = None,
+    lineup_context: dict | None = None,
+    bullpen_context: dict | None = None,
+    catcher_context: dict | None = None,
+    defense_context: dict | None = None,
+    baserunning_context: dict | None = None,
+    park_weather_context: dict | None = None,
+    umpire_context: dict | None = None,
+    availability_context: dict | None = None,
+    incentive_context: dict | None = None,
+    calibration_context: dict | None = None,
+    tracking_context: dict | None = None,
+    dry_run: bool = True,
+):
+    from .baseball_impact_report import build_baseball_impact_diagnostics
+
+    return build_baseball_impact_diagnostics(
+        sport=sport,
+        market_type=market_type,
+        game_context=game_context or {},
+        team_context=team_context or {},
+        pitcher_context=pitcher_context or {},
+        batter_context=batter_context or {},
+        lineup_context=lineup_context or {},
+        bullpen_context=bullpen_context or {},
+        catcher_context=catcher_context or {},
+        defense_context=defense_context or {},
+        baserunning_context=baserunning_context or {},
+        park_weather_context=park_weather_context or {},
+        umpire_context=umpire_context or {},
+        availability_context=availability_context or {},
+        incentive_context=incentive_context or {},
+        calibration_context=calibration_context or {},
+        tracking_context=tracking_context or {},
+        dry_run=dry_run,
+    )
+
+
 def get_strategy_registry_snapshot(base_data_dir: str | None = None):
     from .strategy_registry import compact_strategy_registry
 

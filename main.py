@@ -44,6 +44,8 @@ from automation_scheduler.response_compactor import (
     compact_outcome_import_response,
     compact_outcomes_response,
     compact_balance_sheet_risk_response,
+    compact_baseball_impact_diagnostics_response,
+    compact_baseball_impact_readiness_response,
     compact_basketball_player_impact_readiness_response,
     compact_basketball_player_impact_response,
     compact_broker_quality_response,
@@ -66,6 +68,8 @@ from automation_scheduler.response_compactor import (
     compact_extreme_randomness_report_response,
     compact_football_impact_diagnostics_response,
     compact_football_impact_readiness_response,
+    compact_hockey_impact_diagnostics_response,
+    compact_hockey_impact_readiness_response,
     compact_manifold_map_response,
     compact_manifold_review_response,
     compact_performance_health,
@@ -1117,6 +1121,51 @@ class AutomationFootballImpactDiagnosticsRequest(BaseModel):
     play_drive_context: dict[str, Any] = Field(default_factory=dict)
     personnel_context: dict[str, Any] = Field(default_factory=dict)
     matchup_context: dict[str, Any] = Field(default_factory=dict)
+    availability_context: dict[str, Any] = Field(default_factory=dict)
+    incentive_context: dict[str, Any] = Field(default_factory=dict)
+    calibration_context: dict[str, Any] = Field(default_factory=dict)
+    tracking_context: dict[str, Any] = Field(default_factory=dict)
+
+
+class AutomationHockeyImpactDiagnosticsRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", protected_namespaces=())
+
+    sport: str = "icehockey_nhl"
+    market_type: str = "moneyline"
+    dry_run: bool = True
+    game_context: dict[str, Any] = Field(default_factory=dict)
+    team_context: dict[str, Any] = Field(default_factory=dict)
+    skater_context: dict[str, Any] = Field(default_factory=dict)
+    goalie_context: dict[str, Any] = Field(default_factory=dict)
+    line_context: dict[str, Any] = Field(default_factory=dict)
+    pair_context: dict[str, Any] = Field(default_factory=dict)
+    special_teams_context: dict[str, Any] = Field(default_factory=dict)
+    transition_context: dict[str, Any] = Field(default_factory=dict)
+    shot_quality_context: dict[str, Any] = Field(default_factory=dict)
+    matchup_context: dict[str, Any] = Field(default_factory=dict)
+    availability_context: dict[str, Any] = Field(default_factory=dict)
+    incentive_context: dict[str, Any] = Field(default_factory=dict)
+    calibration_context: dict[str, Any] = Field(default_factory=dict)
+    tracking_context: dict[str, Any] = Field(default_factory=dict)
+
+
+class AutomationBaseballImpactDiagnosticsRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", protected_namespaces=())
+
+    sport: str = "baseball_mlb"
+    market_type: str = "moneyline"
+    dry_run: bool = True
+    game_context: dict[str, Any] = Field(default_factory=dict)
+    team_context: dict[str, Any] = Field(default_factory=dict)
+    pitcher_context: dict[str, Any] = Field(default_factory=dict)
+    batter_context: dict[str, Any] = Field(default_factory=dict)
+    lineup_context: dict[str, Any] = Field(default_factory=dict)
+    bullpen_context: dict[str, Any] = Field(default_factory=dict)
+    catcher_context: dict[str, Any] = Field(default_factory=dict)
+    defense_context: dict[str, Any] = Field(default_factory=dict)
+    baserunning_context: dict[str, Any] = Field(default_factory=dict)
+    park_weather_context: dict[str, Any] = Field(default_factory=dict)
+    umpire_context: dict[str, Any] = Field(default_factory=dict)
     availability_context: dict[str, Any] = Field(default_factory=dict)
     incentive_context: dict[str, Any] = Field(default_factory=dict)
     calibration_context: dict[str, Any] = Field(default_factory=dict)
@@ -3186,6 +3235,105 @@ async def automation_football_impact_diagnostics_endpoint(
     return compact
 
 
+@app.get("/api/automation/hockey-impact-readiness", operation_id="getAutomationHockeyImpactReadiness")
+async def get_automation_hockey_impact_readiness_endpoint(
+    verbose: bool = Query(default=False),
+    include_debug: bool = Query(default=False),
+    limit: int = Query(default=10),
+):
+    cap = min(max(int(limit), 1), 100 if verbose else 10)
+    payload = automation_scheduler.get_hockey_impact_readiness()
+    compact = compact_hockey_impact_readiness_response(payload, limit=cap)
+    if verbose or include_debug:
+        compact["debug"] = redact_and_limit_payload(payload, limit=cap, verbose=verbose)
+    return compact
+
+
+@app.post("/api/automation/hockey-impact-diagnostics", operation_id="runAutomationHockeyImpactDiagnostics")
+async def automation_hockey_impact_diagnostics_endpoint(
+    payload: AutomationHockeyImpactDiagnosticsRequest,
+    verbose: bool = Query(default=False),
+    include_debug: bool = Query(default=False),
+    limit: int = Query(default=10),
+):
+    if payload.dry_run is not True:
+        raise HTTPException(status_code=400, detail="hockey impact diagnostics only supports dry_run=true")
+    cap = min(max(int(limit), 1), 100 if verbose else 10)
+    result = automation_scheduler.run_hockey_impact_diagnostics(
+        sport=payload.sport,
+        market_type=payload.market_type,
+        game_context=payload.game_context,
+        team_context=payload.team_context,
+        skater_context=payload.skater_context,
+        goalie_context=payload.goalie_context,
+        line_context=payload.line_context,
+        pair_context=payload.pair_context,
+        special_teams_context=payload.special_teams_context,
+        transition_context=payload.transition_context,
+        shot_quality_context=payload.shot_quality_context,
+        matchup_context=payload.matchup_context,
+        availability_context=payload.availability_context,
+        incentive_context=payload.incentive_context,
+        calibration_context=payload.calibration_context,
+        tracking_context=payload.tracking_context,
+        dry_run=True,
+    )
+    compact = compact_hockey_impact_diagnostics_response(result, limit=cap)
+    if verbose or include_debug:
+        compact["debug"] = redact_and_limit_payload(result, limit=cap, verbose=verbose)
+    return compact
+
+
+@app.get("/api/automation/baseball-impact-readiness", operation_id="getAutomationBaseballImpactReadiness")
+async def get_automation_baseball_impact_readiness_endpoint(
+    verbose: bool = Query(default=False),
+    include_debug: bool = Query(default=False),
+    limit: int = Query(default=10),
+):
+    cap = min(max(int(limit), 1), 100 if verbose else 10)
+    payload = automation_scheduler.get_baseball_impact_readiness()
+    compact = compact_baseball_impact_readiness_response(payload, limit=cap)
+    if verbose or include_debug:
+        compact["debug"] = redact_and_limit_payload(payload, limit=cap, verbose=verbose)
+    return compact
+
+
+@app.post("/api/automation/baseball-impact-diagnostics", operation_id="runAutomationBaseballImpactDiagnostics")
+async def automation_baseball_impact_diagnostics_endpoint(
+    payload: AutomationBaseballImpactDiagnosticsRequest,
+    verbose: bool = Query(default=False),
+    include_debug: bool = Query(default=False),
+    limit: int = Query(default=10),
+):
+    if payload.dry_run is not True:
+        raise HTTPException(status_code=400, detail="baseball impact diagnostics only supports dry_run=true")
+    cap = min(max(int(limit), 1), 100 if verbose else 10)
+    result = automation_scheduler.run_baseball_impact_diagnostics(
+        sport=payload.sport,
+        market_type=payload.market_type,
+        game_context=payload.game_context,
+        team_context=payload.team_context,
+        pitcher_context=payload.pitcher_context,
+        batter_context=payload.batter_context,
+        lineup_context=payload.lineup_context,
+        bullpen_context=payload.bullpen_context,
+        catcher_context=payload.catcher_context,
+        defense_context=payload.defense_context,
+        baserunning_context=payload.baserunning_context,
+        park_weather_context=payload.park_weather_context,
+        umpire_context=payload.umpire_context,
+        availability_context=payload.availability_context,
+        incentive_context=payload.incentive_context,
+        calibration_context=payload.calibration_context,
+        tracking_context=payload.tracking_context,
+        dry_run=True,
+    )
+    compact = compact_baseball_impact_diagnostics_response(result, limit=cap)
+    if verbose or include_debug:
+        compact["debug"] = redact_and_limit_payload(result, limit=cap, verbose=verbose)
+    return compact
+
+
 @app.post("/api/automation/extreme-signal-diagnostics", operation_id="runAutomationExtremeSignalDiagnostics")
 async def automation_extreme_signal_diagnostics_endpoint(
     payload: AutomationExtremeSignalDiagnosticsRequest,
@@ -4020,6 +4168,10 @@ PUBLIC_OPENAPI_PATH_METHODS = frozenset({
     ("/api/automation/basketball-player-impact", "post"),
     ("/api/automation/football-impact-readiness", "get"),
     ("/api/automation/football-impact-diagnostics", "post"),
+    ("/api/automation/hockey-impact-readiness", "get"),
+    ("/api/automation/hockey-impact-diagnostics", "post"),
+    ("/api/automation/baseball-impact-readiness", "get"),
+    ("/api/automation/baseball-impact-diagnostics", "post"),
     ("/api/automation/advanced-red-team-report", "get"),
     ("/api/automation/extreme-randomness-report", "get"),
     ("/api/automation/extreme-signal-diagnostics", "post"),

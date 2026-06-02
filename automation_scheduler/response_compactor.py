@@ -73,6 +73,8 @@ def _redact(payload: Any) -> Any:
                 "kalshi_order",
                 "crypto_order",
                 "provider_write_payload",
+                "ticket_payload",
+                "slip_payload",
             }:
                 out[k] = "[omitted]"
             else:
@@ -531,6 +533,439 @@ def compact_football_impact_diagnostics_response(payload: dict[str, Any], limit:
             cap,
         ),
         "red_team": _compact_football_section(
+            red_team,
+            ["red_team_status", "downgrade_score", "recommended_action_adjustment", "no_bet_reasons", "red_team_reasons", "missing_inputs", "confidence_cap_reason", "red_team_only"],
+            cap,
+        ),
+        "recommended_action_adjustment": payload.get("recommended_action_adjustment"),
+        "markets_to_review": list(payload.get("markets_to_review") or [])[:cap],
+        "no_bet_reasons": list(payload.get("no_bet_reasons") or [])[:cap],
+        "missing_inputs": list(payload.get("missing_inputs") or [])[:cap],
+        "next_data_to_collect": list(payload.get("next_data_to_collect") or [])[:cap],
+        "provider_write": False,
+        "execution_allowed": False,
+        "live_execution_enabled": False,
+        "auto_execution": False,
+        "auto_execution_enabled": False,
+        "human_approval_required": True,
+        "owner_approval_required": True,
+        "actual_orders_submitted": 0,
+        "actual_bets_submitted": 0,
+        "actual_trades_submitted": 0,
+        "raw_payload_included": False,
+        "raw_payload_exposed": False,
+        "secrets_included": False,
+        "compact_response": True,
+    }
+
+
+def _compact_hockey_section(section: Any, keys: list[str], limit: int = 10) -> dict[str, Any]:
+    row = section if isinstance(section, dict) else {}
+    out: dict[str, Any] = {}
+    for key in keys:
+        value = row.get(key)
+        if isinstance(value, list):
+            out[key] = value[:limit]
+        elif isinstance(value, dict):
+            out[key] = redact_and_limit_payload(value, limit=limit)
+        else:
+            out[key] = value
+    return out
+
+
+def compact_hockey_impact_readiness_response(payload: dict[str, Any], limit: int = 10) -> dict[str, Any]:
+    cap = max(1, min(int(limit or 10), 100))
+    return {
+        "ok": bool(payload.get("ok", True)),
+        "status": payload.get("status", "hockey_impact_readiness"),
+        "supported_sports": list(payload.get("supported_sports") or [])[:cap],
+        "supported_roles": list(payload.get("supported_roles") or [])[:cap],
+        "supported_markets": list(payload.get("supported_markets") or [])[:cap],
+        "data_tier_requirements": redact_and_limit_payload(payload.get("data_tier_requirements") or {}, limit=cap),
+        "nhl_readiness": redact_and_limit_payload(payload.get("nhl_readiness") or {}, limit=cap),
+        "missing_data_by_market": redact_and_limit_payload(payload.get("missing_data_by_market") or {}, limit=cap),
+        "calibration_requirements": list(payload.get("calibration_requirements") or [])[:cap],
+        "no_spend_policy": redact_and_limit_payload(payload.get("no_spend_policy") or {}, limit=cap),
+        "forbidden_features": list(payload.get("forbidden_features") or [])[:cap],
+        "provider_write": False,
+        "execution_allowed": False,
+        "live_execution_enabled": False,
+        "auto_execution": False,
+        "auto_execution_enabled": False,
+        "human_approval_required": True,
+        "owner_approval_required": True,
+        "actual_orders_submitted": 0,
+        "actual_bets_submitted": 0,
+        "actual_trades_submitted": 0,
+        "raw_payload_included": False,
+        "raw_payload_exposed": False,
+        "secrets_included": False,
+        "compact_response": True,
+    }
+
+
+def compact_hockey_impact_diagnostics_response(payload: dict[str, Any], limit: int = 10) -> dict[str, Any]:
+    cap = max(1, min(int(limit or 10), 100))
+    data = payload.get("data_availability") if isinstance(payload.get("data_availability"), dict) else {}
+    possession = payload.get("possession_impact") if isinstance(payload.get("possession_impact"), dict) else {}
+    skater = payload.get("skater_impact") if isinstance(payload.get("skater_impact"), dict) else {}
+    goalie = payload.get("goalie_impact") if isinstance(payload.get("goalie_impact"), dict) else {}
+    line_pair = payload.get("line_pair_context") if isinstance(payload.get("line_pair_context"), dict) else {}
+    special = payload.get("special_teams_context") if isinstance(payload.get("special_teams_context"), dict) else {}
+    transition = payload.get("transition_context") if isinstance(payload.get("transition_context"), dict) else {}
+    matchup = payload.get("matchup_context") if isinstance(payload.get("matchup_context"), dict) else {}
+    availability = payload.get("availability_context") if isinstance(payload.get("availability_context"), dict) else {}
+    incentive = payload.get("incentive_context") if isinstance(payload.get("incentive_context"), dict) else {}
+    market = payload.get("market_relevance") if isinstance(payload.get("market_relevance"), dict) else {}
+    calibration = payload.get("calibration") if isinstance(payload.get("calibration"), dict) else {}
+    red_team = payload.get("red_team") if isinstance(payload.get("red_team"), dict) else {}
+    return {
+        "ok": bool(payload.get("ok", True)),
+        "status": payload.get("status", "hockey_player_impact_complete"),
+        "sport": payload.get("sport"),
+        "market_type": payload.get("market_type"),
+        "data_tier": int(payload.get("data_tier", 0) or 0),
+        "tier_name": payload.get("tier_name"),
+        "team_level_allowed": bool(payload.get("team_level_allowed", False)),
+        "skater_level_allowed": bool(payload.get("skater_level_allowed", False)),
+        "goalie_level_allowed": bool(payload.get("goalie_level_allowed", False)),
+        "line_level_allowed": bool(payload.get("line_level_allowed", False)),
+        "tracking_level_allowed": bool(payload.get("tracking_level_allowed", False)),
+        "hockey_impact_score": payload.get("hockey_impact_score", 0.0),
+        "recommended_review_status": payload.get("recommended_review_status"),
+        "possession_impact": _compact_hockey_section(
+            possession,
+            [
+                "possession_score",
+                "shot_volume_score",
+                "xg_quality_score",
+                "high_danger_score",
+                "rush_rebound_score",
+                "first_period_pressure_score",
+                "pace_volume_score",
+                "team_market_signal_score",
+                "total_signal_score",
+                "team_total_signal_score",
+                "confidence_cap_reason",
+                "insufficient_sample",
+                "limited_proxy",
+                "xg_fabricated",
+                "missing_inputs",
+            ],
+            cap,
+        ),
+        "skater_impact": _compact_hockey_section(
+            skater,
+            [
+                "skater_role",
+                "skater_impact_score",
+                "shot_generation_score",
+                "scoring_quality_score",
+                "playmaking_score",
+                "special_teams_role_score",
+                "transition_score",
+                "defensive_impact_score",
+                "blocked_shot_relevance_score",
+                "skater_market_relevance",
+                "individual_xg_fabricated",
+                "line_role_fabricated",
+                "missing_skater_inputs",
+                "no_bet_reasons",
+            ],
+            cap,
+        ),
+        "goalie_impact": _compact_hockey_section(
+            goalie,
+            [
+                "goalie_impact_score",
+                "starter_certainty_score",
+                "shot_quality_adjusted_score",
+                "workload_fatigue_score",
+                "high_danger_resilience_score",
+                "rebound_control_score",
+                "goalie_prop_relevance",
+                "team_market_goalie_modifier",
+                "total_market_goalie_modifier",
+                "confirmed_starter",
+                "gsax_fabricated",
+                "missing_goalie_inputs",
+                "no_bet_reasons",
+            ],
+            cap,
+        ),
+        "line_pair_context": _compact_hockey_section(
+            line_pair,
+            ["line_quality_score", "line_stability_score", "pair_quality_score", "pair_stability_score", "matchup_deployment_score", "last_change_context_score", "prop_volume_modifier", "team_market_modifier", "confirmed_lines", "line_role_fabricated", "defensive_pair_fabricated", "missing_inputs", "no_bet_reasons"],
+            cap,
+        ),
+        "special_teams_context": _compact_hockey_section(
+            special,
+            ["power_play_score", "penalty_kill_score", "special_teams_edge_score", "special_teams_volatility_score", "player_power_play_prop_relevance", "total_market_modifier", "team_total_modifier", "penalty_environment_fabricated", "missing_inputs", "no_bet_reasons"],
+            cap,
+        ),
+        "transition_context": _compact_hockey_section(
+            transition,
+            ["transition_score", "controlled_entry_score", "zone_exit_score", "rush_attack_score", "rush_defense_risk", "forecheck_score", "turnover_risk_score", "market_relevance_modifier", "zone_entry_fabricated", "zone_exit_fabricated", "missing_inputs", "no_bet_reasons"],
+            cap,
+        ),
+        "matchup_context": _compact_hockey_section(
+            matchup,
+            ["matchup_advantage_score", "matchup_risk_score", "mismatch_reasons", "no_bet_reasons", "market_specific_matchup_notes", "moneyline_relevance", "puckline_relevance", "total_relevance", "team_total_relevance", "player_prop_relevance", "goalie_prop_relevance", "deployment_fabricated"],
+            cap,
+        ),
+        "availability_context": _compact_hockey_section(
+            availability,
+            ["availability_score", "lineup_certainty_score", "goalie_certainty_score", "rest_travel_risk_score", "fatigue_risk_score", "injury_risk_score", "role_stability_score", "confidence_cap_reason", "missing_inputs", "no_bet_reasons", "confirmed_goalie_fabricated", "confirmed_lines_fabricated"],
+            cap,
+        ),
+        "incentive_context": _compact_hockey_section(
+            incentive,
+            ["incentive_context_status", "incentive_behavior_score", "stat_chase_risk", "team_alignment_score", "narrative_overfit_risk", "confidence_modifier", "market_relevance_modifier", "incentive_is_standalone_edge", "bonus_threshold_fabricated", "no_bet_reasons"],
+            cap,
+        ),
+        "market_relevance": _compact_hockey_section(
+            market,
+            ["market_relevance_scores", "strongest_market_links", "weak_market_links", "no_bet_market_reasons", "skater_prop_relevance", "goalie_prop_relevance", "team_market_relevance", "special_teams_market_relevance", "market_confidence_caps", "selected_market_type", "selected_market_relevance_score"],
+            cap,
+        ),
+        "calibration_status": payload.get("calibration_status", calibration.get("calibration_status", "insufficient_data")),
+        "calibration": _compact_hockey_section(
+            calibration,
+            ["calibration_status", "sample_size", "matched_outcomes_count", "insufficient_sample", "hit_rate", "false_positive_rate", "confidence_cap", "next_required_data", "calibration_buckets"],
+            cap,
+        ),
+        "data_availability": _compact_hockey_section(
+            data,
+            ["status", "sport", "data_tier", "tier_name", "team_level_allowed", "skater_level_allowed", "goalie_level_allowed", "line_level_allowed", "tracking_level_allowed", "calibration_allowed", "available_field_groups", "missing_field_groups", "confidence_cap", "confidence_cap_reason", "no_fabrication", "tracking_not_required", "zone_entry_exit_not_assumed", "gsax_not_inferred_from_save_percentage", "next_data_to_collect"],
+            cap,
+        ),
+        "red_team": _compact_hockey_section(
+            red_team,
+            ["red_team_status", "downgrade_score", "recommended_action_adjustment", "no_bet_reasons", "red_team_reasons", "missing_inputs", "confidence_cap_reason", "red_team_only"],
+            cap,
+        ),
+        "recommended_action_adjustment": payload.get("recommended_action_adjustment"),
+        "markets_to_review": list(payload.get("markets_to_review") or [])[:cap],
+        "no_bet_reasons": list(payload.get("no_bet_reasons") or [])[:cap],
+        "missing_inputs": list(payload.get("missing_inputs") or [])[:cap],
+        "next_data_to_collect": list(payload.get("next_data_to_collect") or [])[:cap],
+        "provider_write": False,
+        "execution_allowed": False,
+        "live_execution_enabled": False,
+        "auto_execution": False,
+        "auto_execution_enabled": False,
+        "human_approval_required": True,
+        "owner_approval_required": True,
+        "actual_orders_submitted": 0,
+        "actual_bets_submitted": 0,
+        "actual_trades_submitted": 0,
+        "raw_payload_included": False,
+        "raw_payload_exposed": False,
+        "secrets_included": False,
+        "compact_response": True,
+    }
+
+
+def _compact_baseball_section(section: Any, keys: list[str], limit: int = 10) -> dict[str, Any]:
+    row = section if isinstance(section, dict) else {}
+    out: dict[str, Any] = {}
+    for key in keys:
+        value = row.get(key)
+        if isinstance(value, list):
+            out[key] = value[:limit]
+        elif isinstance(value, dict):
+            out[key] = redact_and_limit_payload(value, limit=limit)
+        else:
+            out[key] = value
+    return out
+
+
+def compact_baseball_impact_readiness_response(payload: dict[str, Any], limit: int = 10) -> dict[str, Any]:
+    cap = max(1, min(int(limit or 10), 100))
+    return {
+        "ok": bool(payload.get("ok", True)),
+        "status": payload.get("status", "baseball_impact_readiness"),
+        "supported_sports": list(payload.get("supported_sports") or [])[:cap],
+        "supported_roles": list(payload.get("supported_roles") or [])[:cap],
+        "supported_markets": list(payload.get("supported_markets") or [])[:cap],
+        "data_tier_requirements": redact_and_limit_payload(payload.get("data_tier_requirements") or {}, limit=cap),
+        "mlb_readiness": redact_and_limit_payload(payload.get("mlb_readiness") or {}, limit=cap),
+        "missing_data_by_market": redact_and_limit_payload(payload.get("missing_data_by_market") or {}, limit=cap),
+        "calibration_requirements": list(payload.get("calibration_requirements") or [])[:cap],
+        "no_spend_policy": redact_and_limit_payload(payload.get("no_spend_policy") or {}, limit=cap),
+        "forbidden_features": list(payload.get("forbidden_features") or [])[:cap],
+        "provider_write": False,
+        "execution_allowed": False,
+        "live_execution_enabled": False,
+        "auto_execution": False,
+        "auto_execution_enabled": False,
+        "human_approval_required": True,
+        "owner_approval_required": True,
+        "actual_orders_submitted": 0,
+        "actual_bets_submitted": 0,
+        "actual_trades_submitted": 0,
+        "raw_payload_included": False,
+        "raw_payload_exposed": False,
+        "secrets_included": False,
+        "compact_response": True,
+    }
+
+
+def compact_baseball_impact_diagnostics_response(payload: dict[str, Any], limit: int = 10) -> dict[str, Any]:
+    cap = max(1, min(int(limit or 10), 100))
+    data = payload.get("data_availability") if isinstance(payload.get("data_availability"), dict) else {}
+    run_value = payload.get("run_value_impact") if isinstance(payload.get("run_value_impact"), dict) else {}
+    pitcher = payload.get("pitcher_impact") if isinstance(payload.get("pitcher_impact"), dict) else {}
+    batter = payload.get("batter_impact") if isinstance(payload.get("batter_impact"), dict) else {}
+    matchup = payload.get("matchup_context") if isinstance(payload.get("matchup_context"), dict) else {}
+    lineup = payload.get("lineup_context") if isinstance(payload.get("lineup_context"), dict) else {}
+    bullpen = payload.get("bullpen_context") if isinstance(payload.get("bullpen_context"), dict) else {}
+    park = payload.get("park_weather_umpire_context") if isinstance(payload.get("park_weather_umpire_context"), dict) else {}
+    defense = payload.get("defense_baserunning_context") if isinstance(payload.get("defense_baserunning_context"), dict) else {}
+    availability = payload.get("availability_context") if isinstance(payload.get("availability_context"), dict) else {}
+    incentive = payload.get("incentive_context") if isinstance(payload.get("incentive_context"), dict) else {}
+    market = payload.get("market_relevance") if isinstance(payload.get("market_relevance"), dict) else {}
+    calibration = payload.get("calibration") if isinstance(payload.get("calibration"), dict) else {}
+    red_team = payload.get("red_team") if isinstance(payload.get("red_team"), dict) else {}
+    return {
+        "ok": bool(payload.get("ok", True)),
+        "status": payload.get("status", "baseball_player_impact_complete"),
+        "sport": payload.get("sport"),
+        "market_type": payload.get("market_type"),
+        "data_tier": int(payload.get("data_tier", 0) or 0),
+        "tier_name": payload.get("tier_name"),
+        "team_level_allowed": bool(payload.get("team_level_allowed", False)),
+        "pitcher_level_allowed": bool(payload.get("pitcher_level_allowed", False)),
+        "batter_level_allowed": bool(payload.get("batter_level_allowed", False)),
+        "tracking_level_allowed": bool(payload.get("tracking_level_allowed", False)),
+        "baseball_impact_score": payload.get("baseball_impact_score", 0.0),
+        "recommended_review_status": payload.get("recommended_review_status"),
+        "run_value_impact": _compact_baseball_section(
+            run_value,
+            [
+                "run_value_score",
+                "pitch_level_score",
+                "plate_appearance_score",
+                "team_offense_score",
+                "team_pitching_score",
+                "first_five_signal_score",
+                "full_game_signal_score",
+                "total_signal_score",
+                "team_total_signal_score",
+                "confidence_cap_reason",
+                "insufficient_sample",
+                "limited_proxy",
+                "run_value_fabricated",
+                "missing_inputs",
+            ],
+            cap,
+        ),
+        "pitcher_impact": _compact_baseball_section(
+            pitcher,
+            [
+                "pitcher_role",
+                "pitcher_impact_score",
+                "strikeout_skill_score",
+                "command_score",
+                "contact_suppression_score",
+                "home_run_risk_score",
+                "pitch_mix_quality_score",
+                "workload_fatigue_score",
+                "times_through_order_risk",
+                "pitcher_market_relevance",
+                "confidence_cap_reason",
+                "pitch_tracking_inferred",
+                "missing_pitcher_inputs",
+                "no_bet_reasons",
+            ],
+            cap,
+        ),
+        "batter_impact": _compact_baseball_section(
+            batter,
+            [
+                "batter_impact_score",
+                "contact_quality_score",
+                "plate_discipline_score",
+                "power_score",
+                "hit_probability_proxy",
+                "total_bases_relevance_score",
+                "home_run_relevance_score",
+                "stolen_base_relevance_score",
+                "strikeout_risk_score",
+                "batter_market_relevance",
+                "confidence_cap_reason",
+                "bat_tracking_inferred",
+                "missing_batter_inputs",
+                "no_bet_reasons",
+            ],
+            cap,
+        ),
+        "matchup_context": _compact_baseball_section(
+            matchup,
+            [
+                "matchup_advantage_score",
+                "matchup_risk_score",
+                "pitcher_matchup_score",
+                "batter_matchup_score",
+                "team_matchup_score",
+                "mismatch_reasons",
+                "no_bet_reasons",
+                "market_specific_matchup_notes",
+                "first_five_relevance",
+                "full_game_relevance",
+                "player_prop_relevance",
+                "batter_vs_pitcher_history_weight",
+                "missing_inputs",
+            ],
+            cap,
+        ),
+        "lineup_context": _compact_baseball_section(
+            lineup,
+            ["lineup_quality_score", "lineup_stability_score", "plate_appearance_projection_confidence", "run_environment_modifier", "prop_volume_modifier", "confidence_cap_reason", "missing_inputs", "no_bet_reasons"],
+            cap,
+        ),
+        "bullpen_context": _compact_baseball_section(
+            bullpen,
+            ["bullpen_quality_score", "bullpen_fatigue_score", "high_leverage_availability_score", "full_game_market_modifier", "first_five_vs_full_game_split", "total_risk_modifier", "confidence_cap_reason", "missing_inputs", "no_bet_reasons"],
+            cap,
+        ),
+        "park_weather_umpire_context": _compact_baseball_section(
+            park,
+            ["park_run_environment_score", "home_run_environment_score", "weather_run_modifier", "pitcher_prop_weather_modifier", "batter_prop_weather_modifier", "umpire_zone_modifier", "total_market_modifier", "roof_uncertainty_reduced", "confidence_cap_reason", "missing_inputs", "no_bet_reasons"],
+            cap,
+        ),
+        "defense_baserunning_context": _compact_baseball_section(
+            defense,
+            ["defense_impact_score", "baserunning_impact_score", "catcher_run_prevention_score", "stolen_base_relevance_score", "pitcher_support_modifier", "total_market_modifier", "confidence_cap_reason", "missing_inputs", "no_bet_reasons"],
+            cap,
+        ),
+        "availability_context": _compact_baseball_section(
+            availability,
+            ["availability_score", "role_stability_score", "starter_certainty_score", "workload_fatigue_score", "lineup_rest_risk_score", "travel_schedule_risk_score", "weather_delay_risk_score", "confidence_cap_reason", "missing_inputs", "no_bet_reasons"],
+            cap,
+        ),
+        "incentive_context": _compact_baseball_section(
+            incentive,
+            ["incentive_context_status", "incentive_behavior_score", "stat_chase_risk", "team_alignment_score", "narrative_overfit_risk", "confidence_modifier", "market_relevance_modifier", "bonus_threshold_fabricated", "incentive_is_standalone_edge", "no_bet_reasons", "missing_inputs"],
+            cap,
+        ),
+        "market_relevance": _compact_baseball_section(
+            market,
+            ["market_relevance_scores", "strongest_market_links", "weak_market_links", "no_bet_market_reasons", "pitcher_prop_relevance", "batter_prop_relevance", "team_market_relevance", "market_confidence_caps", "selected_market_type", "selected_market_relevance_score"],
+            cap,
+        ),
+        "calibration_status": payload.get("calibration_status", calibration.get("calibration_status", "insufficient_data")),
+        "calibration": _compact_baseball_section(
+            calibration,
+            ["calibration_status", "sample_size", "matched_outcomes_count", "insufficient_sample", "hit_rate", "false_positive_rate", "confidence_cap", "next_required_data", "calibration_buckets"],
+            cap,
+        ),
+        "data_availability": _compact_baseball_section(
+            data,
+            ["status", "sport", "data_tier", "tier_name", "team_level_allowed", "pitcher_level_allowed", "batter_level_allowed", "tracking_level_allowed", "calibration_allowed", "available_field_groups", "missing_field_groups", "confidence_cap", "confidence_cap_reason", "no_fabrication", "next_data_to_collect"],
+            cap,
+        ),
+        "red_team": _compact_baseball_section(
             red_team,
             ["red_team_status", "downgrade_score", "recommended_action_adjustment", "no_bet_reasons", "red_team_reasons", "missing_inputs", "confidence_cap_reason", "red_team_only"],
             cap,
