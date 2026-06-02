@@ -68,3 +68,6 @@ data/*.db
 
 # Generated local reports
 reports/
+
+# Generated script backup files
+*.bak_*
