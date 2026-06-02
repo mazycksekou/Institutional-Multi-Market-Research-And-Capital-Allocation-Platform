@@ -22,15 +22,32 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class _FakeSettlementAdapter:
-    def __init__(self, responses, *, ready=True):
+    def __init__(
+        self,
+        responses,
+        *,
+        ready=True,
+        blockers=None,
+        credential_status="ok",
+        live_reads_enabled=True,
+        provider_enabled=True,
+    ):
         self.responses = list(responses)
         self.ready = ready
+        self.blockers = list(blockers or ([] if ready else ["provider_disabled"]))
+        self.credential_status = credential_status
+        self.live_reads_enabled = live_reads_enabled
+        self.provider_enabled = provider_enabled
         self.calls = []
 
     def validate_config(self):
-        if self.ready:
-            return {"ok": True, "blockers": []}
-        return {"ok": False, "blockers": ["provider_disabled"]}
+        return {
+            "ok": self.ready,
+            "blockers": self.blockers,
+            "credential_status": self.credential_status,
+            "live_reads_enabled": self.live_reads_enabled,
+            "provider_enabled": self.provider_enabled,
+        }
 
     def fetch_markets(self, params=None):
         self.calls.append(dict(params or {}))
@@ -212,8 +229,122 @@ class TestDeepSeekDataPullCheckContract(unittest.TestCase):
         self.assertEqual(fake.calls, [])
         self.assertEqual(report["provider_calls_attempted"], 0)
         self.assertEqual(report["explicit_outcomes_found"], 0)
+        self.assertFalse(report["tiny_provider_mode_requested"])
+        self.assertFalse(report["tiny_provider_mode_allowed"])
+        self.assertEqual(report["why_provider_calls_zero"], "tiny_provider_mode_not_requested")
         self.assertFalse(report["provider_write"])
         self.assertFalse(report["execution_allowed"])
+
+    def test_zero_call_diagnostics_report_provider_not_ready_without_secrets(self):
+        fake = _FakeSettlementAdapter(
+            [{"ok": True, "status": "ok", "records": [{"ticker": "KX1", "result": "yes"}]}],
+            ready=False,
+            blockers=["provider_disabled", "live_reads_disabled", "blocked_missing_credentials"],
+            credential_status="missing",
+            live_reads_enabled=False,
+            provider_enabled=False,
+        )
+        report = build_candidate_report(
+            records=[
+                {
+                    "_source_record_type": "paper_decision",
+                    "provider": "kalshi_prediction_market",
+                    "market_type": "prediction_market",
+                    "ticker": "KX1",
+                    "api_key": "do-not-leak",
+                    "provider_payload": {"raw": "drop"},
+                }
+            ],
+            allow_tiny_provider_calls=True,
+            max_provider_calls=3,
+            max_records=5,
+            provider_adapter=fake,
+        )
+        rendered = json.dumps(report, sort_keys=True).lower()
+        self.assertEqual(fake.calls, [])
+        self.assertEqual(report["provider_calls_attempted"], 0)
+        self.assertTrue(report["tiny_provider_mode_requested"])
+        self.assertTrue(report["tiny_provider_mode_allowed"])
+        self.assertEqual(report["provider_readiness_status"], "provider_not_ready")
+        self.assertIn("provider_not_ready", report["provider_readiness_blockers"])
+        self.assertIn("live_reads_disabled", report["provider_readiness_blockers"])
+        self.assertIn("credentials_missing", report["provider_readiness_blockers"])
+        self.assertFalse(report["provider_config_present"])
+        self.assertFalse(report["live_read_enabled"])
+        self.assertFalse(report["credentials_present"])
+        self.assertEqual(report["why_provider_calls_zero"], "provider_not_ready")
+        self.assertEqual(report["provider_selection_blocker"], "provider_not_ready")
+        self.assertGreaterEqual(report["provider_eligible_records"], 1)
+        self.assertNotIn("do-not-leak", rendered)
+        self.assertNotIn("provider_payload", rendered)
+        self.assertFalse(report["raw_payload_included"])
+        self.assertFalse(report["secrets_included"])
+
+    def test_zero_call_diagnostics_report_missing_identifiers(self):
+        fake = _FakeSettlementAdapter([], ready=True)
+        result = run_tiny_read_only_settlement_check(
+            [
+                {
+                    "provider": "kalshi_prediction_market",
+                    "market_type": "prediction_market",
+                    "selection": "unknown",
+                }
+            ],
+            allow_tiny_provider_calls=True,
+            max_provider_calls=3,
+            max_records=5,
+            adapter=fake,
+        )
+        self.assertEqual(fake.calls, [])
+        self.assertEqual(result["provider_calls_attempted"], 0)
+        self.assertEqual(result["pending_records_seen"], 1)
+        self.assertEqual(result["provider_eligible_records"], 0)
+        self.assertEqual(result["provider_selected_count"], 0)
+        self.assertEqual(result["missing_identifier_count"], 1)
+        self.assertEqual(result["missing_ticker_count"], 1)
+        self.assertEqual(result["missing_market_id_count"], 1)
+        self.assertEqual(result["why_provider_calls_zero"], "missing_required_identifiers")
+        self.assertEqual(result["provider_selection_blocker"], "missing_required_identifiers")
+
+    def test_zero_call_diagnostics_report_no_provider_eligible_records(self):
+        fake = _FakeSettlementAdapter([], ready=True)
+        result = run_tiny_read_only_settlement_check(
+            [
+                {
+                    "provider": "kalshi_prediction_market",
+                    "market_type": "prediction_market",
+                    "ticker": "KXLOCAL",
+                    "final_outcome": "yes",
+                }
+            ],
+            allow_tiny_provider_calls=True,
+            max_provider_calls=3,
+            max_records=5,
+            adapter=fake,
+        )
+        self.assertEqual(fake.calls, [])
+        self.assertEqual(result["pending_records_seen"], 1)
+        self.assertEqual(result["local_explicit_outcome_count"], 1)
+        self.assertEqual(result["provider_eligible_records"], 0)
+        self.assertEqual(result["provider_ineligible_reason_counts"]["local_explicit_outcome"], 1)
+        self.assertEqual(result["why_provider_calls_zero"], "no_provider_eligible_records")
+
+    def test_zero_call_diagnostics_report_call_budget_zero(self):
+        fake = _FakeSettlementAdapter([{"ok": True, "status": "ok", "records": [{"ticker": "KX1", "result": "yes"}]}], ready=True)
+        result = run_tiny_read_only_settlement_check(
+            [{"provider": "kalshi_prediction_market", "market_type": "prediction_market", "ticker": "KX1"}],
+            allow_tiny_provider_calls=True,
+            max_provider_calls=0,
+            max_records=5,
+            adapter=fake,
+        )
+        self.assertEqual(fake.calls, [])
+        self.assertTrue(result["tiny_provider_mode_requested"])
+        self.assertFalse(result["tiny_provider_mode_allowed"])
+        self.assertEqual(result["provider_selection_limit"], 0)
+        self.assertEqual(result["provider_selected_count"], 0)
+        self.assertEqual(result["why_provider_calls_zero"], "call_budget_zero")
+        self.assertEqual(result["provider_call_block_reason"], "call_budget_zero")
 
     def test_tiny_provider_settlement_check_accepts_explicit_yes_and_no(self):
         fake = _FakeSettlementAdapter(

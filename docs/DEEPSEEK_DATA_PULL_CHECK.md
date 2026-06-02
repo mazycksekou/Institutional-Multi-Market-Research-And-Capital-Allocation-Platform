@@ -77,6 +77,26 @@ Candidate reports are review-only. They never persist outcomes.
 
 Provider settlement-check report fields include:
 
+- `tiny_provider_mode_requested`
+- `tiny_provider_mode_allowed`
+- `provider_readiness_status`
+- `provider_readiness_blockers`
+- `provider_config_present`
+- `live_read_enabled`
+- `credentials_present`
+- `pending_records_seen`
+- `provider_eligible_records`
+- `provider_ineligible_records`
+- `provider_ineligible_reason_counts`
+- `missing_identifier_count`
+- `missing_ticker_count`
+- `missing_market_id_count`
+- `already_settled_or_closed_without_result_count`
+- `local_explicit_outcome_count`
+- `provider_selection_limit`
+- `provider_selected_count`
+- `provider_selection_blocker`
+- `why_provider_calls_zero`
 - `provider_calls_attempted`
 - `provider_calls_succeeded`
 - `provider_calls_failed`
@@ -87,6 +107,19 @@ Provider settlement-check report fields include:
 - `rate_limited`
 - `persisted=false`
 - `dry_run=true`
+
+Zero-call reasons are compact safe labels:
+
+- `provider_not_ready`
+- `live_reads_disabled`
+- `credentials_missing`
+- `no_pending_records`
+- `no_provider_eligible_records`
+- `missing_required_identifiers`
+- `all_records_rejected_before_provider_check`
+- `call_budget_zero`
+- `tiny_provider_mode_not_requested`
+- `unknown_diagnostic_gap`
 
 ## Report Paths
 

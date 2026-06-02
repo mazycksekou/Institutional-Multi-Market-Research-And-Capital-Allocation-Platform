@@ -19,6 +19,19 @@ KALSHI_PROVIDER_ID = "kalshi_prediction_market"
 MAX_TINY_PROVIDER_CALLS = 3
 MAX_TINY_PROVIDER_RECORDS = 5
 
+ZERO_CALL_REASON_CATEGORIES = {
+    "provider_not_ready",
+    "live_reads_disabled",
+    "credentials_missing",
+    "no_pending_records",
+    "no_provider_eligible_records",
+    "missing_required_identifiers",
+    "all_records_rejected_before_provider_check",
+    "call_budget_zero",
+    "tiny_provider_mode_not_requested",
+    "unknown_diagnostic_gap",
+}
+
 ACCEPTED_EXPLICIT_FIELDS = (
     "result",
     "final_outcome",
@@ -101,6 +114,23 @@ def _safe_int(value: Any, default: int = 0) -> int:
         return int(value)
     except (TypeError, ValueError):
         return default
+
+
+def _clean_reason(value: Any) -> str:
+    text = str(value or "").strip().lower().replace("-", "_").replace(" ", "_")
+    mapping = {
+        "blocked_missing_credentials": "credentials_missing",
+        "missing_credentials": "credentials_missing",
+        "provider_disabled": "provider_not_ready",
+        "live_reads_disabled": "live_reads_disabled",
+        "dry_run_required": "provider_not_ready",
+        "auto_execution_not_allowed": "provider_not_ready",
+        "read_only_required": "provider_not_ready",
+    }
+    cleaned = mapping.get(text, text or "unknown_diagnostic_gap")
+    if any(token in cleaned for token in ("secret", "token", "password", "credential_value", "api_key_value")):
+        return "provider_not_ready"
+    return cleaned
 
 
 def _contains_any_value(row: dict[str, Any], keys: tuple[str, ...]) -> bool:
@@ -186,30 +216,84 @@ def _market_identifier(row: dict[str, Any]) -> str | None:
 
 
 def _pending_provider_rows(records: list[dict[str, Any]], *, max_records: int) -> list[dict[str, Any]]:
-    rows: list[dict[str, Any]] = []
+    return _provider_selection_diagnostics(records, provider_selection_limit=max_records)["selected_rows"]
+
+
+def _provider_row_from_record(row: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "provider": KALSHI_PROVIDER_ID,
+        "market_type": row.get("market_type") or "prediction_market",
+        "decision_id": row.get("decision_id"),
+        "review_item_id": row.get("review_item_id") or row.get("id"),
+        "run_id": row.get("run_id"),
+        "ticker": row.get("ticker"),
+        "contract_id": row.get("contract_id"),
+        "market_id": row.get("market_id"),
+        "close_time": row.get("close_time") or row.get("market_close_at"),
+        "_source_record_type": row.get("_source_record_type") or "local_record",
+    }
+
+
+def _provider_selection_diagnostics(records: list[dict[str, Any]], *, provider_selection_limit: int) -> dict[str, Any]:
+    pending_records_seen = 0
+    provider_eligible: list[dict[str, Any]] = []
+    ineligible_reason_counts: dict[str, int] = {}
+    missing_identifier_count = 0
+    missing_ticker_count = 0
+    missing_market_id_count = 0
+    local_explicit_outcome_count = 0
+    already_settled_or_closed_without_result_count = 0
+
+    def mark(reason: str) -> None:
+        ineligible_reason_counts[reason] = ineligible_reason_counts.get(reason, 0) + 1
+
     for row in records:
-        if not isinstance(row, dict) or not is_prediction_market_record(row) or not _is_kalshi_record(row):
+        if not isinstance(row, dict):
+            mark("malformed_record")
             continue
+        if not is_prediction_market_record(row):
+            mark("non_prediction_market_record")
+            continue
+        if not _is_kalshi_record(row):
+            mark("unsupported_prediction_market_provider")
+            continue
+        pending_records_seen += 1
         local_evidence = evaluate_outcome_evidence(row, source_record_type=str(row.get("_source_record_type") or "local_record"))
+        rejection_reason = str(local_evidence.get("rejection_reason") or "")
         if bool(local_evidence.get("candidate_accepted")):
+            local_explicit_outcome_count += 1
+            already_settled_or_closed_without_result_count += 1
+            mark("local_explicit_outcome")
             continue
-        rows.append(
-            {
-                "provider": KALSHI_PROVIDER_ID,
-                "market_type": row.get("market_type") or "prediction_market",
-                "decision_id": row.get("decision_id"),
-                "review_item_id": row.get("review_item_id") or row.get("id"),
-                "run_id": row.get("run_id"),
-                "ticker": row.get("ticker"),
-                "contract_id": row.get("contract_id"),
-                "market_id": row.get("market_id"),
-                "close_time": row.get("close_time") or row.get("market_close_at"),
-                "_source_record_type": row.get("_source_record_type") or "local_record",
-            }
-        )
-        if len(rows) >= max_records:
-            break
-    return rows
+        if rejection_reason == "closed_without_explicit_result":
+            already_settled_or_closed_without_result_count += 1
+        if row.get("ticker") in (None, ""):
+            missing_ticker_count += 1
+        if row.get("market_id") in (None, ""):
+            missing_market_id_count += 1
+        if not _market_identifier(row):
+            missing_identifier_count += 1
+            mark("missing_required_identifiers")
+            continue
+        provider_eligible.append(_provider_row_from_record(row))
+
+    selection_limit = max(0, int(provider_selection_limit or 0))
+    selected = provider_eligible[:selection_limit]
+    provider_ineligible_records = max(0, len(records) - len(provider_eligible))
+    return {
+        "pending_records_seen": pending_records_seen,
+        "provider_eligible_records": len(provider_eligible),
+        "provider_ineligible_records": provider_ineligible_records,
+        "provider_ineligible_reason_counts": ineligible_reason_counts,
+        "missing_identifier_count": missing_identifier_count,
+        "missing_ticker_count": missing_ticker_count,
+        "missing_market_id_count": missing_market_id_count,
+        "already_settled_or_closed_without_result_count": already_settled_or_closed_without_result_count,
+        "local_explicit_outcome_count": local_explicit_outcome_count,
+        "provider_selection_limit": selection_limit,
+        "provider_selected_count": len(selected),
+        "selected_rows": selected,
+    }
 
 
 def evaluate_outcome_evidence(row: dict[str, Any], *, source_record_type: str = "unknown") -> dict[str, Any]:
@@ -287,7 +371,9 @@ def _empty_provider_check(
     max_records: int,
     status: str,
     block_reason: str | None = None,
+    diagnostics: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    diagnostic_payload = dict(diagnostics or {})
     return {
         "provider_settlement_check_enabled": bool(allow_tiny_provider_calls),
         "provider_settlement_check_status": status,
@@ -312,6 +398,7 @@ def _empty_provider_check(
         "max_records_effective": max_records if allow_tiny_provider_calls else 0,
         "raw_payload_included": False,
         "secrets_included": False,
+        **diagnostic_payload,
     }
 
 
@@ -333,15 +420,120 @@ def _provider_is_rate_limited(fetch: dict[str, Any]) -> bool:
     return int(fetch.get("http_status") or 0) == 429 or _provider_error_reason(fetch) == "http_429"
 
 
-def _adapter_ready(adapter: Any) -> tuple[bool, str | None]:
+def _provider_readiness_diagnostics(adapter: Any) -> dict[str, Any]:
     validator = getattr(adapter, "validate_config", None)
     if not callable(validator):
-        return True, None
+        return {
+            "provider_readiness_status": "provider_ready",
+            "provider_readiness_blockers": [],
+            "provider_config_present": True,
+            "live_read_enabled": True,
+            "credentials_present": True,
+        }
     config = validator()
-    if bool(config.get("ok")):
-        return True, None
-    blockers = [str(item) for item in list(config.get("blockers") or [])]
-    return False, ",".join(blockers) or str(config.get("status") or "provider_not_ready")
+    raw_blockers = [str(item) for item in list(config.get("blockers") or [])]
+    blockers = sorted({ _clean_reason(item) for item in raw_blockers if item })
+    ready = bool(config.get("ok"))
+    if ready:
+        blockers = []
+    credential_status = str(config.get("credential_status") or "").strip().lower()
+    credentials_present = bool(credential_status == "ok") if credential_status else "credentials_missing" not in blockers
+    live_read_enabled = bool(config.get("live_reads_enabled", config.get("live_calls_enabled", ready and "live_reads_disabled" not in blockers)))
+    provider_config_present = bool(config.get("provider_enabled", ready and "provider_not_ready" not in blockers))
+    return {
+        "provider_readiness_status": "provider_ready" if ready else "provider_not_ready",
+        "provider_readiness_blockers": blockers,
+        "provider_config_present": provider_config_present,
+        "live_read_enabled": live_read_enabled,
+        "credentials_present": credentials_present,
+    }
+
+
+def _zero_call_reason(
+    *,
+    allow_tiny_provider_calls: bool,
+    effective_calls: int,
+    effective_records: int,
+    readiness: dict[str, Any],
+    selection: dict[str, Any],
+    calls_attempted: int = 0,
+) -> str | None:
+    if calls_attempted > 0:
+        return None
+    if not allow_tiny_provider_calls:
+        return "tiny_provider_mode_not_requested"
+    if effective_calls <= 0 or effective_records <= 0:
+        return "call_budget_zero"
+    if str(readiness.get("provider_readiness_status") or "") != "provider_ready":
+        blockers = set(str(item) for item in list(readiness.get("provider_readiness_blockers") or []))
+        if "provider_not_ready" in blockers:
+            return "provider_not_ready"
+        if "live_reads_disabled" in blockers:
+            return "live_reads_disabled"
+        if "credentials_missing" in blockers:
+            return "credentials_missing"
+        return "provider_not_ready"
+    if int(selection.get("pending_records_seen") or 0) <= 0:
+        return "no_pending_records"
+    if int(selection.get("provider_eligible_records") or 0) <= 0:
+        if int(selection.get("missing_identifier_count") or 0) > 0:
+            return "missing_required_identifiers"
+        return "no_provider_eligible_records"
+    if int(selection.get("provider_selected_count") or 0) <= 0:
+        return "all_records_rejected_before_provider_check"
+    return "unknown_diagnostic_gap"
+
+
+def _provider_selection_blocker(
+    *,
+    allow_tiny_provider_calls: bool,
+    effective_calls: int,
+    effective_records: int,
+    readiness: dict[str, Any],
+    selection: dict[str, Any],
+) -> str | None:
+    reason = _zero_call_reason(
+        allow_tiny_provider_calls=allow_tiny_provider_calls,
+        effective_calls=effective_calls,
+        effective_records=effective_records,
+        readiness=readiness,
+        selection=selection,
+        calls_attempted=0,
+    )
+    return None if reason == "unknown_diagnostic_gap" and int(selection.get("provider_selected_count") or 0) > 0 else reason
+
+
+def _base_zero_call_diagnostics(
+    *,
+    allow_tiny_provider_calls: bool,
+    effective_calls: int,
+    effective_records: int,
+    readiness: dict[str, Any],
+    selection: dict[str, Any],
+    calls_attempted: int = 0,
+) -> dict[str, Any]:
+    why = _zero_call_reason(
+        allow_tiny_provider_calls=allow_tiny_provider_calls,
+        effective_calls=effective_calls,
+        effective_records=effective_records,
+        readiness=readiness,
+        selection=selection,
+        calls_attempted=calls_attempted,
+    )
+    return {
+        "tiny_provider_mode_requested": bool(allow_tiny_provider_calls),
+        "tiny_provider_mode_allowed": bool(allow_tiny_provider_calls and effective_calls > 0 and effective_records > 0),
+        **readiness,
+        **{key: value for key, value in selection.items() if key != "selected_rows"},
+        "provider_selection_blocker": _provider_selection_blocker(
+            allow_tiny_provider_calls=allow_tiny_provider_calls,
+            effective_calls=effective_calls,
+            effective_records=effective_records,
+            readiness=readiness,
+            selection=selection,
+        ),
+        "why_provider_calls_zero": why,
+    }
 
 
 def _fetch_tiny_read_only_records(
@@ -425,39 +617,61 @@ def run_tiny_read_only_settlement_check(
 ) -> dict[str, Any]:
     effective_calls = max(0, min(_safe_int(max_provider_calls, 0), MAX_TINY_PROVIDER_CALLS))
     effective_records = max(0, min(_safe_int(max_records, 0), MAX_TINY_PROVIDER_RECORDS))
+    provider_selection_limit = min(effective_calls, effective_records) if allow_tiny_provider_calls else 0
+    selection = _provider_selection_diagnostics(records, provider_selection_limit=provider_selection_limit)
+    adapter = adapter or KalshiReadonlyAdapter()
+    readiness = _provider_readiness_diagnostics(adapter)
+    diagnostics = _base_zero_call_diagnostics(
+        allow_tiny_provider_calls=allow_tiny_provider_calls,
+        effective_calls=effective_calls,
+        effective_records=effective_records,
+        readiness=readiness,
+        selection=selection,
+        calls_attempted=0,
+    )
     if not allow_tiny_provider_calls or effective_calls <= 0 or effective_records <= 0:
         return _empty_provider_check(
             allow_tiny_provider_calls=allow_tiny_provider_calls,
             max_provider_calls=effective_calls,
             max_records=effective_records,
             status="provider_calls_disabled",
-            block_reason="provider_calls_disabled_by_default_or_missing_tiny_caps",
+            block_reason=diagnostics["why_provider_calls_zero"],
+            diagnostics=diagnostics,
         )
 
-    pending_rows = _pending_provider_rows(records, max_records=effective_records)
+    pending_rows = list(selection.get("selected_rows") or [])
     if not pending_rows:
         return _empty_provider_check(
             allow_tiny_provider_calls=allow_tiny_provider_calls,
             max_provider_calls=effective_calls,
             max_records=effective_records,
-            status="no_pending_prediction_market_records",
+            status="no_pending_prediction_market_records" if int(selection.get("pending_records_seen") or 0) <= 0 else "no_provider_eligible_records",
+            block_reason=diagnostics["why_provider_calls_zero"],
+            diagnostics=diagnostics,
         )
 
-    adapter = adapter or KalshiReadonlyAdapter()
-    ready, block_reason = _adapter_ready(adapter)
-    if not ready:
+    if str(readiness.get("provider_readiness_status") or "") != "provider_ready":
         return _empty_provider_check(
             allow_tiny_provider_calls=allow_tiny_provider_calls,
             max_provider_calls=effective_calls,
             max_records=effective_records,
             status="provider_not_ready",
-            block_reason=block_reason,
+            block_reason=diagnostics["why_provider_calls_zero"],
+            diagnostics=diagnostics,
         )
 
     fetched = _fetch_tiny_read_only_records(
         pending_rows,
         adapter=adapter,
         max_provider_calls=effective_calls,
+    )
+    post_fetch_diagnostics = _base_zero_call_diagnostics(
+        allow_tiny_provider_calls=allow_tiny_provider_calls,
+        effective_calls=effective_calls,
+        effective_records=effective_records,
+        readiness=readiness,
+        selection=selection,
+        calls_attempted=int(fetched.get("provider_calls_attempted") or 0),
     )
     checked_rows = list(fetched.get("checked_rows") or [])
     provider_records = list(fetched.get("provider_records") or [])
@@ -512,6 +726,7 @@ def run_tiny_read_only_settlement_check(
         "max_records_effective": effective_records,
         "raw_payload_included": False,
         "secrets_included": False,
+        **post_fetch_diagnostics,
     }
 
 

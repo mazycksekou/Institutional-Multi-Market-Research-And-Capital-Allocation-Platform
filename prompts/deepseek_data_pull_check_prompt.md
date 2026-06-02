@@ -23,6 +23,7 @@ Rules:
 - Do not print secrets, auth headers, raw provider payloads, or environment values.
 - Keep output compact and focused on no-spend next actions.
 - If tiny provider mode is used, stop on the first rate limit or provider error and use only explicit settlement/result fields.
+- When provider calls are zero, explain only from `why_provider_calls_zero`, readiness blockers, and eligibility counts; do not infer from hidden config.
 
 Required safety flags must remain:
 
