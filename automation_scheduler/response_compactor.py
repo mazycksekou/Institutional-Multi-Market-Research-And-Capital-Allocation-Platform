@@ -40,7 +40,9 @@ def _redact(payload: Any) -> Any:
         out: dict[str, Any] = {}
         for k, v in payload.items():
             lk = str(k).lower()
-            if any(s in lk for s in _SECRET_KEYS):
+            if lk in {"new_api_keys_required", "api_keys_required", "paid_provider_required"}:
+                out[k] = _redact(v)
+            elif any(s in lk for s in _SECRET_KEYS):
                 out[k] = "[redacted]"
             elif lk in {
                 "provider_payload",

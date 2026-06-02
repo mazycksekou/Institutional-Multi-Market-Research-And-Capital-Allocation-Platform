@@ -610,6 +610,7 @@ class TestHockeySafetyAndEndpoints(unittest.TestCase):
         response = self.client.get("/api/automation/hockey-impact-readiness")
         self.assertEqual(response.status_code, 200)
         self.assertFalse(response.json()["provider_write"])
+        self.assertFalse(response.json()["no_spend_policy"]["new_api_keys_required"])
 
     def test_099_diagnostics_endpoint_returns_execution_allowed_false(self):
         response = self.client.post("/api/automation/hockey-impact-diagnostics", json={"sport": "icehockey_nhl", "market_type": "total", "team_context": _team_context()})

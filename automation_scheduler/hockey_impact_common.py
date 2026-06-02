@@ -353,6 +353,9 @@ def _sensitive_key_for_hockey_output(key: Any) -> bool:
         "auth_header_exposed",
         "signature_exposed",
         "redaction_applied",
+        "new_api_keys_required",
+        "api_keys_required",
+        "paid_provider_required",
     }:
         return False
     if "possession" in lower:
