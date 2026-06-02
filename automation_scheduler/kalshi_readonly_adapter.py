@@ -402,11 +402,11 @@ class KalshiReadonlyAdapter:
             }
         return {"ok": True, "status": "ok", "records": self._extract_records(body), "errors": []}
 
-    def fetch_markets(self) -> dict[str, Any]:
-        return self._safe_get("markets_path")
+    def fetch_markets(self, params: dict[str, Any] | None = None) -> dict[str, Any]:
+        return self._safe_get("markets_path", params=params)
 
-    def fetch_events(self) -> dict[str, Any]:
-        return self._safe_get("events_path")
+    def fetch_events(self, params: dict[str, Any] | None = None) -> dict[str, Any]:
+        return self._safe_get("events_path", params=params)
 
     def _extract_records(self, body: Any) -> list[dict[str, Any]]:
         if isinstance(body, list):

@@ -12,6 +12,7 @@ Use only compact reports produced by:
 Rules:
 
 - Do not call provider APIs.
+- Provider calls are allowed only when the wrapper report says `allow_tiny_provider_calls=true`; respect the hard caps.
 - Do not call paid APIs.
 - Do not enable sources.
 - Do not call import, migration, deploy, execution, bet, trade, order, swap, deposit, withdrawal, or transfer endpoints.
@@ -21,6 +22,7 @@ Rules:
 - Reject ambiguous, missing, price-only, or closed-without-result evidence.
 - Do not print secrets, auth headers, raw provider payloads, or environment values.
 - Keep output compact and focused on no-spend next actions.
+- If tiny provider mode is used, stop on the first rate limit or provider error and use only explicit settlement/result fields.
 
 Required safety flags must remain:
 

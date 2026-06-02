@@ -13,11 +13,30 @@ from automation_scheduler.deepseek_data_pull_check import (
 from automation_scheduler.prediction_market_outcome_candidates import (
     build_candidate_report,
     evaluate_outcome_evidence,
+    run_tiny_read_only_settlement_check,
 )
 from main import app
 
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+class _FakeSettlementAdapter:
+    def __init__(self, responses, *, ready=True):
+        self.responses = list(responses)
+        self.ready = ready
+        self.calls = []
+
+    def validate_config(self):
+        if self.ready:
+            return {"ok": True, "blockers": []}
+        return {"ok": False, "blockers": ["provider_disabled"]}
+
+    def fetch_markets(self, params=None):
+        self.calls.append(dict(params or {}))
+        if self.responses:
+            return self.responses.pop(0)
+        return {"ok": True, "status": "ok", "records": []}
 
 
 class TestDeepSeekDataPullCheckContract(unittest.TestCase):
@@ -112,7 +131,7 @@ class TestDeepSeekDataPullCheckContract(unittest.TestCase):
         self.assertEqual(allowed["max_provider_calls_effective"], 3)
         self.assertEqual(allowed["max_records_effective"], 5)
         self.assertEqual(allowed["provider_calls_attempted"], 0)
-        self.assertEqual(allowed["provider_call_execution_status"], "not_executed_by_safe_wrapper_step_1")
+        self.assertEqual(allowed["provider_call_execution_status"], "tiny_provider_mode_armed")
 
     def test_outcome_evidence_accepts_only_explicit_yes_no(self):
         accepted_yes = evaluate_outcome_evidence(
@@ -173,6 +192,115 @@ class TestDeepSeekDataPullCheckContract(unittest.TestCase):
         self.assertIn("prediction_market_outcome_candidates/daily/", report["candidate_daily_json_path"])
         self.assertEqual(payload["candidates"][0]["explicit_outcome"], "yes")
         self.assertFalse(payload["would_persist_outcomes"])
+
+    def test_default_prediction_market_check_still_makes_zero_provider_calls(self):
+        fake = _FakeSettlementAdapter([{"ok": True, "status": "ok", "records": [{"ticker": "KX1", "result": "yes"}]}])
+        report = build_candidate_report(
+            records=[
+                {
+                    "_source_record_type": "paper_decision",
+                    "provider": "kalshi_prediction_market",
+                    "market_type": "prediction_market",
+                    "ticker": "KX1",
+                }
+            ],
+            allow_tiny_provider_calls=False,
+            max_provider_calls=3,
+            max_records=5,
+            provider_adapter=fake,
+        )
+        self.assertEqual(fake.calls, [])
+        self.assertEqual(report["provider_calls_attempted"], 0)
+        self.assertEqual(report["explicit_outcomes_found"], 0)
+        self.assertFalse(report["provider_write"])
+        self.assertFalse(report["execution_allowed"])
+
+    def test_tiny_provider_settlement_check_accepts_explicit_yes_and_no(self):
+        fake = _FakeSettlementAdapter(
+            [
+                {
+                    "ok": True,
+                    "status": "ok",
+                    "records": [{"ticker": "KXYES", "result": "yes", "settlement_time": "2026-06-02T00:00:00Z"}],
+                },
+                {
+                    "ok": True,
+                    "status": "ok",
+                    "records": [{"ticker": "KXNO", "result": "no", "settlement_time": "2026-06-02T00:00:00Z"}],
+                },
+            ]
+        )
+        report = build_candidate_report(
+            records=[
+                {"_source_record_type": "paper_decision", "provider": "kalshi_prediction_market", "market_type": "prediction_market", "ticker": "KXYES"},
+                {"_source_record_type": "paper_decision", "provider": "kalshi_prediction_market", "market_type": "prediction_market", "ticker": "KXNO"},
+            ],
+            allow_tiny_provider_calls=True,
+            max_provider_calls=99,
+            max_records=99,
+            provider_adapter=fake,
+        )
+        outcomes = sorted(row["explicit_outcome"] for row in report["candidates"])
+        self.assertEqual(outcomes, ["no", "yes"])
+        self.assertEqual(report["provider_calls_attempted"], 2)
+        self.assertEqual(report["provider_calls_succeeded"], 2)
+        self.assertEqual(report["provider_calls_failed"], 0)
+        self.assertEqual(report["markets_checked_with_provider"], 2)
+        self.assertEqual(report["explicit_outcomes_found"], 2)
+        self.assertEqual(report["max_provider_calls_effective"], 3)
+        self.assertEqual(report["max_records_effective"], 5)
+        self.assertFalse(report["rate_limited"])
+        self.assertFalse(report["persisted"])
+
+    def test_tiny_provider_settlement_check_rejects_price_and_closed_without_result(self):
+        fake = _FakeSettlementAdapter(
+            [
+                {"ok": True, "status": "ok", "records": [{"ticker": "KXPRICE", "yes_price": 0.99}]},
+                {"ok": True, "status": "ok", "records": [{"ticker": "KXCLOSED", "status": "closed", "yes_price": 0.99}]},
+            ]
+        )
+        report = build_candidate_report(
+            records=[
+                {"_source_record_type": "paper_decision", "provider": "kalshi_prediction_market", "market_type": "prediction_market", "ticker": "KXPRICE"},
+                {"_source_record_type": "paper_decision", "provider": "kalshi_prediction_market", "market_type": "prediction_market", "ticker": "KXCLOSED"},
+            ],
+            allow_tiny_provider_calls=True,
+            max_provider_calls=3,
+            max_records=5,
+            provider_adapter=fake,
+        )
+        self.assertEqual(report["explicit_outcomes_found"], 0)
+        self.assertEqual(report["provider_calls_attempted"], 2)
+        self.assertIn("missing_explicit_settlement_field", report["provider_rejection_reasons"])
+        self.assertIn("closed_without_explicit_result", report["provider_rejection_reasons"])
+        self.assertFalse(report["raw_payload_included"])
+        self.assertFalse(report["secrets_included"])
+
+    def test_tiny_provider_settlement_check_rate_limit_stops_safely(self):
+        fake = _FakeSettlementAdapter(
+            [
+                {"ok": False, "status": "provider_error", "http_status": 429, "blocker": "http_429", "records": []},
+                {"ok": True, "status": "ok", "records": [{"ticker": "KX2", "result": "yes"}]},
+            ]
+        )
+        result = run_tiny_read_only_settlement_check(
+            [
+                {"provider": "kalshi_prediction_market", "market_type": "prediction_market", "ticker": "KX1"},
+                {"provider": "kalshi_prediction_market", "market_type": "prediction_market", "ticker": "KX2"},
+            ],
+            allow_tiny_provider_calls=True,
+            max_provider_calls=3,
+            max_records=5,
+            adapter=fake,
+        )
+        self.assertEqual(len(fake.calls), 1)
+        self.assertEqual(result["provider_calls_attempted"], 1)
+        self.assertEqual(result["provider_calls_succeeded"], 0)
+        self.assertEqual(result["provider_calls_failed"], 1)
+        self.assertTrue(result["rate_limited"])
+        self.assertEqual(result["provider_settlement_check_status"], "provider_rate_limited")
+        self.assertFalse(result["provider_write"])
+        self.assertFalse(result["execution_allowed"])
 
     def test_data_availability_and_calibration_endpoints_still_work(self):
         client = TestClient(app)

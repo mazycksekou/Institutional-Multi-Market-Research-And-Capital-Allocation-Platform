@@ -22,6 +22,12 @@ Tiny provider mode is gated and capped for future adapter work:
 .\scripts\deepseek_data_pull_check.ps1 -DryRun -AllowTinyProviderCalls -MaxProviderCalls 3 -MaxRecords 5
 ```
 
+Tiny prediction-market settlement check:
+
+```powershell
+.\scripts\deepseek_data_pull_check.ps1 -DryRun -PredictionMarketOutcomeCheck -AllowTinyProviderCalls -MaxProviderCalls 3 -MaxRecords 5 -NoDeepSeek
+```
+
 ## What It Does
 
 The script resolves the project root, activates `.venv` when present, sets `APP_BASE_URL` to the Render app when unset, then runs:
@@ -41,7 +47,9 @@ Defaults:
 - `MaxProviderCalls=0`
 - `MaxRecords=0`
 
-Tiny provider mode requires `-AllowTinyProviderCalls`. The wrapper hard caps `MaxProviderCalls` at 3 and `MaxRecords` at 5. Step 1 does not execute provider calls; it only records whether the gate would allow a future tiny adapter sample.
+Tiny provider mode requires `-AllowTinyProviderCalls`. The wrapper hard caps `MaxProviderCalls` at 3 and `MaxRecords` at 5. When combined with `-PredictionMarketOutcomeCheck`, the wrapper may use the existing Kalshi read-only adapter and settlement discovery logic to check a tiny set of pending prediction-market records.
+
+The check stops on the first rate limit or provider error. If the existing read-only provider configuration is disabled, missing credentials, or live reads are not enabled, the wrapper records the block and makes no external provider call.
 
 Paid and budget-gated sources remain blocked by default. No source is enabled by this wrapper.
 
@@ -66,6 +74,19 @@ Rejected evidence:
 - missing result
 
 Candidate reports are review-only. They never persist outcomes.
+
+Provider settlement-check report fields include:
+
+- `provider_calls_attempted`
+- `provider_calls_succeeded`
+- `provider_calls_failed`
+- `markets_checked_with_provider`
+- `explicit_outcomes_found`
+- `rejected_count`
+- `rejection_reasons`
+- `rate_limited`
+- `persisted=false`
+- `dry_run=true`
 
 ## Report Paths
 

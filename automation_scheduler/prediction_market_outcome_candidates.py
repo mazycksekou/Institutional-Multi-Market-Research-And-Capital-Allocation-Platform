@@ -7,12 +7,17 @@ from typing import Any
 from uuid import uuid4
 
 from .data_paths import get_runtime_data_path, get_storage_health, resolve_base_data_dir
+from .kalshi_readonly_adapter import KalshiReadonlyAdapter
 from .paper_decision_ledger import load_paper_decisions
 from .review_queue import load_review_queue_state
 from .scheduler_config import SCHEMA_VERSION, safe_run_id, sanitize_filename, utc_now_iso
+from .settlement_discovery import discover_kalshi_settlements_for_pending_rows
 
 
 PREDICTION_MARKET_OUTCOME_CANDIDATE_SCHEMA_VERSION = f"{SCHEMA_VERSION}.prediction_market_outcome_candidates.v1"
+KALSHI_PROVIDER_ID = "kalshi_prediction_market"
+MAX_TINY_PROVIDER_CALLS = 3
+MAX_TINY_PROVIDER_RECORDS = 5
 
 ACCEPTED_EXPLICIT_FIELDS = (
     "result",
@@ -91,6 +96,13 @@ def _safe_get(row: dict[str, Any], key: str) -> Any:
     return _safe_scalar(value)
 
 
+def _safe_int(value: Any, default: int = 0) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
 def _contains_any_value(row: dict[str, Any], keys: tuple[str, ...]) -> bool:
     return any(row.get(key) not in (None, "") for key in keys)
 
@@ -160,6 +172,46 @@ def is_prediction_market_record(row: dict[str, Any]) -> bool:
     return any(token in haystack for token in ("prediction_market", "kalshi", "polymarket", "manifold"))
 
 
+def _is_kalshi_record(row: dict[str, Any]) -> bool:
+    haystack = " ".join(str(row.get(key) or "").lower() for key in ("provider", "provider_id", "source", "source_id"))
+    return "kalshi" in haystack or str(row.get("provider") or "").lower() == KALSHI_PROVIDER_ID
+
+
+def _market_identifier(row: dict[str, Any]) -> str | None:
+    for key in ("ticker", "contract_id", "market_id"):
+        value = row.get(key)
+        if value not in (None, ""):
+            return str(value).strip()
+    return None
+
+
+def _pending_provider_rows(records: list[dict[str, Any]], *, max_records: int) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for row in records:
+        if not isinstance(row, dict) or not is_prediction_market_record(row) or not _is_kalshi_record(row):
+            continue
+        local_evidence = evaluate_outcome_evidence(row, source_record_type=str(row.get("_source_record_type") or "local_record"))
+        if bool(local_evidence.get("candidate_accepted")):
+            continue
+        rows.append(
+            {
+                "provider": KALSHI_PROVIDER_ID,
+                "market_type": row.get("market_type") or "prediction_market",
+                "decision_id": row.get("decision_id"),
+                "review_item_id": row.get("review_item_id") or row.get("id"),
+                "run_id": row.get("run_id"),
+                "ticker": row.get("ticker"),
+                "contract_id": row.get("contract_id"),
+                "market_id": row.get("market_id"),
+                "close_time": row.get("close_time") or row.get("market_close_at"),
+                "_source_record_type": row.get("_source_record_type") or "local_record",
+            }
+        )
+        if len(rows) >= max_records:
+            break
+    return rows
+
+
 def evaluate_outcome_evidence(row: dict[str, Any], *, source_record_type: str = "unknown") -> dict[str, Any]:
     safe_record = compact_prediction_market_record(row, source_record_type=source_record_type)
     explicit: list[tuple[str, str, Any]] = []
@@ -223,6 +275,241 @@ def evaluate_outcome_evidence(row: dict[str, Any], *, source_record_type: str = 
         "rejection_reason": reason,
         "evidence_field": None,
         "evidence_value": None,
+        "raw_payload_included": False,
+        "secrets_included": False,
+    }
+
+
+def _empty_provider_check(
+    *,
+    allow_tiny_provider_calls: bool,
+    max_provider_calls: int,
+    max_records: int,
+    status: str,
+    block_reason: str | None = None,
+) -> dict[str, Any]:
+    return {
+        "provider_settlement_check_enabled": bool(allow_tiny_provider_calls),
+        "provider_settlement_check_status": status,
+        "provider_call_block_reason": block_reason,
+        "provider_calls_attempted": 0,
+        "provider_calls_succeeded": 0,
+        "provider_calls_failed": 0,
+        "provider_records_returned": 0,
+        "markets_checked_with_provider": 0,
+        "explicit_outcomes_found": 0,
+        "provider_rejected_count": 0,
+        "provider_rejection_reasons": {},
+        "rate_limited": False,
+        "persisted": False,
+        "dry_run": True,
+        "provider_write": False,
+        "execution_allowed": False,
+        "execution_allowed_count": 0,
+        "live_execution_enabled": False,
+        "auto_execution_enabled": False,
+        "max_provider_calls_effective": max_provider_calls if allow_tiny_provider_calls else 0,
+        "max_records_effective": max_records if allow_tiny_provider_calls else 0,
+        "raw_payload_included": False,
+        "secrets_included": False,
+    }
+
+
+def _provider_error_reason(fetch: dict[str, Any]) -> str:
+    for key in ("blocker", "status"):
+        value = fetch.get(key)
+        if value:
+            return str(value)
+    errors = fetch.get("errors")
+    if isinstance(errors, list) and errors:
+        return str(errors[0])
+    blockers = fetch.get("blockers")
+    if isinstance(blockers, list) and blockers:
+        return str(blockers[0])
+    return "provider_error"
+
+
+def _provider_is_rate_limited(fetch: dict[str, Any]) -> bool:
+    return int(fetch.get("http_status") or 0) == 429 or _provider_error_reason(fetch) == "http_429"
+
+
+def _adapter_ready(adapter: Any) -> tuple[bool, str | None]:
+    validator = getattr(adapter, "validate_config", None)
+    if not callable(validator):
+        return True, None
+    config = validator()
+    if bool(config.get("ok")):
+        return True, None
+    blockers = [str(item) for item in list(config.get("blockers") or [])]
+    return False, ",".join(blockers) or str(config.get("status") or "provider_not_ready")
+
+
+def _fetch_tiny_read_only_records(
+    pending_rows: list[dict[str, Any]],
+    *,
+    adapter: Any,
+    max_provider_calls: int,
+) -> dict[str, Any]:
+    provider_records: list[dict[str, Any]] = []
+    checked_rows: list[dict[str, Any]] = []
+    rejected: dict[str, int] = {}
+    calls_attempted = 0
+    calls_succeeded = 0
+    calls_failed = 0
+    rate_limited = False
+    stop_reason: str | None = None
+
+    fetch_markets = getattr(adapter, "fetch_markets", None)
+    if not callable(fetch_markets):
+        return {
+            "provider_records": [],
+            "checked_rows": [],
+            "provider_calls_attempted": 0,
+            "provider_calls_succeeded": 0,
+            "provider_calls_failed": 0,
+            "provider_records_returned": 0,
+            "markets_checked_with_provider": 0,
+            "rate_limited": False,
+            "stop_reason": "adapter_missing_fetch_markets",
+            "rejected_reason_counts": {"adapter_missing_fetch_markets": len(pending_rows)},
+        }
+
+    for row in pending_rows:
+        if calls_attempted >= max_provider_calls:
+            stop_reason = "max_provider_calls_reached"
+            break
+        market_key = _market_identifier(row)
+        if not market_key:
+            rejected["missing_market_identifier"] = rejected.get("missing_market_identifier", 0) + 1
+            continue
+        calls_attempted += 1
+        fetch = fetch_markets(params={"ticker": market_key, "limit": 1})
+        if _provider_is_rate_limited(fetch):
+            calls_failed += 1
+            rate_limited = True
+            stop_reason = "rate_limited"
+            rejected["http_429"] = rejected.get("http_429", 0) + 1
+            break
+        if not bool(fetch.get("ok")) or str(fetch.get("status") or "") == "provider_error":
+            calls_failed += 1
+            reason = _provider_error_reason(fetch)
+            stop_reason = reason
+            rejected[reason] = rejected.get(reason, 0) + 1
+            break
+        records = [record for record in list(fetch.get("records") or []) if isinstance(record, dict)]
+        provider_records.extend(records[:1])
+        checked_rows.append(row)
+        calls_succeeded += 1
+
+    return {
+        "provider_records": provider_records,
+        "checked_rows": checked_rows,
+        "provider_calls_attempted": calls_attempted,
+        "provider_calls_succeeded": calls_succeeded,
+        "provider_calls_failed": calls_failed,
+        "provider_records_returned": len(provider_records),
+        "markets_checked_with_provider": len(checked_rows),
+        "rate_limited": rate_limited,
+        "stop_reason": stop_reason,
+        "rejected_reason_counts": rejected,
+    }
+
+
+def run_tiny_read_only_settlement_check(
+    records: list[dict[str, Any]],
+    *,
+    allow_tiny_provider_calls: bool = False,
+    max_provider_calls: int = 0,
+    max_records: int = 0,
+    adapter: Any | None = None,
+) -> dict[str, Any]:
+    effective_calls = max(0, min(_safe_int(max_provider_calls, 0), MAX_TINY_PROVIDER_CALLS))
+    effective_records = max(0, min(_safe_int(max_records, 0), MAX_TINY_PROVIDER_RECORDS))
+    if not allow_tiny_provider_calls or effective_calls <= 0 or effective_records <= 0:
+        return _empty_provider_check(
+            allow_tiny_provider_calls=allow_tiny_provider_calls,
+            max_provider_calls=effective_calls,
+            max_records=effective_records,
+            status="provider_calls_disabled",
+            block_reason="provider_calls_disabled_by_default_or_missing_tiny_caps",
+        )
+
+    pending_rows = _pending_provider_rows(records, max_records=effective_records)
+    if not pending_rows:
+        return _empty_provider_check(
+            allow_tiny_provider_calls=allow_tiny_provider_calls,
+            max_provider_calls=effective_calls,
+            max_records=effective_records,
+            status="no_pending_prediction_market_records",
+        )
+
+    adapter = adapter or KalshiReadonlyAdapter()
+    ready, block_reason = _adapter_ready(adapter)
+    if not ready:
+        return _empty_provider_check(
+            allow_tiny_provider_calls=allow_tiny_provider_calls,
+            max_provider_calls=effective_calls,
+            max_records=effective_records,
+            status="provider_not_ready",
+            block_reason=block_reason,
+        )
+
+    fetched = _fetch_tiny_read_only_records(
+        pending_rows,
+        adapter=adapter,
+        max_provider_calls=effective_calls,
+    )
+    checked_rows = list(fetched.get("checked_rows") or [])
+    provider_records = list(fetched.get("provider_records") or [])
+    discovery = discover_kalshi_settlements_for_pending_rows(checked_rows, read_only_records=provider_records)
+    provider_candidates: list[dict[str, Any]] = []
+    provider_rejections = dict(fetched.get("rejected_reason_counts") or {})
+    for candidate in list(discovery.get("completion_candidates") or []):
+        if str(candidate.get("final_outcome") or "").lower() not in {"yes", "no"}:
+            provider_rejections["explicit_non_yes_no_result"] = provider_rejections.get("explicit_non_yes_no_result", 0) + 1
+            continue
+        evidence = evaluate_outcome_evidence(
+            {**candidate, "result": candidate.get("final_outcome")},
+            source_record_type="provider_settlement_discovery",
+        )
+        if bool(evidence.get("candidate_accepted")):
+            provider_candidates.append(evidence)
+        else:
+            reason = str(evidence.get("rejection_reason") or "unknown_provider_result")
+            provider_rejections[reason] = provider_rejections.get(reason, 0) + 1
+
+    for reason, count in dict(discovery.get("rejected_reason_counts") or {}).items():
+        provider_rejections[str(reason)] = provider_rejections.get(str(reason), 0) + int(count)
+
+    provider_rejected_count = int(sum(provider_rejections.values()))
+    status = "provider_settlement_check_complete"
+    if fetched.get("rate_limited"):
+        status = "provider_rate_limited"
+    elif fetched.get("stop_reason") and fetched.get("provider_calls_failed"):
+        status = "provider_error_stopped"
+    return {
+        "provider_settlement_check_enabled": True,
+        "provider_settlement_check_status": status,
+        "provider_call_block_reason": fetched.get("stop_reason"),
+        "provider_calls_attempted": int(fetched.get("provider_calls_attempted") or 0),
+        "provider_calls_succeeded": int(fetched.get("provider_calls_succeeded") or 0),
+        "provider_calls_failed": int(fetched.get("provider_calls_failed") or 0),
+        "provider_records_returned": int(fetched.get("provider_records_returned") or 0),
+        "markets_checked_with_provider": int(fetched.get("markets_checked_with_provider") or 0),
+        "explicit_outcomes_found": len(provider_candidates),
+        "provider_rejected_count": provider_rejected_count,
+        "provider_rejection_reasons": provider_rejections,
+        "provider_candidates": provider_candidates,
+        "rate_limited": bool(fetched.get("rate_limited")),
+        "persisted": False,
+        "dry_run": True,
+        "provider_write": False,
+        "execution_allowed": False,
+        "execution_allowed_count": 0,
+        "live_execution_enabled": False,
+        "auto_execution_enabled": False,
+        "max_provider_calls_effective": effective_calls,
+        "max_records_effective": effective_records,
         "raw_payload_included": False,
         "secrets_included": False,
     }
@@ -360,6 +647,10 @@ def build_candidate_report(
     module: str | None = None,
     source_id: str | None = None,
     local_record_limit: int = 250,
+    allow_tiny_provider_calls: bool = False,
+    max_provider_calls: int = 0,
+    max_records: int = 0,
+    provider_adapter: Any | None = None,
 ) -> dict[str, Any]:
     all_records = records if records is not None else load_prediction_market_source_records(base_data_dir=base_data_dir)
     filtered = [row for row in all_records if isinstance(row, dict)]
@@ -397,6 +688,17 @@ def build_candidate_report(
     for row in rejected:
         reason = str(row.get("rejection_reason") or "unknown")
         rejection_counts[reason] = rejection_counts.get(reason, 0) + 1
+    provider_check = run_tiny_read_only_settlement_check(
+        filtered,
+        allow_tiny_provider_calls=allow_tiny_provider_calls,
+        max_provider_calls=max_provider_calls,
+        max_records=max_records,
+        adapter=provider_adapter,
+    )
+    provider_candidates = [row for row in list(provider_check.get("provider_candidates") or []) if isinstance(row, dict)]
+    candidates.extend(provider_candidates)
+    for reason, count in dict(provider_check.get("provider_rejection_reasons") or {}).items():
+        rejection_counts[str(reason)] = rejection_counts.get(str(reason), 0) + int(count)
     now = utc_now_iso()
     run_id = sanitize_filename(f"prediction_market_outcome_candidates_{now.replace(':', '-')}_{uuid4().hex[:8]}")
     report = {
@@ -409,8 +711,11 @@ def build_candidate_report(
         "source_id_filter": source_id,
         "source_records_scanned": len(filtered),
         "candidates_count": len(candidates),
-        "rejected_count": len(rejected),
+        "local_rejected_count": len(rejected),
+        "provider_rejected_count": int(provider_check.get("provider_rejected_count") or 0),
+        "rejected_count": len(rejected) + int(provider_check.get("provider_rejected_count") or 0),
         "rejection_reason_counts": rejection_counts,
+        "rejection_reasons": rejection_counts,
         "candidates": candidates,
         "rejected_sample": rejected[:25],
         "accepted_evidence_fields": list(ACCEPTED_EXPLICIT_FIELDS) + list(BOOLEAN_SETTLEMENT_FIELDS),
@@ -421,6 +726,9 @@ def build_candidate_report(
             "missing_result",
         ],
         "would_persist_outcomes": False,
+        "persisted": False,
+        "dry_run": True,
+        **{key: value for key, value in provider_check.items() if key != "provider_candidates"},
         "provider_write": False,
         "execution_allowed": False,
         "execution_allowed_count": 0,
