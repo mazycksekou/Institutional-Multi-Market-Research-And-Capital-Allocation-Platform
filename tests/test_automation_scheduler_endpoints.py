@@ -309,6 +309,144 @@ class TestAutomationSchedulerEndpoints(unittest.TestCase):
         self.assertFalse(payload["raw_payload_included"])
         self.assertNotIn("'raw_payload':", str(payload))
 
+    def test_deepseek_red_team_endpoint_compact_default(self):
+        with patch(
+            "automation_scheduler.run_automation_deepseek_red_team",
+            return_value={
+                "ok": True,
+                "status": "red_team_local_only",
+                "enabled": False,
+                "deepseek_used": False,
+                "red_team_only": True,
+                "provider_write": False,
+                "execution_allowed": False,
+                "live_execution_enabled": False,
+                "auto_execution": False,
+                "human_approval_required": True,
+                "owner_approval_required": True,
+                "reviews": [
+                    {
+                        "deepseek_status": "disabled",
+                        "candidate_id": "cand-1",
+                        "asset_type": "prediction_market",
+                        "market_type": "prediction_market",
+                        "recommended_action": "NO_REVIEW",
+                        "confidence_score": 0,
+                        "edge_quality_score": 0,
+                        "liquidity_risk_score": 0,
+                        "trap_risk_score": 0,
+                        "calibration_support_score": 0,
+                        "out_of_distribution_risk": 0,
+                        "agreement_with_core_model": False,
+                        "disagreement_reasons": [],
+                        "missing_inputs": [],
+                        "review_reasons": ["deepseek_not_used"],
+                        "no_bet_reasons": [],
+                        "no_trade_reasons": [],
+                        "next_data_to_collect": [],
+                        "red_team_only": True,
+                        "deepseek_used": False,
+                        "provider_write": False,
+                        "execution_allowed": False,
+                        "live_execution_enabled": False,
+                        "auto_execution": False,
+                        "human_approval_required": True,
+                        "owner_approval_required": True,
+                    }
+                ],
+                "review_count": 1,
+            },
+        ):
+            r = self.client.post("/api/automation/deepseek-red-team", json={"candidates": [{"candidate_id": "cand-1"}]})
+        self.assertEqual(r.status_code, 200)
+        payload = r.json()
+        self.assertEqual(payload["status"], "red_team_local_only")
+        self.assertFalse(payload["provider_write"])
+        self.assertFalse(payload["execution_allowed"])
+        self.assertFalse(payload["reviews"][0]["execution_allowed"])
+
+    def test_deepseek_disagreements_endpoint_compact_default(self):
+        with patch(
+            "automation_scheduler.get_deepseek_disagreements",
+            return_value={
+                "ok": True,
+                "status": "ok",
+                "schema_version": "automation_scheduler.v1.deepseek_profit_lab.disagreement_queue.v1",
+                "count": 1,
+                "items": [
+                    {
+                        "disagreement_id": "d1",
+                        "candidate_id": "cand-1",
+                        "asset_type": "prediction_market",
+                        "market_type": "prediction_market",
+                        "provider": "kalshi_prediction_market",
+                        "core_model_action": "ACTIVE_REVIEW",
+                        "deepseek_action": "NO_BET",
+                        "disagreement_type": "action_disagreement",
+                        "disagreement_reasons": ["weak calibration"],
+                        "created_at": "2026-06-02T00:00:00+00:00",
+                        "redacted": True,
+                        "provider_write": False,
+                        "execution_allowed": False,
+                        "live_execution_enabled": False,
+                    }
+                ],
+            },
+        ):
+            r = self.client.get("/api/automation/deepseek-disagreements")
+        self.assertEqual(r.status_code, 200)
+        payload = r.json()
+        self.assertEqual(payload["count"], 1)
+        self.assertFalse(payload["items"][0]["provider_write"])
+        self.assertFalse(payload["items"][0]["execution_allowed"])
+
+    def test_deepseek_daily_report_endpoint_compact_default(self):
+        with patch(
+            "automation_scheduler.get_deepseek_daily_report",
+            return_value={
+                "ok": True,
+                "status": "disabled",
+                "enabled": False,
+                "deepseek_used": False,
+                "red_team_only": True,
+                "provider_write": False,
+                "execution_allowed": False,
+                "live_execution_enabled": False,
+                "auto_execution": False,
+                "human_approval_required": True,
+                "owner_approval_required": True,
+                "report": {
+                    "report_id": "r1",
+                    "date": "2026-06-02",
+                    "strongest_review_candidates": [],
+                    "strongest_no_bet_no_trade_traps": [],
+                    "calibration_improvements": [],
+                    "failing_clusters": [],
+                    "missing_data": [],
+                    "provider_issues": [],
+                    "disagreement_count": 0,
+                    "repeated_model_mistakes": [],
+                    "recommended_next_data_to_collect": ["outcomes"],
+                    "recommended_next_codex_task": "collect outcomes",
+                    "safety_status": {"provider_write": False, "execution_allowed": False, "live_execution_enabled": False},
+                    "red_team_only": True,
+                    "deepseek_used": False,
+                    "provider_write": False,
+                    "execution_allowed": False,
+                    "live_execution_enabled": False,
+                    "auto_execution": False,
+                    "human_approval_required": True,
+                    "owner_approval_required": True,
+                },
+            },
+        ):
+            r = self.client.get("/api/automation/deepseek-daily-report")
+        self.assertEqual(r.status_code, 200)
+        payload = r.json()
+        self.assertIn("report", payload)
+        self.assertFalse(payload["report"]["provider_write"])
+        self.assertFalse(payload["report"]["safety_status"]["execution_allowed"])
+
     def test_kalshi_provider_endpoints_compact_default(self):
         health = self.client.get('/api/providers/kalshi/health')
         self.assertEqual(health.status_code, 200)

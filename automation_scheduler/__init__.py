@@ -542,14 +542,86 @@ def run_automation_deepseek_review(
     daily_report: dict | None = None,
     calibration_report: dict | None = None,
     sampled_contracts: list[dict] | None = None,
+    candidate: dict | None = None,
+    candidates: list[dict] | None = None,
+    core_model_action: str | None = None,
+    enabled: bool | None = None,
+    base_data_dir: str | None = None,
+    **summary_inputs,
 ):
-    from .deepseek_reviewer import run_deepseek_review
+    from .deepseek_profit_lab import run_candidate_review
 
-    return run_deepseek_review(
-        collector_cycle_report=collector_cycle_report,
-        daily_report=daily_report,
-        calibration_report=calibration_report,
-        sampled_contracts=sampled_contracts,
+    selected_candidate = candidate
+    if selected_candidate is None and candidates:
+        selected_candidate = candidates[0]
+    if selected_candidate is None and sampled_contracts:
+        selected_candidate = sampled_contracts[0]
+    if selected_candidate is None:
+        selected_candidate = {"candidate_id": "deepseek_profit_lab_review", "asset_type": "unknown", "market_type": "unknown"}
+    summaries = {
+        "review_queue_summary": summary_inputs.get("review_queue_summary") or collector_cycle_report or {},
+        "calibration_summary": summary_inputs.get("calibration_summary") or calibration_report or {},
+        "outcome_summary": summary_inputs.get("outcome_summary") or {},
+        "provider_health_summary": summary_inputs.get("provider_health_summary") or {},
+        "trap_no_bet_summary": summary_inputs.get("trap_no_bet_summary") or {},
+        "security_readiness_summary": summary_inputs.get("security_readiness_summary") or {},
+        "strategy_readiness_summary": summary_inputs.get("strategy_readiness_summary") or {},
+        "small_account_summary": summary_inputs.get("small_account_summary") or {},
+        "stock_crypto_pattern_summary": summary_inputs.get("stock_crypto_pattern_summary") or {},
+        "sportsbook_full_board_summary": summary_inputs.get("sportsbook_full_board_summary") or {},
+        "kalshi_prediction_market_summary": summary_inputs.get("kalshi_prediction_market_summary") or daily_report or {},
+        "manifold_cluster_summary": summary_inputs.get("manifold_cluster_summary") or {},
+        "markov_hmm_summary": summary_inputs.get("markov_hmm_summary") or {},
+        "disagreement_summary": summary_inputs.get("disagreement_summary") or {},
+    }
+    return run_candidate_review(
+        candidate=selected_candidate,
+        core_model_action=core_model_action,
+        enabled=enabled,
+        base_data_dir=_data_dir(base_data_dir),
+        summaries=summaries,
+    )
+
+
+def run_automation_deepseek_red_team(
+    *,
+    candidates: list[dict] | None = None,
+    candidate: dict | None = None,
+    enabled: bool | None = None,
+    base_data_dir: str | None = None,
+    **summary_inputs,
+):
+    from .deepseek_profit_lab import run_red_team_review
+
+    return run_red_team_review(
+        candidates=candidates,
+        candidate=candidate,
+        enabled=enabled,
+        base_data_dir=_data_dir(base_data_dir),
+        **summary_inputs,
+    )
+
+
+def get_deepseek_disagreements(*, base_data_dir: str | None = None, limit: int = 100):
+    from .deepseek_disagreement_queue import load_disagreement_queue
+
+    return load_disagreement_queue(base_data_dir=_data_dir(base_data_dir), limit=limit)
+
+
+def get_deepseek_daily_report(
+    *,
+    report_date: str | None = None,
+    enabled: bool | None = None,
+    persist_report: bool = True,
+    base_data_dir: str | None = None,
+):
+    from .deepseek_profit_lab import run_daily_report
+
+    return run_daily_report(
+        report_date=report_date,
+        enabled=enabled,
+        persist_report=persist_report,
+        base_data_dir=_data_dir(base_data_dir),
     )
 
 

@@ -1097,7 +1097,151 @@ def compact_calibration_collector_response(payload: dict[str, Any], limit: int =
     }
 
 
+def _compact_deepseek_candidate_review(review: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "deepseek_status": review.get("deepseek_status"),
+        "candidate_id": review.get("candidate_id"),
+        "asset_type": review.get("asset_type"),
+        "market_type": review.get("market_type"),
+        "recommended_action": review.get("recommended_action"),
+        "confidence_score": float(review.get("confidence_score", 0.0) or 0.0),
+        "edge_quality_score": float(review.get("edge_quality_score", 0.0) or 0.0),
+        "liquidity_risk_score": float(review.get("liquidity_risk_score", 0.0) or 0.0),
+        "trap_risk_score": float(review.get("trap_risk_score", 0.0) or 0.0),
+        "calibration_support_score": float(review.get("calibration_support_score", 0.0) or 0.0),
+        "out_of_distribution_risk": float(review.get("out_of_distribution_risk", 0.0) or 0.0),
+        "agreement_with_core_model": bool(review.get("agreement_with_core_model", False)),
+        "disagreement_reasons": list(review.get("disagreement_reasons") or [])[:25],
+        "missing_inputs": list(review.get("missing_inputs") or [])[:25],
+        "review_reasons": list(review.get("review_reasons") or [])[:25],
+        "no_bet_reasons": list(review.get("no_bet_reasons") or [])[:25],
+        "no_trade_reasons": list(review.get("no_trade_reasons") or [])[:25],
+        "next_data_to_collect": list(review.get("next_data_to_collect") or [])[:25],
+        "red_team_only": True,
+        "deepseek_used": bool(review.get("deepseek_used", False)),
+        "provider_write": False,
+        "execution_allowed": False,
+        "live_execution_enabled": False,
+        "auto_execution": False,
+        "human_approval_required": True,
+        "owner_approval_required": True,
+    }
+
+
+def _compact_deepseek_disagreement(record: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "disagreement_id": record.get("disagreement_id"),
+        "candidate_id": record.get("candidate_id"),
+        "asset_type": record.get("asset_type"),
+        "market_type": record.get("market_type"),
+        "provider": record.get("provider"),
+        "core_model_action": record.get("core_model_action"),
+        "deepseek_action": record.get("deepseek_action"),
+        "disagreement_type": record.get("disagreement_type"),
+        "disagreement_reasons": list(record.get("disagreement_reasons") or [])[:25],
+        "calibration_bucket": record.get("calibration_bucket"),
+        "manifold_cluster_id": record.get("manifold_cluster_id"),
+        "strategy_ids": list(record.get("strategy_ids") or [])[:25],
+        "created_at": record.get("created_at"),
+        "redacted": True,
+        "provider_write": False,
+        "execution_allowed": False,
+        "live_execution_enabled": False,
+    }
+
+
+def _compact_deepseek_daily_report(report: dict[str, Any]) -> dict[str, Any]:
+    safety = dict(report.get("safety_status") or {})
+    safety.update(
+        {
+            "red_team_only": True,
+            "provider_write": False,
+            "execution_allowed": False,
+            "live_execution_enabled": False,
+            "auto_execution": False,
+            "human_approval_required": True,
+            "owner_approval_required": True,
+        }
+    )
+    return {
+        "report_id": report.get("report_id"),
+        "date": report.get("date"),
+        "strongest_review_candidates": list(report.get("strongest_review_candidates") or [])[:10],
+        "strongest_no_bet_no_trade_traps": list(report.get("strongest_no_bet_no_trade_traps") or [])[:10],
+        "calibration_improvements": list(report.get("calibration_improvements") or [])[:25],
+        "failing_clusters": list(report.get("failing_clusters") or [])[:10],
+        "missing_data": list(report.get("missing_data") or [])[:25],
+        "provider_issues": list(report.get("provider_issues") or [])[:25],
+        "disagreement_count": int(report.get("disagreement_count", 0) or 0),
+        "repeated_model_mistakes": list(report.get("repeated_model_mistakes") or [])[:25],
+        "recommended_next_data_to_collect": list(report.get("recommended_next_data_to_collect") or [])[:25],
+        "recommended_next_codex_task": report.get("recommended_next_codex_task"),
+        "safety_status": safety,
+        "red_team_only": True,
+        "deepseek_used": bool(report.get("deepseek_used", False)),
+        "provider_write": False,
+        "execution_allowed": False,
+        "live_execution_enabled": False,
+        "auto_execution": False,
+        "human_approval_required": True,
+        "owner_approval_required": True,
+    }
+
+
+def _compact_deepseek_profit_lab_response(payload: dict[str, Any]) -> dict[str, Any]:
+    review = payload.get("candidate_review") or payload.get("review") or {}
+    reviews = payload.get("reviews") if isinstance(payload.get("reviews"), list) else None
+    report = payload.get("report") if isinstance(payload.get("report"), dict) else None
+    disagreement = payload.get("disagreement") if isinstance(payload.get("disagreement"), dict) else None
+    out = {
+        "ok": bool(payload.get("ok", True)),
+        "status": payload.get("status", "disabled"),
+        "enabled": bool(payload.get("enabled", False)),
+        "deepseek_used": bool(payload.get("deepseek_used", False)),
+        "red_team_only": True,
+        "local_server_reachable": bool(payload.get("local_server_reachable", False)),
+        "json_schema_valid": bool(payload.get("json_schema_valid", False)),
+        "rejected_reason": payload.get("rejected_reason"),
+        "forbidden_actions_rejected": bool(payload.get("forbidden_actions_rejected", False)),
+        "reviewer_side_effects": "none",
+        "provider_write": False,
+        "execution_allowed": False,
+        "live_execution_enabled": False,
+        "auto_execution": False,
+        "auto_execution_enabled": False,
+        "human_approval_required": True,
+        "owner_approval_required": True,
+        "raw_payload_included": False,
+        "secrets_included": False,
+        "compact_response": True,
+    }
+    if isinstance(review, dict) and "candidate_id" in review:
+        out["review"] = _compact_deepseek_candidate_review(review)
+    if reviews is not None:
+        out["reviews"] = [_compact_deepseek_candidate_review(row) for row in reviews if isinstance(row, dict)][:10]
+        out["review_count"] = int(payload.get("review_count", len(out["reviews"])))
+        out["disagreements_recorded"] = int(payload.get("disagreements_recorded", 0) or 0)
+    if report is not None:
+        out["report"] = _compact_deepseek_daily_report(report)
+    if disagreement is not None:
+        record = disagreement.get("record") if isinstance(disagreement.get("record"), dict) else disagreement
+        out["disagreement"] = _compact_deepseek_disagreement(record)
+    if isinstance(payload.get("items"), list):
+        out["count"] = int(payload.get("count", len(payload["items"])))
+        out["items"] = [_compact_deepseek_disagreement(row) for row in payload["items"] if isinstance(row, dict)][:100]
+    return out
+
+
 def compact_deepseek_review_response(payload: dict[str, Any]) -> dict[str, Any]:
+    if (
+        "candidate_review" in payload
+        or "reviews" in payload
+        or "report" in payload
+        or "deepseek_used" in payload
+        or "red_team_only" in payload
+        or "items" in payload and str(payload.get("schema_version", "")).endswith("deepseek_profit_lab.disagreement_queue.v1")
+    ):
+        return _compact_deepseek_profit_lab_response(payload)
     review = dict(payload.get("review", {}))
     return {
         "ok": bool(payload.get("ok", True)),
@@ -1109,8 +1253,13 @@ def compact_deepseek_review_response(payload: dict[str, Any]) -> dict[str, Any]:
         "forbidden_actions_rejected": bool(payload.get("forbidden_actions_rejected", False)),
         "reviewer_side_effects": "none",
         "provider_write": False,
+        "execution_allowed": False,
+        "live_execution_enabled": False,
+        "auto_execution": False,
         "auto_execution_enabled": False,
         "kalshi_order_execution_enabled": False,
+        "human_approval_required": True,
+        "owner_approval_required": True,
         "review": {
             "summary": review.get("summary"),
             "crosscheck_status": review.get("crosscheck_status"),

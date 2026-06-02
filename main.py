@@ -1027,6 +1027,43 @@ class AutomationDeepSeekReviewRequest(BaseModel):
     daily_report: dict[str, Any] = Field(default_factory=dict)
     calibration_report: dict[str, Any] = Field(default_factory=dict)
     sampled_contracts: list[dict[str, Any]] = Field(default_factory=list)
+    candidate: dict[str, Any] = Field(default_factory=dict)
+    candidates: list[dict[str, Any]] = Field(default_factory=list)
+    core_model_action: Optional[str] = None
+    enabled: Optional[bool] = None
+    review_queue_summary: dict[str, Any] = Field(default_factory=dict)
+    outcome_summary: dict[str, Any] = Field(default_factory=dict)
+    provider_health_summary: dict[str, Any] = Field(default_factory=dict)
+    manifold_cluster_summary: dict[str, Any] = Field(default_factory=dict)
+    markov_hmm_summary: dict[str, Any] = Field(default_factory=dict)
+    sportsbook_full_board_summary: dict[str, Any] = Field(default_factory=dict)
+    stock_crypto_pattern_summary: dict[str, Any] = Field(default_factory=dict)
+    kalshi_prediction_market_summary: dict[str, Any] = Field(default_factory=dict)
+    small_account_summary: dict[str, Any] = Field(default_factory=dict)
+    security_readiness_summary: dict[str, Any] = Field(default_factory=dict)
+    strategy_readiness_summary: dict[str, Any] = Field(default_factory=dict)
+    trap_no_bet_summary: dict[str, Any] = Field(default_factory=dict)
+
+
+class AutomationDeepSeekRedTeamRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", protected_namespaces=())
+
+    candidate: dict[str, Any] = Field(default_factory=dict)
+    candidates: list[dict[str, Any]] = Field(default_factory=list)
+    enabled: Optional[bool] = None
+    review_queue_summary: dict[str, Any] = Field(default_factory=dict)
+    calibration_summary: dict[str, Any] = Field(default_factory=dict)
+    outcome_summary: dict[str, Any] = Field(default_factory=dict)
+    provider_health_summary: dict[str, Any] = Field(default_factory=dict)
+    manifold_cluster_summary: dict[str, Any] = Field(default_factory=dict)
+    markov_hmm_summary: dict[str, Any] = Field(default_factory=dict)
+    sportsbook_full_board_summary: dict[str, Any] = Field(default_factory=dict)
+    stock_crypto_pattern_summary: dict[str, Any] = Field(default_factory=dict)
+    kalshi_prediction_market_summary: dict[str, Any] = Field(default_factory=dict)
+    small_account_summary: dict[str, Any] = Field(default_factory=dict)
+    security_readiness_summary: dict[str, Any] = Field(default_factory=dict)
+    strategy_readiness_summary: dict[str, Any] = Field(default_factory=dict)
+    trap_no_bet_summary: dict[str, Any] = Field(default_factory=dict)
 
 
 class AutomationManifoldMapRequest(BaseModel):
@@ -3117,6 +3154,73 @@ async def automation_deepseek_review_endpoint(payload: AutomationDeepSeekReviewR
         daily_report=payload.daily_report,
         calibration_report=payload.calibration_report,
         sampled_contracts=payload.sampled_contracts,
+        candidate=payload.candidate or None,
+        candidates=payload.candidates or None,
+        core_model_action=payload.core_model_action,
+        enabled=payload.enabled,
+        review_queue_summary=payload.review_queue_summary,
+        outcome_summary=payload.outcome_summary,
+        provider_health_summary=payload.provider_health_summary,
+        manifold_cluster_summary=payload.manifold_cluster_summary,
+        markov_hmm_summary=payload.markov_hmm_summary,
+        sportsbook_full_board_summary=payload.sportsbook_full_board_summary,
+        stock_crypto_pattern_summary=payload.stock_crypto_pattern_summary,
+        kalshi_prediction_market_summary=payload.kalshi_prediction_market_summary,
+        small_account_summary=payload.small_account_summary,
+        security_readiness_summary=payload.security_readiness_summary,
+        strategy_readiness_summary=payload.strategy_readiness_summary,
+        trap_no_bet_summary=payload.trap_no_bet_summary,
+    )
+    cap = min(max(int(limit), 1), 100 if verbose else 10)
+    compact = compact_deepseek_review_response(result)
+    if verbose or include_debug:
+        compact["debug"] = redact_and_limit_payload(result, limit=cap, verbose=verbose)
+    return compact
+
+
+@app.post("/api/automation/deepseek-red-team", operation_id="redTeamAutomationWithDeepSeek")
+async def automation_deepseek_red_team_endpoint(payload: AutomationDeepSeekRedTeamRequest, verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=10)):
+    result = automation_scheduler.run_automation_deepseek_red_team(
+        candidate=payload.candidate or None,
+        candidates=payload.candidates or None,
+        enabled=payload.enabled,
+        review_queue_summary=payload.review_queue_summary,
+        calibration_summary=payload.calibration_summary,
+        outcome_summary=payload.outcome_summary,
+        provider_health_summary=payload.provider_health_summary,
+        manifold_cluster_summary=payload.manifold_cluster_summary,
+        markov_hmm_summary=payload.markov_hmm_summary,
+        sportsbook_full_board_summary=payload.sportsbook_full_board_summary,
+        stock_crypto_pattern_summary=payload.stock_crypto_pattern_summary,
+        kalshi_prediction_market_summary=payload.kalshi_prediction_market_summary,
+        small_account_summary=payload.small_account_summary,
+        security_readiness_summary=payload.security_readiness_summary,
+        strategy_readiness_summary=payload.strategy_readiness_summary,
+        trap_no_bet_summary=payload.trap_no_bet_summary,
+    )
+    cap = min(max(int(limit), 1), 100 if verbose else 10)
+    compact = compact_deepseek_review_response(result)
+    if verbose or include_debug:
+        compact["debug"] = redact_and_limit_payload(result, limit=cap, verbose=verbose)
+    return compact
+
+
+@app.get("/api/automation/deepseek-disagreements", operation_id="getDeepSeekDisagreements")
+async def automation_deepseek_disagreements_endpoint(verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=100)):
+    cap = min(max(int(limit), 1), 500 if verbose else 100)
+    result = automation_scheduler.get_deepseek_disagreements(limit=cap)
+    compact = compact_deepseek_review_response(result)
+    if verbose or include_debug:
+        compact["debug"] = redact_and_limit_payload(result, limit=cap, verbose=verbose)
+    return compact
+
+
+@app.get("/api/automation/deepseek-daily-report", operation_id="getDeepSeekDailyReport")
+async def automation_deepseek_daily_report_endpoint(report_date: Optional[str] = Query(default=None), enabled: Optional[bool] = Query(default=None), persist_report: bool = Query(default=True), verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=10)):
+    result = automation_scheduler.get_deepseek_daily_report(
+        report_date=report_date,
+        enabled=enabled,
+        persist_report=persist_report,
     )
     cap = min(max(int(limit), 1), 100 if verbose else 10)
     compact = compact_deepseek_review_response(result)
@@ -3683,6 +3787,9 @@ PUBLIC_OPENAPI_PATH_METHODS = frozenset({
     ("/api/automation/calibration-collector/run", "post"),
     ("/api/automation/calibration-collector/scheduled-run", "post"),
     ("/api/automation/deepseek-review", "post"),
+    ("/api/automation/deepseek-red-team", "post"),
+    ("/api/automation/deepseek-disagreements", "get"),
+    ("/api/automation/deepseek-daily-report", "get"),
     ("/api/automation/data-sources/registry", "get"),
     ("/api/automation/data-sources/coverage", "get"),
     ("/api/automation/data-sources/research-lanes", "get"),
