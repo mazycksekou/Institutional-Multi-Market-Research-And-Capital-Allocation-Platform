@@ -8,6 +8,7 @@ from uuid import uuid4
 
 from .data_paths import get_runtime_data_path, get_storage_health, resolve_base_data_dir
 from .kalshi_readonly_adapter import KalshiReadonlyAdapter
+from .kalshi_readonly_readiness import build_kalshi_readonly_adapter
 from .paper_decision_ledger import load_paper_decisions
 from .review_queue import load_review_queue_state
 from .scheduler_config import SCHEMA_VERSION, safe_run_id, sanitize_filename, utc_now_iso
@@ -619,7 +620,7 @@ def run_tiny_read_only_settlement_check(
     effective_records = max(0, min(_safe_int(max_records, 0), MAX_TINY_PROVIDER_RECORDS))
     provider_selection_limit = min(effective_calls, effective_records) if allow_tiny_provider_calls else 0
     selection = _provider_selection_diagnostics(records, provider_selection_limit=provider_selection_limit)
-    adapter = adapter or KalshiReadonlyAdapter()
+    adapter = adapter or build_kalshi_readonly_adapter()
     readiness = _provider_readiness_diagnostics(adapter)
     diagnostics = _base_zero_call_diagnostics(
         allow_tiny_provider_calls=allow_tiny_provider_calls,
