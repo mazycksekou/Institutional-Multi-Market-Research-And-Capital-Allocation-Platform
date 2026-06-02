@@ -77,6 +77,12 @@ Candidate reports are review-only. They never persist outcomes.
 
 Provider settlement-check report fields include:
 
+- `env_file_present`
+- `env_loaded`
+- `env_loader`
+- `readiness_source`
+- `readiness_checker_consistent_with_wrapper`
+- `missing_env_names`
 - `tiny_provider_mode_requested`
 - `tiny_provider_mode_allowed`
 - `provider_readiness_status`

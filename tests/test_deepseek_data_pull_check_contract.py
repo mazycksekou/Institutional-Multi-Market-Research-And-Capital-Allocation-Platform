@@ -1,4 +1,5 @@
 import json
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -121,11 +122,73 @@ class TestDeepSeekDataPullCheckContract(unittest.TestCase):
         self.assertTrue(report["source_remains_enabled_false"])
         self.assertFalse(report["raw_payload_included"])
         self.assertFalse(report["secrets_included"])
+        self.assertIn("env_file_present", report)
+        self.assertIn("env_loaded", report)
+        self.assertIn("env_loader", report)
+        self.assertIn("readiness_source", report)
+        self.assertIn("readiness_checker_consistent_with_wrapper", report)
+        self.assertIn("missing_env_names", report)
         self.assertIn("deepseek_data_checks/latest.json", report["latest_json_path"])
         self.assertIn("deepseek_data_checks/items/", report["item_json_path"])
         self.assertIn("deepseek_data_checks/daily/", report["daily_json_path"])
         self.assertNotIn("provider_payload", rendered)
-        self.assertNotIn("api_key", rendered)
+        self.assertNotIn("do-not-leak", rendered)
+
+    def test_deepseek_wrapper_loads_project_env_and_matches_readiness_checker(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "automation_scheduler").mkdir()
+            (root / "scripts").mkdir()
+            (root / ".env").write_text(
+                "\n".join(
+                    [
+                        "KALSHI_PROVIDER_ENABLED=true",
+                        "KALSHI_LIVE_READS_ENABLED=true",
+                        "KALSHI_API_KEY=kalshi_key_do_not_print_12345",
+                        "KALSHI_API_SECRET=kalshi_secret_do_not_print_12345",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            env_names = (
+                "KALSHI_PROVIDER_ENABLED",
+                "KALSHI_LIVE_READS_ENABLED",
+                "KALSHI_API_KEY",
+                "KALSHI_API_SECRET",
+            )
+            previous_env = {name: os.environ.get(name) for name in env_names}
+            try:
+                for name in env_names:
+                    os.environ.pop(name, None)
+                report = build_deepseek_data_pull_check_report(
+                    prediction_market_outcome_check=True,
+                    allow_tiny_provider_calls=False,
+                    max_provider_calls=3,
+                    max_records=5,
+                    base_data_dir=tmp,
+                    project_root=root,
+                )
+            finally:
+                for name, value in previous_env.items():
+                    if value is None:
+                        os.environ.pop(name, None)
+                    else:
+                        os.environ[name] = value
+        rendered = json.dumps(report, sort_keys=True)
+        self.assertTrue(report["env_file_present"])
+        self.assertTrue(report["env_loaded"])
+        self.assertEqual(report["env_loader"], "python_dotenv")
+        self.assertEqual(report["readiness_source"], "kalshi_readonly_readiness")
+        self.assertEqual(report["missing_env_names"], [])
+        self.assertEqual(report["readiness_checker_provider_readiness_status"], "provider_ready")
+        self.assertEqual(report["provider_readiness_status"], "provider_ready")
+        self.assertTrue(report["readiness_checker_consistent_with_wrapper"])
+        self.assertEqual(report["provider_calls_attempted"], 0)
+        self.assertEqual(report["why_provider_calls_zero"], "tiny_provider_mode_not_requested")
+        self.assertNotIn("kalshi_key_do_not_print_12345", rendered)
+        self.assertNotIn("kalshi_secret_do_not_print_12345", rendered)
+        self.assertFalse(report["raw_payload_included"])
+        self.assertFalse(report["secrets_included"])
 
     def test_provider_calls_require_tiny_mode_and_caps_are_hard(self):
         blocked = provider_call_gate(

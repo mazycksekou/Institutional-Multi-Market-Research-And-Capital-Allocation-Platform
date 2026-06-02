@@ -9,6 +9,7 @@ from uuid import uuid4
 
 from .data_paths import get_runtime_data_path, get_storage_health, resolve_base_data_dir
 from .data_source_registry import build_registry
+from .kalshi_readonly_readiness import build_kalshi_readonly_readiness_report, load_project_env, resolve_project_root
 from .prediction_market_outcome_candidates import build_candidate_report
 from .scheduler_config import SCHEMA_VERSION, sanitize_filename, utc_now_iso
 
@@ -236,11 +237,42 @@ def _candidate_summary(candidate_report: dict[str, Any] | None) -> dict[str, Any
         "provider_selected_count": candidate_report.get("provider_selected_count"),
         "provider_selection_blocker": candidate_report.get("provider_selection_blocker"),
         "why_provider_calls_zero": candidate_report.get("why_provider_calls_zero"),
+        "readiness_source": candidate_report.get("readiness_source"),
         "rate_limited": candidate_report.get("rate_limited"),
         "persisted": False,
         "would_persist_outcomes": False,
         **{key: candidate_report.get(key) for key in keys if candidate_report.get(key)},
     }
+
+
+def _kalshi_env_and_readiness_context(project_root: str | Path | None = None) -> dict[str, Any]:
+    root = resolve_project_root(project_root or Path(__file__).resolve())
+    env_load = load_project_env(root)
+    readiness = build_kalshi_readonly_readiness_report(project_root=root, load_env=False, tiny_connectivity_check=False)
+    return {
+        "env_file_present": bool(env_load.get("env_file_present")),
+        "env_loaded": bool(env_load.get("env_loaded")),
+        "env_loader": env_load.get("env_loader"),
+        "readiness_source": "kalshi_readonly_readiness",
+        "readiness_checker_provider_readiness_status": readiness.get("provider_readiness_status"),
+        "readiness_checker_provider_readiness_blockers": readiness.get("provider_readiness_blockers", []),
+        "readiness_checker_credentials_present": bool(readiness.get("credentials_present")),
+        "readiness_checker_live_reads_enabled": bool(readiness.get("live_reads_enabled")),
+        "readiness_checker_provider_config_present": bool(readiness.get("provider_config_present")),
+        "missing_env_names": list(readiness.get("missing_env_names") or []),
+    }
+
+
+def _readiness_checker_consistent_with_wrapper(readiness_context: dict[str, Any], candidate: dict[str, Any]) -> bool:
+    wrapper_status = candidate.get("provider_readiness_status")
+    if wrapper_status is None:
+        return True
+    checker_blockers = sorted(str(item) for item in list(readiness_context.get("readiness_checker_provider_readiness_blockers") or []))
+    wrapper_blockers = sorted(str(item) for item in list(candidate.get("provider_readiness_blockers") or []))
+    return (
+        str(readiness_context.get("readiness_checker_provider_readiness_status") or "") == str(wrapper_status or "")
+        and checker_blockers == wrapper_blockers
+    )
 
 
 def render_deepseek_data_pull_markdown(report: dict[str, Any]) -> str:
@@ -255,6 +287,11 @@ def render_deepseek_data_pull_markdown(report: dict[str, Any]) -> str:
         f"- max_records_effective: {report.get('max_records_effective')}",
         f"- prediction_market_outcome_check_enabled: {str(report.get('prediction_market_outcome_check_enabled')).lower()}",
         f"- candidates_count: {report.get('candidates_count')}",
+        f"- env_file_present: {str(report.get('env_file_present')).lower()}",
+        f"- env_loaded: {str(report.get('env_loaded')).lower()}",
+        f"- env_loader: {report.get('env_loader')}",
+        f"- readiness_source: {report.get('readiness_source')}",
+        f"- readiness_checker_consistent_with_wrapper: {str(report.get('readiness_checker_consistent_with_wrapper')).lower()}",
         f"- provider_write: {str(report.get('provider_write')).lower()}",
         f"- execution_allowed: {str(report.get('execution_allowed')).lower()}",
         f"- raw_payload_included: {str(report.get('raw_payload_included')).lower()}",
@@ -314,8 +351,10 @@ def build_deepseek_data_pull_check_report(
     app_base_url: str | None = None,
     base_data_dir: str | Path = "data",
     persist: bool = False,
+    project_root: str | Path | None = None,
 ) -> dict[str, Any]:
     safe_dry_run = True if dry_run is not False else True
+    readiness_context = _kalshi_env_and_readiness_context(project_root)
     call_gate = provider_call_gate(
         dry_run=safe_dry_run,
         allow_tiny_provider_calls=allow_tiny_provider_calls,
@@ -339,6 +378,7 @@ def build_deepseek_data_pull_check_report(
     now = utc_now_iso()
     run_id = sanitize_filename(f"deepseek_data_check_{now.replace(':', '-')}_{uuid4().hex[:8]}")
     candidate = _candidate_summary(candidate_report)
+    readiness_consistent = _readiness_checker_consistent_with_wrapper(readiness_context, candidate)
     report = {
         "ok": True,
         "status": "deepseek_data_pull_check_complete",
@@ -363,6 +403,8 @@ def build_deepseek_data_pull_check_report(
         **budget,
         **call_gate,
         **candidate,
+        **readiness_context,
+        "readiness_checker_consistent_with_wrapper": readiness_consistent,
         "recommended_next_no_spend_action": "no-call audit of existing source reports",
         "provider_write": False,
         "execution_allowed": False,
@@ -400,6 +442,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--no-deepseek", action="store_true")
     parser.add_argument("--app-base-url", default=DEFAULT_APP_BASE_URL)
     parser.add_argument("--base-data-dir", default="data")
+    parser.add_argument("--project-root", default=None)
     parser.add_argument("--persist", action="store_true")
     args = parser.parse_args(argv)
     report = build_deepseek_data_pull_check_report(
@@ -414,6 +457,7 @@ def main(argv: list[str] | None = None) -> int:
         app_base_url=args.app_base_url,
         base_data_dir=args.base_data_dir,
         persist=args.persist,
+        project_root=args.project_root,
     )
     print(json.dumps({
         "ok": report["ok"],
@@ -431,6 +475,12 @@ def main(argv: list[str] | None = None) -> int:
         "explicit_outcomes_found": report.get("explicit_outcomes_found", 0),
         "provider_readiness_status": report.get("provider_readiness_status"),
         "provider_readiness_blockers": report.get("provider_readiness_blockers", []),
+        "env_file_present": report.get("env_file_present"),
+        "env_loaded": report.get("env_loaded"),
+        "env_loader": report.get("env_loader"),
+        "readiness_source": report.get("readiness_source"),
+        "readiness_checker_consistent_with_wrapper": report.get("readiness_checker_consistent_with_wrapper"),
+        "missing_env_names": report.get("missing_env_names", []),
         "provider_eligible_records": report.get("provider_eligible_records"),
         "provider_selected_count": report.get("provider_selected_count"),
         "why_provider_calls_zero": report.get("why_provider_calls_zero"),
