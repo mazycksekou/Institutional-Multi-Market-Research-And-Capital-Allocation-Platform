@@ -252,6 +252,57 @@ def route_cross_asset_intelligence_item(
     )
 
 
+def run_extreme_randomness_diagnostics(
+    candidate: dict | None = None,
+    *,
+    baseline_values: list | None = None,
+    matrix_payload: dict | None = None,
+):
+    from .extreme_randomness_diagnostics import diagnose_extreme_randomness
+
+    return diagnose_extreme_randomness(candidate or {}, baseline_values=baseline_values, matrix_payload=matrix_payload)
+
+
+def get_extreme_randomness_report(
+    *,
+    recent_events: list[dict] | None = None,
+    base_data_dir: str | None = None,
+):
+    from .extreme_randomness_report import build_extreme_randomness_report
+
+    return build_extreme_randomness_report(recent_events=recent_events or [], base_data_dir=_data_dir(base_data_dir))
+
+
+def compare_random_baseline(candidate: dict | None = None, *, baseline_values: list | None = None):
+    from .random_baseline_comparison import compare_to_random_baseline
+
+    return compare_to_random_baseline(candidate or {}, baseline_values=baseline_values)
+
+
+def classify_tail_event(candidate: dict | None = None):
+    from .tail_event_classifier import classify_tail_event as _classify
+
+    return _classify(candidate or {})
+
+
+def evaluate_random_matrix_risk(payload: dict | None = None):
+    from .random_matrix_risk import evaluate_random_matrix_risk as _evaluate
+
+    return _evaluate(payload or {})
+
+
+def evaluate_tracy_widom_research(payload: dict | None = None):
+    from .tracy_widom_research import evaluate_tracy_widom_research as _evaluate
+
+    return _evaluate(payload or {})
+
+
+def get_universality_research_lane(events: list[dict] | None = None):
+    from .universality_research_lanes import build_universality_research_lane
+
+    return build_universality_research_lane(events or [])
+
+
 def get_strategy_registry_snapshot(base_data_dir: str | None = None):
     from .strategy_registry import compact_strategy_registry
 
@@ -328,6 +379,83 @@ def get_strategy_disagreements(*, base_data_dir: str | None = None, limit: int =
     from .strategy_disagreement import load_strategy_disagreements
 
     return load_strategy_disagreements(base_data_dir=_data_dir(base_data_dir), limit=limit)
+
+
+def get_advanced_diagnostic_registry_snapshot(base_data_dir: str | None = None):
+    from .advanced_shape_diagnostics import get_advanced_diagnostic_registry
+    from .security_policy import locked_safety_flags
+
+    registry = get_advanced_diagnostic_registry()
+    return {
+        "ok": True,
+        "status": "advanced_diagnostic_registry",
+        "total_diagnostics": len(registry),
+        "diagnostics": list(registry.values()),
+        "red_team_only": True,
+        **locked_safety_flags(),
+    }
+
+
+def run_automation_advanced_shape_diagnostics(
+    *,
+    candidate: dict | None = None,
+    historical_records: list[dict] | None = None,
+    labeled_records: list[dict] | None = None,
+    calibration_records: list[dict] | None = None,
+    sequences: dict | None = None,
+    provider: str | None = None,
+    persist: bool = False,
+    base_data_dir: str | None = None,
+):
+    from .advanced_red_team_report import write_advanced_diagnostics
+    from .advanced_shape_diagnostics import run_advanced_shape_diagnostics
+
+    result = run_advanced_shape_diagnostics(
+        candidate or {},
+        historical_records=historical_records or [],
+        labeled_records=labeled_records or [],
+        calibration_records=calibration_records or [],
+        sequences=sequences or {},
+        provider=provider,
+    )
+    if persist and bool(result.get("ok", True)):
+        result["persistence"] = write_advanced_diagnostics(result, base_data_dir=_data_dir(base_data_dir))
+    return result
+
+
+def get_automation_advanced_red_team_report(
+    *,
+    candidate: dict | None = None,
+    candidates: list[dict] | None = None,
+    historical_records: list[dict] | None = None,
+    labeled_records: list[dict] | None = None,
+    calibration_records: list[dict] | None = None,
+    sequences: dict | None = None,
+    provider: str | None = None,
+    persist_report: bool = True,
+    base_data_dir: str | None = None,
+    max_items: int = 25,
+):
+    from .advanced_red_team_report import build_advanced_red_team_report
+
+    return build_advanced_red_team_report(
+        candidate=candidate,
+        candidates=candidates or [],
+        historical_records=historical_records or [],
+        labeled_records=labeled_records or [],
+        calibration_records=calibration_records or [],
+        sequences=sequences or {},
+        provider=provider,
+        persist_report=persist_report,
+        base_data_dir=_data_dir(base_data_dir),
+        max_items=max_items,
+    )
+
+
+def get_automation_advanced_red_team_latest(base_data_dir: str | None = None):
+    from .advanced_red_team_report import load_advanced_red_team_latest
+
+    return load_advanced_red_team_latest(base_data_dir=_data_dir(base_data_dir))
 
 
 def evaluate_ai_analyst_provider(

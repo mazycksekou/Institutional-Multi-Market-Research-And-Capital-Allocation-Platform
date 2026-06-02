@@ -241,6 +241,145 @@ def compact_intelligence_readiness_response(payload: dict[str, Any], limit: int 
     }
 
 
+def _compact_extreme_randomness_sample_item(item: dict[str, Any] | None) -> dict[str, Any]:
+    row = item if isinstance(item, dict) else {}
+    return {
+        "asset_type": row.get("asset_type"),
+        "market_type": row.get("market_type"),
+        "extreme_signal_score": float(row.get("extreme_signal_score", 0.0) or 0.0),
+        "random_baseline_percentile": float(row.get("random_baseline_percentile", 0.0) or 0.0),
+        "tail_event_type": row.get("tail_event_type", "normal_noise"),
+        "tail_event_risk_score": float(row.get("tail_event_risk_score", 0.0) or 0.0),
+        "rmt_status": row.get("rmt_status", "not_applicable"),
+        "tracy_widom_status": row.get("tracy_widom_status", "not_applicable"),
+        "edge_survives_random_baseline": bool(row.get("edge_survives_random_baseline", False)),
+        "fake_edge_risk": row.get("fake_edge_risk", "low"),
+        "recommended_action_adjustment": row.get("recommended_action_adjustment", "none"),
+        "no_bet_reasons": list(row.get("no_bet_reasons") or [])[:10],
+        "no_trade_reasons": list(row.get("no_trade_reasons") or [])[:10],
+        "missing_inputs": list(row.get("missing_inputs") or [])[:20],
+        "edge_vs_random_baseline": row.get("edge_vs_random_baseline"),
+        "outlier_status": row.get("outlier_status"),
+        "red_team_warning": row.get("red_team_warning"),
+        "insufficient_sample": bool(row.get("insufficient_sample", True)),
+        "blocked_reason": row.get("blocked_reason"),
+    }
+
+
+def compact_extreme_randomness_diagnostics_response(payload: dict[str, Any], limit: int = 10) -> dict[str, Any]:
+    baseline = payload.get("random_baseline") if isinstance(payload.get("random_baseline"), dict) else {}
+    tail = payload.get("tail_event") if isinstance(payload.get("tail_event"), dict) else {}
+    rmt = payload.get("random_matrix") if isinstance(payload.get("random_matrix"), dict) else {}
+    tw = payload.get("tracy_widom") if isinstance(payload.get("tracy_widom"), dict) else {}
+    return {
+        "ok": bool(payload.get("ok", True)),
+        "status": payload.get("status", "extreme_randomness_diagnostics_complete"),
+        "red_team_only": True,
+        "research_only": True,
+        "calibration_only": bool(payload.get("calibration_only", True)),
+        "sample_item": _compact_extreme_randomness_sample_item(payload.get("sample_item") if isinstance(payload.get("sample_item"), dict) else {}),
+        "random_baseline": {
+            "baseline_method": baseline.get("baseline_method"),
+            "baseline_sample_size": int(baseline.get("baseline_sample_size", 0) or 0),
+            "observed_signal": baseline.get("observed_signal"),
+            "baseline_mean": baseline.get("baseline_mean"),
+            "baseline_std": baseline.get("baseline_std"),
+            "observed_vs_baseline_z_score": baseline.get("observed_vs_baseline_z_score"),
+            "observed_vs_baseline_percentile": baseline.get("observed_vs_baseline_percentile"),
+            "baseline_support_status": baseline.get("baseline_support_status"),
+            "edge_survives_random_baseline": bool(baseline.get("edge_survives_random_baseline", False)),
+            "random_baseline_warning": baseline.get("random_baseline_warning"),
+        },
+        "tail_event": {
+            "tail_event_type": tail.get("tail_event_type"),
+            "tail_event_confidence": tail.get("tail_event_confidence"),
+            "tail_event_risk_score": tail.get("tail_event_risk_score"),
+            "volatility_adjusted_signal": tail.get("volatility_adjusted_signal"),
+            "liquidity_adjusted_signal": tail.get("liquidity_adjusted_signal"),
+            "correlation_adjusted_signal": tail.get("correlation_adjusted_signal"),
+            "random_extreme_probability": tail.get("random_extreme_probability"),
+            "data_error_risk": tail.get("data_error_risk"),
+            "no_trade_no_bet_reason": tail.get("no_trade_no_bet_reason"),
+        },
+        "random_matrix": {
+            "rmt_status": rmt.get("rmt_status", "not_applicable"),
+            "dimension_count": int(rmt.get("dimension_count", 0) or 0),
+            "sample_size": int(rmt.get("sample_size", 0) or 0),
+            "matrix_condition_status": rmt.get("matrix_condition_status"),
+            "largest_eigenvalue": rmt.get("largest_eigenvalue"),
+            "bulk_edge_estimate": rmt.get("bulk_edge_estimate"),
+            "largest_eigenvalue_exceeds_random_bulk": bool(rmt.get("largest_eigenvalue_exceeds_random_bulk", False)),
+            "correlation_shock_score": rmt.get("correlation_shock_score"),
+            "systemwide_noise_risk": rmt.get("systemwide_noise_risk"),
+            "market_mode_detected": bool(rmt.get("market_mode_detected", False)),
+            "idiosyncratic_signal_risk": rmt.get("idiosyncratic_signal_risk"),
+            "insufficient_matrix_data": bool(rmt.get("insufficient_matrix_data", True)),
+        },
+        "tracy_widom": {
+            "tracy_widom_status": tw.get("tracy_widom_status", "not_applicable"),
+            "tw_applicable": bool(tw.get("tw_applicable", False)),
+            "tw_score": tw.get("tw_score"),
+            "tw_tail_probability": tw.get("tw_tail_probability"),
+            "edge_exceeds_tw_threshold": bool(tw.get("edge_exceeds_tw_threshold", False)),
+            "random_extreme_warning": tw.get("random_extreme_warning"),
+            "extreme_value_confidence": tw.get("extreme_value_confidence"),
+            "blocked_reason": tw.get("blocked_reason"),
+        },
+        "provider_write": False,
+        "execution_allowed": False,
+        "live_execution_enabled": False,
+        "auto_execution": False,
+        "auto_execution_enabled": False,
+        "human_approval_required": True,
+        "owner_approval_required": True,
+        "actual_orders_submitted": 0,
+        "actual_bets_submitted": 0,
+        "actual_trades_submitted": 0,
+        "raw_payload_included": False,
+        "secrets_included": False,
+        "compact_response": True,
+    }
+
+
+def compact_extreme_randomness_report_response(payload: dict[str, Any], limit: int = 10) -> dict[str, Any]:
+    advanced = payload.get("advanced_math_status") if isinstance(payload.get("advanced_math_status"), dict) else {}
+    universality = payload.get("universality") if isinstance(payload.get("universality"), dict) else {}
+    return {
+        "ok": bool(payload.get("ok", True)),
+        "status": payload.get("status", "extreme_randomness_report"),
+        "major_lesson": payload.get("major_lesson"),
+        "red_team_only": True,
+        "research_only": True,
+        "calibration_only": True,
+        "advanced_math_status": advanced,
+        "allowed_uses": list(payload.get("allowed_uses") or [])[:20],
+        "forbidden_uses": list(payload.get("forbidden_uses") or [])[:20],
+        "recent_event_count": int(payload.get("recent_event_count", 0) or 0),
+        "universality": {
+            "universality_status": universality.get("universality_status", "research_only"),
+            "cross_asset_pattern_detected": bool(universality.get("cross_asset_pattern_detected", False)),
+            "similar_tail_events_by_asset_type": dict(universality.get("similar_tail_events_by_asset_type") or {}),
+            "shared_structure_hypothesis": universality.get("shared_structure_hypothesis"),
+            "universality_confidence": universality.get("universality_confidence"),
+            "research_only": True,
+        },
+        "storage": _compact_storage_health(payload),
+        "provider_write": False,
+        "execution_allowed": False,
+        "live_execution_enabled": False,
+        "auto_execution": False,
+        "auto_execution_enabled": False,
+        "human_approval_required": True,
+        "owner_approval_required": True,
+        "actual_orders_submitted": 0,
+        "actual_bets_submitted": 0,
+        "actual_trades_submitted": 0,
+        "raw_payload_included": False,
+        "secrets_included": False,
+        "compact_response": True,
+    }
+
+
 def compact_health_response(payload: dict[str, Any]) -> dict[str, Any]:
     return {
         "ok": bool(payload.get("ok", True)),
@@ -293,6 +432,8 @@ def compact_strategy_readiness_response(payload: dict[str, Any], limit: int = 50
                 "enabled": bool(row.get("enabled", False)),
                 "affects_review_queue": bool(row.get("affects_review_queue", False)),
                 "affects_ranking": bool(row.get("affects_ranking", False)),
+                "review_queue_effect": row.get("review_queue_effect"),
+                "ranking_effect": row.get("ranking_effect"),
                 "affects_execution": False,
                 "minimum_sample_size": int(row.get("minimum_sample_size", 0) or 0),
                 "current_sample_size": int(row.get("current_sample_size", 0) or 0),
@@ -340,6 +481,97 @@ def compact_strategy_readiness_response(payload: dict[str, Any], limit: int = 50
         "next_recommended_strategy_to_promote": payload.get("next_recommended_strategy_to_promote"),
         "next_recommended_strategy_to_demote": payload.get("next_recommended_strategy_to_demote"),
         "strategies": _redact(strategies),
+        "raw_payload_included": False,
+        "raw_payload_exposed": False,
+        "secrets_included": False,
+        "secrets_detected": False,
+        "compact_response": True,
+    }
+
+
+def _compact_advanced_diagnostic_item(item: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "candidate_id": item.get("candidate_id"),
+        "status": item.get("status", item.get("advanced_red_team_status")),
+        "advanced_red_team_status": item.get("advanced_red_team_status"),
+        "recommended_action_adjustment": item.get("recommended_action_adjustment"),
+        "topological_risk": item.get("topological_risk"),
+        "manifold_density": item.get("manifold_density"),
+        "conformal_interval_width": item.get("conformal_interval_width"),
+        "transfer_entropy_score": item.get("transfer_entropy_score"),
+        "mutual_information_score": item.get("mutual_information_score"),
+        "causal_graph_support": item.get("causal_graph_support"),
+        "dynamical_predictability": item.get("dynamical_predictability"),
+        "contrastive_edge_signal": item.get("contrastive_edge_signal"),
+        "graph_cluster_density": item.get("graph_cluster_density"),
+        "sparse_region_risk": item.get("sparse_region_risk"),
+        "counterfactual_significance": item.get("counterfactual_significance"),
+        "no_bet_reasons": list(item.get("no_bet_reasons") or [])[:20],
+        "no_trade_reasons": list(item.get("no_trade_reasons") or [])[:20],
+        "missing_inputs": list(item.get("missing_inputs") or [])[:20],
+        "insufficient_sample": bool(item.get("insufficient_sample", False)),
+        "blocked_reason": item.get("blocked_reason"),
+        "deepseek_used": bool(item.get("deepseek_used", False)),
+        "openai_used": bool(item.get("openai_used", False)),
+        "external_ai_call_performed": bool(item.get("external_ai_call_performed", False)),
+        "red_team_only": True,
+        "provider_write": False,
+        "execution_allowed": False,
+        "live_execution_enabled": False,
+        "auto_execution": False,
+        "human_approval_required": True,
+        "owner_approval_required": True,
+        "raw_payload_included": False,
+        "secrets_included": False,
+    }
+
+
+def compact_advanced_red_team_response(payload: dict[str, Any], limit: int = 10) -> dict[str, Any]:
+    cap = max(1, min(int(limit or 10), 100))
+    if not bool(payload.get("ok", True)) and payload.get("status") == "provider_not_allowed_for_red_team":
+        return {
+            "ok": False,
+            "status": "provider_not_allowed_for_red_team",
+            "allowed_ai_providers": list(payload.get("allowed_ai_providers") or ["deepseek", "openai"]),
+            "default_provider": payload.get("default_provider", "deepseek"),
+            "provider_write": False,
+            "execution_allowed": False,
+            "live_execution_enabled": False,
+            "auto_execution": False,
+            "human_approval_required": True,
+            "owner_approval_required": True,
+            "red_team_only": True,
+            "raw_payload_included": False,
+            "secrets_included": False,
+        }
+    items = [_compact_advanced_diagnostic_item(row) for row in list(payload.get("items") or []) if isinstance(row, dict)][:cap]
+    if not items and ("advanced_red_team_status" in payload or "topological_risk" in payload or "provider_policy" in payload):
+        items = [_compact_advanced_diagnostic_item(payload)]
+    return {
+        "ok": bool(payload.get("ok", True)),
+        "status": payload.get("status", "advanced_red_team_report"),
+        "report_id": payload.get("report_id"),
+        "date": payload.get("date"),
+        "candidate_count": int(payload.get("candidate_count", len(items)) or 0),
+        "fake_edge_warning_count": int(payload.get("fake_edge_warning_count", 0) or 0),
+        "data_insufficient_count": int(payload.get("data_insufficient_count", 0) or 0),
+        "fatal_safety_blocker_count": int(payload.get("fatal_safety_blocker_count", 0) or 0),
+        "recommended_action_adjustment_counts": dict(payload.get("recommended_action_adjustment_counts") or {}),
+        "no_bet_reason_counts": dict(payload.get("no_bet_reason_counts") or {}),
+        "no_trade_reason_counts": dict(payload.get("no_trade_reason_counts") or {}),
+        "missing_input_counts": dict(payload.get("missing_input_counts") or {}),
+        "items": items,
+        "deepseek_used": bool(payload.get("deepseek_used", False)),
+        "openai_used": bool(payload.get("openai_used", False)),
+        "external_ai_call_performed": bool(payload.get("external_ai_call_performed", False)),
+        "red_team_only": True,
+        "provider_write": False,
+        "execution_allowed": False,
+        "live_execution_enabled": False,
+        "auto_execution": False,
+        "auto_execution_enabled": False,
+        "human_approval_required": True,
+        "owner_approval_required": True,
         "raw_payload_included": False,
         "raw_payload_exposed": False,
         "secrets_included": False,

@@ -27,6 +27,7 @@ import model_probability
 import screenshot_intake
 from automation_scheduler.data_paths import get_runtime_data_path, get_automation_data_dir
 from automation_scheduler.response_compactor import (
+    compact_advanced_red_team_response,
     compact_calibration_response,
     compact_calibration_collector_response,
     compact_cfbd_adapter_verification_response,
@@ -59,6 +60,8 @@ from automation_scheduler.response_compactor import (
     compact_institutional_lab_run_response,
     compact_institutional_report_response,
     compact_intelligence_readiness_response,
+    compact_extreme_randomness_diagnostics_response,
+    compact_extreme_randomness_report_response,
     compact_manifold_map_response,
     compact_manifold_review_response,
     compact_performance_health,
@@ -1066,6 +1069,28 @@ class AutomationDeepSeekRedTeamRequest(BaseModel):
     security_readiness_summary: dict[str, Any] = Field(default_factory=dict)
     strategy_readiness_summary: dict[str, Any] = Field(default_factory=dict)
     trap_no_bet_summary: dict[str, Any] = Field(default_factory=dict)
+
+
+class AutomationAdvancedShapeDiagnosticsRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", protected_namespaces=())
+
+    dry_run: bool = True
+    candidate: dict[str, Any] = Field(default_factory=dict)
+    historical_records: list[dict[str, Any]] = Field(default_factory=list)
+    labeled_records: list[dict[str, Any]] = Field(default_factory=list)
+    calibration_records: list[dict[str, Any]] = Field(default_factory=list)
+    sequences: dict[str, Any] = Field(default_factory=dict)
+    provider: Optional[str] = None
+    persist: bool = False
+
+
+class AutomationExtremeSignalDiagnosticsRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", protected_namespaces=())
+
+    dry_run: bool = True
+    candidate: dict[str, Any] = Field(default_factory=dict)
+    baseline_values: list[Any] = Field(default_factory=list)
+    matrix_payload: dict[str, Any] = Field(default_factory=dict)
 
 
 class AutomationManifoldMapRequest(BaseModel):
@@ -3018,6 +3043,86 @@ async def get_automation_strategy_readiness_endpoint(verbose: bool = Query(defau
     return compact
 
 
+@app.get("/api/automation/advanced-red-team-report", operation_id="getAutomationAdvancedRedTeamReport")
+async def get_automation_advanced_red_team_report_endpoint(
+    provider: Optional[str] = Query(default=None),
+    persist_report: bool = Query(default=False),
+    verbose: bool = Query(default=False),
+    include_debug: bool = Query(default=False),
+    limit: int = Query(default=10),
+):
+    cap = min(max(int(limit), 1), 100 if verbose else 10)
+    payload = automation_scheduler.get_automation_advanced_red_team_report(
+        provider=provider,
+        persist_report=persist_report,
+        max_items=cap,
+    )
+    compact = compact_advanced_red_team_response(payload, limit=cap)
+    if verbose or include_debug:
+        compact["debug"] = redact_and_limit_payload(payload, limit=cap, verbose=verbose)
+    return compact
+
+
+@app.get("/api/automation/extreme-randomness-report", operation_id="getAutomationExtremeRandomnessReport")
+async def get_automation_extreme_randomness_report_endpoint(
+    verbose: bool = Query(default=False),
+    include_debug: bool = Query(default=False),
+    limit: int = Query(default=10),
+):
+    cap = min(max(int(limit), 1), 100 if verbose else 10)
+    payload = automation_scheduler.get_extreme_randomness_report()
+    compact = compact_extreme_randomness_report_response(payload, limit=cap)
+    if verbose or include_debug:
+        compact["debug"] = redact_and_limit_payload(payload, limit=cap, verbose=verbose)
+    return compact
+
+
+@app.post("/api/automation/extreme-signal-diagnostics", operation_id="runAutomationExtremeSignalDiagnostics")
+async def automation_extreme_signal_diagnostics_endpoint(
+    payload: AutomationExtremeSignalDiagnosticsRequest,
+    verbose: bool = Query(default=False),
+    include_debug: bool = Query(default=False),
+    limit: int = Query(default=10),
+):
+    if payload.dry_run is not True:
+        raise HTTPException(status_code=400, detail="extreme signal diagnostics only supports dry_run=true")
+    cap = min(max(int(limit), 1), 100 if verbose else 10)
+    result = automation_scheduler.run_extreme_randomness_diagnostics(
+        candidate=payload.candidate,
+        baseline_values=payload.baseline_values or None,
+        matrix_payload=payload.matrix_payload or None,
+    )
+    compact = compact_extreme_randomness_diagnostics_response(result, limit=cap)
+    if verbose or include_debug:
+        compact["debug"] = redact_and_limit_payload(result, limit=cap, verbose=verbose)
+    return compact
+
+
+@app.post("/api/automation/advanced-shape-diagnostics", operation_id="runAutomationAdvancedShapeDiagnostics")
+async def automation_advanced_shape_diagnostics_endpoint(
+    payload: AutomationAdvancedShapeDiagnosticsRequest,
+    verbose: bool = Query(default=False),
+    include_debug: bool = Query(default=False),
+    limit: int = Query(default=10),
+):
+    if payload.dry_run is not True:
+        raise HTTPException(status_code=400, detail="advanced shape diagnostics only supports dry_run=true")
+    cap = min(max(int(limit), 1), 100 if verbose else 10)
+    result = automation_scheduler.run_automation_advanced_shape_diagnostics(
+        candidate=payload.candidate,
+        historical_records=payload.historical_records,
+        labeled_records=payload.labeled_records,
+        calibration_records=payload.calibration_records,
+        sequences=payload.sequences,
+        provider=payload.provider,
+        persist=payload.persist,
+    )
+    compact = compact_advanced_red_team_response(result, limit=cap)
+    if verbose or include_debug:
+        compact["debug"] = redact_and_limit_payload(result, limit=cap, verbose=verbose)
+    return compact
+
+
 @app.get("/api/automation/review-queue", operation_id="getAutomationSchedulerReviewQueue")
 async def get_automation_scheduler_review_queue(
     provider: str = Query(default="all"),
@@ -3802,6 +3907,10 @@ PUBLIC_OPENAPI_PATH_METHODS = frozenset({
     ("/api/automation/security-readiness", "get"),
     ("/api/automation/intelligence-readiness", "get"),
     ("/api/automation/strategy-readiness", "get"),
+    ("/api/automation/advanced-red-team-report", "get"),
+    ("/api/automation/extreme-randomness-report", "get"),
+    ("/api/automation/extreme-signal-diagnostics", "post"),
+    ("/api/automation/advanced-shape-diagnostics", "post"),
     ("/api/automation/review-queue", "get"),
     ("/api/automation/calibration", "get"),
     ("/api/automation/outcomes", "get"),
