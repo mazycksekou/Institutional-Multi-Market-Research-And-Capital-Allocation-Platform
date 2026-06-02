@@ -3288,9 +3288,9 @@ async def automation_hockey_impact_diagnostics_endpoint(
 async def get_automation_baseball_impact_readiness_endpoint(
     verbose: bool = Query(default=False),
     include_debug: bool = Query(default=False),
-    limit: int = Query(default=10),
+    limit: int = Query(default=50),
 ):
-    cap = min(max(int(limit), 1), 100 if verbose else 10)
+    cap = min(max(int(limit), 1), 100 if verbose else 50)
     payload = automation_scheduler.get_baseball_impact_readiness()
     compact = compact_baseball_impact_readiness_response(payload, limit=cap)
     if verbose or include_debug:

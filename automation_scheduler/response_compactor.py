@@ -782,6 +782,7 @@ def _compact_baseball_section(section: Any, keys: list[str], limit: int = 10) ->
 
 def compact_baseball_impact_readiness_response(payload: dict[str, Any], limit: int = 10) -> dict[str, Any]:
     cap = max(1, min(int(limit or 10), 100))
+    no_spend = payload.get("no_spend_policy") if isinstance(payload.get("no_spend_policy"), dict) else {}
     return {
         "ok": bool(payload.get("ok", True)),
         "status": payload.get("status", "baseball_impact_readiness"),
@@ -792,7 +793,12 @@ def compact_baseball_impact_readiness_response(payload: dict[str, Any], limit: i
         "mlb_readiness": redact_and_limit_payload(payload.get("mlb_readiness") or {}, limit=cap),
         "missing_data_by_market": redact_and_limit_payload(payload.get("missing_data_by_market") or {}, limit=cap),
         "calibration_requirements": list(payload.get("calibration_requirements") or [])[:cap],
-        "no_spend_policy": redact_and_limit_payload(payload.get("no_spend_policy") or {}, limit=cap),
+        "no_spend_policy": {
+            "paid_provider_required": bool(no_spend.get("paid_provider_required", False)),
+            "new_provider_calls_added": bool(no_spend.get("new_provider_calls_added", False)),
+            "mandatory_api_key_required": bool(no_spend.get("mandatory_api_key_required", False)),
+            "heavy_ml_training_added": bool(no_spend.get("heavy_ml_training_added", False)),
+        },
         "forbidden_features": list(payload.get("forbidden_features") or [])[:cap],
         "provider_write": False,
         "execution_allowed": False,
