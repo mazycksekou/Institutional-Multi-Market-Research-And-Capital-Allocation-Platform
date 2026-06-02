@@ -378,6 +378,8 @@ class TestMarketStateManifold(unittest.TestCase):
                 self.assertEqual(payload["actual_orders_submitted"], 0)
                 self.assertEqual(payload["actual_bets_submitted"], 0)
                 self.assertEqual(payload["actual_trades_submitted"], 0)
+                self.assertFalse(payload["raw_payload_included"])
+                self.assertFalse(payload["secrets_included"])
                 self.assertTrue(payload["human_approval_required"])
 
     def test_existing_institutional_execution_desk_safety_regression(self):

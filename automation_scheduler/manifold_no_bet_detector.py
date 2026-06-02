@@ -150,6 +150,8 @@ def detect_manifold_trap(
         "actual_orders_submitted": 0,
         "actual_bets_submitted": 0,
         "actual_trades_submitted": 0,
+        "raw_payload_included": False,
+        "secrets_included": False,
     }
 
 
@@ -208,6 +210,8 @@ def write_trap_report(traps: list[dict[str, Any]], *, base_data_dir: str = "data
             "actual_orders_submitted": 0,
             "actual_bets_submitted": 0,
             "actual_trades_submitted": 0,
+            "raw_payload_included": False,
+            "secrets_included": False,
         }
         for row in traps
         if isinstance(row, dict)
@@ -228,6 +232,7 @@ def write_trap_report(traps: list[dict[str, Any]], *, base_data_dir: str = "data
         "actual_bets_submitted": 0,
         "actual_trades_submitted": 0,
         "raw_payload_included": False,
+        "secrets_included": False,
         "storage_backend": "file",
     }
     latest = _latest_path(base_data_dir)
@@ -263,6 +268,7 @@ def load_trap_report(*, base_data_dir: str = "data") -> dict[str, Any]:
         "actual_bets_submitted": 0,
         "actual_trades_submitted": 0,
         "raw_payload_included": False,
+        "secrets_included": False,
         "storage_backend": "file",
         "storage_health": get_storage_health(),
     }
@@ -291,6 +297,8 @@ def compact_trap_report(report: dict[str, Any], *, limit: int = 25) -> dict[str,
                 "actual_orders_submitted": 0,
                 "actual_bets_submitted": 0,
                 "actual_trades_submitted": 0,
+                "raw_payload_included": False,
+                "secrets_included": False,
             }
         )
     return {
@@ -311,4 +319,5 @@ def compact_trap_report(report: dict[str, Any], *, limit: int = 25) -> dict[str,
         "actual_bets_submitted": 0,
         "actual_trades_submitted": 0,
         "raw_payload_included": False,
+        "secrets_included": False,
     }

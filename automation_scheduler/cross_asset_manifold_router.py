@@ -126,6 +126,7 @@ def map_manifold_endpoint_item(
         "actual_bets_submitted": 0,
         "actual_trades_submitted": 0,
         "raw_payload_included": False,
+        "secrets_included": False,
     }
 
 

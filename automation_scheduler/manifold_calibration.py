@@ -305,6 +305,7 @@ def build_manifold_calibration_report(
         "actual_bets_submitted": 0,
         "actual_trades_submitted": 0,
         "raw_payload_included": False,
+        "secrets_included": False,
         "storage_backend": "file",
         "storage_health": get_storage_health(),
     }
@@ -325,6 +326,8 @@ def write_manifold_calibration_report(report: dict[str, Any], *, base_data_dir: 
     payload["actual_orders_submitted"] = 0
     payload["actual_bets_submitted"] = 0
     payload["actual_trades_submitted"] = 0
+    payload["raw_payload_included"] = False
+    payload["secrets_included"] = False
     latest = _latest_path(base_data_dir)
     history = _calibration_dir(base_data_dir) / f"{sanitize_filename(utc_now_iso()[:10])}.json"
     _atomic_write_json(latest, payload)
@@ -385,4 +388,5 @@ def compact_manifold_calibration_report(report: dict[str, Any], *, limit: int = 
         "actual_bets_submitted": 0,
         "actual_trades_submitted": 0,
         "raw_payload_included": False,
+        "secrets_included": False,
     }

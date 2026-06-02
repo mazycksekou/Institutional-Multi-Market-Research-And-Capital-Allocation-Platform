@@ -320,6 +320,7 @@ def default_cluster_registry() -> dict[str, Any]:
         "actual_bets_submitted": 0,
         "actual_trades_submitted": 0,
         "raw_payload_included": False,
+        "secrets_included": False,
     }
 
 
@@ -338,6 +339,7 @@ def write_cluster_registry(registry: dict[str, Any] | None = None, *, base_data_
     payload["actual_bets_submitted"] = 0
     payload["actual_trades_submitted"] = 0
     payload["raw_payload_included"] = False
+    payload["secrets_included"] = False
     latest = _latest_path(base_data_dir)
     history = _history_dir(base_data_dir) / f"{sanitize_filename(utc_now_iso()[:10])}.json"
     _atomic_write_json(latest, payload)
@@ -364,6 +366,7 @@ def load_cluster_registry(*, base_data_dir: str = "data", create_if_missing: boo
         payload["actual_bets_submitted"] = 0
         payload["actual_trades_submitted"] = 0
         payload["raw_payload_included"] = False
+        payload["secrets_included"] = False
         payload["storage_health"] = get_storage_health()
         return payload
     payload = default_cluster_registry()
@@ -423,4 +426,5 @@ def compact_cluster_registry(registry: dict[str, Any], *, limit: int = 25) -> di
         "actual_bets_submitted": 0,
         "actual_trades_submitted": 0,
         "raw_payload_included": False,
+        "secrets_included": False,
     }

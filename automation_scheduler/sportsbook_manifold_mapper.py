@@ -76,4 +76,5 @@ def map_sportsbook_full_board(
         "actual_bets_submitted": 0,
         "actual_trades_submitted": 0,
         "raw_payload_included": False,
+        "secrets_included": False,
     }

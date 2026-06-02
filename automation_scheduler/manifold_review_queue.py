@@ -75,6 +75,8 @@ def compact_manifold_item(item: dict[str, Any]) -> dict[str, Any]:
         "actual_orders_submitted": 0,
         "actual_bets_submitted": 0,
         "actual_trades_submitted": 0,
+        "raw_payload_included": False,
+        "secrets_included": False,
     }
 
 
@@ -162,6 +164,8 @@ def write_manifold_review_queue(payload: dict[str, Any], *, base_data_dir: str =
     safe_payload["actual_orders_submitted"] = 0
     safe_payload["actual_bets_submitted"] = 0
     safe_payload["actual_trades_submitted"] = 0
+    safe_payload["raw_payload_included"] = False
+    safe_payload["secrets_included"] = False
     latest = _latest_path(base_data_dir)
     history = _review_dir(base_data_dir) / f"{sanitize_filename(utc_now_iso()[:10])}.json"
     _atomic_write_json(latest, safe_payload)
@@ -199,6 +203,7 @@ def load_manifold_review_queue(*, base_data_dir: str = "data") -> dict[str, Any]
         "actual_bets_submitted": 0,
         "actual_trades_submitted": 0,
         "raw_payload_included": False,
+        "secrets_included": False,
         "storage_backend": "file",
         "storage_health": get_storage_health(),
     }
@@ -236,4 +241,5 @@ def compact_manifold_review_response(payload: dict[str, Any], *, limit: int = 10
         "storage_backend": payload.get("storage_backend", "file"),
         "storage": payload.get("storage_health"),
         "raw_payload_included": False,
+        "secrets_included": False,
     }
