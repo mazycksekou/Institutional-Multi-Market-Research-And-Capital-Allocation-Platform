@@ -342,6 +342,61 @@ def run_football_impact_diagnostics(
     )
 
 
+def get_soccer_impact_readiness():
+    from .soccer_impact_readiness import build_soccer_impact_readiness
+
+    return build_soccer_impact_readiness()
+
+
+def run_soccer_impact_diagnostics(
+    *,
+    sport: str = "soccer",
+    market_type: str = "three_way_moneyline",
+    game_context: dict | None = None,
+    team_context: dict | None = None,
+    player_context: dict | None = None,
+    lineup_context: dict | None = None,
+    tactical_context: dict | None = None,
+    possession_value_context: dict | None = None,
+    shot_quality_context: dict | None = None,
+    pressing_context: dict | None = None,
+    transition_context: dict | None = None,
+    set_piece_context: dict | None = None,
+    goalkeeper_context: dict | None = None,
+    referee_context: dict | None = None,
+    matchup_context: dict | None = None,
+    availability_context: dict | None = None,
+    incentive_context: dict | None = None,
+    calibration_context: dict | None = None,
+    tracking_context: dict | None = None,
+    dry_run: bool = True,
+):
+    from .soccer_impact_report import build_soccer_impact_diagnostics
+
+    return build_soccer_impact_diagnostics(
+        sport=sport,
+        market_type=market_type,
+        game_context=game_context or {},
+        team_context=team_context or {},
+        player_context=player_context or {},
+        lineup_context=lineup_context or {},
+        tactical_context=tactical_context or {},
+        possession_value_context=possession_value_context or {},
+        shot_quality_context=shot_quality_context or {},
+        pressing_context=pressing_context or {},
+        transition_context=transition_context or {},
+        set_piece_context=set_piece_context or {},
+        goalkeeper_context=goalkeeper_context or {},
+        referee_context=referee_context or {},
+        matchup_context=matchup_context or {},
+        availability_context=availability_context or {},
+        incentive_context=incentive_context or {},
+        calibration_context=calibration_context or {},
+        tracking_context=tracking_context or {},
+        dry_run=dry_run,
+    )
+
+
 def get_hockey_impact_readiness():
     from .hockey_impact_readiness import build_hockey_impact_readiness
 

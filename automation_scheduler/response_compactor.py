@@ -561,6 +561,165 @@ def compact_football_impact_diagnostics_response(payload: dict[str, Any], limit:
     }
 
 
+def _compact_soccer_section(section: Any, keys: list[str], limit: int = 10) -> dict[str, Any]:
+    row = section if isinstance(section, dict) else {}
+    out: dict[str, Any] = {}
+    for key in keys:
+        value = row.get(key)
+        if isinstance(value, list):
+            out[key] = value[:limit]
+        elif isinstance(value, dict):
+            out[key] = redact_and_limit_payload(value, limit=limit)
+        else:
+            out[key] = value
+    return out
+
+
+def compact_soccer_impact_readiness_response(payload: dict[str, Any], limit: int = 10) -> dict[str, Any]:
+    cap = max(1, min(int(limit or 10), 100))
+    return {
+        "ok": bool(payload.get("ok", True)),
+        "status": payload.get("status", "soccer_impact_readiness"),
+        "supported_sports": list(payload.get("supported_sports") or [])[:cap],
+        "supported_roles": list(payload.get("supported_roles") or [])[:cap],
+        "supported_markets": list(payload.get("supported_markets") or [])[:cap],
+        "data_tier_requirements": redact_and_limit_payload(payload.get("data_tier_requirements") or {}, limit=cap),
+        "soccer_readiness": redact_and_limit_payload(payload.get("soccer_readiness") or {}, limit=cap),
+        "missing_data_by_market": redact_and_limit_payload(payload.get("missing_data_by_market") or {}, limit=cap),
+        "calibration_requirements": list(payload.get("calibration_requirements") or [])[:cap],
+        "no_spend_policy": redact_and_limit_payload(payload.get("no_spend_policy") or {}, limit=cap),
+        "forbidden_features": list(payload.get("forbidden_features") or [])[:cap],
+        "provider_write": False,
+        "execution_allowed": False,
+        "live_execution_enabled": False,
+        "auto_execution": False,
+        "auto_execution_enabled": False,
+        "human_approval_required": True,
+        "owner_approval_required": True,
+        "actual_orders_submitted": 0,
+        "actual_bets_submitted": 0,
+        "actual_trades_submitted": 0,
+        "raw_payload_included": False,
+        "raw_payload_exposed": False,
+        "secrets_included": False,
+        "compact_response": True,
+    }
+
+
+def compact_soccer_impact_diagnostics_response(payload: dict[str, Any], limit: int = 10) -> dict[str, Any]:
+    cap = max(1, min(int(limit or 10), 100))
+    data = payload.get("data_availability") if isinstance(payload.get("data_availability"), dict) else {}
+    possession = payload.get("possession_value_impact") if isinstance(payload.get("possession_value_impact"), dict) else {}
+    tactical = payload.get("tactical_context") if isinstance(payload.get("tactical_context"), dict) else {}
+    pressing = payload.get("pressing_transition_context") if isinstance(payload.get("pressing_transition_context"), dict) else {}
+    player = payload.get("player_role_impact") if isinstance(payload.get("player_role_impact"), dict) else {}
+    lineup = payload.get("lineup_availability_context") if isinstance(payload.get("lineup_availability_context"), dict) else {}
+    set_piece = payload.get("set_piece_context") if isinstance(payload.get("set_piece_context"), dict) else {}
+    keeper = payload.get("goalkeeper_context") if isinstance(payload.get("goalkeeper_context"), dict) else {}
+    referee = payload.get("referee_context") if isinstance(payload.get("referee_context"), dict) else {}
+    matchup = payload.get("matchup_context") if isinstance(payload.get("matchup_context"), dict) else {}
+    incentive = payload.get("incentive_context") if isinstance(payload.get("incentive_context"), dict) else {}
+    market = payload.get("market_relevance") if isinstance(payload.get("market_relevance"), dict) else {}
+    calibration = payload.get("calibration") if isinstance(payload.get("calibration"), dict) else {}
+    red_team = payload.get("red_team") if isinstance(payload.get("red_team"), dict) else {}
+    return {
+        "ok": bool(payload.get("ok", True)),
+        "status": payload.get("status", "soccer_possession_value_impact_complete"),
+        "sport": payload.get("sport"),
+        "market_type": payload.get("market_type"),
+        "data_tier": int(payload.get("data_tier", 0) or 0),
+        "tier_name": payload.get("tier_name"),
+        "team_level_allowed": bool(payload.get("team_level_allowed", False)),
+        "player_level_allowed": bool(payload.get("player_level_allowed", False)),
+        "tactical_level_allowed": bool(payload.get("tactical_level_allowed", False)),
+        "tracking_level_allowed": bool(payload.get("tracking_level_allowed", False)),
+        "soccer_impact_score": payload.get("soccer_impact_score", 0.0),
+        "recommended_review_status": payload.get("recommended_review_status"),
+        "possession_value_impact": _compact_soccer_section(
+            possession,
+            ["possession_value_score", "chance_quality_score", "territorial_dominance_score", "progression_score", "final_third_pressure_score", "box_entry_score", "xg_quality_score", "first_half_pressure_score", "open_play_attack_score", "defensive_suppression_score", "total_signal_score", "team_total_signal_score", "btts_signal_score", "confidence_cap_reason", "insufficient_sample", "limited_proxy", "xg_fabricated", "xt_fabricated", "obv_vaep_fabricated", "missing_inputs"],
+            cap,
+        ),
+        "tactical_context": _compact_soccer_section(
+            tactical,
+            ["tactical_fit_score", "tactical_stability_score", "pressing_score", "counter_pressing_score", "directness_score", "formation_stability_score", "tactical_mismatch_risk", "style_market_relevance", "formation", "formation_fabricated", "tactical_context_standalone_edge", "missing_inputs", "no_bet_reasons"],
+            cap,
+        ),
+        "pressing_transition_context": _compact_soccer_section(
+            pressing,
+            ["pressing_impact_score", "high_turnover_score", "counterpress_score", "transition_attack_score", "transition_defense_risk", "rest_defense_score", "market_relevance_modifier", "pressing_fabricated", "missing_inputs", "no_bet_reasons"],
+            cap,
+        ),
+        "player_role_impact": _compact_soccer_section(
+            player,
+            ["role", "player_impact_score", "attacking_threat_score", "creative_value_score", "defensive_work_score", "pressing_value_score", "set_piece_role_score", "card_risk_score", "minutes_role_stability_score", "player_market_relevance", "penalty_taker_fabricated", "set_piece_role_fabricated", "post_shot_xg_fabricated", "missing_player_inputs", "no_bet_reasons"],
+            cap,
+        ),
+        "lineup_availability_context": _compact_soccer_section(
+            lineup,
+            ["lineup_certainty_score", "availability_score", "rotation_risk_score", "minutes_projection_confidence", "tactical_continuity_score", "rest_travel_risk_score", "competition_priority_risk", "confidence_cap_reason", "lineup_fabricated", "injury_status_fabricated", "confirmed_goalkeeper_fabricated", "missing_inputs", "no_bet_reasons"],
+            cap,
+        ),
+        "set_piece_context": _compact_soccer_section(
+            set_piece,
+            ["set_piece_attack_score", "set_piece_defense_score", "penalty_context_score", "corner_context_score", "aerial_mismatch_score", "player_goal_prop_modifier", "total_market_modifier", "team_total_modifier", "set_piece_xg_separated", "penalty_taker_fabricated", "set_piece_role_fabricated", "referee_penalty_tendency_fabricated", "missing_inputs", "no_bet_reasons"],
+            cap,
+        ),
+        "goalkeeper_context": _compact_soccer_section(
+            keeper,
+            ["goalkeeper_impact_score", "starter_certainty_score", "shot_stopping_score", "cross_claim_score", "sweeping_score", "distribution_score", "goalkeeper_prop_relevance", "team_market_goalkeeper_modifier", "total_market_goalkeeper_modifier", "confirmed_starter", "post_shot_xg_fabricated", "missing_goalkeeper_inputs", "no_bet_reasons"],
+            cap,
+        ),
+        "referee_context": _compact_soccer_section(
+            referee,
+            ["referee_environment_score", "card_market_relevance", "penalty_market_relevance", "foul_market_relevance", "game_flow_modifier", "total_market_modifier", "red_card_volatility_risk", "referee_context_standalone_edge", "referee_tendency_fabricated", "missing_inputs", "no_bet_reasons"],
+            cap,
+        ),
+        "matchup_context": _compact_soccer_section(
+            matchup,
+            ["matchup_advantage_score", "matchup_risk_score", "tactical_mismatch_reasons", "no_bet_reasons", "market_specific_matchup_notes", "three_way_relevance", "asian_handicap_relevance", "total_relevance", "btts_relevance", "team_total_relevance", "player_prop_relevance", "card_prop_relevance", "tactical_mismatch_fabricated"],
+            cap,
+        ),
+        "incentive_context": _compact_soccer_section(
+            incentive,
+            ["incentive_context_status", "incentive_behavior_score", "stat_chase_risk", "team_alignment_score", "rotation_motivation_risk", "narrative_overfit_risk", "confidence_modifier", "market_relevance_modifier", "incentive_is_standalone_edge", "bonus_threshold_fabricated", "no_bet_reasons"],
+            cap,
+        ),
+        "market_relevance": _compact_soccer_section(
+            market,
+            ["market_relevance_scores", "strongest_market_links", "weak_market_links", "no_bet_market_reasons", "player_prop_relevance", "team_market_relevance", "tactical_market_relevance", "referee_market_relevance", "set_piece_market_relevance", "market_confidence_caps", "selected_market_type", "selected_market_relevance_score"],
+            cap,
+        ),
+        "calibration_status": payload.get("calibration_status", calibration.get("calibration_status", "insufficient_data")),
+        "calibration": _compact_soccer_section(calibration, ["calibration_status", "sample_size", "matched_outcomes_count", "insufficient_sample", "hit_rate", "false_positive_rate", "confidence_cap", "next_required_data", "calibration_buckets", "correct_score_extra_conservative"], cap),
+        "data_availability": _compact_soccer_section(
+            data,
+            ["status", "sport", "data_tier", "tier_name", "team_level_allowed", "player_level_allowed", "tactical_level_allowed", "tracking_level_allowed", "calibration_allowed", "available_field_groups", "missing_field_groups", "confidence_cap", "confidence_cap_reason", "no_fabrication", "xt_not_fabricated", "obv_vaep_not_fabricated", "tracking_not_required", "formation_not_fabricated", "referee_tendency_not_fabricated", "next_data_to_collect"],
+            cap,
+        ),
+        "red_team": _compact_soccer_section(red_team, ["red_team_status", "downgrade_score", "recommended_action_adjustment", "no_bet_reasons", "red_team_reasons", "missing_inputs", "confidence_cap_reason", "red_team_only"], cap),
+        "recommended_action_adjustment": payload.get("recommended_action_adjustment"),
+        "markets_to_review": list(payload.get("markets_to_review") or [])[:cap],
+        "no_bet_reasons": list(payload.get("no_bet_reasons") or [])[:cap],
+        "missing_inputs": list(payload.get("missing_inputs") or [])[:cap],
+        "next_data_to_collect": list(payload.get("next_data_to_collect") or [])[:cap],
+        "provider_write": False,
+        "execution_allowed": False,
+        "live_execution_enabled": False,
+        "auto_execution": False,
+        "auto_execution_enabled": False,
+        "human_approval_required": True,
+        "owner_approval_required": True,
+        "actual_orders_submitted": 0,
+        "actual_bets_submitted": 0,
+        "actual_trades_submitted": 0,
+        "raw_payload_included": False,
+        "raw_payload_exposed": False,
+        "secrets_included": False,
+        "compact_response": True,
+    }
+
+
 def _compact_hockey_section(section: Any, keys: list[str], limit: int = 10) -> dict[str, Any]:
     row = section if isinstance(section, dict) else {}
     out: dict[str, Any] = {}

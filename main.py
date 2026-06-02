@@ -78,6 +78,8 @@ from automation_scheduler.response_compactor import (
     compact_provider_registry_response,
     compact_review_queue_response,
     compact_run_once_response,
+    compact_soccer_impact_diagnostics_response,
+    compact_soccer_impact_readiness_response,
     compact_strategy_readiness_response,
     compact_validation_response,
     redact_and_limit_payload,
@@ -1142,6 +1144,31 @@ class AutomationHockeyImpactDiagnosticsRequest(BaseModel):
     special_teams_context: dict[str, Any] = Field(default_factory=dict)
     transition_context: dict[str, Any] = Field(default_factory=dict)
     shot_quality_context: dict[str, Any] = Field(default_factory=dict)
+    matchup_context: dict[str, Any] = Field(default_factory=dict)
+    availability_context: dict[str, Any] = Field(default_factory=dict)
+    incentive_context: dict[str, Any] = Field(default_factory=dict)
+    calibration_context: dict[str, Any] = Field(default_factory=dict)
+    tracking_context: dict[str, Any] = Field(default_factory=dict)
+
+
+class AutomationSoccerImpactDiagnosticsRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", protected_namespaces=())
+
+    sport: str = "soccer"
+    market_type: str = "three_way_moneyline"
+    dry_run: bool = True
+    game_context: dict[str, Any] = Field(default_factory=dict)
+    team_context: dict[str, Any] = Field(default_factory=dict)
+    player_context: dict[str, Any] = Field(default_factory=dict)
+    lineup_context: dict[str, Any] = Field(default_factory=dict)
+    tactical_context: dict[str, Any] = Field(default_factory=dict)
+    possession_value_context: dict[str, Any] = Field(default_factory=dict)
+    shot_quality_context: dict[str, Any] = Field(default_factory=dict)
+    pressing_context: dict[str, Any] = Field(default_factory=dict)
+    transition_context: dict[str, Any] = Field(default_factory=dict)
+    set_piece_context: dict[str, Any] = Field(default_factory=dict)
+    goalkeeper_context: dict[str, Any] = Field(default_factory=dict)
+    referee_context: dict[str, Any] = Field(default_factory=dict)
     matchup_context: dict[str, Any] = Field(default_factory=dict)
     availability_context: dict[str, Any] = Field(default_factory=dict)
     incentive_context: dict[str, Any] = Field(default_factory=dict)
@@ -3235,6 +3262,58 @@ async def automation_football_impact_diagnostics_endpoint(
     return compact
 
 
+@app.get("/api/automation/soccer-impact-readiness", operation_id="getAutomationSoccerImpactReadiness")
+async def get_automation_soccer_impact_readiness_endpoint(
+    verbose: bool = Query(default=False),
+    include_debug: bool = Query(default=False),
+    limit: int = Query(default=10),
+):
+    cap = min(max(int(limit), 1), 100 if verbose else 10)
+    payload = automation_scheduler.get_soccer_impact_readiness()
+    compact = compact_soccer_impact_readiness_response(payload, limit=cap)
+    if verbose or include_debug:
+        compact["debug"] = redact_and_limit_payload(payload, limit=cap, verbose=verbose)
+    return compact
+
+
+@app.post("/api/automation/soccer-impact-diagnostics", operation_id="runAutomationSoccerImpactDiagnostics")
+async def automation_soccer_impact_diagnostics_endpoint(
+    payload: AutomationSoccerImpactDiagnosticsRequest,
+    verbose: bool = Query(default=False),
+    include_debug: bool = Query(default=False),
+    limit: int = Query(default=10),
+):
+    if payload.dry_run is not True:
+        raise HTTPException(status_code=400, detail="soccer impact diagnostics only supports dry_run=true")
+    cap = min(max(int(limit), 1), 100 if verbose else 10)
+    result = automation_scheduler.run_soccer_impact_diagnostics(
+        sport=payload.sport,
+        market_type=payload.market_type,
+        game_context=payload.game_context,
+        team_context=payload.team_context,
+        player_context=payload.player_context,
+        lineup_context=payload.lineup_context,
+        tactical_context=payload.tactical_context,
+        possession_value_context=payload.possession_value_context,
+        shot_quality_context=payload.shot_quality_context,
+        pressing_context=payload.pressing_context,
+        transition_context=payload.transition_context,
+        set_piece_context=payload.set_piece_context,
+        goalkeeper_context=payload.goalkeeper_context,
+        referee_context=payload.referee_context,
+        matchup_context=payload.matchup_context,
+        availability_context=payload.availability_context,
+        incentive_context=payload.incentive_context,
+        calibration_context=payload.calibration_context,
+        tracking_context=payload.tracking_context,
+        dry_run=True,
+    )
+    compact = compact_soccer_impact_diagnostics_response(result, limit=cap)
+    if verbose or include_debug:
+        compact["debug"] = redact_and_limit_payload(result, limit=cap, verbose=verbose)
+    return compact
+
+
 @app.get("/api/automation/hockey-impact-readiness", operation_id="getAutomationHockeyImpactReadiness")
 async def get_automation_hockey_impact_readiness_endpoint(
     verbose: bool = Query(default=False),
@@ -4168,6 +4247,8 @@ PUBLIC_OPENAPI_PATH_METHODS = frozenset({
     ("/api/automation/basketball-player-impact", "post"),
     ("/api/automation/football-impact-readiness", "get"),
     ("/api/automation/football-impact-diagnostics", "post"),
+    ("/api/automation/soccer-impact-readiness", "get"),
+    ("/api/automation/soccer-impact-diagnostics", "post"),
     ("/api/automation/hockey-impact-readiness", "get"),
     ("/api/automation/hockey-impact-diagnostics", "post"),
     ("/api/automation/baseball-impact-readiness", "get"),
