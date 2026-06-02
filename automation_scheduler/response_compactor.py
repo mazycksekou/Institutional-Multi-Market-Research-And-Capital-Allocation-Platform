@@ -188,6 +188,59 @@ def compact_manifold_review_response(payload: dict[str, Any], limit: int = 10) -
     }
 
 
+def compact_intelligence_readiness_response(payload: dict[str, Any], limit: int = 10) -> dict[str, Any]:
+    cap = max(1, min(int(limit or 10), 100))
+    safety = payload.get("safety_status") if isinstance(payload.get("safety_status"), dict) else {}
+    coverage = payload.get("outcome_coverage_by_asset_type") if isinstance(payload.get("outcome_coverage_by_asset_type"), dict) else {}
+    return {
+        "ok": bool(payload.get("ok", True)),
+        "status": payload.get("status", "intelligence_readiness"),
+        "active_review_models": list(payload.get("active_review_models") or [])[:cap],
+        "active_calibration_models": list(payload.get("active_calibration_models") or [])[:cap],
+        "calibration_only_models": list(payload.get("calibration_only_models") or [])[:cap],
+        "research_only_models": list(payload.get("research_only_models") or [])[:cap],
+        "blocked_models": list(payload.get("blocked_models") or [])[:cap],
+        "active_review_count": int(payload.get("active_review_count", 0) or 0),
+        "active_calibration_count": int(payload.get("active_calibration_count", 0) or 0),
+        "calibration_only_count": int(payload.get("calibration_only_count", 0) or 0),
+        "research_only_count": int(payload.get("research_only_count", 0) or 0),
+        "blocked_count": int(payload.get("blocked_count", 0) or 0),
+        "total_labeled_outcomes": int(payload.get("total_labeled_outcomes", 0) or 0),
+        "outcome_coverage_by_asset_type": dict(list(coverage.items())[:cap]),
+        "feasible_now": list(payload.get("feasible_now") or [])[:cap],
+        "feasible_later": list(payload.get("feasible_later") or [])[:cap],
+        "research_only": list(payload.get("research_only") or [])[:cap],
+        "next_required_data": list(payload.get("next_required_data") or [])[:cap],
+        "safety_status": {
+            "status": safety.get("status", "security_readiness"),
+            "security_posture": safety.get("security_posture", "locked_read_only"),
+            "provider_write_firewall": safety.get("provider_write_firewall", "locked"),
+            "kill_switches_active": bool(safety.get("kill_switches_active", True)),
+            "ai_execution_authority": safety.get("ai_execution_authority", "blocked"),
+            "provider_write": False,
+            "execution_allowed": False,
+            "live_execution_enabled": False,
+            "human_approval_required": True,
+            "owner_approval_required": True,
+        },
+        "storage": _compact_storage_health(payload),
+        "provider_write": False,
+        "execution_allowed": False,
+        "live_execution_enabled": False,
+        "auto_execution": False,
+        "auto_execution_enabled": False,
+        "human_approval_required": True,
+        "owner_approval_required": True,
+        "actual_orders_submitted": 0,
+        "actual_bets_submitted": 0,
+        "actual_trades_submitted": 0,
+        "actual_crypto_swaps_submitted": 0,
+        "raw_payload_included": False,
+        "secrets_included": False,
+        "compact_response": True,
+    }
+
+
 def compact_health_response(payload: dict[str, Any]) -> dict[str, Any]:
     return {
         "ok": bool(payload.get("ok", True)),
@@ -220,6 +273,78 @@ def compact_health_response(payload: dict[str, Any]) -> dict[str, Any]:
         "review_queue_latest_run_id": payload.get("review_queue_latest_run_id"),
         "review_queue_read_ok": bool(payload.get("review_queue_read_ok", True)),
         "storage": _compact_storage_health(payload),
+    }
+
+
+def compact_strategy_readiness_response(payload: dict[str, Any], limit: int = 50) -> dict[str, Any]:
+    cap = max(1, min(int(limit or 50), 100))
+    strategies = []
+    for row in list(payload.get("strategies") or [])[:cap]:
+        if not isinstance(row, dict):
+            continue
+        strategies.append(
+            {
+                "strategy_id": row.get("strategy_id"),
+                "strategy_name": row.get("strategy_name"),
+                "strategy_family": row.get("strategy_family"),
+                "asset_types_supported": list(row.get("asset_types_supported") or [])[:10],
+                "market_types_supported": list(row.get("market_types_supported") or [])[:10],
+                "maturity_status": row.get("maturity_status"),
+                "enabled": bool(row.get("enabled", False)),
+                "affects_review_queue": bool(row.get("affects_review_queue", False)),
+                "affects_ranking": bool(row.get("affects_ranking", False)),
+                "affects_execution": False,
+                "minimum_sample_size": int(row.get("minimum_sample_size", 0) or 0),
+                "current_sample_size": int(row.get("current_sample_size", 0) or 0),
+                "outcome_coverage": float(row.get("outcome_coverage", 0.0) or 0.0),
+                "calibration_status": row.get("calibration_status"),
+                "performance_status": row.get("performance_status"),
+                "promotion_status": row.get("promotion_status"),
+                "demotion_status": row.get("demotion_status"),
+                "blocked_reason": row.get("blocked_reason"),
+                "safety_review_status": row.get("safety_review_status"),
+                "future_execution_eligible": False,
+                "provider_write": False,
+                "execution_allowed": False,
+                "live_execution_enabled": False,
+            }
+        )
+    hard_gate_summary = payload.get("hard_gate_summary") if isinstance(payload.get("hard_gate_summary"), dict) else {}
+    return {
+        "ok": bool(payload.get("ok", True)),
+        "status": payload.get("status", "strategy_readiness"),
+        "total_strategies": int(payload.get("total_strategies", len(strategies)) or 0),
+        "active_review_strategies": list(payload.get("active_review_strategies") or [])[:cap],
+        "active_ranking_strategies": list(payload.get("active_ranking_strategies") or [])[:cap],
+        "calibration_only_strategies": list(payload.get("calibration_only_strategies") or [])[:cap],
+        "research_only_strategies": list(payload.get("research_only_strategies") or [])[:cap],
+        "blocked_strategies": list(payload.get("blocked_strategies") or [])[:cap],
+        "demoted_strategies": list(payload.get("demoted_strategies") or [])[:cap],
+        "promoted_strategies": list(payload.get("promoted_strategies") or [])[:cap],
+        "execution_eligible_future_count": int(payload.get("execution_eligible_future_count", 0) or 0),
+        "currently_executable_count": 0,
+        "provider_write": False,
+        "execution_allowed": False,
+        "live_execution_enabled": False,
+        "auto_execution": False,
+        "auto_execution_enabled": False,
+        "human_approval_required": True,
+        "owner_approval_required": True,
+        "hard_gate_status": payload.get("hard_gate_status", "locked"),
+        "hard_gate_summary": {
+            "status": hard_gate_summary.get("status"),
+            "failed_hard_gates": list(hard_gate_summary.get("failed_hard_gates") or [])[:20],
+            "required_hard_gates": list(hard_gate_summary.get("required_hard_gates") or [])[:20],
+        },
+        "next_required_data": list(payload.get("next_required_data") or [])[:20],
+        "next_recommended_strategy_to_promote": payload.get("next_recommended_strategy_to_promote"),
+        "next_recommended_strategy_to_demote": payload.get("next_recommended_strategy_to_demote"),
+        "strategies": _redact(strategies),
+        "raw_payload_included": False,
+        "raw_payload_exposed": False,
+        "secrets_included": False,
+        "secrets_detected": False,
+        "compact_response": True,
     }
 
 

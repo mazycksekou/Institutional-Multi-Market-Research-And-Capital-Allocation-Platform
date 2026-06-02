@@ -25,6 +25,22 @@ class TestAutomationSchedulerEndpoints(unittest.TestCase):
         p = r.json()
         self.assertIn('items', p)
 
+    def test_strategy_readiness_endpoint_compact_default(self):
+        r = self.client.get("/api/automation/strategy-readiness")
+        self.assertEqual(r.status_code, 200)
+        payload = r.json()
+        self.assertEqual(payload["status"], "strategy_readiness")
+        self.assertIn("active_review_strategies", payload)
+        self.assertIn("hard_gate_status", payload)
+        self.assertEqual(payload["currently_executable_count"], 0)
+        self.assertFalse(payload["provider_write"])
+        self.assertFalse(payload["execution_allowed"])
+        self.assertFalse(payload["live_execution_enabled"])
+        self.assertTrue(payload["human_approval_required"])
+        self.assertTrue(payload["owner_approval_required"])
+        self.assertNotIn("provider_payload", str(payload))
+        self.assertNotIn("api_key", str(payload).lower())
+
     def test_calibration_endpoint_compact_default(self):
         r = self.client.get('/api/automation/calibration')
         self.assertEqual(r.status_code, 200)

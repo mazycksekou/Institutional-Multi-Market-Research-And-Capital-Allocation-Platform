@@ -10,7 +10,7 @@ from .review_queue import filter_review_items, list_active_review_items, load_re
 from .scheduler_config import get_default_scheduler_config, ensure_runtime_directories
 from .backtesting_engine import generate_backtest_report, run_backtest, run_paper_summary
 from .calibration import build_calibration_report
-from .outcome_store import ingest_outcome_records, load_outcome_state, summarize_outcomes
+from .outcome_store import ingest_outcome_records, load_outcome_records, load_outcome_state, summarize_outcomes
 from .outcome_migration import import_local_settlement_records
 from .settlement_discovery import build_outcome_completion_report, write_outcome_completion_candidates
 from .model_performance_report import build_compact_performance_report
@@ -141,6 +141,193 @@ def get_balance_sheet_risk(symbol: str, base_data_dir: str | None = None):
 
 def get_security_readiness(base_data_dir: str | None = None):
     return build_security_readiness_report(base_data_dir=_data_dir(base_data_dir))
+
+
+def get_intelligence_readiness(base_data_dir: str | None = None):
+    from .intelligence_readiness_report import build_intelligence_readiness_report
+
+    return build_intelligence_readiness_report(base_data_dir=_data_dir(base_data_dir))
+
+
+def get_data_intelligence_registry_snapshot(base_data_dir: str | None = None):
+    from .data_intelligence_registry import build_data_intelligence_registry
+    from .intelligence_readiness_report import _outcome_coverage
+
+    base = _data_dir(base_data_dir)
+    records = load_outcome_records(base)
+    coverage = _outcome_coverage(records)
+    coverage_values = {
+        asset_type: payload.get("outcome_coverage", 0.0)
+        for asset_type, payload in coverage.items()
+        if isinstance(payload, dict)
+    }
+    return build_data_intelligence_registry(
+        total_labeled_outcomes=len(records),
+        outcome_coverage_by_asset_type=coverage_values,
+    )
+
+
+def get_model_maturity_registry_snapshot(base_data_dir: str | None = None):
+    from .intelligence_readiness_report import _outcome_coverage
+    from .model_maturity_registry import build_model_maturity_registry
+
+    base = _data_dir(base_data_dir)
+    records = load_outcome_records(base)
+    coverage = _outcome_coverage(records)
+    coverage_values = {
+        asset_type: payload.get("outcome_coverage", 0.0)
+        for asset_type, payload in coverage.items()
+        if isinstance(payload, dict)
+    }
+    return build_model_maturity_registry(
+        total_labeled_outcomes=len(records),
+        outcome_coverage_by_asset_type=coverage_values,
+    )
+
+
+def build_cross_asset_representation_vector(item: dict | None = None):
+    from .representation_feature_builder import build_representation_vector
+
+    return build_representation_vector(item or {})
+
+
+def map_market_state_graph(item: dict | None = None):
+    from .graph_relationship_mapper import map_graph_relationships
+
+    return map_graph_relationships(item or {})
+
+
+def build_causal_effect_scaffold(records: list[dict] | None = None, hypotheses: list[dict] | None = None):
+    from .causal_scaffold import build_causal_scaffold_report
+
+    return build_causal_scaffold_report(records=records or [], hypotheses=hypotheses)
+
+
+def get_tabular_ml_research_lanes(base_data_dir: str | None = None):
+    from .tabular_ml_research import build_tabular_ml_research_lanes
+
+    base = _data_dir(base_data_dir)
+    records = load_outcome_records(base)
+    label_coverage = min(1.0, len(records) / 1000.0)
+    return build_tabular_ml_research_lanes(total_labeled_outcomes=len(records), label_coverage=label_coverage)
+
+
+def get_deep_learning_research_lanes():
+    from .deep_learning_research_lanes import build_deep_learning_research_lanes
+
+    return build_deep_learning_research_lanes()
+
+
+def get_mdp_review_policy_scaffold(base_data_dir: str | None = None):
+    from .model_maturity_registry import build_mdp_review_policy_scaffold
+
+    base = _data_dir(base_data_dir)
+    records = load_outcome_records(base)
+    return build_mdp_review_policy_scaffold(current_sample_size=len(records))
+
+
+def route_cross_asset_intelligence_item(
+    item: dict | None = None,
+    *,
+    historical_records: list[dict] | None = None,
+    base_data_dir: str | None = None,
+):
+    from .cross_asset_intelligence_router import route_cross_asset_intelligence
+    from .intelligence_readiness_report import _outcome_coverage
+
+    base = _data_dir(base_data_dir)
+    records = load_outcome_records(base)
+    coverage = _outcome_coverage(records)
+    coverage_values = {
+        asset_type: payload.get("outcome_coverage", 0.0)
+        for asset_type, payload in coverage.items()
+        if isinstance(payload, dict)
+    }
+    return route_cross_asset_intelligence(
+        item or {},
+        historical_records=historical_records,
+        total_labeled_outcomes=len(records),
+        outcome_coverage_by_asset_type=coverage_values,
+        base_data_dir=base,
+    )
+
+
+def get_strategy_registry_snapshot(base_data_dir: str | None = None):
+    from .strategy_registry import compact_strategy_registry
+
+    return compact_strategy_registry()
+
+
+def route_strategy_candidate(candidate: dict | None = None, *, base_data_dir: str | None = None):
+    from .strategy_router import route_strategies
+
+    return route_strategies(candidate or {})
+
+
+def aggregate_strategy_candidate(
+    candidate: dict | None = None,
+    *,
+    routed: dict | None = None,
+    strategy_outputs: dict | list | None = None,
+    create_disagreements: bool = False,
+    base_data_dir: str | None = None,
+):
+    from .strategy_score_aggregator import aggregate_strategy_scores
+
+    return aggregate_strategy_scores(
+        candidate or {},
+        routed=routed,
+        strategy_outputs=strategy_outputs,
+        create_disagreements=create_disagreements,
+        base_data_dir=_data_dir(base_data_dir),
+    )
+
+
+def evaluate_strategy_promotion_decision(
+    strategy: dict,
+    evidence: dict | None = None,
+    *,
+    context_candidate: dict | None = None,
+    actor_type: str = "system",
+    base_data_dir: str | None = None,
+):
+    from .strategy_promotion import evaluate_strategy_promotion
+
+    return evaluate_strategy_promotion(strategy, evidence or {}, context_candidate=context_candidate, actor_type=actor_type)
+
+
+def evaluate_strategy_execution_gate(
+    candidate: dict | None = None,
+    *,
+    owner_approval: dict | None = None,
+    risk_limits: dict | None = None,
+    idempotency_key: str | None = None,
+    execution_mode: str | None = None,
+    base_data_dir: str | None = None,
+):
+    from .hard_gate_policy import evaluate_hard_gates
+
+    return evaluate_hard_gates(
+        candidate or {},
+        owner_approval=owner_approval,
+        risk_limits=risk_limits,
+        idempotency_key=idempotency_key,
+        execution_mode=execution_mode,
+        base_data_dir=_data_dir(base_data_dir),
+        persist_audit=False,
+    )
+
+
+def get_strategy_readiness(base_data_dir: str | None = None):
+    from .strategy_readiness_report import build_strategy_readiness_report
+
+    return build_strategy_readiness_report(base_data_dir=_data_dir(base_data_dir))
+
+
+def get_strategy_disagreements(*, base_data_dir: str | None = None, limit: int = 100):
+    from .strategy_disagreement import load_strategy_disagreements
+
+    return load_strategy_disagreements(base_data_dir=_data_dir(base_data_dir), limit=limit)
 
 
 def evaluate_ai_analyst_provider(

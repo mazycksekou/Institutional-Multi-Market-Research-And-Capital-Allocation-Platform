@@ -58,6 +58,7 @@ from automation_scheduler.response_compactor import (
     compact_institutional_lab_health_response,
     compact_institutional_lab_run_response,
     compact_institutional_report_response,
+    compact_intelligence_readiness_response,
     compact_manifold_map_response,
     compact_manifold_review_response,
     compact_performance_health,
@@ -66,6 +67,7 @@ from automation_scheduler.response_compactor import (
     compact_provider_registry_response,
     compact_review_queue_response,
     compact_run_once_response,
+    compact_strategy_readiness_response,
     compact_validation_response,
     redact_and_limit_payload,
 )
@@ -2996,6 +2998,26 @@ async def get_automation_security_readiness_endpoint():
     return automation_scheduler.get_security_readiness()
 
 
+@app.get("/api/automation/intelligence-readiness", operation_id="getAutomationIntelligenceReadiness")
+async def get_automation_intelligence_readiness_endpoint(verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=10)):
+    payload = automation_scheduler.get_intelligence_readiness()
+    cap = min(max(int(limit), 1), 100 if verbose else 10)
+    compact = compact_intelligence_readiness_response(payload, limit=cap)
+    if verbose or include_debug:
+        compact["debug"] = redact_and_limit_payload(payload, limit=cap, verbose=verbose)
+    return compact
+
+
+@app.get("/api/automation/strategy-readiness", operation_id="getAutomationStrategyReadiness")
+async def get_automation_strategy_readiness_endpoint(verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=50)):
+    cap = min(max(int(limit), 1), 100 if verbose else 50)
+    payload = automation_scheduler.get_strategy_readiness()
+    compact = compact_strategy_readiness_response(payload, limit=cap)
+    if verbose or include_debug:
+        compact["debug"] = redact_and_limit_payload(payload, limit=cap, verbose=verbose)
+    return compact
+
+
 @app.get("/api/automation/review-queue", operation_id="getAutomationSchedulerReviewQueue")
 async def get_automation_scheduler_review_queue(
     provider: str = Query(default="all"),
@@ -3778,6 +3800,8 @@ PUBLIC_OPENAPI_PATH_METHODS = frozenset({
     ("/api/debug/auth-status", "get"),
     ("/api/automation/health", "get"),
     ("/api/automation/security-readiness", "get"),
+    ("/api/automation/intelligence-readiness", "get"),
+    ("/api/automation/strategy-readiness", "get"),
     ("/api/automation/review-queue", "get"),
     ("/api/automation/calibration", "get"),
     ("/api/automation/outcomes", "get"),
