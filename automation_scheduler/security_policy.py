@@ -165,6 +165,8 @@ def _walk_payload(payload: Any, path: str = "") -> list[str]:
             current = f"{path}.{lower_key}" if path else lower_key
             if lower_key in EXECUTION_TRUE_FIELDS and value is True:
                 violations.append(f"execution_flag_true:{current}")
+            if lower_key.endswith("kill_switch") and value is False:
+                violations.append(f"kill_switch_disable_attempt:{current}")
             if lower_key in EXECUTABLE_PAYLOAD_KEYS and value not in (None, {}, [], ""):
                 violations.append(f"executable_payload:{current}")
             if lower_key in {"recommended_action", "action", "order_action", "side", "intent"}:

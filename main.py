@@ -2954,6 +2954,11 @@ async def get_automation_scheduler_health():
     return compact_health_response(health)
 
 
+@app.get("/api/automation/security-readiness", operation_id="getAutomationSecurityReadiness")
+async def get_automation_security_readiness_endpoint():
+    return automation_scheduler.get_security_readiness()
+
+
 @app.get("/api/automation/review-queue", operation_id="getAutomationSchedulerReviewQueue")
 async def get_automation_scheduler_review_queue(
     provider: str = Query(default="all"),
@@ -3668,6 +3673,7 @@ PUBLIC_OPENAPI_PATH_METHODS = frozenset({
     ("/ping", "get"),
     ("/api/debug/auth-status", "get"),
     ("/api/automation/health", "get"),
+    ("/api/automation/security-readiness", "get"),
     ("/api/automation/review-queue", "get"),
     ("/api/automation/calibration", "get"),
     ("/api/automation/outcomes", "get"),

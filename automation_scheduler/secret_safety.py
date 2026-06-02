@@ -83,7 +83,11 @@ def contains_secret_like_content(payload: Any, *, key_hint: str | None = None) -
     if key_hint and is_secret_key(key_hint):
         if isinstance(payload, str):
             return payload.strip() not in {"", REDACTED}
-        return payload is not None
+        if isinstance(payload, Mapping):
+            return any(contains_secret_like_content(value, key_hint=str(key)) for key, value in payload.items())
+        if isinstance(payload, list):
+            return any(contains_secret_like_content(value) for value in payload)
+        return False
     if isinstance(payload, Mapping):
         return any(contains_secret_like_content(value, key_hint=str(key)) for key, value in payload.items())
     if isinstance(payload, list):

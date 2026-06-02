@@ -43,6 +43,7 @@ from .cross_asset_manifold_router import (
     map_manifold_endpoint_item,
     run_cross_asset_manifold_review,
 )
+from .security_readiness_report import build_security_readiness_report
 
 
 def _data_dir(base_data_dir: str | None = None) -> str:
@@ -136,6 +137,105 @@ def get_balance_sheet_risk(symbol: str, base_data_dir: str | None = None):
         "storage_health": get_storage_health(),
         **SAFETY_FLAGS,
     }
+
+
+def get_security_readiness(base_data_dir: str | None = None):
+    return build_security_readiness_report(base_data_dir=_data_dir(base_data_dir))
+
+
+def evaluate_ai_analyst_provider(
+    provider: str | None = None,
+    *,
+    provider_type: str | None = None,
+    base_data_dir: str | None = None,
+    persist_audit: bool = True,
+):
+    from .ai_provider_security import evaluate_ai_provider
+
+    return evaluate_ai_provider(provider, provider_type=provider_type, base_data_dir=_data_dir(base_data_dir), persist_audit=persist_audit)
+
+
+def enforce_ai_analysis_boundaries(payload: dict | list | None = None, *, actor_provider: str | None = None):
+    from .security_policy import enforce_ai_capability_boundary
+
+    return enforce_ai_capability_boundary(payload or {}, actor_provider=actor_provider)
+
+
+def evaluate_owner_approval_gate(
+    approval: dict | None = None,
+    *,
+    requested_scope: dict | None = None,
+    actor_type: str = "system",
+    signing_secret: str | None = None,
+    base_data_dir: str | None = None,
+    persist_audit: bool = True,
+):
+    from .owner_approval_gate import evaluate_owner_approval
+
+    return evaluate_owner_approval(
+        approval,
+        requested_scope=requested_scope,
+        actor_type=actor_type,
+        signing_secret=signing_secret,
+        base_data_dir=_data_dir(base_data_dir),
+        persist_audit=persist_audit,
+    )
+
+
+def check_provider_write_firewall(
+    *,
+    provider: str | None = None,
+    action: str | None = None,
+    request_payload: dict | None = None,
+    owner_approval: dict | None = None,
+    risk_limits: dict | None = None,
+    idempotency_key: str | None = None,
+    execution_mode: str | None = None,
+    base_data_dir: str | None = None,
+    persist_audit: bool = True,
+):
+    from .provider_write_firewall import check_provider_write_attempt
+
+    return check_provider_write_attempt(
+        provider=provider,
+        action=action,
+        request_payload=request_payload,
+        owner_approval=owner_approval,
+        risk_limits=risk_limits,
+        idempotency_key=idempotency_key,
+        execution_mode=execution_mode,
+        base_data_dir=_data_dir(base_data_dir),
+        persist_audit=persist_audit,
+    )
+
+
+def evaluate_execution_security_authorization(
+    request: dict | None = None,
+    *,
+    owner_approval: dict | None = None,
+    risk_limits: dict | None = None,
+    idempotency_key: str | None = None,
+    execution_mode: str | None = None,
+    base_data_dir: str | None = None,
+    persist_audit: bool = True,
+):
+    from .execution_authorization import evaluate_execution_authorization
+
+    return evaluate_execution_authorization(
+        request,
+        owner_approval=owner_approval,
+        risk_limits=risk_limits,
+        idempotency_key=idempotency_key,
+        execution_mode=execution_mode,
+        base_data_dir=_data_dir(base_data_dir),
+        persist_audit=persist_audit,
+    )
+
+
+def get_security_audit_records(base_data_dir: str | None = None, limit: int = 100):
+    from .audit_ledger import load_security_audit_records
+
+    return load_security_audit_records(base_data_dir=_data_dir(base_data_dir), limit=limit)
 
 
 def get_scheduler_health(base_data_dir: str | None = None):
