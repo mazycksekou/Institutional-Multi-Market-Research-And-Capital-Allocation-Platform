@@ -62,6 +62,8 @@ from automation_scheduler.response_compactor import (
     compact_intelligence_readiness_response,
     compact_extreme_randomness_diagnostics_response,
     compact_extreme_randomness_report_response,
+    compact_football_impact_diagnostics_response,
+    compact_football_impact_readiness_response,
     compact_manifold_map_response,
     compact_manifold_review_response,
     compact_performance_health,
@@ -1091,6 +1093,22 @@ class AutomationExtremeSignalDiagnosticsRequest(BaseModel):
     candidate: dict[str, Any] = Field(default_factory=dict)
     baseline_values: list[Any] = Field(default_factory=list)
     matrix_payload: dict[str, Any] = Field(default_factory=dict)
+
+
+class AutomationFootballImpactDiagnosticsRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", protected_namespaces=())
+
+    sport: str = "americanfootball_nfl"
+    market_type: str = "spread"
+    dry_run: bool = True
+    team_context: dict[str, Any] = Field(default_factory=dict)
+    player_context: dict[str, Any] = Field(default_factory=dict)
+    play_drive_context: dict[str, Any] = Field(default_factory=dict)
+    personnel_context: dict[str, Any] = Field(default_factory=dict)
+    matchup_context: dict[str, Any] = Field(default_factory=dict)
+    availability_context: dict[str, Any] = Field(default_factory=dict)
+    incentive_context: dict[str, Any] = Field(default_factory=dict)
+    calibration_context: dict[str, Any] = Field(default_factory=dict)
 
 
 class AutomationManifoldMapRequest(BaseModel):
@@ -3077,6 +3095,49 @@ async def get_automation_extreme_randomness_report_endpoint(
     return compact
 
 
+@app.get("/api/automation/football-impact-readiness", operation_id="getAutomationFootballImpactReadiness")
+async def get_automation_football_impact_readiness_endpoint(
+    verbose: bool = Query(default=False),
+    include_debug: bool = Query(default=False),
+    limit: int = Query(default=10),
+):
+    cap = min(max(int(limit), 1), 100 if verbose else 10)
+    payload = automation_scheduler.get_football_impact_readiness()
+    compact = compact_football_impact_readiness_response(payload, limit=cap)
+    if verbose or include_debug:
+        compact["debug"] = redact_and_limit_payload(payload, limit=cap, verbose=verbose)
+    return compact
+
+
+@app.post("/api/automation/football-impact-diagnostics", operation_id="runAutomationFootballImpactDiagnostics")
+async def automation_football_impact_diagnostics_endpoint(
+    payload: AutomationFootballImpactDiagnosticsRequest,
+    verbose: bool = Query(default=False),
+    include_debug: bool = Query(default=False),
+    limit: int = Query(default=10),
+):
+    if payload.dry_run is not True:
+        raise HTTPException(status_code=400, detail="football impact diagnostics only supports dry_run=true")
+    cap = min(max(int(limit), 1), 100 if verbose else 10)
+    result = automation_scheduler.run_football_impact_diagnostics(
+        sport=payload.sport,
+        market_type=payload.market_type,
+        team_context=payload.team_context,
+        player_context=payload.player_context,
+        play_drive_context=payload.play_drive_context,
+        personnel_context=payload.personnel_context,
+        matchup_context=payload.matchup_context,
+        availability_context=payload.availability_context,
+        incentive_context=payload.incentive_context,
+        calibration_context=payload.calibration_context,
+        dry_run=True,
+    )
+    compact = compact_football_impact_diagnostics_response(result, limit=cap)
+    if verbose or include_debug:
+        compact["debug"] = redact_and_limit_payload(result, limit=cap, verbose=verbose)
+    return compact
+
+
 @app.post("/api/automation/extreme-signal-diagnostics", operation_id="runAutomationExtremeSignalDiagnostics")
 async def automation_extreme_signal_diagnostics_endpoint(
     payload: AutomationExtremeSignalDiagnosticsRequest,
@@ -3907,6 +3968,8 @@ PUBLIC_OPENAPI_PATH_METHODS = frozenset({
     ("/api/automation/security-readiness", "get"),
     ("/api/automation/intelligence-readiness", "get"),
     ("/api/automation/strategy-readiness", "get"),
+    ("/api/automation/football-impact-readiness", "get"),
+    ("/api/automation/football-impact-diagnostics", "post"),
     ("/api/automation/advanced-red-team-report", "get"),
     ("/api/automation/extreme-randomness-report", "get"),
     ("/api/automation/extreme-signal-diagnostics", "post"),

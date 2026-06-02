@@ -62,9 +62,15 @@ def _redact(payload: Any) -> Any:
                 "raw_request_payload",
                 "request_payload",
                 "response_payload",
+                "raw_response",
                 "bet_slip",
                 "wager_payload",
                 "order_request",
+                "broker_order",
+                "sportsbook_wager",
+                "sportsbook_bet",
+                "kalshi_order",
+                "crypto_order",
                 "provider_write_payload",
             }:
                 out[k] = "[omitted]"
@@ -375,6 +381,166 @@ def compact_extreme_randomness_report_response(payload: dict[str, Any], limit: i
         "actual_bets_submitted": 0,
         "actual_trades_submitted": 0,
         "raw_payload_included": False,
+        "secrets_included": False,
+        "compact_response": True,
+    }
+
+
+def _compact_football_section(section: Any, keys: list[str], limit: int = 10) -> dict[str, Any]:
+    row = section if isinstance(section, dict) else {}
+    out: dict[str, Any] = {}
+    for key in keys:
+        value = row.get(key)
+        if isinstance(value, list):
+            out[key] = value[:limit]
+        elif isinstance(value, dict):
+            out[key] = redact_and_limit_payload(value, limit=limit)
+        else:
+            out[key] = value
+    return out
+
+
+def compact_football_impact_readiness_response(payload: dict[str, Any], limit: int = 10) -> dict[str, Any]:
+    cap = max(1, min(int(limit or 10), 100))
+    return {
+        "ok": bool(payload.get("ok", True)),
+        "status": payload.get("status", "football_impact_readiness"),
+        "supported_sports": list(payload.get("supported_sports") or [])[:cap],
+        "supported_roles": list(payload.get("supported_roles") or [])[:cap],
+        "supported_markets": list(payload.get("supported_markets") or [])[:cap],
+        "data_tier_requirements": redact_and_limit_payload(payload.get("data_tier_requirements") or {}, limit=cap),
+        "nfl_readiness": redact_and_limit_payload(payload.get("nfl_readiness") or {}, limit=cap),
+        "ncaaf_readiness": redact_and_limit_payload(payload.get("ncaaf_readiness") or {}, limit=cap),
+        "missing_data_by_sport": redact_and_limit_payload(payload.get("missing_data_by_sport") or {}, limit=cap),
+        "calibration_requirements": list(payload.get("calibration_requirements") or [])[:cap],
+        "no_spend_policy": redact_and_limit_payload(payload.get("no_spend_policy") or {}, limit=cap),
+        "provider_write": False,
+        "execution_allowed": False,
+        "live_execution_enabled": False,
+        "auto_execution": False,
+        "auto_execution_enabled": False,
+        "human_approval_required": True,
+        "owner_approval_required": True,
+        "actual_orders_submitted": 0,
+        "actual_bets_submitted": 0,
+        "actual_trades_submitted": 0,
+        "raw_payload_included": False,
+        "raw_payload_exposed": False,
+        "secrets_included": False,
+        "compact_response": True,
+    }
+
+
+def compact_football_impact_diagnostics_response(payload: dict[str, Any], limit: int = 10) -> dict[str, Any]:
+    cap = max(1, min(int(limit or 10), 100))
+    data = payload.get("data_availability") if isinstance(payload.get("data_availability"), dict) else {}
+    play = payload.get("play_drive_impact") if isinstance(payload.get("play_drive_impact"), dict) else {}
+    role = payload.get("role_impact") if isinstance(payload.get("role_impact"), dict) else {}
+    personnel = payload.get("personnel_context") if isinstance(payload.get("personnel_context"), dict) else {}
+    matchup = payload.get("matchup_context") if isinstance(payload.get("matchup_context"), dict) else {}
+    availability = payload.get("availability_context") if isinstance(payload.get("availability_context"), dict) else {}
+    incentive = payload.get("incentive_context") if isinstance(payload.get("incentive_context"), dict) else {}
+    market = payload.get("market_relevance") if isinstance(payload.get("market_relevance"), dict) else {}
+    calibration = payload.get("calibration") if isinstance(payload.get("calibration"), dict) else {}
+    return {
+        "ok": bool(payload.get("ok", True)),
+        "status": payload.get("status", "football_impact_diagnostics_complete"),
+        "sport": payload.get("sport"),
+        "market_type": payload.get("market_type"),
+        "data_tier": int(payload.get("data_tier", 0) or 0),
+        "tier_name": payload.get("tier_name"),
+        "player_level_allowed": bool(payload.get("player_level_allowed", False)),
+        "tracking_level_allowed": bool(payload.get("tracking_level_allowed", False)),
+        "play_drive_impact": _compact_football_section(
+            play,
+            [
+                "status",
+                "play_impact_score",
+                "drive_impact_score",
+                "efficiency_score",
+                "explosiveness_score",
+                "leverage_score",
+                "red_zone_score",
+                "pace_volume_score",
+                "turnover_penalty",
+                "penalty_penalty",
+                "insufficient_sample",
+                "confidence_cap_reason",
+                "limited_proxy_used",
+                "epa_fabricated",
+                "missing_inputs",
+            ],
+            cap,
+        ),
+        "role_impact": _compact_football_section(
+            role,
+            [
+                "role",
+                "role_impact_score",
+                "role_usage_score",
+                "role_efficiency_score",
+                "role_volatility_score",
+                "role_confidence_cap",
+                "player_level_allowed",
+                "tracking_metrics_inferred",
+                "confidence_cap_reason",
+                "player_market_relevance",
+                "missing_role_inputs",
+            ],
+            cap,
+        ),
+        "personnel_context": _compact_football_section(
+            personnel,
+            ["personnel_fit_score", "formation_fit_score", "matchup_stress_score", "defensive_structure_risk", "offensive_tendency_risk", "volatility_flags", "missing_inputs"],
+            cap,
+        ),
+        "matchup_context": _compact_football_section(
+            matchup,
+            ["matchup_advantage_score", "matchup_risk_score", "mismatch_reasons", "no_bet_reasons", "market_specific_matchup_notes", "qb_pressure_risk_score", "wr_cb_matchup_score", "ol_dl_run_matchup_score", "missing_inputs"],
+            cap,
+        ),
+        "availability_context": _compact_football_section(
+            availability,
+            ["availability_score", "snap_stability_score", "role_stability_score", "injury_risk_score", "rest_travel_risk_score", "weather_adjustment_score", "wind_risk_score", "starting_qb_market_risk_score", "confidence_cap_reason", "market_wide_risk_flags", "missing_inputs"],
+            cap,
+        ),
+        "incentive_context": _compact_football_section(
+            incentive,
+            ["incentive_context_status", "incentive_behavior_score", "stat_chase_risk", "team_alignment_score", "narrative_overfit_risk", "confidence_modifier", "no_bet_reasons", "incentive_is_standalone_edge", "bonus_threshold_fabricated", "missing_inputs"],
+            cap,
+        ),
+        "market_relevance": _compact_football_section(
+            market,
+            ["market_relevance_scores", "strongest_market_links", "weak_market_links", "no_bet_market_reasons", "player_prop_relevance", "team_market_relevance", "selected_market_type", "selected_market_relevance_score", "weather_adjusted_markets", "pressure_adjusted_markets"],
+            cap,
+        ),
+        "calibration_status": payload.get("calibration_status", "insufficient_data"),
+        "calibration": _compact_football_section(
+            calibration,
+            ["calibration_status", "sample_size", "matched_outcomes_count", "false_positive_rate", "hit_rate", "confidence_cap", "insufficient_sample", "next_required_data", "calibration_buckets"],
+            cap,
+        ),
+        "data_availability": _compact_football_section(
+            data,
+            ["sport", "data_tier", "tier_name", "available_field_groups", "missing_field_groups", "player_level_allowed", "tracking_level_allowed", "calibration_allowed", "no_fabrication", "next_data_to_collect", "ncaaf_tracking_not_assumed"],
+            cap,
+        ),
+        "recommended_action_adjustment": payload.get("recommended_action_adjustment"),
+        "no_bet_reasons": list(payload.get("no_bet_reasons") or [])[:cap],
+        "missing_inputs": list(payload.get("missing_inputs") or [])[:cap],
+        "next_data_to_collect": list(payload.get("next_data_to_collect") or [])[:cap],
+        "provider_write": False,
+        "execution_allowed": False,
+        "live_execution_enabled": False,
+        "auto_execution": False,
+        "auto_execution_enabled": False,
+        "human_approval_required": True,
+        "owner_approval_required": True,
+        "actual_orders_submitted": 0,
+        "actual_bets_submitted": 0,
+        "actual_trades_submitted": 0,
+        "raw_payload_included": False,
+        "raw_payload_exposed": False,
         "secrets_included": False,
         "compact_response": True,
     }

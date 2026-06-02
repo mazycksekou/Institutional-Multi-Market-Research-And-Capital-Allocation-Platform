@@ -303,6 +303,43 @@ def get_universality_research_lane(events: list[dict] | None = None):
     return build_universality_research_lane(events or [])
 
 
+def get_football_impact_readiness():
+    from .football_impact_report import build_football_impact_readiness
+
+    return build_football_impact_readiness()
+
+
+def run_football_impact_diagnostics(
+    *,
+    sport: str = "americanfootball_nfl",
+    market_type: str = "spread",
+    team_context: dict | None = None,
+    player_context: dict | None = None,
+    play_drive_context: dict | None = None,
+    personnel_context: dict | None = None,
+    matchup_context: dict | None = None,
+    availability_context: dict | None = None,
+    incentive_context: dict | None = None,
+    calibration_context: dict | None = None,
+    dry_run: bool = True,
+):
+    from .football_impact_report import build_football_impact_diagnostics
+
+    return build_football_impact_diagnostics(
+        sport=sport,
+        market_type=market_type,
+        team_context=team_context or {},
+        player_context=player_context or {},
+        play_drive_context=play_drive_context or {},
+        personnel_context=personnel_context or {},
+        matchup_context=matchup_context or {},
+        availability_context=availability_context or {},
+        incentive_context=incentive_context or {},
+        calibration_context=calibration_context or {},
+        dry_run=dry_run,
+    )
+
+
 def get_strategy_registry_snapshot(base_data_dir: str | None = None):
     from .strategy_registry import compact_strategy_registry
 
