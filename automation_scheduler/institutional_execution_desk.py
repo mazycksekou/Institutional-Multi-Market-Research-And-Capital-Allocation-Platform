@@ -13,14 +13,28 @@ from .scheduler_config import safe_run_id, sanitize_filename, utc_now_iso
 
 
 EXECUTION_SAFETY_FLAGS = {
+    "dry_run": True,
     "simulation_only": True,
     "live_execution_enabled": False,
     "provider_write": False,
     "execution_allowed": False,
+    "auto_execution": False,
+    "auto_execution_enabled": False,
+    "human_approval_required": True,
+    "owner_approval_required": True,
     "requires_human_command": True,
     "actual_order_submitted": False,
     "actual_bet_submitted": False,
     "actual_trade_submitted": False,
+    "actual_orders_submitted": 0,
+    "actual_bets_submitted": 0,
+    "actual_trades_submitted": 0,
+    "actual_crypto_swaps_submitted": 0,
+    "kalshi_order_execution_enabled": False,
+    "sportsbook_bet_execution_enabled": False,
+    "broker_order_execution_enabled": False,
+    "crypto_trade_execution_enabled": False,
+    "stock_trade_execution_enabled": False,
 }
 
 LIVE_FLAG_FIELDS = (
@@ -35,6 +49,9 @@ LIVE_FLAG_FIELDS = (
     "kalshi_order_execution_enabled",
     "sportsbook_bet_execution_enabled",
     "broker_order_execution_enabled",
+    "crypto_trade_execution_enabled",
+    "stock_trade_execution_enabled",
+    "owner_approval_present",
 )
 
 

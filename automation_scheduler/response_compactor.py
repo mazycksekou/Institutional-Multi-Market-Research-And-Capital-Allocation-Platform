@@ -2,7 +2,21 @@ from __future__ import annotations
 
 from typing import Any
 
-_SECRET_KEYS = ("key", "secret", "token", "password", "auth", "credential", "signature", "header")
+from .secret_safety import looks_like_secret_value, redact_string
+
+_SECRET_KEYS = (
+    "key",
+    "secret",
+    "token",
+    "password",
+    "auth",
+    "credential",
+    "signature",
+    "header",
+    "bearer",
+    "cookie",
+    "private",
+)
 
 
 def _compact_storage_health(payload: dict[str, Any]) -> dict[str, Any]:
@@ -45,6 +59,13 @@ def _redact(payload: Any) -> Any:
                 "trade_payload",
                 "execution_payload",
                 "executable_order_payload",
+                "raw_request_payload",
+                "request_payload",
+                "response_payload",
+                "bet_slip",
+                "wager_payload",
+                "order_request",
+                "provider_write_payload",
             }:
                 out[k] = "[omitted]"
             else:
@@ -52,6 +73,8 @@ def _redact(payload: Any) -> Any:
         return out
     if isinstance(payload, list):
         return [_redact(v) for v in payload]
+    if isinstance(payload, str) and looks_like_secret_value(payload):
+        return redact_string(payload)
     return payload
 
 
