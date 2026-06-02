@@ -68,6 +68,8 @@ from automation_scheduler.response_compactor import (
     compact_extreme_randomness_report_response,
     compact_football_impact_diagnostics_response,
     compact_football_impact_readiness_response,
+    compact_golf_impact_diagnostics_response,
+    compact_golf_impact_readiness_response,
     compact_hockey_impact_diagnostics_response,
     compact_hockey_impact_readiness_response,
     compact_manifold_map_response,
@@ -1196,6 +1198,31 @@ class AutomationBaseballImpactDiagnosticsRequest(BaseModel):
     availability_context: dict[str, Any] = Field(default_factory=dict)
     incentive_context: dict[str, Any] = Field(default_factory=dict)
     calibration_context: dict[str, Any] = Field(default_factory=dict)
+    tracking_context: dict[str, Any] = Field(default_factory=dict)
+
+
+class AutomationGolfImpactDiagnosticsRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", protected_namespaces=())
+
+    sport: str = "golf"
+    market_type: str = "top_20"
+    dry_run: bool = True
+    tournament_context: dict[str, Any] = Field(default_factory=dict)
+    player_context: dict[str, Any] = Field(default_factory=dict)
+    strokes_gained_context: dict[str, Any] = Field(default_factory=dict)
+    off_tee_context: dict[str, Any] = Field(default_factory=dict)
+    approach_context: dict[str, Any] = Field(default_factory=dict)
+    around_green_context: dict[str, Any] = Field(default_factory=dict)
+    putting_context: dict[str, Any] = Field(default_factory=dict)
+    course_context: dict[str, Any] = Field(default_factory=dict)
+    weather_context: dict[str, Any] = Field(default_factory=dict)
+    wave_context: dict[str, Any] = Field(default_factory=dict)
+    field_context: dict[str, Any] = Field(default_factory=dict)
+    form_context: dict[str, Any] = Field(default_factory=dict)
+    availability_context: dict[str, Any] = Field(default_factory=dict)
+    incentive_context: dict[str, Any] = Field(default_factory=dict)
+    calibration_context: dict[str, Any] = Field(default_factory=dict)
+    simulation_context: dict[str, Any] = Field(default_factory=dict)
     tracking_context: dict[str, Any] = Field(default_factory=dict)
 
 
@@ -3413,6 +3440,58 @@ async def automation_baseball_impact_diagnostics_endpoint(
     return compact
 
 
+@app.get("/api/automation/golf-impact-readiness", operation_id="getAutomationGolfImpactReadiness")
+async def get_automation_golf_impact_readiness_endpoint(
+    verbose: bool = Query(default=False),
+    include_debug: bool = Query(default=False),
+    limit: int = Query(default=50),
+):
+    cap = min(max(int(limit), 1), 100 if verbose else 50)
+    payload = automation_scheduler.get_golf_impact_readiness()
+    compact = compact_golf_impact_readiness_response(payload, limit=cap)
+    if verbose or include_debug:
+        compact["debug"] = redact_and_limit_payload(payload, limit=cap, verbose=verbose)
+    return compact
+
+
+@app.post("/api/automation/golf-impact-diagnostics", operation_id="runAutomationGolfImpactDiagnostics")
+async def automation_golf_impact_diagnostics_endpoint(
+    payload: AutomationGolfImpactDiagnosticsRequest,
+    verbose: bool = Query(default=False),
+    include_debug: bool = Query(default=False),
+    limit: int = Query(default=10),
+):
+    if payload.dry_run is not True:
+        raise HTTPException(status_code=400, detail="golf impact diagnostics only supports dry_run=true")
+    cap = min(max(int(limit), 1), 100 if verbose else 10)
+    result = automation_scheduler.run_golf_impact_diagnostics(
+        sport=payload.sport,
+        market_type=payload.market_type,
+        tournament_context=payload.tournament_context,
+        player_context=payload.player_context,
+        strokes_gained_context=payload.strokes_gained_context,
+        off_tee_context=payload.off_tee_context,
+        approach_context=payload.approach_context,
+        around_green_context=payload.around_green_context,
+        putting_context=payload.putting_context,
+        course_context=payload.course_context,
+        weather_context=payload.weather_context,
+        wave_context=payload.wave_context,
+        field_context=payload.field_context,
+        form_context=payload.form_context,
+        availability_context=payload.availability_context,
+        incentive_context=payload.incentive_context,
+        calibration_context=payload.calibration_context,
+        simulation_context=payload.simulation_context,
+        tracking_context=payload.tracking_context,
+        dry_run=True,
+    )
+    compact = compact_golf_impact_diagnostics_response(result, limit=cap)
+    if verbose or include_debug:
+        compact["debug"] = redact_and_limit_payload(result, limit=cap, verbose=verbose)
+    return compact
+
+
 @app.post("/api/automation/extreme-signal-diagnostics", operation_id="runAutomationExtremeSignalDiagnostics")
 async def automation_extreme_signal_diagnostics_endpoint(
     payload: AutomationExtremeSignalDiagnosticsRequest,
@@ -4253,6 +4332,8 @@ PUBLIC_OPENAPI_PATH_METHODS = frozenset({
     ("/api/automation/hockey-impact-diagnostics", "post"),
     ("/api/automation/baseball-impact-readiness", "get"),
     ("/api/automation/baseball-impact-diagnostics", "post"),
+    ("/api/automation/golf-impact-readiness", "get"),
+    ("/api/automation/golf-impact-diagnostics", "post"),
     ("/api/automation/advanced-red-team-report", "get"),
     ("/api/automation/extreme-randomness-report", "get"),
     ("/api/automation/extreme-signal-diagnostics", "post"),

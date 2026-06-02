@@ -1169,6 +1169,299 @@ def compact_baseball_impact_diagnostics_response(payload: dict[str, Any], limit:
     }
 
 
+def _compact_golf_section(section: Any, keys: list[str], limit: int = 10) -> dict[str, Any]:
+    row = section if isinstance(section, dict) else {}
+    out: dict[str, Any] = {}
+    for key in keys:
+        value = row.get(key)
+        if isinstance(value, list):
+            out[key] = value[:limit]
+        elif isinstance(value, dict):
+            out[key] = redact_and_limit_payload(value, limit=limit)
+        else:
+            out[key] = value
+    return out
+
+
+def compact_golf_impact_readiness_response(payload: dict[str, Any], limit: int = 50) -> dict[str, Any]:
+    cap = max(1, min(int(limit or 50), 100))
+    no_spend = payload.get("no_spend_policy") if isinstance(payload.get("no_spend_policy"), dict) else {}
+    return {
+        "ok": bool(payload.get("ok", True)),
+        "status": payload.get("status", "golf_impact_readiness"),
+        "supported_sports": list(payload.get("supported_sports") or [])[:cap],
+        "supported_skill_groups": list(payload.get("supported_skill_groups") or [])[:cap],
+        "supported_markets": list(payload.get("supported_markets") or [])[:cap],
+        "data_tier_requirements": redact_and_limit_payload(payload.get("data_tier_requirements") or {}, limit=cap),
+        "golf_readiness": redact_and_limit_payload(payload.get("golf_readiness") or {}, limit=cap),
+        "missing_data_by_market": redact_and_limit_payload(payload.get("missing_data_by_market") or {}, limit=cap),
+        "calibration_requirements": list(payload.get("calibration_requirements") or [])[:cap],
+        "no_spend_policy": {
+            "paid_provider_required": _safe_policy_bool(no_spend.get("paid_provider_required", False)),
+            "new_provider_calls_added": _safe_policy_bool(no_spend.get("new_provider_calls_added", False)),
+            "mandatory_api_key_required": _safe_policy_bool(no_spend.get("mandatory_api_key_required", False)),
+            "heavy_ml_training_added": _safe_policy_bool(no_spend.get("heavy_ml_training_added", False)),
+            "model_training_added": _safe_policy_bool(no_spend.get("model_training_added", False)),
+        },
+        "forbidden_features": list(payload.get("forbidden_features") or [])[:cap],
+        "provider_write": False,
+        "execution_allowed": False,
+        "live_execution_enabled": False,
+        "auto_execution": False,
+        "auto_execution_enabled": False,
+        "human_approval_required": True,
+        "owner_approval_required": True,
+        "actual_orders_submitted": 0,
+        "actual_bets_submitted": 0,
+        "actual_trades_submitted": 0,
+        "raw_payload_included": False,
+        "raw_payload_exposed": False,
+        "secrets_included": False,
+        "compact_response": True,
+    }
+
+
+def compact_golf_impact_diagnostics_response(payload: dict[str, Any], limit: int = 10) -> dict[str, Any]:
+    cap = max(1, min(int(limit or 10), 100))
+    data = payload.get("data_availability") if isinstance(payload.get("data_availability"), dict) else {}
+    sg = payload.get("strokes_gained_impact") if isinstance(payload.get("strokes_gained_impact"), dict) else {}
+    off_tee = payload.get("off_tee_impact") if isinstance(payload.get("off_tee_impact"), dict) else {}
+    approach = payload.get("approach_impact") if isinstance(payload.get("approach_impact"), dict) else {}
+    short_game = payload.get("short_game_putting_context") if isinstance(payload.get("short_game_putting_context"), dict) else {}
+    course = payload.get("course_fit_context") if isinstance(payload.get("course_fit_context"), dict) else {}
+    weather = payload.get("weather_wave_context") if isinstance(payload.get("weather_wave_context"), dict) else {}
+    field = payload.get("field_tournament_context") if isinstance(payload.get("field_tournament_context"), dict) else {}
+    availability = payload.get("availability_context") if isinstance(payload.get("availability_context"), dict) else {}
+    incentive = payload.get("incentive_context") if isinstance(payload.get("incentive_context"), dict) else {}
+    market = payload.get("market_relevance") if isinstance(payload.get("market_relevance"), dict) else {}
+    calibration = payload.get("calibration") if isinstance(payload.get("calibration"), dict) else {}
+    red_team = payload.get("red_team") if isinstance(payload.get("red_team"), dict) else {}
+    return {
+        "ok": bool(payload.get("ok", True)),
+        "status": payload.get("status", "golf_strokes_gained_impact_complete"),
+        "sport": payload.get("sport"),
+        "market_type": payload.get("market_type"),
+        "data_tier": int(payload.get("data_tier", 0) or 0),
+        "tier_name": payload.get("tier_name"),
+        "player_level_allowed": bool(payload.get("player_level_allowed", False)),
+        "course_fit_allowed": bool(payload.get("course_fit_allowed", False)),
+        "weather_wave_allowed": bool(payload.get("weather_wave_allowed", False)),
+        "simulation_allowed": bool(payload.get("simulation_allowed", False)),
+        "golf_impact_score": payload.get("golf_impact_score", 0.0),
+        "recommended_review_status": payload.get("recommended_review_status"),
+        "strokes_gained_impact": _compact_golf_section(
+            sg,
+            [
+                "strokes_gained_score",
+                "tee_to_green_score",
+                "ball_striking_score",
+                "short_game_score",
+                "putting_score",
+                "scoring_score",
+                "birdie_bogey_score",
+                "cut_made_profile_score",
+                "volatility_score",
+                "recent_vs_baseline_delta",
+                "confidence_cap_reason",
+                "insufficient_sample",
+                "limited_proxy",
+                "sg_splits_fabricated",
+                "missing_inputs",
+            ],
+            cap,
+        ),
+        "off_tee_impact": _compact_golf_section(
+            off_tee,
+            [
+                "off_tee_score",
+                "distance_advantage_score",
+                "accuracy_score",
+                "dispersion_risk_score",
+                "penalty_avoidance_score",
+                "course_off_tee_fit_score",
+                "driving_prop_relevance",
+                "course_fit_confidence_capped",
+                "dispersion_inferred",
+                "missing_inputs",
+                "no_bet_reasons",
+            ],
+            cap,
+        ),
+        "approach_impact": _compact_golf_section(
+            approach,
+            [
+                "approach_score",
+                "distance_bucket_fit_score",
+                "proximity_score",
+                "gir_relevance_score",
+                "scoring_opportunity_score",
+                "course_approach_fit_score",
+                "approach_prop_relevance",
+                "distance_bucket_fit_supported",
+                "sg_approach_fabricated",
+                "missing_inputs",
+                "no_bet_reasons",
+            ],
+            cap,
+        ),
+        "short_game_putting_context": _compact_golf_section(
+            short_game,
+            [
+                "short_game_score",
+                "scrambling_score",
+                "bunker_score",
+                "putting_score",
+                "grass_fit_score",
+                "three_putt_risk_score",
+                "putting_volatility_score",
+                "score_save_modifier",
+                "sg_putting_fabricated",
+                "grass_fit_fabricated",
+                "missing_inputs",
+                "no_bet_reasons",
+            ],
+            cap,
+        ),
+        "course_fit_context": _compact_golf_section(
+            course,
+            [
+                "course_fit_score",
+                "architecture_fit_score",
+                "distance_bucket_fit_score",
+                "grass_surface_fit_score",
+                "hazard_risk_score",
+                "comp_course_fit_score",
+                "course_history_relevance",
+                "course_architecture_fabricated",
+                "grass_type_fabricated",
+                "missing_inputs",
+                "no_bet_reasons",
+            ],
+            cap,
+        ),
+        "weather_wave_context": _compact_golf_section(
+            weather,
+            [
+                "weather_impact_score",
+                "wave_draw_score",
+                "wind_fit_score",
+                "delay_risk_score",
+                "scoring_condition_modifier",
+                "round_score_modifier",
+                "market_confidence_modifier",
+                "tee_time_wave_fabricated",
+                "weather_wave_edge_fabricated",
+                "missing_inputs",
+                "no_bet_reasons",
+            ],
+            cap,
+        ),
+        "field_tournament_context": _compact_golf_section(
+            field,
+            [
+                "field_strength_score",
+                "tournament_format_score",
+                "cut_rule_context_score",
+                "cut_risk_modifier",
+                "top_finish_market_modifier",
+                "outright_market_modifier",
+                "travel_fatigue_risk_score",
+                "unsupported_format",
+                "missing_inputs",
+                "no_bet_reasons",
+            ],
+            cap,
+        ),
+        "availability_context": _compact_golf_section(
+            availability,
+            [
+                "availability_score",
+                "withdrawal_risk_score",
+                "injury_risk_score",
+                "travel_fatigue_score",
+                "schedule_load_score",
+                "change_uncertainty_score",
+                "confidence_cap_reason",
+                "injury_status_fabricated",
+                "missing_inputs",
+                "no_bet_reasons",
+            ],
+            cap,
+        ),
+        "incentive_context": _compact_golf_section(
+            incentive,
+            [
+                "incentive_context_status",
+                "incentive_behavior_score",
+                "motivation_alignment_score",
+                "narrative_overfit_risk",
+                "withdrawal_or_tuneup_risk",
+                "confidence_modifier",
+                "market_relevance_modifier",
+                "incentive_is_standalone_edge",
+                "motivation_fabricated",
+                "missing_inputs",
+                "no_bet_reasons",
+            ],
+            cap,
+        ),
+        "market_relevance": _compact_golf_section(
+            market,
+            [
+                "market_relevance_scores",
+                "strongest_market_links",
+                "weak_market_links",
+                "no_bet_market_reasons",
+                "outright_relevance",
+                "top_finish_relevance",
+                "cut_market_relevance",
+                "matchup_relevance",
+                "round_market_relevance",
+                "player_prop_relevance",
+                "market_confidence_caps",
+                "selected_market_type",
+                "selected_market_relevance_score",
+            ],
+            cap,
+        ),
+        "calibration_status": payload.get("calibration_status", calibration.get("calibration_status", "insufficient_data")),
+        "calibration": _compact_golf_section(
+            calibration,
+            ["calibration_status", "sample_size", "matched_outcomes_count", "insufficient_sample", "hit_rate", "false_positive_rate", "confidence_cap", "next_required_data", "calibration_buckets", "outright_extra_conservative"],
+            cap,
+        ),
+        "data_availability": _compact_golf_section(
+            data,
+            ["status", "sport", "data_tier", "tier_name", "player_level_allowed", "course_fit_allowed", "weather_wave_allowed", "simulation_allowed", "calibration_allowed", "available_field_groups", "missing_field_groups", "confidence_cap", "confidence_cap_reason", "no_fabrication", "next_data_to_collect"],
+            cap,
+        ),
+        "red_team": _compact_golf_section(
+            red_team,
+            ["red_team_status", "downgrade_score", "recommended_action_adjustment", "no_bet_reasons", "red_team_reasons", "missing_inputs", "confidence_cap_reason", "red_team_only"],
+            cap,
+        ),
+        "recommended_action_adjustment": payload.get("recommended_action_adjustment"),
+        "markets_to_review": list(payload.get("markets_to_review") or [])[:cap],
+        "no_bet_reasons": list(payload.get("no_bet_reasons") or [])[:cap],
+        "missing_inputs": list(payload.get("missing_inputs") or [])[:cap],
+        "next_data_to_collect": list(payload.get("next_data_to_collect") or [])[:cap],
+        "provider_write": False,
+        "execution_allowed": False,
+        "live_execution_enabled": False,
+        "auto_execution": False,
+        "auto_execution_enabled": False,
+        "human_approval_required": True,
+        "owner_approval_required": True,
+        "actual_orders_submitted": 0,
+        "actual_bets_submitted": 0,
+        "actual_trades_submitted": 0,
+        "raw_payload_included": False,
+        "raw_payload_exposed": False,
+        "secrets_included": False,
+        "compact_response": True,
+    }
+
+
 def compact_health_response(payload: dict[str, Any]) -> dict[str, Any]:
     return {
         "ok": bool(payload.get("ok", True)),

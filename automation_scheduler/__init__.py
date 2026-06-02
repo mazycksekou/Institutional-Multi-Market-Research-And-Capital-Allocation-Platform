@@ -497,6 +497,61 @@ def run_baseball_impact_diagnostics(
     )
 
 
+def get_golf_impact_readiness():
+    from .golf_impact_readiness import build_golf_impact_readiness
+
+    return build_golf_impact_readiness()
+
+
+def run_golf_impact_diagnostics(
+    *,
+    sport: str = "golf",
+    market_type: str = "top_20",
+    tournament_context: dict | None = None,
+    player_context: dict | None = None,
+    strokes_gained_context: dict | None = None,
+    off_tee_context: dict | None = None,
+    approach_context: dict | None = None,
+    around_green_context: dict | None = None,
+    putting_context: dict | None = None,
+    course_context: dict | None = None,
+    weather_context: dict | None = None,
+    wave_context: dict | None = None,
+    field_context: dict | None = None,
+    form_context: dict | None = None,
+    availability_context: dict | None = None,
+    incentive_context: dict | None = None,
+    calibration_context: dict | None = None,
+    simulation_context: dict | None = None,
+    tracking_context: dict | None = None,
+    dry_run: bool = True,
+):
+    from .golf_impact_report import build_golf_impact_diagnostics
+
+    return build_golf_impact_diagnostics(
+        sport=sport,
+        market_type=market_type,
+        tournament_context=tournament_context or {},
+        player_context=player_context or {},
+        strokes_gained_context=strokes_gained_context or {},
+        off_tee_context=off_tee_context or {},
+        approach_context=approach_context or {},
+        around_green_context=around_green_context or {},
+        putting_context=putting_context or {},
+        course_context=course_context or {},
+        weather_context=weather_context or {},
+        wave_context=wave_context or {},
+        field_context=field_context or {},
+        form_context=form_context or {},
+        availability_context=availability_context or {},
+        incentive_context=incentive_context or {},
+        calibration_context=calibration_context or {},
+        simulation_context=simulation_context or {},
+        tracking_context=tracking_context or {},
+        dry_run=dry_run,
+    )
+
+
 def get_strategy_registry_snapshot(base_data_dir: str | None = None):
     from .strategy_registry import compact_strategy_registry
 
