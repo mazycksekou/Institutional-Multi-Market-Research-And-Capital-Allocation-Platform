@@ -99,6 +99,13 @@ class TestOpenSportsHistoryBackfill(unittest.TestCase):
         self.assertEqual(coverage["real_rows_by_source"], {"nflverse_nfl": 1})
         self.assertEqual(coverage["real_rows_by_module"], {"americanfootball_nfl": 1})
         self.assertEqual(coverage["real_rows_by_season"], {"2024": 1})
+        self.assertEqual(coverage["target_source_id"], "nflverse_nfl")
+        self.assertEqual(coverage["target_module"], "americanfootball_nfl")
+        self.assertEqual(coverage["target_seasons"], ["2024", "2023", "2022", "2021", "2020", "2019", "2018", "2017", "2016", "2015"])
+        self.assertEqual(coverage["seasons_validated"], ["2024"])
+        self.assertEqual(coverage["seasons_missing_for_target"], ["2023", "2022", "2021", "2020", "2019", "2018", "2017", "2016", "2015"])
+        self.assertEqual(coverage["real_rows_by_target_season"], {"2024": 1})
+        self.assertEqual(coverage["nflverse_nfl_coverage_percentage"], 10.0)
         self.assertTrue(coverage["synthetic_rows_ignored_for_real_coverage"])
         self.assertIn("nflverse_nfl", coverage["sources_with_valid_rows"])
         self.assertEqual(coverage["downloads_attempted"], 0)
@@ -179,6 +186,92 @@ class TestOpenSportsHistoryBackfill(unittest.TestCase):
         self.assertTrue(allowed["ok"])
         self.assertEqual(allowed["records_valid"], 1)
         self.assertEqual(allowed["downloads_attempted"], 0)
+
+    def test_multiseason_backfill_dedupes_existing_season_and_writes_by_season(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "nflverse.csv"
+            self._write_csv(
+                path,
+                [
+                    {
+                        "game_id": "nfl-2024-1",
+                        "gameday": "2024-09-05",
+                        "season": "2024",
+                        "week": "1",
+                        "home_team": "KC",
+                        "away_team": "BAL",
+                        "home_score": "27",
+                        "away_score": "20",
+                    },
+                    {
+                        "game_id": "nfl-2023-1",
+                        "gameday": "2023-09-07",
+                        "season": "2023",
+                        "week": "1",
+                        "home_team": "DET",
+                        "away_team": "KC",
+                        "home_score": "21",
+                        "away_score": "20",
+                    },
+                ],
+            )
+            first = build_open_sports_history_backfill_report(
+                source_id="nflverse_nfl",
+                mode="bulk_backfill",
+                seasons=[2024, 2023],
+                input_path=path,
+                persist_preview=True,
+                base_data_dir=tmp,
+            )
+            second = build_open_sports_history_backfill_report(
+                source_id="nflverse_nfl",
+                mode="bulk_backfill",
+                seasons=[2024, 2023],
+                input_path=path,
+                persist_preview=True,
+                base_data_dir=tmp,
+            )
+            coverage = build_open_sports_history_coverage_report(base_data_dir=tmp)
+            by_2024 = Path(tmp) / "data_sources" / "open_sports_history" / "validated" / "by_season" / "americanfootball_nfl" / "2024.json"
+            by_2023 = Path(tmp) / "data_sources" / "open_sports_history" / "validated" / "by_season" / "americanfootball_nfl" / "2023.json"
+            by_2024_exists = by_2024.exists()
+            by_2023_exists = by_2023.exists()
+
+        self.assertTrue(first["ok"])
+        self.assertTrue(second["ok"])
+        self.assertTrue(by_2024_exists)
+        self.assertTrue(by_2023_exists)
+        self.assertEqual(coverage["real_rows_by_target_season"], {"2024": 1, "2023": 1})
+        self.assertEqual(coverage["seasons_validated"], ["2024", "2023"])
+        self.assertEqual(coverage["nflverse_nfl_coverage_percentage"], 20.0)
+        self.assertEqual(coverage["real_rows_count"], 2)
+
+    def test_failed_season_does_not_corrupt_existing_validated_rows(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._nflverse_csv(tmp)
+            ok_report = build_open_sports_history_backfill_report(
+                source_id="nflverse_nfl",
+                mode="season_backfill",
+                seasons=[2024],
+                input_path=path,
+                persist_preview=True,
+                base_data_dir=tmp,
+            )
+            blocked = build_open_sports_history_backfill_report(
+                source_id="nflverse_nfl",
+                mode="season_backfill",
+                seasons=[2023],
+                persist_preview=True,
+                base_data_dir=tmp,
+            )
+            coverage = build_open_sports_history_coverage_report(base_data_dir=tmp)
+
+        self.assertTrue(ok_report["ok"])
+        self.assertFalse(blocked["ok"])
+        self.assertEqual(blocked["blocked_reason"], "download_not_allowed")
+        self.assertEqual(coverage["real_rows_by_target_season"], {"2024": 1})
+        self.assertEqual(coverage["seasons_validated"], ["2024"])
+        self.assertEqual(coverage["records_valid"], 1)
 
     def test_bulk_backfill_uses_prior_smoke_session_state(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -274,6 +367,8 @@ class TestOpenSportsHistoryBackfill(unittest.TestCase):
         self.assertNotIn("americanfootball_nfl", coverage["modules_ready_for_tier0"])
         self.assertNotIn("americanfootball_nfl", coverage["modules_ready_for_real_tier0"])
         self.assertTrue(coverage["synthetic_rows_ignored_for_real_coverage"])
+        self.assertEqual(coverage["seasons_validated"], [])
+        self.assertEqual(coverage["nflverse_nfl_coverage_percentage"], 0.0)
 
     def test_no_download_occurs_unless_allow_download_is_true(self):
         with patch("automation_scheduler.open_sports_history_import.urllib.request.urlopen") as urlopen:
@@ -342,6 +437,26 @@ class TestOpenSportsHistoryBackfill(unittest.TestCase):
         gitignore = Path(".gitignore").read_text(encoding="utf-8")
         self.assertIn("data/", gitignore)
         self.assertIn("*.csv", gitignore)
+
+    def test_coverage_report_exposes_no_raw_download_url_payloads(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._nflverse_csv(tmp)
+            report = build_open_sports_history_backfill_report(
+                source_id="nflverse_nfl",
+                mode="season_backfill",
+                seasons=[2024],
+                input_path=path,
+                persist_preview=True,
+                base_data_dir=tmp,
+            )
+            self.assertTrue(report["ok"])
+            coverage = build_open_sports_history_coverage_report(base_data_dir=tmp)
+
+        rendered = str(coverage).lower()
+        self.assertNotIn("browser_download_url", rendered)
+        self.assertNotIn("api.github.com/repos", rendered)
+        self.assertFalse(coverage["raw_payload_included"])
+        self.assertFalse(coverage["secrets_included"])
 
 
 if __name__ == "__main__":

@@ -29,6 +29,9 @@ SUPPORTED_MODES = {
 }
 PARSER_SOURCE_IDS = {"retrosheet_mlb", "nflverse_nfl"}
 DEFAULT_TARGET_YEARS = 10
+NFLVERSE_NFL_TARGET_SOURCE_ID = "nflverse_nfl"
+NFLVERSE_NFL_TARGET_MODULE = "americanfootball_nfl"
+NFLVERSE_NFL_TARGET_SEASONS = tuple(range(2024, 2014, -1))
 
 
 def _data_sources_root(base_data_dir: str | Path | None = None) -> Path:
@@ -153,6 +156,36 @@ def _load_validated_preview_rows(*, base_data_dir: str | Path | None = None) -> 
     for payload in payloads:
         rows.extend(_valid_rows(payload))
     return _dedupe_rows(rows)
+
+
+def _rejected_rows_by_session_season(
+    *,
+    base_data_dir: str | Path | None = None,
+    source_id: str,
+) -> dict[str, int]:
+    root = _sessions_root(base_data_dir)
+    paths: list[Path] = []
+    item_dir = root / "items"
+    if item_dir.exists():
+        paths.extend(sorted(item_dir.glob("*.json")))
+    latest_by_season: dict[str, tuple[str, int]] = {}
+    for path in paths:
+        payload = _read_json(path)
+        if not isinstance(payload, dict) or payload.get("source_id") != source_id:
+            continue
+        created = str(payload.get("created_at") or "")
+        for result in payload.get("season_results") or []:
+            if not isinstance(result, dict):
+                continue
+            season = result.get("season")
+            if season is None:
+                continue
+            key = str(season)
+            count = int(result.get("records_rejected", 0) or 0)
+            prior = latest_by_season.get(key)
+            if prior is None or created >= prior[0]:
+                latest_by_season[key] = (created, count)
+    return {season: count for season, (_, count) in sorted(latest_by_season.items())}
 
 
 def _target_seasons(*, seasons: list[int | str] | None = None, target_years: int = DEFAULT_TARGET_YEARS) -> list[int | str]:
@@ -662,7 +695,7 @@ def build_open_sports_history_coverage_report(*, base_data_dir: str | Path | Non
 
     real_rows = _real_rows(rows)
     synthetic_rows = [row for row in rows if not _row_is_real_open_data(row)]
-    target_seasons = [str(season) for season in _target_seasons(target_years=DEFAULT_TARGET_YEARS)]
+    target_seasons = [str(season) for season in NFLVERSE_NFL_TARGET_SEASONS]
 
     module_rows: list[dict[str, Any]] = []
     real_coverage_percentage_by_module: dict[str, float] = {}
@@ -740,6 +773,40 @@ def build_open_sports_history_coverage_report(*, base_data_dir: str | Path | Non
         real_rows_by_module_season[module][season] = count
     modules_ready_real_tier0 = [row["module"] for row in module_rows if row["tier0_with_real_data"]]
     modules_ready_real_tier1 = [row["module"] for row in module_rows if row["tier1_with_real_data"]]
+    target_real_rows = [
+        row
+        for row in real_rows
+        if row.get("source_id") == NFLVERSE_NFL_TARGET_SOURCE_ID and row.get("module") == NFLVERSE_NFL_TARGET_MODULE
+    ]
+    target_real_counts_all = Counter(str(row.get("season") or "unknown") for row in target_real_rows)
+    target_real_rows_by_season = {
+        season: int(target_real_counts_all.get(season, 0))
+        for season in target_seasons
+        if int(target_real_counts_all.get(season, 0)) > 0
+    }
+    target_seasons_validated = [season for season in target_seasons if target_real_counts_all.get(season, 0) > 0]
+    target_seasons_missing = [season for season in target_seasons if target_real_counts_all.get(season, 0) <= 0]
+    target_rejected_rows_by_season = {
+        season: int(count)
+        for season, count in _rejected_rows_by_session_season(
+            base_data_dir=base_data_dir,
+            source_id=NFLVERSE_NFL_TARGET_SOURCE_ID,
+        ).items()
+        if season in set(target_seasons)
+    }
+    target_coverage_percentage = round((len(target_seasons_validated) / max(1, len(target_seasons))) * 100, 2)
+    target_coverage = {
+        "source_id": NFLVERSE_NFL_TARGET_SOURCE_ID,
+        "module": NFLVERSE_NFL_TARGET_MODULE,
+        "target_coverage_years": DEFAULT_TARGET_YEARS,
+        "target_seasons": target_seasons,
+        "seasons_validated": target_seasons_validated,
+        "seasons_missing": target_seasons_missing,
+        "real_rows_by_season": target_real_rows_by_season,
+        "rejected_rows_by_season": target_rejected_rows_by_season,
+        "coverage_percentage": target_coverage_percentage,
+        "synthetic_rows_ignored_for_real_coverage": True,
+    }
     covered_slots = len({(str(row.get("module") or "unknown"), str(row.get("season") or "unknown")) for row in real_rows if str(row.get("season") or "unknown") in target_seasons})
     total_slots = len(module_rows) * len(target_seasons)
     real_coverage_percentage = round((covered_slots / total_slots) * 100, 2) if total_slots else 0.0
@@ -758,6 +825,8 @@ def build_open_sports_history_coverage_report(*, base_data_dir: str | Path | Non
         "created_at": utc_now_iso(),
         "run_id": sanitize_filename(f"open_sports_history_coverage_{utc_now_iso().replace(':', '-')}_{uuid4().hex[:8]}"),
         "mode": "coverage_report",
+        "source_id": NFLVERSE_NFL_TARGET_SOURCE_ID,
+        "module": NFLVERSE_NFL_TARGET_MODULE,
         "runtime_data_dir": str(resolve_base_data_dir(base_data_dir)),
         "total_rows": len(rows),
         "records_valid": len(rows),
@@ -768,6 +837,16 @@ def build_open_sports_history_coverage_report(*, base_data_dir: str | Path | Non
         "synthetic_rows_ignored_for_real_coverage": True,
         "target_coverage_years": DEFAULT_TARGET_YEARS,
         "target_seasons": target_seasons,
+        "target_source_id": NFLVERSE_NFL_TARGET_SOURCE_ID,
+        "target_module": NFLVERSE_NFL_TARGET_MODULE,
+        "seasons_targeted": target_seasons,
+        "seasons_validated": target_seasons_validated,
+        "seasons_missing_for_target": target_seasons_missing,
+        "real_rows_by_target_season": target_real_rows_by_season,
+        "rejected_rows_by_target_season": target_rejected_rows_by_season,
+        "coverage_percentage": target_coverage_percentage,
+        "nflverse_nfl_coverage_percentage": target_coverage_percentage,
+        "target_coverage": target_coverage,
         "real_rows_by_source": _count_by(real_rows, "source_id"),
         "real_rows_by_module": _count_by(real_rows, "module"),
         "real_rows_by_season": _count_by(real_rows, "season"),
@@ -808,7 +887,10 @@ def render_open_sports_history_coverage_markdown(report: dict[str, Any]) -> str:
         f"5. modules_ready_for_real_tier0: {', '.join(report.get('modules_ready_for_real_tier0') or []) if report.get('modules_ready_for_real_tier0') else 'none'}",
         f"6. modules_ready_for_real_tier1: {', '.join(report.get('modules_ready_for_real_tier1') or []) if report.get('modules_ready_for_real_tier1') else 'none'}",
         f"7. real_rows_by_source: {json.dumps(report.get('real_rows_by_source') or {}, sort_keys=True)}",
-        f"8. safety: provider_calls_attempted=0; downloads_attempted=0; provider_write=false; execution_allowed=false; raw_payload_included=false; secrets_included=false",
+        f"8. nflverse_target_seasons: {', '.join(report.get('target_seasons') or [])}",
+        f"9. nflverse_seasons_validated: {', '.join(report.get('seasons_validated') or []) if report.get('seasons_validated') else 'none'}",
+        f"10. nflverse_coverage_percentage: {report.get('nflverse_nfl_coverage_percentage')}",
+        f"11. safety: provider_calls_attempted=0; downloads_attempted=0; provider_write=false; execution_allowed=false; raw_payload_included=false; secrets_included=false",
         "",
     ]
     return "\n".join(lines)
