@@ -550,25 +550,34 @@ def build_open_sports_history_coverage_report(*, base_data_dir: str | Path | Non
         by_module[str(row.get("module") or "unknown")].append(row)
         by_source[str(row.get("source_id") or "unknown")].append(row)
 
+    real_rows = [row for row in rows if row.get("data_kind") == "real_open_data"]
+    synthetic_rows = [row for row in rows if row.get("data_kind") != "real_open_data"]
+
     module_rows: list[dict[str, Any]] = []
     for module, module_records in sorted(by_module.items()):
+        real_module_records = [r for r in module_records if r.get("data_kind") == "real_open_data"]
         seasons = sorted({str(row.get("season")) for row in module_records if row.get("season") is not None})
         sources = sorted({str(row.get("source_id")) for row in module_records if row.get("source_id")})
         module_rows.append(
             {
                 "module": module,
                 "records_valid": len(module_records),
+                "real_records": len(real_module_records),
+                "synthetic_records": len(module_records) - len(real_module_records),
                 "sources": sources,
                 "seasons": seasons,
                 "season_count": len(seasons),
                 "tier0_ready": bool(module_records),
+                "tier0_with_real_data": bool(real_module_records),
                 "tier1_candidate": len(module_records) >= 3,
+                "tier1_with_real_data": len(real_module_records) >= 3,
             }
         )
     source_rows = [
         {
             "source_id": source,
             "records_valid": len(source_records),
+            "real_records": len([r for r in source_records if r.get("data_kind") == "real_open_data"]),
             "modules": sorted({str(row.get("module")) for row in source_records if row.get("module")}),
             "seasons": sorted({str(row.get("season")) for row in source_records if row.get("season") is not None}),
         }
@@ -592,6 +601,8 @@ def build_open_sports_history_coverage_report(*, base_data_dir: str | Path | Non
         "mode": "coverage_report",
         "runtime_data_dir": str(resolve_base_data_dir(base_data_dir)),
         "records_valid": len(rows),
+        "real_records": len(real_rows),
+        "synthetic_records": len(synthetic_rows),
         "modules_with_valid_rows": sorted(by_module),
         "sources_with_valid_rows": sorted(by_source),
         "modules_ready_for_tier0": [row["module"] for row in module_rows if row["tier0_ready"]],
@@ -604,7 +615,7 @@ def build_open_sports_history_coverage_report(*, base_data_dir: str | Path | Non
         "outcome_persistence_attempted": False,
         "import_or_persist_endpoint_called": False,
         "persisted_outcomes": False,
-        "recommended_next_action": "feed validated rows into derived_feature_backfill_report" if rows else "run smoke_test with a local Retrosheet or nflverse fixture",
+        "recommended_next_action": "feed validated real-data rows into derived_feature_backfill_report" if real_rows else "run season_backfill with real open-data source",
         "storage_health": get_storage_health(),
     }
 

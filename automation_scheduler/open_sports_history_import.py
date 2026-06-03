@@ -120,7 +120,7 @@ SOURCE_ALIASES = {
 }
 
 DOWNLOAD_URLS = {
-    "nflverse_nfl": "https://github.com/nflverse/nfldata/releases/download/schedules/schedules.csv",
+    "nflverse_nfl": "https://github.com/nflverse/nflverse-data/releases/download/schedules/schedules.csv",
 }
 
 
@@ -296,6 +296,27 @@ def _empty_preview_row(
     }
 
 
+def _infer_data_kind(source_file_or_ref: str | None, allow_download: bool, downloads_succeeded: bool = False) -> str:
+    """Infer whether data is synthetic_fixture or real_open_data.
+    
+    Synthetic: local test file in /imports/ directory
+    Real: downloaded from URL or explicitly provided non-test file
+    """
+    if not source_file_or_ref:
+        return "synthetic_fixture"
+    source_path = str(source_file_or_ref).lower().replace("\\", "/")
+    # Mark as synthetic if it's from test imports directory
+    if "/imports/" in source_path:
+        return "synthetic_fixture"
+    # Mark as real if it was downloaded
+    if allow_download and downloads_succeeded:
+        return "real_open_data"
+    # Mark as real if explicitly provided by user (not from downloads, not from test directory)
+    if not allow_download and "/imports/" not in source_path:
+        return "real_open_data"
+    return "synthetic_fixture"
+
+
 def normalize_open_sports_history_row(
     row: dict[str, Any],
     *,
@@ -303,6 +324,7 @@ def normalize_open_sports_history_row(
     module: str,
     season: int | str | None = None,
     source_file_or_ref: str | None = None,
+    data_kind: str = "synthetic_fixture",
 ) -> dict[str, Any]:
     aliases = _source_aliases(source_id)
     if _has_raw_payload_risk(row):
@@ -370,6 +392,7 @@ def normalize_open_sports_history_row(
         "source_file_or_ref": source_file_or_ref,
         "source_record_hash": _record_hash(source_id, safe),
         "raw_payload_included": False,
+        "data_kind": data_kind,
     }
 
 
@@ -548,6 +571,8 @@ def build_open_sports_history_import_report(
         read_error = gate_reason
 
     module = str((source or {}).get("module") or "")
+    downloads_succeeded = downloads_attempted > 0 and read_error is None
+    data_kind = _infer_data_kind(source_ref, allow_download, downloads_succeeded)
     preview_rows: list[dict[str, Any]] = []
     if rows_received and read_error is None:
         preview_rows = [
@@ -557,6 +582,7 @@ def build_open_sports_history_import_report(
                 module=module,
                 season=season,
                 source_file_or_ref=source_ref,
+                data_kind=data_kind,
             )
             for row in rows_received[:effective_max]
         ]
@@ -725,6 +751,7 @@ COMPACT_ROW_FIELDS = (
     "source_file_or_ref",
     "source_record_hash",
     "raw_payload_included",
+    "data_kind",
 )
 
 
