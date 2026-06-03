@@ -1,0 +1,750 @@
+from __future__ import annotations
+
+import argparse
+import csv
+import json
+import urllib.error
+import urllib.request
+from datetime import datetime
+from io import StringIO
+from pathlib import Path
+from typing import Any
+from uuid import uuid4
+
+from .data_paths import get_data_sources_dir, get_storage_health, resolve_base_data_dir
+from .open_sports_history_sources import SAFETY_FIELDS, source_by_id
+from .scheduler_config import sanitize_filename, utc_now_iso
+
+
+OPEN_SPORTS_HISTORY_IMPORT_SCHEMA_VERSION = "open_sports_history_import_v1"
+DEFAULT_MAX_RECORDS = 25
+HARD_MAX_RECORDS = 500
+
+ALLOWED_BLOCKED_REASONS = {
+    "available",
+    "unsupported_source",
+    "source_not_current_phase_allowed",
+    "source_disabled",
+    "paid_source_not_approved",
+    "terms_review_required",
+    "sports_reference_scraping_blocked",
+    "missing_event_id",
+    "missing_event_date",
+    "missing_participants",
+    "missing_scores_or_results",
+    "nonnumeric_score",
+    "raw_payload_risk",
+    "secret_risk",
+    "duplicate_record",
+    "malformed_csv",
+    "malformed_json",
+    "unsupported_file_type",
+    "no_records_found",
+    "download_not_allowed",
+    "provider_error",
+    "insufficient_fields",
+    "source_not_configured_or_package_missing",
+}
+
+RAW_PAYLOAD_KEYS = {
+    "provider_payload",
+    "raw_payload",
+    "external_payload",
+    "source_payload",
+    "source_payload_redacted",
+    "raw_provider_payload",
+    "raw_kalshi_payload",
+    "raw_sharp_payload",
+    "response_payload",
+    "raw_response",
+}
+SECRET_FIELD_MARKERS = (
+    "api_key",
+    "api_secret",
+    "secret",
+    "token",
+    "password",
+    "auth_header",
+    "authorization",
+    "credential",
+    "signature",
+    "private_key",
+)
+PLACEHOLDER_VALUES = {"", "n/a", "na", "none", "null", "unknown", "tbd", "placeholder"}
+RECORD_LIST_KEYS = ("items", "records", "rows", "games", "events", "schedule", "results", "data")
+
+COMMON_ALIASES = {
+    "event_id": ("event_id", "game_id", "GAME_ID", "gameid", "old_game_id", "gsis_id", "id"),
+    "event_date": ("event_date", "date", "game_date", "Date", "GAME_DT", "gameday"),
+    "home_participant": ("home_participant", "home_team", "home", "Home", "home_team_id", "HOME_TEAM_ID"),
+    "away_participant": ("away_participant", "away_team", "away", "Away", "away_team_id", "AWAY_TEAM_ID"),
+    "home_score": ("home_score", "home_points", "home_runs", "home_team_runs", "home_score_ct", "HOME_SCORE_CT", "home_score_final", "total_home_score"),
+    "away_score": ("away_score", "away_points", "away_runs", "away_team_runs", "away_score_ct", "AWAY_SCORE_CT", "away_score_final", "total_away_score"),
+    "week_or_round": ("week_or_round", "week", "round"),
+    "season": ("season", "year"),
+    "winner": ("winner", "winning_team", "winning_participant"),
+    "final_result": ("final_result", "result", "game_result", "outcome"),
+    "neutral_site": ("neutral_site", "neutral"),
+}
+
+RETROSHEET_ALIASES = {
+    **COMMON_ALIASES,
+    "event_id": ("event_id", "game_id", "GAME_ID", "gameid", "id"),
+    "event_date": ("event_date", "date", "game_date", "Date", "GAME_DT"),
+    "home_participant": ("home_participant", "home_team", "home", "Home", "home_team_id", "HOME_TEAM_ID"),
+    "away_participant": ("away_participant", "away_team", "away", "Away", "away_team_id", "AWAY_TEAM_ID"),
+    "home_score": ("home_score", "home_runs", "home_team_runs", "home_score_ct", "HOME_SCORE_CT"),
+    "away_score": ("away_score", "away_runs", "away_team_runs", "away_score_ct", "AWAY_SCORE_CT"),
+}
+
+NFLVERSE_ALIASES = {
+    **COMMON_ALIASES,
+    "event_id": ("event_id", "game_id", "old_game_id", "gsis_id"),
+    "event_date": ("event_date", "game_date", "gameday", "date"),
+    "home_participant": ("home_participant", "home_team", "home"),
+    "away_participant": ("away_participant", "away_team", "away"),
+    "home_score": ("home_score", "home_points", "home_score_final", "total_home_score"),
+    "away_score": ("away_score", "away_points", "away_score_final", "total_away_score"),
+    "week_or_round": ("week", "week_or_round"),
+    "season": ("season",),
+}
+
+SOURCE_ALIASES = {
+    "retrosheet_mlb": RETROSHEET_ALIASES,
+    "nflverse_nfl": NFLVERSE_ALIASES,
+}
+
+DOWNLOAD_URLS = {
+    "nflverse_nfl": "https://github.com/nflverse/nfldata/releases/download/schedules/schedules.csv",
+}
+
+
+def _real_value(value: Any) -> bool:
+    if value in (None, [], {}):
+        return False
+    if isinstance(value, str) and value.strip().lower() in PLACEHOLDER_VALUES:
+        return False
+    return True
+
+
+def _safe_scalar(value: Any) -> Any:
+    if isinstance(value, (str, int, float, bool)) or value is None:
+        return value
+    return None
+
+
+def _first_value(row: dict[str, Any], keys: tuple[str, ...]) -> Any:
+    for key in keys:
+        if key in row and _real_value(row.get(key)):
+            return _safe_scalar(row.get(key))
+    return None
+
+
+def _safe_number(value: Any) -> float | None:
+    try:
+        if value is None or value == "":
+            return None
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _compact_number(value: float | None) -> int | float | None:
+    if value is None:
+        return None
+    return int(value) if float(value).is_integer() else value
+
+
+def _parse_event_date(value: Any) -> str | None:
+    if value is None:
+        return None
+    text = str(value).strip()
+    if not text or text.lower() in PLACEHOLDER_VALUES:
+        return None
+    candidates = [
+        "%Y-%m-%d",
+        "%Y%m%d",
+        "%m/%d/%Y",
+        "%Y/%m/%d",
+        "%m-%d-%Y",
+    ]
+    for fmt in candidates:
+        try:
+            return datetime.strptime(text[:10] if fmt == "%Y-%m-%d" else text, fmt).date().isoformat()
+        except ValueError:
+            pass
+    try:
+        return datetime.fromisoformat(text.replace("Z", "+00:00")).date().isoformat()
+    except ValueError:
+        return None
+
+
+def _has_raw_payload_risk(value: Any, *, depth: int = 0) -> bool:
+    if depth > 6:
+        return False
+    if isinstance(value, dict):
+        for key, item in value.items():
+            lower_key = str(key).lower()
+            if lower_key in RAW_PAYLOAD_KEYS:
+                return True
+            if _has_raw_payload_risk(item, depth=depth + 1):
+                return True
+    if isinstance(value, list):
+        return any(_has_raw_payload_risk(item, depth=depth + 1) for item in value[:100])
+    return False
+
+
+def _has_secret_risk(value: Any, *, depth: int = 0) -> bool:
+    if depth > 6:
+        return False
+    if isinstance(value, dict):
+        for key, item in value.items():
+            lower_key = str(key).lower()
+            if any(marker in lower_key for marker in SECRET_FIELD_MARKERS) and _real_value(item):
+                return True
+            if _has_secret_risk(item, depth=depth + 1):
+                return True
+    if isinstance(value, list):
+        return any(_has_secret_risk(item, depth=depth + 1) for item in value[:100])
+    return False
+
+
+def _source_aliases(source_id: str) -> dict[str, tuple[str, ...]]:
+    return SOURCE_ALIASES.get(source_id, COMMON_ALIASES)
+
+
+def _derive_winner_and_result(
+    *,
+    home: Any,
+    away: Any,
+    home_score: float | None,
+    away_score: float | None,
+    explicit_winner: Any,
+    explicit_result: Any,
+) -> tuple[Any, Any, float | None, float | None]:
+    final_margin = None
+    total_score = None
+    winner = explicit_winner
+    result = explicit_result
+    if home_score is None or away_score is None:
+        return winner, result, final_margin, total_score
+    final_margin = home_score - away_score
+    total_score = home_score + away_score
+    if not _real_value(winner):
+        if home_score > away_score:
+            winner = home
+        elif away_score > home_score:
+            winner = away
+        else:
+            winner = "draw"
+    if not _real_value(result):
+        if home_score > away_score:
+            result = "home_win"
+        elif away_score > home_score:
+            result = "away_win"
+        else:
+            result = "draw"
+    return winner, result, final_margin, total_score
+
+
+def _empty_preview_row(
+    *,
+    module: str | None,
+    source_id: str,
+    season: int | str | None,
+    source_file_or_ref: str | None,
+    blocked_reason: str,
+) -> dict[str, Any]:
+    if blocked_reason not in ALLOWED_BLOCKED_REASONS:
+        blocked_reason = "insufficient_fields"
+    return {
+        "module": module,
+        "source_id": source_id,
+        "event_id": None,
+        "event_date": None,
+        "season": season,
+        "week_or_round": None,
+        "home_participant": None,
+        "away_participant": None,
+        "neutral_site": None,
+        "home_score": None,
+        "away_score": None,
+        "final_result": None,
+        "winner": None,
+        "final_margin": None,
+        "total_score": None,
+        "validation_status": "blocked",
+        "blocked_reason": blocked_reason,
+        "source_file_or_ref": source_file_or_ref,
+        "raw_payload_included": False,
+    }
+
+
+def normalize_open_sports_history_row(
+    row: dict[str, Any],
+    *,
+    source_id: str,
+    module: str,
+    season: int | str | None = None,
+    source_file_or_ref: str | None = None,
+) -> dict[str, Any]:
+    aliases = _source_aliases(source_id)
+    if _has_raw_payload_risk(row):
+        return _empty_preview_row(module=module, source_id=source_id, season=season, source_file_or_ref=source_file_or_ref, blocked_reason="raw_payload_risk")
+    if _has_secret_risk(row):
+        return _empty_preview_row(module=module, source_id=source_id, season=season, source_file_or_ref=source_file_or_ref, blocked_reason="secret_risk")
+
+    safe = {str(key): _safe_scalar(value) for key, value in row.items() if _safe_scalar(value) is not None}
+    event_id = _first_value(safe, aliases["event_id"])
+    raw_date = _first_value(safe, aliases["event_date"])
+    event_date = _parse_event_date(raw_date)
+    home = _first_value(safe, aliases["home_participant"])
+    away = _first_value(safe, aliases["away_participant"])
+    home_score_raw = _first_value(safe, aliases["home_score"])
+    away_score_raw = _first_value(safe, aliases["away_score"])
+    home_score = _safe_number(home_score_raw)
+    away_score = _safe_number(away_score_raw)
+    explicit_winner = _first_value(safe, aliases["winner"])
+    explicit_result = _first_value(safe, aliases["final_result"])
+    week = _first_value(safe, aliases["week_or_round"])
+    row_season = _first_value(safe, aliases["season"]) or season
+    if row_season is None and event_date:
+        row_season = int(event_date[:4])
+
+    if not _real_value(event_id):
+        blocked_reason = "missing_event_id"
+    elif event_date is None:
+        blocked_reason = "missing_event_date"
+    elif not (_real_value(home) and _real_value(away)):
+        blocked_reason = "missing_participants"
+    elif (_real_value(home_score_raw) and home_score is None) or (_real_value(away_score_raw) and away_score is None):
+        blocked_reason = "nonnumeric_score"
+    elif not ((home_score is not None and away_score is not None) or _real_value(explicit_result) or _real_value(explicit_winner)):
+        blocked_reason = "missing_scores_or_results"
+    else:
+        blocked_reason = "available"
+
+    winner, final_result, final_margin, total_score = _derive_winner_and_result(
+        home=home,
+        away=away,
+        home_score=home_score,
+        away_score=away_score,
+        explicit_winner=explicit_winner,
+        explicit_result=explicit_result,
+    )
+    validation_status = "available" if blocked_reason == "available" else "blocked"
+    return {
+        "module": module,
+        "source_id": source_id,
+        "event_id": event_id,
+        "event_date": event_date,
+        "season": row_season,
+        "week_or_round": week,
+        "home_participant": home,
+        "away_participant": away,
+        "neutral_site": _first_value(safe, aliases["neutral_site"]),
+        "home_score": _compact_number(home_score),
+        "away_score": _compact_number(away_score),
+        "final_result": final_result,
+        "winner": winner,
+        "final_margin": _compact_number(final_margin),
+        "total_score": _compact_number(total_score),
+        "validation_status": validation_status,
+        "blocked_reason": blocked_reason,
+        "source_file_or_ref": source_file_or_ref,
+        "raw_payload_included": False,
+    }
+
+
+def _read_csv_rows(path: Path, max_records: int) -> tuple[list[dict[str, Any]], str | None]:
+    try:
+        with path.open("r", encoding="utf-8-sig", newline="") as handle:
+            reader = csv.DictReader(handle)
+            if not reader.fieldnames:
+                return [], "malformed_csv"
+            return [dict(row) for _, row in zip(range(max_records), reader)], None
+    except (OSError, UnicodeDecodeError, csv.Error):
+        return [], "malformed_csv"
+
+
+def _extract_json_records(payload: Any) -> list[dict[str, Any]]:
+    if isinstance(payload, list):
+        return [row for row in payload if isinstance(row, dict)]
+    if isinstance(payload, dict):
+        for key in RECORD_LIST_KEYS:
+            value = payload.get(key)
+            if isinstance(value, list):
+                return [row for row in value if isinstance(row, dict)]
+        return [payload]
+    return []
+
+
+def _read_json_rows(path: Path, max_records: int) -> tuple[list[dict[str, Any]], str | None]:
+    try:
+        if path.suffix.lower() in {".jsonl", ".ndjson"}:
+            rows: list[dict[str, Any]] = []
+            for line in path.read_text(encoding="utf-8").splitlines():
+                if line.strip():
+                    parsed = json.loads(line)
+                    if isinstance(parsed, dict):
+                        rows.append(parsed)
+                    if len(rows) >= max_records:
+                        break
+            return rows, None
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        return _extract_json_records(payload)[:max_records], None
+    except (json.JSONDecodeError, UnicodeDecodeError, OSError):
+        return [], "malformed_json"
+
+
+def _read_parquet_rows(path: Path, max_records: int) -> tuple[list[dict[str, Any]], str | None]:
+    try:
+        import pandas as pd  # type: ignore
+    except Exception:
+        return [], "unsupported_file_type"
+    try:
+        frame = pd.read_parquet(path)
+        return frame.head(max_records).to_dict(orient="records"), None
+    except Exception:
+        return [], "unsupported_file_type"
+
+
+def _read_local_rows(pathish: str | Path, max_records: int) -> tuple[list[dict[str, Any]], str | None]:
+    path = Path(pathish).expanduser()
+    if not path.exists() or not path.is_file():
+        return [], "no_records_found"
+    suffix = path.suffix.lower()
+    if suffix == ".csv":
+        return _read_csv_rows(path, max_records)
+    if suffix in {".json", ".jsonl", ".ndjson"}:
+        return _read_json_rows(path, max_records)
+    if suffix == ".parquet":
+        return _read_parquet_rows(path, max_records)
+    return [], "unsupported_file_type"
+
+
+def _download_rows(source_id: str, max_records: int) -> tuple[list[dict[str, Any]], str | None, str | None]:
+    url = DOWNLOAD_URLS.get(source_id)
+    if not url:
+        return [], "provider_error", None
+    try:
+        request = urllib.request.Request(url, headers={"User-Agent": "betting-stock-api-open-history-preview/1.0"})
+        with urllib.request.urlopen(request, timeout=20) as response:
+            body = response.read(4_000_000).decode("utf-8", errors="replace")
+        reader = csv.DictReader(StringIO(body))
+        if not reader.fieldnames:
+            return [], "malformed_csv", url
+        return [dict(row) for _, row in zip(range(max_records), reader)], None, url
+    except (urllib.error.URLError, TimeoutError, OSError, UnicodeDecodeError, csv.Error):
+        return [], "provider_error", url
+
+
+def _effective_max_records(max_records: int | None) -> int:
+    requested = DEFAULT_MAX_RECORDS if max_records is None else int(max_records)
+    return max(1, min(requested, HARD_MAX_RECORDS))
+
+
+def _source_gate(
+    source: dict[str, Any] | None,
+    *,
+    source_id: str,
+    allow_download: bool,
+) -> str | None:
+    if source is None:
+        return "unsupported_source"
+    if source_id == "sports_reference_manual_export" and allow_download:
+        return "sports_reference_scraping_blocked"
+    if source.get("future_paid_candidate") or source.get("requires_budget_approval"):
+        return "paid_source_not_approved"
+    if not source.get("current_phase_allowed") and source_id != "sports_reference_manual_export":
+        return "source_not_current_phase_allowed"
+    if source_id == "sports_reference_manual_export":
+        return "terms_review_required"
+    return None
+
+
+def _dedupe_rows(rows: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], int]:
+    seen: set[tuple[str, str, str]] = set()
+    out: list[dict[str, Any]] = []
+    duplicates = 0
+    for row in rows:
+        if row.get("blocked_reason") != "available":
+            out.append(row)
+            continue
+        key = (str(row.get("module") or ""), str(row.get("source_id") or ""), str(row.get("event_id") or ""))
+        if key in seen:
+            duplicates += 1
+            out.append({**row, "validation_status": "blocked", "blocked_reason": "duplicate_record"})
+            continue
+        seen.add(key)
+        out.append(row)
+    return out, duplicates
+
+
+def _count_reasons(rows: list[dict[str, Any]], fallback: str | None = None) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for row in rows:
+        reason = str(row.get("blocked_reason") or fallback or "available")
+        counts[reason] = counts.get(reason, 0) + 1
+    if not rows and fallback:
+        counts[fallback] = 1
+    return dict(sorted(counts.items()))
+
+
+def build_open_sports_history_import_report(
+    *,
+    source_id: str,
+    season: int | str | None = None,
+    input_path: str | Path | None = None,
+    max_records: int | None = None,
+    dry_run: bool = True,
+    allow_download: bool = False,
+    persist_preview: bool = False,
+    base_data_dir: str | Path | None = None,
+) -> dict[str, Any]:
+    source = source_by_id(source_id)
+    effective_max = _effective_max_records(max_records)
+    source_ref = str(input_path) if input_path else None
+    gate_reason = _source_gate(source, source_id=source_id, allow_download=allow_download)
+    rows_received: list[dict[str, Any]] = []
+    read_error: str | None = None
+    downloads_attempted = 0
+
+    if gate_reason is None:
+        if input_path:
+            rows_received, read_error = _read_local_rows(input_path, effective_max)
+        elif allow_download:
+            if not source.get("supports_direct_download"):
+                read_error = "download_not_allowed"
+            else:
+                downloads_attempted = 1
+                rows_received, read_error, source_ref = _download_rows(source_id, effective_max)
+        elif source_id.startswith("sportsdataverse_"):
+            read_error = "source_not_configured_or_package_missing"
+        else:
+            read_error = "download_not_allowed"
+    else:
+        read_error = gate_reason
+
+    module = str((source or {}).get("module") or "")
+    preview_rows: list[dict[str, Any]] = []
+    if rows_received and read_error is None:
+        preview_rows = [
+            normalize_open_sports_history_row(
+                row,
+                source_id=source_id,
+                module=module,
+                season=season,
+                source_file_or_ref=source_ref,
+            )
+            for row in rows_received[:effective_max]
+        ]
+        preview_rows, duplicate_count = _dedupe_rows(preview_rows)
+    else:
+        duplicate_count = 0
+
+    if not rows_received and read_error is None:
+        read_error = "no_records_found"
+    if read_error and read_error not in ALLOWED_BLOCKED_REASONS:
+        read_error = "insufficient_fields"
+
+    valid_rows = [row for row in preview_rows if row.get("blocked_reason") == "available"]
+    rejected_rows = [row for row in preview_rows if row.get("blocked_reason") != "available"]
+    ok = gate_reason is None and read_error is None
+    status = "preview_ready" if valid_rows else "blocked"
+    if read_error in {"malformed_csv", "malformed_json", "unsupported_file_type"}:
+        status = read_error
+    elif read_error == "download_not_allowed":
+        status = "download_blocked"
+    elif read_error == "source_not_configured_or_package_missing":
+        status = "metadata_ready_no_source_configured"
+
+    return {
+        **SAFETY_FIELDS,
+        "ok": bool(ok or valid_rows),
+        "status": status,
+        "schema_version": OPEN_SPORTS_HISTORY_IMPORT_SCHEMA_VERSION,
+        "created_at": utc_now_iso(),
+        "run_id": sanitize_filename(f"open_sports_history_validated_{utc_now_iso().replace(':', '-')}_{uuid4().hex[:8]}"),
+        "runtime_data_dir": str(resolve_base_data_dir(base_data_dir)),
+        "source_id": source_id,
+        "source_name": (source or {}).get("source_name"),
+        "module": module or None,
+        "source_access_type": (source or {}).get("source_access_type"),
+        "approval_status": (source or {}).get("approval_status"),
+        "source_enabled": bool((source or {}).get("enabled", False)),
+        "season": season,
+        "input_path": str(input_path) if input_path else None,
+        "source_file_or_ref": source_ref,
+        "dry_run": bool(dry_run),
+        "allow_download": bool(allow_download),
+        "persist_preview": bool(persist_preview),
+        "max_records_requested": DEFAULT_MAX_RECORDS if max_records is None else int(max_records),
+        "max_records_effective": effective_max,
+        "records_received": len(rows_received),
+        "preview_rows_created": len(valid_rows),
+        "records_valid": len(valid_rows),
+        "records_rejected": len(rejected_rows) + (1 if read_error and not preview_rows else 0),
+        "duplicate_record_count": duplicate_count,
+        "blocked_reason": read_error,
+        "blocked_reason_counts": _count_reasons(preview_rows, read_error),
+        "validated_preview_rows": valid_rows,
+        "preview_rows": preview_rows,
+        "rejected_preview_rows": rejected_rows[:50],
+        "download_required": bool(not input_path and not allow_download),
+        "downloads_attempted": downloads_attempted,
+        "provider_calls_attempted": 0,
+        "provider_calls_succeeded": 0,
+        "provider_calls_failed": 0,
+        "outcome_persistence_attempted": False,
+        "import_or_persist_endpoint_called": False,
+        "persisted_outcomes": False,
+        "recommended_next_action": "persist compact preview rows with -PersistPreview after verifying the local fixture" if valid_rows and not persist_preview else "provide a local approved CSV fixture or explicitly pass -AllowDownload",
+        "storage_health": get_storage_health(),
+    }
+
+
+def _report_root(base_data_dir: str | Path | None = None) -> Path:
+    base = get_data_sources_dir() if base_data_dir is None else resolve_base_data_dir(base_data_dir) / "data_sources"
+    root = base / "open_sports_history" / "validated"
+    root.mkdir(parents=True, exist_ok=True)
+    return root
+
+
+def _rel(path: Path, base_data_dir: str | Path | None = None) -> str:
+    root = resolve_base_data_dir(base_data_dir)
+    try:
+        return str(path.resolve().relative_to(root.resolve())).replace("\\", "/")
+    except Exception:
+        return path.name
+
+
+def _atomic_write_json(path: Path, payload: Any) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(f"{path.name}.tmp")
+    tmp.write_text(json.dumps(payload, separators=(",", ":"), sort_keys=True), encoding="utf-8")
+    tmp.replace(path)
+
+
+def _atomic_write_text(path: Path, text: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(f"{path.name}.tmp")
+    tmp.write_text(text, encoding="utf-8")
+    tmp.replace(path)
+
+
+def render_open_sports_history_import_markdown(report: dict[str, Any]) -> str:
+    lines = [
+        "# Open Sports History Import Preview",
+        "",
+        f"1. source_id: {report.get('source_id')}",
+        f"2. module: {report.get('module')}",
+        f"3. dry_run: {str(report.get('dry_run')).lower()}",
+        f"4. allow_download: {str(report.get('allow_download')).lower()}",
+        f"5. downloads_attempted: {report.get('downloads_attempted')}",
+        f"6. records_received: {report.get('records_received')}",
+        f"7. preview_rows_created: {report.get('preview_rows_created')}",
+        f"8. blocked_reason_counts: {json.dumps(report.get('blocked_reason_counts') or {}, sort_keys=True)}",
+        f"9. safety: provider_calls_attempted=0; provider_write=false; execution_allowed=false; raw_payload_included=false; secrets_included=false",
+        "",
+    ]
+    return "\n".join(lines)
+
+
+def write_open_sports_history_import_report(
+    report: dict[str, Any],
+    *,
+    base_data_dir: str | Path | None = None,
+) -> dict[str, str]:
+    root = _report_root(base_data_dir)
+    created = str(report.get("created_at") or utc_now_iso())
+    day = created[:10]
+    run_id = sanitize_filename(str(report.get("run_id") or f"open_sports_history_validated_{created}_{uuid4().hex[:8]}"))
+    latest_json = root / "latest.json"
+    latest_md = root / "latest.md"
+    item_json = root / "items" / f"{run_id}.json"
+    item_md = root / "items" / f"{run_id}.md"
+    daily_json = root / "daily" / f"{day}.json"
+    daily_md = root / "daily" / f"{day}.md"
+    paths = {
+        "latest_json_path": _rel(latest_json, base_data_dir),
+        "latest_markdown_path": _rel(latest_md, base_data_dir),
+        "item_json_path": _rel(item_json, base_data_dir),
+        "item_markdown_path": _rel(item_md, base_data_dir),
+        "daily_json_path": _rel(daily_json, base_data_dir),
+        "daily_markdown_path": _rel(daily_md, base_data_dir),
+    }
+    payload = {**SAFETY_FIELDS, **report, **paths, "raw_payload_included": False, "secrets_included": False}
+    markdown = render_open_sports_history_import_markdown(payload)
+    _atomic_write_json(latest_json, payload)
+    _atomic_write_text(latest_md, markdown)
+    _atomic_write_json(item_json, payload)
+    _atomic_write_text(item_md, markdown)
+    _atomic_write_json(daily_json, payload)
+    _atomic_write_text(daily_md, markdown)
+    return paths
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--source-id", required=True)
+    parser.add_argument("--season", default=None)
+    parser.add_argument("--input-path", default=None)
+    parser.add_argument("--max-records", type=int, default=None)
+    parser.add_argument("--dry-run", dest="dry_run", action="store_true", default=True)
+    parser.add_argument("--no-dry-run", dest="dry_run", action="store_false")
+    parser.add_argument("--allow-download", action="store_true")
+    parser.add_argument("--persist-preview", action="store_true")
+    args = parser.parse_args(argv)
+
+    report = build_open_sports_history_import_report(
+        source_id=args.source_id,
+        season=args.season,
+        input_path=args.input_path,
+        max_records=args.max_records,
+        dry_run=args.dry_run,
+        allow_download=args.allow_download,
+        persist_preview=args.persist_preview,
+    )
+    paths: dict[str, str] = {}
+    if args.persist_preview:
+        paths = write_open_sports_history_import_report(report)
+        report.update(paths)
+
+    print(
+        json.dumps(
+            {
+                "ok": report["ok"],
+                "status": report["status"],
+                "run_id": report["run_id"],
+                "source_id": report["source_id"],
+                "module": report["module"],
+                "dry_run": report["dry_run"],
+                "allow_download": report["allow_download"],
+                "persist_preview": report["persist_preview"],
+                "max_records_effective": report["max_records_effective"],
+                "records_received": report["records_received"],
+                "preview_rows_created": report["preview_rows_created"],
+                "records_rejected": report["records_rejected"],
+                "blocked_reason": report["blocked_reason"],
+                "blocked_reason_counts": report["blocked_reason_counts"],
+                "downloads_attempted": report["downloads_attempted"],
+                "provider_calls_attempted": 0,
+                "enabled_source_count": 0,
+                "paid_source_enabled_count": 0,
+                "provider_write": False,
+                "execution_allowed": False,
+                "raw_payload_included": False,
+                "secrets_included": False,
+                "latest_json_path": paths.get("latest_json_path"),
+                "latest_markdown_path": paths.get("latest_markdown_path"),
+            },
+            indent=2,
+            sort_keys=True,
+        )
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -424,6 +424,57 @@ def _local_source_files(base: Path) -> list[tuple[str, Path]]:
     return pairs
 
 
+def _open_sports_history_latest_path(base: Path) -> tuple[str, Path]:
+    relative = "data_sources/open_sports_history/validated/latest.json"
+    return relative, base / relative
+
+
+def _open_sports_history_records(base: Path) -> tuple[dict[str, list[dict[str, Any]]], str | None, int]:
+    relative, path = _open_sports_history_latest_path(base)
+    payload = _read_json(path)
+    if not isinstance(payload, dict):
+        return {}, relative if path.exists() else None, 0
+    candidates = payload.get("validated_preview_rows")
+    if not isinstance(candidates, list):
+        candidates = payload.get("preview_rows")
+    records_by_module: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    consumed = 0
+    for item in candidates or []:
+        if not isinstance(item, dict):
+            continue
+        if item.get("raw_payload_included") is True:
+            continue
+        if str(item.get("validation_status") or item.get("blocked_reason") or "").lower() not in {"available"}:
+            continue
+        module = str(item.get("module") or "")
+        if not module:
+            continue
+        row = {
+            "module": module,
+            "event_id": item.get("event_id"),
+            "source_id": item.get("source_id"),
+            "season": item.get("season"),
+            "week_or_round": item.get("week_or_round"),
+            "event_date": item.get("event_date"),
+            "home_participant": item.get("home_participant"),
+            "away_participant": item.get("away_participant"),
+            "neutral_site": item.get("neutral_site"),
+            "home_score": item.get("home_score"),
+            "away_score": item.get("away_score"),
+            "final_result": item.get("final_result"),
+            "winner": item.get("winner"),
+            "final_margin": item.get("final_margin"),
+            "total_score": item.get("total_score"),
+            "market_price_or_odds": None,
+            "explicit_outcome": None,
+            "data_source_path": item.get("source_file_or_ref") or relative,
+            "raw_payload_included": False,
+        }
+        records_by_module[module].append(row)
+        consumed += 1
+    return dict(records_by_module), relative, consumed
+
+
 def load_local_normalized_records(*, base_data_dir: str | Path | None = None) -> dict[str, list[dict[str, Any]]]:
     base = resolve_base_data_dir(base_data_dir)
     records_by_module: dict[str, list[dict[str, Any]]] = defaultdict(list)
@@ -442,6 +493,16 @@ def load_local_normalized_records(*, base_data_dir: str | Path | None = None) ->
                 continue
             seen.add(dedupe_key)
             records_by_module[module].append(normalized)
+    open_records, _, _ = _open_sports_history_records(base)
+    for module, rows in open_records.items():
+        for row in rows:
+            event_key = str(row.get("event_id") or "")
+            source_key = str(row.get("source_id") or "open_sports_history")
+            dedupe_key = (module, event_key, source_key)
+            if event_key and dedupe_key in seen:
+                continue
+            seen.add(dedupe_key)
+            records_by_module[module].append(row)
     return dict(records_by_module)
 
 
@@ -684,6 +745,7 @@ def build_derived_feature_backfill_report(
 ) -> dict[str, Any]:
     base = resolve_base_data_dir(base_data_dir)
     availability = _availability_rows(base)
+    open_records, open_history_report, open_history_consumed = _open_sports_history_records(base)
     local_records = records_by_module if records_by_module is not None else load_local_normalized_records(base_data_dir=base)
     module_names = [module] if module else REPORT_MODULES
     normalized_records: dict[str, list[dict[str, Any]]] = {}
@@ -733,6 +795,8 @@ def build_derived_feature_backfill_report(
         )
         if (base / path).exists()
     ]
+    if records_by_module is None and open_history_report and (base / open_history_report).exists():
+        reports_consumed.append(open_history_report)
     return {
         "ok": True,
         "status": "ok",
@@ -744,6 +808,8 @@ def build_derived_feature_backfill_report(
         "root_runtime_path_confusion_resolved": True,
         "root_data_sources_path_used": False,
         "reports_consumed": reports_consumed,
+        "open_sports_history_preview_rows_consumed": open_history_consumed if records_by_module is None else 0,
+        "open_sports_history_modules_consumed": sorted(open_records) if records_by_module is None else [],
         "normalized_schedule_result_shape": NORMALIZED_SCHEDULE_RESULT_SHAPE,
         "total_modules": len(modules),
         "total_feature_rows": len(feature_rows),
