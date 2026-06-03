@@ -86,6 +86,8 @@ RECORD_LIST_KEYS = (
     "rows",
     "games",
     "events",
+    "normalized_records",
+    "compact_records",
     "matches",
     "fixtures",
     "schedule",
@@ -108,14 +110,15 @@ MODULE_KEYWORDS = {
     "icehockey_nhl": ("icehockey_nhl", " nhl ", "/nhl", "\\nhl", "hockey"),
     "soccer": ("soccer", "football_soccer", "premier league", "epl", "fifa", "uefa"),
     "tennis": ("tennis", " atp ", " wta ", "/atp", "\\atp", "/wta", "\\wta"),
-    "ufc_mma": ("ufc_mma", " ufc ", "/ufc", "\\ufc", " mma ", "mixed martial"),
+    "ufc_mma": ("ufc_mma", " ufc ", "sport:ufc", "league:ufc", "/ufc", "\\ufc", " mma ", "sport:mma", "mixed martial"),
     "boxing": ("boxing", " boxer ", "fight_card"),
     "golf": ("golf", " pga ", " lpga ", "masters", "tournament"),
 }
 
-EVENT_ID_KEYS = ("event_id", "game_id", "match_id", "fixture_id", "fight_id", "tournament_id", "id")
+EVENT_ID_KEYS = ("event_id", "game_id", "match_id", "fixture_id", "bout_id", "fight_id", "tournament_id", "id")
 EVENT_DATE_KEYS = (
     "event_date",
+    "start_date",
     "game_date",
     "match_date",
     "fixture_date",
@@ -126,13 +129,37 @@ EVENT_DATE_KEYS = (
     "scheduled_at",
     "event_time",
 )
-HOME_KEYS = ("home_participant", "home_team", "home", "home_name")
-AWAY_KEYS = ("away_participant", "away_team", "away", "away_name")
-HOME_SCORE_KEYS = ("home_score", "home_points", "home_runs", "home_goals", "home_sets")
-AWAY_SCORE_KEYS = ("away_score", "away_points", "away_runs", "away_goals", "away_sets")
-FINAL_RESULT_KEYS = ("final_result", "result", "game_result", "match_result", "winner")
-MARKET_PRICE_KEYS = ("market_price_or_odds", "implied_probability", "odds", "moneyline", "spread", "total", "best_odds", "closing_odds")
+HOME_KEYS = ("home_participant", "home_team", "home", "home_name", "team", "fighter_a", "player_a", "golfer")
+AWAY_KEYS = ("away_participant", "away_team", "away", "away_name", "opponent", "fighter_b", "player_b", "field")
+HOME_SCORE_KEYS = ("home_score", "home_points", "home_runs", "home_goals", "home_sets", "player_a_score", "fighter_a_score")
+AWAY_SCORE_KEYS = ("away_score", "away_points", "away_runs", "away_goals", "away_sets", "player_b_score", "fighter_b_score")
+FINAL_RESULT_KEYS = ("final_result", "result", "game_result", "match_result", "winner", "outcome")
+MARKET_PRICE_KEYS = (
+    "market_price_or_odds",
+    "implied_probability",
+    "market_implied_probability",
+    "odds",
+    "price",
+    "moneyline",
+    "spread",
+    "total",
+    "best_odds",
+    "closing_odds",
+)
 EXPLICIT_OUTCOME_KEYS = ("explicit_outcome", "settlement_result", "final_outcome")
+PARENT_CONTEXT_KEYS = ("module", "sport", "league", "competition", "provider", "provider_id", "source_id", "season", "week")
+
+CANONICAL_ALIAS_GROUPS = {
+    "event_id": EVENT_ID_KEYS,
+    "event_date": EVENT_DATE_KEYS,
+    "home_participant": HOME_KEYS,
+    "away_participant": AWAY_KEYS,
+    "home_score": HOME_SCORE_KEYS,
+    "away_score": AWAY_SCORE_KEYS,
+    "final_result": FINAL_RESULT_KEYS + ("home_win", "away_win"),
+    "market_price_or_odds": MARKET_PRICE_KEYS,
+    "explicit_outcome": EXPLICIT_OUTCOME_KEYS,
+}
 
 
 def _repo_root() -> Path:
@@ -189,6 +216,33 @@ def _safe_record_slice(row: dict[str, Any]) -> dict[str, Any]:
     return safe
 
 
+def _secret_key_is_status(lower_key: str) -> bool:
+    return (
+        lower_key.startswith("missing_")
+        or lower_key.endswith("_configured")
+        or lower_key.endswith("_present")
+        or lower_key.startswith("requires_")
+        or lower_key in {"credential_status", "approval_status"}
+    )
+
+
+def _secret_value_risky(lower_key: str, value: Any) -> bool:
+    if _secret_key_is_status(lower_key):
+        return False
+    if value in (None, False, "", [], {}):
+        return False
+    if isinstance(value, bool):
+        return False
+    if isinstance(value, (int, float)):
+        return False
+    if isinstance(value, str):
+        text = value.strip().lower()
+        if text in PLACEHOLDER_VALUES or text in {"false", "true", "configured", "missing", "not_configured", "[redacted]", "redacted"}:
+            return False
+        return True
+    return True
+
+
 def _has_raw_payload_risk(value: Any, *, depth: int = 0) -> bool:
     if depth > 6:
         return False
@@ -210,13 +264,32 @@ def _has_secret_risk(value: Any, *, depth: int = 0) -> bool:
     if isinstance(value, dict):
         for key, item in value.items():
             lower_key = str(key).lower()
-            if any(marker in lower_key for marker in SECRET_FIELD_MARKERS) and _real_value(item):
+            if any(marker in lower_key for marker in SECRET_FIELD_MARKERS) and _secret_value_risky(lower_key, item):
                 return True
             if _has_secret_risk(item, depth=depth + 1):
                 return True
     elif isinstance(value, list):
         return any(_has_secret_risk(item, depth=depth + 1) for item in value[:100])
     return False
+
+
+def _diagnostics_template() -> dict[str, Counter[str]]:
+    return {
+        "alias_mapping_hits": Counter(),
+        "nested_container_hits": Counter(),
+        "fields_present_counts": Counter(),
+    }
+
+
+def _record_alias_hit(counters: dict[str, Counter[str]] | None, alias: str, canonical: str) -> None:
+    if counters is None:
+        return
+    counters["alias_mapping_hits"][f"{alias}->{canonical}"] += 1
+
+
+def _record_field_present(counters: dict[str, Counter[str]] | None, canonical: str, value: Any) -> None:
+    if counters is not None and _real_value(value):
+        counters["fields_present_counts"][canonical] += 1
 
 
 def _should_skip_path(path: Path) -> bool:
@@ -307,26 +380,57 @@ def _looks_like_record(row: dict[str, Any]) -> bool:
     return bool(keys & interesting)
 
 
-def _extract_records(payload: Any, *, depth: int = 0) -> tuple[list[dict[str, Any]], str | None]:
+def _parent_context(payload: dict[str, Any], inherited_context: dict[str, Any] | None = None) -> dict[str, Any]:
+    context = dict(inherited_context or {})
+    safe = _safe_record_slice(payload)
+    for key in PARENT_CONTEXT_KEYS:
+        if key in safe and _real_value(safe.get(key)):
+            context[key] = safe[key]
+    return context
+
+
+def _merge_context(row: dict[str, Any], context: dict[str, Any] | None) -> dict[str, Any]:
+    if not context:
+        return row
+    merged = dict(row)
+    for key, value in context.items():
+        if key not in merged and _real_value(value):
+            merged[key] = value
+    return merged
+
+
+def _extract_records(
+    payload: Any,
+    *,
+    depth: int = 0,
+    counters: dict[str, Counter[str]] | None = None,
+    inherited_context: dict[str, Any] | None = None,
+) -> tuple[list[dict[str, Any]], str | None]:
     if depth > 4:
         return [], "unsupported_shape"
     if isinstance(payload, list):
-        rows = [row for row in payload if isinstance(row, dict)]
+        rows = [_merge_context(row, inherited_context) for row in payload if isinstance(row, dict)]
         return rows, None if rows or not payload else "no_records_found"
     if not isinstance(payload, dict):
         return [], "unsupported_shape"
+    context = _parent_context(payload, inherited_context)
     records: list[dict[str, Any]] = []
     for key in RECORD_LIST_KEYS:
         value = payload.get(key)
         if isinstance(value, list):
-            records.extend(row for row in value if isinstance(row, dict))
+            rows = [_merge_context(row, context) for row in value if isinstance(row, dict)]
+            if rows and counters is not None:
+                counters["nested_container_hits"][key] += 1
+            records.extend(rows)
         elif isinstance(value, dict):
-            nested, _ = _extract_records(value, depth=depth + 1)
+            if counters is not None:
+                counters["nested_container_hits"][key] += 1
+            nested, _ = _extract_records(value, depth=depth + 1, counters=counters, inherited_context=context)
             records.extend(nested)
     if records:
         return records, None
     if _looks_like_record(payload):
-        return [payload], None
+        return [_merge_context(payload, context)], None
     return [], "no_records_found" if any(key in payload for key in RECORD_LIST_KEYS) else "unsupported_shape"
 
 
@@ -369,22 +473,61 @@ def _split_event_name(row: dict[str, Any]) -> tuple[str | None, str | None]:
     return None, None
 
 
-def _normalize_preview_row(path: Path, row: dict[str, Any]) -> dict[str, Any]:
+def _first_alias_value(
+    row: dict[str, Any],
+    keys: tuple[str, ...],
+    canonical: str,
+    counters: dict[str, Counter[str]] | None,
+) -> Any:
+    for key in keys:
+        if key in row and _real_value(row.get(key)):
+            _record_alias_hit(counters, key, canonical)
+            return _safe_scalar(row.get(key))
+    return None
+
+
+def _explicit_home_away_result(
+    row: dict[str, Any],
+    home: Any,
+    away: Any,
+    counters: dict[str, Counter[str]] | None,
+) -> tuple[Any, Any]:
+    home_win = row.get("home_win")
+    away_win = row.get("away_win")
+    if home_win is True:
+        _record_alias_hit(counters, "home_win", "final_result")
+        return "home_win", home
+    if away_win is True:
+        _record_alias_hit(counters, "away_win", "final_result")
+        return "away_win", away
+    return None, None
+
+
+def _normalize_preview_row(
+    path: Path,
+    row: dict[str, Any],
+    *,
+    counters: dict[str, Counter[str]] | None = None,
+) -> dict[str, Any]:
     safe = _safe_record_slice(row)
     module = _module_guess(path, safe) or "unknown"
-    home = _first_value(safe, HOME_KEYS)
-    away = _first_value(safe, AWAY_KEYS)
+    home = _first_alias_value(safe, HOME_KEYS, "home_participant", counters)
+    away = _first_alias_value(safe, AWAY_KEYS, "away_participant", counters)
     if not home or not away:
         parsed_home, parsed_away = _split_event_name(safe)
-        home = home or parsed_home
-        away = away or parsed_away
-    home_score = _first_value(safe, HOME_SCORE_KEYS)
-    away_score = _first_value(safe, AWAY_SCORE_KEYS)
+        if parsed_home and not home:
+            _record_alias_hit(counters, "event_name", "home_participant")
+            home = parsed_home
+        if parsed_away and not away:
+            _record_alias_hit(counters, "event_name", "away_participant")
+            away = parsed_away
+    home_score = _first_alias_value(safe, HOME_SCORE_KEYS, "home_score", counters)
+    away_score = _first_alias_value(safe, AWAY_SCORE_KEYS, "away_score", counters)
     home_n = _safe_number(home_score)
     away_n = _safe_number(away_score)
     final_margin = None
     total_score = None
-    winner = _first_value(safe, ("winner", "winning_team", "winning_participant"))
+    winner = _first_alias_value(safe, ("winner", "winning_team", "winning_participant"), "winner", counters)
     if home_n is not None and away_n is not None:
         final_margin = home_n - away_n
         total_score = home_n + away_n
@@ -395,9 +538,12 @@ def _normalize_preview_row(path: Path, row: dict[str, Any]) -> dict[str, Any]:
                 winner = away
             else:
                 winner = "draw"
-    final_result = _first_value(safe, FINAL_RESULT_KEYS)
-    event_id = _first_value(safe, EVENT_ID_KEYS)
-    event_date = _first_value(safe, EVENT_DATE_KEYS)
+    final_result = _first_alias_value(safe, FINAL_RESULT_KEYS, "final_result", counters)
+    explicit_result, explicit_winner = _explicit_home_away_result(safe, home, away, counters)
+    final_result = final_result or explicit_result
+    winner = winner or explicit_winner
+    event_id = _first_alias_value(safe, EVENT_ID_KEYS, "event_id", counters)
+    event_date = _first_alias_value(safe, EVENT_DATE_KEYS, "event_date", counters)
     has_participants = _real_value(home) and _real_value(away)
     has_scores_or_result = (home_n is not None and away_n is not None) or _real_value(final_result) or _real_value(winner)
     if module not in SPORT_MODULES:
@@ -412,6 +558,20 @@ def _normalize_preview_row(path: Path, row: dict[str, Any]) -> dict[str, Any]:
         blocked_reason = "missing_scores_or_results"
     else:
         blocked_reason = "available"
+    market_price_or_odds = _first_alias_value(safe, MARKET_PRICE_KEYS, "market_price_or_odds", counters)
+    explicit_outcome = _first_alias_value(safe, EXPLICIT_OUTCOME_KEYS, "explicit_outcome", counters)
+    for canonical in CANONICAL_ALIAS_GROUPS:
+        _record_field_present(counters, canonical, {
+            "event_id": event_id,
+            "event_date": event_date,
+            "home_participant": home,
+            "away_participant": away,
+            "home_score": home_score,
+            "away_score": away_score,
+            "final_result": final_result,
+            "market_price_or_odds": market_price_or_odds,
+            "explicit_outcome": explicit_outcome,
+        }.get(canonical))
     return {
         "module": module,
         "event_id": event_id,
@@ -426,8 +586,8 @@ def _normalize_preview_row(path: Path, row: dict[str, Any]) -> dict[str, Any]:
         "winner": winner,
         "final_margin": final_margin,
         "total_score": total_score,
-        "market_price_or_odds": _first_value(safe, MARKET_PRICE_KEYS),
-        "explicit_outcome": _first_value(safe, EXPLICIT_OUTCOME_KEYS),
+        "market_price_or_odds": market_price_or_odds,
+        "explicit_outcome": explicit_outcome,
         "normalization_status": "available" if blocked_reason == "available" else "blocked",
         "blocked_reason": blocked_reason,
         "raw_payload_included": False,
@@ -439,7 +599,12 @@ def _file_type(path: Path) -> str:
     return suffix or "unknown"
 
 
-def _file_report(path: Path, *, base: Path) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+def _file_report(
+    path: Path,
+    *,
+    base: Path,
+    counters: dict[str, Counter[str]] | None = None,
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     payload, read_error = _read_json_records(path)
     rel = _relative_path(path, base)
     if read_error:
@@ -467,11 +632,11 @@ def _file_report(path: Path, *, base: Path) -> tuple[dict[str, Any], list[dict[s
         return (_blocked_file_report(path, base=base, reason="raw_payload_risk"), [])
     if _has_secret_risk(payload):
         return (_blocked_file_report(path, base=base, reason="secret_risk"), [])
-    records, shape_error = _extract_records(payload)
+    records, shape_error = _extract_records(payload, counters=counters)
     if not records:
         return (_blocked_file_report(path, base=base, reason=shape_error or "no_records_found"), [])
 
-    preview_rows = [_normalize_preview_row(path, row) for row in records if isinstance(row, dict)]
+    preview_rows = [_normalize_preview_row(path, row, counters=counters) for row in records if isinstance(row, dict)]
     sport_rows = [row for row in preview_rows if row["module"] in SPORT_MODULES or row["module"] == "unknown_sports"]
     if not sport_rows:
         return (_blocked_file_report(path, base=base, reason="not_sports_history", records_seen=len(records)), [])
@@ -586,10 +751,11 @@ def build_local_sports_history_audit_report(
     base = resolve_base_data_dir(base_data_dir)
     roots = [Path(root).expanduser().resolve() for root in (scan_roots or _default_scan_roots(base))]
     files, skipped = _iter_scan_files(roots)
+    counters = _diagnostics_template()
     file_reports: list[dict[str, Any]] = []
     preview_rows: list[dict[str, Any]] = []
     for path in files:
-        report, rows = _file_report(path, base=base)
+        report, rows = _file_report(path, base=base, counters=counters)
         file_reports.append(report)
         for row in rows:
             if len(preview_rows) < PREVIEW_ROW_LIMIT:
@@ -600,6 +766,7 @@ def build_local_sports_history_audit_report(
     modules_still_blocked = sorted(SPORT_MODULES - set(modules_with_rows))
     reason_counts = Counter(str(row.get("blocked_reason")) for row in file_reports)
     top_missing_fields = _top_missing_fields(reason_counts)
+    near_miss_examples = _near_miss_examples(file_reports)
     return {
         "ok": True,
         "status": "ok",
@@ -614,6 +781,15 @@ def build_local_sports_history_audit_report(
         "modules_with_preview_rows": modules_with_rows,
         "modules_still_blocked": modules_still_blocked,
         "top_missing_fields": top_missing_fields,
+        "near_miss_file_count": sum(
+            1
+            for row in file_reports
+            if row.get("blocked_reason") in {"missing_event_id", "missing_event_date", "missing_participants", "missing_scores_or_results"}
+        ),
+        "near_miss_examples_redacted": near_miss_examples,
+        "fields_present_counts": dict(sorted(counters["fields_present_counts"].items())),
+        "alias_mapping_hits": dict(sorted(counters["alias_mapping_hits"].items())),
+        "nested_container_hits": dict(sorted(counters["nested_container_hits"].items())),
         "blocked_reason_counts": dict(sorted(reason_counts.items())),
         "candidate_files": file_reports,
         "preview_rows": preview_rows,
@@ -656,7 +832,7 @@ def _top_missing_fields(reason_counts: Counter[str]) -> list[dict[str, Any]]:
         "missing_participants": "home_away_participants",
         "missing_scores_or_results": "scores_or_final_result",
         "insufficient_fields": "minimum_sports_history_fields",
-        "unsupported_shape": "supported_schedule_result_shape",
+        "unsupported_shape": "record_container_or_sports_aliases",
     }
     rows = [
         {"field": field, "count": count, "blocked_reason": reason}
@@ -664,6 +840,30 @@ def _top_missing_fields(reason_counts: Counter[str]) -> list[dict[str, Any]]:
         if count and (field := mapping.get(reason))
     ]
     return sorted(rows, key=lambda row: (-int(row["count"]), str(row["field"])))[:10]
+
+
+def _near_miss_examples(file_reports: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    examples: list[dict[str, Any]] = []
+    near_miss_reasons = {"missing_event_id", "missing_event_date", "missing_participants", "missing_scores_or_results"}
+    for row in file_reports:
+        if row.get("blocked_reason") not in near_miss_reasons:
+            continue
+        examples.append(
+            {
+                "path": row.get("path"),
+                "module_guess": row.get("module_guess"),
+                "blocked_reason": row.get("blocked_reason"),
+                "records_seen": row.get("records_seen"),
+                "records_with_event_id": row.get("records_with_event_id"),
+                "records_with_event_date": row.get("records_with_event_date"),
+                "records_with_home_away": row.get("records_with_home_away"),
+                "records_with_scores": row.get("records_with_scores"),
+                "records_with_final_result": row.get("records_with_final_result"),
+            }
+        )
+        if len(examples) >= 10:
+            break
+    return examples
 
 
 def _recommended_next_action(modules_with_rows: list[str], top_missing_fields: list[dict[str, Any]]) -> str:
@@ -685,7 +885,7 @@ def render_local_sports_history_markdown(report: dict[str, Any]) -> str:
         f"4. modules_with_preview_rows: {', '.join(report.get('modules_with_preview_rows') or []) if report.get('modules_with_preview_rows') else 'none'}",
         f"5. modules_still_blocked: {', '.join(list(report.get('modules_still_blocked') or [])[:13]) if report.get('modules_still_blocked') else 'none'}",
         f"6. top_missing_fields: {json.dumps(report.get('top_missing_fields') or [], sort_keys=True)}",
-        f"7. derived_feature_backfill_report_can_consume_these_preview_rows_later: {str(bool(report.get('derived_feature_backfill_report_can_consume_preview_rows_later'))).lower()}",
+        f"7. alias_mapping_hits: {json.dumps(report.get('alias_mapping_hits') or {}, sort_keys=True)}; nested_container_hits: {json.dumps(report.get('nested_container_hits') or {}, sort_keys=True)}",
         f"8. recommended_next_no_spend_action: {report.get('recommended_next_no_spend_action')}; safety provider_calls_attempted=0 provider_write=false execution_allowed=false raw_payload_included=false secrets_included=false",
         "",
     ]

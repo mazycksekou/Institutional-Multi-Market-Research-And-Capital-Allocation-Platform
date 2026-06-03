@@ -78,6 +78,103 @@ class TestLocalSportsHistoryAudit(unittest.TestCase):
         self.assertFalse(report["raw_payload_included"])
         self.assertFalse(report["secrets_included"])
 
+    def test_cfbd_style_cached_record_maps_to_ncaaf_preview_row(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "scan"
+            self._write_json(
+                root / "ncaaf_cfbd_latest.json",
+                {
+                    "module": "americanfootball_ncaaf",
+                    "normalized_records": [
+                        {
+                            "game_id": "401",
+                            "start_date": "2025-09-06T19:30:00Z",
+                            "home_team": "A State",
+                            "away_team": "B Tech",
+                            "neutral_site": False,
+                            "home_points": 35,
+                            "away_points": 24,
+                            "final_result": "A State",
+                        }
+                    ],
+                    "api_key_configured": False,
+                    "missing_api_key": True,
+                },
+            )
+            report = build_local_sports_history_audit_report(base_data_dir=tmp, scan_roots=[root])
+
+        self.assertEqual(report["usable_tier0_preview_files"], 1)
+        row = report["preview_rows"][0]
+        self.assertEqual(row["module"], "americanfootball_ncaaf")
+        self.assertEqual(row["event_id"], "401")
+        self.assertEqual(row["event_date"], "2025-09-06T19:30:00Z")
+        self.assertEqual(row["home_participant"], "A State")
+        self.assertEqual(row["away_participant"], "B Tech")
+        self.assertEqual(row["home_score"], 35)
+        self.assertEqual(row["away_score"], 24)
+        self.assertEqual(row["final_margin"], 11.0)
+        self.assertEqual(row["total_score"], 59.0)
+        self.assertIn("normalized_records", report["nested_container_hits"])
+        self.assertGreater(report["alias_mapping_hits"]["start_date->event_date"], 0)
+        self.assertGreater(report["alias_mapping_hits"]["home_points->home_score"], 0)
+        self.assertNotIn("secret_risk", report["blocked_reason_counts"])
+
+    def test_nested_compact_records_container_is_scanned(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "scan"
+            self._write_json(
+                root / "mma_compact.json",
+                {
+                    "compact_records": [
+                        {
+                            "sport": "ufc",
+                            "bout_id": "bout-1",
+                            "start_date": "2026-02-01",
+                            "fighter_a": "Red",
+                            "fighter_b": "Blue",
+                            "fighter_a_score": 29,
+                            "fighter_b_score": 28,
+                        }
+                    ]
+                },
+            )
+            report = build_local_sports_history_audit_report(base_data_dir=tmp, scan_roots=[root])
+
+        self.assertEqual(report["modules_with_preview_rows"], ["ufc_mma"])
+        self.assertEqual(report["nested_container_hits"]["compact_records"], 1)
+        row = report["preview_rows"][0]
+        self.assertEqual(row["event_id"], "bout-1")
+        self.assertEqual(row["home_participant"], "Red")
+        self.assertEqual(row["away_participant"], "Blue")
+        self.assertEqual(row["final_margin"], 1.0)
+
+    def test_home_away_win_result_is_explicit_but_scores_not_derived(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "scan"
+            self._write_json(
+                root / "nhl_results.json",
+                {
+                    "records": [
+                        {
+                            "league": "NHL",
+                            "game_id": "nhl-1",
+                            "start_date": "2026-02-01",
+                            "home_team": "Home",
+                            "away_team": "Away",
+                            "home_win": True,
+                        }
+                    ]
+                },
+            )
+            report = build_local_sports_history_audit_report(base_data_dir=tmp, scan_roots=[root])
+
+        row = report["preview_rows"][0]
+        self.assertEqual(row["normalization_status"], "available")
+        self.assertEqual(row["final_result"], "home_win")
+        self.assertEqual(row["winner"], "Home")
+        self.assertIsNone(row["final_margin"])
+        self.assertIsNone(row["total_score"])
+
     def test_missing_scores_are_blocked(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp) / "scan"
@@ -120,6 +217,31 @@ class TestLocalSportsHistoryAudit(unittest.TestCase):
             report = build_local_sports_history_audit_report(base_data_dir=tmp, scan_roots=[root])
 
         self.assertEqual(report["candidate_files"][0]["blocked_reason"], "unsupported_shape")
+        self.assertNotIn("supported_schedule_result_shape", json.dumps(report, sort_keys=True))
+        self.assertEqual(report["top_missing_fields"][0]["field"], "record_container_or_sports_aliases")
+
+    def test_missing_participants_are_blocked(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "scan"
+            self._write_json(
+                root / "tennis_result.json",
+                [{"sport": "tennis", "match_id": "tennis-1", "start_date": "2026-03-01", "player_a_score": 2, "player_b_score": 1}],
+            )
+            report = build_local_sports_history_audit_report(base_data_dir=tmp, scan_roots=[root])
+
+        self.assertEqual(report["candidate_files"][0]["blocked_reason"], "missing_participants")
+
+    def test_missing_scores_or_results_are_blocked_after_aliases(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "scan"
+            self._write_json(
+                root / "nba_fixture.json",
+                [{"league": "NBA", "id": "nba-2", "commence_time": "2026-01-01", "team": "A", "opponent": "B"}],
+            )
+            report = build_local_sports_history_audit_report(base_data_dir=tmp, scan_roots=[root])
+
+        self.assertEqual(report["candidate_files"][0]["blocked_reason"], "missing_scores_or_results")
+        self.assertGreater(report["alias_mapping_hits"]["commence_time->event_date"], 0)
 
     def test_skips_env_and_secret_like_files(self):
         with tempfile.TemporaryDirectory() as tmp:
