@@ -35,8 +35,11 @@ class TestOpenSportsHistoryDerivedFeatures(unittest.TestCase):
             report = build_derived_feature_backfill_report(base_data_dir=tmp, module="baseball_mlb")
 
         self.assertEqual(report["open_sports_history_preview_rows_consumed"], 1)
+        self.assertEqual(report["open_sports_history_real_rows_consumed"], 1)
+        self.assertEqual(report["open_sports_history_synthetic_rows_ignored"], 0)
         self.assertIn("data_sources/open_sports_history/validated/latest.json", report["reports_consumed"])
         self.assertIn("baseball_mlb", report["modules_ready_for_tier0_backfill"])
+        self.assertIn("baseball_mlb", report["modules_ready_for_real_tier0_backfill"])
         self.assertTrue(self._feature(report, "baseball_mlb", "total_runs")["can_derive_now"])
         self.assertTrue(self._feature(report, "baseball_mlb", "winner")["can_derive_now"])
         self.assertEqual(report["provider_calls_attempted"], 0)
@@ -54,7 +57,10 @@ class TestOpenSportsHistoryDerivedFeatures(unittest.TestCase):
             report = build_derived_feature_backfill_report(base_data_dir=tmp, module="americanfootball_nfl")
 
         self.assertEqual(report["open_sports_history_preview_rows_consumed"], 1)
+        self.assertEqual(report["open_sports_history_real_rows_consumed"], 1)
+        self.assertEqual(report["open_sports_history_synthetic_rows_ignored"], 0)
         self.assertIn("americanfootball_nfl", report["modules_ready_for_tier0_backfill"])
+        self.assertIn("americanfootball_nfl", report["modules_ready_for_real_tier0_backfill"])
         self.assertTrue(self._feature(report, "americanfootball_nfl", "total_points")["can_derive_now"])
         self.assertTrue(self._feature(report, "americanfootball_nfl", "winner")["can_derive_now"])
 
@@ -71,6 +77,8 @@ class TestOpenSportsHistoryDerivedFeatures(unittest.TestCase):
             report = build_derived_feature_backfill_report(base_data_dir=tmp, module="baseball_mlb")
 
         self.assertEqual(report["open_sports_history_preview_rows_consumed"], 1)
+        self.assertEqual(report["open_sports_history_real_rows_consumed"], 1)
+        self.assertEqual(report["open_sports_history_synthetic_rows_ignored"], 0)
         self.assertIn("baseball_mlb", report["modules_ready_for_tier0_backfill"])
         self.assertTrue(self._feature(report, "baseball_mlb", "total_runs")["can_derive_now"])
 
@@ -104,6 +112,7 @@ class TestOpenSportsHistoryDerivedFeatures(unittest.TestCase):
             report = build_derived_feature_backfill_report(base_data_dir=tmp, module="americanfootball_nfl")
 
         self.assertIn("americanfootball_nfl", report["modules_ready_for_tier1_derived_backfill"])
+        self.assertIn("americanfootball_nfl", report["modules_ready_for_real_tier1_derived_backfill"])
         self.assertTrue(self._feature(report, "americanfootball_nfl", "rolling_points_for")["can_derive_now"])
         self.assertTrue(self._feature(report, "americanfootball_nfl", "volatility")["can_derive_now"])
         self.assertTrue(self._feature(report, "americanfootball_nfl", "close_game_rate")["can_derive_now"])
@@ -129,6 +138,27 @@ class TestOpenSportsHistoryDerivedFeatures(unittest.TestCase):
         self.assertFalse(report["provider_write"])
         self.assertFalse(report["execution_allowed"])
         self.assertFalse(report["persisted_outcomes"])
+
+    def test_synthetic_open_sports_rows_are_ignored_for_derived_readiness(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "data_sources" / "open_sports_history" / "imports" / "nflverse_nfl" / "sample.csv"
+            self._write_csv(
+                path,
+                [{"game_id": "nfl-synthetic-1", "gameday": "2024-09-05", "season": "2024", "week": "1", "home_team": "KC", "away_team": "BAL", "home_score": "27", "away_score": "20"}],
+            )
+            preview = build_open_sports_history_import_report(source_id="nflverse_nfl", input_path=path, base_data_dir=tmp)
+            write_open_sports_history_import_report(preview, base_data_dir=tmp)
+            report = build_derived_feature_backfill_report(base_data_dir=tmp, module="americanfootball_nfl")
+
+        self.assertEqual(report["open_sports_history_preview_rows_seen"], 1)
+        self.assertEqual(report["open_sports_history_preview_rows_consumed"], 0)
+        self.assertEqual(report["open_sports_history_real_rows_consumed"], 0)
+        self.assertEqual(report["open_sports_history_synthetic_rows_ignored"], 1)
+        self.assertEqual(report["open_sports_history_modules_consumed"], [])
+        self.assertNotIn("americanfootball_nfl", report["modules_ready_for_tier0_backfill"])
+        self.assertNotIn("americanfootball_nfl", report["modules_ready_for_real_tier0_backfill"])
+        self.assertFalse(self._feature(report, "americanfootball_nfl", "total_points")["can_derive_now"])
+        self.assertTrue(report["synthetic_rows_ignored_for_real_coverage"])
 
 
 if __name__ == "__main__":

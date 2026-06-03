@@ -34,6 +34,8 @@ Retrosheet local CSV imports normalize MLB event IDs, dates, home/away teams, sc
 
 nflverse local CSV imports normalize NFL game IDs, dates, season/week, home/away teams, scores, winner, final margin, and total points. CSV direct download support is available only when `-AllowDownload` is explicitly passed.
 
+When downloads are allowed, the lane resolves the official `schedules` release through the GitHub API at `https://api.github.com/repos/nflverse/nflverse-data/releases/tags/schedules` and selects the official `games.csv` release asset. If that release asset cannot be resolved, the only fallback is the official nflverse raw CSV at `https://raw.githubusercontent.com/nflverse/nfldata/master/data/games.csv`. The report stores compact source metadata such as release tag, asset name, host, and verifier fields; it does not persist raw API payloads or downloaded CSV payloads.
+
 ## Soccer, Tennis, And SportsDataverse Lanes
 
 The registry includes second-wave lanes for:
@@ -73,7 +75,9 @@ No source is globally enabled by default. Paid sources are not enabled.
 
 ## Download Rules
 
-No downloads occur by default. Downloads require `-AllowDownload`, an approved current-phase source, and a supported direct-download lane. Missing or unimplemented download paths are explicit blockers, not silent fallbacks.
+No downloads occur by default. Downloads require `-AllowDownload`, an approved current-phase source, and a supported direct-download lane. Missing or unimplemented download paths are explicit blockers, not silent fallbacks. Downloaded datasets and CSV files are ignored by git through the repository ignore rules.
+
+For `nflverse_nfl` one-season downloads, the backfill uses the source hard cap when no explicit `-MaxRecords` value is supplied so a full real season can be validated in one run.
 
 ## Bulk Backfill Rules
 
@@ -112,9 +116,15 @@ Validated preview rows contain only:
 - `blocked_reason`
 - `source_file_or_ref`
 - `source_record_hash`
+- `data_kind`
+- `is_synthetic`
+- `source_url_kind`
+- `source_verified_at`
 - `raw_payload_included=false`
 
 Rows missing event ID, date, participants, or scores/results are rejected. Scores and dates are not inferred.
+
+`data_kind=real_open_data` is used only for verified official downloads or explicit non-import user files. Rows from local `data_sources/open_sports_history/imports/...` fixtures are `data_kind=synthetic_fixture` and `is_synthetic=true`.
 
 ## Preview Rows Vs Outcome Persistence
 
@@ -128,7 +138,9 @@ Rows missing event ID, date, participants, or scores/results are rejected. Score
 - `data/data_sources/open_sports_history/validated/by_module/<module>.json`
 - `data/data_sources/open_sports_history/validated/by_season/<module>/<season>.json`
 
-Tier 0 features become available when valid result rows exist. Tier 1 rolling/form features require enough chronological history and otherwise report `insufficient_history`.
+Tier 0 features become available when valid real result rows exist. Tier 1 rolling/form features require enough chronological real history and otherwise report `insufficient_history`.
+
+Synthetic fixture rows are counted separately in coverage and derived-feature reports. They do not count toward real coverage, Tier 0 production readiness, or Tier 1 derived-feature readiness.
 
 ## Safety Invariants
 

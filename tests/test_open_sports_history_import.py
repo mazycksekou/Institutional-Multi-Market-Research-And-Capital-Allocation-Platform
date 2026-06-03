@@ -1,16 +1,37 @@
 import csv
+import inspect
 import json
 import tempfile
 import unittest
+import urllib.error
 from pathlib import Path
 from unittest.mock import patch
 
+import automation_scheduler.open_sports_history_import as open_sports_history_import
 from automation_scheduler.open_sports_history_import import (
     HARD_MAX_RECORDS,
+    NFLVERSE_RAW_GAMES_CSV_FALLBACK_URL,
+    classify_open_data_source_url,
     build_open_sports_history_import_report,
     normalize_open_sports_history_row,
+    resolve_nflverse_schedules_source,
+    validate_nflverse_schedule_columns,
     write_open_sports_history_import_report,
 )
+
+
+class FakeHttpResponse:
+    def __init__(self, text):
+        self._body = text.encode("utf-8")
+
+    def read(self, _limit=-1):
+        return self._body
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_args):
+        return False
 
 
 class TestOpenSportsHistoryImport(unittest.TestCase):
@@ -31,6 +52,157 @@ class TestOpenSportsHistoryImport(unittest.TestCase):
         self.assertEqual(report["downloads_attempted"], 0)
         self.assertEqual(report["provider_calls_attempted"], 0)
         urlopen.assert_not_called()
+
+    def test_nflverse_release_resolver_selects_official_games_csv(self):
+        release = {
+            "tag_name": "schedules",
+            "assets": [
+                {
+                    "name": "timestamp.txt",
+                    "browser_download_url": "https://github.com/nflverse/nflverse-data/releases/download/schedules/timestamp.txt",
+                    "size": 10,
+                },
+                {
+                    "name": "games.csv",
+                    "browser_download_url": "https://github.com/nflverse/nflverse-data/releases/download/schedules/games.csv",
+                    "size": 123,
+                },
+            ],
+        }
+        with patch("automation_scheduler.open_sports_history_import._urlopen_json", return_value=release):
+            resolved = resolve_nflverse_schedules_source()
+
+        self.assertTrue(resolved["source_url_verified"])
+        self.assertEqual(resolved["selected_source_url_kind"], "nflverse_data_release_asset")
+        self.assertEqual(resolved["selected_source_host"], "github.com")
+        self.assertEqual(resolved["selected_release_tag"], "schedules")
+        self.assertEqual(resolved["selected_asset_name"], "games.csv")
+        self.assertEqual(resolved["selected_asset_format"], "csv")
+        self.assertFalse(resolved["fallback_used"])
+        self.assertEqual(resolved["provider_calls_attempted"], 1)
+        self.assertEqual(resolved["provider_calls_succeeded"], 1)
+
+    def test_nflverse_resolver_falls_back_to_official_raw_games_csv_when_release_asset_missing(self):
+        with patch("automation_scheduler.open_sports_history_import._urlopen_json", return_value={"assets": []}):
+            resolved = resolve_nflverse_schedules_source()
+
+        self.assertTrue(resolved["source_url_verified"])
+        self.assertEqual(resolved["selected_source_url_kind"], "nflverse_nfldata_games_csv_fallback")
+        self.assertEqual(resolved["selected_source_host"], "raw.githubusercontent.com")
+        self.assertEqual(resolved["selected_asset_name"], "games.csv")
+        self.assertTrue(resolved["fallback_used"])
+        self.assertEqual(resolved["url_resolution_blocker"], "source_not_available")
+        self.assertEqual(resolved["_download_url"], NFLVERSE_RAW_GAMES_CSV_FALLBACK_URL)
+
+    def test_nflverse_resolver_can_report_unresolved_without_fallback(self):
+        with patch("automation_scheduler.open_sports_history_import._urlopen_json", return_value={"assets": []}):
+            resolved = resolve_nflverse_schedules_source(allow_fallback=False)
+
+        self.assertFalse(resolved["source_url_verified"])
+        self.assertEqual(resolved["url_resolution_blocker"], "source_not_available")
+        self.assertFalse(resolved["fallback_used"])
+        self.assertIsNone(resolved["_download_url"])
+
+    def test_nflverse_resolver_falls_back_after_provider_error(self):
+        with patch("automation_scheduler.open_sports_history_import._urlopen_json", side_effect=urllib.error.URLError("boom")):
+            resolved = resolve_nflverse_schedules_source()
+
+        self.assertTrue(resolved["fallback_used"])
+        self.assertEqual(resolved["url_resolution_blocker"], "provider_error")
+        self.assertEqual(resolved["provider_calls_attempted"], 1)
+        self.assertEqual(resolved["provider_calls_succeeded"], 0)
+
+    def test_source_url_classifier_rejects_unofficial_download_hosts(self):
+        official = classify_open_data_source_url("https://github.com/nflverse/nflverse-data/releases/download/schedules/games.csv")
+        fallback = classify_open_data_source_url(NFLVERSE_RAW_GAMES_CSV_FALLBACK_URL)
+        unofficial = classify_open_data_source_url("https://example.com/games.csv")
+
+        self.assertTrue(official["source_url_verified"])
+        self.assertEqual(official["selected_source_url_kind"], "nflverse_data_release_asset")
+        self.assertTrue(fallback["source_url_verified"])
+        self.assertEqual(fallback["selected_source_url_kind"], "nflverse_nfldata_games_csv_fallback")
+        self.assertFalse(unofficial["source_url_verified"])
+        self.assertEqual(unofficial["url_resolution_blocker"], "source_url_unverified")
+
+    def test_nflverse_schedule_columns_are_validated(self):
+        valid, missing = validate_nflverse_schedule_columns(
+            ["game_id", "gameday", "season", "home_team", "away_team", "home_score", "away_score"]
+        )
+        invalid, invalid_missing = validate_nflverse_schedule_columns(["game_id", "season"])
+
+        self.assertTrue(valid)
+        self.assertEqual(missing, [])
+        self.assertFalse(invalid)
+        self.assertIn("event_date", invalid_missing)
+        self.assertIn("home_score", invalid_missing)
+
+    def test_nflverse_download_uses_python_http_and_compact_official_metadata_only(self):
+        release = {
+            "assets": [
+                {
+                    "name": "games.csv",
+                    "browser_download_url": "https://github.com/nflverse/nflverse-data/releases/download/schedules/games.csv",
+                    "size": 321,
+                }
+            ]
+        }
+        csv_text = "\n".join(
+            [
+                "game_id,gameday,season,week,home_team,away_team,home_score,away_score",
+                "2023_01_A_B,2023-09-01,2023,1,A,B,10,7",
+                "2024_01_BAL_KC,2024-09-05,2024,1,KC,BAL,27,20",
+                "2024_02_BUF_MIA,2024-09-12,2024,2,MIA,BUF,31,28",
+            ]
+        )
+        calls = []
+
+        def fake_urlopen(request, timeout=20):
+            url = getattr(request, "full_url", str(request))
+            calls.append((url, timeout))
+            if url.endswith("/releases/tags/schedules"):
+                return FakeHttpResponse(json.dumps(release))
+            if url.endswith("/releases/download/schedules/games.csv"):
+                return FakeHttpResponse(csv_text)
+            raise AssertionError(f"unexpected url {url}")
+
+        with patch("automation_scheduler.open_sports_history_import.urllib.request.urlopen", side_effect=fake_urlopen):
+            report = build_open_sports_history_import_report(
+                source_id="nflverse_nfl",
+                season=2024,
+                allow_download=True,
+                max_records=10,
+            )
+
+        rendered = json.dumps(report, sort_keys=True)
+        self.assertTrue(report["ok"])
+        self.assertEqual(report["records_received"], 2)
+        self.assertEqual(report["records_valid"], 2)
+        self.assertEqual(report["downloads_attempted"], 1)
+        self.assertEqual(report["downloads_succeeded"], 1)
+        self.assertEqual(report["provider_calls_attempted"], 1)
+        self.assertEqual(report["provider_calls_succeeded"], 1)
+        self.assertEqual(report["data_kind"], "real_open_data")
+        self.assertFalse(report["is_synthetic"])
+        self.assertEqual(report["selected_source_url_kind"], "nflverse_data_release_asset")
+        self.assertEqual(report["selected_asset_name"], "games.csv")
+        self.assertEqual({row["season"] for row in report["validated_preview_rows"]}, {"2024"})
+        self.assertTrue(all(row["data_kind"] == "real_open_data" for row in report["validated_preview_rows"]))
+        self.assertTrue(all(row["is_synthetic"] is False for row in report["validated_preview_rows"]))
+        self.assertEqual([url for url, _ in calls], [
+            "https://api.github.com/repos/nflverse/nflverse-data/releases/tags/schedules",
+            "https://github.com/nflverse/nflverse-data/releases/download/schedules/games.csv",
+        ])
+        self.assertNotIn("browser_download_url", rendered)
+        self.assertNotIn('"assets"', rendered)
+        self.assertFalse(report["raw_payload_included"])
+        self.assertFalse(report["secrets_included"])
+
+    def test_import_module_has_no_browser_or_html_scraping_dependency(self):
+        source = inspect.getsource(open_sports_history_import)
+        self.assertIn("urllib.request", source)
+        self.assertNotIn("BeautifulSoup", source)
+        self.assertNotIn("playwright", source)
+        self.assertNotIn("selenium", source)
 
     def test_max_records_default_and_hard_cap_are_enforced(self):
         defaulted = build_open_sports_history_import_report(source_id="retrosheet_mlb", input_path="missing.csv")

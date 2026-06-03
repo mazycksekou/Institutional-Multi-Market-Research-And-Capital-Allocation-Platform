@@ -117,6 +117,27 @@ def _dedupe_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return out
 
 
+def _row_is_real_open_data(row: dict[str, Any]) -> bool:
+    synthetic_flag = row.get("is_synthetic")
+    synthetic_text = str(synthetic_flag).strip().lower()
+    return row.get("data_kind") == "real_open_data" and synthetic_flag is not True and synthetic_text not in {"true", "1", "yes"}
+
+
+def _real_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [row for row in rows if _row_is_real_open_data(row)]
+
+
+def _count_by(rows: list[dict[str, Any]], key: str) -> dict[str, int]:
+    counts = Counter(str(row.get(key) or "unknown") for row in rows)
+    return dict(sorted(counts.items()))
+
+
+def _valid_row_kind_counts(import_report: dict[str, Any]) -> tuple[int, int]:
+    rows = list(import_report.get("validated_preview_rows") or [])
+    real_count = len(_real_rows(rows))
+    return real_count, max(0, len(rows) - real_count)
+
+
 def _load_validated_preview_rows(*, base_data_dir: str | Path | None = None) -> list[dict[str, Any]]:
     root = _validated_root(base_data_dir)
     payloads: list[Any] = [_read_json(root / "latest.json")]
@@ -146,6 +167,23 @@ def _session_id(mode: str, source_id: str | None, explicit: str | None = None) -
     if explicit:
         return sanitize_filename(explicit)
     return sanitize_filename(f"open_sports_history_{mode}_{source_id or 'all'}_{utc_now_iso().replace(':', '-')}_{uuid4().hex[:8]}")
+
+
+def _import_max_records(
+    source: dict[str, Any],
+    *,
+    source_id: str,
+    max_records: int | None,
+    allow_download: bool,
+    smoke_test: bool = False,
+) -> int | None:
+    if max_records is not None:
+        return max_records
+    if smoke_test:
+        return min(int(source.get("max_records_default") or 25), 25)
+    if allow_download and source_id == "nflverse_nfl":
+        return int(source.get("max_records_hard_cap") or 500)
+    return None
 
 
 def _smoke_test_passed(source_id: str, *, base_data_dir: str | Path | None = None) -> bool:
@@ -185,9 +223,14 @@ def _error_report(
         "message": message,
         "runtime_data_dir": str(resolve_base_data_dir(base_data_dir)),
         "records_valid": 0,
+        "real_rows_count": 0,
+        "synthetic_rows_count": 0,
         "records_rejected": 0,
         "downloads_attempted": 0,
+        "downloads_succeeded": 0,
         "provider_calls_attempted": 0,
+        "provider_calls_succeeded": 0,
+        "provider_calls_failed": 0,
         "outcome_persistence_attempted": False,
         "import_or_persist_endpoint_called": False,
         "persisted_outcomes": False,
@@ -246,14 +289,33 @@ def _run_import(
 
 
 def _season_result(import_report: dict[str, Any], *, season: int | str | None) -> dict[str, Any]:
+    real_count, synthetic_count = _valid_row_kind_counts(import_report)
     return {
         "season": season,
         "status": import_report.get("status"),
         "blocked_reason": import_report.get("blocked_reason"),
+        "data_kind": import_report.get("data_kind"),
+        "is_synthetic": import_report.get("is_synthetic"),
+        "source_url_verified": import_report.get("source_url_verified"),
+        "selected_source_url_kind": import_report.get("selected_source_url_kind"),
+        "selected_source_host": import_report.get("selected_source_host"),
+        "selected_release_tag": import_report.get("selected_release_tag"),
+        "selected_asset_name": import_report.get("selected_asset_name"),
+        "selected_asset_format": import_report.get("selected_asset_format"),
+        "fallback_used": import_report.get("fallback_used"),
+        "url_resolution_blocker": import_report.get("url_resolution_blocker"),
+        "source_verified_at": import_report.get("source_verified_at"),
         "records_received": int(import_report.get("records_received", 0) or 0),
         "records_valid": int(import_report.get("records_valid", 0) or 0),
+        "real_rows_count": real_count,
+        "synthetic_rows_count": synthetic_count,
+        "valid_real_preview_rows": real_count,
         "records_rejected": int(import_report.get("records_rejected", 0) or 0),
         "downloads_attempted": int(import_report.get("downloads_attempted", 0) or 0),
+        "downloads_succeeded": int(import_report.get("downloads_succeeded", 0) or 0),
+        "provider_calls_attempted": int(import_report.get("provider_calls_attempted", 0) or 0),
+        "provider_calls_succeeded": int(import_report.get("provider_calls_succeeded", 0) or 0),
+        "provider_calls_failed": int(import_report.get("provider_calls_failed", 0) or 0),
         "validated_paths": {
             "latest_json_path": import_report.get("latest_json_path"),
             "by_source_paths": import_report.get("by_source_paths") or [],
@@ -294,9 +356,14 @@ def _base_report(
         "resume": bool(resume),
         "runtime_data_dir": str(resolve_base_data_dir(base_data_dir)),
         "records_valid": 0,
+        "real_rows_count": 0,
+        "synthetic_rows_count": 0,
         "records_rejected": 0,
         "downloads_attempted": 0,
+        "downloads_succeeded": 0,
         "provider_calls_attempted": 0,
+        "provider_calls_succeeded": 0,
+        "provider_calls_failed": 0,
         "outcome_persistence_attempted": False,
         "import_or_persist_endpoint_called": False,
         "persisted_outcomes": False,
@@ -351,7 +418,7 @@ def build_open_sports_history_backfill_report(
     assert source_id is not None
 
     if mode == "smoke_test":
-        smoke_max = max_records if max_records is not None else min(int(source.get("max_records_default") or 25), 25)
+        smoke_max = _import_max_records(source, source_id=source_id, max_records=max_records, allow_download=allow_download, smoke_test=True)
         import_report, paths = _run_import(
             source_id=source_id,
             season=planned_seasons[0] if seasons else None,
@@ -362,6 +429,7 @@ def build_open_sports_history_backfill_report(
             persist_preview=persist_preview,
             base_data_dir=base_data_dir,
         )
+        real_count, synthetic_count = _valid_row_kind_counts(import_report)
         report.update(
             {
                 "status": "smoke_test_passed" if import_report.get("records_valid", 0) else "blocked",
@@ -369,8 +437,14 @@ def build_open_sports_history_backfill_report(
                 "blocked_reason": import_report.get("blocked_reason"),
                 "smoke_test_passed": bool(import_report.get("records_valid", 0)),
                 "records_valid": int(import_report.get("records_valid", 0) or 0),
+                "real_rows_count": real_count,
+                "synthetic_rows_count": synthetic_count,
                 "records_rejected": int(import_report.get("records_rejected", 0) or 0),
                 "downloads_attempted": int(import_report.get("downloads_attempted", 0) or 0),
+                "downloads_succeeded": int(import_report.get("downloads_succeeded", 0) or 0),
+                "provider_calls_attempted": int(import_report.get("provider_calls_attempted", 0) or 0),
+                "provider_calls_succeeded": int(import_report.get("provider_calls_succeeded", 0) or 0),
+                "provider_calls_failed": int(import_report.get("provider_calls_failed", 0) or 0),
                 "season_results": [_season_result(import_report, season=import_report.get("season"))],
                 "completed_seasons": [import_report.get("season")] if import_report.get("records_valid") and import_report.get("season") else [],
                 "pending_seasons": [],
@@ -384,25 +458,33 @@ def build_open_sports_history_backfill_report(
         if not seasons:
             return _error_report(mode=mode, source_id=source_id, blocked_reason="insufficient_fields", message="season_backfill requires one season", base_data_dir=base_data_dir, session_id=sid)
         season = planned_seasons[0]
+        season_max = _import_max_records(source, source_id=source_id, max_records=max_records, allow_download=allow_download)
         import_report, paths = _run_import(
             source_id=source_id,
             season=season,
             input_path=input_path,
-            max_records=max_records,
+            max_records=season_max,
             dry_run=dry_run,
             allow_download=allow_download,
             persist_preview=persist_preview,
             base_data_dir=base_data_dir,
         )
         valid = int(import_report.get("records_valid", 0) or 0)
+        real_count, synthetic_count = _valid_row_kind_counts(import_report)
         report.update(
             {
                 "status": "season_backfill_complete" if valid else "blocked",
                 "ok": bool(valid),
                 "blocked_reason": import_report.get("blocked_reason"),
                 "records_valid": valid,
+                "real_rows_count": real_count,
+                "synthetic_rows_count": synthetic_count,
                 "records_rejected": int(import_report.get("records_rejected", 0) or 0),
                 "downloads_attempted": int(import_report.get("downloads_attempted", 0) or 0),
+                "downloads_succeeded": int(import_report.get("downloads_succeeded", 0) or 0),
+                "provider_calls_attempted": int(import_report.get("provider_calls_attempted", 0) or 0),
+                "provider_calls_succeeded": int(import_report.get("provider_calls_succeeded", 0) or 0),
+                "provider_calls_failed": int(import_report.get("provider_calls_failed", 0) or 0),
                 "season_results": [_season_result(import_report, season=season)],
                 "completed_seasons": [season] if valid else [],
                 "pending_seasons": [] if valid else [season],
@@ -434,7 +516,8 @@ def build_open_sports_history_backfill_report(
         season_results: list[dict[str, Any]] = []
         completed: list[int | str] = []
         pending: list[int | str] = []
-        total_valid = total_rejected = total_downloads = 0
+        total_valid = total_real = total_synthetic = total_rejected = total_downloads = total_downloads_succeeded = 0
+        total_provider_calls = total_provider_calls_succeeded = total_provider_calls_failed = 0
         if input_path:
             import_report, paths = _run_import(
                 source_id=source_id,
@@ -455,25 +538,38 @@ def build_open_sports_history_backfill_report(
                     pending.append(season)
                 season_results.append(_season_result(import_report, season=season))
             total_valid = int(import_report.get("records_valid", 0) or 0)
+            total_real, total_synthetic = _valid_row_kind_counts(import_report)
             total_rejected = int(import_report.get("records_rejected", 0) or 0)
             total_downloads = int(import_report.get("downloads_attempted", 0) or 0)
+            total_downloads_succeeded = int(import_report.get("downloads_succeeded", 0) or 0)
+            total_provider_calls = int(import_report.get("provider_calls_attempted", 0) or 0)
+            total_provider_calls_succeeded = int(import_report.get("provider_calls_succeeded", 0) or 0)
+            total_provider_calls_failed = int(import_report.get("provider_calls_failed", 0) or 0)
             report["validated_paths"] = paths
         else:
             for season in planned_seasons:
+                season_max = _import_max_records(source, source_id=source_id, max_records=max_records, allow_download=allow_download)
                 import_report, paths = _run_import(
                     source_id=source_id,
                     season=season,
                     input_path=None,
-                    max_records=max_records,
+                    max_records=season_max,
                     dry_run=dry_run,
                     allow_download=allow_download,
                     persist_preview=persist_preview,
                     base_data_dir=base_data_dir,
                 )
                 valid = int(import_report.get("records_valid", 0) or 0)
+                real_count, synthetic_count = _valid_row_kind_counts(import_report)
                 total_valid += valid
+                total_real += real_count
+                total_synthetic += synthetic_count
                 total_rejected += int(import_report.get("records_rejected", 0) or 0)
                 total_downloads += int(import_report.get("downloads_attempted", 0) or 0)
+                total_downloads_succeeded += int(import_report.get("downloads_succeeded", 0) or 0)
+                total_provider_calls += int(import_report.get("provider_calls_attempted", 0) or 0)
+                total_provider_calls_succeeded += int(import_report.get("provider_calls_succeeded", 0) or 0)
+                total_provider_calls_failed += int(import_report.get("provider_calls_failed", 0) or 0)
                 season_results.append(_season_result(import_report, season=season))
                 if valid:
                     completed.append(season)
@@ -487,8 +583,14 @@ def build_open_sports_history_backfill_report(
                 "ok": bool(total_valid),
                 "blocked_reason": None if total_valid else (season_results[-1].get("blocked_reason") if season_results else "no_records_found"),
                 "records_valid": total_valid,
+                "real_rows_count": total_real,
+                "synthetic_rows_count": total_synthetic,
                 "records_rejected": total_rejected,
                 "downloads_attempted": total_downloads,
+                "downloads_succeeded": total_downloads_succeeded,
+                "provider_calls_attempted": total_provider_calls,
+                "provider_calls_succeeded": total_provider_calls_succeeded,
+                "provider_calls_failed": total_provider_calls_failed,
                 "season_results": season_results,
                 "completed_seasons": completed,
                 "pending_seasons": pending,
@@ -511,25 +613,33 @@ def build_open_sports_history_backfill_report(
             }
         )
         if input_path or allow_download:
+            scheduled_max = _import_max_records(source, source_id=source_id, max_records=max_records, allow_download=allow_download)
             import_report, paths = _run_import(
                 source_id=source_id,
                 season=next_season,
                 input_path=input_path,
-                max_records=max_records,
+                max_records=scheduled_max,
                 dry_run=dry_run,
                 allow_download=allow_download,
                 persist_preview=persist_preview,
                 base_data_dir=base_data_dir,
             )
             valid = int(import_report.get("records_valid", 0) or 0)
+            real_count, synthetic_count = _valid_row_kind_counts(import_report)
             report.update(
                 {
                     "status": "scheduled_session_chunk_complete" if valid else "blocked",
                     "ok": bool(valid),
                     "blocked_reason": import_report.get("blocked_reason"),
                     "records_valid": valid,
+                    "real_rows_count": real_count,
+                    "synthetic_rows_count": synthetic_count,
                     "records_rejected": int(import_report.get("records_rejected", 0) or 0),
                     "downloads_attempted": int(import_report.get("downloads_attempted", 0) or 0),
+                    "downloads_succeeded": int(import_report.get("downloads_succeeded", 0) or 0),
+                    "provider_calls_attempted": int(import_report.get("provider_calls_attempted", 0) or 0),
+                    "provider_calls_succeeded": int(import_report.get("provider_calls_succeeded", 0) or 0),
+                    "provider_calls_failed": int(import_report.get("provider_calls_failed", 0) or 0),
                     "season_results": [_season_result(import_report, season=next_season)],
                     "completed_seasons": [next_season] if valid and next_season is not None else [],
                     "pending_seasons": planned_seasons[1:] if valid else planned_seasons,
@@ -550,47 +660,96 @@ def build_open_sports_history_coverage_report(*, base_data_dir: str | Path | Non
         by_module[str(row.get("module") or "unknown")].append(row)
         by_source[str(row.get("source_id") or "unknown")].append(row)
 
-    real_rows = [row for row in rows if row.get("data_kind") == "real_open_data"]
-    synthetic_rows = [row for row in rows if row.get("data_kind") != "real_open_data"]
+    real_rows = _real_rows(rows)
+    synthetic_rows = [row for row in rows if not _row_is_real_open_data(row)]
+    target_seasons = [str(season) for season in _target_seasons(target_years=DEFAULT_TARGET_YEARS)]
 
     module_rows: list[dict[str, Any]] = []
+    real_coverage_percentage_by_module: dict[str, float] = {}
+    seasons_missing: dict[str, list[str]] = {}
     for module, module_records in sorted(by_module.items()):
-        real_module_records = [r for r in module_records if r.get("data_kind") == "real_open_data"]
+        real_module_records = _real_rows(module_records)
+        synthetic_module_records = [r for r in module_records if not _row_is_real_open_data(r)]
         seasons = sorted({str(row.get("season")) for row in module_records if row.get("season") is not None})
+        real_seasons = sorted({str(row.get("season")) for row in real_module_records if row.get("season") is not None})
+        synthetic_seasons = sorted({str(row.get("season")) for row in synthetic_module_records if row.get("season") is not None})
         sources = sorted({str(row.get("source_id")) for row in module_records if row.get("source_id")})
+        missing = [season for season in target_seasons if season not in set(real_seasons)]
+        seasons_missing[module] = missing
+        real_coverage_percentage_by_module[module] = round(
+            (len(set(real_seasons) & set(target_seasons)) / max(1, len(target_seasons))) * 100,
+            2,
+        )
         module_rows.append(
             {
                 "module": module,
+                "total_rows": len(module_records),
                 "records_valid": len(module_records),
                 "real_records": len(real_module_records),
-                "synthetic_records": len(module_records) - len(real_module_records),
+                "real_rows_count": len(real_module_records),
+                "synthetic_records": len(synthetic_module_records),
+                "synthetic_rows_count": len(synthetic_module_records),
                 "sources": sources,
                 "seasons": seasons,
+                "real_seasons": real_seasons,
+                "synthetic_seasons": synthetic_seasons,
+                "target_seasons_missing": missing,
                 "season_count": len(seasons),
-                "tier0_ready": bool(module_records),
+                "real_season_count": len(real_seasons),
+                "tier0_ready": bool(real_module_records),
                 "tier0_with_real_data": bool(real_module_records),
-                "tier1_candidate": len(module_records) >= 3,
+                "tier1_candidate": len(real_module_records) >= 3,
                 "tier1_with_real_data": len(real_module_records) >= 3,
+                "synthetic_rows_ignored_for_real_coverage": True,
             }
         )
     source_rows = [
         {
             "source_id": source,
+            "total_rows": len(source_records),
             "records_valid": len(source_records),
-            "real_records": len([r for r in source_records if r.get("data_kind") == "real_open_data"]),
+            "real_records": len(_real_rows(source_records)),
+            "real_rows_count": len(_real_rows(source_records)),
+            "synthetic_records": len(source_records) - len(_real_rows(source_records)),
+            "synthetic_rows_count": len(source_records) - len(_real_rows(source_records)),
             "modules": sorted({str(row.get("module")) for row in source_records if row.get("module")}),
             "seasons": sorted({str(row.get("season")) for row in source_records if row.get("season") is not None}),
+            "real_seasons": sorted({str(row.get("season")) for row in _real_rows(source_records) if row.get("season") is not None}),
         }
         for source, source_records in sorted(by_source.items())
     ]
-    season_counts = Counter(
-        (str(row.get("module") or "unknown"), str(row.get("season") or "unknown"))
-        for row in rows
-    )
+    season_counts: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
+    for row in rows:
+        season_counts[(str(row.get("module") or "unknown"), str(row.get("season") or "unknown"))].append(row)
     season_rows = [
-        {"module": module, "season": season, "records_valid": count}
-        for (module, season), count in sorted(season_counts.items())
+        {
+            "module": module,
+            "season": season,
+            "records_valid": len(season_records),
+            "real_records": len(_real_rows(season_records)),
+            "synthetic_records": len(season_records) - len(_real_rows(season_records)),
+        }
+        for (module, season), season_records in sorted(season_counts.items())
     ]
+    real_module_season_counts = Counter(
+        (str(row.get("module") or "unknown"), str(row.get("season") or "unknown"))
+        for row in real_rows
+    )
+    real_rows_by_module_season: dict[str, dict[str, int]] = defaultdict(dict)
+    for (module, season), count in sorted(real_module_season_counts.items()):
+        real_rows_by_module_season[module][season] = count
+    modules_ready_real_tier0 = [row["module"] for row in module_rows if row["tier0_with_real_data"]]
+    modules_ready_real_tier1 = [row["module"] for row in module_rows if row["tier1_with_real_data"]]
+    covered_slots = len({(str(row.get("module") or "unknown"), str(row.get("season") or "unknown")) for row in real_rows if str(row.get("season") or "unknown") in target_seasons})
+    total_slots = len(module_rows) * len(target_seasons)
+    real_coverage_percentage = round((covered_slots / total_slots) * 100, 2) if total_slots else 0.0
+    next_recommended_backfill = (
+        "run season_backfill with real open-data source"
+        if not real_rows
+        else "continue season_backfill for missing target seasons"
+        if any(seasons_missing.values())
+        else "feed validated real-data rows into derived_feature_backfill_report"
+    )
     return {
         **SAFETY_FIELDS,
         "ok": True,
@@ -600,13 +759,30 @@ def build_open_sports_history_coverage_report(*, base_data_dir: str | Path | Non
         "run_id": sanitize_filename(f"open_sports_history_coverage_{utc_now_iso().replace(':', '-')}_{uuid4().hex[:8]}"),
         "mode": "coverage_report",
         "runtime_data_dir": str(resolve_base_data_dir(base_data_dir)),
+        "total_rows": len(rows),
         "records_valid": len(rows),
+        "real_rows_count": len(real_rows),
         "real_records": len(real_rows),
+        "synthetic_rows_count": len(synthetic_rows),
         "synthetic_records": len(synthetic_rows),
+        "synthetic_rows_ignored_for_real_coverage": True,
+        "target_coverage_years": DEFAULT_TARGET_YEARS,
+        "target_seasons": target_seasons,
+        "real_rows_by_source": _count_by(real_rows, "source_id"),
+        "real_rows_by_module": _count_by(real_rows, "module"),
+        "real_rows_by_season": _count_by(real_rows, "season"),
+        "real_rows_by_module_season": dict(sorted(real_rows_by_module_season.items())),
+        "real_coverage_percentage": real_coverage_percentage,
+        "real_coverage_percentage_by_module": dict(sorted(real_coverage_percentage_by_module.items())),
+        "seasons_missing": seasons_missing,
         "modules_with_valid_rows": sorted(by_module),
         "sources_with_valid_rows": sorted(by_source),
-        "modules_ready_for_tier0": [row["module"] for row in module_rows if row["tier0_ready"]],
-        "modules_ready_for_tier1_candidate": [row["module"] for row in module_rows if row["tier1_candidate"]],
+        "modules_with_real_rows": sorted({str(row.get("module")) for row in real_rows if row.get("module")}),
+        "sources_with_real_rows": sorted({str(row.get("source_id")) for row in real_rows if row.get("source_id")}),
+        "modules_ready_for_tier0": modules_ready_real_tier0,
+        "modules_ready_for_tier1_candidate": modules_ready_real_tier1,
+        "modules_ready_for_real_tier0": modules_ready_real_tier0,
+        "modules_ready_for_real_tier1": modules_ready_real_tier1,
         "module_coverage": module_rows,
         "source_coverage": source_rows,
         "season_coverage": season_rows,
@@ -615,7 +791,8 @@ def build_open_sports_history_coverage_report(*, base_data_dir: str | Path | Non
         "outcome_persistence_attempted": False,
         "import_or_persist_endpoint_called": False,
         "persisted_outcomes": False,
-        "recommended_next_action": "feed validated real-data rows into derived_feature_backfill_report" if real_rows else "run season_backfill with real open-data source",
+        "recommended_next_action": next_recommended_backfill,
+        "next_recommended_backfill": next_recommended_backfill,
         "storage_health": get_storage_health(),
     }
 
@@ -624,12 +801,14 @@ def render_open_sports_history_coverage_markdown(report: dict[str, Any]) -> str:
     lines = [
         "# Open Sports History Coverage",
         "",
-        f"1. records_valid: {report.get('records_valid')}",
-        f"2. modules_with_valid_rows: {', '.join(report.get('modules_with_valid_rows') or []) if report.get('modules_with_valid_rows') else 'none'}",
-        f"3. sources_with_valid_rows: {', '.join(report.get('sources_with_valid_rows') or []) if report.get('sources_with_valid_rows') else 'none'}",
-        f"4. modules_ready_for_tier0: {', '.join(report.get('modules_ready_for_tier0') or []) if report.get('modules_ready_for_tier0') else 'none'}",
-        f"5. modules_ready_for_tier1_candidate: {', '.join(report.get('modules_ready_for_tier1_candidate') or []) if report.get('modules_ready_for_tier1_candidate') else 'none'}",
-        "6. safety: provider_calls_attempted=0; downloads_attempted=0; provider_write=false; execution_allowed=false; raw_payload_included=false; secrets_included=false",
+        f"1. total_rows: {report.get('total_rows')}",
+        f"2. real_rows_count: {report.get('real_rows_count')}",
+        f"3. synthetic_rows_count: {report.get('synthetic_rows_count')}",
+        f"4. modules_with_real_rows: {', '.join(report.get('modules_with_real_rows') or []) if report.get('modules_with_real_rows') else 'none'}",
+        f"5. modules_ready_for_real_tier0: {', '.join(report.get('modules_ready_for_real_tier0') or []) if report.get('modules_ready_for_real_tier0') else 'none'}",
+        f"6. modules_ready_for_real_tier1: {', '.join(report.get('modules_ready_for_real_tier1') or []) if report.get('modules_ready_for_real_tier1') else 'none'}",
+        f"7. real_rows_by_source: {json.dumps(report.get('real_rows_by_source') or {}, sort_keys=True)}",
+        f"8. safety: provider_calls_attempted=0; downloads_attempted=0; provider_write=false; execution_allowed=false; raw_payload_included=false; secrets_included=false",
         "",
     ]
     return "\n".join(lines)
@@ -646,7 +825,8 @@ def render_open_sports_history_session_markdown(report: dict[str, Any]) -> str:
         f"5. blocked_reason: {report.get('blocked_reason')}",
         f"6. completed_seasons: {', '.join(str(item) for item in report.get('completed_seasons') or []) if report.get('completed_seasons') else 'none'}",
         f"7. pending_seasons: {', '.join(str(item) for item in list(report.get('pending_seasons') or [])[:10]) if report.get('pending_seasons') else 'none'}",
-        "8. safety: provider_calls_attempted=0; provider_write=false; execution_allowed=false; raw_payload_included=false; secrets_included=false",
+        f"8. downloads_attempted: {report.get('downloads_attempted', 0)}; downloads_succeeded: {report.get('downloads_succeeded', 0)}; provider_calls_attempted: {report.get('provider_calls_attempted', 0)}",
+        "9. safety: provider_write=false; execution_allowed=false; raw_payload_included=false; secrets_included=false",
         "",
     ]
     return "\n".join(lines)
@@ -810,8 +990,13 @@ def main(argv: list[str] | None = None) -> int:
                 "blocked_reason": report.get("blocked_reason"),
                 "records_valid": int(report.get("records_valid", 0) or 0),
                 "records_rejected": int(report.get("records_rejected", 0) or 0),
+                "real_rows_count": int(report.get("real_rows_count", report.get("real_records", 0)) or 0),
+                "synthetic_rows_count": int(report.get("synthetic_rows_count", report.get("synthetic_records", 0)) or 0),
                 "downloads_attempted": int(report.get("downloads_attempted", 0) or 0),
-                "provider_calls_attempted": 0,
+                "downloads_succeeded": int(report.get("downloads_succeeded", 0) or 0),
+                "provider_calls_attempted": int(report.get("provider_calls_attempted", 0) or 0),
+                "provider_calls_succeeded": int(report.get("provider_calls_succeeded", 0) or 0),
+                "provider_calls_failed": int(report.get("provider_calls_failed", 0) or 0),
                 "enabled_source_count": 0,
                 "paid_source_enabled_count": 0,
                 "provider_write": False,

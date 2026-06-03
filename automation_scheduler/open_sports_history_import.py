@@ -4,7 +4,9 @@ import argparse
 import csv
 import hashlib
 import json
+import socket
 import urllib.error
+import urllib.parse
 import urllib.request
 from datetime import datetime
 from io import StringIO
@@ -43,6 +45,9 @@ ALLOWED_BLOCKED_REASONS = {
     "no_records_found",
     "download_not_allowed",
     "unsupported_mode",
+    "source_url_unverified",
+    "source_timeout",
+    "unsupported_file_shape",
     "provider_error",
     "source_error",
     "insufficient_fields",
@@ -119,9 +124,11 @@ SOURCE_ALIASES = {
     "nflverse_nfl": NFLVERSE_ALIASES,
 }
 
-DOWNLOAD_URLS = {
-    "nflverse_nfl": "https://github.com/nflverse/nflverse-data/releases/download/schedules/schedules.csv",
-}
+HTTP_TIMEOUT_SECONDS = 20
+HTTP_USER_AGENT = "betting-stock-api-open-data-check"
+NFLVERSE_RELEASE_TAG = "schedules"
+NFLVERSE_RELEASE_API_URL = "https://api.github.com/repos/nflverse/nflverse-data/releases/tags/schedules"
+NFLVERSE_RAW_GAMES_CSV_FALLBACK_URL = "https://raw.githubusercontent.com/nflverse/nfldata/master/data/games.csv"
 
 
 def _real_value(value: Any) -> bool:
@@ -168,6 +175,202 @@ def _record_hash(source_id: str, row: dict[str, Any]) -> str:
     }
     text = json.dumps({"source_id": source_id, "row": safe}, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def classify_open_data_source_url(url: str | None) -> dict[str, Any]:
+    parsed = urllib.parse.urlparse(str(url or ""))
+    host = parsed.netloc.lower()
+    path = parsed.path
+    if host == "github.com" and path.startswith(f"/nflverse/nflverse-data/releases/download/{NFLVERSE_RELEASE_TAG}/"):
+        suffix = Path(path).suffix.lower().lstrip(".") or "unknown"
+        return {
+            "source_url_verified": True,
+            "selected_source_url_kind": "nflverse_data_release_asset",
+            "selected_source_host": host,
+            "selected_release_tag": NFLVERSE_RELEASE_TAG,
+            "selected_asset_format": suffix,
+            "fallback_used": False,
+            "url_resolution_blocker": None,
+        }
+    if host == "raw.githubusercontent.com" and path == "/nflverse/nfldata/master/data/games.csv":
+        return {
+            "source_url_verified": True,
+            "selected_source_url_kind": "nflverse_nfldata_games_csv_fallback",
+            "selected_source_host": host,
+            "selected_release_tag": None,
+            "selected_asset_format": "csv",
+            "fallback_used": True,
+            "url_resolution_blocker": None,
+        }
+    return {
+        "source_url_verified": False,
+        "selected_source_url_kind": "unverified_open_data_url",
+        "selected_source_host": host or None,
+        "selected_release_tag": None,
+        "selected_asset_format": None,
+        "fallback_used": False,
+        "url_resolution_blocker": "source_url_unverified",
+    }
+
+
+def _urlopen_json(url: str, *, timeout: int = HTTP_TIMEOUT_SECONDS) -> dict[str, Any]:
+    request = urllib.request.Request(
+        url,
+        headers={
+            "User-Agent": HTTP_USER_AGENT,
+            "Accept": "application/vnd.github+json",
+        },
+    )
+    with urllib.request.urlopen(request, timeout=timeout) as response:
+        body = response.read(2_000_000).decode("utf-8", errors="replace")
+    payload = json.loads(body)
+    return payload if isinstance(payload, dict) else {}
+
+
+def _timeout_error(exc: BaseException) -> bool:
+    if isinstance(exc, (TimeoutError, socket.timeout)):
+        return True
+    if isinstance(exc, urllib.error.URLError) and isinstance(getattr(exc, "reason", None), (TimeoutError, socket.timeout)):
+        return True
+    return "timed out" in str(exc).lower() or "timeout" in str(exc).lower()
+
+
+def _compact_asset(asset: dict[str, Any]) -> dict[str, Any]:
+    download_url = str(asset.get("browser_download_url") or "")
+    classified = classify_open_data_source_url(download_url)
+    return {
+        **classified,
+        "selected_asset_name": asset.get("name"),
+        "selected_asset_format": classified.get("selected_asset_format") or Path(str(asset.get("name") or "")).suffix.lower().lstrip("."),
+        "selected_asset_size": int(asset.get("size", 0) or 0),
+    }
+
+
+def _select_nflverse_schedule_asset(assets: list[Any]) -> dict[str, Any] | None:
+    candidates = [asset for asset in assets if isinstance(asset, dict)]
+    exact = [asset for asset in candidates if str(asset.get("name") or "").lower() == "games.csv"]
+    if exact:
+        return exact[0]
+    csv_assets = [
+        asset
+        for asset in candidates
+        if str(asset.get("name") or "").lower().endswith(".csv")
+        and any(token in str(asset.get("name") or "").lower() for token in ("game", "schedule"))
+    ]
+    return csv_assets[0] if csv_assets else None
+
+
+def _fallback_nflverse_resolution(
+    blocker: str | None = None,
+    *,
+    provider_calls_attempted: int = 0,
+    provider_calls_succeeded: int = 0,
+) -> dict[str, Any]:
+    classified = classify_open_data_source_url(NFLVERSE_RAW_GAMES_CSV_FALLBACK_URL)
+    return {
+        **classified,
+        "selected_asset_name": "games.csv",
+        "selected_asset_format": "csv",
+        "source_file_or_ref": "nflverse_nfldata_games_csv_fallback:games.csv",
+        "selected_release_tag": None,
+        "provider_calls_attempted": provider_calls_attempted,
+        "provider_calls_succeeded": provider_calls_succeeded,
+        "provider_calls_failed": max(0, provider_calls_attempted - provider_calls_succeeded),
+        "downloads_attempted": 0,
+        "downloads_succeeded": 0,
+        "raw_payload_included": False,
+        "secrets_included": False,
+        "url_resolution_blocker": blocker,
+        "_download_url": NFLVERSE_RAW_GAMES_CSV_FALLBACK_URL,
+    }
+
+
+def resolve_nflverse_schedules_source(*, allow_fallback: bool = True, timeout: int = HTTP_TIMEOUT_SECONDS) -> dict[str, Any]:
+    provider_calls_attempted = 1
+    try:
+        release = _urlopen_json(NFLVERSE_RELEASE_API_URL, timeout=timeout)
+        asset = _select_nflverse_schedule_asset(list(release.get("assets") or []))
+        if not asset:
+            if allow_fallback:
+                return _fallback_nflverse_resolution(
+                    "source_not_available",
+                    provider_calls_attempted=provider_calls_attempted,
+                    provider_calls_succeeded=1,
+                )
+            return {
+                "source_url_verified": False,
+                "selected_source_url_kind": None,
+                "selected_source_host": "api.github.com",
+                "selected_release_tag": NFLVERSE_RELEASE_TAG,
+                "selected_asset_name": None,
+                "selected_asset_format": None,
+                "fallback_used": False,
+                "url_resolution_blocker": "source_not_available",
+                "provider_calls_attempted": provider_calls_attempted,
+                "provider_calls_succeeded": 1,
+                "provider_calls_failed": 0,
+                "downloads_attempted": 0,
+                "downloads_succeeded": 0,
+                "raw_payload_included": False,
+                "secrets_included": False,
+                "_download_url": None,
+            }
+        download_url = str(asset.get("browser_download_url") or "")
+        compact = _compact_asset(asset)
+        if not compact.get("source_url_verified"):
+            if allow_fallback:
+                return _fallback_nflverse_resolution(
+                    "source_url_unverified",
+                    provider_calls_attempted=provider_calls_attempted,
+                    provider_calls_succeeded=1,
+                )
+            return {**compact, "provider_calls_attempted": provider_calls_attempted, "provider_calls_succeeded": 1, "provider_calls_failed": 0, "downloads_attempted": 0, "downloads_succeeded": 0, "raw_payload_included": False, "secrets_included": False, "_download_url": None}
+        return {
+            **compact,
+            "source_file_or_ref": f"nflverse_data_release_asset:{asset.get('name')}",
+            "provider_calls_attempted": provider_calls_attempted,
+            "provider_calls_succeeded": 1,
+            "provider_calls_failed": 0,
+            "downloads_attempted": 0,
+            "downloads_succeeded": 0,
+            "raw_payload_included": False,
+            "secrets_included": False,
+            "_download_url": download_url,
+        }
+    except (json.JSONDecodeError, urllib.error.URLError, TimeoutError, socket.timeout, OSError) as exc:
+        blocker = "source_timeout" if _timeout_error(exc) else "provider_error"
+        if allow_fallback:
+            return _fallback_nflverse_resolution(
+                blocker,
+                provider_calls_attempted=provider_calls_attempted,
+                provider_calls_succeeded=0,
+            )
+        return {
+            "source_url_verified": False,
+            "selected_source_url_kind": None,
+            "selected_source_host": "api.github.com",
+            "selected_release_tag": NFLVERSE_RELEASE_TAG,
+            "selected_asset_name": None,
+            "selected_asset_format": None,
+            "fallback_used": False,
+            "url_resolution_blocker": blocker,
+            "provider_calls_attempted": provider_calls_attempted,
+            "provider_calls_succeeded": 0,
+            "provider_calls_failed": provider_calls_attempted,
+            "downloads_attempted": 0,
+            "downloads_succeeded": 0,
+            "raw_payload_included": False,
+            "secrets_included": False,
+            "_download_url": None,
+        }
+
+
+def _compact_resolution_for_report(resolution: dict[str, Any] | None) -> dict[str, Any]:
+    safe = dict(resolution or {})
+    safe.pop("_download_url", None)
+    safe["raw_payload_included"] = False
+    safe["secrets_included"] = False
+    return safe
 
 
 def _parse_event_date(value: Any) -> str | None:
@@ -269,6 +472,9 @@ def _empty_preview_row(
     season: int | str | None,
     source_file_or_ref: str | None,
     blocked_reason: str,
+    data_kind: str = "synthetic_fixture",
+    source_url_kind: str | None = None,
+    source_verified_at: str | None = None,
 ) -> dict[str, Any]:
     if blocked_reason not in ALLOWED_BLOCKED_REASONS:
         blocked_reason = "insufficient_fields"
@@ -292,6 +498,10 @@ def _empty_preview_row(
         "blocked_reason": blocked_reason,
         "source_file_or_ref": source_file_or_ref,
         "source_record_hash": None,
+        "data_kind": data_kind,
+        "is_synthetic": data_kind != "real_open_data",
+        "source_url_kind": source_url_kind,
+        "source_verified_at": source_verified_at,
         "raw_payload_included": False,
     }
 
@@ -325,12 +535,32 @@ def normalize_open_sports_history_row(
     season: int | str | None = None,
     source_file_or_ref: str | None = None,
     data_kind: str = "synthetic_fixture",
+    source_url_kind: str | None = None,
+    source_verified_at: str | None = None,
 ) -> dict[str, Any]:
     aliases = _source_aliases(source_id)
     if _has_raw_payload_risk(row):
-        return _empty_preview_row(module=module, source_id=source_id, season=season, source_file_or_ref=source_file_or_ref, blocked_reason="raw_payload_risk")
+        return _empty_preview_row(
+            module=module,
+            source_id=source_id,
+            season=season,
+            source_file_or_ref=source_file_or_ref,
+            blocked_reason="raw_payload_risk",
+            data_kind=data_kind,
+            source_url_kind=source_url_kind,
+            source_verified_at=source_verified_at,
+        )
     if _has_secret_risk(row):
-        return _empty_preview_row(module=module, source_id=source_id, season=season, source_file_or_ref=source_file_or_ref, blocked_reason="secret_risk")
+        return _empty_preview_row(
+            module=module,
+            source_id=source_id,
+            season=season,
+            source_file_or_ref=source_file_or_ref,
+            blocked_reason="secret_risk",
+            data_kind=data_kind,
+            source_url_kind=source_url_kind,
+            source_verified_at=source_verified_at,
+        )
 
     safe = {str(key): _safe_scalar(value) for key, value in row.items() if _safe_scalar(value) is not None}
     event_id = _first_value(safe, aliases["event_id"])
@@ -393,6 +623,9 @@ def normalize_open_sports_history_row(
         "source_record_hash": _record_hash(source_id, safe),
         "raw_payload_included": False,
         "data_kind": data_kind,
+        "is_synthetic": data_kind != "real_open_data",
+        "source_url_kind": source_url_kind,
+        "source_verified_at": source_verified_at,
     }
 
 
@@ -463,20 +696,88 @@ def _read_local_rows(pathish: str | Path, max_records: int) -> tuple[list[dict[s
     return [], "unsupported_file_type"
 
 
-def _download_rows(source_id: str, max_records: int) -> tuple[list[dict[str, Any]], str | None, str | None]:
-    url = DOWNLOAD_URLS.get(source_id)
-    if not url:
-        return [], "source_not_available", None
+def validate_nflverse_schedule_columns(fieldnames: list[str] | tuple[str, ...] | None) -> tuple[bool, list[str]]:
+    fields = {str(field) for field in (fieldnames or [])}
+    aliases = NFLVERSE_ALIASES
+    required_groups = {
+        "event_id": aliases["event_id"],
+        "event_date": aliases["event_date"],
+        "season": aliases["season"],
+        "home_participant": aliases["home_participant"],
+        "away_participant": aliases["away_participant"],
+        "home_score": aliases["home_score"],
+        "away_score": aliases["away_score"],
+    }
+    missing = [canonical for canonical, candidates in required_groups.items() if not any(candidate in fields for candidate in candidates)]
+    return not missing, missing
+
+
+def _season_value_for_row(row: dict[str, Any], source_id: str) -> Any:
+    aliases = _source_aliases(source_id)
+    return _first_value(row, aliases.get("season", ("season",)))
+
+
+def _filter_rows_by_season(rows: list[dict[str, Any]], *, source_id: str, season: int | str | None, max_records: int) -> list[dict[str, Any]]:
+    if season is None:
+        return rows[:max_records]
+    target = str(season)
+    filtered = [row for row in rows if str(_season_value_for_row(row, source_id) or "") == target]
+    return filtered[:max_records]
+
+
+def download_official_open_data_file(
+    *,
+    source_id: str,
+    season: int | str | None,
+    max_records: int,
+    timeout: int = HTTP_TIMEOUT_SECONDS,
+) -> tuple[list[dict[str, Any]], str | None, dict[str, Any]]:
+    if source_id != "nflverse_nfl":
+        return [], "source_not_available", {
+            "source_url_verified": False,
+            "selected_source_url_kind": None,
+            "selected_source_host": None,
+            "selected_release_tag": None,
+            "selected_asset_name": None,
+            "selected_asset_format": None,
+            "fallback_used": False,
+            "url_resolution_blocker": "source_not_available",
+            "provider_calls_attempted": 0,
+            "downloads_attempted": 0,
+            "downloads_succeeded": 0,
+            "raw_payload_included": False,
+            "secrets_included": False,
+        }
+    resolution = resolve_nflverse_schedules_source(allow_fallback=True, timeout=timeout)
+    download_url = resolution.get("_download_url")
+    if not resolution.get("source_url_verified") or not download_url:
+        return [], str(resolution.get("url_resolution_blocker") or "source_url_unverified"), resolution
     try:
-        request = urllib.request.Request(url, headers={"User-Agent": "betting-stock-api-open-history-preview/1.0"})
-        with urllib.request.urlopen(request, timeout=20) as response:
-            body = response.read(4_000_000).decode("utf-8", errors="replace")
+        request = urllib.request.Request(str(download_url), headers={"User-Agent": HTTP_USER_AGENT})
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            body = response.read(8_000_000).decode("utf-8", errors="replace")
         reader = csv.DictReader(StringIO(body))
         if not reader.fieldnames:
-            return [], "malformed_csv", url
-        return [dict(row) for _, row in zip(range(max_records), reader)], None, url
-    except (urllib.error.URLError, TimeoutError, OSError, UnicodeDecodeError, csv.Error):
-        return [], "provider_error", url
+            return [], "malformed_csv", {**resolution, "downloads_attempted": 1, "downloads_succeeded": 0}
+        valid_shape, missing = validate_nflverse_schedule_columns(reader.fieldnames)
+        if not valid_shape:
+            return [], "unsupported_file_shape", {
+                **resolution,
+                "downloads_attempted": 1,
+                "downloads_succeeded": 0,
+                "missing_required_columns": missing,
+            }
+        rows = _filter_rows_by_season([dict(row) for row in reader], source_id=source_id, season=season, max_records=max_records)
+        if not rows:
+            return [], "no_records_found", {**resolution, "downloads_attempted": 1, "downloads_succeeded": 1}
+        return rows, None, {**resolution, "downloads_attempted": 1, "downloads_succeeded": 1}
+    except (urllib.error.URLError, TimeoutError, socket.timeout, OSError, UnicodeDecodeError, csv.Error) as exc:
+        blocker = "source_timeout" if _timeout_error(exc) else "provider_error"
+        return [], blocker, {**resolution, "downloads_attempted": 1, "downloads_succeeded": 0}
+
+
+def _download_rows(source_id: str, season: int | str | None, max_records: int) -> tuple[list[dict[str, Any]], str | None, dict[str, Any]]:
+    return download_official_open_data_file(source_id=source_id, season=season, max_records=max_records)
 
 
 def _effective_max_records(max_records: int | None) -> int:
@@ -551,6 +852,23 @@ def build_open_sports_history_import_report(
     rows_received: list[dict[str, Any]] = []
     read_error: str | None = None
     downloads_attempted = 0
+    downloads_succeeded = 0
+    provider_calls_attempted = 0
+    source_resolution: dict[str, Any] = {
+        "source_url_verified": False,
+        "selected_source_url_kind": "local_file_import" if input_path else None,
+        "selected_source_host": None,
+        "selected_release_tag": None,
+        "selected_asset_name": Path(str(input_path)).name if input_path else None,
+        "selected_asset_format": Path(str(input_path)).suffix.lower().lstrip(".") if input_path else None,
+        "fallback_used": False,
+        "url_resolution_blocker": None,
+        "provider_calls_attempted": 0,
+        "downloads_attempted": 0,
+        "downloads_succeeded": 0,
+        "raw_payload_included": False,
+        "secrets_included": False,
+    }
 
     if gate_reason is None:
         if input_path:
@@ -558,21 +876,28 @@ def build_open_sports_history_import_report(
         elif allow_download:
             if not source.get("supports_direct_download"):
                 read_error = "download_not_allowed"
-            elif source_id not in DOWNLOAD_URLS:
-                read_error = "source_not_available"
             else:
-                downloads_attempted = 1
-                rows_received, read_error, source_ref = _download_rows(source_id, effective_max)
+                rows_received, read_error, source_resolution = _download_rows(source_id, season, effective_max)
+                downloads_attempted = int(source_resolution.get("downloads_attempted", 0) or 0)
+                downloads_succeeded = int(source_resolution.get("downloads_succeeded", 0) or 0)
+                provider_calls_attempted = int(source_resolution.get("provider_calls_attempted", 0) or 0)
+                provider_calls_succeeded = int(source_resolution.get("provider_calls_succeeded", 0) or 0)
+                provider_calls_failed = int(source_resolution.get("provider_calls_failed", 0) or 0)
+                source_ref = str(source_resolution.get("source_file_or_ref") or source_resolution.get("selected_source_url_kind") or source_id)
         elif source_id.startswith("sportsdataverse_"):
             read_error = "package_not_installed"
         else:
             read_error = "download_not_allowed"
     else:
         read_error = gate_reason
+    provider_calls_succeeded = int(source_resolution.get("provider_calls_succeeded", 0) or 0)
+    provider_calls_failed = int(source_resolution.get("provider_calls_failed", 0) or 0)
 
     module = str((source or {}).get("module") or "")
-    downloads_succeeded = downloads_attempted > 0 and read_error is None
-    data_kind = _infer_data_kind(source_ref, allow_download, downloads_succeeded)
+    download_completed = downloads_attempted > 0 and downloads_succeeded > 0 and read_error is None
+    data_kind = _infer_data_kind(source_ref, allow_download, download_completed)
+    source_url_kind = str(source_resolution.get("selected_source_url_kind") or ("local_file_import" if input_path else "download_not_allowed"))
+    source_verified_at = utc_now_iso() if (input_path or source_resolution.get("source_url_verified")) else None
     preview_rows: list[dict[str, Any]] = []
     if rows_received and read_error is None:
         preview_rows = [
@@ -583,6 +908,8 @@ def build_open_sports_history_import_report(
                 season=season,
                 source_file_or_ref=source_ref,
                 data_kind=data_kind,
+                source_url_kind=source_url_kind,
+                source_verified_at=source_verified_at,
             )
             for row in rows_received[:effective_max]
         ]
@@ -607,6 +934,8 @@ def build_open_sports_history_import_report(
         status = "metadata_ready_no_source_configured"
     elif read_error == "source_not_available":
         status = "source_download_not_implemented"
+    elif read_error in {"source_url_unverified", "source_timeout", "provider_error", "unsupported_file_shape"}:
+        status = read_error
 
     return {
         **SAFETY_FIELDS,
@@ -625,9 +954,14 @@ def build_open_sports_history_import_report(
         "season": season,
         "input_path": str(input_path) if input_path else None,
         "source_file_or_ref": source_ref,
+        "source_url_resolution": _compact_resolution_for_report(source_resolution),
+        **_compact_resolution_for_report(source_resolution),
+        "source_verified_at": source_verified_at,
         "dry_run": bool(dry_run),
         "allow_download": bool(allow_download),
         "persist_preview": bool(persist_preview),
+        "data_kind": data_kind,
+        "is_synthetic": data_kind != "real_open_data",
         "max_records_requested": DEFAULT_MAX_RECORDS if max_records is None else int(max_records),
         "max_records_effective": effective_max,
         "records_received": len(rows_received),
@@ -643,9 +977,10 @@ def build_open_sports_history_import_report(
         "rejected_preview_rows": rejected_rows[:50],
         "download_required": bool(not input_path and not allow_download),
         "downloads_attempted": downloads_attempted,
-        "provider_calls_attempted": 0,
-        "provider_calls_succeeded": 0,
-        "provider_calls_failed": 0,
+        "downloads_succeeded": downloads_succeeded,
+        "provider_calls_attempted": provider_calls_attempted,
+        "provider_calls_succeeded": provider_calls_succeeded,
+        "provider_calls_failed": provider_calls_failed,
         "outcome_persistence_attempted": False,
         "import_or_persist_endpoint_called": False,
         "persisted_outcomes": False,
@@ -695,7 +1030,9 @@ def render_open_sports_history_import_markdown(report: dict[str, Any]) -> str:
         f"6. records_received: {report.get('records_received')}",
         f"7. preview_rows_created: {report.get('preview_rows_created')}",
         f"8. blocked_reason_counts: {json.dumps(report.get('blocked_reason_counts') or {}, sort_keys=True)}",
-        f"9. safety: provider_calls_attempted=0; provider_write=false; execution_allowed=false; raw_payload_included=false; secrets_included=false",
+        f"9. data_kind: {report.get('data_kind')}",
+        f"10. source_url_kind: {report.get('selected_source_url_kind')}",
+        f"11. safety: provider_calls_attempted={report.get('provider_calls_attempted', 0)}; provider_write=false; execution_allowed=false; raw_payload_included=false; secrets_included=false",
         "",
     ]
     return "\n".join(lines)
@@ -752,6 +1089,9 @@ COMPACT_ROW_FIELDS = (
     "source_record_hash",
     "raw_payload_included",
     "data_kind",
+    "is_synthetic",
+    "source_url_kind",
+    "source_verified_at",
 )
 
 
@@ -940,7 +1280,18 @@ def main(argv: list[str] | None = None) -> int:
                 "blocked_reason": report["blocked_reason"],
                 "blocked_reason_counts": report["blocked_reason_counts"],
                 "downloads_attempted": report["downloads_attempted"],
-                "provider_calls_attempted": 0,
+                "downloads_succeeded": report.get("downloads_succeeded", 0),
+                "provider_calls_attempted": report.get("provider_calls_attempted", 0),
+                "source_url_verified": report.get("source_url_verified"),
+                "selected_source_url_kind": report.get("selected_source_url_kind"),
+                "selected_source_host": report.get("selected_source_host"),
+                "selected_release_tag": report.get("selected_release_tag"),
+                "selected_asset_name": report.get("selected_asset_name"),
+                "selected_asset_format": report.get("selected_asset_format"),
+                "fallback_used": report.get("fallback_used"),
+                "url_resolution_blocker": report.get("url_resolution_blocker"),
+                "data_kind": report.get("data_kind"),
+                "is_synthetic": report.get("is_synthetic"),
                 "enabled_source_count": 0,
                 "paid_source_enabled_count": 0,
                 "provider_write": False,

@@ -445,14 +445,22 @@ def _open_sports_history_payload_paths(base: Path) -> list[tuple[str, Path]]:
     return pairs
 
 
-def _open_sports_history_records(base: Path) -> tuple[dict[str, list[dict[str, Any]]], str | None, int]:
+def _item_is_real_open_data(item: dict[str, Any]) -> bool:
+    synthetic_flag = item.get("is_synthetic")
+    synthetic_text = str(synthetic_flag).strip().lower()
+    return item.get("data_kind") == "real_open_data" and synthetic_flag is not True and synthetic_text not in {"true", "1", "yes"}
+
+
+def _open_sports_history_records(base: Path) -> tuple[dict[str, list[dict[str, Any]]], str | None, int, int, int]:
     relative, path = _open_sports_history_latest_path(base)
     payload_paths = _open_sports_history_payload_paths(base)
     if not payload_paths:
-        return {}, relative if path.exists() else None, 0
+        return {}, relative if path.exists() else None, 0, 0, 0
     records_by_module: dict[str, list[dict[str, Any]]] = defaultdict(list)
     seen: set[tuple[str, str, str]] = set()
-    consumed = 0
+    real_consumed = 0
+    synthetic_ignored = 0
+    total_seen = 0
     primary_relative = payload_paths[0][0]
     for payload_relative, payload_path in payload_paths:
         payload = _read_json(payload_path)
@@ -478,6 +486,10 @@ def _open_sports_history_records(base: Path) -> tuple[dict[str, list[dict[str, A
                 continue
             if event_id:
                 seen.add(dedupe_key)
+            total_seen += 1
+            if not _item_is_real_open_data(item):
+                synthetic_ignored += 1
+                continue
             row = {
                 "module": module,
                 "event_id": item.get("event_id"),
@@ -498,10 +510,14 @@ def _open_sports_history_records(base: Path) -> tuple[dict[str, list[dict[str, A
                 "explicit_outcome": None,
                 "data_source_path": item.get("source_file_or_ref") or payload_relative,
                 "raw_payload_included": False,
+                "data_kind": item.get("data_kind"),
+                "is_synthetic": item.get("is_synthetic"),
+                "source_url_kind": item.get("source_url_kind"),
+                "source_verified_at": item.get("source_verified_at"),
             }
             records_by_module[module].append(row)
-            consumed += 1
-    return dict(records_by_module), primary_relative, consumed
+            real_consumed += 1
+    return dict(records_by_module), primary_relative, real_consumed, synthetic_ignored, total_seen
 
 
 def load_local_normalized_records(*, base_data_dir: str | Path | None = None) -> dict[str, list[dict[str, Any]]]:
@@ -522,7 +538,7 @@ def load_local_normalized_records(*, base_data_dir: str | Path | None = None) ->
                 continue
             seen.add(dedupe_key)
             records_by_module[module].append(normalized)
-    open_records, _, _ = _open_sports_history_records(base)
+    open_records, _, _, _, _ = _open_sports_history_records(base)
     for module, rows in open_records.items():
         for row in rows:
             event_key = str(row.get("event_id") or "")
@@ -774,7 +790,13 @@ def build_derived_feature_backfill_report(
 ) -> dict[str, Any]:
     base = resolve_base_data_dir(base_data_dir)
     availability = _availability_rows(base)
-    open_records, open_history_report, open_history_consumed = _open_sports_history_records(base)
+    (
+        open_records,
+        open_history_report,
+        open_history_real_consumed,
+        open_history_synthetic_ignored,
+        open_history_seen,
+    ) = _open_sports_history_records(base)
     local_records = records_by_module if records_by_module is not None else load_local_normalized_records(base_data_dir=base)
     module_names = [module] if module else REPORT_MODULES
     normalized_records: dict[str, list[dict[str, Any]]] = {}
@@ -803,6 +825,9 @@ def build_derived_feature_backfill_report(
         for row in modules
         if any(feature in TIER1_DERIVED_FEATURES for feature in row["supported_derived_features"])
     ]
+    real_open_modules = set(open_records) if records_by_module is None else set()
+    modules_ready_real_tier0 = [name for name in modules_ready_tier0 if name in real_open_modules]
+    modules_ready_real_tier1 = [name for name in modules_ready_tier1 if name in real_open_modules]
     derivable_features = sorted({row["feature_name"] for row in feature_rows if row["can_derive_now"]})
     insufficient_history_features = sorted(
         {row["feature_name"] for row in feature_rows if row["blocked_reason"] == "insufficient_history"}
@@ -837,7 +862,11 @@ def build_derived_feature_backfill_report(
         "root_runtime_path_confusion_resolved": True,
         "root_data_sources_path_used": False,
         "reports_consumed": reports_consumed,
-        "open_sports_history_preview_rows_consumed": open_history_consumed if records_by_module is None else 0,
+        "open_sports_history_preview_rows_seen": open_history_seen if records_by_module is None else 0,
+        "open_sports_history_preview_rows_consumed": open_history_real_consumed if records_by_module is None else 0,
+        "open_sports_history_real_rows_consumed": open_history_real_consumed if records_by_module is None else 0,
+        "open_sports_history_synthetic_rows_ignored": open_history_synthetic_ignored if records_by_module is None else 0,
+        "synthetic_rows_ignored_for_real_coverage": True,
         "open_sports_history_modules_consumed": sorted(open_records) if records_by_module is None else [],
         "normalized_schedule_result_shape": NORMALIZED_SCHEDULE_RESULT_SHAPE,
         "total_modules": len(modules),
@@ -848,6 +877,8 @@ def build_derived_feature_backfill_report(
         "current_best_tier_counts": dict(sorted(tier_counts.items())),
         "modules_ready_for_tier0_backfill": modules_ready_tier0,
         "modules_ready_for_tier1_derived_backfill": modules_ready_tier1,
+        "modules_ready_for_real_tier0_backfill": modules_ready_real_tier0,
+        "modules_ready_for_real_tier1_derived_backfill": modules_ready_real_tier1,
         "features_derivable_now": derivable_features,
         "features_blocked_by_insufficient_history": insufficient_history_features,
         "features_blocked_by_missing_fields": missing_field_features,
@@ -914,6 +945,8 @@ def _atomic_write_text(path: Path, text: str) -> None:
 def render_derived_feature_markdown(report: dict[str, Any]) -> str:
     ready_tier0 = list(report.get("modules_ready_for_tier0_backfill") or [])
     ready_tier1 = list(report.get("modules_ready_for_tier1_derived_backfill") or [])
+    ready_real_tier0 = list(report.get("modules_ready_for_real_tier0_backfill") or [])
+    ready_real_tier1 = list(report.get("modules_ready_for_real_tier1_derived_backfill") or [])
     derivable = list(report.get("features_derivable_now") or [])
     insufficient = list(report.get("features_blocked_by_insufficient_history") or [])
     missing_fields = list(report.get("features_blocked_by_missing_fields") or [])
@@ -921,13 +954,17 @@ def render_derived_feature_markdown(report: dict[str, Any]) -> str:
         "# Derived Feature Backfill Report",
         "",
         f"1. total_modules_scanned: {report.get('total_modules')}; feature_rows: {report.get('total_feature_rows')}",
-        f"2. modules_ready_for_tier0: {', '.join(ready_tier0[:12]) if ready_tier0 else 'none'}",
-        f"3. modules_ready_for_tier1: {', '.join(ready_tier1[:12]) if ready_tier1 else 'none'}",
-        f"4. features_derivable_now: {', '.join(derivable) if derivable else 'none'}",
-        f"5. features_blocked_by_insufficient_history: {', '.join(insufficient) if insufficient else 'none'}",
-        f"6. features_blocked_by_missing_fields: {', '.join(missing_fields) if missing_fields else 'none'}",
-        f"7. highest_value_next_no_spend_actions: {report.get('recommended_no_spend_next_step')}",
-        "8. safety_status: provider_calls_attempted=0; enabled_source_count=0; paid_source_enabled_count=0; provider_write=false; execution_allowed=false; raw_payload_included=false; secrets_included=false",
+        f"2. open_sports_history_real_rows_consumed: {report.get('open_sports_history_real_rows_consumed')}",
+        f"3. open_sports_history_synthetic_rows_ignored: {report.get('open_sports_history_synthetic_rows_ignored')}",
+        f"4. modules_ready_for_tier0: {', '.join(ready_tier0[:12]) if ready_tier0 else 'none'}",
+        f"5. modules_ready_for_tier1: {', '.join(ready_tier1[:12]) if ready_tier1 else 'none'}",
+        f"6. modules_ready_for_real_tier0: {', '.join(ready_real_tier0[:12]) if ready_real_tier0 else 'none'}",
+        f"7. modules_ready_for_real_tier1: {', '.join(ready_real_tier1[:12]) if ready_real_tier1 else 'none'}",
+        f"8. features_derivable_now: {', '.join(derivable) if derivable else 'none'}",
+        f"9. features_blocked_by_insufficient_history: {', '.join(insufficient) if insufficient else 'none'}",
+        f"10. features_blocked_by_missing_fields: {', '.join(missing_fields) if missing_fields else 'none'}",
+        f"11. highest_value_next_no_spend_actions: {report.get('recommended_no_spend_next_step')}",
+        "12. safety_status: provider_calls_attempted=0; enabled_source_count=0; paid_source_enabled_count=0; provider_write=false; execution_allowed=false; raw_payload_included=false; secrets_included=false",
         "",
     ]
     return "\n".join(lines)
@@ -985,6 +1022,8 @@ def main(argv: list[str] | None = None) -> int:
                 "total_modules": report["total_modules"],
                 "supported_feature_count": report["supported_feature_count"],
                 "blocked_feature_count": report["blocked_feature_count"],
+                "open_sports_history_real_rows_consumed": report.get("open_sports_history_real_rows_consumed"),
+                "open_sports_history_synthetic_rows_ignored": report.get("open_sports_history_synthetic_rows_ignored"),
                 "latest_json_path": paths.get("latest_json_path"),
                 "latest_markdown_path": paths.get("latest_markdown_path"),
                 "provider_calls_attempted": 0,

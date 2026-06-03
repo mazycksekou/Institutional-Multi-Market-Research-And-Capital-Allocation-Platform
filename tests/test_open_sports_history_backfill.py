@@ -93,8 +93,68 @@ class TestOpenSportsHistoryBackfill(unittest.TestCase):
         self.assertEqual(report["completed_seasons"], [2024])
         self.assertIn("data_sources/open_sports_history/backfill_sessions/items/", paths["session_item_json_path"])
         self.assertIn("americanfootball_nfl", coverage["modules_ready_for_tier0"])
+        self.assertIn("americanfootball_nfl", coverage["modules_ready_for_real_tier0"])
+        self.assertEqual(coverage["real_rows_count"], 1)
+        self.assertEqual(coverage["synthetic_rows_count"], 0)
+        self.assertEqual(coverage["real_rows_by_source"], {"nflverse_nfl": 1})
+        self.assertEqual(coverage["real_rows_by_module"], {"americanfootball_nfl": 1})
+        self.assertEqual(coverage["real_rows_by_season"], {"2024": 1})
+        self.assertTrue(coverage["synthetic_rows_ignored_for_real_coverage"])
         self.assertIn("nflverse_nfl", coverage["sources_with_valid_rows"])
         self.assertEqual(coverage["downloads_attempted"], 0)
+
+    def test_season_backfill_download_uses_source_hard_cap_and_propagates_provider_counts(self):
+        fake_import = {
+            "status": "preview_ready",
+            "blocked_reason": None,
+            "data_kind": "real_open_data",
+            "is_synthetic": False,
+            "source_url_verified": True,
+            "selected_source_url_kind": "nflverse_data_release_asset",
+            "selected_source_host": "github.com",
+            "selected_release_tag": "schedules",
+            "selected_asset_name": "games.csv",
+            "selected_asset_format": "csv",
+            "fallback_used": False,
+            "url_resolution_blocker": None,
+            "source_verified_at": "2026-06-03T00:00:00Z",
+            "records_received": 285,
+            "records_valid": 285,
+            "records_rejected": 0,
+            "downloads_attempted": 1,
+            "downloads_succeeded": 1,
+            "provider_calls_attempted": 1,
+            "provider_calls_succeeded": 1,
+            "provider_calls_failed": 0,
+            "validated_preview_rows": [
+                {
+                    "module": "americanfootball_nfl",
+                    "source_id": "nflverse_nfl",
+                    "event_id": "2024_01_BAL_KC",
+                    "data_kind": "real_open_data",
+                    "is_synthetic": False,
+                    "blocked_reason": "available",
+                }
+            ],
+        }
+        with patch("automation_scheduler.open_sports_history_backfill._run_import", return_value=(fake_import, {})) as run_import:
+            report = build_open_sports_history_backfill_report(
+                source_id="nflverse_nfl",
+                mode="season_backfill",
+                seasons=[2024],
+                allow_download=True,
+                persist_preview=True,
+                base_data_dir="unused",
+            )
+
+        self.assertTrue(report["ok"])
+        self.assertEqual(report["records_valid"], 285)
+        self.assertEqual(report["downloads_attempted"], 1)
+        self.assertEqual(report["downloads_succeeded"], 1)
+        self.assertEqual(report["provider_calls_attempted"], 1)
+        self.assertEqual(report["provider_calls_succeeded"], 1)
+        self.assertEqual(run_import.call_args.kwargs["max_records"], 500)
+        self.assertEqual(report["season_results"][0]["valid_real_preview_rows"], 1)
 
     def test_bulk_backfill_requires_smoke_test_or_valid_local_parser_input(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -181,6 +241,40 @@ class TestOpenSportsHistoryBackfill(unittest.TestCase):
         self.assertIn("data_sources/open_sports_history/coverage/latest.json", paths["coverage_latest_json_path"])
         self.assertIn("data_sources/open_sports_history/coverage/items/", paths["coverage_item_json_path"])
 
+    def test_synthetic_import_rows_do_not_count_toward_real_coverage_or_readiness(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            imports_path = Path(tmp) / "data_sources" / "open_sports_history" / "imports" / "nflverse_nfl" / "sample.csv"
+            self._nflverse_csv(imports_path.parent, rows=[
+                {
+                    "game_id": "nfl-synthetic-1",
+                    "gameday": "2024-09-05",
+                    "season": "2024",
+                    "week": "1",
+                    "home_team": "KC",
+                    "away_team": "BAL",
+                    "home_score": "27",
+                    "away_score": "20",
+                }
+            ]).replace(imports_path)
+            season = build_open_sports_history_backfill_report(
+                source_id="nflverse_nfl",
+                mode="season_backfill",
+                seasons=[2024],
+                input_path=imports_path,
+                persist_preview=True,
+                base_data_dir=tmp,
+            )
+            self.assertTrue(season["ok"])
+            coverage = build_open_sports_history_backfill_report(mode="coverage_report", base_data_dir=tmp)
+
+        self.assertEqual(coverage["total_rows"], 1)
+        self.assertEqual(coverage["real_rows_count"], 0)
+        self.assertEqual(coverage["synthetic_rows_count"], 1)
+        self.assertEqual(coverage["real_rows_by_source"], {})
+        self.assertNotIn("americanfootball_nfl", coverage["modules_ready_for_tier0"])
+        self.assertNotIn("americanfootball_nfl", coverage["modules_ready_for_real_tier0"])
+        self.assertTrue(coverage["synthetic_rows_ignored_for_real_coverage"])
+
     def test_no_download_occurs_unless_allow_download_is_true(self):
         with patch("automation_scheduler.open_sports_history_import.urllib.request.urlopen") as urlopen:
             report = build_open_sports_history_backfill_report(
@@ -243,6 +337,11 @@ class TestOpenSportsHistoryBackfill(unittest.TestCase):
         self.assertFalse(report["secrets_included"])
         self.assertFalse(report["outcome_persistence_attempted"])
         self.assertFalse(report["persisted_outcomes"])
+
+    def test_downloaded_dataset_file_patterns_are_gitignored(self):
+        gitignore = Path(".gitignore").read_text(encoding="utf-8")
+        self.assertIn("data/", gitignore)
+        self.assertIn("*.csv", gitignore)
 
 
 if __name__ == "__main__":
