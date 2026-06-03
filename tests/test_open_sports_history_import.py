@@ -100,6 +100,7 @@ class TestOpenSportsHistoryImport(unittest.TestCase):
         self.assertEqual(row["final_margin"], 2)
         self.assertEqual(row["total_score"], 8)
         self.assertEqual(row["blocked_reason"], "available")
+        self.assertRegex(row["source_record_hash"], r"^[0-9a-f]{64}$")
 
     def test_retrosheet_common_date_team_and_score_aliases_work(self):
         row = normalize_open_sports_history_row(
@@ -249,9 +250,18 @@ class TestOpenSportsHistoryImport(unittest.TestCase):
             report = build_open_sports_history_import_report(source_id="retrosheet_mlb", input_path=path, persist_preview=True, base_data_dir=tmp)
             paths = write_open_sports_history_import_report(report, base_data_dir=tmp)
             latest = Path(tmp, paths["latest_json_path"])
+            by_source = Path(tmp, paths["by_source_paths"][0])
+            by_module = Path(tmp, paths["by_module_paths"][0])
+            by_season = Path(tmp, paths["by_season_paths"][0])
             self.assertTrue(latest.exists())
+            self.assertTrue(by_source.exists())
+            self.assertTrue(by_module.exists())
+            self.assertTrue(by_season.exists())
 
         self.assertIn("data_sources/open_sports_history/validated/latest.json", paths["latest_json_path"])
+        self.assertIn("data_sources/open_sports_history/validated/by_source/retrosheet_mlb.json", paths["by_source_paths"][0])
+        self.assertIn("data_sources/open_sports_history/validated/by_module/baseball_mlb.json", paths["by_module_paths"][0])
+        self.assertIn("data_sources/open_sports_history/validated/by_season/baseball_mlb/2024.json", paths["by_season_paths"][0])
         self.assertEqual(report["outcome_persistence_attempted"], False)
         self.assertEqual(report["provider_calls_attempted"], 0)
         self.assertEqual(report["downloads_attempted"], 0)

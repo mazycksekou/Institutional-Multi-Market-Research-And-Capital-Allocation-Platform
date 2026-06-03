@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import json
 import urllib.error
 import urllib.request
@@ -41,9 +42,13 @@ ALLOWED_BLOCKED_REASONS = {
     "unsupported_file_type",
     "no_records_found",
     "download_not_allowed",
+    "unsupported_mode",
     "provider_error",
+    "source_error",
     "insufficient_fields",
-    "source_not_configured_or_package_missing",
+    "source_not_available",
+    "package_not_installed",
+    "research_required",
 }
 
 RAW_PAYLOAD_KEYS = {
@@ -153,6 +158,16 @@ def _compact_number(value: float | None) -> int | float | None:
     if value is None:
         return None
     return int(value) if float(value).is_integer() else value
+
+
+def _record_hash(source_id: str, row: dict[str, Any]) -> str:
+    safe = {
+        str(key): value
+        for key, value in row.items()
+        if isinstance(value, (str, int, float, bool)) or value is None
+    }
+    text = json.dumps({"source_id": source_id, "row": safe}, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
 def _parse_event_date(value: Any) -> str | None:
@@ -276,6 +291,7 @@ def _empty_preview_row(
         "validation_status": "blocked",
         "blocked_reason": blocked_reason,
         "source_file_or_ref": source_file_or_ref,
+        "source_record_hash": None,
         "raw_payload_included": False,
     }
 
@@ -352,6 +368,7 @@ def normalize_open_sports_history_row(
         "validation_status": validation_status,
         "blocked_reason": blocked_reason,
         "source_file_or_ref": source_file_or_ref,
+        "source_record_hash": _record_hash(source_id, safe),
         "raw_payload_included": False,
     }
 
@@ -426,7 +443,7 @@ def _read_local_rows(pathish: str | Path, max_records: int) -> tuple[list[dict[s
 def _download_rows(source_id: str, max_records: int) -> tuple[list[dict[str, Any]], str | None, str | None]:
     url = DOWNLOAD_URLS.get(source_id)
     if not url:
-        return [], "provider_error", None
+        return [], "source_not_available", None
     try:
         request = urllib.request.Request(url, headers={"User-Agent": "betting-stock-api-open-history-preview/1.0"})
         with urllib.request.urlopen(request, timeout=20) as response:
@@ -456,6 +473,8 @@ def _source_gate(
         return "sports_reference_scraping_blocked"
     if source.get("future_paid_candidate") or source.get("requires_budget_approval"):
         return "paid_source_not_approved"
+    if source.get("approval_status") == "research_required":
+        return "research_required"
     if not source.get("current_phase_allowed") and source_id != "sports_reference_manual_export":
         return "source_not_current_phase_allowed"
     if source_id == "sports_reference_manual_export":
@@ -516,11 +535,13 @@ def build_open_sports_history_import_report(
         elif allow_download:
             if not source.get("supports_direct_download"):
                 read_error = "download_not_allowed"
+            elif source_id not in DOWNLOAD_URLS:
+                read_error = "source_not_available"
             else:
                 downloads_attempted = 1
                 rows_received, read_error, source_ref = _download_rows(source_id, effective_max)
         elif source_id.startswith("sportsdataverse_"):
-            read_error = "source_not_configured_or_package_missing"
+            read_error = "package_not_installed"
         else:
             read_error = "download_not_allowed"
     else:
@@ -556,8 +577,10 @@ def build_open_sports_history_import_report(
         status = read_error
     elif read_error == "download_not_allowed":
         status = "download_blocked"
-    elif read_error == "source_not_configured_or_package_missing":
+    elif read_error == "package_not_installed":
         status = "metadata_ready_no_source_configured"
+    elif read_error == "source_not_available":
+        status = "source_download_not_implemented"
 
     return {
         **SAFETY_FIELDS,
@@ -587,6 +610,7 @@ def build_open_sports_history_import_report(
         "records_rejected": len(rejected_rows) + (1 if read_error and not preview_rows else 0),
         "duplicate_record_count": duplicate_count,
         "blocked_reason": read_error,
+        "download_blocker": "source_download_not_implemented" if read_error == "source_not_available" and allow_download else None,
         "blocked_reason_counts": _count_reasons(preview_rows, read_error),
         "validated_preview_rows": valid_rows,
         "preview_rows": preview_rows,
@@ -651,6 +675,163 @@ def render_open_sports_history_import_markdown(report: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def _read_json(path: Path) -> Any | None:
+    if not path.exists():
+        return None
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+
+
+def _valid_preview_rows(payload: Any) -> list[dict[str, Any]]:
+    if not isinstance(payload, dict):
+        return []
+    candidates = payload.get("validated_preview_rows")
+    if not isinstance(candidates, list):
+        candidates = payload.get("preview_rows")
+    rows: list[dict[str, Any]] = []
+    for row in candidates or []:
+        if not isinstance(row, dict):
+            continue
+        if row.get("raw_payload_included") is True:
+            continue
+        if row.get("blocked_reason") != "available" and row.get("validation_status") != "available":
+            continue
+        safe = {key: row.get(key) for key in COMPACT_ROW_FIELDS if key in row}
+        safe["raw_payload_included"] = False
+        rows.append(safe)
+    return rows
+
+
+COMPACT_ROW_FIELDS = (
+    "module",
+    "source_id",
+    "event_id",
+    "event_date",
+    "season",
+    "week_or_round",
+    "home_participant",
+    "away_participant",
+    "neutral_site",
+    "home_score",
+    "away_score",
+    "final_result",
+    "winner",
+    "final_margin",
+    "total_score",
+    "validation_status",
+    "blocked_reason",
+    "source_file_or_ref",
+    "source_record_hash",
+    "raw_payload_included",
+)
+
+
+def _dedupe_validated_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    seen: set[tuple[str, str, str]] = set()
+    out: list[dict[str, Any]] = []
+    for row in rows:
+        key = (str(row.get("module") or ""), str(row.get("source_id") or ""), str(row.get("event_id") or ""))
+        if not key[2] or key in seen:
+            continue
+        seen.add(key)
+        out.append({field: row.get(field) for field in COMPACT_ROW_FIELDS if field in row} | {"raw_payload_included": False})
+    return out
+
+
+def _validated_collection_payload(
+    *,
+    rows: list[dict[str, Any]],
+    created: str,
+    scope: str,
+    scope_value: str,
+    base_data_dir: str | Path | None,
+) -> dict[str, Any]:
+    modules = sorted({str(row.get("module")) for row in rows if row.get("module")})
+    sources = sorted({str(row.get("source_id")) for row in rows if row.get("source_id")})
+    seasons = sorted({str(row.get("season")) for row in rows if row.get("season") is not None})
+    return {
+        **SAFETY_FIELDS,
+        "ok": True,
+        "status": "ok",
+        "schema_version": OPEN_SPORTS_HISTORY_IMPORT_SCHEMA_VERSION,
+        "created_at": created,
+        "runtime_data_dir": str(resolve_base_data_dir(base_data_dir)),
+        "scope": scope,
+        "scope_value": scope_value,
+        "records_valid": len(rows),
+        "preview_rows_created": len(rows),
+        "validated_preview_rows": rows,
+        "preview_rows": rows,
+        "modules": modules,
+        "sources": sources,
+        "seasons": seasons,
+        "provider_calls_attempted": 0,
+        "downloads_attempted": 0,
+        "outcome_persistence_attempted": False,
+        "import_or_persist_endpoint_called": False,
+        "persisted_outcomes": False,
+        "raw_payload_included": False,
+        "secrets_included": False,
+    }
+
+
+def _merge_write_validated_collection(
+    path: Path,
+    *,
+    incoming_rows: list[dict[str, Any]],
+    created: str,
+    scope: str,
+    scope_value: str,
+    base_data_dir: str | Path | None,
+) -> dict[str, Any]:
+    existing = _valid_preview_rows(_read_json(path))
+    rows = _dedupe_validated_rows(existing + incoming_rows)
+    payload = _validated_collection_payload(
+        rows=rows,
+        created=created,
+        scope=scope,
+        scope_value=scope_value,
+        base_data_dir=base_data_dir,
+    )
+    _atomic_write_json(path, payload)
+    return payload
+
+
+def _write_grouped_validated_rows(
+    *,
+    root: Path,
+    rows: list[dict[str, Any]],
+    created: str,
+    base_data_dir: str | Path | None,
+) -> dict[str, Any]:
+    paths: dict[str, Any] = {"by_source_paths": [], "by_module_paths": [], "by_season_paths": []}
+    for source_id in sorted({str(row.get("source_id")) for row in rows if row.get("source_id")}):
+        group = [row for row in rows if str(row.get("source_id")) == source_id]
+        path = root / "by_source" / f"{sanitize_filename(source_id)}.json"
+        _merge_write_validated_collection(path, incoming_rows=group, created=created, scope="source", scope_value=source_id, base_data_dir=base_data_dir)
+        paths["by_source_paths"].append(_rel(path, base_data_dir))
+    for module in sorted({str(row.get("module")) for row in rows if row.get("module")}):
+        group = [row for row in rows if str(row.get("module")) == module]
+        path = root / "by_module" / f"{sanitize_filename(module)}.json"
+        _merge_write_validated_collection(path, incoming_rows=group, created=created, scope="module", scope_value=module, base_data_dir=base_data_dir)
+        paths["by_module_paths"].append(_rel(path, base_data_dir))
+        for season in sorted({str(row.get("season")) for row in group if row.get("season") is not None}):
+            season_group = [row for row in group if str(row.get("season")) == season]
+            season_path = root / "by_season" / sanitize_filename(module) / f"{sanitize_filename(season)}.json"
+            _merge_write_validated_collection(
+                season_path,
+                incoming_rows=season_group,
+                created=created,
+                scope="module_season",
+                scope_value=f"{module}:{season}",
+                base_data_dir=base_data_dir,
+            )
+            paths["by_season_paths"].append(_rel(season_path, base_data_dir))
+    return paths
+
+
 def write_open_sports_history_import_report(
     report: dict[str, Any],
     *,
@@ -666,7 +847,7 @@ def write_open_sports_history_import_report(
     item_md = root / "items" / f"{run_id}.md"
     daily_json = root / "daily" / f"{day}.json"
     daily_md = root / "daily" / f"{day}.md"
-    paths = {
+    paths: dict[str, Any] = {
         "latest_json_path": _rel(latest_json, base_data_dir),
         "latest_markdown_path": _rel(latest_md, base_data_dir),
         "item_json_path": _rel(item_json, base_data_dir),
@@ -682,6 +863,9 @@ def write_open_sports_history_import_report(
     _atomic_write_text(item_md, markdown)
     _atomic_write_json(daily_json, payload)
     _atomic_write_text(daily_md, markdown)
+    valid_rows = _valid_preview_rows(payload)
+    if valid_rows:
+        paths.update(_write_grouped_validated_rows(root=root, rows=valid_rows, created=created, base_data_dir=base_data_dir))
     return paths
 
 

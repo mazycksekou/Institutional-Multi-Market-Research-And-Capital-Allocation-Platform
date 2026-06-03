@@ -58,6 +58,22 @@ class TestOpenSportsHistoryDerivedFeatures(unittest.TestCase):
         self.assertTrue(self._feature(report, "americanfootball_nfl", "total_points")["can_derive_now"])
         self.assertTrue(self._feature(report, "americanfootball_nfl", "winner")["can_derive_now"])
 
+    def test_derived_report_consumes_by_module_and_by_season_rows(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "retrosheet.csv"
+            self._write_csv(
+                path,
+                [{"game_id": "mlb-agg-1", "date": "2024-04-01", "home_team": "BOS", "away_team": "NYY", "home_runs": "5", "away_runs": "3"}],
+            )
+            preview = build_open_sports_history_import_report(source_id="retrosheet_mlb", input_path=path, base_data_dir=tmp)
+            paths = write_open_sports_history_import_report(preview, base_data_dir=tmp)
+            Path(tmp, paths["latest_json_path"]).unlink()
+            report = build_derived_feature_backfill_report(base_data_dir=tmp, module="baseball_mlb")
+
+        self.assertEqual(report["open_sports_history_preview_rows_consumed"], 1)
+        self.assertIn("baseball_mlb", report["modules_ready_for_tier0_backfill"])
+        self.assertTrue(self._feature(report, "baseball_mlb", "total_runs")["can_derive_now"])
+
     def test_tier1_features_require_sufficient_history(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "short_nflverse.csv"

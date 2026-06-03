@@ -429,50 +429,79 @@ def _open_sports_history_latest_path(base: Path) -> tuple[str, Path]:
     return relative, base / relative
 
 
+def _open_sports_history_payload_paths(base: Path) -> list[tuple[str, Path]]:
+    pairs: list[tuple[str, Path]] = []
+    latest = _open_sports_history_latest_path(base)
+    if latest[1].exists():
+        pairs.append(latest)
+    by_module = base / "data_sources" / "open_sports_history" / "validated" / "by_module"
+    if by_module.exists():
+        for path in sorted(by_module.glob("*.json")):
+            pairs.append((str(path.relative_to(base)).replace("\\", "/"), path))
+    by_season = base / "data_sources" / "open_sports_history" / "validated" / "by_season"
+    if by_season.exists():
+        for path in sorted(by_season.glob("*/*.json")):
+            pairs.append((str(path.relative_to(base)).replace("\\", "/"), path))
+    return pairs
+
+
 def _open_sports_history_records(base: Path) -> tuple[dict[str, list[dict[str, Any]]], str | None, int]:
     relative, path = _open_sports_history_latest_path(base)
-    payload = _read_json(path)
-    if not isinstance(payload, dict):
+    payload_paths = _open_sports_history_payload_paths(base)
+    if not payload_paths:
         return {}, relative if path.exists() else None, 0
-    candidates = payload.get("validated_preview_rows")
-    if not isinstance(candidates, list):
-        candidates = payload.get("preview_rows")
     records_by_module: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    seen: set[tuple[str, str, str]] = set()
     consumed = 0
-    for item in candidates or []:
-        if not isinstance(item, dict):
+    primary_relative = payload_paths[0][0]
+    for payload_relative, payload_path in payload_paths:
+        payload = _read_json(payload_path)
+        if not isinstance(payload, dict):
             continue
-        if item.get("raw_payload_included") is True:
-            continue
-        if str(item.get("validation_status") or item.get("blocked_reason") or "").lower() not in {"available"}:
-            continue
-        module = str(item.get("module") or "")
-        if not module:
-            continue
-        row = {
-            "module": module,
-            "event_id": item.get("event_id"),
-            "source_id": item.get("source_id"),
-            "season": item.get("season"),
-            "week_or_round": item.get("week_or_round"),
-            "event_date": item.get("event_date"),
-            "home_participant": item.get("home_participant"),
-            "away_participant": item.get("away_participant"),
-            "neutral_site": item.get("neutral_site"),
-            "home_score": item.get("home_score"),
-            "away_score": item.get("away_score"),
-            "final_result": item.get("final_result"),
-            "winner": item.get("winner"),
-            "final_margin": item.get("final_margin"),
-            "total_score": item.get("total_score"),
-            "market_price_or_odds": None,
-            "explicit_outcome": None,
-            "data_source_path": item.get("source_file_or_ref") or relative,
-            "raw_payload_included": False,
-        }
-        records_by_module[module].append(row)
-        consumed += 1
-    return dict(records_by_module), relative, consumed
+        candidates = payload.get("validated_preview_rows")
+        if not isinstance(candidates, list):
+            candidates = payload.get("preview_rows")
+        for item in candidates or []:
+            if not isinstance(item, dict):
+                continue
+            if item.get("raw_payload_included") is True:
+                continue
+            if str(item.get("validation_status") or item.get("blocked_reason") or "").lower() not in {"available"}:
+                continue
+            module = str(item.get("module") or "")
+            if not module:
+                continue
+            event_id = str(item.get("event_id") or "")
+            source_id = str(item.get("source_id") or "open_sports_history")
+            dedupe_key = (module, source_id, event_id)
+            if event_id and dedupe_key in seen:
+                continue
+            if event_id:
+                seen.add(dedupe_key)
+            row = {
+                "module": module,
+                "event_id": item.get("event_id"),
+                "source_id": item.get("source_id"),
+                "season": item.get("season"),
+                "week_or_round": item.get("week_or_round"),
+                "event_date": item.get("event_date"),
+                "home_participant": item.get("home_participant"),
+                "away_participant": item.get("away_participant"),
+                "neutral_site": item.get("neutral_site"),
+                "home_score": item.get("home_score"),
+                "away_score": item.get("away_score"),
+                "final_result": item.get("final_result"),
+                "winner": item.get("winner"),
+                "final_margin": item.get("final_margin"),
+                "total_score": item.get("total_score"),
+                "market_price_or_odds": None,
+                "explicit_outcome": None,
+                "data_source_path": item.get("source_file_or_ref") or payload_relative,
+                "raw_payload_included": False,
+            }
+            records_by_module[module].append(row)
+            consumed += 1
+    return dict(records_by_module), primary_relative, consumed
 
 
 def load_local_normalized_records(*, base_data_dir: str | Path | None = None) -> dict[str, list[dict[str, Any]]]:

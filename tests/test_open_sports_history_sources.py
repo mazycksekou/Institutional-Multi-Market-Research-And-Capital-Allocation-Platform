@@ -49,6 +49,8 @@ class TestOpenSportsHistorySources(unittest.TestCase):
             "sportsdataverse_ncaab",
             "sportsdataverse_ncaaw",
             "sportsdataverse_wnba",
+            "sportsdataverse_nhl",
+            "sportsdataverse_nba_or_hoopr",
         ):
             source = sources[source_id]
             self.assertEqual(source["approval_status"], "needs_tiny_verification")
@@ -56,6 +58,34 @@ class TestOpenSportsHistorySources(unittest.TestCase):
             self.assertFalse(source["supports_direct_download"])
             self.assertFalse(source["enabled"])
             self.assertTrue(source["terms_review_required"])
+            self.assertEqual(source["target_coverage_years"], 10)
+
+    def test_soccer_and_tennis_lanes_exist_as_tiny_verification_sources(self):
+        sources = self._sources_by_id()
+        for source_id in (
+            "football_data_uk_soccer",
+            "jeff_sackmann_tennis_atp",
+            "jeff_sackmann_tennis_wta",
+        ):
+            source = sources[source_id]
+            self.assertEqual(source["approval_status"], "needs_tiny_verification")
+            self.assertTrue(source["current_phase_allowed"])
+            self.assertTrue(source["supports_direct_download"])
+            self.assertTrue(source["supports_local_file_import"])
+            self.assertTrue(source["supports_bulk_backfill"])
+            self.assertFalse(source["enabled"])
+            self.assertTrue(source["terms_review_required"])
+            self.assertEqual(source["target_coverage_years"], 10)
+
+    def test_ufc_boxing_and_golf_are_research_lanes(self):
+        sources = self._sources_by_id()
+        for source_id in ("ufc_mma_research_lane", "boxing_research_lane", "golf_research_lane"):
+            source = sources[source_id]
+            self.assertEqual(source["approval_status"], "research_required")
+            self.assertFalse(source["current_phase_allowed"])
+            self.assertFalse(source["enabled"])
+            self.assertEqual(source["blocked_reason"], "open_structured_source_not_confirmed")
+            self.assertFalse(source["supports_direct_download"])
 
     def test_sports_reference_is_manual_export_terms_review_only(self):
         source = self._sources_by_id()["sports_reference_manual_export"]
@@ -70,7 +100,7 @@ class TestOpenSportsHistorySources(unittest.TestCase):
 
     def test_enabled_and_paid_source_counts_remain_zero(self):
         report = build_open_sports_history_source_report()
-        self.assertEqual(report["sources_registered"], 7)
+        self.assertEqual(report["sources_registered"], 15)
         self.assertEqual(report["enabled_source_count"], 0)
         self.assertEqual(report["paid_source_enabled_count"], 0)
         self.assertEqual(report["downloads_attempted"], 0)
@@ -96,11 +126,17 @@ class TestOpenSportsHistorySources(unittest.TestCase):
             "supports_local_file_import",
             "supports_manual_export",
             "supports_api_key",
+            "supports_bulk_backfill",
+            "supports_scheduled_backfill",
             "terms_review_required",
+            "target_coverage_years",
+            "available_start_year",
+            "available_end_year",
             "recommended_use",
             "blocked_reason",
             "max_records_default",
             "max_records_hard_cap",
+            "bulk_backfill_allowed_after_smoke",
             "raw_payload_persistence_allowed",
             "provider_write",
             "execution_allowed",
