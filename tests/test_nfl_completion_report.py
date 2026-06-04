@@ -9,9 +9,11 @@ class TestNflCompletionReport(unittest.TestCase):
     def test_report_exposes_required_safety_and_timing_fields(self):
         with tempfile.TemporaryDirectory() as tmp:
             report = build_nfl_completion_report(base_data_dir=tmp, run_mode="open_free_mode", tests_run=["one"], tests_passed=["one"], commit_hash="abc123")
-            paths = write_nfl_completion_report(report)
-            latest_json = Path("reports") / "NFL_COMPLETION_FINAL_REPORT.json"
-            latest_md = Path("reports") / "NFL_COMPLETION_FINAL_REPORT.md"
+            paths = write_nfl_completion_report(report, output_dir=Path(tmp) / "reports")
+            latest_json = Path(tmp) / "reports" / "NFL_COMPLETION_FINAL_REPORT.json"
+            latest_md = Path(tmp) / "reports" / "NFL_COMPLETION_FINAL_REPORT.md"
+            self.assertTrue(latest_json.exists())
+            self.assertTrue(latest_md.exists())
 
         self.assertTrue(report["ok"])
         self.assertEqual(report["run_mode"], "open_free_mode")
@@ -28,8 +30,6 @@ class TestNflCompletionReport(unittest.TestCase):
         self.assertFalse(report["secrets_included"])
         self.assertTrue(paths["latest_json_path"].endswith("reports/NFL_COMPLETION_FINAL_REPORT.json"))
         self.assertTrue(paths["latest_markdown_path"].endswith("reports/NFL_COMPLETION_FINAL_REPORT.md"))
-        self.assertTrue(latest_json.exists())
-        self.assertTrue(latest_md.exists())
 
     def test_report_includes_source_family_and_feature_sections(self):
         report = build_nfl_completion_report()

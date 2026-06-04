@@ -1,0 +1,351 @@
+{
+  "blocked_policy_sources": {
+    "mlb": [
+      "market_odds_blocked",
+      "official_public_web",
+      "statcast_public_data"
+    ],
+    "nfl": [
+      "blocked_ftn_charting",
+      "blocked_pfr_reference",
+      "nflverse",
+      "official_nfl_staff_or_news_pages",
+      "official_team_press_releases",
+      "official_team_staff_pages",
+      "open_github_coaching_dataset",
+      "research",
+      "team_sitemaps"
+    ]
+  },
+  "combined_verdict": "COMPLETE_WITH_POLICY_BLOCKED_SOURCES",
+  "created_at": "2026-06-04T23:19:16.400030+00:00",
+  "cutoff_safety_summary": {
+    "future_leakage_checks_passed": true,
+    "mlb": {
+      "cutoff_safe_feature_count": 1,
+      "future_leakage_checks_passed": true
+    },
+    "nfl": {
+      "cutoff_safe_feature_count": 6,
+      "future_leakage_checks_passed": true
+    }
+  },
+  "files_changed": [
+    "automation_scheduler/nfl_mlb_integration_report.py",
+    "scripts/run_nfl_mlb_integration_report.ps1",
+    "tests/test_nfl_completion_report.py",
+    "tests/test_nfl_mlb_integration_report.py",
+    "tests/test_automation_scheduler_scripts.py",
+    "reports/NFL_COMPLETION_FINAL_REPORT.json",
+    "reports/NFL_COMPLETION_FINAL_REPORT.md",
+    "reports/NFL_MLB_INTEGRATION_FINAL_REPORT.json",
+    "reports/NFL_MLB_INTEGRATION_FINAL_REPORT.md"
+  ],
+  "future_leakage_checks_passed": true,
+  "integration_branch": "finish-mlb-completely",
+  "integration_commit_hash": "018a388dbadabe7429158b7f8e4a65717e8b7773",
+  "merge_conflicts_resolved": [],
+  "mlb_commit_hash": "018a388dbadabe7429158b7f8e4a65717e8b7773",
+  "mlb_feature_groups_model_eligible": [
+    "batting_profile",
+    "bullpen_usage",
+    "mlb_batted_ball_quality_candidates_available",
+    "mlb_batting_profile_available",
+    "mlb_bullpen_usage_available",
+    "mlb_cutoff_sensitive_feature_count",
+    "mlb_feature_builder_blockers",
+    "mlb_feature_builder_count",
+    "mlb_fielding_profile_available",
+    "mlb_leakage_sensitive_feature_count",
+    "mlb_lineup_stability_available",
+    "mlb_manager_continuity_available",
+    "mlb_market_odds_available",
+    "mlb_park_factor_available",
+    "mlb_people_identifier_crosswalk_available",
+    "mlb_pitch_quality_candidates_available",
+    "mlb_pitching_profile_available",
+    "mlb_player_availability_available",
+    "mlb_postseason_context_available",
+    "mlb_roster_continuity_available",
+    "mlb_stadium_weather_available",
+    "mlb_starting_pitcher_profile_available",
+    "mlb_team_game_run_profile_available",
+    "mlb_team_identity_available",
+    "people_identifier_crosswalk",
+    "pitching_profile",
+    "postseason_context",
+    "roster_continuity",
+    "stadium_weather",
+    "starting_pitcher_profile",
+    "team_game_run_profile"
+  ],
+  "mlb_record_count_total": 2233,
+  "mlb_report_missing_fields": [],
+  "mlb_source_family_summary": {
+    "approved": [
+      "chadwick_register",
+      "lahman_database",
+      "manual_csv_import",
+      "mlb_stats_api",
+      "retrosheet_open_dataset",
+      "wikidata_wikipedia_seed"
+    ],
+    "audited": [
+      "chadwick_register",
+      "lahman_database",
+      "manual_csv_import",
+      "market_odds_blocked",
+      "mlb_stats_api",
+      "official_public_web",
+      "retrosheet_open_dataset",
+      "statcast_public_data",
+      "wikidata_wikipedia_seed"
+    ],
+    "blocked": [
+      "market_odds_blocked",
+      "official_public_web",
+      "statcast_public_data"
+    ],
+    "populated": [
+      "chadwick_register",
+      "lahman_database",
+      "mlb_stats_api",
+      "retrosheet_open_dataset"
+    ],
+    "research": [
+      "lahman_database",
+      "manual_csv_import",
+      "mlb_stats_api",
+      "wikidata_wikipedia_seed"
+    ]
+  },
+  "mlb_status": "COMPLETE_WITH_POLICY_BLOCKED_SOURCES",
+  "nfl_commit_hash": "7fdf533d0b685dd2d312c489f2aa8b0db94eb4a6",
+  "nfl_feature_groups_model_eligible": [
+    "average_margin",
+    "average_points_against",
+    "average_points_for",
+    "average_rest_days",
+    "away_win_rate",
+    "close_game_win_rate",
+    "defensive_volatility",
+    "depth_chart_stability",
+    "home_win_rate",
+    "injury_availability",
+    "late_season_win_rate",
+    "nextgen_efficiency_candidates",
+    "player_usage_participation",
+    "player_usage_snaps",
+    "point_differential",
+    "roster_continuity",
+    "schedule_strength_proxy",
+    "scoring_volatility",
+    "simple_team_rating",
+    "team_game_efficiency_candidates",
+    "team_game_play_volume",
+    "win_rate"
+  ],
+  "nfl_record_count_total": 6461599,
+  "nfl_report_missing_fields": [],
+  "nfl_source_family_summary": {
+    "approved": [
+      "manual_csv_import",
+      "nflverse",
+      "wikidata_coaching_seed",
+      "wikidata_entity_api",
+      "wikidata_local_dump",
+      "wikipedia_coaching_seed",
+      "wikipedia_coaching_tables"
+    ],
+    "audited": [
+      "blocked_ftn_charting",
+      "blocked_pfr_reference",
+      "manual_csv_import",
+      "nflverse",
+      "official_nfl_staff_or_news_pages",
+      "official_team_press_releases",
+      "official_team_staff_pages",
+      "open_github_coaching_dataset",
+      "research",
+      "team_sitemaps",
+      "wikidata_coaching_seed",
+      "wikidata_entity_api",
+      "wikidata_local_dump",
+      "wikipedia_coaching_seed",
+      "wikipedia_coaching_tables"
+    ],
+    "blocked": [
+      "blocked_ftn_charting",
+      "blocked_pfr_reference",
+      "nflverse",
+      "official_nfl_staff_or_news_pages",
+      "official_team_press_releases",
+      "official_team_staff_pages",
+      "open_github_coaching_dataset",
+      "research",
+      "team_sitemaps"
+    ],
+    "populated": [
+      "nflverse"
+    ],
+    "research": [
+      "manual_csv_import",
+      "wikidata_coaching_seed",
+      "wikidata_entity_api",
+      "wikidata_local_dump",
+      "wikipedia_coaching_seed",
+      "wikipedia_coaching_tables"
+    ]
+  },
+  "nfl_status": "COMPLETE",
+  "ok": true,
+  "oxylabs_residential_proxy_status": {
+    "allow_oxylabs_required": true,
+    "allow_paid_retrieval_required": true,
+    "allowlist_required": true,
+    "blocklist_enforced": true,
+    "disabled_by_default": true,
+    "no_raw_html": true,
+    "no_raw_payloads": true,
+    "no_secret_logging": true,
+    "present": true
+  },
+  "oxylabs_web_scraper_api_status": {
+    "allow_oxylabs_required": true,
+    "allow_paid_retrieval_required": true,
+    "allowlist_required": true,
+    "blocklist_enforced": true,
+    "disabled_by_default": true,
+    "no_raw_html": true,
+    "no_raw_payloads": true,
+    "no_secret_logging": true,
+    "present": true
+  },
+  "raw_payload_scan_result": {
+    "checked_patterns": [
+      "raw html",
+      "raw screenshot",
+      "raw payload",
+      ".env tracked",
+      "payload/screenshot/html file names"
+    ],
+    "findings": [],
+    "name_scan_hits": [
+      ".env.example",
+      "automation_scheduler/arbitrage/draw_market_arbitrage.py",
+      "automation_scheduler/drawdown_controls.py",
+      "automation_scheduler/provider_payload_validator.py",
+      "screenshot_intake.py",
+      "scripts/check_live_payload_contract.ps1",
+      "scripts/live_payloads.ps1",
+      "tests/test_arbitrage_draw_market.py",
+      "tests/test_drawdown_controls.py",
+      "tests/test_live_smoke_payload_contract.py",
+      "tests/test_provider_payload_validator.py",
+      "tests/test_screenshot_analysis.py",
+      "tests/test_screenshot_normalization_parity.py"
+    ],
+    "notes": [
+      "Tracked files with payload/screenshot/html-like names were code/tests/docs utilities only; no raw HTML, raw screenshot, or raw provider payload artifacts were found."
+    ],
+    "status": "clean"
+  },
+  "remaining_manual_actions": [],
+  "report_hash": "b0ba53a29e608b8d667ea94b1c328ba4d08ff381baef466ad3eb2aa9f7a810b6",
+  "research_sources": {
+    "mlb": [
+      "lahman_database",
+      "manual_csv_import",
+      "mlb_stats_api",
+      "wikidata_wikipedia_seed"
+    ],
+    "nfl": [
+      "manual_csv_import",
+      "wikidata_coaching_seed",
+      "wikidata_entity_api",
+      "wikidata_local_dump",
+      "wikipedia_coaching_seed",
+      "wikipedia_coaching_tables"
+    ]
+  },
+  "safety_invariants": {
+    "actual_bets_submitted": 0,
+    "actual_crypto_swaps_submitted": 0,
+    "actual_orders_submitted": 0,
+    "actual_trades_submitted": 0,
+    "auto_execution_enabled": false,
+    "broker_order_execution_enabled": false,
+    "crypto_trade_execution_enabled": false,
+    "enabled_source_count": 0,
+    "execution_allowed": false,
+    "execution_allowed_count": 0,
+    "kalshi_order_execution_enabled": false,
+    "live_execution_enabled": false,
+    "paid_source_enabled_count": 0,
+    "provider_write": false,
+    "raw_html_persisted": false,
+    "raw_payload_included": false,
+    "raw_screenshot_persisted": false,
+    "secrets_included": false,
+    "sportsbook_bet_execution_enabled": false,
+    "stock_trade_execution_enabled": false
+  },
+  "schema_version": "nfl_mlb_integration_final_report_v1",
+  "secret_scan_result": {
+    "checked_patterns": [
+      "Authorization:",
+      "Basic auth",
+      "OXYLABS credentials markers",
+      "cookie/session/token markers"
+    ],
+    "findings": [],
+    "marker_references": [
+      "docs/OXYLABS_RETRIEVAL_LAYER.md",
+      "tests/test_oxylabs_residential_proxy_adapter.py",
+      "tests/test_oxylabs_web_scraper_api_adapter.py",
+      "automation_scheduler/paid_retrieval_sources.py",
+      "automation_scheduler/oxylabs_residential_proxy_adapter.py",
+      "automation_scheduler/oxylabs_web_scraper_api_adapter.py"
+    ],
+    "notes": [
+      "Manual repository scan found marker references only; no committed secret values were found."
+    ],
+    "status": "clean"
+  },
+  "shared_files_touched": [
+    "automation_scheduler/derived_feature_backfill_report.py",
+    "automation_scheduler/retrieval_policy.py",
+    "automation_scheduler/paid_retrieval_sources.py",
+    "automation_scheduler/oxylabs_residential_proxy_adapter.py",
+    "automation_scheduler/oxylabs_web_scraper_api_adapter.py",
+    "docs/OXYLABS_RETRIEVAL_LAYER.md",
+    "tests/test_automation_scheduler_scripts.py",
+    "tests/test_oxylabs_residential_proxy_adapter.py",
+    "tests/test_oxylabs_web_scraper_api_adapter.py",
+    "scripts/test_oxylabs_residential_proxy.ps1",
+    "scripts/test_oxylabs_web_scraper_api.ps1"
+  ],
+  "status": "ok",
+  "tests_failed": [],
+  "tests_passed": [
+    "pytest tests/test_automation_scheduler_scripts.py -q",
+    "pytest tests/test_nfl_completion_report.py -q",
+    "pytest tests/test_nfl_mlb_integration_report.py -q",
+    "pytest tests/test_mlb_completion_report.py -q",
+    "pytest tests/test_oxylabs_residential_proxy_adapter.py -q",
+    "pytest tests/test_oxylabs_web_scraper_api_adapter.py -q",
+    "pytest tests -q",
+    "python -m compileall automation_scheduler scripts tests"
+  ],
+  "tests_run": [
+    "pytest tests/test_automation_scheduler_scripts.py -q",
+    "pytest tests/test_nfl_completion_report.py -q",
+    "pytest tests/test_nfl_mlb_integration_report.py -q",
+    "pytest tests/test_mlb_completion_report.py -q",
+    "pytest tests/test_oxylabs_residential_proxy_adapter.py -q",
+    "pytest tests/test_oxylabs_web_scraper_api_adapter.py -q",
+    "pytest tests -q",
+    "python -m compileall automation_scheduler scripts tests"
+  ],
+  "total_records_populated": 6463832
+}
