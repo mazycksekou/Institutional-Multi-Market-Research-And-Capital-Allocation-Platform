@@ -57,6 +57,10 @@ EXECUTIVE_TOKENS = ("general manager", "president", "owner", "executive", "direc
 WIKIDATA_SPARQL_ENDPOINT = "https://query.wikidata.org/sparql"
 WIKIDATA_DEFAULT_TIMEOUT_SECONDS = 15
 WIKIDATA_MAX_RETRIES = 1
+# Descriptive contact appended to the truthful research user-agent per the
+# Wikidata user-agent policy. This is project provenance, not browser spoofing.
+WIKIDATA_CONTACT_URL = "https://github.com/mazycksekou/betting-stock-api-code-integration"
+WIKIDATA_USER_AGENT = f"{RESEARCH_USER_AGENT} (+{WIKIDATA_CONTACT_URL})"
 
 
 def _clean(value: Any) -> str:
@@ -466,7 +470,7 @@ def _default_wikidata_fetch(query: str, *, timeout: int = WIKIDATA_DEFAULT_TIMEO
     request = urllib.request.Request(
         url,
         headers={
-            "User-Agent": RESEARCH_USER_AGENT,
+            "User-Agent": WIKIDATA_USER_AGENT,
             "Accept": "application/sparql-results+json",
         },
         method="GET",
@@ -557,6 +561,17 @@ class WikidataCoachingSeedAdapter(NflCoachingAdapter):
                 downloads_succeeded += 1
                 bindings = list((payload or {}).get("results", {}).get("bindings", []))
                 break
+            except urllib.error.HTTPError as exc:
+                fetch_error = f"structured_seed_fetch_failed:HTTP_{exc.code}"
+                bindings = []
+                # Respect rate limits / bot blocks: never retry-spam a 429/403.
+                if exc.code in (403, 429):
+                    fetch_error = (
+                        "structured_seed_rate_limited_HTTP_429"
+                        if exc.code == 429
+                        else "structured_seed_forbidden_HTTP_403"
+                    )
+                    break
             except (urllib.error.URLError, TimeoutError, socket.timeout, ValueError, OSError) as exc:
                 fetch_error = "structured_seed_fetch_failed:" + type(exc).__name__
                 bindings = []

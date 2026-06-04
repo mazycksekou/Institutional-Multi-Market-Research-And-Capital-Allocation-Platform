@@ -257,6 +257,15 @@ year), an effective date yields a point-in-time record, and missing dates yield
 a row flagged `requires_season_expansion` that is excluded from season-based
 features.
 
+The request sends a descriptive truthful user-agent with project contact
+(`betting-stock-api-research-bot/0.1 (+<repo url>)`) per the Wikidata
+user-agent policy — this is provenance, not browser spoofing. Rate limits and
+bot blocks are respected, never bypassed: an `HTTP 429` (rate limit) or
+`HTTP 403` (forbidden) response is reported as a precise blocker
+(`structured_seed_rate_limited_HTTP_429` / `structured_seed_forbidden_HTTP_403`)
+and is never retry-spammed. When the shared egress IP is rate-limited, the lane
+reports the blocker and the manual CSV fallback remains ready.
+
 Modes are driven by `scripts/run_nfl_coaching_import.ps1`
 (`metadata_check | tiny_sample | structured_seed_import | manual_import |
 coverage_report`). Validated rows are written under

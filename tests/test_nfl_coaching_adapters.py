@@ -223,6 +223,42 @@ class TestNflCoachingAdapters(unittest.TestCase):
         expanded = expand_coaching_dates_to_team_seasons({"start_date": "2013-09-08", "end_date": "2014-09-01"})
         self.assertEqual([row["season"] for row in expanded], ["2013", "2014"])
 
+    def test_wikidata_user_agent_is_descriptive_not_spoofed(self):
+        from automation_scheduler.nfl_coaching_adapters import WIKIDATA_USER_AGENT, WIKIDATA_CONTACT_URL
+
+        self.assertIn("betting-stock-api-research-bot", WIKIDATA_USER_AGENT)
+        self.assertIn(WIKIDATA_CONTACT_URL, WIKIDATA_USER_AGENT)
+        self.assertNotIn("Mozilla", WIKIDATA_USER_AGENT)
+        self.assertNotIn("Chrome", WIKIDATA_USER_AGENT)
+
+    def test_rate_limit_429_is_respected_without_retry(self):
+        import urllib.error
+
+        def rate_limited(query):
+            raise urllib.error.HTTPError(url="https://query.wikidata.org/sparql", code=429, msg="Too Many Requests", hdrs=None, fp=None)
+
+        adapter = adapter_by_id("wikidata_coaching_seed")
+        run = adapter.run_structured_seed_import(allow_structured_seed=True, fetch_fn=rate_limited)
+        self.assertEqual(run["status"], "blocked")
+        self.assertEqual(run["blocked_reason"], "structured_seed_rate_limited_HTTP_429")
+        self.assertEqual(run["provider_calls_attempted"], 1)
+        self.assertEqual(run["downloads_attempted"], 1)
+        self.assertEqual(run["downloads_succeeded"], 0)
+        self.assertFalse(run["spoofing_used"])
+        self.assertFalse(run["browser_impersonation_used"])
+        self.assertFalse(run["raw_payload_persisted"])
+
+    def test_forbidden_403_is_respected_without_retry(self):
+        import urllib.error
+
+        def forbidden(query):
+            raise urllib.error.HTTPError(url="https://query.wikidata.org/sparql", code=403, msg="Forbidden", hdrs=None, fp=None)
+
+        adapter = adapter_by_id("wikidata_coaching_seed")
+        run = adapter.run_structured_seed_import(allow_structured_seed=True, fetch_fn=forbidden)
+        self.assertEqual(run["blocked_reason"], "structured_seed_forbidden_HTTP_403")
+        self.assertEqual(run["provider_calls_attempted"], 1)
+
     def test_wikipedia_adapter_is_supplemental_only(self):
         adapter = adapter_by_id("wikipedia_coaching_seed")
         self.assertIsInstance(adapter, WikipediaCoachingSeedAdapter)
