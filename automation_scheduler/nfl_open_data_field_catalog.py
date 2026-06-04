@@ -450,6 +450,137 @@ def build_nfl_open_data_field_catalog(
     }
 
 
+def build_existing_nfl_field_index(*, base_data_dir: str | Path | None = None) -> dict[str, Any]:
+    """Index verified fields already present in the project's NFL field catalog."""
+    catalog = build_nfl_open_data_field_catalog(base_data_dir=base_data_dir)
+    source_field_names: set[str] = set()
+    canonical_field_names: set[str] = set()
+    by_source: dict[str, set[str]] = {}
+    seasons_by_canonical: dict[str, set[str]] = {}
+    join_keys: set[str] = set()
+    for entry in catalog.get("entries") or []:
+        if entry.get("source_status") != "verified":
+            continue
+        field_name = str(entry.get("field_name"))
+        canonical = str(entry.get("canonical_field_name"))
+        source_field_names.add(field_name.lower())
+        canonical_field_names.add(canonical)
+        by_source.setdefault(str(entry.get("source_id")), set()).add(field_name.lower())
+        seasons_by_canonical.setdefault(canonical, set()).update(str(s) for s in entry.get("seasons_available") or [])
+        if entry.get("structural_or_join_key"):
+            join_keys.add(canonical)
+    return {
+        "source_field_names": source_field_names,
+        "canonical_field_names": canonical_field_names,
+        "by_source": by_source,
+        "seasons_by_canonical": seasons_by_canonical,
+        "join_keys": join_keys,
+        "verified_field_count": int(catalog.get("verified_field_count", 0) or 0),
+    }
+
+
+def classify_candidate_field_novelty(
+    candidate_field: dict[str, Any],
+    existing_index: dict[str, Any],
+) -> dict[str, Any]:
+    """Classify a single candidate field against the existing NFL catalog."""
+    field_name = str(candidate_field.get("field_name") or "")
+    canonical = _canonical_field_name(field_name)
+    lower = field_name.lower()
+    candidate_seasons = {str(s) for s in candidate_field.get("seasons_available") or []}
+    is_join_key = bool(candidate_field.get("join_key"))
+    new_entity = bool(candidate_field.get("new_entity_coverage"))
+    higher_quality = bool(candidate_field.get("higher_quality_replacement"))
+
+    exact_duplicate = lower in existing_index.get("source_field_names", set())
+    canonical_duplicate = (not exact_duplicate) and canonical in existing_index.get("canonical_field_names", set())
+    equivalent = canonical_duplicate
+    existing_seasons = existing_index.get("seasons_by_canonical", {}).get(canonical, set())
+    new_season_coverage = bool(candidate_seasons - existing_seasons) if (exact_duplicate or canonical_duplicate) else False
+    new_join_key = is_join_key and canonical not in existing_index.get("join_keys", set())
+    new_field = not (exact_duplicate or canonical_duplicate)
+
+    if new_field:
+        novelty = "new_field"
+    elif higher_quality:
+        novelty = "higher_quality_replacement"
+    elif new_season_coverage:
+        novelty = "new_season_coverage"
+    elif new_entity:
+        novelty = "new_entity_coverage"
+    elif new_join_key:
+        novelty = "new_join_key"
+    elif candidate_field.get("new_granularity"):
+        novelty = "new_granularity"
+    elif exact_duplicate:
+        novelty = "exact_duplicate"
+    else:
+        novelty = "canonical_duplicate"
+
+    ingestible = novelty not in {"exact_duplicate", "canonical_duplicate", "equivalent_existing_field"}
+    return {
+        "field_name": field_name,
+        "canonical_field_name": canonical,
+        "exact_duplicate": exact_duplicate,
+        "canonical_duplicate": canonical_duplicate,
+        "equivalent_existing_field": equivalent and not ingestible,
+        "new_field": new_field,
+        "new_granularity": bool(candidate_field.get("new_granularity")),
+        "new_join_key": new_join_key,
+        "new_season_coverage": new_season_coverage,
+        "new_entity_coverage": new_entity,
+        "higher_quality_replacement": higher_quality,
+        "novelty": novelty,
+        "ingestible": ingestible,
+        "blocker": None if ingestible else "redundant_with_existing_fields",
+    }
+
+
+def compare_candidate_fields_to_existing_catalog(
+    candidate_fields: list[dict[str, Any]],
+    *,
+    base_data_dir: str | Path | None = None,
+    existing_index: dict[str, Any] | None = None,
+) -> list[dict[str, Any]]:
+    index = existing_index if existing_index is not None else build_existing_nfl_field_index(base_data_dir=base_data_dir)
+    return [classify_candidate_field_novelty(field, index) for field in candidate_fields]
+
+
+def build_source_field_diff_report(
+    *,
+    source_id: str,
+    candidate_fields: list[dict[str, Any]],
+    base_data_dir: str | Path | None = None,
+    existing_index: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    classifications = compare_candidate_fields_to_existing_catalog(
+        candidate_fields,
+        base_data_dir=base_data_dir,
+        existing_index=existing_index,
+    )
+    ingestible = [row["field_name"] for row in classifications if row["ingestible"]]
+    duplicates = [row["field_name"] for row in classifications if not row["ingestible"]]
+    return {
+        **SAFETY_FIELDS,
+        "ok": True,
+        "status": "ok",
+        "schema_version": NFL_OPEN_DATA_FIELD_CATALOG_SCHEMA_VERSION,
+        "source_id": source_id,
+        "candidate_field_count": len(candidate_fields),
+        "ingestible_field_count": len(ingestible),
+        "ingestible_fields": ingestible,
+        "duplicate_field_count": len(duplicates),
+        "duplicate_fields": duplicates,
+        "field_classifications": classifications,
+        "no_predictive_claim": True,
+        "provider_calls_attempted": 0,
+        "downloads_attempted": 0,
+        "downloads_succeeded": 0,
+        "raw_payload_included": False,
+        "secrets_included": False,
+    }
+
+
 def render_nfl_open_data_field_catalog_markdown(report: dict[str, Any]) -> str:
     lines = [
         "# NFL Open Data Field Catalog",

@@ -196,6 +196,25 @@ class TestDerivedFeatureBackfillReport(unittest.TestCase):
             self.assertIn(key, report)
         self.assertTrue(report["nfl_snap_usage_available"])
 
+    def test_report_exposes_exhaustion_coaching_cutoff_flags(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            report = build_derived_feature_backfill_report(base_data_dir=tmp)
+        for key in (
+            "nfl_source_exhaustion_checked",
+            "nfl_new_safe_sources_found",
+            "nfl_redundant_sources_skipped",
+            "nfl_blocked_sources",
+            "nfl_coaching_data_available",
+            "nfl_coaching_data_blocked_reason",
+            "nfl_cutoff_week_features_available",
+            "nfl_cutoff_week_feature_groups_available",
+            "nfl_cutoff_week_leakage_guard_status",
+            "nfl_cutoff_week_snapshot_count",
+        ):
+            self.assertIn(key, report)
+        self.assertTrue(report["nfl_source_exhaustion_checked"])
+        self.assertFalse(report["nfl_coaching_data_available"])
+
     def test_nfl_flags_default_when_records_provided(self):
         report = build_derived_feature_backfill_report(
             module="americanfootball_nfl",

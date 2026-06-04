@@ -163,6 +163,46 @@ Feature readiness and feature builder reports are written under
 `data/data_sources/nfl_open_data/feature_builders/` and
 `data/data_sources/nfl_open_data/feature_readiness/` and are not committed.
 
+## Source Exhaustion, Coaching, and Cutoff-Week Snapshots
+
+`automation_scheduler/nfl_open_data_source_exhaustion.py` audits remaining
+candidate NFL source families (nflverse/nflfastR, SportsDataverse, official
+NFL/team endpoints, public web, open GitHub datasets, public open data, open
+market archives, coaching/staff) as a no-call, metadata-only registry. It
+performs no provider calls, no downloads, no HTML scraping, and no user-agent
+spoofing. Candidates are classified and blocked when spoofing/bypass is
+required, terms/robots are unclear for raw-HTML scraping, the source is
+paid/freemium, auth/API key is required, or it is a Sports Reference / Pro
+Football Reference derivative. Redundant sources (already covered by nflverse)
+are skipped. The field-difference engine in `nfl_open_data_field_catalog.py`
+(`build_existing_nfl_field_index`, `compare_candidate_fields_to_existing_catalog`,
+`classify_candidate_field_novelty`, `build_source_field_diff_report`) marks each
+candidate field as exact/canonical duplicate, equivalent, or genuinely new
+(field, granularity, join key, season, or entity coverage) so only
+non-redundant fields advance to ingestion gates.
+
+Coaching/staff sources (`nfl_coaching_sources.py`, `nfl_coaching_adapters.py`)
+are disabled by default and compliance-gated. The adapter never scrapes, never
+spoofs (truthful `betting-stock-api-research-bot/0.1` user-agent), enforces a
+crawl delay of at least 3 seconds and a bounded page budget if crawling were
+ever permitted, persists no raw HTML, and stores only compact normalized facts.
+With no confirmed open/terms-safe coaching release, the lane stays blocked with
+a precise reason rather than failing.
+
+`automation_scheduler/nfl_cutoff_week_features.py` (script
+`scripts/run_nfl_cutoff_features.ps1`) computes point-in-time feature snapshots
+from already-validated compact rows using only data through an explicit
+`(season, cutoff_week)`. Future weeks are excluded, postseason is excluded by
+default, cutoff-sensitive groups (roster continuity, injury availability, depth
+chart stability, market odds) are blocked unless
+`allow_cutoff_sensitive_fields` is explicitly enabled, and every value carries
+provenance (`source_id`, `source_fields_used`, `season`, `max_week_used`,
+`cutoff_week`, `cutoff_passed`, `leakage_risk`, `cutoff_required`). No target
+labels are used as features, no predictive claims are made, and no values are
+fabricated. Source-exhaustion, coaching, and cutoff reports are written under
+`data/data_sources/nfl_open_data/{source_exhaustion,coaching_sources,cutoff_features}/`
+and are not committed.
+
 ## Blocked Lanes
 
 The registry tracks terms/research blockers explicitly. Sports Reference derivative lanes remain blocked. FTN charting remains blocked until terms are reviewed. Coaching remains blocked until an approved open structured no-auth source is verified.
