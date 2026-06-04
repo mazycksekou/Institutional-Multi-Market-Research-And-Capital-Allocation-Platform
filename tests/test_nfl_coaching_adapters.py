@@ -149,7 +149,7 @@ class TestNflCoachingAdapters(unittest.TestCase):
         self.assertFalse(report["execution_allowed"])
         self.assertFalse(report["raw_payload_included"])
         self.assertFalse(report["secrets_included"])
-        self.assertEqual(report["robots_blocked_count"], 10)
+        self.assertEqual(report["robots_blocked_count"], 13)
 
     def test_metadata_check_does_not_fetch(self):
         adapter = adapter_by_id("wikidata_coaching_seed")
@@ -258,6 +258,129 @@ class TestNflCoachingAdapters(unittest.TestCase):
         run = adapter.run_structured_seed_import(allow_structured_seed=True, fetch_fn=forbidden)
         self.assertEqual(run["blocked_reason"], "structured_seed_forbidden_HTTP_403")
         self.assertEqual(run["provider_calls_attempted"], 1)
+
+    # --- Fallback ladder ---
+    def test_wdqs_scheduled_respects_retry_after_and_no_retry_spam(self):
+        import email.message
+        import urllib.error
+
+        def rate_limited(query):
+            hdrs = email.message.Message()
+            hdrs["Retry-After"] = "120"
+            raise urllib.error.HTTPError(url="https://query.wikidata.org/sparql", code=429, msg="Too Many Requests", hdrs=hdrs, fp=None)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            adapter = adapter_by_id("wikidata_coaching_seed")
+            run = adapter.run_structured_seed_import_scheduled(allow_structured_seed=True, fetch_fn=rate_limited, base_data_dir=tmp, resume=False)
+        self.assertEqual(run["status"], "blocked")
+        self.assertEqual(run["blocked_reason"], "structured_seed_rate_limited_HTTP_429")
+        self.assertEqual(run["retry_after_seconds"], 120)
+        self.assertIn("next_safe_run_time", run)
+        self.assertEqual(run["provider_calls_attempted"], 1)
+        self.assertEqual(run["downloads_attempted"], 1)
+
+    def test_entity_api_fallback_exists_and_avoids_sparql(self):
+        from automation_scheduler.nfl_coaching_adapters import WikidataEntityApiCoachingAdapter
+
+        adapter = adapter_by_id("wikidata_entity_api")
+        self.assertIsInstance(adapter, WikidataEntityApiCoachingAdapter)
+        with tempfile.TemporaryDirectory() as tmp:
+            check = adapter.team_qid_manifest_check(base_data_dir=tmp)
+        self.assertFalse(check["uses_sparql"])
+        self.assertEqual(check["teams_in_manifest"], 32)
+
+    def test_entity_api_requires_allow_structured_seed(self):
+        adapter = adapter_by_id("wikidata_entity_api")
+        with tempfile.TemporaryDirectory() as tmp:
+            run = adapter.run_entity_seed_import(allow_structured_seed=False, base_data_dir=tmp)
+        self.assertEqual(run["status"], "blocked")
+        self.assertEqual(run["blocked_reason"], "structured_seed_disabled_by_default")
+
+    def test_entity_api_missing_qid_does_not_fabricate(self):
+        adapter = adapter_by_id("wikidata_entity_api")
+        with tempfile.TemporaryDirectory() as tmp:
+            run = adapter.run_entity_seed_import(allow_structured_seed=True, base_data_dir=tmp)
+        self.assertEqual(run["blocked_reason"], "team_qid_manifest_empty_needs_manual_qid")
+        self.assertEqual(run["records_validated"], 0)
+
+    def test_entity_api_normalizes_with_injected_fetch(self):
+        from automation_scheduler.nfl_coaching_adapters import read_team_qid_manifest, team_qid_manifest_path
+
+        entities = {
+            "Q221196": {"entities": {"Q221196": {"claims": {"P286": [{"id": "stmt$1", "mainsnak": {"datavalue": {"value": {"id": "Q1226299"}}}, "qualifiers": {"P580": [{"datavalue": {"value": {"time": "+2013-09-08T00:00:00Z"}}}], "P582": [{"datavalue": {"value": {"time": "+2014-09-01T00:00:00Z"}}}]}}]}}}},
+            "Q1226299": {"entities": {"Q1226299": {"labels": {"en": {"value": "Andy Reid"}}}}},
+        }
+
+        def fetch(qid):
+            return entities[qid]
+
+        with tempfile.TemporaryDirectory() as tmp:
+            from automation_scheduler.nfl_coaching_adapters import generate_team_qid_manifest_template
+            generate_team_qid_manifest_template(base_data_dir=tmp)
+            path = team_qid_manifest_path(Path(tmp))
+            rows = path.read_text(encoding="utf-8").splitlines()
+            rows[1] = "Kansas City Chiefs,KC,Q221196,Wikidata,CC0,"
+            path.write_text("\n".join(rows) + "\n", encoding="utf-8")
+            adapter = adapter_by_id("wikidata_entity_api")
+            run = adapter.run_entity_seed_import(allow_structured_seed=True, entity_fetch_fn=fetch, label_fetch_fn=fetch, persist_preview=True, base_data_dir=tmp)
+            loaded = load_validated_coaching_rows(base_data_dir=tmp)
+        self.assertEqual(run["status"], "ok")
+        self.assertEqual(run["seasons_covered"], ["2013", "2014"])
+        self.assertFalse(run["raw_payload_persisted"])
+        self.assertFalse(run["uses_sparql"])
+        self.assertTrue(all(r["source_license"] == "CC0" for r in loaded))
+
+    def test_dump_fallback_requires_allow_and_blocks_missing_path(self):
+        adapter = adapter_by_id("wikidata_local_dump")
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertEqual(adapter.run_dump_import(allow_local_dump=False, base_data_dir=tmp)["blocked_reason"], "local_dump_not_authorized")
+            missing = adapter.run_dump_import(allow_local_dump=True, base_data_dir=tmp)
+        self.assertEqual(missing["blocked_reason"], "dump_path_missing")
+        self.assertIn("instructions", missing)
+        self.assertFalse(missing["uses_sparql"])
+
+    def test_dump_fallback_streams_local_ndjson(self):
+        adapter = adapter_by_id("wikidata_local_dump")
+        with tempfile.TemporaryDirectory() as tmp:
+            dump = Path(tmp) / "tiny_dump.ndjson"
+            dump.write_text(
+                '[\n'
+                '{"id":"Q221196","claims":{"P286":[{"id":"s1","mainsnak":{"datavalue":{"value":{"id":"Q1226299"}}},"qualifiers":{"P580":[{"datavalue":{"value":{"time":"+2013-09-08T00:00:00Z"}}}]}}]}},\n'
+                ']\n',
+                encoding="utf-8",
+            )
+            run = adapter.run_dump_import(dump_path=str(dump), allow_local_dump=True, persist_preview=True, base_data_dir=tmp)
+        self.assertEqual(run["status"], "ok")
+        self.assertGreater(run["entities_scanned"], 0)
+        self.assertFalse(run["raw_dump_rows_persisted"])
+        self.assertFalse(run["uses_sparql"])
+
+    def test_wikipedia_table_fallback_requires_attribution_and_no_prose(self):
+        adapter = adapter_by_id("wikipedia_coaching_tables")
+        with tempfile.TemporaryDirectory() as tmp:
+            no_fetch = adapter.run_table_import(allow_structured_seed=True, base_data_dir=tmp)
+            self.assertEqual(no_fetch["blocked_reason"], "wikipedia_table_fetch_not_configured")
+            self.assertFalse(no_fetch["parses_article_prose"])
+
+            def table_fetch(page_title):
+                return [{"team": "Kansas City Chiefs", "staff_name": "Andy Reid", "season": "2024", "staff_role": "Head Coach"}]
+
+            run = adapter.run_table_import(allow_structured_seed=True, table_fetch_fn=table_fetch, persist_preview=True, base_data_dir=tmp)
+        self.assertEqual(run["status"], "ok")
+        self.assertTrue(run["attribution_required"])
+        self.assertFalse(run["parses_article_prose"])
+        self.assertEqual(run["license_status"], "cc_by_sa")
+
+    def test_generate_manual_templates(self):
+        from automation_scheduler.nfl_coaching_adapters import generate_manual_templates
+
+        with tempfile.TemporaryDirectory() as tmp:
+            result = generate_manual_templates(base_data_dir=tmp)
+            template_files = [Path(tmp, p) for p in result["templates_written"]]
+            exists = all(p.exists() for p in template_files)
+        self.assertTrue(exists)
+        self.assertEqual(len(result["templates_written"]), 3)
+        self.assertIn("team_qid_manifest", result)
 
     def test_wikipedia_adapter_is_supplemental_only(self):
         adapter = adapter_by_id("wikipedia_coaching_seed")

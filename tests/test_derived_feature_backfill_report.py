@@ -230,7 +230,16 @@ class TestDerivedFeatureBackfillReport(unittest.TestCase):
             "nfl_coaching_attribution_required",
         ):
             self.assertIn(key, report)
-        self.assertEqual(report["nfl_coaching_sources_checked"], 10)
+        self.assertEqual(report["nfl_coaching_sources_checked"], 13)
+        for key in (
+            "nfl_coaching_population_fallbacks_available",
+            "nfl_coaching_wdqs_scheduled_available",
+            "nfl_coaching_entity_api_fallback_available",
+            "nfl_coaching_dump_fallback_available",
+            "nfl_coaching_wikipedia_table_fallback_available",
+            "nfl_coaching_manual_templates_available",
+        ):
+            self.assertIn(key, report)
 
     def test_nfl_flags_default_when_records_provided(self):
         report = build_derived_feature_backfill_report(

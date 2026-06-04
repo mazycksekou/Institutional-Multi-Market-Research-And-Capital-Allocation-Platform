@@ -19,7 +19,7 @@ import socket
 import urllib.error
 import urllib.parse
 import urllib.request
-from datetime import date, datetime
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Callable
 from uuid import uuid4
@@ -663,6 +663,75 @@ class WikidataCoachingSeedAdapter(NflCoachingAdapter):
             base_data_dir=base_data_dir,
         )
 
+    def run_structured_seed_import_scheduled(
+        self,
+        *,
+        allow_structured_seed: bool = False,
+        max_records: int | None = None,
+        request_interval_seconds: int = 65,
+        stop_on_429: bool = True,
+        persist_preview: bool = False,
+        resume: bool = True,
+        fetch_fn: Callable[[str], dict[str, Any]] | None = None,
+        base_data_dir: str | Path | None = None,
+    ) -> dict[str, Any]:
+        """Polite, single-request WDQS run. Honors Retry-After; never retry-spams."""
+        base = resolve_base_data_dir(base_data_dir)
+        cap = int(max_records) if max_records is not None else 500
+        decision = self.validate_source_allowed(allow_structured_seed=allow_structured_seed)
+        if not decision["allowed"]:
+            result = self._seed_result(status="blocked", blocked_reason=decision["reason"], cap=cap)
+            result["mode"] = "structured_seed_import_scheduled"
+            return result
+        ledger = _read_resume_ledger(self.source["source_id"], base)
+        now = datetime.now(tz=timezone.utc)
+        if resume and ledger.get("next_safe_run_time"):
+            next_dt = _parse_iso_datetime(ledger.get("next_safe_run_time"))
+            if next_dt is not None and now < next_dt:
+                result = self._seed_result(status="blocked", blocked_reason="scheduled_wait_window_active", cap=cap)
+                result.update({
+                    "mode": "structured_seed_import_scheduled",
+                    "request_interval_seconds": request_interval_seconds,
+                    "next_safe_run_time": ledger.get("next_safe_run_time"),
+                    "retry_after_seconds": max(0, int((next_dt - now).total_seconds())),
+                })
+                return result
+        query = self.build_wikidata_query(max_records=cap)
+        fetcher = fetch_fn or _default_wikidata_fetch
+        provider_calls = 1
+        downloads_attempted = 1
+        downloads_succeeded = 0
+        bindings: list[dict[str, Any]] = []
+        blocked_reason: str | None = None
+        retry_after = request_interval_seconds
+        try:
+            payload = fetcher(query)
+            downloads_succeeded = 1
+            bindings = list((payload or {}).get("results", {}).get("bindings", []))
+        except urllib.error.HTTPError as exc:
+            if exc.code == 429:
+                blocked_reason = "structured_seed_rate_limited_HTTP_429"
+                retry_after = _retry_after_seconds(exc, default=request_interval_seconds)
+            elif exc.code == 403:
+                blocked_reason = "structured_seed_forbidden_HTTP_403"
+            else:
+                blocked_reason = f"structured_seed_fetch_failed:HTTP_{exc.code}"
+        except (urllib.error.URLError, TimeoutError, socket.timeout, ValueError, OSError) as exc:
+            blocked_reason = "structured_seed_fetch_failed:" + type(exc).__name__
+        next_safe = (now + timedelta(seconds=retry_after)).isoformat()
+        _write_resume_ledger(self.source["source_id"], base, {"last_run_at": now.isoformat(), "next_safe_run_time": next_safe, "last_blocked_reason": blocked_reason})
+        if blocked_reason:
+            result = self._seed_result(status="blocked", blocked_reason=blocked_reason, cap=cap, provider_calls=provider_calls, downloads_attempted=downloads_attempted, downloads_succeeded=downloads_succeeded)
+            result.update({"mode": "structured_seed_import_scheduled", "request_interval_seconds": request_interval_seconds, "retry_after_seconds": retry_after, "next_safe_run_time": next_safe, "stop_on_429": stop_on_429})
+            return result
+        normalized = self.normalize_wikidata_records(bindings)[:cap]
+        validated, rejected = _validate_seed_rows(normalized)
+        paths = self.write_compact_validated_rows(validated, base_data_dir=base) if (persist_preview and validated) else {}
+        result = self._seed_result(status="ok" if validated else "no_records", blocked_reason=None, cap=cap, validated=validated, rejected=rejected, provider_calls=provider_calls, downloads_attempted=downloads_attempted, downloads_succeeded=downloads_succeeded)
+        result.update({"mode": "structured_seed_import_scheduled", "request_interval_seconds": request_interval_seconds, "next_safe_run_time": next_safe})
+        result.update(paths)
+        return result
+
 
 class WikipediaCoachingSeedAdapter(NflCoachingAdapter):
     """Supplemental provenance only. Never parses article prose; ingests no rows."""
@@ -704,12 +773,580 @@ class WikipediaCoachingSeedAdapter(NflCoachingAdapter):
         }
 
 
+NFL_TEAMS = [
+    ("Buffalo Bills", "BUF"), ("Miami Dolphins", "MIA"), ("New England Patriots", "NE"), ("New York Jets", "NYJ"),
+    ("Baltimore Ravens", "BAL"), ("Cincinnati Bengals", "CIN"), ("Cleveland Browns", "CLE"), ("Pittsburgh Steelers", "PIT"),
+    ("Houston Texans", "HOU"), ("Indianapolis Colts", "IND"), ("Jacksonville Jaguars", "JAX"), ("Tennessee Titans", "TEN"),
+    ("Denver Broncos", "DEN"), ("Kansas City Chiefs", "KC"), ("Las Vegas Raiders", "LV"), ("Los Angeles Chargers", "LAC"),
+    ("Dallas Cowboys", "DAL"), ("New York Giants", "NYG"), ("Philadelphia Eagles", "PHI"), ("Washington Commanders", "WAS"),
+    ("Chicago Bears", "CHI"), ("Detroit Lions", "DET"), ("Green Bay Packers", "GB"), ("Minnesota Vikings", "MIN"),
+    ("Atlanta Falcons", "ATL"), ("Carolina Panthers", "CAR"), ("New Orleans Saints", "NO"), ("Tampa Bay Buccaneers", "TB"),
+    ("Arizona Cardinals", "ARI"), ("Los Angeles Rams", "LAR"), ("San Francisco 49ers", "SF"), ("Seattle Seahawks", "SEA"),
+]
+
+WIKIDATA_ENTITY_DATA_URL = "https://www.wikidata.org/wiki/Special:EntityData/{qid}.json"
+HEAD_COACH_PROPERTY = "P286"
+START_TIME_QUALIFIER = "P580"
+END_TIME_QUALIFIER = "P582"
+
+
+def team_qid_manifest_path(base: Path) -> Path:
+    return base / "manual_imports" / "nfl_coaching" / "team_wikidata_qids.csv"
+
+
+def generate_team_qid_manifest_template(*, base_data_dir: str | Path | None = None) -> dict[str, Any]:
+    base = resolve_base_data_dir(base_data_dir)
+    path = team_qid_manifest_path(base)
+    created = False
+    if not path.exists():
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("w", encoding="utf-8", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=["team", "team_abbr", "wikidata_qid", "source_label", "source_license", "notes"])
+            writer.writeheader()
+            for team, abbr in NFL_TEAMS:
+                writer.writerow({"team": team, "team_abbr": abbr, "wikidata_qid": "", "source_label": "Wikidata", "source_license": "CC0", "notes": "needs_manual_qid"})
+        created = True
+    return {"manifest_path": _rel(path, base_data_dir), "created": created, "teams": len(NFL_TEAMS)}
+
+
+def read_team_qid_manifest(*, base_data_dir: str | Path | None = None) -> list[dict[str, Any]]:
+    base = resolve_base_data_dir(base_data_dir)
+    path = team_qid_manifest_path(base)
+    if not path.exists():
+        return []
+    rows: list[dict[str, Any]] = []
+    try:
+        with path.open("r", encoding="utf-8", newline="") as handle:
+            for raw in csv.DictReader(handle):
+                rows.append({k: _clean(v) for k, v in raw.items()})
+    except (csv.Error, OSError, UnicodeDecodeError):
+        return []
+    return rows
+
+
+def _default_entity_fetch(qid: str, *, timeout: int = WIKIDATA_DEFAULT_TIMEOUT_SECONDS) -> dict[str, Any]:
+    """Bounded no-auth GET of a single Wikidata entity by QID (not SPARQL)."""
+    url = WIKIDATA_ENTITY_DATA_URL.format(qid=urllib.parse.quote(qid))
+    request = urllib.request.Request(url, headers={"User-Agent": WIKIDATA_USER_AGENT, "Accept": "application/json"}, method="GET")
+    with urllib.request.urlopen(request, timeout=timeout) as response:  # noqa: S310
+        return json.loads(response.read().decode("utf-8"))
+
+
+def _extract_head_coach_claims(entity: dict[str, Any], qid: str) -> list[dict[str, Any]]:
+    """Extract head-coach (P286) statements from a Wikidata entity JSON. No raw payload kept."""
+    entities = entity.get("entities") if isinstance(entity, dict) else None
+    node = (entities or {}).get(qid) if isinstance(entities, dict) else entity
+    claims = (node or {}).get("claims", {}) if isinstance(node, dict) else {}
+    out: list[dict[str, Any]] = []
+    for statement in claims.get(HEAD_COACH_PROPERTY, []) or []:
+        mainsnak = statement.get("mainsnak", {}) if isinstance(statement, dict) else {}
+        datavalue = mainsnak.get("datavalue", {}) if isinstance(mainsnak, dict) else {}
+        coach_qid = (datavalue.get("value", {}) or {}).get("id") if isinstance(datavalue.get("value"), dict) else None
+        qualifiers = statement.get("qualifiers", {}) if isinstance(statement, dict) else {}
+        out.append(
+            {
+                "coach_qid": coach_qid,
+                "statement_id": statement.get("id"),
+                "start_date": _qualifier_time(qualifiers, START_TIME_QUALIFIER),
+                "end_date": _qualifier_time(qualifiers, END_TIME_QUALIFIER),
+            }
+        )
+    return out
+
+
+def _qualifier_time(qualifiers: dict[str, Any], prop: str) -> str:
+    for q in qualifiers.get(prop, []) or []:
+        value = (q.get("datavalue", {}) or {}).get("value", {})
+        if isinstance(value, dict) and value.get("time"):
+            return str(value["time"])
+    return ""
+
+
+def _entity_label(entity: dict[str, Any], qid: str, lang: str = "en") -> str:
+    entities = entity.get("entities") if isinstance(entity, dict) else None
+    node = (entities or {}).get(qid) if isinstance(entities, dict) else entity
+    labels = (node or {}).get("labels", {}) if isinstance(node, dict) else {}
+    return _clean((labels.get(lang, {}) or {}).get("value"))
+
+
+class WikidataEntityApiCoachingAdapter(NflCoachingAdapter):
+    """Direct Wikidata entity API fallback (no SPARQL). Respects rate limits."""
+
+    def team_qid_manifest_check(self, *, base_data_dir: str | Path | None = None) -> dict[str, Any]:
+        base = resolve_base_data_dir(base_data_dir)
+        template = generate_team_qid_manifest_template(base_data_dir=base)
+        manifest = read_team_qid_manifest(base_data_dir=base)
+        with_qid = [r for r in manifest if r.get("wikidata_qid")]
+        return {
+            **SAFETY_FIELDS,
+            "ok": True,
+            "status": "ok",
+            "gate": "team_qid_manifest_check",
+            "source_id": self.source.get("source_id"),
+            "manifest_path": template["manifest_path"],
+            "manifest_template_created": template["created"],
+            "teams_in_manifest": len(manifest),
+            "teams_with_qid": len(with_qid),
+            "teams_needing_qid": len(manifest) - len(with_qid),
+            "uses_sparql": False,
+            "raw_payload_included": False,
+            "raw_html_persisted": False,
+            "secrets_included": False,
+            "provider_calls_attempted": 0,
+            "downloads_attempted": 0,
+            "downloads_succeeded": 0,
+        }
+
+    def run_entity_seed_import(
+        self,
+        *,
+        allow_structured_seed: bool = False,
+        max_entities: int | None = None,
+        max_requests: int | None = None,
+        persist_preview: bool = False,
+        entity_fetch_fn: Callable[[str], dict[str, Any]] | None = None,
+        label_fetch_fn: Callable[[str], dict[str, Any]] | None = None,
+        base_data_dir: str | Path | None = None,
+    ) -> dict[str, Any]:
+        base = resolve_base_data_dir(base_data_dir)
+        if not allow_structured_seed:
+            return self._entity_result(status="blocked", blocked_reason="structured_seed_disabled_by_default")
+        generate_team_qid_manifest_template(base_data_dir=base)
+        manifest = [r for r in read_team_qid_manifest(base_data_dir=base) if r.get("wikidata_qid")]
+        if not manifest:
+            return self._entity_result(status="blocked", blocked_reason="team_qid_manifest_empty_needs_manual_qid")
+        entity_fetcher = entity_fetch_fn or _default_entity_fetch
+        label_fetcher = label_fetch_fn or _default_entity_fetch
+        max_e = int(max_entities) if max_entities is not None else 32
+        max_r = int(max_requests) if max_requests is not None else 64
+        provider_calls = downloads_attempted = downloads_succeeded = 0
+        raw_rows: list[dict[str, Any]] = []
+        label_cache: dict[str, str] = {}
+        blocked_reason: str | None = None
+        for entry in manifest[:max_e]:
+            if provider_calls >= max_r:
+                break
+            qid = entry["wikidata_qid"]
+            provider_calls += 1
+            downloads_attempted += 1
+            try:
+                entity = entity_fetcher(qid)
+                downloads_succeeded += 1
+            except urllib.error.HTTPError as exc:
+                if exc.code in (403, 429):
+                    blocked_reason = "entity_api_rate_limited_HTTP_429" if exc.code == 429 else "entity_api_forbidden_HTTP_403"
+                    break
+                blocked_reason = f"entity_api_fetch_failed:HTTP_{exc.code}"
+                continue
+            except (urllib.error.URLError, TimeoutError, socket.timeout, ValueError, OSError) as exc:
+                blocked_reason = "entity_api_fetch_failed:" + type(exc).__name__
+                continue
+            for claim in _extract_head_coach_claims(entity, qid):
+                coach_qid = claim.get("coach_qid")
+                coach_name = ""
+                if coach_qid:
+                    if coach_qid in label_cache:
+                        coach_name = label_cache[coach_qid]
+                    elif provider_calls < max_r:
+                        provider_calls += 1
+                        downloads_attempted += 1
+                        try:
+                            coach_entity = label_fetcher(coach_qid)
+                            downloads_succeeded += 1
+                            coach_name = _entity_label(coach_entity, coach_qid)
+                            label_cache[coach_qid] = coach_name
+                        except Exception:  # noqa: BLE001 - label resolution is best-effort, never fabricated
+                            coach_name = ""
+                if not coach_name:
+                    continue
+                raw_rows.append(
+                    {
+                        "team": entry.get("team"),
+                        "team_abbr": entry.get("team_abbr"),
+                        "season": "",
+                        "staff_name": coach_name,
+                        "staff_role": "Head Coach",
+                        "start_date": claim.get("start_date"),
+                        "end_date": claim.get("end_date"),
+                        "source_label": "Wikidata Entity API",
+                        "source_license": "CC0",
+                        "source_entity_id": qid,
+                        "source_statement_id": claim.get("statement_id"),
+                        "source_property_id": HEAD_COACH_PROPERTY,
+                    }
+                )
+        normalized: list[dict[str, Any]] = []
+        for raw in raw_rows:
+            for row in expand_coaching_dates_to_team_seasons(raw):
+                rec = self.normalize_coaching_records([row])[0]
+                rec["season_resolution_status"] = row.get("season_resolution_status")
+                rec["source_entity_id"] = raw.get("source_entity_id")
+                rec["source_statement_id"] = raw.get("source_statement_id")
+                rec["source_property_id"] = raw.get("source_property_id")
+                normalized.append(rec)
+        validated, rejected = _validate_seed_rows(normalized)
+        paths = self.write_compact_validated_rows(validated, base_data_dir=base) if (persist_preview and validated) else {}
+        status = "ok" if validated else ("blocked" if blocked_reason else "no_records")
+        result = self._entity_result(status=status, blocked_reason=blocked_reason, validated=validated, rejected=rejected, provider_calls=provider_calls, downloads_attempted=downloads_attempted, downloads_succeeded=downloads_succeeded)
+        result.update(paths)
+        return result
+
+    def run_entity_tiny_sample(self, *, allow_structured_seed: bool = False, entity_fetch_fn: Callable[[str], dict[str, Any]] | None = None, label_fetch_fn: Callable[[str], dict[str, Any]] | None = None, base_data_dir: str | Path | None = None) -> dict[str, Any]:
+        return self.run_entity_seed_import(allow_structured_seed=allow_structured_seed, max_entities=2, max_requests=6, persist_preview=False, entity_fetch_fn=entity_fetch_fn, label_fetch_fn=label_fetch_fn, base_data_dir=base_data_dir)
+
+    def _entity_result(self, *, status: str, blocked_reason: str | None, validated: list[dict[str, Any]] | None = None, rejected: list[dict[str, Any]] | None = None, provider_calls: int = 0, downloads_attempted: int = 0, downloads_succeeded: int = 0) -> dict[str, Any]:
+        validated = validated or []
+        rejected = rejected or []
+        return {
+            **SAFETY_FIELDS,
+            "ok": True,
+            "status": status,
+            "gate": "entity_seed_import",
+            "source_id": self.source.get("source_id"),
+            "license_status": "cc0",
+            "uses_sparql": False,
+            "blocked_reason": blocked_reason,
+            "records_validated": len(validated),
+            "records_rejected": len(rejected),
+            "rejected": rejected[:50],
+            "sample_rows": validated[:50],
+            "teams_covered": sorted({r["team"] for r in validated if r.get("team")}),
+            "seasons_covered": sorted({r["season"] for r in validated if r.get("season")}),
+            "role_groups_covered": sorted({r["role_group"] for r in validated if r.get("role_group")}),
+            "fetch_attempted": downloads_attempted > 0,
+            "spoofing_used": False,
+            "browser_impersonation_used": False,
+            "raw_html_persisted": False,
+            "raw_payload_persisted": False,
+            "no_predictive_claim": True,
+            "provider_calls_attempted": provider_calls,
+            "downloads_attempted": downloads_attempted,
+            "downloads_succeeded": downloads_succeeded,
+            "enabled_source_count": 0,
+            "paid_source_enabled_count": 0,
+            "provider_write": False,
+            "execution_allowed": False,
+            "raw_payload_included": False,
+            "secrets_included": False,
+        }
+
+
+class WikidataDumpCoachingAdapter(NflCoachingAdapter):
+    """Local Wikidata dump streaming fallback. Avoids live query endpoints entirely."""
+
+    def _open_dump(self, path: Path):
+        if path.suffix == ".gz":
+            import gzip
+
+            return gzip.open(path, "rt", encoding="utf-8")
+        if path.suffix == ".bz2":
+            import bz2
+
+            return bz2.open(path, "rt", encoding="utf-8")
+        return path.open("r", encoding="utf-8")
+
+    def run_dump_import(
+        self,
+        *,
+        dump_path: str | Path | None = None,
+        allow_local_dump: bool = False,
+        max_entities: int | None = None,
+        max_records: int | None = None,
+        persist_preview: bool = False,
+        tiny_scan: bool = False,
+        base_data_dir: str | Path | None = None,
+    ) -> dict[str, Any]:
+        base = resolve_base_data_dir(base_data_dir)
+        if not allow_local_dump:
+            return self._dump_result(status="blocked", blocked_reason="local_dump_not_authorized")
+        if not dump_path:
+            return self._dump_result(status="blocked", blocked_reason="dump_path_missing", instructions=self._dump_instructions(base))
+        path = Path(dump_path)
+        if not path.exists():
+            return self._dump_result(status="blocked", blocked_reason="dump_file_not_found", instructions=self._dump_instructions(base))
+        manifest = {r["wikidata_qid"]: r for r in read_team_qid_manifest(base_data_dir=base) if r.get("wikidata_qid")}
+        max_e = int(max_entities) if max_entities is not None else (50 if tiny_scan else 5000)
+        raw_rows: list[dict[str, Any]] = []
+        entities_scanned = 0
+        try:
+            with self._open_dump(path) as handle:
+                for line in handle:  # stream; never load whole dump
+                    line = line.strip().rstrip(",")
+                    if not line or line in ("[", "]"):
+                        continue
+                    entities_scanned += 1
+                    if entities_scanned > max_e:
+                        break
+                    try:
+                        entity = json.loads(line)
+                    except ValueError:
+                        continue
+                    qid = entity.get("id")
+                    if manifest and qid not in manifest:
+                        continue
+                    for claim in _extract_head_coach_claims({"entities": {qid: entity}}, qid):
+                        if not claim.get("coach_qid"):
+                            continue
+                        team = manifest.get(qid, {}).get("team") if manifest else qid
+                        raw_rows.append(
+                            {
+                                "team": team,
+                                "season": "",
+                                "staff_name": claim["coach_qid"],  # label resolution not available offline without person entities
+                                "staff_role": "Head Coach",
+                                "start_date": claim.get("start_date"),
+                                "end_date": claim.get("end_date"),
+                                "source_label": "Wikidata Dump",
+                                "source_license": "CC0",
+                                "source_entity_id": qid,
+                                "source_statement_id": claim.get("statement_id"),
+                            }
+                        )
+        except OSError as exc:
+            return self._dump_result(status="blocked", blocked_reason="dump_read_error:" + type(exc).__name__)
+        normalized: list[dict[str, Any]] = []
+        for raw in raw_rows:
+            for row in expand_coaching_dates_to_team_seasons(raw):
+                rec = self.normalize_coaching_records([row])[0]
+                rec["season_resolution_status"] = row.get("season_resolution_status")
+                normalized.append(rec)
+        validated, rejected = _validate_seed_rows(normalized)
+        paths = self.write_compact_validated_rows(validated, base_data_dir=base) if (persist_preview and validated) else {}
+        result = self._dump_result(status="ok" if validated else "no_records", blocked_reason=None, validated=validated, rejected=rejected, entities_scanned=entities_scanned)
+        result.update(paths)
+        return result
+
+    def _dump_instructions(self, base: Path) -> dict[str, Any]:
+        target = base / "manual_imports" / "nfl_coaching" / "wikidata_dump"
+        return {
+            "place_dump_under": _rel(target, base),
+            "expected_filename_patterns": ["latest-all.json.gz", "wikidata-*.json.bz2", "*.ndjson"],
+            "rerun_command": ".\\scripts\\run_nfl_coaching_import.ps1 -Mode dump_structured_seed_import -AllowLocalDump -WikidataDumpPath <path> -PersistPreview",
+        }
+
+    def _dump_result(self, *, status: str, blocked_reason: str | None, validated: list[dict[str, Any]] | None = None, rejected: list[dict[str, Any]] | None = None, entities_scanned: int = 0, instructions: dict[str, Any] | None = None) -> dict[str, Any]:
+        validated = validated or []
+        rejected = rejected or []
+        return {
+            **SAFETY_FIELDS,
+            "ok": True,
+            "status": status,
+            "gate": "dump_structured_seed_import",
+            "source_id": self.source.get("source_id"),
+            "license_status": "cc0",
+            "uses_sparql": False,
+            "uses_live_query_endpoint": False,
+            "blocked_reason": blocked_reason,
+            "entities_scanned": entities_scanned,
+            "records_validated": len(validated),
+            "records_rejected": len(rejected),
+            "rejected": rejected[:50],
+            "sample_rows": validated[:50],
+            "teams_covered": sorted({r["team"] for r in validated if r.get("team")}),
+            "seasons_covered": sorted({r["season"] for r in validated if r.get("season")}),
+            "role_groups_covered": sorted({r["role_group"] for r in validated if r.get("role_group")}),
+            "instructions": instructions,
+            "raw_dump_rows_persisted": False,
+            "raw_payload_persisted": False,
+            "raw_html_persisted": False,
+            "no_predictive_claim": True,
+            "provider_calls_attempted": 0,
+            "downloads_attempted": 0,
+            "downloads_succeeded": 0,
+            "enabled_source_count": 0,
+            "paid_source_enabled_count": 0,
+            "provider_write": False,
+            "execution_allowed": False,
+            "raw_payload_included": False,
+            "secrets_included": False,
+        }
+
+
+class WikipediaCoachingTableSupplementAdapter(NflCoachingAdapter):
+    """Wikipedia structured-table supplemental fallback (API only, attribution required, no prose)."""
+
+    def run_table_import(
+        self,
+        *,
+        allow_structured_seed: bool = False,
+        table_fetch_fn: Callable[[str], list[dict[str, Any]]] | None = None,
+        page_title: str = "List of NFL head coaches",
+        persist_preview: bool = False,
+        base_data_dir: str | Path | None = None,
+    ) -> dict[str, Any]:
+        base = resolve_base_data_dir(base_data_dir)
+        if not allow_structured_seed:
+            return self._table_result(status="blocked", blocked_reason="structured_seed_disabled_by_default", page_title=page_title)
+        if table_fetch_fn is None:
+            # No prose parsing and no default HTML fetch: structured-table fetch must be supplied.
+            return self._table_result(status="blocked", blocked_reason="wikipedia_table_fetch_not_configured", page_title=page_title)
+        try:
+            table_rows = table_fetch_fn(page_title)
+        except Exception as exc:  # noqa: BLE001
+            return self._table_result(status="blocked", blocked_reason="wikipedia_table_fetch_failed:" + type(exc).__name__, page_title=page_title)
+        raw_rows: list[dict[str, Any]] = []
+        rejected: list[dict[str, Any]] = []
+        for entry in table_rows or []:
+            if not isinstance(entry, dict):
+                continue
+            team = _clean(entry.get("team"))
+            name = _clean(entry.get("staff_name") or entry.get("coach"))
+            if not team or not name:
+                rejected.append({"reason": "ambiguous_table_row"})
+                continue
+            raw_rows.append(
+                {
+                    "team": team,
+                    "season": _clean(entry.get("season")),
+                    "staff_name": name,
+                    "staff_role": _clean(entry.get("staff_role")) or "Head Coach",
+                    "start_date": _clean(entry.get("start_date")),
+                    "end_date": _clean(entry.get("end_date")),
+                    "source_label": f"Wikipedia: {page_title}",
+                    "source_license": "CC BY-SA",
+                }
+            )
+        normalized: list[dict[str, Any]] = []
+        for raw in raw_rows:
+            for row in expand_coaching_dates_to_team_seasons(raw):
+                rec = self.normalize_coaching_records([row])[0]
+                rec["season_resolution_status"] = row.get("season_resolution_status")
+                rec["attribution_required"] = True
+                normalized.append(rec)
+        validated, more_rejected = _validate_seed_rows(normalized)
+        rejected.extend(more_rejected)
+        paths = self.write_compact_validated_rows(validated, base_data_dir=base) if (persist_preview and validated) else {}
+        result = self._table_result(status="ok" if validated else "no_records", blocked_reason=None, page_title=page_title, validated=validated, rejected=rejected)
+        result.update(paths)
+        return result
+
+    def _table_result(self, *, status: str, blocked_reason: str | None, page_title: str, validated: list[dict[str, Any]] | None = None, rejected: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+        validated = validated or []
+        rejected = rejected or []
+        return {
+            **SAFETY_FIELDS,
+            "ok": True,
+            "status": status,
+            "gate": "wikipedia_table_import",
+            "source_id": self.source.get("source_id"),
+            "license_status": "cc_by_sa",
+            "attribution_required": True,
+            "attribution_text": "Content derived from Wikipedia, licensed CC BY-SA.",
+            "page_title": page_title,
+            "parses_article_prose": False,
+            "blocked_reason": blocked_reason,
+            "records_validated": len(validated),
+            "records_rejected": len(rejected),
+            "rejected": rejected[:50],
+            "sample_rows": validated[:50],
+            "teams_covered": sorted({r["team"] for r in validated if r.get("team")}),
+            "seasons_covered": sorted({r["season"] for r in validated if r.get("season")}),
+            "role_groups_covered": sorted({r["role_group"] for r in validated if r.get("role_group")}),
+            "raw_html_persisted": False,
+            "raw_payload_persisted": False,
+            "no_predictive_claim": True,
+            "provider_calls_attempted": 0,
+            "downloads_attempted": 0,
+            "downloads_succeeded": 0,
+            "enabled_source_count": 0,
+            "paid_source_enabled_count": 0,
+            "provider_write": False,
+            "execution_allowed": False,
+            "raw_payload_included": False,
+            "secrets_included": False,
+        }
+
+
+MANUAL_TEMPLATE_COLUMNS = [
+    "team", "season", "staff_name", "staff_role", "canonical_role", "role_group",
+    "start_date", "end_date", "source_label", "source_license", "source_url_label",
+    "attribution_required", "notes",
+]
+MANUAL_TEMPLATES = ["head_coaches_template", "coordinators_template", "current_staff_template"]
+
+
+def generate_manual_templates(*, base_data_dir: str | Path | None = None) -> dict[str, Any]:
+    base = resolve_base_data_dir(base_data_dir)
+    template_dir = base / "manual_imports" / "nfl_coaching" / "templates"
+    template_dir.mkdir(parents=True, exist_ok=True)
+    written: list[str] = []
+    for name in MANUAL_TEMPLATES:
+        path = template_dir / f"{name}.csv"
+        with path.open("w", encoding="utf-8", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=MANUAL_TEMPLATE_COLUMNS)
+            writer.writeheader()
+        written.append(_rel(path, base_data_dir))
+    manifest = generate_team_qid_manifest_template(base_data_dir=base)
+    return {
+        "templates_written": written,
+        "team_qid_manifest": manifest["manifest_path"],
+        "import_command": ".\\scripts\\run_nfl_coaching_import.ps1 -Mode manual_import -AllowManualImport -InputCsv data/manual_imports/nfl_coaching/<file>.csv -PersistPreview",
+    }
+
+
 class OpenLicensedDatasetAdapter(NflCoachingAdapter):
     pass
 
 
 class BlockedReferenceSourceAdapter(NflCoachingAdapter):
     pass
+
+
+def _parse_iso_datetime(value: Any) -> datetime | None:
+    text = _clean(value)
+    if not text:
+        return None
+    try:
+        parsed = datetime.fromisoformat(text)
+        return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
+    except ValueError:
+        return None
+
+
+def _retry_after_seconds(exc: urllib.error.HTTPError, *, default: int) -> int:
+    headers = getattr(exc, "headers", None)
+    raw = headers.get("Retry-After") if headers else None
+    if raw is None:
+        return default
+    text = str(raw).strip()
+    if text.isdigit():
+        return max(1, int(text))
+    return default
+
+
+def _resume_ledger_path(source_id: str, base: Path) -> Path:
+    return base / "data_sources" / "nfl_open_data" / "coaching" / "resume_ledgers" / f"{sanitize_filename(source_id)}.json"
+
+
+def _read_resume_ledger(source_id: str, base: Path) -> dict[str, Any]:
+    path = _resume_ledger_path(source_id, base)
+    if not path.exists():
+        return {}
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+def _write_resume_ledger(source_id: str, base: Path, payload: dict[str, Any]) -> None:
+    path = _resume_ledger_path(source_id, base)
+    _atomic_write_json(path, {**SAFETY_FIELDS, "source_id": source_id, **payload, "raw_payload_included": False, "secrets_included": False})
+
+
+def _validate_seed_rows(normalized: list[dict[str, Any]], *, season_start: int | None = None, season_end: int | None = None) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    validated: list[dict[str, Any]] = []
+    rejected: list[dict[str, Any]] = []
+    for row in normalized:
+        ok, reason = validate_record_shape(row, require_license=True, require_season=False)
+        if not ok:
+            rejected.append({"reason": reason, "team": row.get("team")})
+            continue
+        if season_start is not None and row.get("season") and int(row["season"]) < int(season_start):
+            continue
+        if season_end is not None and row.get("season") and int(row["season"]) > int(season_end):
+            continue
+        validated.append(row)
+    return validated, rejected
 
 
 def _binding_value(binding: dict[str, Any], key: str) -> str:
@@ -842,7 +1479,10 @@ _ADAPTER_BY_FAMILY = {
     "official_nfl_staff_or_news_pages": OfficialTeamPressReleaseCrawler,
     "team_sitemaps": OfficialTeamStaffPageCrawler,
     "wikidata_coaching_seed": WikidataCoachingSeedAdapter,
+    "wikidata_entity_api": WikidataEntityApiCoachingAdapter,
+    "wikidata_local_dump": WikidataDumpCoachingAdapter,
     "wikipedia_coaching_seed": WikipediaCoachingSeedAdapter,
+    "wikipedia_coaching_tables": WikipediaCoachingTableSupplementAdapter,
     "open_github_coaching_dataset": OpenLicensedDatasetAdapter,
     "manual_csv_import": ManualCsvCoachingImportAdapter,
     "blocked_pfr_reference": BlockedReferenceSourceAdapter,

@@ -241,6 +241,43 @@ data. The acquisition report and coverage matrix are written under
 readiness flags are exposed in the derived feature report and the pattern lab.
 The script is `scripts/run_nfl_coaching_import.ps1`.
 
+## Coaching Population Fallback Ladder
+
+Because WDQS SPARQL can be rate-limited per shared egress IP, the coaching lane
+provides multiple compliant population routes, none of which spoof a browser,
+use browser automation, bypass rate limits, or persist raw HTML/payloads:
+
+1. **WDQS polite scheduled mode** (`structured_seed_import_scheduled`): one
+   request per configured interval (default 65s), reads the `Retry-After`
+   header on `HTTP 429`, writes a resume ledger with `next_safe_run_time`, and
+   never retry-spams.
+2. **Wikidata Entity/REST API fallback** (`WikidataEntityApiCoachingAdapter`):
+   fetches entities directly by QID (no SPARQL) using a team QID manifest at
+   `data/manual_imports/nfl_coaching/team_wikidata_qids.csv`. A 32-team template
+   is generated with blank QIDs marked `needs_manual_qid`; QIDs are never
+   fabricated. Head-coach (P286) statements with start/end qualifiers are
+   extracted and labels resolved in bounded batches; raw entity payloads are
+   never stored.
+3. **Wikidata local dump streaming** (`WikidataDumpCoachingAdapter`): streams a
+   locally-supplied JSON/NDJSON/`.gz`/`.bz2` dump line-by-line (never loads the
+   whole file), filters to manifest team QIDs and P286 statements, and persists
+   only compact facts. Requires `-AllowLocalDump` and a dump path; if missing it
+   reports exact placement/rerun instructions. Avoids live query endpoints
+   entirely.
+4. **Wikipedia structured-table supplement**
+   (`WikipediaCoachingTableSupplementAdapter`): API/structured-table only, never
+   parses article prose, CC BY-SA with required attribution; ambiguous rows are
+   rejected.
+5. **Manual CSV fast path**: `generate_templates` writes header-only templates
+   (`head_coaches_template.csv`, `coordinators_template.csv`,
+   `current_staff_template.csv`) plus the QID manifest; the manual importer
+   validates rows and requires `source_license`.
+
+All routes are disabled by default and gated by explicit flags
+(`-AllowStructuredSeed`, `-AllowLocalDump`, `-AllowManualImport`). Fallback
+availability is exposed in the derived feature report and pattern lab
+(`nfl_coaching_population_fallbacks_available`, per-route `*_available` flags).
+
 ## Coaching Structured Seed (Wikidata CC0)
 
 `WikidataCoachingSeedAdapter` (`nfl_coaching_adapters.py`) performs a bounded,

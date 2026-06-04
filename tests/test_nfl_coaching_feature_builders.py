@@ -121,7 +121,7 @@ class TestNflCoachingFeatureBuilders(unittest.TestCase):
             rendered = latest.read_text(encoding="utf-8").lower()
         self.assertTrue(latest_exists)
         self.assertTrue(coverage_exists)
-        self.assertEqual(report["sources_checked"], 10)
+        self.assertEqual(report["sources_checked"], 13)
         self.assertFalse(report["spoofing_used"])
         self.assertFalse(report["raw_html_persisted"])
         self.assertFalse(report["provider_write"])

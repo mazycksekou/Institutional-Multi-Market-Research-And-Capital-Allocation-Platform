@@ -26,6 +26,18 @@ from .scheduler_config import sanitize_filename, utc_now_iso
 
 COACHING_READINESS_FLAG_DEFAULTS = {
     "nfl_coaching_data_available": False,
+    "nfl_coaching_population_fallbacks_available": [
+        "wdqs_scheduled",
+        "wikidata_entity_api",
+        "wikidata_local_dump",
+        "wikipedia_table",
+        "manual_csv",
+    ],
+    "nfl_coaching_wdqs_scheduled_available": True,
+    "nfl_coaching_entity_api_fallback_available": True,
+    "nfl_coaching_dump_fallback_available": True,
+    "nfl_coaching_wikipedia_table_fallback_available": True,
+    "nfl_coaching_manual_templates_available": True,
     "nfl_coaching_structured_seed_available": False,
     "nfl_coaching_sources_checked": 0,
     "nfl_coaching_sources_allowed": [],
@@ -51,6 +63,18 @@ def coaching_readiness_flags(*, base_data_dir: str | Path | None = None) -> dict
     attribution_required = any("by_sa" in str(row.get("source_license") or "").lower() for row in rows)
     return {
         "nfl_coaching_data_available": int(feature_summary["nfl_coaching_records_validated"]) > 0,
+        "nfl_coaching_population_fallbacks_available": [
+            "wdqs_scheduled",
+            "wikidata_entity_api",
+            "wikidata_local_dump",
+            "wikipedia_table",
+            "manual_csv",
+        ],
+        "nfl_coaching_wdqs_scheduled_available": True,
+        "nfl_coaching_entity_api_fallback_available": True,
+        "nfl_coaching_dump_fallback_available": True,
+        "nfl_coaching_wikipedia_table_fallback_available": True,
+        "nfl_coaching_manual_templates_available": True,
         "nfl_coaching_structured_seed_available": structured_seed_available,
         "nfl_coaching_sources_checked": source_report["coaching_sources_audited"],
         "nfl_coaching_sources_allowed": source_report["approved_coaching_sources"],
@@ -478,7 +502,7 @@ def write_nfl_coaching_acquisition_report(
 
 
 def main(argv: list[str] | None = None) -> int:
-    from .nfl_coaching_adapters import adapter_by_id, ManualCsvCoachingImportAdapter, WikidataCoachingSeedAdapter
+    from .nfl_coaching_adapters import adapter_by_id, generate_manual_templates, ManualCsvCoachingImportAdapter, WikidataCoachingSeedAdapter
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -488,6 +512,15 @@ def main(argv: list[str] | None = None) -> int:
             "metadata_check",
             "tiny_sample",
             "structured_seed_import",
+            "structured_seed_import_scheduled",
+            "team_qid_manifest_check",
+            "entity_tiny_sample",
+            "entity_seed_import",
+            "dump_metadata_check",
+            "dump_tiny_scan",
+            "dump_structured_seed_import",
+            "wikipedia_table_import",
+            "generate_templates",
             "crawl_staff_pages",
             "crawl_press_releases",
             "wikidata_seed",
@@ -502,9 +535,16 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--allow-manual-import", action="store_true")
     parser.add_argument("--allow-structured-seed", action="store_true")
     parser.add_argument("--allow-download", action="store_true")
+    parser.add_argument("--allow-local-dump", action="store_true")
+    parser.add_argument("--wikidata-dump-path", default=None)
     parser.add_argument("--max-pages-per-domain", type=int, default=None)
     parser.add_argument("--crawl-delay-seconds", type=int, default=None)
     parser.add_argument("--max-records", type=int, default=None)
+    parser.add_argument("--max-entities", type=int, default=None)
+    parser.add_argument("--max-requests", type=int, default=None)
+    parser.add_argument("--request-interval-seconds", type=int, default=65)
+    parser.add_argument("--stop-on-429", action="store_true")
+    parser.add_argument("--resume", action="store_true")
     parser.add_argument("--season-start", type=int, default=None)
     parser.add_argument("--season-end", type=int, default=None)
     parser.add_argument("--persist", action="store_true")
@@ -553,6 +593,46 @@ def main(argv: list[str] | None = None) -> int:
             season_end=args.season_end,
         )
         summary = {"mode": args.mode, **{k: run.get(k) for k in ("ok", "status", "records_validated", "records_rejected", "blocked_reason", "provider_calls_attempted", "downloads_attempted", "downloads_succeeded", "teams_covered", "seasons_covered")}}
+    elif args.mode == "structured_seed_import_scheduled":
+        adapter = adapter_by_id(args.source_id or "wikidata_coaching_seed")
+        run = adapter.run_structured_seed_import_scheduled(
+            allow_structured_seed=allow_seed,
+            max_records=args.max_records,
+            request_interval_seconds=args.request_interval_seconds,
+            stop_on_429=args.stop_on_429 or True,
+            persist_preview=args.persist,
+            resume=args.resume or True,
+        )
+        summary = {"mode": args.mode, **{k: run.get(k) for k in ("ok", "status", "records_validated", "blocked_reason", "retry_after_seconds", "next_safe_run_time", "provider_calls_attempted", "downloads_attempted", "downloads_succeeded")}}
+    elif args.mode == "team_qid_manifest_check":
+        adapter = adapter_by_id("wikidata_entity_api")
+        run = adapter.team_qid_manifest_check()
+        summary = {"mode": args.mode, **{k: run.get(k) for k in ("ok", "status", "manifest_path", "teams_in_manifest", "teams_with_qid", "teams_needing_qid", "uses_sparql")}}
+    elif args.mode in {"entity_seed_import", "entity_tiny_sample"}:
+        adapter = adapter_by_id("wikidata_entity_api")
+        if args.mode == "entity_tiny_sample":
+            run = adapter.run_entity_tiny_sample(allow_structured_seed=allow_seed)
+        else:
+            run = adapter.run_entity_seed_import(allow_structured_seed=allow_seed, max_entities=args.max_entities, max_requests=args.max_requests, persist_preview=args.persist)
+        summary = {"mode": args.mode, **{k: run.get(k) for k in ("ok", "status", "records_validated", "records_rejected", "blocked_reason", "uses_sparql", "provider_calls_attempted", "downloads_attempted", "downloads_succeeded", "teams_covered")}}
+    elif args.mode in {"dump_metadata_check", "dump_tiny_scan", "dump_structured_seed_import"}:
+        adapter = adapter_by_id("wikidata_local_dump")
+        run = adapter.run_dump_import(
+            dump_path=args.wikidata_dump_path,
+            allow_local_dump=args.allow_local_dump,
+            max_entities=args.max_entities,
+            max_records=args.max_records,
+            tiny_scan=(args.mode == "dump_tiny_scan"),
+            persist_preview=args.persist and args.mode == "dump_structured_seed_import",
+        )
+        summary = {"mode": args.mode, **{k: run.get(k) for k in ("ok", "status", "records_validated", "records_rejected", "blocked_reason", "entities_scanned", "uses_sparql", "instructions")}}
+    elif args.mode == "wikipedia_table_import":
+        adapter = adapter_by_id("wikipedia_coaching_tables")
+        run = adapter.run_table_import(allow_structured_seed=allow_seed, persist_preview=args.persist)
+        summary = {"mode": args.mode, **{k: run.get(k) for k in ("ok", "status", "records_validated", "blocked_reason", "attribution_required", "parses_article_prose")}}
+    elif args.mode == "generate_templates":
+        result = generate_manual_templates()
+        summary = {"mode": args.mode, "ok": True, "status": "ok", **result}
     elif args.mode == "manual_import":
         adapter = ManualCsvCoachingImportAdapter(adapter_by_id("manual_csv_import").source)
         run = adapter.run_manual_import(
