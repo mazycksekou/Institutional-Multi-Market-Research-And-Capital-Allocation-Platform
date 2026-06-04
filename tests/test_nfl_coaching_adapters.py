@@ -296,10 +296,25 @@ class TestNflCoachingAdapters(unittest.TestCase):
         self.assertEqual(run["status"], "blocked")
         self.assertEqual(run["blocked_reason"], "structured_seed_disabled_by_default")
 
+    def test_entity_api_manifest_can_be_auto_populated_from_search(self):
+        from automation_scheduler.nfl_coaching_adapters import _populate_team_qid_manifest_from_search
+
+        def search(team):
+            return {"search": [{"id": "Q221196", "label": team, "description": "American football team"}]}
+
+        with tempfile.TemporaryDirectory() as tmp:
+            summary = _populate_team_qid_manifest_from_search(base_data_dir=tmp, search_fn=search)
+
+        self.assertEqual(summary["teams_in_manifest"], 32)
+        self.assertEqual(summary["teams_with_qid"], 32)
+        self.assertEqual(summary["teams_needing_qid"], 0)
+        self.assertEqual(summary["updated"], 32)
+        self.assertIsNone(summary["blocked_reason"])
+
     def test_entity_api_missing_qid_does_not_fabricate(self):
         adapter = adapter_by_id("wikidata_entity_api")
         with tempfile.TemporaryDirectory() as tmp:
-            run = adapter.run_entity_seed_import(allow_structured_seed=True, base_data_dir=tmp)
+            run = adapter.run_entity_seed_import(allow_structured_seed=True, search_fn=lambda team: {"search": []}, base_data_dir=tmp)
         self.assertEqual(run["blocked_reason"], "team_qid_manifest_empty_needs_manual_qid")
         self.assertEqual(run["records_validated"], 0)
 
@@ -322,7 +337,14 @@ class TestNflCoachingAdapters(unittest.TestCase):
             rows[1] = "Kansas City Chiefs,KC,Q221196,Wikidata,CC0,"
             path.write_text("\n".join(rows) + "\n", encoding="utf-8")
             adapter = adapter_by_id("wikidata_entity_api")
-            run = adapter.run_entity_seed_import(allow_structured_seed=True, entity_fetch_fn=fetch, label_fetch_fn=fetch, persist_preview=True, base_data_dir=tmp)
+            run = adapter.run_entity_seed_import(
+                allow_structured_seed=True,
+                entity_fetch_fn=fetch,
+                label_fetch_fn=fetch,
+                search_fn=lambda team: {"search": [{"id": "Q221196", "label": team, "description": "American football team"}]},
+                persist_preview=True,
+                base_data_dir=tmp,
+            )
             loaded = load_validated_coaching_rows(base_data_dir=tmp)
         self.assertEqual(run["status"], "ok")
         self.assertEqual(run["seasons_covered"], ["2013", "2014"])

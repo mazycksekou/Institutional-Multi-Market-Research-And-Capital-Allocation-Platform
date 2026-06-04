@@ -55,6 +55,7 @@ REQUIRED_RECORD_FIELDS = ["team", "season", "staff_name", "staff_role"]
 EXECUTIVE_TOKENS = ("general manager", "president", "owner", "executive", "director of", "vice president", "gm")
 
 WIKIDATA_SPARQL_ENDPOINT = "https://query.wikidata.org/sparql"
+WIKIDATA_SEARCH_ENDPOINT = "https://www.wikidata.org/w/api.php"
 WIKIDATA_DEFAULT_TIMEOUT_SECONDS = 15
 WIKIDATA_MAX_RETRIES = 1
 # Descriptive contact appended to the truthful research user-agent per the
@@ -832,6 +833,101 @@ def _default_entity_fetch(qid: str, *, timeout: int = WIKIDATA_DEFAULT_TIMEOUT_S
         return json.loads(response.read().decode("utf-8"))
 
 
+def _default_entity_search(query: str, *, timeout: int = WIKIDATA_DEFAULT_TIMEOUT_SECONDS) -> dict[str, Any]:
+    params = {
+        "action": "wbsearchentities",
+        "search": query,
+        "language": "en",
+        "format": "json",
+        "limit": "5",
+        "type": "item",
+    }
+    url = f"{WIKIDATA_SEARCH_ENDPOINT}?{urllib.parse.urlencode(params)}"
+    request = urllib.request.Request(url, headers={"User-Agent": WIKIDATA_USER_AGENT, "Accept": "application/json"}, method="GET")
+    with urllib.request.urlopen(request, timeout=timeout) as response:  # noqa: S310
+        return json.loads(response.read().decode("utf-8"))
+
+
+def _choose_search_qid(payload: dict[str, Any], *, team: str, team_abbr: str) -> str:
+    search_results = payload.get("search") if isinstance(payload, dict) else []
+    best = ""
+    team_lower = team.strip().lower()
+    abbr_lower = team_abbr.strip().lower()
+    for item in search_results or []:
+        if not isinstance(item, dict):
+            continue
+        qid = _clean(item.get("id"))
+        if not qid:
+            continue
+        label = _clean(item.get("label")).lower()
+        desc = _clean(item.get("description")).lower()
+        aliases = " ".join(str(alias or "").lower() for alias in (item.get("aliases") or []))
+        if label == team_lower:
+            return qid
+        if team_lower in label and ("american football" in desc or "nfl" in desc or abbr_lower in aliases):
+            best = best or qid
+        elif abbr_lower and abbr_lower in aliases:
+            best = best or qid
+    if best:
+        return best
+    for item in search_results or []:
+        if isinstance(item, dict) and _clean(item.get("id")):
+            return _clean(item.get("id"))
+    return ""
+
+
+def _populate_team_qid_manifest_from_search(
+    *,
+    base_data_dir: str | Path | None = None,
+    search_fn: Callable[[str], dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    base = resolve_base_data_dir(base_data_dir)
+    path = team_qid_manifest_path(base)
+    generate_team_qid_manifest_template(base_data_dir=base)
+    manifest = read_team_qid_manifest(base_data_dir=base)
+    searcher = search_fn or _default_entity_search
+    updated = 0
+    blocked_reason: str | None = None
+    for row in manifest:
+        if row.get("wikidata_qid"):
+            continue
+        team = _clean(row.get("team"))
+        abbr = _clean(row.get("team_abbr"))
+        if not team:
+            continue
+        try:
+            payload = searcher(team)
+            qid = _choose_search_qid(payload, team=team, team_abbr=abbr)
+        except urllib.error.HTTPError as exc:
+            if exc.code in {403, 429}:
+                blocked_reason = f"entity_search_rate_limited_HTTP_{exc.code}"
+                break
+            blocked_reason = f"entity_search_failed:HTTP_{exc.code}"
+            continue
+        except (urllib.error.URLError, TimeoutError, socket.timeout, ValueError, OSError) as exc:
+            blocked_reason = "entity_search_failed:" + type(exc).__name__
+            continue
+        if qid:
+            row["wikidata_qid"] = qid
+            row["source_label"] = row.get("source_label") or "Wikidata"
+            row["source_license"] = row.get("source_license") or "CC0"
+            row["notes"] = "auto_discovered_from_wikidata_search"
+            updated += 1
+    if updated:
+        with path.open("w", encoding="utf-8", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=["team", "team_abbr", "wikidata_qid", "source_label", "source_license", "notes"])
+            writer.writeheader()
+            writer.writerows(manifest)
+    return {
+        "manifest_path": _rel(path, base_data_dir),
+        "teams_in_manifest": len(manifest),
+        "teams_with_qid": len([row for row in manifest if row.get("wikidata_qid")]),
+        "teams_needing_qid": len([row for row in manifest if not row.get("wikidata_qid")]),
+        "updated": updated,
+        "blocked_reason": blocked_reason,
+    }
+
+
 def _extract_head_coach_claims(entity: dict[str, Any], qid: str) -> list[dict[str, Any]]:
     """Extract head-coach (P286) statements from a Wikidata entity JSON. No raw payload kept."""
     entities = entity.get("entities") if isinstance(entity, dict) else None
@@ -906,15 +1002,17 @@ class WikidataEntityApiCoachingAdapter(NflCoachingAdapter):
         persist_preview: bool = False,
         entity_fetch_fn: Callable[[str], dict[str, Any]] | None = None,
         label_fetch_fn: Callable[[str], dict[str, Any]] | None = None,
+        search_fn: Callable[[str], dict[str, Any]] | None = None,
         base_data_dir: str | Path | None = None,
     ) -> dict[str, Any]:
         base = resolve_base_data_dir(base_data_dir)
         if not allow_structured_seed:
             return self._entity_result(status="blocked", blocked_reason="structured_seed_disabled_by_default")
-        generate_team_qid_manifest_template(base_data_dir=base)
+        search_summary = _populate_team_qid_manifest_from_search(base_data_dir=base, search_fn=search_fn)
         manifest = [r for r in read_team_qid_manifest(base_data_dir=base) if r.get("wikidata_qid")]
         if not manifest:
-            return self._entity_result(status="blocked", blocked_reason="team_qid_manifest_empty_needs_manual_qid")
+            reason = search_summary.get("blocked_reason") or "team_qid_manifest_empty_needs_manual_qid"
+            return self._entity_result(status="blocked", blocked_reason=reason)
         entity_fetcher = entity_fetch_fn or _default_entity_fetch
         label_fetcher = label_fetch_fn or _default_entity_fetch
         max_e = int(max_entities) if max_entities is not None else 32
@@ -988,11 +1086,12 @@ class WikidataEntityApiCoachingAdapter(NflCoachingAdapter):
         paths = self.write_compact_validated_rows(validated, base_data_dir=base) if (persist_preview and validated) else {}
         status = "ok" if validated else ("blocked" if blocked_reason else "no_records")
         result = self._entity_result(status=status, blocked_reason=blocked_reason, validated=validated, rejected=rejected, provider_calls=provider_calls, downloads_attempted=downloads_attempted, downloads_succeeded=downloads_succeeded)
+        result["team_qid_manifest"] = search_summary
         result.update(paths)
         return result
 
-    def run_entity_tiny_sample(self, *, allow_structured_seed: bool = False, entity_fetch_fn: Callable[[str], dict[str, Any]] | None = None, label_fetch_fn: Callable[[str], dict[str, Any]] | None = None, base_data_dir: str | Path | None = None) -> dict[str, Any]:
-        return self.run_entity_seed_import(allow_structured_seed=allow_structured_seed, max_entities=2, max_requests=6, persist_preview=False, entity_fetch_fn=entity_fetch_fn, label_fetch_fn=label_fetch_fn, base_data_dir=base_data_dir)
+    def run_entity_tiny_sample(self, *, allow_structured_seed: bool = False, entity_fetch_fn: Callable[[str], dict[str, Any]] | None = None, label_fetch_fn: Callable[[str], dict[str, Any]] | None = None, search_fn: Callable[[str], dict[str, Any]] | None = None, base_data_dir: str | Path | None = None) -> dict[str, Any]:
+        return self.run_entity_seed_import(allow_structured_seed=allow_structured_seed, max_entities=2, max_requests=6, persist_preview=False, entity_fetch_fn=entity_fetch_fn, label_fetch_fn=label_fetch_fn, search_fn=search_fn, base_data_dir=base_data_dir)
 
     def _entity_result(self, *, status: str, blocked_reason: str | None, validated: list[dict[str, Any]] | None = None, rejected: list[dict[str, Any]] | None = None, provider_calls: int = 0, downloads_attempted: int = 0, downloads_succeeded: int = 0) -> dict[str, Any]:
         validated = validated or []
