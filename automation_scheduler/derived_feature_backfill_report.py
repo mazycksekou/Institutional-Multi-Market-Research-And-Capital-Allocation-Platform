@@ -9,6 +9,7 @@ from uuid import uuid4
 
 from .data_availability_tiers import resolve_profile_key
 from .data_paths import get_data_sources_dir, get_storage_health, resolve_base_data_dir
+from .mlb_open_data_feature_readiness import build_mlb_feature_readiness_report
 from .nfl_open_data_feature_builders import nfl_feature_availability_flags
 from .nfl_coaching_feature_builders import COACHING_READINESS_FLAG_DEFAULTS, coaching_readiness_flags
 from .nfl_cutoff_week_features import cutoff_feature_availability_summary
@@ -34,6 +35,32 @@ def nfl_exhaustion_coaching_cutoff_flags(base_data_dir: str | Path | None = None
         "nfl_cutoff_week_feature_groups_available": cutoff["nfl_cutoff_week_feature_groups_available"],
         "nfl_cutoff_week_leakage_guard_status": cutoff["nfl_cutoff_week_leakage_guard_status"],
         "nfl_cutoff_week_snapshot_count": 0,
+    }
+
+
+def mlb_exhaustion_cutoff_flags(base_data_dir: str | Path | None = None) -> dict[str, Any]:
+    """Phase-7 availability flags for MLB source exhaustion, cutoff support, and pattern readiness."""
+    readiness = build_mlb_feature_readiness_report(base_data_dir=base_data_dir)
+    exhaustion = readiness.get("source_exhaustion") or {}
+    cutoff = readiness.get("cutoff_feature_availability") or {}
+    expanded = readiness.get("expanded_feature_readiness") or {}
+    structured_seed = readiness.get("structured_seed_summary") or {}
+    return {
+        "mlb_source_exhaustion_checked": True,
+        "mlb_new_safe_sources_found": exhaustion.get("mlb_new_safe_sources_found") or [],
+        "mlb_redundant_sources_skipped": exhaustion.get("mlb_redundant_sources_skipped") or [],
+        "mlb_blocked_sources": exhaustion.get("mlb_blocked_sources") or [],
+        "mlb_cutoff_date_features_available": cutoff.get("mlb_cutoff_date_features_available", True),
+        "mlb_cutoff_date_feature_groups_available": cutoff.get("mlb_cutoff_date_feature_groups_available") or [],
+        "mlb_cutoff_date_cutoff_sensitive_groups": cutoff.get("mlb_cutoff_date_cutoff_sensitive_groups") or [],
+        "mlb_cutoff_date_leakage_guard_status": cutoff.get("mlb_cutoff_date_leakage_guard_status", "active_future_data_excluded"),
+        "mlb_cutoff_date_postseason_default_excluded": cutoff.get("mlb_cutoff_date_postseason_default_excluded", True),
+        "mlb_structured_seed_available": bool(structured_seed.get("structured_seed_sources_used")),
+        "mlb_feature_builder_count": readiness.get("feature_builder_count", 0),
+        "mlb_feature_builder_blockers": [row.get("blocked_reason") for row in readiness.get("feature_builders_blocked") or []],
+        "mlb_cutoff_sensitive_feature_count": readiness.get("cutoff_sensitive_fields", 0),
+        "mlb_leakage_sensitive_feature_count": readiness.get("leakage_sensitive_fields", 0),
+        "mlb_pattern_readiness_available": bool(expanded.get("expanded_feature_catalog_available")),
     }
 
 
@@ -64,6 +91,50 @@ NFL_FEATURE_BUILDER_FLAG_DEFAULTS = {
     "nfl_feature_builder_blockers": [],
     "nfl_cutoff_sensitive_feature_count": 0,
     "nfl_leakage_sensitive_feature_count": 0,
+}
+
+MLB_FEATURE_BUILDER_FLAG_DEFAULTS = {
+    "mlb_team_game_run_profile_available": False,
+    "mlb_batting_profile_available": False,
+    "mlb_pitching_profile_available": False,
+    "mlb_fielding_profile_available": False,
+    "mlb_bullpen_usage_available": False,
+    "mlb_starting_pitcher_profile_available": False,
+    "mlb_roster_continuity_available": False,
+    "mlb_lineup_stability_available": False,
+    "mlb_player_availability_available": False,
+    "mlb_park_factor_available": False,
+    "mlb_stadium_weather_available": False,
+    "mlb_postseason_context_available": False,
+    "mlb_manager_continuity_available": False,
+    "mlb_team_identity_available": False,
+    "mlb_people_identifier_crosswalk_available": False,
+    "mlb_pitch_quality_candidates_available": False,
+    "mlb_batted_ball_quality_candidates_available": False,
+    "mlb_market_odds_available": False,
+    "mlb_structured_seed_available": False,
+    "mlb_feature_builder_count": 0,
+    "mlb_feature_builder_blockers": [],
+    "mlb_cutoff_sensitive_feature_count": 0,
+    "mlb_leakage_sensitive_feature_count": 0,
+}
+
+MLB_EXHAUSTION_CUTOFF_DEFAULTS = {
+    "mlb_source_exhaustion_checked": True,
+    "mlb_new_safe_sources_found": [],
+    "mlb_redundant_sources_skipped": [],
+    "mlb_blocked_sources": [],
+    "mlb_cutoff_date_features_available": True,
+    "mlb_cutoff_date_feature_groups_available": [],
+    "mlb_cutoff_date_cutoff_sensitive_groups": [],
+    "mlb_cutoff_date_leakage_guard_status": "active_future_data_excluded",
+    "mlb_cutoff_date_postseason_default_excluded": True,
+    "mlb_structured_seed_available": False,
+    "mlb_feature_builder_count": 0,
+    "mlb_feature_builder_blockers": [],
+    "mlb_cutoff_sensitive_feature_count": 0,
+    "mlb_leakage_sensitive_feature_count": 0,
+    "mlb_pattern_readiness_available": False,
 }
 
 
@@ -941,17 +1012,37 @@ def build_derived_feature_backfill_report(
         reports_consumed.append(open_history_report)
     nfl_open_data_report, nfl_open_data_report_path = _nfl_open_data_coverage_path(base)
     nfl_feature_availability = _nfl_open_data_feature_availability(base)
+    mlb_open_data_report_path = base / "data_sources" / "mlb_open_data" / "coverage_matrix" / "latest.json"
+    mlb_feature_readiness_path = base / "data_sources" / "mlb_open_data" / "feature_readiness" / "latest.json"
+    if records_by_module is None and mlb_open_data_report_path.exists():
+        reports_consumed.append("data_sources/mlb_open_data/coverage_matrix/latest.json")
+    if records_by_module is None and mlb_feature_readiness_path.exists():
+        reports_consumed.append("data_sources/mlb_open_data/feature_readiness/latest.json")
+    mlb_feature_availability = {}
+    mlb_readiness_flags = {}
     if records_by_module is None and nfl_open_data_report_path.exists():
         reports_consumed.append(nfl_open_data_report)
     if records_by_module is None:
         nfl_feature_builder_flags = nfl_feature_availability_flags(base_data_dir=base)
         nfl_exhaustion_flags = nfl_exhaustion_coaching_cutoff_flags(base_data_dir=base)
+        try:
+            mlb_readiness = build_mlb_feature_readiness_report(base_data_dir=base)
+            mlb_feature_availability = dict(mlb_readiness.get("derived_feature_availability") or {})
+            mlb_readiness_flags = mlb_exhaustion_cutoff_flags(base_data_dir=base)
+        except Exception:
+            mlb_readiness = {}
+            mlb_feature_availability = dict(MLB_FEATURE_BUILDER_FLAG_DEFAULTS)
+            mlb_readiness_flags = dict(MLB_EXHAUSTION_CUTOFF_DEFAULTS)
     else:
         nfl_feature_builder_flags = dict(NFL_FEATURE_BUILDER_FLAG_DEFAULTS)
         nfl_exhaustion_flags = dict(NFL_EXHAUSTION_COACHING_CUTOFF_DEFAULTS)
+        mlb_feature_availability = dict(MLB_FEATURE_BUILDER_FLAG_DEFAULTS)
+        mlb_readiness_flags = dict(MLB_EXHAUSTION_CUTOFF_DEFAULTS)
     return {
         **nfl_feature_builder_flags,
         **nfl_exhaustion_flags,
+        **mlb_feature_availability,
+        **mlb_readiness_flags,
         "ok": True,
         "status": "ok",
         "schema_version": DERIVED_FEATURE_REPORT_SCHEMA_VERSION,
@@ -969,6 +1060,8 @@ def build_derived_feature_backfill_report(
         "synthetic_rows_ignored_for_real_coverage": True,
         "open_sports_history_modules_consumed": sorted(open_records) if records_by_module is None else [],
         "nfl_open_data_feature_availability": nfl_feature_availability if records_by_module is None else {},
+        "mlb_open_data_feature_availability": mlb_feature_availability if records_by_module is None else {},
+        "mlb_open_data_feature_readiness": mlb_readiness if records_by_module is None else {},
         "normalized_schedule_result_shape": NORMALIZED_SCHEDULE_RESULT_SHAPE,
         "total_modules": len(modules),
         "total_feature_rows": len(feature_rows),
@@ -1052,6 +1145,7 @@ def render_derived_feature_markdown(report: dict[str, Any]) -> str:
     insufficient = list(report.get("features_blocked_by_insufficient_history") or [])
     missing_fields = list(report.get("features_blocked_by_missing_fields") or [])
     nfl_open_data = dict(report.get("nfl_open_data_feature_availability") or {})
+    mlb_open_data = dict(report.get("mlb_open_data_feature_availability") or {})
     lines = [
         "# Derived Feature Backfill Report",
         "",
@@ -1068,6 +1162,7 @@ def render_derived_feature_markdown(report: dict[str, Any]) -> str:
         f"11. highest_value_next_no_spend_actions: {report.get('recommended_no_spend_next_step')}",
         "12. safety_status: provider_calls_attempted=0; enabled_source_count=0; paid_source_enabled_count=0; provider_write=false; execution_allowed=false; raw_payload_included=false; secrets_included=false",
         f"13. nfl_open_data_feature_availability: {json.dumps(nfl_open_data, sort_keys=True)}",
+        f"14. mlb_open_data_feature_availability: {json.dumps(mlb_open_data, sort_keys=True)}",
         "",
     ]
     return "\n".join(lines)
