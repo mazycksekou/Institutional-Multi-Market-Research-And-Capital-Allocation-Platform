@@ -445,6 +445,34 @@ def _open_sports_history_payload_paths(base: Path) -> list[tuple[str, Path]]:
     return pairs
 
 
+def _nfl_open_data_coverage_path(base: Path) -> tuple[str, Path]:
+    relative = "data_sources/nfl_open_data/coverage_matrix/latest.json"
+    return relative, base / relative
+
+
+def _nfl_open_data_feature_availability(base: Path) -> dict[str, bool]:
+    _, path = _nfl_open_data_coverage_path(base)
+    payload = _read_json(path)
+    if not isinstance(payload, dict) or not isinstance(payload.get("feature_availability"), dict):
+        return {
+            "play_by_play_available": False,
+            "roster_data_available": False,
+            "weekly_rosters_available": False,
+            "player_stats_available": False,
+            "team_stats_available": False,
+            "snap_counts_available": False,
+            "participation_available": False,
+            "draft_combine_available": False,
+            "injury_data_available": False,
+            "market_data_available": False,
+        }
+    return {
+        str(key): bool(value)
+        for key, value in payload["feature_availability"].items()
+        if isinstance(key, str)
+    }
+
+
 def _item_is_real_open_data(item: dict[str, Any]) -> bool:
     synthetic_flag = item.get("is_synthetic")
     synthetic_text = str(synthetic_flag).strip().lower()
@@ -851,6 +879,10 @@ def build_derived_feature_backfill_report(
     ]
     if records_by_module is None and open_history_report and (base / open_history_report).exists():
         reports_consumed.append(open_history_report)
+    nfl_open_data_report, nfl_open_data_report_path = _nfl_open_data_coverage_path(base)
+    nfl_feature_availability = _nfl_open_data_feature_availability(base)
+    if records_by_module is None and nfl_open_data_report_path.exists():
+        reports_consumed.append(nfl_open_data_report)
     return {
         "ok": True,
         "status": "ok",
@@ -868,6 +900,7 @@ def build_derived_feature_backfill_report(
         "open_sports_history_synthetic_rows_ignored": open_history_synthetic_ignored if records_by_module is None else 0,
         "synthetic_rows_ignored_for_real_coverage": True,
         "open_sports_history_modules_consumed": sorted(open_records) if records_by_module is None else [],
+        "nfl_open_data_feature_availability": nfl_feature_availability if records_by_module is None else {},
         "normalized_schedule_result_shape": NORMALIZED_SCHEDULE_RESULT_SHAPE,
         "total_modules": len(modules),
         "total_feature_rows": len(feature_rows),
@@ -950,6 +983,7 @@ def render_derived_feature_markdown(report: dict[str, Any]) -> str:
     derivable = list(report.get("features_derivable_now") or [])
     insufficient = list(report.get("features_blocked_by_insufficient_history") or [])
     missing_fields = list(report.get("features_blocked_by_missing_fields") or [])
+    nfl_open_data = dict(report.get("nfl_open_data_feature_availability") or {})
     lines = [
         "# Derived Feature Backfill Report",
         "",
@@ -965,6 +999,7 @@ def render_derived_feature_markdown(report: dict[str, Any]) -> str:
         f"10. features_blocked_by_missing_fields: {', '.join(missing_fields) if missing_fields else 'none'}",
         f"11. highest_value_next_no_spend_actions: {report.get('recommended_no_spend_next_step')}",
         "12. safety_status: provider_calls_attempted=0; enabled_source_count=0; paid_source_enabled_count=0; provider_write=false; execution_allowed=false; raw_payload_included=false; secrets_included=false",
+        f"13. nfl_open_data_feature_availability: {json.dumps(nfl_open_data, sort_keys=True)}",
         "",
     ]
     return "\n".join(lines)
