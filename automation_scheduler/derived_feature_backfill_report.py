@@ -10,7 +10,7 @@ from uuid import uuid4
 from .data_availability_tiers import resolve_profile_key
 from .data_paths import get_data_sources_dir, get_storage_health, resolve_base_data_dir
 from .nfl_open_data_feature_builders import nfl_feature_availability_flags
-from .nfl_coaching_sources import build_nfl_coaching_source_report
+from .nfl_coaching_feature_builders import COACHING_READINESS_FLAG_DEFAULTS, coaching_readiness_flags
 from .nfl_cutoff_week_features import cutoff_feature_availability_summary
 from .nfl_open_data_source_exhaustion import build_nfl_source_exhaustion_report
 from .scheduler_config import sanitize_filename, utc_now_iso
@@ -19,15 +19,17 @@ from .scheduler_config import sanitize_filename, utc_now_iso
 def nfl_exhaustion_coaching_cutoff_flags(base_data_dir: str | Path | None = None) -> dict[str, Any]:
     """Phase-7 availability flags for source exhaustion, coaching, and cutoff features."""
     exhaustion = build_nfl_source_exhaustion_report(base_data_dir=base_data_dir)
-    coaching = build_nfl_coaching_source_report(base_data_dir=base_data_dir)
+    coaching = coaching_readiness_flags(base_data_dir=base_data_dir)
     cutoff = cutoff_feature_availability_summary()
     return {
         "nfl_source_exhaustion_checked": True,
         "nfl_new_safe_sources_found": exhaustion.get("nfl_new_safe_sources_found") or [],
         "nfl_redundant_sources_skipped": exhaustion.get("nfl_redundant_sources_skipped") or [],
         "nfl_blocked_sources": exhaustion.get("nfl_blocked_sources") or [],
-        "nfl_coaching_data_available": bool(coaching.get("nfl_coaching_data_available")),
-        "nfl_coaching_data_blocked_reason": coaching.get("nfl_coaching_data_blocked_reason"),
+        "nfl_coaching_data_blocked_reason": None
+        if coaching["nfl_coaching_data_available"]
+        else "no_coaching_rows_ingested_yet_sources_disabled_by_default",
+        **coaching,
         "nfl_cutoff_week_features_available": cutoff["nfl_cutoff_week_features_available"],
         "nfl_cutoff_week_feature_groups_available": cutoff["nfl_cutoff_week_feature_groups_available"],
         "nfl_cutoff_week_leakage_guard_status": cutoff["nfl_cutoff_week_leakage_guard_status"],
@@ -40,8 +42,8 @@ NFL_EXHAUSTION_COACHING_CUTOFF_DEFAULTS = {
     "nfl_new_safe_sources_found": [],
     "nfl_redundant_sources_skipped": [],
     "nfl_blocked_sources": [],
-    "nfl_coaching_data_available": False,
-    "nfl_coaching_data_blocked_reason": "no_confirmed_open_terms_safe_coaching_source",
+    "nfl_coaching_data_blocked_reason": "no_coaching_rows_ingested_yet_sources_disabled_by_default",
+    **COACHING_READINESS_FLAG_DEFAULTS,
     "nfl_cutoff_week_features_available": True,
     "nfl_cutoff_week_feature_groups_available": [],
     "nfl_cutoff_week_leakage_guard_status": "active_future_data_excluded",

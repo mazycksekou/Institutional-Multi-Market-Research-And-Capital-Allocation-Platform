@@ -329,6 +329,25 @@ class TestNflHistoricalPatternLab(unittest.TestCase):
         self.assertTrue(report["no_predictive_claim"])
         self.assertGreater(report["source_supported_feature_builder_count"], 0)
 
+    def test_report_exposes_coaching_readiness(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self._persist_real_rows(tmp)
+            report = build_nfl_historical_pattern_lab_report(base_data_dir=tmp)
+        for key in (
+            "nfl_coaching_data_available",
+            "nfl_coaching_sources_checked",
+            "nfl_coaching_sources_allowed",
+            "nfl_coaching_sources_blocked",
+            "nfl_coaching_records_validated",
+            "nfl_coaching_teams_covered",
+            "nfl_coaching_seasons_covered",
+            "nfl_coaching_feature_builders_available",
+            "nfl_coaching_feature_builder_blockers",
+            "nfl_coaching_leakage_guard_status",
+        ):
+            self.assertIn(key, report)
+        self.assertTrue(report["no_predictive_claim"])
+
     def test_similarity_feature_catalog_blocks_unavailable_sources(self):
         with tempfile.TemporaryDirectory() as tmp:
             self._persist_real_rows(tmp)

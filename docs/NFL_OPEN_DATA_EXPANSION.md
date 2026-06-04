@@ -203,6 +203,44 @@ fabricated. Source-exhaustion, coaching, and cutoff reports are written under
 `data/data_sources/nfl_open_data/{source_exhaustion,coaching_sources,cutoff_features}/`
 and are not committed.
 
+## Coaching/Staff Acquisition (compliance-gated, disabled by default)
+
+`automation_scheduler/nfl_coaching_sources.py` registers ten coaching/staff
+source families: official team staff pages, official team press releases,
+official NFL staff/news pages, team sitemaps, Wikidata seed (CC0), Wikipedia
+seed (CC BY-SA, API), open GitHub dataset, manual CSV import, and the blocked
+Pro Football Reference and FTN lanes. Every source is disabled by default.
+Public HTML lanes are blocked unless robots.txt and terms clearly allow
+automated collection (none currently do); Wikidata/Wikipedia structured seeds
+and manual CSV import are the only ingestion-approved paths, and even those stay
+disabled until an explicit enable / `-AllowManualImport`.
+
+`automation_scheduler/nfl_coaching_adapters.py` implements compliance-gated
+adapters (`OfficialTeamStaffPageCrawler`, `OfficialTeamPressReleaseCrawler`,
+`WikidataCoachingSeedAdapter`, `WikipediaCoachingSeedAdapter`,
+`OpenLicensedDatasetAdapter`, `ManualCsvCoachingImportAdapter`,
+`BlockedReferenceSourceAdapter`). The crawler never spoofs a browser
+user-agent (truthful `betting-stock-api-research-bot/0.1`), never uses browser
+automation, enforces a crawl delay of at least 3 seconds and a bounded page
+budget, checks robots/terms before any crawl, and never persists raw HTML or
+raw payloads. No page fetch occurs in this phase because no HTML lane passes the
+gate. Coaching facts are normalized into compact rows (canonical role groups:
+head_coach, offensive/defensive/special_teams_coordinator, position_coach,
+assistant, analyst, executive, unknown) with provenance and license, and
+ambiguous roles map to `unknown`.
+
+The manual CSV importer reads `data/manual_imports/nfl_coaching/*.csv`
+(requires `-AllowManualImport`), validates each row (team, season, staff_name,
+staff_role, source_license required), rejects invalid rows with a reason, and
+writes only compact normalized facts. `nfl_coaching_feature_builders.py`
+provides head-coach / coordinator / staff by team-season, plus coaching,
+coordinator, and staff-turnover continuity candidates — continuity is computed
+only when adjacent seasons are source-supported and never inferred from missing
+data. The acquisition report and coverage matrix are written under
+`data/data_sources/nfl_open_data/coaching/` and are not committed. Coaching
+readiness flags are exposed in the derived feature report and the pattern lab.
+The script is `scripts/run_nfl_coaching_import.ps1`.
+
 ## Blocked Lanes
 
 The registry tracks terms/research blockers explicitly. Sports Reference derivative lanes remain blocked. FTN charting remains blocked until terms are reviewed. Coaching remains blocked until an approved open structured no-auth source is verified.

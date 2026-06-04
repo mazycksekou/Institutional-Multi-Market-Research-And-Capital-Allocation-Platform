@@ -214,6 +214,19 @@ class TestDerivedFeatureBackfillReport(unittest.TestCase):
             self.assertIn(key, report)
         self.assertTrue(report["nfl_source_exhaustion_checked"])
         self.assertFalse(report["nfl_coaching_data_available"])
+        for key in (
+            "nfl_coaching_sources_checked",
+            "nfl_coaching_sources_allowed",
+            "nfl_coaching_sources_blocked",
+            "nfl_coaching_records_validated",
+            "nfl_coaching_teams_covered",
+            "nfl_coaching_seasons_covered",
+            "nfl_coaching_feature_builders_available",
+            "nfl_coaching_feature_builder_blockers",
+            "nfl_coaching_leakage_guard_status",
+        ):
+            self.assertIn(key, report)
+        self.assertEqual(report["nfl_coaching_sources_checked"], 10)
 
     def test_nfl_flags_default_when_records_provided(self):
         report = build_derived_feature_backfill_report(

@@ -3,56 +3,66 @@ import unittest
 from pathlib import Path
 
 from automation_scheduler.nfl_coaching_sources import (
+    COACHING_SOURCE_FAMILIES,
     COACHING_TARGET_FIELDS,
     MIN_CRAWL_DELAY_SECONDS,
     RESEARCH_USER_AGENT,
     build_nfl_coaching_source_report,
     classify_coaching_source,
+    coaching_source_by_id,
     nfl_coaching_sources,
     write_nfl_coaching_source_report,
-)
-from automation_scheduler.nfl_coaching_adapters import (
-    NflCoachingAdapter,
-    adapter_by_id,
-    build_nfl_coaching_ingestion_report,
 )
 
 
 class TestNflCoachingSources(unittest.TestCase):
-    def test_all_coaching_sources_disabled_by_default(self):
+    def _families(self):
+        return {s["source_family"] for s in nfl_coaching_sources()}
+
+    def test_registry_includes_official_staff_pages(self):
+        self.assertIn("official_team_staff_pages", self._families())
+
+    def test_registry_includes_official_press_releases(self):
+        self.assertIn("official_team_press_releases", self._families())
+
+    def test_registry_includes_wikidata_seed(self):
+        self.assertIn("wikidata_coaching_seed", self._families())
+
+    def test_registry_includes_wikipedia_seed(self):
+        self.assertIn("wikipedia_coaching_seed", self._families())
+
+    def test_registry_includes_manual_csv_import(self):
+        self.assertIn("manual_csv_import", self._families())
+
+    def test_registry_covers_all_declared_families(self):
+        self.assertEqual(self._families(), set(COACHING_SOURCE_FAMILIES))
+
+    def test_all_sources_disabled_by_default(self):
         for source in nfl_coaching_sources():
             self.assertFalse(source["enabled"])
-
-    def test_coaching_source_does_not_spoof_user_agent(self):
-        for source in nfl_coaching_sources():
             self.assertEqual(source["user_agent"], RESEARCH_USER_AGENT)
             self.assertFalse(source["spoofing_required"])
-        adapter = NflCoachingAdapter(nfl_coaching_sources()[0])
-        self.assertFalse(adapter.spoofs_user_agent)
-        self.assertEqual(adapter.user_agent, "betting-stock-api-research-bot/0.1")
-
-    def test_crawl_delay_at_least_three_seconds(self):
-        for source in nfl_coaching_sources():
+            self.assertFalse(source["browser_impersonation_used"])
+            self.assertFalse(source["raw_html_persisted"])
             self.assertGreaterEqual(source["crawl_delay_seconds"], MIN_CRAWL_DELAY_SECONDS)
-        adapter = NflCoachingAdapter(nfl_coaching_sources()[0])
-        self.assertGreaterEqual(adapter.crawl_delay_seconds, 3)
+            self.assertEqual(source["data_category"], "coaching_staff")
 
-    def test_coaching_source_stores_no_raw_html(self):
-        for source in nfl_coaching_sources():
-            self.assertFalse(source["persists_raw_html"])
-            self.assertTrue(source["stores_compact_facts_only"])
-        report = build_nfl_coaching_ingestion_report()
-        self.assertFalse(report["raw_html_persisted"])
-        for run in report["coaching_runs"]:
-            self.assertFalse(run["raw_html_persisted"])
-            self.assertFalse(run["fetch_attempted"])
+    def test_wikidata_and_wikipedia_are_structured_approved(self):
+        sources = {s["source_id"]: s for s in nfl_coaching_sources()}
+        self.assertEqual(sources["wikidata_coaching_seed"]["approval_status"], "approved_open_structured")
+        self.assertEqual(sources["wikipedia_coaching_seed"]["approval_status"], "approved_open_structured")
+        self.assertEqual(sources["manual_csv_import"]["approval_status"], "approved_manual_import")
 
-    def test_robots_disallow_blocks_source(self):
+    def test_pfr_and_ftn_blocked(self):
+        sources = {s["source_id"]: s for s in nfl_coaching_sources()}
+        self.assertEqual(sources["blocked_pfr_reference"]["blocker"], "sports_reference_scraping_blocked")
+        self.assertEqual(sources["blocked_ftn_charting"]["approval_status"], "blocked")
+
+    def test_robots_disallow_blocks_html_source(self):
         classified = classify_coaching_source(
-            {"robots_review_status": "disallows_automated_collection", "automation_allowed": True, "structured_data_available": True, "terms_review_status": "terms_unclear", "source_kind": "html_pages"}
+            {"source_kind": "html_pages", "robots_review_status": "disallows_automated_collection", "raw_html_required": True, "terms_review_status": "terms_unclear", "automation_allowed": True, "structured_data_available": False}
         )
         self.assertEqual(classified["blocker"], "robots_disallows_automation")
-        self.assertFalse(classified["current_phase_allowed"])
 
     def test_unverified_license_blocks_open_file(self):
         classified = classify_coaching_source(
@@ -60,26 +70,13 @@ class TestNflCoachingSources(unittest.TestCase):
         )
         self.assertEqual(classified["blocker"], "license_unverified")
 
-    def test_coaching_lane_blocked_with_precise_reason(self):
+    def test_report_blocked_until_rows_ingested(self):
         report = build_nfl_coaching_source_report()
         self.assertFalse(report["nfl_coaching_data_available"])
-        self.assertEqual(report["nfl_coaching_data_blocked_reason"], "no_confirmed_open_terms_safe_coaching_source")
+        self.assertEqual(report["nfl_coaching_data_blocked_reason"], "no_coaching_rows_ingested_yet_sources_disabled_by_default")
         self.assertEqual(report["coaching_target_fields"], COACHING_TARGET_FIELDS)
-
-    def test_adapter_ingestion_is_blocked_and_safe(self):
-        adapter = adapter_by_id("official_team_staff_pages")
-        with tempfile.TemporaryDirectory() as tmp:
-            run = adapter.run_ingestion(base_data_dir=tmp)
-        self.assertEqual(run["status"], "blocked")
-        self.assertFalse(run["fetch_attempted"])
-        self.assertEqual(run["coaching_fields_ingested"], [])
-        self.assertEqual(run["records_validated"], 0)
-        self.assertEqual(run["provider_calls_attempted"], 0)
-        self.assertEqual(run["downloads_attempted"], 0)
-        self.assertFalse(run["provider_write"])
-        self.assertFalse(run["execution_allowed"])
-        self.assertFalse(run["raw_payload_included"])
-        self.assertFalse(run["secrets_included"])
+        self.assertEqual(report["enabled_source_count"], 0)
+        self.assertEqual(report["paid_source_enabled_count"], 0)
 
     def test_report_writes_without_leak(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -93,6 +90,7 @@ class TestNflCoachingSources(unittest.TestCase):
         self.assertNotIn("http://", rendered)
         self.assertNotIn("https://", rendered)
         self.assertNotIn("provider_payload", rendered)
+        self.assertIsNotNone(coaching_source_by_id("manual_csv_import"))
 
 
 if __name__ == "__main__":

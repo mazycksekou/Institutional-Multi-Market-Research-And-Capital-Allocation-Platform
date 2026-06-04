@@ -11,7 +11,7 @@ from typing import Any
 from uuid import uuid4
 
 from .data_paths import get_data_sources_dir, get_storage_health, resolve_base_data_dir
-from .nfl_coaching_sources import build_nfl_coaching_source_report
+from .nfl_coaching_feature_builders import coaching_readiness_flags
 from .nfl_cutoff_week_features import cutoff_feature_availability_summary
 from .nfl_open_data_feature_builders import (
     build_expanded_feature_readiness,
@@ -1593,17 +1593,19 @@ def build_nfl_historical_pattern_lab_report(*, base_data_dir: str | Path | None 
     readiness_status = validation_scorecard["validation_status"]
     expanded_readiness = build_expanded_feature_readiness(base_data_dir=base)
     exhaustion = build_nfl_source_exhaustion_report(base_data_dir=base)
-    coaching = build_nfl_coaching_source_report(base_data_dir=base)
+    coaching = coaching_readiness_flags(base_data_dir=base)
     cutoff_summary = cutoff_feature_availability_summary()
     return {
         **SAFETY_FIELDS,
         **expanded_readiness,
+        **coaching,
         "nfl_source_exhaustion_checked": True,
         "nfl_new_safe_sources_found": exhaustion.get("nfl_new_safe_sources_found") or [],
         "nfl_redundant_sources_skipped": exhaustion.get("nfl_redundant_sources_skipped") or [],
         "nfl_blocked_sources": exhaustion.get("nfl_blocked_sources") or [],
-        "nfl_coaching_data_available": bool(coaching.get("nfl_coaching_data_available")),
-        "nfl_coaching_data_blocked_reason": coaching.get("nfl_coaching_data_blocked_reason"),
+        "nfl_coaching_data_blocked_reason": None
+        if coaching["nfl_coaching_data_available"]
+        else "no_coaching_rows_ingested_yet_sources_disabled_by_default",
         "nfl_cutoff_week_features_available": cutoff_summary["nfl_cutoff_week_features_available"],
         "nfl_cutoff_week_feature_groups_available": cutoff_summary["nfl_cutoff_week_feature_groups_available"],
         "nfl_cutoff_week_leakage_guard_status": cutoff_summary["nfl_cutoff_week_leakage_guard_status"],
