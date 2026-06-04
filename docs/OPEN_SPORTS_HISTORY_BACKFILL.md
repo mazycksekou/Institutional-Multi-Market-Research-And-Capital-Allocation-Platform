@@ -183,6 +183,18 @@ Run:
 
 This script writes compact reports under `data/data_sources/open_sports_history/nfl_pattern_lab/` by default. It performs no provider calls, downloads, outcome writes, calibration writes, provider writes, or execution actions. Use `-NoPersist` only for a local stdout-only check.
 
+## NFL Historical Holdout Validation
+
+`automation_scheduler/nfl_historical_pattern_lab.py` also builds a non-predictive holdout validation scorecard. It creates regular-season-only team snapshots, compares each anchor team-season only to prior seasons, and evaluates explicit postseason labels only as targets. The leakage guard blocks postseason and Super Bowl outcome fields from similarity inputs, including `postseason_flag`, `playoff_game_count`, `super_bowl_flag`, `reached_playoffs`, `reached_conference_championship`, `reached_super_bowl`, and `won_super_bowl`.
+
+Run:
+
+```powershell
+.\scripts\run_nfl_pattern_validation.ps1
+```
+
+The report is written under `data/data_sources/open_sports_history/nfl_pattern_validation/`. It reports base rates, comp positive rates, and lift as historical validation context only. It sets `no_predictive_claim=true` and does not create betting/trading recommendations, outcome writes, calibration writes, provider writes, or execution actions.
+
 ## Safety Invariants
 
 The control plane keeps these locked:

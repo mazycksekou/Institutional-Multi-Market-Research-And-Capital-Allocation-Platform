@@ -23,6 +23,8 @@ BLOWOUT_MARGIN = 21
 LATE_SEASON_GAME_COUNT = 5
 MIN_SIMILARITY_FEATURES = 3
 MINIMUM_COMPS_REQUIRED = 30
+HOLDOUT_K_VALUES = [5, 10, 20]
+MINIMUM_HOLDOUT_ANCHORS = 30
 
 GAME_TYPE_ROUND_LABELS = {
     "REG": "regular_season",
@@ -61,6 +63,58 @@ SIMILARITY_NUMERIC_FEATURES = [
     "simple_team_rating",
     "schedule_strength_proxy",
 ]
+
+HOLDOUT_ALLOWED_SIMILARITY_FEATURES = [
+    "win_rate",
+    "average_points_for",
+    "average_points_against",
+    "average_margin",
+    "point_differential",
+    "close_game_win_rate",
+    "scoring_volatility",
+    "defensive_volatility",
+    "late_season_win_rate",
+    "schedule_strength_proxy",
+    "simple_team_rating",
+    "home_win_rate",
+    "away_win_rate",
+    "average_rest_days",
+]
+
+HOLDOUT_BLOCKED_LEAKAGE_FEATURES = [
+    "postseason_flag",
+    "playoff_game_count",
+    "super_bowl_flag",
+    "postseason_games",
+    "postseason_wins",
+    "postseason_losses",
+    "reached_playoffs",
+    "reached_conference_championship",
+    "reached_super_bowl",
+    "won_super_bowl",
+    "market_price_or_odds",
+    "injury_lineup_profile",
+    "roster_continuity",
+    "pace_or_advanced_efficiency",
+]
+
+POSTSEASON_TARGET_LABEL_FIELDS = [
+    "made_playoffs",
+    "won_playoff_game",
+    "reached_conference_championship",
+    "reached_super_bowl",
+    "won_super_bowl",
+]
+
+HOLDOUT_VALIDATION_STATUSES = {
+    "insufficient_labels",
+    "insufficient_features",
+    "insufficient_samples",
+    "validation_scaffold_ready_no_predictive_claim",
+    "holdout_backtest_ready_no_predictive_claim",
+    "historical_signal_candidate_no_predictive_claim",
+    "blocked_leakage_detected",
+}
 
 
 def _root(base_data_dir: str | Path | None = None) -> Path:
@@ -128,6 +182,7 @@ def _is_real_nfl_row(row: dict[str, Any]) -> bool:
 def load_real_nfl_rows(*, base_data_dir: str | Path | None = None) -> tuple[list[dict[str, Any]], int]:
     base = resolve_base_data_dir(base_data_dir)
     seen: set[tuple[str, str, str]] = set()
+    ignored_seen: set[tuple[str, str, str]] = set()
     rows: list[dict[str, Any]] = []
     synthetic_ignored = 0
     for _, path in _validated_paths(base):
@@ -135,7 +190,18 @@ def load_real_nfl_rows(*, base_data_dir: str | Path | None = None) -> tuple[list
         for item in _items(payload):
             if not _is_real_nfl_row(item):
                 if item.get("module") == NFL_MODULE and item.get("source_id") == NFL_SOURCE_ID:
-                    synthetic_ignored += 1
+                    ignored_id = str(item.get("event_id") or item.get("source_record_hash") or "")
+                    if not ignored_id:
+                        primitive_item = {
+                            key: item.get(key)
+                            for key in sorted(item)
+                            if isinstance(item.get(key), (str, int, float, bool)) or item.get(key) is None
+                        }
+                        ignored_id = json.dumps(primitive_item, sort_keys=True, separators=(",", ":"))
+                    ignored_key = (str(item.get("module") or ""), str(item.get("source_id") or ""), ignored_id)
+                    if ignored_key not in ignored_seen:
+                        synthetic_ignored += 1
+                        ignored_seen.add(ignored_key)
                 continue
             event_id = str(item.get("event_id") or "")
             key = (str(item.get("module") or ""), str(item.get("source_id") or ""), event_id)
@@ -894,6 +960,546 @@ def build_pattern_validation_scorecard(
     }
 
 
+def _team_season_key_for_item(item: dict[str, Any]) -> tuple[str, str]:
+    return str(item.get("season") or ""), str(item.get("team") or "")
+
+
+def _mean(values: list[float]) -> float | None:
+    return sum(values) / len(values) if values else None
+
+
+def _median(values: list[float]) -> float | None:
+    return statistics.median(values) if values else None
+
+
+def _compact_rate(value: float | None) -> float | None:
+    return None if value is None else round(float(value), 4)
+
+
+def build_regular_season_snapshot_profiles(team_games: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    grouped: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
+    for game in team_games:
+        if str(game.get("source_data_kind") or "") != "real_open_data":
+            continue
+        if str(game.get("game_type") or "").upper() != "REG":
+            continue
+        grouped[(str(game.get("season") or ""), str(game.get("team") or ""))].append(game)
+
+    profiles: list[dict[str, Any]] = []
+    for (season, team), games in sorted(grouped.items(), key=lambda item: (_season_key(item[0][0]), item[0][1])):
+        games = sorted(games, key=lambda item: (str(item.get("event_date")), str(item.get("week_or_round") or "")))
+        record = _record()
+        home_record = _record()
+        away_record = _record()
+        close_record = _record()
+        points_for_values: list[float] = []
+        points_against_values: list[float] = []
+        margins: list[float] = []
+        rest_days_values: list[float] = []
+        blowout_wins = 0
+        blowout_losses = 0
+        for game in games:
+            pf = _number(game.get("points_for"))
+            pa = _number(game.get("points_against"))
+            margin = _number(game.get("point_differential"))
+            if pf is None or pa is None or margin is None:
+                continue
+            result = str(game.get("result") or _result_from_margin(margin))
+            _add_record(record, result)
+            _add_record(home_record if game.get("home_away") == "home" else away_record, result)
+            if abs(margin) <= CLOSE_GAME_MARGIN:
+                _add_record(close_record, result)
+            if margin >= BLOWOUT_MARGIN:
+                blowout_wins += 1
+            if margin <= -BLOWOUT_MARGIN:
+                blowout_losses += 1
+            rest_days = _number(game.get("rest_days"))
+            if rest_days is not None:
+                rest_days_values.append(rest_days)
+            points_for_values.append(pf)
+            points_against_values.append(pa)
+            margins.append(margin)
+        games_played = len(points_for_values)
+        late_games = games[-LATE_SEASON_GAME_COUNT:]
+        late_record = _record()
+        for game in late_games:
+            margin = _number(game.get("point_differential"))
+            if margin is not None:
+                _add_record(late_record, str(game.get("result") or _result_from_margin(margin)))
+        profile = {
+            "season": season,
+            "team": team,
+            "games_played": games_played,
+            "regular_season_games": games_played,
+            "wins": record["wins"],
+            "losses": record["losses"],
+            "ties": record["ties"],
+            "win_rate": _win_rate(record),
+            "points_for": _compact_number(sum(points_for_values)),
+            "points_against": _compact_number(sum(points_against_values)),
+            "point_differential": _compact_number(sum(margins)),
+            "average_points_for": _compact_number(sum(points_for_values) / games_played if games_played else None),
+            "average_points_against": _compact_number(sum(points_against_values) / games_played if games_played else None),
+            "average_margin": _compact_number(sum(margins) / games_played if games_played else None),
+            "close_game_win_rate": _win_rate(close_record),
+            "scoring_volatility": _compact_number(statistics.pstdev(points_for_values) if len(points_for_values) > 1 else 0.0 if points_for_values else None),
+            "defensive_volatility": _compact_number(statistics.pstdev(points_against_values) if len(points_against_values) > 1 else 0.0 if points_against_values else None),
+            "late_season_win_rate": _win_rate(late_record),
+            "schedule_strength_proxy": None,
+            "simple_team_rating": _compact_number(sum(margins) / games_played if games_played else None),
+            "home_win_rate": _win_rate(home_record),
+            "away_win_rate": _win_rate(away_record),
+            "average_rest_days": _compact_number(_mean(rest_days_values)),
+            "blowout_wins": blowout_wins,
+            "blowout_losses": blowout_losses,
+            "source_data_kind": "real_open_data",
+            "regular_season_snapshot_only": True,
+            "no_predictive_claim": True,
+            "raw_payload_included": False,
+        }
+        profiles.append(profile)
+
+    by_team_season = {(profile["season"], profile["team"]): profile for profile in profiles}
+    opponent_rates: dict[tuple[str, str], list[float]] = defaultdict(list)
+    for game in team_games:
+        if str(game.get("game_type") or "").upper() != "REG":
+            continue
+        profile_key = (str(game.get("season") or ""), str(game.get("team") or ""))
+        opponent = by_team_season.get((str(game.get("season") or ""), str(game.get("opponent") or "")))
+        rate = _number(opponent.get("win_rate")) if opponent else None
+        if rate is not None:
+            opponent_rates[profile_key].append(rate)
+    for profile in profiles:
+        rates = opponent_rates.get((profile["season"], profile["team"]), [])
+        profile["schedule_strength_proxy"] = _compact_number(_mean(rates))
+    return profiles
+
+
+def derive_postseason_target_labels(team_games: list[dict[str, Any]]) -> dict[tuple[str, str], dict[str, Any]]:
+    grouped: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
+    for game in team_games:
+        if str(game.get("source_data_kind") or "") != "real_open_data":
+            continue
+        grouped[(str(game.get("season") or ""), str(game.get("team") or ""))].append(game)
+
+    targets: dict[tuple[str, str], dict[str, Any]] = {}
+    for (season, team), games in sorted(grouped.items(), key=lambda item: (_season_key(item[0][0]), item[0][1])):
+        missing_game_type = any(not str(game.get("game_type") or "").strip() for game in games)
+        values: dict[str, bool | None]
+        if missing_game_type:
+            values = {target: None for target in POSTSEASON_TARGET_LABEL_FIELDS}
+            blockers = {target: "target_label_missing" for target in POSTSEASON_TARGET_LABEL_FIELDS}
+        else:
+            postseason_games = [game for game in games if str(game.get("game_type") or "").upper() in POSTSEASON_GAME_TYPES]
+            conference_games = [game for game in games if str(game.get("game_type") or "").upper() == "CON"]
+            super_bowl_games = [game for game in games if str(game.get("game_type") or "").upper() == "SB"]
+            values = {
+                "made_playoffs": bool(postseason_games),
+                "won_playoff_game": any(str(game.get("result") or "") == "win" for game in postseason_games),
+                "reached_conference_championship": bool(conference_games),
+                "reached_super_bowl": bool(super_bowl_games),
+                "won_super_bowl": any(str(game.get("result") or "") == "win" for game in super_bowl_games),
+            }
+            blockers = {}
+        targets[(season, team)] = {
+            "season": season,
+            "team": team,
+            "target_values": values,
+            "target_blockers": blockers,
+            "labels_available": all(value is not None for value in values.values()),
+            "source_supported_by_game_type": not missing_game_type,
+            "no_fabricated_labels": True,
+        }
+    return targets
+
+
+def _target_label_summaries(target_labels: dict[tuple[str, str], dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    summaries: dict[str, dict[str, Any]] = {}
+    for target in POSTSEASON_TARGET_LABEL_FIELDS:
+        values = [entry.get("target_values", {}).get(target) for entry in target_labels.values()]
+        available = [bool(value) for value in values if value is not None]
+        positive = sum(1 for value in available if value)
+        negative = sum(1 for value in available if not value)
+        missing = len(values) - len(available)
+        summaries[target] = {
+            "target_name": target,
+            "labels_available_count": len(available),
+            "labels_missing_count": missing,
+            "positive_count": positive,
+            "negative_count": negative,
+            "base_rate": _compact_rate(positive / len(available) if available else None),
+            "target_supported": bool(available),
+            "target_blocker": None if available else "insufficient_labels",
+        }
+    return summaries
+
+
+def _compute_holdout_similarity(
+    profile_a: dict[str, Any],
+    profile_b: dict[str, Any],
+    *,
+    allowed_features: list[str],
+) -> dict[str, Any]:
+    features_compared: list[str] = []
+    features_missing: list[str] = []
+    similarities: list[float] = []
+    for feature in allowed_features:
+        a = _number(profile_a.get(feature))
+        b = _number(profile_b.get(feature))
+        if a is None or b is None or not (math.isfinite(a) and math.isfinite(b)):
+            features_missing.append(feature)
+            continue
+        denom = max(abs(a), abs(b), 1.0)
+        similarities.append(max(0.0, 1.0 - (abs(a - b) / denom)))
+        features_compared.append(feature)
+    if len(features_compared) < MIN_SIMILARITY_FEATURES:
+        return {
+            "similarity_score": None,
+            "features_compared": features_compared,
+            "features_missing": features_missing,
+            "confidence": "insufficient",
+            "blocked_reason": "insufficient_features",
+            "no_predictive_claim": True,
+        }
+    return {
+        "similarity_score": round(sum(similarities) / len(similarities), 4),
+        "features_compared": features_compared,
+        "features_missing": features_missing,
+        "confidence": "medium" if len(features_compared) >= 8 else "low",
+        "blocked_reason": None,
+        "no_predictive_claim": True,
+    }
+
+
+def find_prior_season_comps(
+    anchor_profile: dict[str, Any],
+    candidate_profiles: list[dict[str, Any]],
+    *,
+    top_k: int,
+    allowed_features: list[str] | None = None,
+) -> list[dict[str, Any]]:
+    allowed = list(allowed_features or HOLDOUT_ALLOWED_SIMILARITY_FEATURES)
+    anchor_season = _season_key(anchor_profile.get("season"))
+    comps: list[dict[str, Any]] = []
+    for candidate in candidate_profiles:
+        candidate_season = _season_key(candidate.get("season"))
+        if candidate_season < 0 or anchor_season < 0:
+            continue
+        if candidate_season >= anchor_season:
+            continue
+        similarity = _compute_holdout_similarity(anchor_profile, candidate, allowed_features=allowed)
+        if similarity.get("similarity_score") is None:
+            continue
+        comps.append(
+            {
+                "anchor_team": anchor_profile.get("team"),
+                "anchor_season": anchor_profile.get("season"),
+                "comp_team": candidate.get("team"),
+                "comp_season": candidate.get("season"),
+                "similarity_score": similarity.get("similarity_score"),
+                "features_compared": similarity.get("features_compared") or [],
+                "features_missing": similarity.get("features_missing") or [],
+                "confidence": similarity.get("confidence"),
+                "prior_season_only": True,
+                "same_season_excluded": True,
+                "future_season_excluded": True,
+                "no_predictive_claim": True,
+            }
+        )
+    comps.sort(key=lambda item: (-float(item.get("similarity_score") or 0.0), str(item.get("comp_season")), str(item.get("comp_team"))))
+    return comps[: max(0, int(top_k))]
+
+
+def _prior_base_rate(
+    *,
+    anchor_profile: dict[str, Any],
+    target_name: str,
+    target_labels: dict[tuple[str, str], dict[str, Any]],
+) -> float | None:
+    anchor_season = _season_key(anchor_profile.get("season"))
+    values: list[bool] = []
+    for (season, _team), entry in target_labels.items():
+        if _season_key(season) >= anchor_season:
+            continue
+        value = entry.get("target_values", {}).get(target_name)
+        if value is not None:
+            values.append(bool(value))
+    return sum(1 for value in values if value) / len(values) if values else None
+
+
+def evaluate_comps_against_targets(
+    anchor_profiles: list[dict[str, Any]],
+    target_labels: dict[tuple[str, str], dict[str, Any]],
+    *,
+    k_values: list[int] | None = None,
+    allowed_features: list[str] | None = None,
+) -> tuple[dict[str, dict[str, Any]], dict[str, list[dict[str, Any]]]]:
+    allowed = list(allowed_features or HOLDOUT_ALLOWED_SIMILARITY_FEATURES)
+    selected_k = list(k_values or HOLDOUT_K_VALUES)
+    max_k = max(selected_k) if selected_k else 0
+    comps_by_anchor: dict[tuple[str, str], list[dict[str, Any]]] = {}
+    prior_base_by_anchor_target: dict[tuple[tuple[str, str], str], float | None] = {}
+    for anchor in anchor_profiles:
+        key = _team_season_key_for_item(anchor)
+        comps_by_anchor[key] = find_prior_season_comps(anchor, anchor_profiles, top_k=max_k, allowed_features=allowed)
+        for target_name in POSTSEASON_TARGET_LABEL_FIELDS:
+            prior_base_by_anchor_target[(key, target_name)] = _prior_base_rate(
+                anchor_profile=anchor,
+                target_name=target_name,
+                target_labels=target_labels,
+            )
+    target_summaries = _target_label_summaries(target_labels)
+    validation_by_target: dict[str, dict[str, Any]] = {}
+    validation_by_k: dict[str, list[dict[str, Any]]] = {str(k): [] for k in selected_k}
+
+    for target_name, target_summary in target_summaries.items():
+        target_rows: list[dict[str, Any]] = []
+        for k in selected_k:
+            anchors_evaluated = 0
+            anchors_skipped = 0
+            skip_reasons: Counter[str] = Counter()
+            comp_rates: list[float] = []
+            base_rates: list[float] = []
+            feature_counts: list[float] = []
+            missing_counts: list[float] = []
+            directional_hits = 0
+            directional_total = 0
+            for anchor in anchor_profiles:
+                key = _team_season_key_for_item(anchor)
+                anchor_target = target_labels.get(key, {}).get("target_values", {}).get(target_name)
+                if anchor_target is None:
+                    anchors_skipped += 1
+                    skip_reasons["target_label_missing"] += 1
+                    continue
+                prior_base = prior_base_by_anchor_target.get((key, target_name))
+                if prior_base is None:
+                    anchors_skipped += 1
+                    skip_reasons["no_prior_target_labels"] += 1
+                    continue
+                comps = comps_by_anchor.get(key, [])[:k]
+                if not comps:
+                    anchors_skipped += 1
+                    skip_reasons["no_prior_comps"] += 1
+                    continue
+                comp_values: list[bool] = []
+                for comp in comps:
+                    comp_key = (str(comp.get("comp_season") or ""), str(comp.get("comp_team") or ""))
+                    value = target_labels.get(comp_key, {}).get("target_values", {}).get(target_name)
+                    if value is not None:
+                        comp_values.append(bool(value))
+                        feature_counts.append(float(len(comp.get("features_compared") or [])))
+                        missing_counts.append(float(len(comp.get("features_missing") or [])))
+                if not comp_values:
+                    anchors_skipped += 1
+                    skip_reasons["no_comp_target_labels"] += 1
+                    continue
+                comp_rate = sum(1 for value in comp_values if value) / len(comp_values)
+                comp_rates.append(comp_rate)
+                base_rates.append(prior_base)
+                signal_positive = comp_rate >= prior_base
+                if signal_positive == bool(anchor_target):
+                    directional_hits += 1
+                directional_total += 1
+                anchors_evaluated += 1
+            average_comp_rate = _mean(comp_rates)
+            average_base_rate = _mean(base_rates)
+            lift = average_comp_rate - average_base_rate if average_comp_rate is not None and average_base_rate is not None else None
+            median_features = _median(feature_counts)
+            avg_missing = _mean(missing_counts)
+            minimum_sample_warning = anchors_evaluated < MINIMUM_HOLDOUT_ANCHORS
+            if not target_summary["target_supported"]:
+                status = "insufficient_labels"
+            elif median_features is None or median_features < MIN_SIMILARITY_FEATURES:
+                status = "insufficient_features"
+            elif minimum_sample_warning:
+                status = "insufficient_samples"
+            elif lift is not None and abs(lift) >= 0.02:
+                status = "historical_signal_candidate_no_predictive_claim"
+            else:
+                status = "holdout_backtest_ready_no_predictive_claim"
+            row = {
+                "target": target_name,
+                "anchors_evaluated": anchors_evaluated,
+                "anchors_skipped": anchors_skipped,
+                "skip_reasons": dict(sorted(skip_reasons.items())),
+                "average_comp_positive_rate": _compact_rate(average_comp_rate),
+                "historical_base_rate": _compact_rate(average_base_rate),
+                "lift_vs_base_rate": _compact_rate(lift),
+                "directional_hit_rate": _compact_rate(directional_hits / directional_total if directional_total else None),
+                "sample_count": anchors_evaluated,
+                "top_k": k,
+                "median_features_compared": _compact_rate(median_features),
+                "average_features_missing": _compact_rate(avg_missing),
+                "minimum_sample_warning": minimum_sample_warning,
+                "confidence_tier": "high_context" if anchors_evaluated >= 300 and (median_features or 0) >= 8 else "medium_context" if anchors_evaluated >= MINIMUM_HOLDOUT_ANCHORS else "low_sample",
+                "validation_status": status,
+                "no_predictive_claim": True,
+            }
+            target_rows.append(row)
+            validation_by_k[str(k)].append(row)
+        validation_by_target[target_name] = {
+            **target_summary,
+            "by_k": target_rows,
+            "validation_status": _target_status(target_rows),
+            "no_predictive_claim": True,
+        }
+    return validation_by_target, validation_by_k
+
+
+def _target_status(rows: list[dict[str, Any]]) -> str:
+    statuses = [str(row.get("validation_status") or "") for row in rows]
+    if any(status == "historical_signal_candidate_no_predictive_claim" for status in statuses):
+        return "historical_signal_candidate_no_predictive_claim"
+    if any(status == "holdout_backtest_ready_no_predictive_claim" for status in statuses):
+        return "holdout_backtest_ready_no_predictive_claim"
+    if any(status == "validation_scaffold_ready_no_predictive_claim" for status in statuses):
+        return "validation_scaffold_ready_no_predictive_claim"
+    if any(status == "insufficient_samples" for status in statuses):
+        return "insufficient_samples"
+    if any(status == "insufficient_features" for status in statuses):
+        return "insufficient_features"
+    return "insufficient_labels"
+
+
+def build_holdout_leakage_guard(allowed_features: list[str] | None = None) -> dict[str, Any]:
+    allowed = list(allowed_features or HOLDOUT_ALLOWED_SIMILARITY_FEATURES)
+    leaked = sorted(set(allowed) & set(HOLDOUT_BLOCKED_LEAKAGE_FEATURES))
+    return {
+        "status": "blocked_leakage_detected" if leaked else "passed",
+        "leakage_detected": bool(leaked),
+        "leaked_features": leaked,
+        "allowed_similarity_features": allowed,
+        "blocked_leakage_features": HOLDOUT_BLOCKED_LEAKAGE_FEATURES,
+        "target_label_fields": POSTSEASON_TARGET_LABEL_FIELDS,
+        "future_data_excluded": True,
+        "prior_seasons_only": True,
+        "regular_season_snapshot_only": True,
+        "postseason_labels_used_only_as_targets": True,
+        "no_market_data_used": True,
+        "no_roster_data_used": True,
+        "no_injury_data_used": True,
+    }
+
+
+def _overall_holdout_status(
+    *,
+    leakage_guard: dict[str, Any],
+    validation_by_target: dict[str, dict[str, Any]],
+    anchor_profiles_evaluated: int,
+) -> str:
+    if leakage_guard.get("leakage_detected"):
+        return "blocked_leakage_detected"
+    if not validation_by_target:
+        return "insufficient_labels"
+    statuses = [str(row.get("validation_status") or "") for row in validation_by_target.values()]
+    if anchor_profiles_evaluated < MINIMUM_HOLDOUT_ANCHORS:
+        return "insufficient_samples"
+    if any(status == "historical_signal_candidate_no_predictive_claim" for status in statuses):
+        return "historical_signal_candidate_no_predictive_claim"
+    if any(status == "holdout_backtest_ready_no_predictive_claim" for status in statuses):
+        return "holdout_backtest_ready_no_predictive_claim"
+    if any(status == "insufficient_features" for status in statuses):
+        return "insufficient_features"
+    if any(status == "insufficient_samples" for status in statuses):
+        return "insufficient_samples"
+    return "insufficient_labels"
+
+
+def build_historical_holdout_validation_scorecard(
+    *,
+    base_data_dir: str | Path | None = None,
+    allowed_similarity_features: list[str] | None = None,
+    k_values: list[int] | None = None,
+) -> dict[str, Any]:
+    base = resolve_base_data_dir(base_data_dir)
+    rows, synthetic_ignored = load_real_nfl_rows(base_data_dir=base)
+    team_games = build_team_game_profiles(rows)
+    snapshots = build_regular_season_snapshot_profiles(team_games)
+    target_labels = derive_postseason_target_labels(team_games)
+    leakage_guard = build_holdout_leakage_guard(allowed_similarity_features)
+    selected_k = list(k_values or HOLDOUT_K_VALUES)
+    if leakage_guard.get("leakage_detected"):
+        validation_by_target: dict[str, dict[str, Any]] = {}
+        validation_by_k: dict[str, list[dict[str, Any]]] = {str(k): [] for k in selected_k}
+        anchor_profiles_evaluated = 0
+        anchor_profiles_skipped = len(snapshots)
+    else:
+        validation_by_target, validation_by_k = evaluate_comps_against_targets(
+            snapshots,
+            target_labels,
+            k_values=selected_k,
+            allowed_features=list(allowed_similarity_features or HOLDOUT_ALLOWED_SIMILARITY_FEATURES),
+        )
+        evaluated_keys = set()
+        skipped = 0
+        for target in validation_by_target.values():
+            for row in target.get("by_k") or []:
+                if int(row.get("top_k", 0) or 0) == selected_k[0]:
+                    evaluated_keys.add(target.get("target_name"))
+                    skipped = max(skipped, int(row.get("anchors_skipped", 0) or 0))
+        anchor_profiles_evaluated = max((int(row.get("anchors_evaluated", 0) or 0) for rows_by_k in validation_by_k.values() for row in rows_by_k), default=0)
+        anchor_profiles_skipped = skipped
+    target_summaries = _target_label_summaries(target_labels)
+    seasons = sorted({str(profile.get("season")) for profile in snapshots}, key=_season_key)
+    status = _overall_holdout_status(
+        leakage_guard=leakage_guard,
+        validation_by_target=validation_by_target,
+        anchor_profiles_evaluated=anchor_profiles_evaluated,
+    )
+    return {
+        **SAFETY_FIELDS,
+        "ok": True,
+        "status": status,
+        "schema_version": "nfl_historical_holdout_validation_v1",
+        "created_at": utc_now_iso(),
+        "run_id": sanitize_filename(f"nfl_pattern_validation_{utc_now_iso().replace(':', '-')}_{uuid4().hex[:8]}"),
+        "runtime_data_dir": str(base),
+        "report_root": str(base / "data_sources" / "open_sports_history" / "nfl_pattern_validation"),
+        "seasons_analyzed": seasons,
+        "real_rows_consumed": len(rows),
+        "synthetic_rows_ignored": synthetic_ignored,
+        "team_season_profiles_used": len(snapshots),
+        "anchor_profiles_evaluated": anchor_profiles_evaluated,
+        "anchor_profiles_skipped": anchor_profiles_skipped,
+        "targets_evaluated": POSTSEASON_TARGET_LABEL_FIELDS,
+        "target_label_summary": target_summaries,
+        "holdout_method": "regular_season_snapshot_prior_seasons_only",
+        "similarity_k_values": selected_k,
+        "leakage_guard": leakage_guard,
+        "validation_by_target": validation_by_target,
+        "validation_by_k": validation_by_k,
+        "feature_catalog": {
+            "allowed_similarity_features": list(allowed_similarity_features or HOLDOUT_ALLOWED_SIMILARITY_FEATURES),
+            "blocked_leakage_features": HOLDOUT_BLOCKED_LEAKAGE_FEATURES,
+            "blocked_unavailable_feature_families": [
+                "market_price_or_odds",
+                "injury_lineup_profile",
+                "roster_continuity",
+                "pace_or_advanced_efficiency",
+            ],
+        },
+        "blockers": [] if status not in {"insufficient_labels", "insufficient_features", "insufficient_samples", "blocked_leakage_detected"} else [status],
+        "no_predictive_claim": True,
+        "predictive_claim_made": False,
+        "betting_decision_made": False,
+        "confirmed_bets_created": False,
+        "no_bet_rows_modified": False,
+        "outcome_store_written": False,
+        "paper_ledger_written": False,
+        "kalshi_calibration_mutated": False,
+        "provider_calls_attempted": 0,
+        "provider_calls_succeeded": 0,
+        "provider_calls_failed": 0,
+        "downloads_attempted": 0,
+        "downloads_succeeded": 0,
+        "outcome_persistence_attempted": False,
+        "import_or_persist_endpoint_called": False,
+        "persisted_outcomes": False,
+        "recommended_next_step": "review holdout validation metrics as historical context only; do not use for betting or execution",
+        "storage_health": get_storage_health(),
+    }
+
+
 def build_nfl_historical_pattern_lab_report(*, base_data_dir: str | Path | None = None) -> dict[str, Any]:
     base = resolve_base_data_dir(base_data_dir)
     rows, synthetic_ignored = load_real_nfl_rows(base_data_dir=base)
@@ -1054,15 +1660,125 @@ def write_nfl_historical_pattern_lab_report(
     return paths
 
 
+def _validation_root(base_data_dir: str | Path | None = None) -> Path:
+    base = get_data_sources_dir() if base_data_dir is None else resolve_base_data_dir(base_data_dir) / "data_sources"
+    root = base / "open_sports_history" / "nfl_pattern_validation"
+    root.mkdir(parents=True, exist_ok=True)
+    return root
+
+
+def render_nfl_pattern_validation_markdown(report: dict[str, Any]) -> str:
+    target_lines = []
+    for target, details in sorted((report.get("validation_by_target") or {}).items()):
+        first_k = (details.get("by_k") or [{}])[0]
+        target_lines.append(
+            f"- {target}: status={details.get('validation_status')}; base_rate={details.get('base_rate')}; "
+            f"k{first_k.get('top_k')} comp_rate={first_k.get('average_comp_positive_rate')}; lift={first_k.get('lift_vs_base_rate')}"
+        )
+    lines = [
+        "# NFL Historical Holdout Validation",
+        "",
+        f"1. status: {report.get('status')}",
+        f"2. seasons_analyzed: {', '.join(report.get('seasons_analyzed') or []) if report.get('seasons_analyzed') else 'none'}",
+        f"3. real_rows_consumed: {report.get('real_rows_consumed')}",
+        f"4. synthetic_rows_ignored: {report.get('synthetic_rows_ignored')}",
+        f"5. team_season_profiles_used: {report.get('team_season_profiles_used')}",
+        f"6. anchor_profiles_evaluated: {report.get('anchor_profiles_evaluated')}",
+        f"7. anchor_profiles_skipped: {report.get('anchor_profiles_skipped')}",
+        f"8. holdout_method: {report.get('holdout_method')}",
+        f"9. similarity_k_values: {', '.join(str(item) for item in report.get('similarity_k_values') or [])}",
+        f"10. leakage_guard_status: {(report.get('leakage_guard') or {}).get('status')}",
+        "11. no_predictive_claim=true",
+        "12. provider_calls_attempted=0",
+        "13. downloads_attempted=0",
+        "14. provider_write=false",
+        "15. execution_allowed=false",
+        "",
+        "## Targets",
+        *(target_lines or ["- none"]),
+        "",
+        f"recommended_next_step: {report.get('recommended_next_step')}",
+        "",
+    ]
+    return "\n".join(lines)
+
+
+def write_nfl_historical_holdout_validation_report(
+    report: dict[str, Any],
+    *,
+    base_data_dir: str | Path | None = None,
+) -> dict[str, str]:
+    root = _validation_root(base_data_dir)
+    run_id = sanitize_filename(str(report.get("run_id") or f"nfl_pattern_validation_{uuid4().hex[:8]}"))
+    latest_json = root / "latest.json"
+    latest_md = root / "latest.md"
+    item_json = root / "items" / f"{run_id}.json"
+    item_md = root / "items" / f"{run_id}.md"
+    paths = {
+        "latest_json_path": _rel(latest_json, base_data_dir),
+        "latest_markdown_path": _rel(latest_md, base_data_dir),
+        "item_json_path": _rel(item_json, base_data_dir),
+        "item_markdown_path": _rel(item_md, base_data_dir),
+    }
+    payload = {**SAFETY_FIELDS, **report, **paths, "raw_payload_included": False, "secrets_included": False}
+    markdown = render_nfl_pattern_validation_markdown(payload)
+    _atomic_write_json(latest_json, payload)
+    _atomic_write_text(latest_md, markdown)
+    _atomic_write_json(item_json, payload)
+    _atomic_write_text(item_md, markdown)
+    return paths
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--persist", action="store_true")
+    parser.add_argument("--validation", action="store_true")
     args = parser.parse_args(argv)
-    report = build_nfl_historical_pattern_lab_report()
+    report = build_historical_holdout_validation_scorecard() if args.validation else build_nfl_historical_pattern_lab_report()
     paths: dict[str, str] = {}
     if args.persist:
-        paths = write_nfl_historical_pattern_lab_report(report)
+        paths = (
+            write_nfl_historical_holdout_validation_report(report)
+            if args.validation
+            else write_nfl_historical_pattern_lab_report(report)
+        )
         report.update(paths)
+    if args.validation:
+        print(
+            json.dumps(
+                {
+                    "ok": report["ok"],
+                    "status": report["status"],
+                    "seasons_analyzed": report["seasons_analyzed"],
+                    "real_rows_consumed": report["real_rows_consumed"],
+                    "synthetic_rows_ignored": report["synthetic_rows_ignored"],
+                    "team_season_profiles_used": report["team_season_profiles_used"],
+                    "anchor_profiles_evaluated": report["anchor_profiles_evaluated"],
+                    "anchor_profiles_skipped": report["anchor_profiles_skipped"],
+                    "targets_evaluated": report["targets_evaluated"],
+                    "holdout_method": report["holdout_method"],
+                    "similarity_k_values": report["similarity_k_values"],
+                    "leakage_guard": report["leakage_guard"],
+                    "validation_by_target": report["validation_by_target"],
+                    "validation_by_k": report["validation_by_k"],
+                    "no_predictive_claim": True,
+                    "provider_calls_attempted": 0,
+                    "downloads_attempted": 0,
+                    "downloads_succeeded": 0,
+                    "enabled_source_count": 0,
+                    "paid_source_enabled_count": 0,
+                    "provider_write": False,
+                    "execution_allowed": False,
+                    "raw_payload_included": False,
+                    "secrets_included": False,
+                    "latest_json_path": paths.get("latest_json_path"),
+                    "latest_markdown_path": paths.get("latest_markdown_path"),
+                },
+                indent=2,
+                sort_keys=True,
+            )
+        )
+        return 0
     print(
         json.dumps(
             {
