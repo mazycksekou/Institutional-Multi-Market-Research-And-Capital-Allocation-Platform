@@ -456,14 +456,19 @@ def _nfl_open_data_feature_availability(base: Path) -> dict[str, bool]:
     if not isinstance(payload, dict) or not isinstance(payload.get("feature_availability"), dict):
         return {
             "play_by_play_available": False,
+            "team_stats_available": False,
+            "weekly_player_stats_available": False,
             "roster_data_available": False,
             "weekly_rosters_available": False,
-            "player_stats_available": False,
-            "team_stats_available": False,
             "snap_counts_available": False,
             "participation_available": False,
-            "draft_combine_available": False,
+            "depth_charts_available": False,
             "injury_data_available": False,
+            "pace_play_volume_available": False,
+            "roster_continuity_available": False,
+            "nextgen_stats_available": False,
+            "player_stats_available": False,
+            "draft_combine_available": False,
             "market_data_available": False,
         }
     return {

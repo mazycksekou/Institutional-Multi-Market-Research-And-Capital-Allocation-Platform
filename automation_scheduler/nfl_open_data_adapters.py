@@ -109,6 +109,182 @@ FIELD_HINTS: dict[str, list[str]] = {
     "coaching": ["season", "team", "coach_id", "coach_name", "role"],
 }
 
+NFL_OPEN_DATA_RESUME_LEDGER_SCHEMA_VERSION = "nfl_open_data_resume_ledger_v1"
+
+
+def _read_json_file(path: Path) -> Any | None:
+    if not path.exists():
+        return None
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+
+
+def _nfl_data_root(base_data_dir: str | Path | None = None) -> Path:
+    base = get_data_sources_dir() if base_data_dir is None else resolve_base_data_dir(base_data_dir) / "data_sources"
+    root = base / "nfl_open_data"
+    root.mkdir(parents=True, exist_ok=True)
+    return root
+
+
+def _resume_ledger_path(source_id: str, base_data_dir: str | Path | None = None) -> Path:
+    return _nfl_data_root(base_data_dir) / "resume_ledgers" / f"{sanitize_filename(source_id)}.json"
+
+
+def _completed_seasons_from_disk(source_id: str, base_data_dir: str | Path | None = None) -> set[str]:
+    root = _validated_root(source_id, base_data_dir) / "by_season"
+    if not root.exists():
+        return set()
+    return {path.stem for path in root.glob("*.json") if path.is_file()}
+
+
+def _load_resume_ledger(source_id: str, base_data_dir: str | Path | None = None) -> dict[str, Any]:
+    payload = _read_json_file(_resume_ledger_path(source_id, base_data_dir))
+    if not isinstance(payload, dict):
+        return {
+            "schema_version": NFL_OPEN_DATA_RESUME_LEDGER_SCHEMA_VERSION,
+            "source_id": source_id,
+            "seasons_completed": [],
+            "season_records_validated": {},
+            "total_records_validated": 0,
+            "total_records_rejected": 0,
+        }
+    return payload
+
+
+def _save_resume_ledger(ledger: dict[str, Any], *, base_data_dir: str | Path | None = None) -> None:
+    path = _resume_ledger_path(str(ledger.get("source_id") or "unknown"), base_data_dir)
+    _atomic_write_json(path, {**SAFETY_FIELDS, **ledger, "raw_payload_included": False, "secrets_included": False})
+
+
+def _season_record_totals_from_asset_reports(asset_reports: list[dict[str, Any]]) -> dict[str, int]:
+    totals: dict[str, int] = {}
+    for item in asset_reports:
+        if not isinstance(item, dict) or item.get("status") != "ok":
+            continue
+        season = item.get("season")
+        if season is None:
+            continue
+        key = str(season)
+        totals[key] = int(item.get("records_validated", 0) or 0)
+    return totals
+
+
+def _merge_asset_reports(existing: list[dict[str, Any]], incoming: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    merged: dict[str, dict[str, Any]] = {}
+    for item in existing + incoming:
+        if not isinstance(item, dict):
+            continue
+        key = str(item.get("asset_name_or_dataset_ref") or item.get("season") or uuid4().hex[:8])
+        merged[key] = item
+    return sorted(merged.values(), key=lambda row: (str(row.get("season") or ""), str(row.get("asset_name_or_dataset_ref") or "")))
+
+
+def _merge_validated_report(
+    source_id: str,
+    report: dict[str, Any],
+    *,
+    base_data_dir: str | Path | None = None,
+    session_id: str | None = None,
+) -> dict[str, Any]:
+    existing = _read_json_file(_validated_root(source_id, base_data_dir) / "latest.json")
+    ledger = _load_resume_ledger(source_id, base_data_dir)
+    disk_seasons = _completed_seasons_from_disk(source_id, base_data_dir)
+    incoming_assets = list(report.get("asset_reports") or [])
+    existing_assets = list(existing.get("asset_reports") or []) if isinstance(existing, dict) else []
+    merged_assets = _merge_asset_reports(existing_assets, incoming_assets)
+    season_totals = dict(ledger.get("season_records_validated") or {})
+    for season, count in _season_record_totals_from_asset_reports(incoming_assets).items():
+        season_totals[season] = int(count)
+    seasons_completed = sorted(set(ledger.get("seasons_completed") or []) | disk_seasons | set(season_totals))
+    total_records = int(sum(season_totals.values()))
+    total_rejected = int(existing.get("records_rejected", 0) if isinstance(existing, dict) else 0) + int(
+        report.get("records_rejected", 0) or 0
+    )
+    seasons_available = list(report.get("seasons_available") or (existing or {}).get("seasons_available") or [])
+    seasons_missing = [season for season in seasons_available if str(season) not in set(seasons_completed)]
+    completion_pct = None
+    if seasons_available:
+        completion_pct = round(len(seasons_completed) / len(seasons_available) * 100, 2)
+    full_status = report.get("full_backfill_status")
+    if seasons_available and not seasons_missing:
+        full_status = "complete"
+        status = "full_backfill_complete"
+        next_session = "run coverage_report"
+        report = {**report, "blocked_reason": None, "ok": True}
+    elif report.get("full_backfill_status") == "partial_bounded_session" or seasons_missing:
+        full_status = "partial_bounded_session" if seasons_missing else full_status
+        status = "partial_backfill_session_complete" if seasons_missing else report.get("status")
+        next_session = report.get("next_recommended_session") or (
+            f"resume full_available_backfill; {len(seasons_missing)} seasons remaining"
+        )
+    else:
+        status = report.get("status")
+        next_session = report.get("next_recommended_session")
+    fields_seen: set[str] = set()
+    if isinstance(existing, dict):
+        fields_seen.update(existing.get("fields_available") or [])
+    fields_seen.update(report.get("fields_available") or [])
+    merged = {
+        **SAFETY_FIELDS,
+        **(existing if isinstance(existing, dict) else {}),
+        **report,
+        "status": status,
+        "full_backfill_status": full_status,
+        "completion_percentage": completion_pct,
+        "asset_reports": merged_assets,
+        "seasons_backfilled": seasons_completed,
+        "seasons_missing": seasons_missing,
+        "records_validated": total_records,
+        "records_rejected": total_rejected,
+        "fields_available": sorted(fields_seen),
+        "resume_ledger_seasons_completed": seasons_completed,
+        "next_recommended_session": next_session,
+        "session_id": session_id or report.get("session_id"),
+        "raw_payload_included": False,
+        "secrets_included": False,
+    }
+    ledger.update(
+        {
+            "schema_version": NFL_OPEN_DATA_RESUME_LEDGER_SCHEMA_VERSION,
+            "source_id": source_id,
+            "seasons_completed": seasons_completed,
+            "season_records_validated": season_totals,
+            "total_records_validated": total_records,
+            "total_records_rejected": total_rejected,
+            "last_session_at": report.get("created_at"),
+            "last_session_id": session_id or report.get("run_id"),
+        }
+    )
+    _save_resume_ledger(ledger, base_data_dir=base_data_dir)
+    return merged
+
+
+def _filter_assets_by_season_window(
+    assets: list[dict[str, Any]],
+    *,
+    start_season: int | str | None,
+    end_season: int | str | None,
+) -> list[dict[str, Any]]:
+    if start_season is None and end_season is None:
+        return assets
+    start = int(start_season) if start_season is not None else None
+    end = int(end_season) if end_season is not None else None
+    filtered: list[dict[str, Any]] = []
+    for asset in assets:
+        season = asset.get("season")
+        if season is None:
+            filtered.append(asset)
+            continue
+        year = int(str(season))
+        if start is not None and year < start:
+            continue
+        if end is not None and year > end:
+            continue
+        filtered.append(asset)
+    return filtered
+
 
 def _atomic_write_json(path: Path, payload: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -505,6 +681,11 @@ class NflOpenDataAdapter:
         allow_download: bool = False,
         one_season_passed: bool = False,
         max_full_assets: int | None = None,
+        resume: bool = True,
+        start_season: int | str | None = None,
+        end_season: int | str | None = None,
+        base_data_dir: str | Path | None = None,
+        session_id: str | None = None,
     ) -> dict[str, Any]:
         if not allow_download:
             return self._blocked_report("full_available_backfill", "download_not_allowed")
@@ -517,17 +698,59 @@ class NflOpenDataAdapter:
         if not metadata.get("ok"):
             return self._blocked_report("full_available_backfill", str(metadata.get("blocked_reason") or "metadata_not_available"), metadata=metadata)
         assets = self._select_assets_with_private(metadata)
+        assets = _filter_assets_by_season_window(assets, start_season=start_season, end_season=end_season)
+        completed: set[str] = set()
+        if resume:
+            ledger = _load_resume_ledger(self.source["source_id"], base_data_dir)
+            completed |= {str(season) for season in ledger.get("seasons_completed") or []}
+            completed |= _completed_seasons_from_disk(self.source["source_id"], base_data_dir)
+        pending = [asset for asset in assets if str(asset.get("season") or "all") not in completed]
+        pending = sorted(pending, key=lambda item: (str(item.get("season") or "9999"), str(item.get("asset_name_or_dataset_ref") or "")))
+        if not pending:
+            latest = _read_json_file(_validated_root(self.source["source_id"], base_data_dir) / "latest.json")
+            return {
+                **SAFETY_FIELDS,
+                "ok": True,
+                "status": "full_backfill_complete",
+                "full_backfill_status": "complete",
+                "gate": "full_available_backfill",
+                "source_id": self.source["source_id"],
+                "seasons_available": list(metadata.get("seasons_available") or []),
+                "seasons_backfilled": sorted(completed),
+                "records_validated": int((latest or {}).get("records_validated", 0) or 0),
+                "records_rejected": int((latest or {}).get("records_rejected", 0) or 0),
+                "downloads_attempted": 0,
+                "downloads_succeeded": 0,
+                "next_recommended_session": "run coverage_report",
+                "resume": resume,
+                "session_id": session_id,
+                "raw_payload_included": False,
+                "secrets_included": False,
+            }
         bounded = False
         if self.source.get("large_source") and max_full_assets is None:
-            max_full_assets = 2
-        if max_full_assets is not None and max_full_assets > 0 and len(assets) > max_full_assets:
+            max_full_assets = 4
+        if max_full_assets is not None and max_full_assets > 0 and len(pending) > max_full_assets:
             bounded = True
-            assets = assets[-max_full_assets:]
-        report = self._download_assets("full_available_backfill", assets, max_records=None, metadata=metadata)
+            pending = pending[:max_full_assets]
+        report = self._download_assets("full_available_backfill", pending, max_records=None, metadata=metadata)
+        report["resume"] = resume
+        report["session_id"] = session_id
+        report["pending_assets_before_session"] = len(assets) - len(completed)
+        report["assets_processed_this_session"] = len(pending)
         if bounded:
             report["status"] = "partial_backfill_session_complete" if report.get("ok") else report.get("status")
             report["full_backfill_status"] = "partial_bounded_session"
-            report["next_recommended_session"] = "resume full_available_backfill with a larger max_full_assets value after reviewing runtime"
+            report["next_recommended_session"] = (
+                "resume full_available_backfill with --resume and a larger --max-full-assets value"
+            )
+        elif report.get("ok"):
+            seasons_available = [str(season) for season in metadata.get("seasons_available") or [] if season is not None]
+            done = sorted(completed | {str(season) for season in report.get("seasons_backfilled") or []})
+            if seasons_available and all(season in done for season in seasons_available):
+                report["full_backfill_status"] = "complete"
+                report["status"] = "full_backfill_complete"
+                report["next_recommended_session"] = "run coverage_report"
         return report
 
     def validate_sample_shape(self, rows: list[dict[str, Any]], fields: list[str]) -> dict[str, Any]:
@@ -570,7 +793,14 @@ class NflOpenDataAdapter:
         by_season_paths: list[str] = []
         by_team_paths: list[str] = []
         by_player_paths: list[str] = []
-        payload = {**SAFETY_FIELDS, **report, "raw_payload_included": False, "secrets_included": False}
+        payload = _merge_validated_report(
+            self.source["source_id"],
+            report,
+            base_data_dir=base_data_dir,
+            session_id=str(report.get("session_id") or run_id),
+        )
+        payload = {**payload, "raw_payload_included": False, "secrets_included": False}
+        season_totals = dict(_load_resume_ledger(self.source["source_id"], base_data_dir).get("season_records_validated") or {})
         _atomic_write_json(latest_json, payload)
         _atomic_write_text(latest_md, render_adapter_markdown(payload))
         _atomic_write_json(item_json, payload)
@@ -588,7 +818,9 @@ class NflOpenDataAdapter:
                 by_player[str(row["player_id"])].append(row)
         for season, rows in sorted(by_season.items()):
             path = root / "by_season" / f"{sanitize_filename(season)}.json"
-            _atomic_write_json(path, _collection_payload(report, rows, scope="season", scope_value=season))
+            season_payload = _collection_payload(payload, rows, scope="season", scope_value=season)
+            season_payload["records_validated"] = int(season_totals.get(season, len(rows)))
+            _atomic_write_json(path, season_payload)
             by_season_paths.append(_rel(path, base_data_dir))
         for team, rows in sorted(by_team.items()):
             path = root / "by_team" / f"{sanitize_filename(team)}.json"

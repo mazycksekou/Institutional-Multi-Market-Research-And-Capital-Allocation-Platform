@@ -5,6 +5,11 @@ param(
     [int]$MaxRecords = 25,
     [switch]$AllowDownload,
     [int]$MaxFullAssets = 0,
+    [int]$StartSeason = 0,
+    [int]$EndSeason = 0,
+    [string]$SessionId = "",
+    [switch]$Resume,
+    [switch]$NoResume,
     [switch]$NoPersist
 )
 
@@ -27,6 +32,21 @@ if ($AllowDownload) {
 }
 if ($MaxFullAssets -gt 0) {
     $ArgsList += @("--max-full-assets", "$MaxFullAssets")
+}
+if ($StartSeason -gt 0) {
+    $ArgsList += @("--start-season", "$StartSeason")
+}
+if ($EndSeason -gt 0) {
+    $ArgsList += @("--end-season", "$EndSeason")
+}
+if (-not [string]::IsNullOrWhiteSpace($SessionId)) {
+    $ArgsList += @("--session-id", $SessionId)
+}
+if ($Resume) {
+    $ArgsList += "--resume"
+}
+if ($NoResume) {
+    $ArgsList += "--no-resume"
 }
 if (-not $NoPersist) {
     $ArgsList += "--persist"

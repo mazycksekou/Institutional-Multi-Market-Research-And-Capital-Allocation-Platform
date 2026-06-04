@@ -16,7 +16,16 @@ from .scheduler_config import sanitize_filename, utc_now_iso
 
 NFL_OPEN_DATA_BACKFILL_SCHEMA_VERSION = "nfl_open_data_backfill_v1"
 NFL_OPEN_DATA_COVERAGE_SCHEMA_VERSION = "nfl_open_data_coverage_matrix_v1"
-SUPPORTED_MODES = {"metadata_check", "tiny_sample", "one_season_import", "full_available_backfill", "all", "coverage_report"}
+SUPPORTED_MODES = {
+    "metadata_check",
+    "tiny_sample",
+    "one_season_import",
+    "full_available_backfill",
+    "full_backfill",
+    "resume",
+    "all",
+    "coverage_report",
+}
 
 
 def _data_root(base_data_dir: str | Path | None = None) -> Path:
@@ -77,20 +86,34 @@ def _validated_latest(source_id: str, *, base_data_dir: str | Path | None = None
 
 
 def _feature_flags(rows: list[dict[str, Any]]) -> dict[str, bool]:
-    supported_by_category = {
-        str(row.get("data_category")): bool(row.get("records_validated", 0))
-        for row in rows
-    }
+    supported_by_category: dict[str, bool] = {}
+    for row in rows:
+        category = str(row.get("data_category") or "")
+        if not category:
+            continue
+        has_records = bool(int(row.get("records_validated", 0) or 0))
+        supported_by_category[category] = supported_by_category.get(category, False) or has_records
+    play_by_play = supported_by_category.get("play_by_play", False)
+    weekly_rosters = supported_by_category.get("weekly_rosters", False)
+    rosters = supported_by_category.get("rosters", False)
     return {
-        "play_by_play_available": supported_by_category.get("play_by_play", False),
-        "roster_data_available": supported_by_category.get("rosters", False),
-        "weekly_rosters_available": supported_by_category.get("weekly_rosters", False),
-        "player_stats_available": supported_by_category.get("player_stats", False),
+        "play_by_play_available": play_by_play,
         "team_stats_available": supported_by_category.get("team_stats", False),
+        "weekly_player_stats_available": supported_by_category.get("player_stats", False),
+        "roster_data_available": rosters,
+        "weekly_rosters_available": weekly_rosters,
         "snap_counts_available": supported_by_category.get("snap_counts", False),
         "participation_available": supported_by_category.get("participation", False),
-        "draft_combine_available": supported_by_category.get("draft", False) and supported_by_category.get("combine", False),
+        "depth_charts_available": supported_by_category.get("depth_charts", False),
         "injury_data_available": supported_by_category.get("injuries", False),
+        "pace_play_volume_available": supported_by_category.get("pace_or_play_volume", False) or play_by_play,
+        "roster_continuity_available": supported_by_category.get("roster_continuity", False) or weekly_rosters,
+        "nextgen_stats_available": any(
+            str(row.get("source_id")) == "nflverse_nextgen_stats" and bool(int(row.get("records_validated", 0) or 0))
+            for row in rows
+        ),
+        "player_stats_available": supported_by_category.get("player_stats", False),
+        "draft_combine_available": supported_by_category.get("draft", False) and supported_by_category.get("combine", False),
         "market_data_available": supported_by_category.get("betting_lines_or_market_odds", False),
     }
 
@@ -115,10 +138,14 @@ def _coverage_row(source: dict[str, Any], latest: dict[str, Any]) -> dict[str, A
         if nested_one and not nested_one.get("ok")
         else "not_run"
     )
-    full_status = "succeeded" if latest.get("gate") == "full_available_backfill" and latest.get("ok") else "not_run"
-    if latest.get("gate") == "full_available_backfill" and latest.get("full_backfill_status") == "partial_bounded_session":
+    full_status = "not_run"
+    if latest.get("full_backfill_status") == "complete":
+        full_status = "succeeded"
+    elif latest.get("gate") == "full_available_backfill" and latest.get("ok"):
+        full_status = "succeeded"
+    if latest.get("full_backfill_status") == "partial_bounded_session":
         full_status = "partial_bounded_session"
-    if latest.get("blocked_reason"):
+    if latest.get("blocked_reason") and latest.get("full_backfill_status") != "complete":
         if latest.get("gate") == "tiny_sample":
             tiny_status = "failed"
         if latest.get("gate") == "one_season_import":
@@ -126,10 +153,24 @@ def _coverage_row(source: dict[str, Any], latest: dict[str, Any]) -> dict[str, A
         if latest.get("gate") == "full_available_backfill":
             full_status = "failed"
     source_status = "validated" if records > 0 else "blocked" if source.get("blockers") or not source.get("current_phase_allowed") else "metadata_ready"
-    blocker = latest.get("blocked_reason") or (", ".join(source.get("blockers") or []) or None)
+    blocker = (
+        None
+        if latest.get("full_backfill_status") == "complete" and not source.get("blockers")
+        else latest.get("blocked_reason") or (", ".join(source.get("blockers") or []) or None)
+    )
     blocked_features = list(source.get("blocked_features") or [])
     if source.get("data_category") in {"coaching"} and "coaching_staff" not in blocked_features:
         blocked_features.append("coaching_staff")
+    seasons_available = list(latest.get("seasons_available") or [])
+    seasons_backfilled = list(latest.get("seasons_backfilled") or [])
+    seasons_missing = list(latest.get("seasons_missing") or []) or [
+        season
+        for season in seasons_available
+        if str(season) not in {str(item) for item in seasons_backfilled}
+    ]
+    completion_percentage = latest.get("completion_percentage")
+    if completion_percentage is None and seasons_available:
+        completion_percentage = round(len(seasons_backfilled) / len(seasons_available) * 100, 2)
     return {
         "source_id": source["source_id"],
         "data_category": source.get("data_category"),
@@ -141,13 +182,10 @@ def _coverage_row(source: dict[str, Any], latest: dict[str, Any]) -> dict[str, A
         "full_backfill_status": full_status,
         "records_validated": records,
         "records_rejected": int(latest.get("records_rejected", 0) or 0),
-        "seasons_available": list(latest.get("seasons_available") or []),
-        "seasons_backfilled": list(latest.get("seasons_backfilled") or []),
-        "seasons_missing": [
-            season
-            for season in list(latest.get("seasons_available") or [])
-            if str(season) not in {str(item) for item in list(latest.get("seasons_backfilled") or [])}
-        ],
+        "seasons_available": seasons_available,
+        "seasons_backfilled": seasons_backfilled,
+        "seasons_missing": seasons_missing,
+        "completion_percentage": completion_percentage,
         "fields_available": list(latest.get("fields_available") or []),
         "fields_missing": [
             field
@@ -266,8 +304,17 @@ def build_nfl_open_data_backfill_report(
     allow_download: bool = False,
     max_records: int = DEFAULT_TINY_SAMPLE_RECORDS,
     max_full_assets: int | None = None,
+    start_season: int | str | None = None,
+    end_season: int | str | None = None,
+    resume: bool = True,
+    session_id: str | None = None,
     base_data_dir: str | Path | None = None,
 ) -> dict[str, Any]:
+    if mode == "full_backfill":
+        mode = "full_available_backfill"
+    if mode == "resume":
+        mode = "full_available_backfill"
+        resume = True
     if mode not in SUPPORTED_MODES:
         return _blocked_session(mode=mode, source_id=source_id, blocker="unsupported_source", base_data_dir=base_data_dir)
     if mode == "coverage_report":
@@ -284,7 +331,16 @@ def build_nfl_open_data_backfill_report(
         elif mode == "one_season_import":
             result = adapter.run_one_season_import(season=season, allow_download=allow_download, safe_override=True)
         elif mode == "full_available_backfill":
-            result = adapter.run_full_available_backfill(allow_download=allow_download, one_season_passed=True, max_full_assets=max_full_assets)
+            result = adapter.run_full_available_backfill(
+                allow_download=allow_download,
+                one_season_passed=True,
+                max_full_assets=max_full_assets,
+                resume=resume,
+                start_season=start_season,
+                end_season=end_season,
+                base_data_dir=base_data_dir,
+                session_id=session_id,
+            )
         else:
             tiny = adapter.run_tiny_sample(allow_download=allow_download, max_records=max_records)
             if tiny.get("gate"):
@@ -296,6 +352,11 @@ def build_nfl_open_data_backfill_report(
                 allow_download=allow_download,
                 one_season_passed=bool(one.get("ok")),
                 max_full_assets=max_full_assets,
+                resume=resume,
+                start_season=start_season,
+                end_season=end_season,
+                base_data_dir=base_data_dir,
+                session_id=session_id,
             )
             result = {
                 **full,
@@ -468,6 +529,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--max-records", type=int, default=DEFAULT_TINY_SAMPLE_RECORDS)
     parser.add_argument("--allow-download", action="store_true")
     parser.add_argument("--max-full-assets", type=int, default=None)
+    parser.add_argument("--start-season", type=int, default=None)
+    parser.add_argument("--end-season", type=int, default=None)
+    parser.add_argument("--session-id", default=None)
+    parser.add_argument("--resume", dest="resume", action="store_true", default=True)
+    parser.add_argument("--no-resume", dest="resume", action="store_false")
     parser.add_argument("--persist", action="store_true")
     args = parser.parse_args(argv)
     report = build_nfl_open_data_backfill_report(
@@ -477,6 +543,10 @@ def main(argv: list[str] | None = None) -> int:
         allow_download=args.allow_download,
         max_records=args.max_records,
         max_full_assets=args.max_full_assets,
+        start_season=args.start_season,
+        end_season=args.end_season,
+        resume=args.resume,
+        session_id=args.session_id,
     )
     paths: dict[str, Any] = {}
     if args.persist or args.mode == "coverage_report":

@@ -5,13 +5,35 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+import automation_scheduler.nfl_open_data_adapters as nfl_open_data_adapters
 import automation_scheduler.nfl_open_data_backfill as nfl_open_data_backfill
+from automation_scheduler.nfl_open_data_adapters import (
+    _load_resume_ledger,
+    _merge_asset_reports,
+    _merge_validated_report,
+    _save_resume_ledger,
+)
 from automation_scheduler.nfl_open_data_backfill import (
     build_nfl_open_data_backfill_report,
     build_nfl_open_data_coverage_matrix,
     write_nfl_open_data_backfill_report,
 )
 from automation_scheduler.nfl_open_data_sources import BLOCKED_FEATURE_FAMILIES, REQUIRED_DATA_CATEGORIES
+
+PARTIAL_LANE_SOURCE_IDS = [
+    "nflverse_play_by_play",
+    "nflverse_team_stats",
+    "nflverse_weekly_player_stats",
+    "nflverse_rosters",
+    "nflverse_weekly_rosters",
+    "nflverse_snap_counts",
+    "nflverse_participation",
+    "nflverse_depth_charts",
+    "nflverse_injuries",
+    "nflverse_pace_or_play_volume",
+    "nflverse_roster_continuity",
+    "nflverse_nextgen_stats",
+]
 
 
 class TestNflOpenDataBackfill(unittest.TestCase):
@@ -84,6 +106,121 @@ class TestNflOpenDataBackfill(unittest.TestCase):
         self.assertNotIn("outcome_store", source)
         self.assertNotIn("paper_ledger", source)
         self.assertNotIn("kalshi calibration", source.lower())
+
+    def test_partial_lanes_present_in_coverage_matrix(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            report = build_nfl_open_data_coverage_matrix(base_data_dir=tmp)
+        source_ids = {row["source_id"] for row in report["coverage_rows"]}
+        for lane in PARTIAL_LANE_SOURCE_IDS:
+            self.assertIn(lane, source_ids)
+
+    def test_coverage_row_reports_completion_percentage(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            latest = Path(tmp) / "data_sources" / "nfl_open_data" / "validated" / "nflverse_team_stats" / "latest.json"
+            latest.parent.mkdir(parents=True)
+            latest.write_text(
+                json.dumps(
+                    {
+                        "ok": True,
+                        "gate": "full_available_backfill",
+                        "seasons_available": ["2023", "2024", "2025"],
+                        "seasons_backfilled": ["2024", "2025"],
+                        "records_validated": 100,
+                        "fields_available": ["season", "week", "team"],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            report = build_nfl_open_data_coverage_matrix(base_data_dir=tmp)
+            row = {item["source_id"]: item for item in report["coverage_rows"]}["nflverse_team_stats"]
+        self.assertEqual(row["completion_percentage"], 66.67)
+
+    def test_resume_ledger_dedupes_asset_reports(self):
+        merged = _merge_asset_reports(
+            [{"asset_name_or_dataset_ref": "a.csv", "season": "2023", "records_validated": 10}],
+            [{"asset_name_or_dataset_ref": "a.csv", "season": "2023", "records_validated": 12}, {"asset_name_or_dataset_ref": "b.csv", "season": "2024", "records_validated": 5}],
+        )
+        self.assertEqual(len(merged), 2)
+        by_name = {item["asset_name_or_dataset_ref"]: item for item in merged}
+        self.assertEqual(by_name["a.csv"]["records_validated"], 12)
+
+    def test_merge_validated_report_accumulates_season_totals(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            _save_resume_ledger(
+                {
+                    "schema_version": "nfl_open_data_resume_ledger_v1",
+                    "source_id": "nflverse_snap_counts",
+                    "seasons_completed": ["2023"],
+                    "season_records_validated": {"2023": 1000},
+                    "total_records_validated": 1000,
+                    "total_records_rejected": 0,
+                },
+                base_data_dir=tmp,
+            )
+            merged = _merge_validated_report(
+                "nflverse_snap_counts",
+                {
+                    "ok": True,
+                    "gate": "full_available_backfill",
+                    "seasons_available": ["2023", "2024"],
+                    "seasons_backfilled": ["2024"],
+                    "asset_reports": [{"asset_name_or_dataset_ref": "snap_2024.csv", "season": "2024", "status": "ok", "records_validated": 500}],
+                    "fields_available": ["season"],
+                    "records_rejected": 0,
+                },
+                base_data_dir=tmp,
+            )
+            ledger = _load_resume_ledger("nflverse_snap_counts", tmp)
+        self.assertEqual(merged["records_validated"], 1500)
+        self.assertEqual(set(merged["seasons_backfilled"]), {"2023", "2024"})
+        self.assertEqual(ledger["total_records_validated"], 1500)
+
+    def test_feature_availability_flags_include_partial_lane_families(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            report = build_nfl_open_data_coverage_matrix(base_data_dir=tmp)
+        flags = report["feature_availability"]
+        for key in (
+            "play_by_play_available",
+            "team_stats_available",
+            "weekly_player_stats_available",
+            "roster_data_available",
+            "weekly_rosters_available",
+            "snap_counts_available",
+            "participation_available",
+            "depth_charts_available",
+            "injury_data_available",
+            "pace_play_volume_available",
+            "roster_continuity_available",
+            "nextgen_stats_available",
+        ):
+            self.assertIn(key, flags)
+
+    def test_tiny_sample_requires_allow_download(self):
+        report = build_nfl_open_data_backfill_report(
+            source_id="nflverse_team_stats",
+            mode="tiny_sample",
+            allow_download=False,
+        )
+        self.assertEqual(report["downloads_attempted"], 0)
+        self.assertFalse(report["ok"])
+
+    def test_full_backfill_mode_alias(self):
+        report = build_nfl_open_data_backfill_report(
+            source_id="nflverse_coaching_research",
+            mode="full_backfill",
+            allow_download=False,
+        )
+        self.assertEqual(report["mode"], "full_available_backfill")
+
+    def test_adapters_module_has_no_outcome_writes(self):
+        source = inspect.getsource(nfl_open_data_adapters)
+        self.assertNotIn("outcome_store", source)
+        self.assertNotIn("paper_ledger", source)
+
+    def test_generated_nfl_open_data_paths_are_gitignored(self):
+        gitignore = Path(".gitignore").read_text(encoding="utf-8")
+        self.assertIn("data/", gitignore)
+        self.assertIn("*.csv", gitignore)
 
 
 if __name__ == "__main__":
