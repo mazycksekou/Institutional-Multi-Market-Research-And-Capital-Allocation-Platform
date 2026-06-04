@@ -79,6 +79,20 @@ No downloads occur by default. Downloads require `-AllowDownload`, an approved c
 
 For `nflverse_nfl` one-season downloads, the backfill uses the source hard cap when no explicit `-MaxRecords` value is supplied so a full real season can be validated in one run.
 
+## All Available Completed NFL Seasons
+
+The `nflverse_nfl` coverage target is `all_available_completed_seasons`. The official `games.csv` release is inspected during explicit `-AllowDownload` runs and summarized as compact source availability metadata:
+
+- `earliest_available_season`
+- `latest_available_completed_season`
+- `all_available_completed_seasons`
+- `validated_completed_seasons`
+- `missing_completed_seasons`
+- `incomplete_or_future_seasons`
+- `source_completion_status`
+
+Coverage reports use this compact metadata when present and do not persist raw release payloads or downloaded CSV payloads.
+
 ## Bulk Backfill Rules
 
 Bulk mode requires a passed smoke test for the source or a valid local parser input. It targets the last 10 seasons by default, processes by season, and writes resumable session state.
@@ -141,6 +155,27 @@ Rows missing event ID, date, participants, or scores/results are rejected. Score
 Tier 0 features become available when valid real result rows exist. Tier 1 rolling/form features require enough chronological real history and otherwise report `insufficient_history`.
 
 Synthetic fixture rows are counted separately in coverage and derived-feature reports. They do not count toward real coverage, Tier 0 production readiness, or Tier 1 derived-feature readiness.
+
+## NFL Historical Pattern Lab
+
+`automation_scheduler/nfl_historical_pattern_lab.py` builds deterministic compact NFL historical profiles from validated `real_open_data` nflverse rows only. It creates:
+
+- `team_season_profiles`
+- `team_game_profiles`
+- `matchup_profiles`
+- `pattern_candidate_profiles`
+- `similarity_feature_catalog`
+- `backtest_readiness_report` fields
+
+The lab uses only safely derived schedule/result fields such as wins, losses, points for/against, margin, home/away record, close-game record, blowout rate, scoring volatility, defensive volatility, late-season form, simple team rating, and schedule-strength proxy. Postseason and Super Bowl flags are used only when `game_type` is present in the source row. Roster, injury/lineup, market, and advanced pace/efficiency features are blocked until approved sources exist.
+
+Run:
+
+```powershell
+.\scripts\run_nfl_pattern_lab.ps1 -Persist
+```
+
+This script performs no provider calls, downloads, outcome writes, calibration writes, provider writes, or execution actions.
 
 ## Safety Invariants
 

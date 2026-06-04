@@ -1,4 +1,5 @@
 import csv
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -99,16 +100,57 @@ class TestOpenSportsHistoryBackfill(unittest.TestCase):
         self.assertEqual(coverage["real_rows_by_source"], {"nflverse_nfl": 1})
         self.assertEqual(coverage["real_rows_by_module"], {"americanfootball_nfl": 1})
         self.assertEqual(coverage["real_rows_by_season"], {"2024": 1})
+        self.assertEqual(coverage["target_coverage_strategy"], "all_available_completed_seasons")
         self.assertEqual(coverage["target_source_id"], "nflverse_nfl")
         self.assertEqual(coverage["target_module"], "americanfootball_nfl")
-        self.assertEqual(coverage["target_seasons"], ["2024", "2023", "2022", "2021", "2020", "2019", "2018", "2017", "2016", "2015"])
+        self.assertEqual(coverage["target_seasons"], ["2024"])
         self.assertEqual(coverage["seasons_validated"], ["2024"])
-        self.assertEqual(coverage["seasons_missing_for_target"], ["2023", "2022", "2021", "2020", "2019", "2018", "2017", "2016", "2015"])
+        self.assertEqual(coverage["seasons_missing_for_target"], [])
         self.assertEqual(coverage["real_rows_by_target_season"], {"2024": 1})
-        self.assertEqual(coverage["nflverse_nfl_coverage_percentage"], 10.0)
+        self.assertEqual(coverage["nflverse_nfl_coverage_percentage"], 100.0)
         self.assertTrue(coverage["synthetic_rows_ignored_for_real_coverage"])
         self.assertIn("nflverse_nfl", coverage["sources_with_valid_rows"])
         self.assertEqual(coverage["downloads_attempted"], 0)
+
+    def test_coverage_report_uses_source_availability_for_missing_and_incomplete_seasons(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._nflverse_csv(tmp)
+            report = build_open_sports_history_backfill_report(
+                source_id="nflverse_nfl",
+                mode="season_backfill",
+                seasons=[2024],
+                input_path=path,
+                persist_preview=True,
+                base_data_dir=tmp,
+            )
+            self.assertTrue(report["ok"])
+            latest = Path(tmp) / "data_sources" / "open_sports_history" / "validated" / "latest.json"
+            payload = json.loads(latest.read_text(encoding="utf-8"))
+            payload["source_availability"] = {
+                "target_coverage_strategy": "all_available_completed_seasons",
+                "earliest_available_season": "2023",
+                "latest_available_completed_season": "2024",
+                "all_available_completed_seasons": ["2023", "2024"],
+                "seasons_available": ["2023", "2024"],
+                "incomplete_or_future_seasons": ["2025"],
+                "source_completion_status": {
+                    "2023": {"status": "complete_final_scores", "rows": 1, "final_score_rows": 1, "missing_score_rows": 0},
+                    "2024": {"status": "complete_final_scores", "rows": 1, "final_score_rows": 1, "missing_score_rows": 0},
+                    "2025": {"status": "incomplete_or_future", "rows": 1, "final_score_rows": 0, "missing_score_rows": 1},
+                },
+            }
+            latest.write_text(json.dumps(payload), encoding="utf-8")
+            coverage = build_open_sports_history_coverage_report(base_data_dir=tmp)
+
+        self.assertEqual(coverage["target_coverage_strategy"], "all_available_completed_seasons")
+        self.assertEqual(coverage["earliest_available_season"], "2023")
+        self.assertEqual(coverage["latest_available_completed_season"], "2024")
+        self.assertEqual(coverage["all_available_completed_seasons"], ["2023", "2024"])
+        self.assertEqual(coverage["validated_completed_seasons"], ["2024"])
+        self.assertEqual(coverage["missing_completed_seasons"], ["2023"])
+        self.assertEqual(coverage["incomplete_or_future_seasons"], ["2025"])
+        self.assertEqual(coverage["coverage_percentage"], 50.0)
+        self.assertEqual(coverage["source_completion_status"]["2025"]["status"], "incomplete_or_future")
 
     def test_season_backfill_download_uses_source_hard_cap_and_propagates_provider_counts(self):
         fake_import = {
@@ -241,9 +283,9 @@ class TestOpenSportsHistoryBackfill(unittest.TestCase):
         self.assertTrue(second["ok"])
         self.assertTrue(by_2024_exists)
         self.assertTrue(by_2023_exists)
-        self.assertEqual(coverage["real_rows_by_target_season"], {"2024": 1, "2023": 1})
-        self.assertEqual(coverage["seasons_validated"], ["2024", "2023"])
-        self.assertEqual(coverage["nflverse_nfl_coverage_percentage"], 20.0)
+        self.assertEqual(coverage["real_rows_by_target_season"], {"2023": 1, "2024": 1})
+        self.assertEqual(coverage["seasons_validated"], ["2023", "2024"])
+        self.assertEqual(coverage["nflverse_nfl_coverage_percentage"], 100.0)
         self.assertEqual(coverage["real_rows_count"], 2)
 
     def test_failed_season_does_not_corrupt_existing_validated_rows(self):

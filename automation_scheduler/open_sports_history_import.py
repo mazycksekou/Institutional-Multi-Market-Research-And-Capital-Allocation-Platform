@@ -8,6 +8,7 @@ import socket
 import urllib.error
 import urllib.parse
 import urllib.request
+from collections import Counter, defaultdict
 from datetime import datetime
 from io import StringIO
 from pathlib import Path
@@ -92,6 +93,7 @@ COMMON_ALIASES = {
     "away_score": ("away_score", "away_points", "away_runs", "away_team_runs", "away_score_ct", "AWAY_SCORE_CT", "away_score_final", "total_away_score"),
     "week_or_round": ("week_or_round", "week", "round"),
     "season": ("season", "year"),
+    "game_type": ("game_type", "season_type"),
     "winner": ("winner", "winning_team", "winning_participant"),
     "final_result": ("final_result", "result", "game_result", "outcome"),
     "neutral_site": ("neutral_site", "neutral"),
@@ -117,6 +119,7 @@ NFLVERSE_ALIASES = {
     "away_score": ("away_score", "away_points", "away_score_final", "total_away_score"),
     "week_or_round": ("week", "week_or_round"),
     "season": ("season",),
+    "game_type": ("game_type", "season_type"),
 }
 
 SOURCE_ALIASES = {
@@ -485,6 +488,7 @@ def _empty_preview_row(
         "event_date": None,
         "season": season,
         "week_or_round": None,
+        "game_type": None,
         "home_participant": None,
         "away_participant": None,
         "neutral_site": None,
@@ -575,6 +579,7 @@ def normalize_open_sports_history_row(
     explicit_winner = _first_value(safe, aliases["winner"])
     explicit_result = _first_value(safe, aliases["final_result"])
     week = _first_value(safe, aliases["week_or_round"])
+    game_type = _first_value(safe, aliases.get("game_type", ("game_type", "season_type")))
     row_season = _first_value(safe, aliases["season"]) or season
     if row_season is None and event_date:
         row_season = int(event_date[:4])
@@ -608,6 +613,7 @@ def normalize_open_sports_history_row(
         "event_date": event_date,
         "season": row_season,
         "week_or_round": week,
+        "game_type": game_type,
         "home_participant": home,
         "away_participant": away,
         "neutral_site": _first_value(safe, aliases["neutral_site"]),
@@ -712,6 +718,87 @@ def validate_nflverse_schedule_columns(fieldnames: list[str] | tuple[str, ...] |
     return not missing, missing
 
 
+def _row_has_final_scores(row: dict[str, Any], *, source_id: str = "nflverse_nfl") -> bool:
+    aliases = _source_aliases(source_id)
+    home_score = _safe_number(_first_value(row, aliases.get("home_score", ("home_score",))))
+    away_score = _safe_number(_first_value(row, aliases.get("away_score", ("away_score",))))
+    return home_score is not None and away_score is not None
+
+
+def build_nflverse_schedule_availability(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    by_season: dict[str, dict[str, Any]] = defaultdict(
+        lambda: {
+            "rows": 0,
+            "final_score_rows": 0,
+            "missing_score_rows": 0,
+            "game_types": Counter(),
+            "min_event_date": None,
+            "max_event_date": None,
+        }
+    )
+    for row in rows:
+        season = str(_season_value_for_row(row, "nflverse_nfl") or "").strip()
+        if not season:
+            continue
+        item = by_season[season]
+        item["rows"] += 1
+        if _row_has_final_scores(row, source_id="nflverse_nfl"):
+            item["final_score_rows"] += 1
+        else:
+            item["missing_score_rows"] += 1
+        game_type = str(_first_value(row, NFLVERSE_ALIASES.get("game_type", ("game_type", "season_type"))) or "unknown")
+        item["game_types"][game_type] += 1
+        event_date = _parse_event_date(_first_value(row, NFLVERSE_ALIASES["event_date"]))
+        if event_date:
+            item["min_event_date"] = event_date if item["min_event_date"] is None or event_date < item["min_event_date"] else item["min_event_date"]
+            item["max_event_date"] = event_date if item["max_event_date"] is None or event_date > item["max_event_date"] else item["max_event_date"]
+
+    ordered_seasons = sorted(by_season, key=lambda value: int(value) if value.isdigit() else -1)
+    completed = [
+        season
+        for season in ordered_seasons
+        if int(by_season[season]["rows"] or 0) > 0 and int(by_season[season]["missing_score_rows"] or 0) == 0
+    ]
+    incomplete = [
+        season
+        for season in ordered_seasons
+        if int(by_season[season]["missing_score_rows"] or 0) > 0
+    ]
+    seasons_with_final_scores = [
+        season
+        for season in ordered_seasons
+        if int(by_season[season]["final_score_rows"] or 0) > 0
+    ]
+    season_status = {}
+    for season in ordered_seasons:
+        item = by_season[season]
+        missing_score_rows = int(item["missing_score_rows"] or 0)
+        rows_count = int(item["rows"] or 0)
+        status = "complete_final_scores" if rows_count > 0 and missing_score_rows == 0 else "incomplete_or_future"
+        season_status[season] = {
+            "status": status,
+            "rows": rows_count,
+            "final_score_rows": int(item["final_score_rows"] or 0),
+            "missing_score_rows": missing_score_rows,
+            "game_types": dict(sorted(item["game_types"].items())),
+            "min_event_date": item["min_event_date"],
+            "max_event_date": item["max_event_date"],
+        }
+    return {
+        "target_coverage_strategy": "all_available_completed_seasons",
+        "earliest_available_season": completed[0] if completed else (ordered_seasons[0] if ordered_seasons else None),
+        "latest_available_completed_season": completed[-1] if completed else None,
+        "all_available_completed_seasons": completed,
+        "seasons_available": completed,
+        "seasons_with_final_scores": seasons_with_final_scores,
+        "incomplete_or_future_seasons": incomplete,
+        "source_completion_status": season_status,
+        "source_completion_status_blocker": None if completed else "season_completion_status_unknown",
+        "raw_payload_included": False,
+        "secrets_included": False,
+    }
+
+
 def _season_value_for_row(row: dict[str, Any], source_id: str) -> Any:
     aliases = _source_aliases(source_id)
     return _first_value(row, aliases.get("season", ("season",)))
@@ -767,10 +854,22 @@ def download_official_open_data_file(
                 "downloads_succeeded": 0,
                 "missing_required_columns": missing,
             }
-        rows = _filter_rows_by_season([dict(row) for row in reader], source_id=source_id, season=season, max_records=max_records)
+        all_rows = [dict(row) for row in reader]
+        source_availability = build_nflverse_schedule_availability(all_rows)
+        rows = _filter_rows_by_season(all_rows, source_id=source_id, season=season, max_records=max_records)
         if not rows:
-            return [], "no_records_found", {**resolution, "downloads_attempted": 1, "downloads_succeeded": 1}
-        return rows, None, {**resolution, "downloads_attempted": 1, "downloads_succeeded": 1}
+            return [], "no_records_found", {
+                **resolution,
+                "downloads_attempted": 1,
+                "downloads_succeeded": 1,
+                "source_availability": source_availability,
+            }
+        return rows, None, {
+            **resolution,
+            "downloads_attempted": 1,
+            "downloads_succeeded": 1,
+            "source_availability": source_availability,
+        }
     except (urllib.error.URLError, TimeoutError, socket.timeout, OSError, UnicodeDecodeError, csv.Error) as exc:
         blocker = "source_timeout" if _timeout_error(exc) else "provider_error"
         return [], blocker, {**resolution, "downloads_attempted": 1, "downloads_succeeded": 0}
@@ -1074,6 +1173,7 @@ COMPACT_ROW_FIELDS = (
     "event_date",
     "season",
     "week_or_round",
+    "game_type",
     "home_participant",
     "away_participant",
     "neutral_site",

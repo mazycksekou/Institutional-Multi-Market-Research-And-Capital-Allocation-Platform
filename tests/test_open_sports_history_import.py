@@ -11,6 +11,7 @@ import automation_scheduler.open_sports_history_import as open_sports_history_im
 from automation_scheduler.open_sports_history_import import (
     HARD_MAX_RECORDS,
     NFLVERSE_RAW_GAMES_CSV_FALLBACK_URL,
+    build_nflverse_schedule_availability,
     classify_open_data_source_url,
     build_open_sports_history_import_report,
     normalize_open_sports_history_row,
@@ -148,10 +149,10 @@ class TestOpenSportsHistoryImport(unittest.TestCase):
         }
         csv_text = "\n".join(
             [
-                "game_id,gameday,season,week,home_team,away_team,home_score,away_score",
-                "2023_01_A_B,2023-09-01,2023,1,A,B,10,7",
-                "2024_01_BAL_KC,2024-09-05,2024,1,KC,BAL,27,20",
-                "2024_02_BUF_MIA,2024-09-12,2024,2,MIA,BUF,31,28",
+                "game_id,gameday,season,week,game_type,home_team,away_team,home_score,away_score",
+                "2023_01_A_B,2023-09-01,2023,1,REG,A,B,10,7",
+                "2024_01_BAL_KC,2024-09-05,2024,1,REG,KC,BAL,27,20",
+                "2024_02_BUF_MIA,2024-09-12,2024,2,REG,MIA,BUF,31,28",
             ]
         )
         calls = []
@@ -185,7 +186,10 @@ class TestOpenSportsHistoryImport(unittest.TestCase):
         self.assertFalse(report["is_synthetic"])
         self.assertEqual(report["selected_source_url_kind"], "nflverse_data_release_asset")
         self.assertEqual(report["selected_asset_name"], "games.csv")
+        self.assertEqual(report["source_availability"]["all_available_completed_seasons"], ["2023", "2024"])
+        self.assertEqual(report["source_availability"]["latest_available_completed_season"], "2024")
         self.assertEqual({row["season"] for row in report["validated_preview_rows"]}, {"2024"})
+        self.assertEqual({row["game_type"] for row in report["validated_preview_rows"]}, {"REG"})
         self.assertTrue(all(row["data_kind"] == "real_open_data" for row in report["validated_preview_rows"]))
         self.assertTrue(all(row["is_synthetic"] is False for row in report["validated_preview_rows"]))
         self.assertEqual([url for url, _ in calls], [
@@ -196,6 +200,21 @@ class TestOpenSportsHistoryImport(unittest.TestCase):
         self.assertNotIn('"assets"', rendered)
         self.assertFalse(report["raw_payload_included"])
         self.assertFalse(report["secrets_included"])
+
+    def test_nflverse_source_availability_marks_incomplete_future_seasons(self):
+        availability = build_nflverse_schedule_availability(
+            [
+                {"game_id": "2024_01_A_B", "season": "2024", "gameday": "2024-09-01", "game_type": "REG", "home_team": "A", "away_team": "B", "home_score": "10", "away_score": "7"},
+                {"game_id": "2025_01_A_B", "season": "2025", "gameday": "2025-09-01", "game_type": "REG", "home_team": "A", "away_team": "B", "home_score": "", "away_score": ""},
+            ]
+        )
+
+        self.assertEqual(availability["target_coverage_strategy"], "all_available_completed_seasons")
+        self.assertEqual(availability["earliest_available_season"], "2024")
+        self.assertEqual(availability["latest_available_completed_season"], "2024")
+        self.assertEqual(availability["all_available_completed_seasons"], ["2024"])
+        self.assertEqual(availability["incomplete_or_future_seasons"], ["2025"])
+        self.assertEqual(availability["source_completion_status"]["2025"]["status"], "incomplete_or_future")
 
     def test_import_module_has_no_browser_or_html_scraping_dependency(self):
         source = inspect.getsource(open_sports_history_import)
@@ -325,6 +344,7 @@ class TestOpenSportsHistoryImport(unittest.TestCase):
                         "gameday": "2024-09-05",
                         "season": "2024",
                         "week": "1",
+                        "game_type": "REG",
                         "home_team": "KC",
                         "away_team": "BAL",
                         "home_score": "27",
@@ -341,6 +361,7 @@ class TestOpenSportsHistoryImport(unittest.TestCase):
         self.assertEqual(row["event_date"], "2024-09-05")
         self.assertEqual(row["season"], "2024")
         self.assertEqual(row["week_or_round"], "1")
+        self.assertEqual(row["game_type"], "REG")
         self.assertEqual(row["home_participant"], "KC")
         self.assertEqual(row["away_participant"], "BAL")
         self.assertEqual(row["winner"], "KC")
