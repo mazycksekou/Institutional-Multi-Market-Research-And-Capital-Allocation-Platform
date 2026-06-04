@@ -165,17 +165,21 @@ Synthetic fixture rows are counted separately in coverage and derived-feature re
 - `matchup_profiles`
 - `pattern_candidate_profiles`
 - `similarity_feature_catalog`
-- `backtest_readiness_report` fields
+- deterministic playoff/Super Bowl label coverage metrics
+- non-predictive historical comps scaffolds
+- `validation_scorecard` fields
 
-The lab uses only safely derived schedule/result fields such as wins, losses, points for/against, margin, home/away record, close-game record, blowout rate, scoring volatility, defensive volatility, late-season form, simple team rating, and schedule-strength proxy. Postseason and Super Bowl flags are used only when `game_type` is present in the source row. Roster, injury/lineup, market, and advanced pace/efficiency features are blocked until approved sources exist.
+The lab uses only safely derived schedule/result fields such as wins, losses, points for/against, margin, home/away record, close-game record, blowout rate, scoring volatility, defensive volatility, late-season form, simple team rating, and schedule-strength proxy. Postseason, playoff-round, conference-championship, and Super Bowl labels are used only when compact source fields such as `game_type` explicitly support them. Missing label fields are reported with blockers such as `compact_game_type_missing`, `playoff_round_labels_missing`, `super_bowl_label_missing`, and `insufficient_label_fields`; the lab does not infer labels from week, date, team name, or memory.
+
+The validation scorecard checks whether the profile set has enough real rows, numeric features, comparable profiles, and source-supported outcome labels to support future backtesting. It does not claim prediction, does not create betting/trading recommendations, and sets `no_predictive_claim=true`. Roster, injury/lineup, market, and advanced pace/efficiency features remain blocked until approved no-spend sources exist.
 
 Run:
 
 ```powershell
-.\scripts\run_nfl_pattern_lab.ps1 -Persist
+.\scripts\run_nfl_pattern_lab.ps1
 ```
 
-This script performs no provider calls, downloads, outcome writes, calibration writes, provider writes, or execution actions.
+This script writes compact reports under `data/data_sources/open_sports_history/nfl_pattern_lab/` by default. It performs no provider calls, downloads, outcome writes, calibration writes, provider writes, or execution actions. Use `-NoPersist` only for a local stdout-only check.
 
 ## Safety Invariants
 

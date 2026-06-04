@@ -15,13 +15,31 @@ from .open_sports_history_sources import SAFETY_FIELDS
 from .scheduler_config import sanitize_filename, utc_now_iso
 
 
-NFL_PATTERN_LAB_SCHEMA_VERSION = "nfl_historical_pattern_lab_v1"
+NFL_PATTERN_LAB_SCHEMA_VERSION = "nfl_historical_pattern_lab_v2"
 NFL_MODULE = "americanfootball_nfl"
 NFL_SOURCE_ID = "nflverse_nfl"
 CLOSE_GAME_MARGIN = 7
 BLOWOUT_MARGIN = 21
 LATE_SEASON_GAME_COUNT = 5
 MIN_SIMILARITY_FEATURES = 3
+MINIMUM_COMPS_REQUIRED = 30
+
+GAME_TYPE_ROUND_LABELS = {
+    "REG": "regular_season",
+    "WC": "wild_card",
+    "DIV": "divisional",
+    "CON": "conference_championship",
+    "SB": "super_bowl",
+}
+POSTSEASON_GAME_TYPES = {"WC", "DIV", "CON", "SB"}
+SUPER_BOWL_GAME_TYPES = {"SB"}
+LABEL_BLOCKERS = [
+    "playoff_round_labels_missing",
+    "super_bowl_label_missing",
+    "compact_game_type_missing",
+    "source_field_missing",
+    "insufficient_label_fields",
+]
 
 SIMILARITY_NUMERIC_FEATURES = [
     "games_played",
@@ -163,6 +181,77 @@ def _result_from_margin(margin: float) -> str:
     return "tie"
 
 
+def _clean_game_type(value: Any) -> str | None:
+    text = str(value or "").strip().upper()
+    return text if text in GAME_TYPE_ROUND_LABELS else None
+
+
+def _explicit_bool(value: Any) -> bool | None:
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return None
+    text = str(value).strip().lower()
+    if text in {"true", "1", "yes", "y"}:
+        return True
+    if text in {"false", "0", "no", "n"}:
+        return False
+    return None
+
+
+def derive_nfl_game_labels(row: dict[str, Any]) -> dict[str, Any]:
+    game_type = _clean_game_type(row.get("game_type"))
+    blockers: list[str] = []
+    if game_type:
+        postseason_flag = game_type in POSTSEASON_GAME_TYPES
+        super_bowl_flag = game_type in SUPER_BOWL_GAME_TYPES
+        return {
+            "game_type": game_type,
+            "playoff_round_label": GAME_TYPE_ROUND_LABELS[game_type],
+            "postseason_flag": postseason_flag,
+            "super_bowl_flag": super_bowl_flag,
+            "label_confidence": "source_supported",
+            "label_blockers": [],
+            "playoff_round_label_method": "explicit_game_type",
+            "super_bowl_label_method": "explicit_game_type",
+        }
+
+    explicit_postseason = None
+    for key in ("postseason_flag", "playoff_flag", "is_postseason", "is_playoff"):
+        explicit_postseason = _explicit_bool(row.get(key))
+        if explicit_postseason is not None:
+            break
+    explicit_super_bowl = None
+    for key in ("super_bowl_flag", "is_super_bowl"):
+        explicit_super_bowl = _explicit_bool(row.get(key))
+        if explicit_super_bowl is not None:
+            break
+
+    blockers.extend(["compact_game_type_missing", "playoff_round_labels_missing"])
+    if explicit_super_bowl is None:
+        blockers.append("super_bowl_label_missing")
+    if explicit_postseason is None and explicit_super_bowl is None:
+        blockers.append("source_field_missing")
+    return {
+        "game_type": None,
+        "playoff_round_label": None,
+        "postseason_flag": explicit_postseason,
+        "super_bowl_flag": explicit_super_bowl,
+        "label_confidence": "partial_source_supported" if explicit_postseason is not None or explicit_super_bowl is not None else "blocked",
+        "label_blockers": sorted({blocker for blocker in blockers if blocker in LABEL_BLOCKERS}),
+        "playoff_round_label_method": "unavailable",
+        "super_bowl_label_method": "explicit_super_bowl_flag" if explicit_super_bowl is not None else "unavailable",
+    }
+
+
+def _winner_from_scores(home_team: Any, away_team: Any, home_score: float, away_score: float) -> str | None:
+    if home_score > away_score:
+        return str(home_team or "") or None
+    if away_score > home_score:
+        return str(away_team or "") or None
+    return "tie"
+
+
 def _record() -> dict[str, int]:
     return {"games": 0, "wins": 0, "losses": 0, "ties": 0}
 
@@ -190,7 +279,7 @@ def build_team_game_profiles(rows: list[dict[str, Any]]) -> list[dict[str, Any]]
         away_team = str(row.get("away_participant") or "")
         if not (season and event_date and home_team and away_team):
             continue
-        game_type = str(row.get("game_type") or "").strip() or None
+        labels = derive_nfl_game_labels(row)
         home_margin = home_score - away_score
         away_margin = away_score - home_score
         base = {
@@ -198,7 +287,12 @@ def build_team_game_profiles(rows: list[dict[str, Any]]) -> list[dict[str, Any]]
             "season": season,
             "event_date": event_date,
             "week_or_round": row.get("week_or_round"),
-            "game_type": game_type,
+            "game_type": labels["game_type"],
+            "playoff_round_label": labels["playoff_round_label"],
+            "postseason_flag": labels["postseason_flag"],
+            "super_bowl_flag": labels["super_bowl_flag"],
+            "label_confidence": labels["label_confidence"],
+            "label_blockers": labels["label_blockers"],
             "source_data_kind": "real_open_data",
             "raw_payload_included": False,
         }
@@ -248,17 +342,32 @@ def build_matchup_profiles(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
         away_score = _number(row.get("away_score"))
         if home_score is None or away_score is None:
             continue
+        labels = derive_nfl_game_labels(row)
+        final_margin = _number(row.get("final_margin"))
+        total_points = _number(row.get("total_score"))
+        home_team = row.get("home_participant")
+        away_team = row.get("away_participant")
         matchups.append(
             {
                 "event_id": row.get("event_id"),
+                "game_id": row.get("event_id"),
                 "season": str(row.get("season") or ""),
                 "event_date": row.get("event_date"),
+                "game_date": row.get("event_date"),
                 "week_or_round": row.get("week_or_round"),
-                "game_type": row.get("game_type"),
-                "home_team": row.get("home_participant"),
-                "away_team": row.get("away_participant"),
+                "game_type": labels["game_type"],
+                "playoff_round_label": labels["playoff_round_label"],
+                "postseason_flag": labels["postseason_flag"],
+                "super_bowl_flag": labels["super_bowl_flag"],
+                "label_confidence": labels["label_confidence"],
+                "label_blockers": labels["label_blockers"],
+                "home_team": home_team,
+                "away_team": away_team,
                 "home_score": _compact_number(home_score),
                 "away_score": _compact_number(away_score),
+                "winner": row.get("winner") or _winner_from_scores(home_team, away_team, home_score, away_score),
+                "final_margin": _compact_number(final_margin if final_margin is not None else home_score - away_score),
+                "total_points": _compact_number(total_points if total_points is not None else home_score + away_score),
                 "home_margin": _compact_number(home_score - away_score),
                 "total_score": _compact_number(home_score + away_score),
                 "source_data_kind": "real_open_data",
@@ -292,7 +401,21 @@ def build_team_season_profiles(team_games: list[dict[str, Any]]) -> list[dict[st
         blowout_wins = 0
         blowout_losses = 0
         game_types = [str(game.get("game_type") or "").strip() for game in games]
-        all_game_types_available = all(game_type for game_type in game_types)
+        label_blockers = sorted(
+            {
+                blocker
+                for game in games
+                for blocker in (game.get("label_blockers") or [])
+                if blocker in LABEL_BLOCKERS
+            }
+        )
+        supported_label_games = [game for game in games if game.get("postseason_flag") is not None or game.get("super_bowl_flag") is not None]
+        all_game_labels_supported = len(supported_label_games) == len(games) and not label_blockers
+        labeled_postseason_games = [game for game in supported_label_games if game.get("postseason_flag") is True]
+        labeled_conference_championship_games = [
+            game for game in supported_label_games if game.get("playoff_round_label") == "conference_championship"
+        ]
+        labeled_super_bowl_games = [game for game in supported_label_games if game.get("super_bowl_flag") is True]
         for game in games:
             pf = _number(game.get("points_for"))
             pa = _number(game.get("points_against"))
@@ -321,16 +444,39 @@ def build_team_season_profiles(team_games: list[dict[str, Any]]) -> list[dict[st
                 continue
             late_margin += margin
             _add_record(late_record, str(game.get("result") or _result_from_margin(margin)))
-        playoff_game_count = None
-        postseason_flag = None
-        super_bowl_flag = None
-        blockers: list[str] = []
-        if all_game_types_available:
-            playoff_game_count = sum(1 for game_type in game_types if game_type != "REG")
-            postseason_flag = playoff_game_count > 0
-            super_bowl_flag = any(game_type == "SB" for game_type in game_types)
-        else:
-            blockers.extend(["playoff_round_labels_missing", "super_bowl_label_missing"])
+        postseason_games = None
+        postseason_wins = None
+        postseason_losses = None
+        reached_playoffs = None
+        reached_conference_championship = None
+        reached_super_bowl = None
+        won_super_bowl = None
+        if supported_label_games:
+            postseason_games = len(labeled_postseason_games)
+            postseason_wins = sum(1 for game in labeled_postseason_games if game.get("result") == "win")
+            postseason_losses = sum(1 for game in labeled_postseason_games if game.get("result") == "loss")
+            reached_playoffs = True if labeled_postseason_games else False if all_game_labels_supported else None
+            reached_conference_championship = (
+                True if labeled_conference_championship_games else False if all_game_labels_supported else None
+            )
+            reached_super_bowl = True if labeled_super_bowl_games else False if all_game_labels_supported else None
+            won_super_bowl = (
+                True
+                if any(game.get("result") == "win" for game in labeled_super_bowl_games)
+                else False
+                if reached_super_bowl is True or all_game_labels_supported
+                else None
+            )
+        label_confidence = (
+            "source_supported"
+            if all_game_labels_supported
+            else "partial_source_supported"
+            if supported_label_games
+            else "blocked"
+        )
+        if label_confidence != "source_supported" and "insufficient_label_fields" not in label_blockers:
+            label_blockers.append("insufficient_label_fields")
+        label_blockers = sorted({blocker for blocker in label_blockers if blocker in LABEL_BLOCKERS})
         profile = {
             "season": season,
             "team": team,
@@ -363,12 +509,21 @@ def build_team_season_profiles(team_games: list[dict[str, Any]]) -> list[dict[st
             "late_season_win_rate": _win_rate(late_record),
             "simple_team_rating": _compact_number(sum(margins) / games_played if games_played else None),
             "schedule_strength_proxy": None,
-            "playoff_game_count": playoff_game_count,
-            "postseason_flag": postseason_flag,
-            "super_bowl_flag": super_bowl_flag,
-            "game_type_labels_available": bool(all_game_types_available),
+            "postseason_games": postseason_games,
+            "postseason_wins": postseason_wins,
+            "postseason_losses": postseason_losses,
+            "reached_playoffs": reached_playoffs,
+            "reached_conference_championship": reached_conference_championship,
+            "reached_super_bowl": reached_super_bowl,
+            "won_super_bowl": won_super_bowl,
+            "label_confidence": label_confidence,
+            "label_blockers": label_blockers,
+            "playoff_game_count": postseason_games,
+            "postseason_flag": reached_playoffs,
+            "super_bowl_flag": reached_super_bowl,
+            "game_type_labels_available": label_confidence == "source_supported",
             "game_types_seen": sorted({game_type for game_type in game_types if game_type}),
-            "blocked_reasons": blockers,
+            "blocked_reasons": label_blockers,
             "source_data_kind": "real_open_data",
             "raw_payload_included": False,
         }
@@ -411,6 +566,15 @@ def build_pattern_candidate_profiles(team_season_profiles: list[dict[str, Any]])
                 "late_season_win_rate": profile.get("late_season_win_rate"),
                 "simple_team_rating": profile.get("simple_team_rating"),
                 "schedule_strength_proxy": profile.get("schedule_strength_proxy"),
+                "postseason_games": profile.get("postseason_games"),
+                "postseason_wins": profile.get("postseason_wins"),
+                "postseason_losses": profile.get("postseason_losses"),
+                "reached_playoffs": profile.get("reached_playoffs"),
+                "reached_conference_championship": profile.get("reached_conference_championship"),
+                "reached_super_bowl": profile.get("reached_super_bowl"),
+                "won_super_bowl": profile.get("won_super_bowl"),
+                "label_confidence": profile.get("label_confidence"),
+                "label_blockers": profile.get("label_blockers") or [],
                 "postseason_flag": profile.get("postseason_flag"),
                 "super_bowl_flag": profile.get("super_bowl_flag"),
                 "blocked_reasons": profile.get("blocked_reasons") or [],
@@ -456,6 +620,33 @@ def build_similarity_feature_catalog(team_season_profiles: list[dict[str, Any]])
     return catalog
 
 
+def _profile_numeric_features(profile: dict[str, Any]) -> list[str]:
+    return [
+        feature
+        for feature in SIMILARITY_NUMERIC_FEATURES
+        if (value := _number(profile.get(feature))) is not None and math.isfinite(value)
+    ]
+
+
+def _outcome_label_available(profile: dict[str, Any]) -> bool:
+    return any(
+        profile.get(field) is not None
+        for field in (
+            "postseason_games",
+            "postseason_wins",
+            "postseason_losses",
+            "reached_playoffs",
+            "reached_conference_championship",
+            "reached_super_bowl",
+            "won_super_bowl",
+        )
+    )
+
+
+def _label_overlap_available(profile_a: dict[str, Any], profile_b: dict[str, Any]) -> bool:
+    return _outcome_label_available(profile_a) and _outcome_label_available(profile_b)
+
+
 def compute_team_profile_similarity(profile_a: dict[str, Any], profile_b: dict[str, Any]) -> dict[str, Any]:
     features_compared: list[str] = []
     features_missing: list[str] = []
@@ -477,6 +668,9 @@ def compute_team_profile_similarity(profile_a: dict[str, Any], profile_b: dict[s
             "confidence": "insufficient",
             "blocked_reason": "insufficient_data",
             "predictive_claim_made": False,
+            "no_predictive_claim": True,
+            "label_overlap_available": _label_overlap_available(profile_a, profile_b),
+            "outcome_label_available": _outcome_label_available(profile_a) and _outcome_label_available(profile_b),
             "provider_write": False,
             "execution_allowed": False,
         }
@@ -486,6 +680,171 @@ def compute_team_profile_similarity(profile_a: dict[str, Any], profile_b: dict[s
         "features_missing": features_missing,
         "confidence": "medium" if len(features_compared) >= 8 else "low",
         "blocked_reason": None,
+        "predictive_claim_made": False,
+        "no_predictive_claim": True,
+        "label_overlap_available": _label_overlap_available(profile_a, profile_b),
+        "outcome_label_available": _outcome_label_available(profile_a) and _outcome_label_available(profile_b),
+        "provider_write": False,
+        "execution_allowed": False,
+    }
+
+
+def build_historical_team_profiles(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return build_team_season_profiles(build_team_game_profiles(rows))
+
+
+def find_historical_team_comps(
+    team_season_profiles: list[dict[str, Any]],
+    *,
+    anchor_team: str,
+    anchor_season: str | int,
+    limit: int = 5,
+) -> list[dict[str, Any]]:
+    anchor = next(
+        (
+            profile
+            for profile in team_season_profiles
+            if str(profile.get("team")) == str(anchor_team) and str(profile.get("season")) == str(anchor_season)
+        ),
+        None,
+    )
+    if anchor is None:
+        return []
+    comps: list[dict[str, Any]] = []
+    for profile in team_season_profiles:
+        if str(profile.get("team")) == str(anchor_team) and str(profile.get("season")) == str(anchor_season):
+            continue
+        similarity = compute_team_profile_similarity(anchor, profile)
+        comps.append(
+            {
+                "anchor_team": anchor.get("team"),
+                "anchor_season": anchor.get("season"),
+                "comp_team": profile.get("team"),
+                "comp_season": profile.get("season"),
+                "similarity_score": similarity.get("similarity_score"),
+                "features_compared": similarity.get("features_compared") or [],
+                "features_missing": similarity.get("features_missing") or [],
+                "label_overlap_available": similarity.get("label_overlap_available"),
+                "outcome_label_available": similarity.get("outcome_label_available"),
+                "confidence": similarity.get("confidence"),
+                "blocked_reason": similarity.get("blocked_reason"),
+                "no_predictive_claim": True,
+                "predictive_claim_made": False,
+                "provider_write": False,
+                "execution_allowed": False,
+            }
+        )
+    comps.sort(
+        key=lambda item: (
+            item.get("similarity_score") is None,
+            0.0 if item.get("similarity_score") is None else -float(item.get("similarity_score")),
+            str(item.get("comp_season")),
+            str(item.get("comp_team")),
+        )
+    )
+    return comps[: max(0, int(limit))]
+
+
+def _label_coverage_summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    playoff_coverage_count = 0
+    super_bowl_coverage_count = 0
+    blockers: set[str] = set()
+    playoff_methods: Counter[str] = Counter()
+    super_bowl_methods: Counter[str] = Counter()
+    for row in rows:
+        labels = derive_nfl_game_labels(row)
+        if labels.get("playoff_round_label") is not None:
+            playoff_coverage_count += 1
+            playoff_methods[str(labels.get("playoff_round_label_method") or "unknown")] += 1
+        else:
+            blockers.update(labels.get("label_blockers") or [])
+        if labels.get("super_bowl_flag") is not None:
+            super_bowl_coverage_count += 1
+            super_bowl_methods[str(labels.get("super_bowl_label_method") or "unknown")] += 1
+        else:
+            blockers.update(labels.get("label_blockers") or [])
+    total = len(rows)
+    playoff_missing_count = max(0, total - playoff_coverage_count)
+    super_bowl_missing_count = max(0, total - super_bowl_coverage_count)
+    status = "available" if total and playoff_missing_count == 0 and super_bowl_missing_count == 0 else "partial" if playoff_coverage_count or super_bowl_coverage_count else "blocked"
+    if playoff_missing_count:
+        blockers.add("playoff_round_labels_missing")
+    if super_bowl_missing_count:
+        blockers.add("super_bowl_label_missing")
+    if playoff_missing_count or super_bowl_missing_count:
+        blockers.add("insufficient_label_fields")
+    return {
+        "postseason_label_status": status,
+        "playoff_label_coverage_count": playoff_coverage_count,
+        "playoff_label_missing_count": playoff_missing_count,
+        "super_bowl_label_coverage_count": super_bowl_coverage_count,
+        "super_bowl_label_missing_count": super_bowl_missing_count,
+        "playoff_round_label_method": "explicit_game_type" if playoff_methods else "unavailable",
+        "super_bowl_label_method": "explicit_game_type" if super_bowl_methods else "unavailable",
+        "label_blockers": sorted({blocker for blocker in blockers if blocker in LABEL_BLOCKERS}),
+    }
+
+
+def build_pattern_validation_scorecard(
+    team_season_profiles: list[dict[str, Any]],
+    similarity_feature_catalog: list[dict[str, Any]],
+) -> dict[str, Any]:
+    features_available = sorted({row["feature_name"] for row in similarity_feature_catalog if row.get("status") == "available"})
+    features_blocked = sorted({row["feature_name"] for row in similarity_feature_catalog if row.get("status") == "blocked"})
+    label_blockers = sorted(
+        {
+            blocker
+            for profile in team_season_profiles
+            for blocker in (profile.get("label_blockers") or profile.get("blocked_reasons") or [])
+            if blocker in LABEL_BLOCKERS
+        }
+    )
+    target_labels_available = [
+        field
+        for field in (
+            "postseason_games",
+            "postseason_wins",
+            "postseason_losses",
+            "reached_playoffs",
+            "reached_conference_championship",
+            "reached_super_bowl",
+            "won_super_bowl",
+        )
+        if any(profile.get(field) is not None for profile in team_season_profiles)
+    ]
+    comparable_profile_count = sum(
+        1 for profile in team_season_profiles if len(_profile_numeric_features(profile)) >= MIN_SIMILARITY_FEATURES
+    )
+    backtest_blockers: list[str] = []
+    if len(features_available) < MIN_SIMILARITY_FEATURES:
+        backtest_blockers.append("insufficient_features")
+    if not target_labels_available:
+        backtest_blockers.append("insufficient_labels")
+    backtest_blockers.extend(label_blockers)
+    if comparable_profile_count < MINIMUM_COMPS_REQUIRED:
+        backtest_blockers.append("insufficient_comparable_profiles")
+    backtest_blockers = sorted(set(backtest_blockers))
+    if len(features_available) < MIN_SIMILARITY_FEATURES:
+        validation_status = "insufficient_features"
+    elif not target_labels_available:
+        validation_status = "insufficient_labels"
+    elif backtest_blockers:
+        validation_status = "scaffold_ready_no_predictive_claim"
+    else:
+        validation_status = "backtest_ready_no_predictive_claim"
+    return {
+        "seasons_analyzed": sorted({str(profile.get("season")) for profile in team_season_profiles}, key=_season_key),
+        "teams_analyzed": len({str(profile.get("team")) for profile in team_season_profiles}),
+        "features_available": features_available,
+        "features_blocked": features_blocked,
+        "target_labels_available": target_labels_available,
+        "target_labels_blocked": label_blockers,
+        "comparable_profile_count": comparable_profile_count,
+        "minimum_comps_required": MINIMUM_COMPS_REQUIRED,
+        "backtest_ready": validation_status == "backtest_ready_no_predictive_claim",
+        "backtest_blockers": backtest_blockers,
+        "validation_status": validation_status,
+        "no_predictive_claim": True,
         "predictive_claim_made": False,
         "provider_write": False,
         "execution_allowed": False,
@@ -502,21 +861,21 @@ def build_nfl_historical_pattern_lab_report(*, base_data_dir: str | Path | None 
     catalog = build_similarity_feature_catalog(team_seasons)
     available_features = sorted({row["feature_name"] for row in catalog if row["status"] == "available"})
     blocked_features = sorted({row["feature_name"] for row in catalog if row["status"] == "blocked"})
-    label_profiles = [profile for profile in team_seasons if profile.get("game_type_labels_available")]
-    label_status = "available" if team_seasons and len(label_profiles) == len(team_seasons) else "partial" if label_profiles else "blocked"
-    label_blockers = []
-    if label_status != "available":
-        label_blockers = ["playoff_round_labels_missing", "super_bowl_label_missing"]
+    label_summary = _label_coverage_summary(rows)
     seasons = sorted({str(profile.get("season")) for profile in team_seasons}, key=_season_key)
     teams = sorted({str(profile.get("team")) for profile in team_seasons})
     example_similarity = None
+    example_comps: list[dict[str, Any]] = []
     if len(team_seasons) >= 2:
         example_similarity = compute_team_profile_similarity(team_seasons[0], team_seasons[1])
-    readiness_status = (
-        "profile_scaffold_ready_no_predictive_validation"
-        if team_seasons and len(available_features) >= MIN_SIMILARITY_FEATURES
-        else "blocked_insufficient_real_history"
-    )
+        example_comps = find_historical_team_comps(
+            team_seasons,
+            anchor_team=str(team_seasons[0].get("team")),
+            anchor_season=str(team_seasons[0].get("season")),
+            limit=5,
+        )
+    validation_scorecard = build_pattern_validation_scorecard(team_seasons, catalog)
+    readiness_status = validation_scorecard["validation_status"]
     return {
         **SAFETY_FIELDS,
         "ok": True,
@@ -543,8 +902,19 @@ def build_nfl_historical_pattern_lab_report(*, base_data_dir: str | Path | None 
         "similarity_features_available": available_features,
         "similarity_features_blocked": blocked_features,
         "example_similarity": example_similarity,
-        "playoff_super_bowl_labels_available": label_status,
-        "label_blockers": label_blockers,
+        "example_historical_comps": example_comps,
+        "postseason_label_status": label_summary["postseason_label_status"],
+        "playoff_label_coverage_count": label_summary["playoff_label_coverage_count"],
+        "playoff_label_missing_count": label_summary["playoff_label_missing_count"],
+        "super_bowl_label_coverage_count": label_summary["super_bowl_label_coverage_count"],
+        "super_bowl_label_missing_count": label_summary["super_bowl_label_missing_count"],
+        "playoff_round_label_method": label_summary["playoff_round_label_method"],
+        "super_bowl_label_method": label_summary["super_bowl_label_method"],
+        "playoff_super_bowl_labels_available": label_summary["postseason_label_status"],
+        "label_blockers": label_summary["label_blockers"],
+        "validation_scorecard": validation_scorecard,
+        "validation_status": validation_scorecard["validation_status"],
+        "no_predictive_claim": True,
         "backtest_readiness_status": readiness_status,
         "predictive_claim_made": False,
         "betting_decision_made": False,
@@ -559,27 +929,38 @@ def build_nfl_historical_pattern_lab_report(*, base_data_dir: str | Path | None 
         "outcome_persistence_attempted": False,
         "import_or_persist_endpoint_called": False,
         "persisted_outcomes": False,
-        "recommended_next_step": "add deterministic validation labels from approved open postseason/roster/market sources before predictive claims",
+        "recommended_next_step": "fill remaining source-supported nflverse game_type coverage before any predictive validation claims",
         "storage_health": get_storage_health(),
     }
 
 
 def render_nfl_pattern_lab_markdown(report: dict[str, Any]) -> str:
+    scorecard = report.get("validation_scorecard") or {}
     lines = [
-        "# NFL Historical Pattern Lab",
+        "# NFL Historical Pattern Lab v2",
         "",
         f"1. seasons_analyzed: {', '.join(report.get('seasons_analyzed') or []) if report.get('seasons_analyzed') else 'none'}",
         f"2. teams_profiled: {len(report.get('teams_profiled') or [])}",
         f"3. team_season_profiles_created: {report.get('team_season_profiles_created')}",
-        f"4. similarity_features_available: {', '.join(report.get('similarity_features_available') or []) if report.get('similarity_features_available') else 'none'}",
-        f"5. similarity_features_blocked: {', '.join(report.get('similarity_features_blocked') or []) if report.get('similarity_features_blocked') else 'none'}",
-        f"6. playoff_super_bowl_labels_available: {report.get('playoff_super_bowl_labels_available')}",
-        f"7. backtest_readiness_status: {report.get('backtest_readiness_status')}",
-        "8. raw_payload_included=false",
-        "9. secrets_included=false",
-        "10. provider_write=false",
-        "11. execution_allowed=false",
-        f"12. recommended_next_step: {report.get('recommended_next_step')}",
+        f"4. team_game_profiles_created: {report.get('team_game_profiles_created')}",
+        f"5. matchup_profiles_created: {report.get('matchup_profiles_created')}",
+        f"6. playoff_label_method: {report.get('playoff_round_label_method')}",
+        f"7. playoff_label_coverage_count: {report.get('playoff_label_coverage_count')}",
+        f"8. playoff_label_missing_count: {report.get('playoff_label_missing_count')}",
+        f"9. super_bowl_label_method: {report.get('super_bowl_label_method')}",
+        f"10. super_bowl_label_coverage_count: {report.get('super_bowl_label_coverage_count')}",
+        f"11. super_bowl_label_missing_count: {report.get('super_bowl_label_missing_count')}",
+        f"12. label_blockers: {', '.join(report.get('label_blockers') or []) if report.get('label_blockers') else 'none'}",
+        f"13. similarity_features_available: {', '.join(report.get('similarity_features_available') or []) if report.get('similarity_features_available') else 'none'}",
+        f"14. similarity_features_blocked: {', '.join(report.get('similarity_features_blocked') or []) if report.get('similarity_features_blocked') else 'none'}",
+        f"15. validation_status: {scorecard.get('validation_status')}",
+        f"16. backtest_ready: {str(scorecard.get('backtest_ready')).lower()}",
+        "17. no_predictive_claim=true",
+        "18. raw_payload_included=false",
+        "19. secrets_included=false",
+        "20. provider_write=false",
+        "21. execution_allowed=false",
+        f"22. recommended_next_step: {report.get('recommended_next_step')}",
         "",
     ]
     return "\n".join(lines)
@@ -646,7 +1027,17 @@ def main(argv: list[str] | None = None) -> int:
                 "matchup_profiles_created": report["matchup_profiles_created"],
                 "similarity_features_available": report["similarity_features_available"],
                 "similarity_features_blocked": report["similarity_features_blocked"],
+                "postseason_label_status": report["postseason_label_status"],
+                "playoff_round_label_method": report["playoff_round_label_method"],
+                "playoff_label_coverage_count": report["playoff_label_coverage_count"],
+                "playoff_label_missing_count": report["playoff_label_missing_count"],
+                "super_bowl_label_method": report["super_bowl_label_method"],
+                "super_bowl_label_coverage_count": report["super_bowl_label_coverage_count"],
+                "super_bowl_label_missing_count": report["super_bowl_label_missing_count"],
+                "label_blockers": report["label_blockers"],
                 "playoff_super_bowl_labels_available": report["playoff_super_bowl_labels_available"],
+                "validation_scorecard": report["validation_scorecard"],
+                "no_predictive_claim": True,
                 "backtest_readiness_status": report["backtest_readiness_status"],
                 "provider_calls_attempted": 0,
                 "downloads_attempted": 0,

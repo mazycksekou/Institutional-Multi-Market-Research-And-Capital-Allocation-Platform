@@ -1,5 +1,6 @@
 param(
-    [switch]$Persist
+    [switch]$Persist,
+    [switch]$NoPersist
 )
 
 Set-StrictMode -Version Latest
@@ -13,7 +14,7 @@ if (Test-Path ".\.venv\Scripts\Activate.ps1") {
 }
 
 $ArgsList = @("-m", "automation_scheduler.nfl_historical_pattern_lab")
-if ($Persist) {
+if ($Persist -or -not $NoPersist) {
     $ArgsList += "--persist"
 }
 
