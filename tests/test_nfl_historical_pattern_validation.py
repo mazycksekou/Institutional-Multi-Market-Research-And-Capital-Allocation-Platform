@@ -10,6 +10,7 @@ from automation_scheduler.nfl_historical_pattern_lab import (
     build_historical_holdout_validation_scorecard,
     build_regular_season_snapshot_profiles,
     build_team_game_profiles,
+    build_validation_guard_summary,
     derive_postseason_target_labels,
     evaluate_comps_against_targets,
     find_prior_season_comps,
@@ -244,6 +245,52 @@ class TestNflHistoricalPatternValidation(unittest.TestCase):
         self.assertEqual(report["status"], "blocked_leakage_detected")
         self.assertEqual(report["leakage_guard"]["status"], "blocked_leakage_detected")
         self.assertEqual(report["anchor_profiles_evaluated"], 0)
+
+    def test_validation_guard_blocks_new_feature_families_by_default(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self._seed_nfl_lane(tmp, "nflverse_snap_counts", ["season", "week", "team", "player", "offense_snaps"])
+            self._seed_nfl_lane(tmp, "nflverse_injuries", ["season", "week", "team", "report_status"])
+            self._seed_nfl_lane(tmp, "nflverse_play_by_play", ["play_id", "posteam", "yards_gained", "epa"])
+            summary = build_validation_guard_summary(base_data_dir=tmp)
+
+        self.assertGreater(summary["candidate_features_count"], summary["allowed_validation_features_count"])
+        self.assertEqual(summary["allowed_validation_features_count"], len(HOLDOUT_ALLOWED_SIMILARITY_FEATURES))
+        self.assertIn("injury_availability", summary["blocked_by_leakage"])
+        self.assertIn("player_usage_snaps", summary["blocked_by_leakage"])
+        self.assertIn("team_game_efficiency_candidates", summary["blocked_by_cutoff"])
+        self.assertEqual(summary["blocked_by_future_data"], [])
+        self.assertTrue(summary["market_features_cutoff_sensitive_by_default"])
+        self.assertTrue(summary["postseason_labels_target_only"])
+        self.assertTrue(summary["no_predictive_claim"])
+
+    def test_validation_guard_blocks_missing_provenance(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            summary = build_validation_guard_summary(base_data_dir=tmp)
+        self.assertTrue(summary["blocked_by_missing_provenance"])
+
+    def test_scorecard_includes_validation_guard_summary(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self._persist_rows(tmp)
+            report = build_historical_holdout_validation_scorecard(base_data_dir=tmp)
+        self.assertIn("validation_guard_summary", report)
+        guard = report["validation_guard_summary"]
+        self.assertEqual(guard["allowed_validation_features_count"], len(HOLDOUT_ALLOWED_SIMILARITY_FEATURES))
+        self.assertTrue(guard["no_predictive_claim"])
+
+    def _seed_nfl_lane(self, tmp, source_id, fields, *, records=200, seasons=("2023", "2024")):
+        path = Path(tmp) / "data_sources" / "nfl_open_data" / "validated" / source_id / "latest.json"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(
+            json.dumps(
+                {
+                    "fields_available": list(fields),
+                    "records_validated": records,
+                    "seasons_backfilled": list(seasons),
+                    "data_category": source_id.replace("nflverse_", ""),
+                }
+            ),
+            encoding="utf-8",
+        )
 
     def test_report_writes_compact_outputs_and_safety_fields(self):
         with tempfile.TemporaryDirectory() as tmp:

@@ -9,7 +9,24 @@ from uuid import uuid4
 
 from .data_availability_tiers import resolve_profile_key
 from .data_paths import get_data_sources_dir, get_storage_health, resolve_base_data_dir
+from .nfl_open_data_feature_builders import nfl_feature_availability_flags
 from .scheduler_config import sanitize_filename, utc_now_iso
+
+NFL_FEATURE_BUILDER_FLAG_DEFAULTS = {
+    "nfl_play_by_play_efficiency_available": False,
+    "nfl_pace_play_volume_available": False,
+    "nfl_snap_usage_available": False,
+    "nfl_participation_available": False,
+    "nfl_depth_chart_available": False,
+    "nfl_injury_availability_available": False,
+    "nfl_roster_continuity_available": False,
+    "nfl_nextgen_efficiency_available": False,
+    "nfl_market_odds_available": False,
+    "nfl_feature_builder_count": 0,
+    "nfl_feature_builder_blockers": [],
+    "nfl_cutoff_sensitive_feature_count": 0,
+    "nfl_leakage_sensitive_feature_count": 0,
+}
 
 
 DERIVED_FEATURE_REPORT_SCHEMA_VERSION = "derived_feature_backfill_report_v1"
@@ -888,7 +905,12 @@ def build_derived_feature_backfill_report(
     nfl_feature_availability = _nfl_open_data_feature_availability(base)
     if records_by_module is None and nfl_open_data_report_path.exists():
         reports_consumed.append(nfl_open_data_report)
+    if records_by_module is None:
+        nfl_feature_builder_flags = nfl_feature_availability_flags(base_data_dir=base)
+    else:
+        nfl_feature_builder_flags = dict(NFL_FEATURE_BUILDER_FLAG_DEFAULTS)
     return {
+        **nfl_feature_builder_flags,
         "ok": True,
         "status": "ok",
         "schema_version": DERIVED_FEATURE_REPORT_SCHEMA_VERSION,

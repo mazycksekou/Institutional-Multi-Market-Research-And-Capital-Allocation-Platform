@@ -129,6 +129,40 @@ Coverage matrix reports are written under:
 
 The workflow never writes `outcome_store`, `paper_ledger`, calibration stores, execution ledgers, provider-write ledgers, `.env`, cookies, tokens, secrets, raw provider responses, or downloaded raw datasets.
 
+## Feature Readiness (availability only)
+
+After lanes are backfilled, the field catalog is re-seeded from the compact
+validated outputs and every verified field is classified with `feature_family`,
+`cutoff_required`, `leakage_risk`, `target_leakage_safe`,
+`allowed_for_regular_season_snapshot`, `allowed_for_postseason_target`, and
+`derived_/pattern_/validation_feature_candidate` flags. Fields are never marked
+verified unless they exist in a completed compact output.
+
+Source-supported feature builders are reported (availability + provenance only,
+no values computed and nothing fabricated) by
+`automation_scheduler/nfl_open_data_feature_builders.py` for: team game play
+volume, team game efficiency candidates, player usage (snap/participation),
+roster continuity, injury availability, depth-chart stability, and next-gen
+efficiency candidates. Each builder carries `source_id`, `source_fields_used`,
+`seasons_supported`, `granularity`, `cutoff_required`, and `leakage_risk`, and
+returns a blocked feature with a reason when required source fields are missing.
+
+The combined readiness report
+(`automation_scheduler/nfl_open_data_feature_readiness.py`, script
+`scripts/run_nfl_open_data_feature_readiness.ps1`) diffs the field catalog
+before/after, surfaces derived-feature availability flags, pattern-lab expanded
+readiness, and the holdout validation guard summary. The holdout validation
+guard classifies every candidate before use: regular-season snapshot similarity
+features are the only validation-allowed inputs, while injury / roster / snap /
+depth / market / next-gen feature builders are blocked by default (by leakage or
+cutoff sensitivity). Market-odds fields are cutoff-sensitive by default and
+postseason labels remain target-only. No predictive claims are made and no
+betting/trading/execution outputs are produced.
+
+Feature readiness and feature builder reports are written under
+`data/data_sources/nfl_open_data/feature_builders/` and
+`data/data_sources/nfl_open_data/feature_readiness/` and are not committed.
+
 ## Blocked Lanes
 
 The registry tracks terms/research blockers explicitly. Sports Reference derivative lanes remain blocked. FTN charting remains blocked until terms are reviewed. Coaching remains blocked until an approved open structured no-auth source is verified.

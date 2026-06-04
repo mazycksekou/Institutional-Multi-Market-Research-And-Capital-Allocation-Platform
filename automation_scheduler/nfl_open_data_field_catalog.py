@@ -39,6 +39,72 @@ FEATURE_FAMILIES = [
 
 LEAKAGE_MARKERS = ("score", "result", "winner", "spread", "moneyline", "total_line", "postseason", "playoff", "super_bowl")
 
+# Structural identifier / join-key fields. These are keys, not model features:
+# they are leakage-safe but never themselves derived/pattern/validation feature
+# candidates.
+STRUCTURAL_FIELDS = {
+    "season",
+    "season_type",
+    "week",
+    "game_id",
+    "old_game_id",
+    "nflverse_game_id",
+    "pfr_game_id",
+    "play_id",
+    "team",
+    "team_abbr",
+    "opponent",
+    "posteam",
+    "defteam",
+    "club_code",
+    "player",
+    "player_id",
+    "gsis_id",
+    "player_gsis_id",
+    "pfr_id",
+    "pfr_player_id",
+    "esb_id",
+    "smart_id",
+    "elias_id",
+    "espn_id",
+    "player_name",
+    "player_display_name",
+    "full_name",
+    "first_name",
+    "last_name",
+    "jersey_number",
+}
+
+# In-season, time-varying feature families. Source-supported but cutoff-sensitive:
+# they may only feed a regular-season snapshot built up to an explicit cutoff and
+# must not be used as validation inputs by default.
+CUTOFF_SENSITIVE_FAMILIES = {
+    "play_by_play_efficiency",
+    "pace_play_volume",
+    "scoring_profile",
+    "defensive_profile",
+    "player_availability",
+    "roster_continuity",
+    "injury_lineup",
+    "depth_chart",
+}
+
+# Availability families that must be blocked from validation by default (Phase 6).
+AVAILABILITY_FAMILIES = {"player_availability", "injury_lineup", "depth_chart", "roster_continuity"}
+
+# Static, pre-game-known identity / profile families that are leakage-safe.
+STATIC_SAFE_FAMILIES = {
+    "team_identity",
+    "draft_capital",
+    "combine_athletic_profile",
+    "officials",
+    "stadium_weather",
+    "rest_travel",
+    "transactions",
+}
+
+POSTSEASON_LABEL_TOKENS = ("postseason", "playoff", "super_bowl", "game_type")
+
 
 def _root(base_data_dir: str | Path | None = None) -> Path:
     base = get_data_sources_dir() if base_data_dir is None else resolve_base_data_dir(base_data_dir) / "data_sources"
@@ -112,8 +178,10 @@ def _family_for(source: dict[str, Any], field: str) -> str:
         return "defensive_profile" if "against" in lower or "def" in lower else "scoring_profile"
     if category == "player_stats":
         return "player_availability" if any(token in lower for token in ("player", "position", "team")) else "scoring_profile"
-    if category in {"rosters", "weekly_rosters", "roster_continuity", "snap_counts", "participation"}:
-        return "roster_continuity" if category != "snap_counts" else "player_availability"
+    if category in {"snap_counts", "participation"}:
+        return "player_availability"
+    if category in {"rosters", "weekly_rosters", "roster_continuity"}:
+        return "roster_continuity"
     if category == "injuries":
         return "injury_lineup"
     if category == "depth_charts":
@@ -143,7 +211,108 @@ def _leakage_risk(field: str, family: str) -> str:
         return "market_timing_cutoff_required"
     if any(marker in lower for marker in LEAKAGE_MARKERS):
         return "target_or_postgame_field_requires_cutoff"
+    if family in CUTOFF_SENSITIVE_FAMILIES:
+        return "in_season_cutoff_required"
     return "low"
+
+
+def _classify_field(source: dict[str, Any], field: str, family: str) -> dict[str, Any]:
+    """Classify cutoff / leakage / feature-candidacy for a single field (Phase 1/2)."""
+    lower = field.strip().lower()
+    canonical = _canonical_field_name(field)
+    structural = canonical in STRUCTURAL_FIELDS or lower in STRUCTURAL_FIELDS
+    is_postseason_label = family == "postseason_labels" or any(token in lower for token in POSTSEASON_LABEL_TOKENS)
+    leakage = _leakage_risk(field, family)
+    # Market-timing fields (including their join keys) are cutoff-sensitive and
+    # are never validation candidates unless a cutoff is explicitly modeled.
+    if family == "market_odds":
+        return {
+            "structural_or_join_key": structural,
+            "leakage_risk": "market_timing_cutoff_required",
+            "cutoff_required": True,
+            "target_leakage_safe": False,
+            "allowed_for_regular_season_snapshot": False,
+            "allowed_for_postseason_target": False,
+            "derived_feature_candidate": not structural,
+            "pattern_feature_candidate": False,
+            "validation_feature_candidate": False,
+        }
+    if structural:
+        return {
+            "structural_or_join_key": True,
+            "leakage_risk": "low",
+            "cutoff_required": False,
+            "target_leakage_safe": True,
+            "allowed_for_regular_season_snapshot": True,
+            "allowed_for_postseason_target": False,
+            "derived_feature_candidate": False,
+            "pattern_feature_candidate": False,
+            "validation_feature_candidate": False,
+        }
+    if is_postseason_label:
+        return {
+            "structural_or_join_key": False,
+            "leakage_risk": "target_or_postgame_field_requires_cutoff",
+            "cutoff_required": True,
+            "target_leakage_safe": False,
+            "allowed_for_regular_season_snapshot": False,
+            "allowed_for_postseason_target": True,
+            "derived_feature_candidate": False,
+            "pattern_feature_candidate": False,
+            "validation_feature_candidate": False,
+        }
+    if leakage != "low":
+        availability_family = family in AVAILABILITY_FAMILIES
+        return {
+            "structural_or_join_key": False,
+            "leakage_risk": leakage,
+            "cutoff_required": True,
+            "target_leakage_safe": False,
+            "allowed_for_regular_season_snapshot": not availability_family,
+            "allowed_for_postseason_target": False,
+            "derived_feature_candidate": True,
+            "pattern_feature_candidate": not availability_family,
+            "validation_feature_candidate": False,
+        }
+    static_safe = family in STATIC_SAFE_FAMILIES
+    return {
+        "structural_or_join_key": False,
+        "leakage_risk": "low",
+        "cutoff_required": False,
+        "target_leakage_safe": True,
+        "allowed_for_regular_season_snapshot": True,
+        "allowed_for_postseason_target": False,
+        "derived_feature_candidate": True,
+        "pattern_feature_candidate": True,
+        "validation_feature_candidate": static_safe,
+    }
+
+
+def _dimensions_for(source: dict[str, Any]) -> tuple[bool, bool]:
+    join_keys = {str(key).lower() for key in source.get("expected_join_keys") or []}
+    category = str(source.get("data_category"))
+    teams_available = bool({"team", "team_abbr", "posteam", "home_team"} & join_keys) or category in {
+        "team_stats",
+        "schedules_results",
+        "stadiums",
+        "weather",
+        "betting_lines_or_market_odds",
+        "play_by_play",
+        "pace_or_play_volume",
+    }
+    players_available = bool({"player_id", "gsis_id", "player", "player_gsis_id"} & join_keys) or category in {
+        "player_stats",
+        "rosters",
+        "weekly_rosters",
+        "snap_counts",
+        "depth_charts",
+        "injuries",
+        "roster_continuity",
+        "advanced_efficiency",
+        "draft",
+        "combine",
+    }
+    return teams_available, players_available
 
 
 def _field_entry(
@@ -155,12 +324,17 @@ def _field_entry(
     seasons_available: list[str] | None = None,
 ) -> dict[str, Any]:
     family = _family_for(source, field_name)
-    leakage = _leakage_risk(field_name, family)
+    classification = _classify_field(source, field_name, family)
+    leakage = classification["leakage_risk"]
     verified_and_allowed = bool(verified and source.get("current_phase_allowed"))
+    teams_available, players_available = _dimensions_for(source)
+    blocker = None if verified_and_allowed else "field_not_verified_by_sample"
     return {
         "field_name": field_name,
+        "source_field_name": field_name,
         "canonical_field_name": _canonical_field_name(field_name),
         "source_id": source["source_id"],
+        "source_lane": source["source_id"],
         "source_family": source.get("source_family"),
         "data_category": source.get("data_category"),
         "module": NFL_MODULE,
@@ -168,20 +342,30 @@ def _field_entry(
         "granularity": source.get("expected_granularity"),
         "join_keys": source.get("expected_join_keys") or [],
         "seasons_available": seasons_available or [],
+        "teams_available": teams_available,
+        "players_available": players_available,
         "nullable": True,
         "data_type": data_type or "unknown",
         "raw_field_allowed": bool(verified),
         "normalized_field_supported": bool(verified_and_allowed),
+        "feature_family": family,
         "model_feature_family": family,
         "pattern_feature_family": family,
         "validation_use_case": "coverage_and_ingestion_only",
         "leakage_risk": leakage,
-        "target_leakage_safe": leakage == "low",
-        "requires_season_cutoff": leakage != "low",
+        "target_leakage_safe": classification["target_leakage_safe"],
+        "requires_season_cutoff": classification["cutoff_required"],
+        "cutoff_required": classification["cutoff_required"],
+        "structural_or_join_key": classification["structural_or_join_key"],
+        "derived_feature_candidate": bool(verified and classification["derived_feature_candidate"]),
+        "pattern_feature_candidate": bool(verified and classification["pattern_feature_candidate"]),
+        "validation_feature_candidate": bool(verified and classification["validation_feature_candidate"]),
+        "allowed_for_regular_season_snapshot": classification["allowed_for_regular_season_snapshot"],
+        "allowed_for_postseason_target": classification["allowed_for_postseason_target"],
         "source_status": "verified" if verified else "unverified",
         "implementation_status": "available" if verified_and_allowed else "research_required",
         "current_phase_allowed": bool(verified_and_allowed),
-        "blocker": None if verified_and_allowed else "field_not_verified_by_sample",
+        "blocker": blocker,
     }
 
 
@@ -215,7 +399,21 @@ def build_nfl_open_data_field_catalog(
             for field in fields:
                 entries.append(_field_entry(source=source, field_name=str(field), verified=False))
     families = sorted({entry["model_feature_family"] for entry in entries})
+    verified = sum(1 for entry in entries if entry["source_status"] == "verified")
     unverified = sum(1 for entry in entries if entry["source_status"] == "unverified")
+    cutoff_sensitive = sum(1 for entry in entries if entry["source_status"] == "verified" and entry["cutoff_required"])
+    leakage_sensitive = sum(1 for entry in entries if entry["source_status"] == "verified" and entry["leakage_risk"] != "low")
+    target_leakage_safe = sum(1 for entry in entries if entry["source_status"] == "verified" and entry["target_leakage_safe"])
+    fields_by_feature_family: dict[str, int] = {}
+    for entry in entries:
+        if entry["source_status"] != "verified":
+            continue
+        family = str(entry["model_feature_family"])
+        fields_by_feature_family[family] = fields_by_feature_family.get(family, 0) + 1
+    derived_candidates = sum(1 for entry in entries if entry["derived_feature_candidate"])
+    pattern_candidates = sum(1 for entry in entries if entry["pattern_feature_candidate"])
+    validation_candidates = sum(1 for entry in entries if entry["validation_feature_candidate"])
+    join_keys = sorted({key for source in nfl_open_data_sources() for key in (source.get("expected_join_keys") or [])})
     return {
         **SAFETY_FIELDS,
         "ok": True,
@@ -226,9 +424,19 @@ def build_nfl_open_data_field_catalog(
         "module": NFL_MODULE,
         "runtime_data_dir": str(base),
         "field_entries_created": len(entries),
+        "total_field_count": len(entries),
+        "verified_field_count": verified,
         "verified_source_count": len(verified_sources),
         "verified_sources": verified_sources,
         "unverified_field_count": unverified,
+        "cutoff_sensitive_field_count": cutoff_sensitive,
+        "leakage_sensitive_field_count": leakage_sensitive,
+        "target_leakage_safe_field_count": target_leakage_safe,
+        "derived_feature_candidate_count": derived_candidates,
+        "pattern_feature_candidate_count": pattern_candidates,
+        "validation_feature_candidate_count": validation_candidates,
+        "fields_by_feature_family": dict(sorted(fields_by_feature_family.items())),
+        "join_keys": join_keys,
         "feature_families_covered": families,
         "entries": entries,
         "provider_calls_attempted": 0,
@@ -247,10 +455,12 @@ def render_nfl_open_data_field_catalog_markdown(report: dict[str, Any]) -> str:
         "# NFL Open Data Field Catalog",
         "",
         f"1. field_entries_created: {report.get('field_entries_created')}",
-        f"2. verified_source_count: {report.get('verified_source_count')}",
+        f"2. verified_field_count: {report.get('verified_field_count')}; verified_source_count: {report.get('verified_source_count')}",
         f"3. unverified_field_count: {report.get('unverified_field_count')}",
-        f"4. feature_families_covered: {', '.join(report.get('feature_families_covered') or [])}",
-        "5. safety: provider_calls_attempted=0; downloads_attempted=0; provider_write=false; execution_allowed=false; raw_payload_included=false; secrets_included=false",
+        f"4. cutoff_sensitive_field_count: {report.get('cutoff_sensitive_field_count')}; leakage_sensitive_field_count: {report.get('leakage_sensitive_field_count')}",
+        f"5. fields_by_feature_family: {json.dumps(report.get('fields_by_feature_family') or {}, sort_keys=True)}",
+        f"6. feature_families_covered: {', '.join(report.get('feature_families_covered') or [])}",
+        "7. safety: provider_calls_attempted=0; downloads_attempted=0; provider_write=false; execution_allowed=false; raw_payload_included=false; secrets_included=false",
         "",
         "## Fields",
     ]
@@ -302,8 +512,12 @@ def main(argv: list[str] | None = None) -> int:
                 "ok": bool(report.get("ok")),
                 "status": report.get("status"),
                 "field_entries_created": report.get("field_entries_created"),
+                "verified_field_count": report.get("verified_field_count"),
                 "verified_source_count": report.get("verified_source_count"),
                 "unverified_field_count": report.get("unverified_field_count"),
+                "cutoff_sensitive_field_count": report.get("cutoff_sensitive_field_count"),
+                "leakage_sensitive_field_count": report.get("leakage_sensitive_field_count"),
+                "fields_by_feature_family": report.get("fields_by_feature_family"),
                 "feature_families_covered": report.get("feature_families_covered"),
                 "enabled_source_count": 0,
                 "paid_source_enabled_count": 0,

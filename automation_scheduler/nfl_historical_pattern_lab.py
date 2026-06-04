@@ -11,6 +11,10 @@ from typing import Any
 from uuid import uuid4
 
 from .data_paths import get_data_sources_dir, get_storage_health, resolve_base_data_dir
+from .nfl_open_data_feature_builders import (
+    build_expanded_feature_readiness,
+    build_nfl_feature_builder_report,
+)
 from .open_sports_history_sources import SAFETY_FIELDS
 from .scheduler_config import sanitize_filename, utc_now_iso
 
@@ -96,6 +100,12 @@ HOLDOUT_BLOCKED_LEAKAGE_FEATURES = [
     "injury_lineup_profile",
     "roster_continuity",
     "pace_or_advanced_efficiency",
+    "injury_availability",
+    "depth_chart_stability",
+    "player_usage_snaps",
+    "player_usage_participation",
+    "nextgen_efficiency_candidates",
+    "market_odds",
 ]
 
 POSTSEASON_TARGET_LABEL_FIELDS = [
@@ -1405,6 +1415,57 @@ def _overall_holdout_status(
     return "insufficient_labels"
 
 
+def build_validation_guard_summary(*, base_data_dir: str | Path | None = None) -> dict[str, Any]:
+    """Classify newly available NFL feature builders before any validation use (Phase 6).
+
+    Regular-season snapshot features (the schedule/result-derived similarity
+    features) are the only validation-allowed inputs. All source-supported
+    in-season feature builders (injury/roster/snap/depth/market/nextgen/pace)
+    are blocked by default: by leakage when they are availability/market
+    families, otherwise by cutoff sensitivity. Builders missing their source
+    fields are blocked by missing provenance.
+    """
+    builder_report = build_nfl_feature_builder_report(base_data_dir=base_data_dir)
+    builders = builder_report.get("feature_builders") or []
+    allowed_features = list(HOLDOUT_ALLOWED_SIMILARITY_FEATURES)
+    blocked_by_leakage: list[str] = []
+    blocked_by_cutoff: list[str] = []
+    blocked_by_future_data: list[str] = []
+    blocked_by_missing_provenance: list[str] = []
+    availability_leakage = {"availability_in_season_cutoff_required", "market_timing_cutoff_required"}
+    for builder in builders:
+        name = str(builder.get("feature_name"))
+        if builder.get("status") != "available":
+            blocked_by_missing_provenance.append(name)
+            continue
+        if builder.get("uses_future_data"):
+            blocked_by_future_data.append(name)
+            continue
+        leakage_risk = str(builder.get("leakage_risk"))
+        if name in HOLDOUT_BLOCKED_LEAKAGE_FEATURES or leakage_risk in availability_leakage:
+            blocked_by_leakage.append(name)
+        elif builder.get("cutoff_required"):
+            blocked_by_cutoff.append(name)
+        else:
+            blocked_by_cutoff.append(name)
+    candidate_feature_count = len(allowed_features) + len(builders)
+    blocked_total = len(blocked_by_leakage) + len(blocked_by_cutoff) + len(blocked_by_future_data) + len(blocked_by_missing_provenance)
+    return {
+        "candidate_features_count": candidate_feature_count,
+        "allowed_validation_features_count": len(allowed_features),
+        "allowed_validation_features": allowed_features,
+        "blocked_validation_features_count": blocked_total,
+        "blocked_by_leakage": sorted(blocked_by_leakage),
+        "blocked_by_cutoff": sorted(blocked_by_cutoff),
+        "blocked_by_future_data": sorted(blocked_by_future_data),
+        "blocked_by_missing_provenance": sorted(blocked_by_missing_provenance),
+        "newly_available_feature_builders_blocked_by_default": True,
+        "market_features_cutoff_sensitive_by_default": True,
+        "postseason_labels_target_only": True,
+        "no_predictive_claim": True,
+    }
+
+
 def build_historical_holdout_validation_scorecard(
     *,
     base_data_dir: str | Path | None = None,
@@ -1441,6 +1502,7 @@ def build_historical_holdout_validation_scorecard(
         anchor_profiles_skipped = skipped
     target_summaries = _target_label_summaries(target_labels)
     seasons = sorted({str(profile.get("season")) for profile in snapshots}, key=_season_key)
+    validation_guard_summary = build_validation_guard_summary(base_data_dir=base)
     status = _overall_holdout_status(
         leakage_guard=leakage_guard,
         validation_by_target=validation_by_target,
@@ -1450,6 +1512,7 @@ def build_historical_holdout_validation_scorecard(
         **SAFETY_FIELDS,
         "ok": True,
         "status": status,
+        "validation_guard_summary": validation_guard_summary,
         "schema_version": "nfl_historical_holdout_validation_v1",
         "created_at": utc_now_iso(),
         "run_id": sanitize_filename(f"nfl_pattern_validation_{utc_now_iso().replace(':', '-')}_{uuid4().hex[:8]}"),
@@ -1525,8 +1588,10 @@ def build_nfl_historical_pattern_lab_report(*, base_data_dir: str | Path | None 
         )
     validation_scorecard = build_pattern_validation_scorecard(team_seasons, catalog)
     readiness_status = validation_scorecard["validation_status"]
+    expanded_readiness = build_expanded_feature_readiness(base_data_dir=base)
     return {
         **SAFETY_FIELDS,
+        **expanded_readiness,
         "ok": True,
         "status": "ok",
         "schema_version": NFL_PATTERN_LAB_SCHEMA_VERSION,
@@ -1759,6 +1824,7 @@ def main(argv: list[str] | None = None) -> int:
                     "holdout_method": report["holdout_method"],
                     "similarity_k_values": report["similarity_k_values"],
                     "leakage_guard": report["leakage_guard"],
+                    "validation_guard_summary": report["validation_guard_summary"],
                     "validation_by_target": report["validation_by_target"],
                     "validation_by_k": report["validation_by_k"],
                     "no_predictive_claim": True,
@@ -1791,6 +1857,11 @@ def main(argv: list[str] | None = None) -> int:
                 "matchup_profiles_created": report["matchup_profiles_created"],
                 "similarity_features_available": report["similarity_features_available"],
                 "similarity_features_blocked": report["similarity_features_blocked"],
+                "expanded_feature_catalog_available": report.get("expanded_feature_catalog_available"),
+                "expanded_feature_families_available": report.get("expanded_feature_families_available"),
+                "expanded_feature_families_blocked": report.get("expanded_feature_families_blocked"),
+                "source_supported_feature_count": report.get("source_supported_feature_count"),
+                "source_supported_feature_builder_count": report.get("source_supported_feature_builder_count"),
                 "postseason_label_status": report["postseason_label_status"],
                 "playoff_round_label_method": report["playoff_round_label_method"],
                 "playoff_label_coverage_count": report["playoff_label_coverage_count"],

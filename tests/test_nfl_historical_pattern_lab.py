@@ -310,6 +310,25 @@ class TestNflHistoricalPatternLab(unittest.TestCase):
         self.assertFalse((Path(tmp) / "paper_ledger").exists())
         self.assertFalse((Path(tmp) / "data_sources" / "kalshi_calibration").exists())
 
+    def test_report_exposes_expanded_feature_readiness(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self._persist_real_rows(tmp)
+            report = build_nfl_historical_pattern_lab_report(base_data_dir=tmp)
+
+        for key in (
+            "expanded_feature_catalog_available",
+            "expanded_feature_families_available",
+            "expanded_feature_families_blocked",
+            "expanded_regular_season_features_candidate",
+            "expanded_cutoff_sensitive_features",
+            "expanded_leakage_sensitive_features",
+            "source_supported_feature_count",
+            "source_supported_feature_builder_count",
+        ):
+            self.assertIn(key, report)
+        self.assertTrue(report["no_predictive_claim"])
+        self.assertGreater(report["source_supported_feature_builder_count"], 0)
+
     def test_similarity_feature_catalog_blocks_unavailable_sources(self):
         with tempfile.TemporaryDirectory() as tmp:
             self._persist_real_rows(tmp)

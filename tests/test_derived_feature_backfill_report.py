@@ -161,6 +161,49 @@ class TestDerivedFeatureBackfillReport(unittest.TestCase):
         self.assertNotIn("do-not-leak", rendered)
         self.assertNotIn("provider_payload", rendered)
 
+    def test_report_exposes_nfl_feature_availability_flags(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            snap = Path(tmp) / "data_sources" / "nfl_open_data" / "validated" / "nflverse_snap_counts" / "latest.json"
+            snap.parent.mkdir(parents=True, exist_ok=True)
+            snap.write_text(
+                json.dumps(
+                    {
+                        "fields_available": ["season", "week", "team", "player", "offense_snaps", "offense_pct"],
+                        "records_validated": 500,
+                        "seasons_backfilled": ["2023", "2024"],
+                        "data_category": "snap_counts",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            report = build_derived_feature_backfill_report(base_data_dir=tmp)
+
+        for key in (
+            "nfl_play_by_play_efficiency_available",
+            "nfl_pace_play_volume_available",
+            "nfl_snap_usage_available",
+            "nfl_participation_available",
+            "nfl_depth_chart_available",
+            "nfl_injury_availability_available",
+            "nfl_roster_continuity_available",
+            "nfl_nextgen_efficiency_available",
+            "nfl_market_odds_available",
+            "nfl_feature_builder_count",
+            "nfl_feature_builder_blockers",
+            "nfl_cutoff_sensitive_feature_count",
+            "nfl_leakage_sensitive_feature_count",
+        ):
+            self.assertIn(key, report)
+        self.assertTrue(report["nfl_snap_usage_available"])
+
+    def test_nfl_flags_default_when_records_provided(self):
+        report = build_derived_feature_backfill_report(
+            module="americanfootball_nfl",
+            records_by_module={"americanfootball_nfl": [{"home_team": "A", "away_team": "B", "home_score": 1, "away_score": 0}]},
+        )
+        self.assertFalse(report["nfl_snap_usage_available"])
+        self.assertEqual(report["nfl_feature_builder_count"], 0)
+
     def test_all_blocked_reasons_are_in_allowed_vocabulary(self):
         report = build_derived_feature_backfill_report(records_by_module={})
         reasons = {
