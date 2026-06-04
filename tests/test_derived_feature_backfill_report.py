@@ -224,6 +224,10 @@ class TestDerivedFeatureBackfillReport(unittest.TestCase):
             "nfl_coaching_feature_builders_available",
             "nfl_coaching_feature_builder_blockers",
             "nfl_coaching_leakage_guard_status",
+            "nfl_coaching_structured_seed_available",
+            "nfl_coaching_records_rejected",
+            "nfl_coaching_role_groups_covered",
+            "nfl_coaching_attribution_required",
         ):
             self.assertIn(key, report)
         self.assertEqual(report["nfl_coaching_sources_checked"], 10)

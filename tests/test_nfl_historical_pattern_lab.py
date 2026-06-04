@@ -344,6 +344,8 @@ class TestNflHistoricalPatternLab(unittest.TestCase):
             "nfl_coaching_feature_builders_available",
             "nfl_coaching_feature_builder_blockers",
             "nfl_coaching_leakage_guard_status",
+            "nfl_coaching_structured_seed_available",
+            "nfl_coaching_attribution_required",
         ):
             self.assertIn(key, report)
         self.assertTrue(report["no_predictive_claim"])

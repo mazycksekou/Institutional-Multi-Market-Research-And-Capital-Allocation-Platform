@@ -53,6 +53,22 @@ class TestNflCoachingSources(unittest.TestCase):
         self.assertEqual(sources["wikipedia_coaching_seed"]["approval_status"], "approved_open_structured")
         self.assertEqual(sources["manual_csv_import"]["approval_status"], "approved_manual_import")
 
+    def test_wikidata_is_structured_open_data_cc0(self):
+        sources = {s["source_id"]: s for s in nfl_coaching_sources()}
+        wd = sources["wikidata_coaching_seed"]
+        self.assertEqual(wd["source_kind"], "structured_open_data")
+        self.assertEqual(wd["license_status"], "cc0")
+        self.assertTrue(wd["structured_seed_supported"])
+        self.assertFalse(wd["attribution_required"])
+        self.assertFalse(wd["enabled"])
+
+    def test_wikipedia_requires_attribution_and_is_supplemental(self):
+        sources = {s["source_id"]: s for s in nfl_coaching_sources()}
+        wp = sources["wikipedia_coaching_seed"]
+        self.assertEqual(wp["license_status"], "cc_by_sa")
+        self.assertTrue(wp["attribution_required"])
+        self.assertTrue(wp["supplemental_only"])
+
     def test_pfr_and_ftn_blocked(self):
         sources = {s["source_id"]: s for s in nfl_coaching_sources()}
         self.assertEqual(sources["blocked_pfr_reference"]["blocker"], "sports_reference_scraping_blocked")

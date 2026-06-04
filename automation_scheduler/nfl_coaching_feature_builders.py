@@ -26,14 +26,18 @@ from .scheduler_config import sanitize_filename, utc_now_iso
 
 COACHING_READINESS_FLAG_DEFAULTS = {
     "nfl_coaching_data_available": False,
+    "nfl_coaching_structured_seed_available": False,
     "nfl_coaching_sources_checked": 0,
     "nfl_coaching_sources_allowed": [],
     "nfl_coaching_sources_blocked": [],
     "nfl_coaching_records_validated": 0,
+    "nfl_coaching_records_rejected": 0,
     "nfl_coaching_teams_covered": [],
     "nfl_coaching_seasons_covered": [],
+    "nfl_coaching_role_groups_covered": [],
     "nfl_coaching_feature_builders_available": [],
     "nfl_coaching_feature_builder_blockers": [],
+    "nfl_coaching_attribution_required": False,
     "nfl_coaching_leakage_guard_status": "active_offseason_cutoff_required",
 }
 
@@ -42,16 +46,23 @@ def coaching_readiness_flags(*, base_data_dir: str | Path | None = None) -> dict
     base = resolve_base_data_dir(base_data_dir)
     source_report = build_nfl_coaching_source_report(base_data_dir=base)
     feature_summary = coaching_feature_availability_summary(base_data_dir=base)
+    rows = load_validated_coaching_rows(base_data_dir=base)
+    structured_seed_available = any(str(row.get("source_id")) == "wikidata_coaching_seed" for row in rows)
+    attribution_required = any("by_sa" in str(row.get("source_license") or "").lower() for row in rows)
     return {
         "nfl_coaching_data_available": int(feature_summary["nfl_coaching_records_validated"]) > 0,
+        "nfl_coaching_structured_seed_available": structured_seed_available,
         "nfl_coaching_sources_checked": source_report["coaching_sources_audited"],
         "nfl_coaching_sources_allowed": source_report["approved_coaching_sources"],
         "nfl_coaching_sources_blocked": source_report["blocked_coaching_sources"],
         "nfl_coaching_records_validated": feature_summary["nfl_coaching_records_validated"],
+        "nfl_coaching_records_rejected": 0,
         "nfl_coaching_teams_covered": feature_summary["nfl_coaching_teams_covered"],
         "nfl_coaching_seasons_covered": feature_summary["nfl_coaching_seasons_covered"],
+        "nfl_coaching_role_groups_covered": feature_summary.get("nfl_coaching_role_groups_covered", []),
         "nfl_coaching_feature_builders_available": feature_summary["nfl_coaching_feature_builders_available"],
         "nfl_coaching_feature_builder_blockers": feature_summary["nfl_coaching_feature_builder_blockers"],
+        "nfl_coaching_attribution_required": attribution_required,
         "nfl_coaching_leakage_guard_status": feature_summary["nfl_coaching_leakage_guard_status"],
     }
 
@@ -296,6 +307,7 @@ def coaching_feature_availability_summary(*, base_data_dir: str | Path | None = 
         "nfl_coaching_records_validated": report["coaching_records_loaded"],
         "nfl_coaching_teams_covered": report["teams_covered"],
         "nfl_coaching_seasons_covered": report["seasons_covered"],
+        "nfl_coaching_role_groups_covered": report["role_groups_covered"],
         "nfl_coaching_feature_builders_available": report["coaching_feature_builders_available"],
         "nfl_coaching_feature_builder_blockers": [row["blocked_reason"] for row in report["coaching_feature_builder_blockers"]],
         "nfl_coaching_leakage_guard_status": "active_offseason_cutoff_required",
@@ -317,7 +329,9 @@ def build_nfl_coaching_acquisition_report(
     *,
     allow_crawl: bool = False,
     allow_manual_import: bool = False,
+    allow_structured_seed: bool = False,
     input_csv: str | None = None,
+    max_records: int | None = None,
     persist_preview: bool = False,
     base_data_dir: str | Path | None = None,
 ) -> dict[str, Any]:
@@ -325,7 +339,9 @@ def build_nfl_coaching_acquisition_report(
     ingestion = build_nfl_coaching_ingestion_report(
         allow_crawl=allow_crawl,
         allow_manual_import=allow_manual_import,
+        allow_structured_seed=allow_structured_seed,
         input_csv=input_csv,
+        max_records=max_records,
         persist_preview=persist_preview,
         base_data_dir=base,
     )
@@ -350,6 +366,10 @@ def build_nfl_coaching_acquisition_report(
         "terms_blocked_count": ingestion["terms_blocked_count"],
         "records_validated": ingestion["records_validated"],
         "records_rejected": ingestion["records_rejected"],
+        "provider_calls_attempted": ingestion["provider_calls_attempted"],
+        "downloads_attempted": ingestion["downloads_attempted"],
+        "downloads_succeeded": ingestion["downloads_succeeded"],
+        "nfl_coaching_structured_seed_available": ingestion.get("nfl_coaching_structured_seed_available", False),
         "seasons_covered": feature_report["seasons_covered"],
         "teams_covered": feature_report["teams_covered"],
         "role_groups_covered": feature_report["role_groups_covered"],
@@ -362,10 +382,11 @@ def build_nfl_coaching_acquisition_report(
         "spoofing_used": False,
         "browser_impersonation_used": False,
         "raw_html_persisted": False,
+        "raw_payload_persisted": False,
         "no_predictive_claim": True,
-        "provider_calls_attempted": 0,
-        "downloads_attempted": 0,
-        "downloads_succeeded": 0,
+        "provider_calls_attempted": ingestion["provider_calls_attempted"],
+        "downloads_attempted": ingestion["downloads_attempted"],
+        "downloads_succeeded": ingestion["downloads_succeeded"],
         "enabled_source_count": 0,
         "paid_source_enabled_count": 0,
         "provider_write": False,
@@ -457,7 +478,7 @@ def write_nfl_coaching_acquisition_report(
 
 
 def main(argv: list[str] | None = None) -> int:
-    from .nfl_coaching_adapters import adapter_by_id, ManualCsvCoachingImportAdapter
+    from .nfl_coaching_adapters import adapter_by_id, ManualCsvCoachingImportAdapter, WikidataCoachingSeedAdapter
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -466,6 +487,7 @@ def main(argv: list[str] | None = None) -> int:
         choices=[
             "metadata_check",
             "tiny_sample",
+            "structured_seed_import",
             "crawl_staff_pages",
             "crawl_press_releases",
             "wikidata_seed",
@@ -478,12 +500,17 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--input-csv", default=None)
     parser.add_argument("--allow-crawl", action="store_true")
     parser.add_argument("--allow-manual-import", action="store_true")
+    parser.add_argument("--allow-structured-seed", action="store_true")
+    parser.add_argument("--allow-download", action="store_true")
     parser.add_argument("--max-pages-per-domain", type=int, default=None)
     parser.add_argument("--crawl-delay-seconds", type=int, default=None)
     parser.add_argument("--max-records", type=int, default=None)
+    parser.add_argument("--season-start", type=int, default=None)
+    parser.add_argument("--season-end", type=int, default=None)
     parser.add_argument("--persist", action="store_true")
     args = parser.parse_args(argv)
 
+    allow_seed = args.allow_structured_seed or args.allow_download
     mode_to_source = {
         "crawl_staff_pages": "official_team_staff_pages",
         "crawl_press_releases": "official_team_press_releases",
@@ -495,7 +522,9 @@ def main(argv: list[str] | None = None) -> int:
         report = build_nfl_coaching_acquisition_report(
             allow_crawl=args.allow_crawl,
             allow_manual_import=args.allow_manual_import,
+            allow_structured_seed=allow_seed,
             input_csv=args.input_csv,
+            max_records=args.max_records,
             persist_preview=args.persist,
         )
         if args.persist:
@@ -506,10 +535,24 @@ def main(argv: list[str] | None = None) -> int:
             "sources_checked": report["sources_checked"],
             "sources_allowed": report["sources_allowed"],
             "records_validated": report["records_validated"],
+            "records_rejected": report["records_rejected"],
             "feature_builders_available": report["feature_builders_available"],
             "nfl_coaching_data_available": report["nfl_coaching_data_available"],
+            "provider_calls_attempted": report["provider_calls_attempted"],
+            "downloads_attempted": report["downloads_attempted"],
+            "downloads_succeeded": report["downloads_succeeded"],
             "latest_json_path": report.get("latest_json_path"),
         }
+    elif args.mode == "structured_seed_import":
+        adapter = adapter_by_id(args.source_id or "wikidata_coaching_seed")
+        run = adapter.run_structured_seed_import(
+            allow_structured_seed=allow_seed,
+            max_records=args.max_records,
+            persist_preview=args.persist,
+            season_start=args.season_start,
+            season_end=args.season_end,
+        )
+        summary = {"mode": args.mode, **{k: run.get(k) for k in ("ok", "status", "records_validated", "records_rejected", "blocked_reason", "provider_calls_attempted", "downloads_attempted", "downloads_succeeded", "teams_covered", "seasons_covered")}}
     elif args.mode == "manual_import":
         adapter = ManualCsvCoachingImportAdapter(adapter_by_id("manual_csv_import").source)
         run = adapter.run_manual_import(
@@ -519,21 +562,23 @@ def main(argv: list[str] | None = None) -> int:
             persist_preview=args.persist,
         )
         summary = {"mode": args.mode, **{k: run.get(k) for k in ("ok", "status", "records_validated", "records_rejected", "blocked_reason")}}
+    elif args.mode == "tiny_sample":
+        adapter = adapter_by_id(args.source_id or "wikidata_coaching_seed")
+        if isinstance(adapter, WikidataCoachingSeedAdapter):
+            run = adapter.run_tiny_sample(allow_structured_seed=allow_seed, max_records=args.max_records or 25)
+        else:
+            run = adapter.run_tiny_sample(allow_crawl=args.allow_crawl)
+        summary = {"mode": args.mode, **{k: run.get(k) for k in ("ok", "status", "records_validated", "blocked_reason", "downloads_attempted", "downloads_succeeded")}}
     else:
         source_id = args.source_id or mode_to_source.get(args.mode)
         adapter = adapter_by_id(source_id) if source_id else None
         if adapter is None:
             summary = {"mode": args.mode, "ok": False, "status": "unknown_source", "source_id": source_id}
-        elif args.mode == "tiny_sample":
-            summary = {"mode": args.mode, **adapter.run_tiny_sample(allow_crawl=args.allow_crawl)}
         else:
             summary = {"mode": args.mode, **adapter.run_metadata_check()}
+    summary.setdefault("no_predictive_claim", True)
     summary.update(
         {
-            "no_predictive_claim": True,
-            "provider_calls_attempted": 0,
-            "downloads_attempted": 0,
-            "downloads_succeeded": 0,
             "enabled_source_count": 0,
             "paid_source_enabled_count": 0,
             "provider_write": False,

@@ -86,6 +86,26 @@ class TestNflCoachingFeatureBuilders(unittest.TestCase):
         names = {row["feature_name"] for row in features}
         self.assertEqual(names, set(COACHING_FEATURE_BUILDERS))
 
+    def test_feature_builders_activate_from_wikidata_seed(self):
+        from automation_scheduler.nfl_coaching_adapters import adapter_by_id
+
+        def fake(query):
+            return {
+                "results": {
+                    "bindings": [
+                        {"teamLabel": {"value": "KC"}, "coachLabel": {"value": "Andy Reid"}, "start": {"value": "+2013-09-08T00:00:00Z"}, "end": {"value": "+2014-09-01T00:00:00Z"}},
+                    ]
+                }
+            }
+
+        with tempfile.TemporaryDirectory() as tmp:
+            adapter = adapter_by_id("wikidata_coaching_seed")
+            adapter.run_structured_seed_import(allow_structured_seed=True, persist_preview=True, fetch_fn=fake, base_data_dir=tmp)
+            report = build_nfl_coaching_feature_report(base_data_dir=tmp)
+        self.assertGreater(report["coaching_records_loaded"], 0)
+        self.assertIn("head_coach_by_team_season", report["coaching_feature_builders_available"])
+        self.assertIn("coaching_continuity_candidates", report["coaching_feature_builders_available"])
+
     def test_acquisition_report_writes_safely(self):
         rows = [
             {"team": "KC", "season": "2024", "staff_name": "Andy Reid", "staff_role": "Head Coach", "source_label": "m", "source_license": "CC0"},

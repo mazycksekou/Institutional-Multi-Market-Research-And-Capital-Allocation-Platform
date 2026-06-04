@@ -15,8 +15,13 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import socket
+import urllib.error
+import urllib.parse
+import urllib.request
+from datetime import date, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 from uuid import uuid4
 
 from .data_paths import get_data_sources_dir, get_storage_health, resolve_base_data_dir
@@ -49,9 +54,55 @@ CANONICAL_ROLE_GROUPS = [
 REQUIRED_RECORD_FIELDS = ["team", "season", "staff_name", "staff_role"]
 EXECUTIVE_TOKENS = ("general manager", "president", "owner", "executive", "director of", "vice president", "gm")
 
+WIKIDATA_SPARQL_ENDPOINT = "https://query.wikidata.org/sparql"
+WIKIDATA_DEFAULT_TIMEOUT_SECONDS = 15
+WIKIDATA_MAX_RETRIES = 1
+
 
 def _clean(value: Any) -> str:
     return str(value or "").strip()
+
+
+def _parse_iso_date(value: Any) -> date | None:
+    text = _clean(value)
+    if not text:
+        return None
+    text = text.lstrip("+")  # Wikidata times look like +2013-01-01T00:00:00Z
+    try:
+        return datetime.fromisoformat(text[:10]).date()
+    except ValueError:
+        return None
+
+
+def _date_to_nfl_season(value: date) -> int:
+    # NFL season year = season starting year; games Jan-July belong to prior year's season.
+    return value.year if value.month >= 8 else value.year - 1
+
+
+def expand_coaching_dates_to_team_seasons(row: dict[str, Any]) -> list[dict[str, Any]]:
+    """Expand a coaching fact to team-season rows using only clear date bounds.
+
+    Never fabricates a season. With start+end dates, emits all overlapping NFL
+    seasons. With only an effective date, emits a single point-in-time record.
+    With no usable dates, emits one row flagged requires_season_expansion.
+    """
+    start = _parse_iso_date(row.get("start_date"))
+    end = _parse_iso_date(row.get("end_date"))
+    effective = _parse_iso_date(row.get("source_effective_date"))
+    existing_season = _clean(row.get("season"))
+    if existing_season.isdigit():
+        return [{**row, "season": existing_season, "season_resolution_status": "source_supplied"}]
+    if start and end and _date_to_nfl_season(end) >= _date_to_nfl_season(start):
+        first, last = _date_to_nfl_season(start), _date_to_nfl_season(end)
+        return [
+            {**row, "season": str(season), "season_resolution_status": "expanded_from_date_interval"}
+            for season in range(first, last + 1)
+        ]
+    if start and not end:
+        return [{**row, "season": str(_date_to_nfl_season(start)), "season_resolution_status": "open_interval_start_season_only"}]
+    if effective:
+        return [{**row, "season": str(_date_to_nfl_season(effective)), "season_resolution_status": "point_in_time"}]
+    return [{**row, "season": "", "season_resolution_status": "requires_season_expansion"}]
 
 
 def classify_coaching_role(staff_role: str) -> dict[str, Any]:
@@ -93,12 +144,22 @@ def classify_coaching_role(staff_role: str) -> dict[str, Any]:
     }
 
 
-def validate_record_shape(record: dict[str, Any], *, require_license: bool = False) -> tuple[bool, str | None]:
+def validate_record_shape(
+    record: dict[str, Any],
+    *,
+    require_license: bool = False,
+    require_season: bool = True,
+) -> tuple[bool, str | None]:
     for field in REQUIRED_RECORD_FIELDS:
+        if field == "season" and not require_season:
+            continue
         if not _clean(record.get(field)):
             return False, f"missing_required_field:{field}"
     season = _clean(record.get("season"))
-    if not season.isdigit() or not (1920 <= int(season) <= 2100):
+    if require_season:
+        if not season.isdigit() or not (1920 <= int(season) <= 2100):
+            return False, "invalid_season"
+    elif season and (not season.isdigit() or not (1920 <= int(season) <= 2100)):
         return False, "invalid_season"
     if require_license and not _clean(record.get("source_license")):
         return False, "missing_source_license"
@@ -158,7 +219,13 @@ class NflCoachingAdapter:
         allowed = status in {"reviewed_open_allowed", "user_supplied"}
         return {"terms_review_status": status, "terms_allows_automation": allowed}
 
-    def validate_source_allowed(self, *, allow_crawl: bool = False, allow_manual_import: bool = False) -> dict[str, Any]:
+    def validate_source_allowed(
+        self,
+        *,
+        allow_crawl: bool = False,
+        allow_manual_import: bool = False,
+        allow_structured_seed: bool = False,
+    ) -> dict[str, Any]:
         robots = self.check_robots_txt()
         terms = self.check_terms_status()
         kind = self.source.get("source_kind")
@@ -168,8 +235,10 @@ class NflCoachingAdapter:
             if not allow_manual_import:
                 return {"allowed": False, "reason": "manual_import_not_authorized", "robots": robots, "terms": terms}
             return {"allowed": True, "reason": None, "robots": robots, "terms": terms}
-        if kind == "structured_api":
-            if not self.source.get("enabled") and not allow_crawl:
+        if kind in {"structured_open_data", "structured_api"}:
+            if self.source.get("supplemental_only"):
+                return {"allowed": False, "reason": "supplemental_only_no_record_ingestion", "robots": robots, "terms": terms}
+            if not (allow_structured_seed or self.source.get("enabled")):
                 return {"allowed": False, "reason": "structured_seed_disabled_by_default", "robots": robots, "terms": terms}
             return {"allowed": True, "reason": None, "robots": robots, "terms": terms}
         # HTML/page/sitemap crawl path
@@ -296,6 +365,7 @@ class NflCoachingAdapter:
         root = _validated_root(self.source["source_id"], base_data_dir)
         run_id = sanitize_filename(f"nfl_coaching_validated_{utc_now_iso().replace(':', '-')}_{uuid4().hex[:8]}")
         latest_json = root / "latest.json"
+        latest_md = root / "latest.md"
         item_json = root / "items" / f"{run_id}.json"
         payload = {
             **SAFETY_FIELDS,
@@ -306,17 +376,40 @@ class NflCoachingAdapter:
             "data_category": "coaching_staff",
             "created_at": utc_now_iso(),
             "records_validated": len(rows),
-            "sample_rows": rows[:200],
+            "sample_rows": rows[:500],
             "raw_html_persisted": False,
             "raw_payload_included": False,
             "secrets_included": False,
         }
+        by_team_paths: list[str] = []
+        by_season_paths: list[str] = []
+        by_team: dict[str, list[dict[str, Any]]] = {}
+        by_season: dict[str, list[dict[str, Any]]] = {}
+        for row in rows:
+            team = _clean(row.get("team"))
+            season = _clean(row.get("season"))
+            if team:
+                by_team.setdefault(team, []).append(row)
+            if season:
+                by_season.setdefault(season, []).append(row)
         paths = {
             "latest_json_path": _rel(latest_json, base_data_dir),
+            "latest_markdown_path": _rel(latest_md, base_data_dir),
             "item_json_path": _rel(item_json, base_data_dir),
         }
         _atomic_write_json(latest_json, {**payload, **paths})
+        _atomic_write_text(latest_md, _coaching_validated_markdown(payload))
         _atomic_write_json(item_json, {**payload, **paths})
+        for team, team_rows in sorted(by_team.items()):
+            path = root / "by_team" / f"{sanitize_filename(team)}.json"
+            _atomic_write_json(path, {**payload, "scope": "team", "scope_value": team, "records_validated": len(team_rows), "sample_rows": team_rows[:500]})
+            by_team_paths.append(_rel(path, base_data_dir))
+        for season, season_rows in sorted(by_season.items()):
+            path = root / "by_season" / f"{sanitize_filename(season)}.json"
+            _atomic_write_json(path, {**payload, "scope": "season", "scope_value": season, "records_validated": len(season_rows), "sample_rows": season_rows[:500]})
+            by_season_paths.append(_rel(path, base_data_dir))
+        paths["by_team_paths"] = by_team_paths
+        paths["by_season_paths"] = by_season_paths
         return paths
 
     def build_compact_report(self, *, base_data_dir: str | Path | None = None) -> dict[str, Any]:
@@ -362,12 +455,238 @@ class OfficialTeamPressReleaseCrawler(NflCoachingAdapter):
     pass
 
 
+def _default_wikidata_fetch(query: str, *, timeout: int = WIKIDATA_DEFAULT_TIMEOUT_SECONDS) -> dict[str, Any]:
+    """Bounded, no-auth GET against the public Wikidata SPARQL endpoint.
+
+    Returns parsed JSON. The raw response is parsed in memory and never written
+    to disk. Uses a truthful research user-agent (no browser spoofing).
+    """
+    params = urllib.parse.urlencode({"query": query, "format": "json"})
+    url = f"{WIKIDATA_SPARQL_ENDPOINT}?{params}"
+    request = urllib.request.Request(
+        url,
+        headers={
+            "User-Agent": RESEARCH_USER_AGENT,
+            "Accept": "application/sparql-results+json",
+        },
+        method="GET",
+    )
+    with urllib.request.urlopen(request, timeout=timeout) as response:  # noqa: S310 (no-auth public endpoint)
+        return json.loads(response.read().decode("utf-8"))
+
+
 class WikidataCoachingSeedAdapter(NflCoachingAdapter):
-    pass
+    def build_wikidata_query(self, *, max_records: int = 500) -> str:
+        limit = max(1, min(int(max_records), 5000))
+        # Bounded SPARQL: NFL teams (P118 = American football league NFL via team),
+        # head coach (P286) statements with optional start/end qualifiers.
+        return (
+            "SELECT ?team ?teamLabel ?coach ?coachLabel ?start ?end WHERE {\n"
+            "  ?team wdt:P118 wd:Q1215884 .\n"
+            "  ?team p:P286 ?stmt .\n"
+            "  ?stmt ps:P286 ?coach .\n"
+            "  OPTIONAL { ?stmt pq:P580 ?start . }\n"
+            "  OPTIONAL { ?stmt pq:P582 ?end . }\n"
+            "  SERVICE wikibase:label { bd:serviceParam wikibase:language \"en\". }\n"
+            "}\n"
+            f"LIMIT {limit}"
+        )
+
+    def normalize_wikidata_records(self, bindings: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        raw_rows: list[dict[str, Any]] = []
+        for binding in bindings or []:
+            if not isinstance(binding, dict):
+                continue
+            team = _binding_value(binding, "teamLabel") or _binding_value(binding, "team")
+            coach = _binding_value(binding, "coachLabel") or _binding_value(binding, "coach")
+            if not team or not coach:
+                continue
+            raw_rows.append(
+                {
+                    "team": team,
+                    "season": "",
+                    "staff_name": coach,
+                    "staff_role": "Head Coach",
+                    "start_date": _binding_value(binding, "start"),
+                    "end_date": _binding_value(binding, "end"),
+                    "source_label": "Wikidata",
+                    "source_license": "CC0",
+                    "source_entity_id": _binding_qid(binding, "team"),
+                    "source_statement_id": _binding_qid(binding, "coach"),
+                    "confidence": "structured_open_data",
+                }
+            )
+        expanded: list[dict[str, Any]] = []
+        for raw in raw_rows:
+            for row in expand_coaching_dates_to_team_seasons(raw):
+                normalized = self.normalize_coaching_records([row])[0]
+                normalized["season_resolution_status"] = row.get("season_resolution_status")
+                normalized["source_entity_id"] = raw.get("source_entity_id")
+                normalized["source_statement_id"] = raw.get("source_statement_id")
+                expanded.append(normalized)
+        return expanded
+
+    def run_structured_seed_import(
+        self,
+        *,
+        allow_structured_seed: bool = False,
+        max_records: int | None = None,
+        persist_preview: bool = False,
+        season_start: int | None = None,
+        season_end: int | None = None,
+        fetch_fn: Callable[[str], dict[str, Any]] | None = None,
+        base_data_dir: str | Path | None = None,
+    ) -> dict[str, Any]:
+        base = resolve_base_data_dir(base_data_dir)
+        decision = self.validate_source_allowed(allow_structured_seed=allow_structured_seed)
+        cap = int(max_records) if max_records is not None else 500
+        if not decision["allowed"]:
+            return self._seed_result(status="blocked", blocked_reason=decision["reason"], cap=cap)
+        query = self.build_wikidata_query(max_records=cap)
+        fetcher = fetch_fn or _default_wikidata_fetch
+        provider_calls = 0
+        downloads_attempted = 0
+        downloads_succeeded = 0
+        bindings: list[dict[str, Any]] = []
+        fetch_error: str | None = None
+        for attempt in range(WIKIDATA_MAX_RETRIES + 1):
+            provider_calls += 1
+            downloads_attempted += 1
+            try:
+                payload = fetcher(query)
+                downloads_succeeded += 1
+                bindings = list((payload or {}).get("results", {}).get("bindings", []))
+                break
+            except (urllib.error.URLError, TimeoutError, socket.timeout, ValueError, OSError) as exc:
+                fetch_error = "structured_seed_fetch_failed:" + type(exc).__name__
+                bindings = []
+        normalized = self.normalize_wikidata_records(bindings)[:cap]
+        validated: list[dict[str, Any]] = []
+        rejected: list[dict[str, Any]] = []
+        for row in normalized:
+            ok, reason = validate_record_shape(row, require_license=True, require_season=False)
+            if not ok:
+                rejected.append({"reason": reason, "team": row.get("team")})
+                continue
+            if season_start is not None and row.get("season") and int(row["season"]) < int(season_start):
+                continue
+            if season_end is not None and row.get("season") and int(row["season"]) > int(season_end):
+                continue
+            validated.append(row)
+        paths: dict[str, Any] = {}
+        if persist_preview and validated:
+            paths = self.write_compact_validated_rows(validated, base_data_dir=base)
+        result = self._seed_result(
+            status="ok" if validated else ("blocked" if fetch_error else "no_records"),
+            blocked_reason=fetch_error,
+            cap=cap,
+            validated=validated,
+            rejected=rejected,
+            provider_calls=provider_calls,
+            downloads_attempted=downloads_attempted,
+            downloads_succeeded=downloads_succeeded,
+        )
+        result.update(paths)
+        return result
+
+    def _seed_result(
+        self,
+        *,
+        status: str,
+        blocked_reason: str | None,
+        cap: int,
+        validated: list[dict[str, Any]] | None = None,
+        rejected: list[dict[str, Any]] | None = None,
+        provider_calls: int = 0,
+        downloads_attempted: int = 0,
+        downloads_succeeded: int = 0,
+    ) -> dict[str, Any]:
+        validated = validated or []
+        rejected = rejected or []
+        return {
+            **SAFETY_FIELDS,
+            "ok": True,
+            "status": status,
+            "gate": "structured_seed_import",
+            "source_id": self.source.get("source_id"),
+            "source_kind": self.source.get("source_kind"),
+            "license_status": "cc0",
+            "max_records": cap,
+            "blocked_reason": blocked_reason,
+            "records_validated": len(validated),
+            "records_rejected": len(rejected),
+            "rejected": rejected[:50],
+            "sample_rows": validated[:50],
+            "coaching_fields_ingested": sorted({field for row in validated for field in row}) if validated else [],
+            "teams_covered": sorted({row["team"] for row in validated if row.get("team")}),
+            "seasons_covered": sorted({row["season"] for row in validated if row.get("season")}),
+            "role_groups_covered": sorted({row["role_group"] for row in validated if row.get("role_group")}),
+            "fetch_attempted": downloads_attempted > 0,
+            "spoofing_used": False,
+            "browser_impersonation_used": False,
+            "raw_html_persisted": False,
+            "raw_payload_persisted": False,
+            "no_predictive_claim": True,
+            "provider_calls_attempted": provider_calls,
+            "downloads_attempted": downloads_attempted,
+            "downloads_succeeded": downloads_succeeded,
+            "enabled_source_count": 0,
+            "paid_source_enabled_count": 0,
+            "provider_write": False,
+            "execution_allowed": False,
+            "raw_payload_included": False,
+            "secrets_included": False,
+        }
+
+    def run_tiny_sample(self, *, allow_structured_seed: bool = False, allow_crawl: bool = False, max_records: int | None = None, fetch_fn: Callable[[str], dict[str, Any]] | None = None, base_data_dir: str | Path | None = None) -> dict[str, Any]:
+        cap = int(max_records) if max_records is not None else 25
+        return self.run_structured_seed_import(
+            allow_structured_seed=allow_structured_seed or allow_crawl,
+            max_records=cap,
+            persist_preview=False,
+            fetch_fn=fetch_fn,
+            base_data_dir=base_data_dir,
+        )
 
 
 class WikipediaCoachingSeedAdapter(NflCoachingAdapter):
-    pass
+    """Supplemental provenance only. Never parses article prose; ingests no rows."""
+
+    def build_attribution_note(self) -> dict[str, Any]:
+        return {
+            "source_id": self.source.get("source_id"),
+            "license_status": "cc_by_sa",
+            "attribution_required": True,
+            "attribution_text": "Content derived from Wikipedia, licensed CC BY-SA.",
+            "usage": "supplemental_page_title_and_provenance_only",
+            "parses_article_prose": False,
+            "persists_raw_text": False,
+        }
+
+    def run_structured_seed_import(self, **kwargs: Any) -> dict[str, Any]:
+        return {
+            **SAFETY_FIELDS,
+            "ok": True,
+            "status": "blocked",
+            "gate": "structured_seed_import",
+            "source_id": self.source.get("source_id"),
+            "blocked_reason": "supplemental_only_no_record_ingestion",
+            "records_validated": 0,
+            "records_rejected": 0,
+            "attribution": self.build_attribution_note(),
+            "parses_article_prose": False,
+            "raw_html_persisted": False,
+            "raw_payload_included": False,
+            "no_predictive_claim": True,
+            "provider_calls_attempted": 0,
+            "downloads_attempted": 0,
+            "downloads_succeeded": 0,
+            "enabled_source_count": 0,
+            "paid_source_enabled_count": 0,
+            "provider_write": False,
+            "execution_allowed": False,
+            "secrets_included": False,
+        }
 
 
 class OpenLicensedDatasetAdapter(NflCoachingAdapter):
@@ -376,6 +695,25 @@ class OpenLicensedDatasetAdapter(NflCoachingAdapter):
 
 class BlockedReferenceSourceAdapter(NflCoachingAdapter):
     pass
+
+
+def _binding_value(binding: dict[str, Any], key: str) -> str:
+    item = binding.get(key)
+    return _clean(item.get("value")) if isinstance(item, dict) else ""
+
+
+def _binding_qid(binding: dict[str, Any], key: str) -> str | None:
+    value = _binding_value(binding, key)
+    return value.rsplit("/", 1)[-1] if value.startswith("http") else None
+
+
+def _coaching_validated_markdown(payload: dict[str, Any]) -> str:
+    return (
+        "# NFL Coaching Validated Rows\n\n"
+        f"1. source_id: {payload.get('source_id')}\n"
+        f"2. records_validated: {payload.get('records_validated')}\n"
+        "3. raw_html_persisted=false; raw_payload_included=false; secrets_included=false\n"
+    )
 
 
 class ManualCsvCoachingImportAdapter(NflCoachingAdapter):
@@ -529,6 +867,13 @@ def _atomic_write_json(path: Path, payload: Any) -> None:
     tmp.replace(path)
 
 
+def _atomic_write_text(path: Path, text: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(f"{path.name}.tmp")
+    tmp.write_text(text, encoding="utf-8")
+    tmp.replace(path)
+
+
 def load_validated_coaching_rows(*, base_data_dir: str | Path | None = None) -> list[dict[str, Any]]:
     base = resolve_base_data_dir(base_data_dir)
     root = base / "data_sources" / "nfl_open_data" / "coaching" / "validated"
@@ -550,8 +895,11 @@ def build_nfl_coaching_ingestion_report(
     *,
     allow_crawl: bool = False,
     allow_manual_import: bool = False,
+    allow_structured_seed: bool = False,
     input_csv: str | Path | None = None,
+    max_records: int | None = None,
     persist_preview: bool = False,
+    fetch_fn: Callable[[str], dict[str, Any]] | None = None,
     base_data_dir: str | Path | None = None,
 ) -> dict[str, Any]:
     base = resolve_base_data_dir(base_data_dir)
@@ -559,6 +907,9 @@ def build_nfl_coaching_ingestion_report(
     runs: list[dict[str, Any]] = []
     validated_total = 0
     rejected_total = 0
+    provider_calls_total = 0
+    downloads_attempted_total = 0
+    downloads_succeeded_total = 0
     teams: set[str] = set()
     seasons: set[str] = set()
     role_groups: set[str] = set()
@@ -583,6 +934,23 @@ def build_nfl_coaching_ingestion_report(
             )
             validated_total += int(run.get("records_validated", 0) or 0)
             rejected_total += int(run.get("records_rejected", 0) or 0)
+            teams.update(run.get("teams_covered") or [])
+            seasons.update(run.get("seasons_covered") or [])
+            role_groups.update(run.get("role_groups_covered") or [])
+            runs.append(run)
+        elif isinstance(adapter, WikidataCoachingSeedAdapter) and allow_structured_seed:
+            run = adapter.run_structured_seed_import(
+                allow_structured_seed=True,
+                max_records=max_records,
+                persist_preview=persist_preview,
+                fetch_fn=fetch_fn,
+                base_data_dir=base,
+            )
+            validated_total += int(run.get("records_validated", 0) or 0)
+            rejected_total += int(run.get("records_rejected", 0) or 0)
+            provider_calls_total += int(run.get("provider_calls_attempted", 0) or 0)
+            downloads_attempted_total += int(run.get("downloads_attempted", 0) or 0)
+            downloads_succeeded_total += int(run.get("downloads_succeeded", 0) or 0)
             teams.update(run.get("teams_covered") or [])
             seasons.update(run.get("seasons_covered") or [])
             role_groups.update(run.get("role_groups_covered") or [])
@@ -613,15 +981,17 @@ def build_nfl_coaching_ingestion_report(
         "seasons_covered": sorted(seasons),
         "role_groups_covered": sorted(role_groups),
         "nfl_coaching_data_available": validated_total > 0,
+        "nfl_coaching_structured_seed_available": validated_total > 0,
         "nfl_coaching_data_blocked_reason": None if validated_total > 0 else "no_coaching_rows_ingested_yet_sources_disabled_by_default",
         "coaching_runs": runs,
         "spoofing_used": False,
         "browser_impersonation_used": False,
         "raw_html_persisted": False,
+        "raw_payload_persisted": False,
         "no_predictive_claim": True,
-        "provider_calls_attempted": 0,
-        "downloads_attempted": 0,
-        "downloads_succeeded": 0,
+        "provider_calls_attempted": provider_calls_total,
+        "downloads_attempted": downloads_attempted_total,
+        "downloads_succeeded": downloads_succeeded_total,
         "enabled_source_count": 0,
         "paid_source_enabled_count": 0,
         "provider_write": False,

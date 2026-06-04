@@ -6,13 +6,34 @@ from pathlib import Path
 from automation_scheduler.nfl_coaching_adapters import (
     ManualCsvCoachingImportAdapter,
     NflCoachingAdapter,
+    WikidataCoachingSeedAdapter,
+    WikipediaCoachingSeedAdapter,
     adapter_by_id,
     build_nfl_coaching_ingestion_report,
     classify_coaching_role,
+    expand_coaching_dates_to_team_seasons,
     load_validated_coaching_rows,
     validate_record_shape,
 )
 from automation_scheduler.nfl_coaching_sources import RESEARCH_USER_AGENT, coaching_source_by_id
+
+
+def _fake_wikidata(query):
+    return {
+        "results": {
+            "bindings": [
+                {
+                    "teamLabel": {"value": "Kansas City Chiefs"},
+                    "team": {"value": "http://www.wikidata.org/entity/Q221196"},
+                    "coachLabel": {"value": "Andy Reid"},
+                    "coach": {"value": "http://www.wikidata.org/entity/Q1226299"},
+                    "start": {"value": "+2013-09-08T00:00:00Z"},
+                    "end": {"value": "+2015-09-01T00:00:00Z"},
+                },
+                {"teamLabel": {"value": "Chiefs"}, "coachLabel": {"value": ""}},
+            ]
+        }
+    }
 
 
 def _write_csv(path, rows):
@@ -137,6 +158,80 @@ class TestNflCoachingAdapters(unittest.TestCase):
         self.assertEqual(metadata["provider_calls_attempted"], 0)
         self.assertEqual(metadata["downloads_attempted"], 0)
         self.assertFalse(metadata["raw_html_persisted"])
+
+    # --- Wikidata structured seed ---
+    def test_wikidata_seed_requires_allow_structured_seed(self):
+        adapter = adapter_by_id("wikidata_coaching_seed")
+        blocked = adapter.run_structured_seed_import(allow_structured_seed=False, fetch_fn=_fake_wikidata)
+        self.assertEqual(blocked["status"], "blocked")
+        self.assertEqual(blocked["blocked_reason"], "structured_seed_disabled_by_default")
+        self.assertEqual(blocked["downloads_attempted"], 0)
+
+    def test_wikidata_seed_imports_and_expands_seasons(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            adapter = adapter_by_id("wikidata_coaching_seed")
+            run = adapter.run_structured_seed_import(allow_structured_seed=True, max_records=500, persist_preview=True, fetch_fn=_fake_wikidata, base_data_dir=tmp)
+            loaded = load_validated_coaching_rows(base_data_dir=tmp)
+        self.assertEqual(run["status"], "ok")
+        self.assertEqual(run["records_validated"], 3)  # 2013,2014,2015 seasons
+        self.assertEqual(run["seasons_covered"], ["2013", "2014", "2015"])
+        self.assertEqual(run["teams_covered"], ["Kansas City Chiefs"])
+        self.assertEqual(run["downloads_attempted"], 1)
+        self.assertEqual(run["downloads_succeeded"], 1)
+        self.assertFalse(run["raw_html_persisted"])
+        self.assertFalse(run["raw_payload_persisted"])
+        self.assertEqual(len(loaded), 3)
+        self.assertTrue(all(row["source_license"] == "CC0" for row in loaded))
+
+    def test_tiny_sample_enforces_max_records(self):
+        adapter = adapter_by_id("wikidata_coaching_seed")
+        run = adapter.run_tiny_sample(allow_structured_seed=True, max_records=2, fetch_fn=_fake_wikidata)
+        self.assertEqual(run["max_records"], 2)
+        self.assertLessEqual(run["records_validated"], 2)
+
+    def test_structured_seed_enforces_max_records(self):
+        adapter = adapter_by_id("wikidata_coaching_seed")
+        run = adapter.run_structured_seed_import(allow_structured_seed=True, max_records=1, fetch_fn=_fake_wikidata)
+        self.assertLessEqual(run["records_validated"], 1)
+
+    def test_wikidata_metadata_check_no_download(self):
+        adapter = adapter_by_id("wikidata_coaching_seed")
+        metadata = adapter.run_metadata_check()
+        self.assertEqual(metadata["downloads_attempted"], 0)
+        self.assertEqual(metadata["provider_calls_attempted"], 0)
+
+    def test_normalized_records_require_source_and_license(self):
+        adapter = adapter_by_id("wikidata_coaching_seed")
+        rows = adapter.normalize_wikidata_records(_fake_wikidata("")["results"]["bindings"])
+        self.assertTrue(rows)
+        for row in rows:
+            self.assertEqual(row["source_license"], "CC0")
+            self.assertEqual(row["provenance_label"], "Wikidata")
+            self.assertIn("source_entity_id", row)
+
+    def test_missing_coach_name_is_dropped_not_fabricated(self):
+        adapter = adapter_by_id("wikidata_coaching_seed")
+        rows = adapter.normalize_wikidata_records(_fake_wikidata("")["results"]["bindings"])
+        self.assertTrue(all(row["staff_name"] for row in rows))
+
+    def test_missing_dates_do_not_fabricate_season(self):
+        expanded = expand_coaching_dates_to_team_seasons({"team": "KC", "staff_name": "X", "staff_role": "Head Coach"})
+        self.assertEqual(expanded[0]["season"], "")
+        self.assertEqual(expanded[0]["season_resolution_status"], "requires_season_expansion")
+
+    def test_date_to_season_expansion_with_clear_bounds(self):
+        expanded = expand_coaching_dates_to_team_seasons({"start_date": "2013-09-08", "end_date": "2014-09-01"})
+        self.assertEqual([row["season"] for row in expanded], ["2013", "2014"])
+
+    def test_wikipedia_adapter_is_supplemental_only(self):
+        adapter = adapter_by_id("wikipedia_coaching_seed")
+        self.assertIsInstance(adapter, WikipediaCoachingSeedAdapter)
+        run = adapter.run_structured_seed_import(allow_structured_seed=True)
+        self.assertEqual(run["status"], "blocked")
+        self.assertEqual(run["blocked_reason"], "supplemental_only_no_record_ingestion")
+        self.assertFalse(run["attribution"]["parses_article_prose"])
+        self.assertTrue(run["attribution"]["attribution_required"])
+        self.assertEqual(run["records_validated"], 0)
 
 
 if __name__ == "__main__":

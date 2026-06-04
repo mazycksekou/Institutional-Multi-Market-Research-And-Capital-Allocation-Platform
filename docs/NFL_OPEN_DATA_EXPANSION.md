@@ -241,6 +241,34 @@ data. The acquisition report and coverage matrix are written under
 readiness flags are exposed in the derived feature report and the pattern lab.
 The script is `scripts/run_nfl_coaching_import.ps1`.
 
+## Coaching Structured Seed (Wikidata CC0)
+
+`WikidataCoachingSeedAdapter` (`nfl_coaching_adapters.py`) performs a bounded,
+no-auth, CC0 structured query against the public Wikidata SPARQL endpoint, but
+only when `-AllowStructuredSeed` / `-AllowDownload` is passed (the source stays
+`enabled=false` by default). It uses a truthful research user-agent (no browser
+spoofing, no browser automation), a bounded `LIMIT`/`MaxRecords`, a request
+timeout, and bounded retries. The SPARQL JSON is parsed in memory into compact
+normalized coaching rows and the raw payload is never written to disk. Head-coach
+statements with start/end qualifiers are expanded to team-season rows via
+`expand_coaching_dates_to_team_seasons`, which never fabricates a season: clear
+start+end intervals expand to all overlapping NFL seasons (season = starting
+year), an effective date yields a point-in-time record, and missing dates yield
+a row flagged `requires_season_expansion` that is excluded from season-based
+features.
+
+Modes are driven by `scripts/run_nfl_coaching_import.ps1`
+(`metadata_check | tiny_sample | structured_seed_import | manual_import |
+coverage_report`). Validated rows are written under
+`data/data_sources/nfl_open_data/coaching/validated/wikidata_coaching_seed/`
+(`latest.json`, `by_team/`, `by_season/`) and are not committed. Wikipedia is
+supplemental only (CC BY-SA, attribution required) and never parses article
+prose or ingests rows. Coaching seed readiness flags
+(`nfl_coaching_structured_seed_available`, `nfl_coaching_attribution_required`,
+records/teams/seasons/role-groups covered) are exposed in the derived feature
+report and the pattern lab. Feature builders activate automatically once valid
+coaching rows exist (via the Wikidata seed or the manual CSV importer).
+
 ## Blocked Lanes
 
 The registry tracks terms/research blockers explicitly. Sports Reference derivative lanes remain blocked. FTN charting remains blocked until terms are reviewed. Coaching remains blocked until an approved open structured no-auth source is verified.
