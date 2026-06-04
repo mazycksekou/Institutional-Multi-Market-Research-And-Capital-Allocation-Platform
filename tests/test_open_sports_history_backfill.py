@@ -109,6 +109,11 @@ class TestOpenSportsHistoryBackfill(unittest.TestCase):
         self.assertEqual(coverage["real_rows_by_target_season"], {"2024": 1})
         self.assertEqual(coverage["nflverse_nfl_coverage_percentage"], 100.0)
         self.assertTrue(coverage["synthetic_rows_ignored_for_real_coverage"])
+        self.assertEqual(coverage["game_type_present_count"], 0)
+        self.assertEqual(coverage["game_type_missing_count"], 1)
+        self.assertEqual(coverage["game_type_missing_by_season"], {"2024": 1})
+        self.assertEqual(coverage["label_enrichment_status"], "partial_source_label_coverage")
+        self.assertIn("compact_game_type_missing", coverage["label_enrichment_blockers"])
         self.assertIn("nflverse_nfl", coverage["sources_with_valid_rows"])
         self.assertEqual(coverage["downloads_attempted"], 0)
 
@@ -151,6 +156,56 @@ class TestOpenSportsHistoryBackfill(unittest.TestCase):
         self.assertEqual(coverage["incomplete_or_future_seasons"], ["2025"])
         self.assertEqual(coverage["coverage_percentage"], 50.0)
         self.assertEqual(coverage["source_completion_status"]["2025"]["status"], "incomplete_or_future")
+
+    def test_coverage_report_counts_game_type_missing_by_season(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._nflverse_csv(
+                tmp,
+                rows=[
+                    {
+                        "game_id": "nfl-2024-1",
+                        "gameday": "2024-09-05",
+                        "season": "2024",
+                        "week": "1",
+                        "game_type": "REG",
+                        "home_team": "KC",
+                        "away_team": "BAL",
+                        "home_score": "27",
+                        "away_score": "20",
+                    },
+                    {
+                        "game_id": "nfl-2024-2",
+                        "gameday": "2024-09-12",
+                        "season": "2024",
+                        "week": "2",
+                        "game_type": "",
+                        "home_team": "MIA",
+                        "away_team": "BUF",
+                        "home_score": "31",
+                        "away_score": "28",
+                    },
+                ],
+            )
+            report = build_open_sports_history_backfill_report(
+                source_id="nflverse_nfl",
+                mode="season_backfill",
+                seasons=[2024],
+                input_path=path,
+                persist_preview=True,
+                base_data_dir=tmp,
+            )
+            self.assertTrue(report["ok"])
+            coverage = build_open_sports_history_coverage_report(base_data_dir=tmp)
+
+        self.assertEqual(coverage["game_type_present_count"], 1)
+        self.assertEqual(coverage["game_type_missing_count"], 1)
+        self.assertEqual(coverage["game_type_present_by_season"], {"2024": 1})
+        self.assertEqual(coverage["game_type_missing_by_season"], {"2024": 1})
+        self.assertEqual(coverage["playoff_label_available_by_season"], {"2024": 1})
+        self.assertEqual(coverage["super_bowl_label_available_by_season"], {"2024": 1})
+        self.assertEqual(coverage["label_enrichment_status"], "partial_source_label_coverage")
+        self.assertTrue(coverage["missing_source_label_fields"])
+        self.assertIn("source_field_missing", coverage["label_enrichment_blockers"])
 
     def test_season_backfill_download_uses_source_hard_cap_and_propagates_provider_counts(self):
         fake_import = {

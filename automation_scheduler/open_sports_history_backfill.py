@@ -143,6 +143,75 @@ def _count_by(rows: list[dict[str, Any]], key: str) -> dict[str, int]:
     return dict(sorted(counts.items()))
 
 
+def _has_explicit_game_type(row: dict[str, Any]) -> bool:
+    return bool(str(row.get("game_type") or "").strip())
+
+
+def _has_explicit_label_field(row: dict[str, Any]) -> bool:
+    if row.get("source_label_fields_present") is True:
+        return True
+    if _has_explicit_game_type(row):
+        return True
+    if str(row.get("season_type") or "").strip():
+        return True
+    if str(row.get("playoff_round") or "").strip():
+        return True
+    return isinstance(row.get("postseason_flag"), bool)
+
+
+def _nfl_label_coverage(
+    rows: list[dict[str, Any]],
+    *,
+    target_seasons: list[str],
+) -> dict[str, Any]:
+    by_season: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for row in rows:
+        by_season[str(row.get("season") or "unknown")].append(row)
+    seasons = sorted(set(target_seasons) | set(by_season), key=_season_sort_key)
+    game_type_present_by_season: dict[str, int] = {}
+    game_type_missing_by_season: dict[str, int] = {}
+    playoff_label_available_by_season: dict[str, int] = {}
+    super_bowl_label_available_by_season: dict[str, int] = {}
+    label_blockers_by_season: dict[str, list[str]] = {}
+    for season in seasons:
+        season_rows = by_season.get(season, [])
+        game_type_present = sum(1 for row in season_rows if _has_explicit_game_type(row))
+        game_type_missing = len(season_rows) - game_type_present
+        label_present = sum(1 for row in season_rows if _has_explicit_label_field(row))
+        label_missing = len(season_rows) - label_present
+        game_type_present_by_season[season] = game_type_present
+        game_type_missing_by_season[season] = game_type_missing
+        playoff_label_available_by_season[season] = label_present
+        super_bowl_label_available_by_season[season] = label_present
+        blockers: list[str] = []
+        if label_missing:
+            blockers.extend(
+                [
+                    "compact_game_type_missing",
+                    "source_field_missing",
+                    "playoff_round_labels_missing",
+                    "super_bowl_label_missing",
+                    "insufficient_label_fields",
+                ]
+            )
+        label_blockers_by_season[season] = sorted(set(blockers))
+    present_total = sum(game_type_present_by_season.values())
+    missing_total = sum(game_type_missing_by_season.values())
+    blockers = sorted({blocker for blockers in label_blockers_by_season.values() for blocker in blockers})
+    return {
+        "game_type_present_count": present_total,
+        "game_type_missing_count": missing_total,
+        "game_type_present_by_season": game_type_present_by_season,
+        "game_type_missing_by_season": game_type_missing_by_season,
+        "playoff_label_available_by_season": playoff_label_available_by_season,
+        "super_bowl_label_available_by_season": super_bowl_label_available_by_season,
+        "label_blockers_by_season": label_blockers_by_season,
+        "label_enrichment_status": "complete" if missing_total == 0 else "partial_source_label_coverage",
+        "label_enrichment_blockers": blockers,
+        "missing_source_label_fields": bool(missing_total),
+    }
+
+
 def _valid_row_kind_counts(import_report: dict[str, Any]) -> tuple[int, int]:
     rows = list(import_report.get("validated_preview_rows") or [])
     real_count = len(_real_rows(rows))
@@ -848,6 +917,7 @@ def build_open_sports_history_coverage_report(*, base_data_dir: str | Path | Non
         season: int(rejected_session_counts.get(season, 0))
         for season in target_seasons
     }
+    target_label_coverage = _nfl_label_coverage(target_real_rows, target_seasons=target_seasons)
     target_coverage_percentage = round((len(target_seasons_validated) / max(1, len(target_seasons))) * 100, 2)
     target_coverage = {
         "source_id": NFLVERSE_NFL_TARGET_SOURCE_ID,
@@ -866,6 +936,15 @@ def build_open_sports_history_coverage_report(*, base_data_dir: str | Path | Non
         "incomplete_or_future_seasons": incomplete_or_future_seasons,
         "real_rows_by_season": target_real_rows_by_season,
         "rejected_rows_by_season": target_rejected_rows_by_season,
+        "game_type_present_count": target_label_coverage["game_type_present_count"],
+        "game_type_missing_count": target_label_coverage["game_type_missing_count"],
+        "game_type_missing_by_season": target_label_coverage["game_type_missing_by_season"],
+        "playoff_label_available_by_season": target_label_coverage["playoff_label_available_by_season"],
+        "super_bowl_label_available_by_season": target_label_coverage["super_bowl_label_available_by_season"],
+        "label_blockers_by_season": target_label_coverage["label_blockers_by_season"],
+        "label_enrichment_status": target_label_coverage["label_enrichment_status"],
+        "label_enrichment_blockers": target_label_coverage["label_enrichment_blockers"],
+        "missing_source_label_fields": target_label_coverage["missing_source_label_fields"],
         "source_completion_status": source_completion_status,
         "source_completion_status_blocker": source_completion_status_blocker,
         "coverage_percentage": target_coverage_percentage,
@@ -918,6 +997,16 @@ def build_open_sports_history_coverage_report(*, base_data_dir: str | Path | Non
         "real_rows_by_target_season": target_real_rows_by_season,
         "rejected_rows_by_season": target_rejected_rows_by_season,
         "rejected_rows_by_target_season": target_rejected_rows_by_season,
+        "game_type_present_count": target_label_coverage["game_type_present_count"],
+        "game_type_missing_count": target_label_coverage["game_type_missing_count"],
+        "game_type_present_by_season": target_label_coverage["game_type_present_by_season"],
+        "game_type_missing_by_season": target_label_coverage["game_type_missing_by_season"],
+        "playoff_label_available_by_season": target_label_coverage["playoff_label_available_by_season"],
+        "super_bowl_label_available_by_season": target_label_coverage["super_bowl_label_available_by_season"],
+        "label_blockers_by_season": target_label_coverage["label_blockers_by_season"],
+        "label_enrichment_status": target_label_coverage["label_enrichment_status"],
+        "label_enrichment_blockers": target_label_coverage["label_enrichment_blockers"],
+        "missing_source_label_fields": target_label_coverage["missing_source_label_fields"],
         "source_completion_status": source_completion_status,
         "source_completion_status_blocker": source_completion_status_blocker,
         "coverage_percentage": target_coverage_percentage,
@@ -966,7 +1055,11 @@ def render_open_sports_history_coverage_markdown(report: dict[str, Any]) -> str:
         f"8. nflverse_target_seasons: {', '.join(report.get('target_seasons') or [])}",
         f"9. nflverse_seasons_validated: {', '.join(report.get('seasons_validated') or []) if report.get('seasons_validated') else 'none'}",
         f"10. nflverse_coverage_percentage: {report.get('nflverse_nfl_coverage_percentage')}",
-        f"11. safety: provider_calls_attempted=0; downloads_attempted=0; provider_write=false; execution_allowed=false; raw_payload_included=false; secrets_included=false",
+        f"11. game_type_present_count: {report.get('game_type_present_count')}",
+        f"12. game_type_missing_count: {report.get('game_type_missing_count')}",
+        f"13. label_enrichment_status: {report.get('label_enrichment_status')}",
+        f"14. label_enrichment_blockers: {', '.join(report.get('label_enrichment_blockers') or []) if report.get('label_enrichment_blockers') else 'none'}",
+        f"15. safety: provider_calls_attempted=0; downloads_attempted=0; provider_write=false; execution_allowed=false; raw_payload_included=false; secrets_included=false",
         "",
     ]
     return "\n".join(lines)
@@ -1155,6 +1248,10 @@ def main(argv: list[str] | None = None) -> int:
                 "provider_calls_attempted": int(report.get("provider_calls_attempted", 0) or 0),
                 "provider_calls_succeeded": int(report.get("provider_calls_succeeded", 0) or 0),
                 "provider_calls_failed": int(report.get("provider_calls_failed", 0) or 0),
+                "game_type_present_count": report.get("game_type_present_count"),
+                "game_type_missing_count": report.get("game_type_missing_count"),
+                "label_enrichment_status": report.get("label_enrichment_status"),
+                "label_enrichment_blockers": report.get("label_enrichment_blockers"),
                 "enabled_source_count": 0,
                 "paid_source_enabled_count": 0,
                 "provider_write": False,

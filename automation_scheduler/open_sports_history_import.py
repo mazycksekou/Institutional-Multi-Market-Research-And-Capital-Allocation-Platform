@@ -83,6 +83,20 @@ SECRET_FIELD_MARKERS = (
 )
 PLACEHOLDER_VALUES = {"", "n/a", "na", "none", "null", "unknown", "tbd", "placeholder"}
 RECORD_LIST_KEYS = ("items", "records", "rows", "games", "events", "schedule", "results", "data")
+POSTSEASON_GAME_TYPES = {"WC", "DIV", "CON", "SB"}
+LABEL_ENRICHMENT_FIELDS = (
+    "game_type",
+    "season_type",
+    "postseason_flag",
+    "playoff_round",
+    "source_label_fields_present",
+)
+LABEL_VALUE_FIELDS = (
+    "game_type",
+    "season_type",
+    "postseason_flag",
+    "playoff_round",
+)
 
 COMMON_ALIASES = {
     "event_id": ("event_id", "game_id", "GAME_ID", "gameid", "old_game_id", "gsis_id", "id"),
@@ -468,6 +482,49 @@ def _derive_winner_and_result(
     return winner, result, final_margin, total_score
 
 
+def _clean_game_type(value: Any) -> str | None:
+    text = str(value or "").strip().upper()
+    return text if text else None
+
+
+def _explicit_bool(value: Any) -> bool | None:
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return None
+    text = str(value).strip().lower()
+    if text in {"true", "1", "yes", "y"}:
+        return True
+    if text in {"false", "0", "no", "n"}:
+        return False
+    return None
+
+
+def _explicit_label_fields(safe: dict[str, Any], game_type: Any) -> dict[str, Any]:
+    season_type = _first_value(safe, ("season_type",))
+    postseason_flag = _first_value(safe, ("postseason_flag", "playoff_flag", "is_postseason", "is_playoff"))
+    explicit_playoff_round = _first_value(safe, ("playoff_round", "postseason_round", "round_label"))
+    cleaned_game_type = _clean_game_type(game_type)
+    playoff_round = explicit_playoff_round
+    if not _real_value(playoff_round) and cleaned_game_type in POSTSEASON_GAME_TYPES:
+        playoff_round = cleaned_game_type
+    source_label_fields_present = any(
+        _real_value(value)
+        for value in (
+            game_type,
+            season_type,
+            postseason_flag,
+            explicit_playoff_round,
+        )
+    )
+    return {
+        "season_type": season_type,
+        "postseason_flag": _explicit_bool(postseason_flag),
+        "playoff_round": playoff_round,
+        "source_label_fields_present": bool(source_label_fields_present),
+    }
+
+
 def _empty_preview_row(
     *,
     module: str | None,
@@ -580,6 +637,7 @@ def normalize_open_sports_history_row(
     explicit_result = _first_value(safe, aliases["final_result"])
     week = _first_value(safe, aliases["week_or_round"])
     game_type = _first_value(safe, aliases.get("game_type", ("game_type", "season_type")))
+    label_fields = _explicit_label_fields(safe, game_type)
     row_season = _first_value(safe, aliases["season"]) or season
     if row_season is None and event_date:
         row_season = int(event_date[:4])
@@ -614,6 +672,10 @@ def normalize_open_sports_history_row(
         "season": row_season,
         "week_or_round": week,
         "game_type": game_type,
+        "season_type": label_fields["season_type"],
+        "postseason_flag": label_fields["postseason_flag"],
+        "playoff_round": label_fields["playoff_round"],
+        "source_label_fields_present": label_fields["source_label_fields_present"],
         "home_participant": home,
         "away_participant": away,
         "neutral_site": _first_value(safe, aliases["neutral_site"]),
@@ -1174,6 +1236,10 @@ COMPACT_ROW_FIELDS = (
     "season",
     "week_or_round",
     "game_type",
+    "season_type",
+    "postseason_flag",
+    "playoff_round",
+    "source_label_fields_present",
     "home_participant",
     "away_participant",
     "neutral_site",
@@ -1195,15 +1261,42 @@ COMPACT_ROW_FIELDS = (
 )
 
 
+def _has_label_value(row: dict[str, Any]) -> bool:
+    return any(_real_value(row.get(field)) for field in LABEL_VALUE_FIELDS)
+
+
+def _merge_duplicate_validated_row(existing: dict[str, Any], incoming: dict[str, Any]) -> dict[str, Any]:
+    merged = {field: existing.get(field) for field in COMPACT_ROW_FIELDS if field in existing}
+    for field in LABEL_ENRICHMENT_FIELDS:
+        if not _real_value(merged.get(field)) and _real_value(incoming.get(field)):
+            merged[field] = incoming.get(field)
+    if not _real_value(merged.get("source_url_kind")) and _real_value(incoming.get("source_url_kind")):
+        merged["source_url_kind"] = incoming.get("source_url_kind")
+    if not _real_value(merged.get("source_verified_at")) and _real_value(incoming.get("source_verified_at")):
+        merged["source_verified_at"] = incoming.get("source_verified_at")
+    if not _real_value(merged.get("source_record_hash")) and _real_value(incoming.get("source_record_hash")):
+        merged["source_record_hash"] = incoming.get("source_record_hash")
+    merged["source_label_fields_present"] = bool(_has_label_value(merged))
+    merged["raw_payload_included"] = False
+    return merged
+
+
 def _dedupe_validated_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     seen: set[tuple[str, str, str]] = set()
     out: list[dict[str, Any]] = []
+    index_by_key: dict[tuple[str, str, str], int] = {}
     for row in rows:
         key = (str(row.get("module") or ""), str(row.get("source_id") or ""), str(row.get("event_id") or ""))
         if not key[2] or key in seen:
+            if key in index_by_key:
+                out[index_by_key[key]] = _merge_duplicate_validated_row(out[index_by_key[key]], row)
             continue
         seen.add(key)
-        out.append({field: row.get(field) for field in COMPACT_ROW_FIELDS if field in row} | {"raw_payload_included": False})
+        index_by_key[key] = len(out)
+        compact = {field: row.get(field) for field in COMPACT_ROW_FIELDS if field in row}
+        compact["source_label_fields_present"] = bool(_has_label_value(compact))
+        compact["raw_payload_included"] = False
+        out.append(compact)
     return out
 
 

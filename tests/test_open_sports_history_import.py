@@ -362,11 +362,52 @@ class TestOpenSportsHistoryImport(unittest.TestCase):
         self.assertEqual(row["season"], "2024")
         self.assertEqual(row["week_or_round"], "1")
         self.assertEqual(row["game_type"], "REG")
+        self.assertTrue(row["source_label_fields_present"])
+        self.assertIsNone(row["playoff_round"])
         self.assertEqual(row["home_participant"], "KC")
         self.assertEqual(row["away_participant"], "BAL")
         self.assertEqual(row["winner"], "KC")
         self.assertEqual(row["final_margin"], 7)
         self.assertEqual(row["total_score"], 47)
+
+    def test_nflverse_postseason_label_fields_are_preserved_without_inference(self):
+        row = normalize_open_sports_history_row(
+            {
+                "game_id": "2024_SB_A_B",
+                "gameday": "2025-02-09",
+                "season": "2024",
+                "week": "22",
+                "game_type": "SB",
+                "home_team": "A",
+                "away_team": "B",
+                "home_score": "31",
+                "away_score": "24",
+            },
+            source_id="nflverse_nfl",
+            module="americanfootball_nfl",
+        )
+        no_label = normalize_open_sports_history_row(
+            {
+                "game_id": "2024_22_A_B",
+                "gameday": "2025-02-09",
+                "season": "2024",
+                "week": "22",
+                "home_team": "A",
+                "away_team": "B",
+                "home_score": "31",
+                "away_score": "24",
+            },
+            source_id="nflverse_nfl",
+            module="americanfootball_nfl",
+        )
+
+        self.assertEqual(row["game_type"], "SB")
+        self.assertEqual(row["playoff_round"], "SB")
+        self.assertTrue(row["source_label_fields_present"])
+        self.assertIsNone(row["postseason_flag"])
+        self.assertIsNone(no_label["game_type"])
+        self.assertIsNone(no_label["playoff_round"])
+        self.assertFalse(no_label["source_label_fields_present"])
 
     def test_nflverse_old_ids_and_point_aliases_work(self):
         row = normalize_open_sports_history_row(
@@ -462,6 +503,55 @@ class TestOpenSportsHistoryImport(unittest.TestCase):
         self.assertEqual(report["paid_source_enabled_count"], 0)
         self.assertFalse(report["provider_write"])
         self.assertFalse(report["execution_allowed"])
+
+    def test_persist_preview_enriches_duplicate_nflverse_event_labels_without_changing_scores(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            first_path = Path(tmp) / "nflverse_missing_label.csv"
+            self._write_csv(
+                first_path,
+                [
+                    {
+                        "game_id": "2024_01_BAL_KC",
+                        "gameday": "2024-09-05",
+                        "season": "2024",
+                        "week": "1",
+                        "home_team": "KC",
+                        "away_team": "BAL",
+                        "home_score": "27",
+                        "away_score": "20",
+                    }
+                ],
+            )
+            first = build_open_sports_history_import_report(source_id="nflverse_nfl", input_path=first_path, persist_preview=True, base_data_dir=tmp)
+            write_open_sports_history_import_report(first, base_data_dir=tmp)
+            second_path = Path(tmp) / "nflverse_with_label.csv"
+            self._write_csv(
+                second_path,
+                [
+                    {
+                        "game_id": "2024_01_BAL_KC",
+                        "gameday": "2024-09-05",
+                        "season": "2024",
+                        "week": "1",
+                        "game_type": "REG",
+                        "home_team": "KC",
+                        "away_team": "BAL",
+                        "home_score": "99",
+                        "away_score": "0",
+                    }
+                ],
+            )
+            second = build_open_sports_history_import_report(source_id="nflverse_nfl", input_path=second_path, persist_preview=True, base_data_dir=tmp)
+            write_open_sports_history_import_report(second, base_data_dir=tmp)
+            by_source = Path(tmp) / "data_sources" / "open_sports_history" / "validated" / "by_source" / "nflverse_nfl.json"
+            rows = json.loads(by_source.read_text(encoding="utf-8"))["validated_preview_rows"]
+
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["event_id"], "2024_01_BAL_KC")
+        self.assertEqual(rows[0]["game_type"], "REG")
+        self.assertTrue(rows[0]["source_label_fields_present"])
+        self.assertEqual(rows[0]["home_score"], 27)
+        self.assertEqual(rows[0]["away_score"], 20)
 
 
 if __name__ == "__main__":

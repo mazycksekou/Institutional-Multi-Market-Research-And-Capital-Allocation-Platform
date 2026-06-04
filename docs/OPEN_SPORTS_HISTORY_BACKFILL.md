@@ -173,6 +173,8 @@ The lab uses only safely derived schedule/result fields such as wins, losses, po
 
 The validation scorecard checks whether the profile set has enough real rows, numeric features, comparable profiles, and source-supported outcome labels to support future backtesting. It does not claim prediction, does not create betting/trading recommendations, and sets `no_predictive_claim=true`. Roster, injury/lineup, market, and advanced pace/efficiency features remain blocked until approved no-spend sources exist.
 
+When official nflverse schedule rows include compact label fields, the importer preserves `game_type`, `season_type`, explicit postseason flags, explicit playoff-round fields, and `source_label_fields_present`. Reprocessing a season can enrich an existing compact row by `event_id` with missing label fields only; dates, teams, scores, and results are not replaced during duplicate enrichment. Coverage reports expose `game_type_present_count`, `game_type_missing_count`, `game_type_missing_by_season`, label availability by season, and `label_enrichment_status`.
+
 Run:
 
 ```powershell

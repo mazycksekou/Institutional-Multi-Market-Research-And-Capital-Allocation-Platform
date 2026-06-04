@@ -200,7 +200,7 @@ def _explicit_bool(value: Any) -> bool | None:
 
 
 def derive_nfl_game_labels(row: dict[str, Any]) -> dict[str, Any]:
-    game_type = _clean_game_type(row.get("game_type"))
+    game_type = _clean_game_type(row.get("game_type") or row.get("season_type") or row.get("playoff_round"))
     blockers: list[str] = []
     if game_type:
         postseason_flag = game_type in POSTSEASON_GAME_TYPES
@@ -751,17 +751,42 @@ def _label_coverage_summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
     blockers: set[str] = set()
     playoff_methods: Counter[str] = Counter()
     super_bowl_methods: Counter[str] = Counter()
+    by_season: dict[str, dict[str, Any]] = defaultdict(
+        lambda: {
+            "rows": 0,
+            "playoff_label_coverage_count": 0,
+            "playoff_label_missing_count": 0,
+            "super_bowl_label_coverage_count": 0,
+            "super_bowl_label_missing_count": 0,
+            "game_type_present_count": 0,
+            "game_type_missing_count": 0,
+            "label_blockers": set(),
+        }
+    )
     for row in rows:
         labels = derive_nfl_game_labels(row)
+        season = str(row.get("season") or "unknown")
+        season_item = by_season[season]
+        season_item["rows"] += 1
+        if labels.get("game_type") is not None:
+            season_item["game_type_present_count"] += 1
+        else:
+            season_item["game_type_missing_count"] += 1
         if labels.get("playoff_round_label") is not None:
             playoff_coverage_count += 1
+            season_item["playoff_label_coverage_count"] += 1
             playoff_methods[str(labels.get("playoff_round_label_method") or "unknown")] += 1
         else:
+            season_item["playoff_label_missing_count"] += 1
+            season_item["label_blockers"].update(labels.get("label_blockers") or [])
             blockers.update(labels.get("label_blockers") or [])
         if labels.get("super_bowl_flag") is not None:
             super_bowl_coverage_count += 1
+            season_item["super_bowl_label_coverage_count"] += 1
             super_bowl_methods[str(labels.get("super_bowl_label_method") or "unknown")] += 1
         else:
+            season_item["super_bowl_label_missing_count"] += 1
+            season_item["label_blockers"].update(labels.get("label_blockers") or [])
             blockers.update(labels.get("label_blockers") or [])
     total = len(rows)
     playoff_missing_count = max(0, total - playoff_coverage_count)
@@ -773,6 +798,22 @@ def _label_coverage_summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
         blockers.add("super_bowl_label_missing")
     if playoff_missing_count or super_bowl_missing_count:
         blockers.add("insufficient_label_fields")
+    label_coverage_by_season: dict[str, dict[str, Any]] = {}
+    label_blockers_by_season: dict[str, list[str]] = {}
+    for season, item in sorted(by_season.items(), key=lambda pair: _season_key(pair[0])):
+        season_blockers = sorted({blocker for blocker in item["label_blockers"] if blocker in LABEL_BLOCKERS})
+        if item["playoff_label_missing_count"] or item["super_bowl_label_missing_count"]:
+            season_blockers = sorted(set(season_blockers) | {"insufficient_label_fields"})
+        label_coverage_by_season[season] = {
+            "rows": item["rows"],
+            "game_type_present_count": item["game_type_present_count"],
+            "game_type_missing_count": item["game_type_missing_count"],
+            "playoff_label_coverage_count": item["playoff_label_coverage_count"],
+            "playoff_label_missing_count": item["playoff_label_missing_count"],
+            "super_bowl_label_coverage_count": item["super_bowl_label_coverage_count"],
+            "super_bowl_label_missing_count": item["super_bowl_label_missing_count"],
+        }
+        label_blockers_by_season[season] = season_blockers
     return {
         "postseason_label_status": status,
         "playoff_label_coverage_count": playoff_coverage_count,
@@ -782,6 +823,8 @@ def _label_coverage_summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "playoff_round_label_method": "explicit_game_type" if playoff_methods else "unavailable",
         "super_bowl_label_method": "explicit_game_type" if super_bowl_methods else "unavailable",
         "label_blockers": sorted({blocker for blocker in blockers if blocker in LABEL_BLOCKERS}),
+        "label_coverage_by_season": label_coverage_by_season,
+        "label_blockers_by_season": label_blockers_by_season,
     }
 
 
@@ -912,9 +955,12 @@ def build_nfl_historical_pattern_lab_report(*, base_data_dir: str | Path | None 
         "super_bowl_label_method": label_summary["super_bowl_label_method"],
         "playoff_super_bowl_labels_available": label_summary["postseason_label_status"],
         "label_blockers": label_summary["label_blockers"],
+        "label_coverage_by_season": label_summary["label_coverage_by_season"],
+        "label_blockers_by_season": label_summary["label_blockers_by_season"],
         "validation_scorecard": validation_scorecard,
         "validation_status": validation_scorecard["validation_status"],
         "no_predictive_claim": True,
+        "no_fabricated_labels": True,
         "backtest_readiness_status": readiness_status,
         "predictive_claim_made": False,
         "betting_decision_made": False,
@@ -951,16 +997,18 @@ def render_nfl_pattern_lab_markdown(report: dict[str, Any]) -> str:
         f"10. super_bowl_label_coverage_count: {report.get('super_bowl_label_coverage_count')}",
         f"11. super_bowl_label_missing_count: {report.get('super_bowl_label_missing_count')}",
         f"12. label_blockers: {', '.join(report.get('label_blockers') or []) if report.get('label_blockers') else 'none'}",
-        f"13. similarity_features_available: {', '.join(report.get('similarity_features_available') or []) if report.get('similarity_features_available') else 'none'}",
-        f"14. similarity_features_blocked: {', '.join(report.get('similarity_features_blocked') or []) if report.get('similarity_features_blocked') else 'none'}",
-        f"15. validation_status: {scorecard.get('validation_status')}",
-        f"16. backtest_ready: {str(scorecard.get('backtest_ready')).lower()}",
-        "17. no_predictive_claim=true",
-        "18. raw_payload_included=false",
-        "19. secrets_included=false",
-        "20. provider_write=false",
-        "21. execution_allowed=false",
-        f"22. recommended_next_step: {report.get('recommended_next_step')}",
+        f"13. label_blockers_by_season: {json.dumps(report.get('label_blockers_by_season') or {}, sort_keys=True)}",
+        f"14. no_fabricated_labels: {str(report.get('no_fabricated_labels')).lower()}",
+        f"15. similarity_features_available: {', '.join(report.get('similarity_features_available') or []) if report.get('similarity_features_available') else 'none'}",
+        f"16. similarity_features_blocked: {', '.join(report.get('similarity_features_blocked') or []) if report.get('similarity_features_blocked') else 'none'}",
+        f"17. validation_status: {scorecard.get('validation_status')}",
+        f"18. backtest_ready: {str(scorecard.get('backtest_ready')).lower()}",
+        "19. no_predictive_claim=true",
+        "20. raw_payload_included=false",
+        "21. secrets_included=false",
+        "22. provider_write=false",
+        "23. execution_allowed=false",
+        f"24. recommended_next_step: {report.get('recommended_next_step')}",
         "",
     ]
     return "\n".join(lines)
@@ -1035,9 +1083,12 @@ def main(argv: list[str] | None = None) -> int:
                 "super_bowl_label_coverage_count": report["super_bowl_label_coverage_count"],
                 "super_bowl_label_missing_count": report["super_bowl_label_missing_count"],
                 "label_blockers": report["label_blockers"],
+                "label_coverage_by_season": report["label_coverage_by_season"],
+                "label_blockers_by_season": report["label_blockers_by_season"],
                 "playoff_super_bowl_labels_available": report["playoff_super_bowl_labels_available"],
                 "validation_scorecard": report["validation_scorecard"],
                 "no_predictive_claim": True,
+                "no_fabricated_labels": report["no_fabricated_labels"],
                 "backtest_readiness_status": report["backtest_readiness_status"],
                 "provider_calls_attempted": 0,
                 "downloads_attempted": 0,
