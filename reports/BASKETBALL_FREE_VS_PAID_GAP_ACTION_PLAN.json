@@ -1,0 +1,679 @@
+{
+  "action_rows": [
+    {
+      "action": "backfill_approved_seasons",
+      "allowed_action": true,
+      "calibration_impact": "anchors event identity, final result labels, rest windows, and score calibration joins",
+      "free_or_paid_category": "free_open_populated",
+      "lane_name": "schedule_results",
+      "reason": "One-season SportsDataverse schedule CSV sample is available with stable game/date/team/result fields.",
+      "sport": "basketball_nba"
+    },
+    {
+      "action": "backfill_approved_seasons",
+      "allowed_action": true,
+      "calibration_impact": "supports possession estimates, efficiency priors, and team-strength calibration",
+      "free_or_paid_category": "free_open_populated",
+      "lane_name": "team_box_scores",
+      "reason": "One-season team box score CSV sample validates team-game statistics.",
+      "sport": "basketball_nba"
+    },
+    {
+      "action": "backfill_approved_seasons",
+      "allowed_action": true,
+      "calibration_impact": "supports minutes/usage volatility, roster continuity, and player-impact calibration",
+      "free_or_paid_category": "free_open_populated",
+      "lane_name": "player_box_scores",
+      "reason": "One-season player box score CSV sample validates player-game statistics.",
+      "sport": "basketball_nba"
+    },
+    {
+      "action": "backfill_approved_seasons",
+      "allowed_action": true,
+      "calibration_impact": "enables possession segmentation, pace, foul/turnover context, and in-game state calibration",
+      "free_or_paid_category": "free_open_populated",
+      "lane_name": "play_by_play",
+      "reason": "One-season play-by-play CSV sample validates event-level basketball data.",
+      "sport": "basketball_nba"
+    },
+    {
+      "action": "backfill_approved_seasons",
+      "allowed_action": true,
+      "calibration_impact": "improves priors for rating strength, matchup efficiency, and probability calibration caps",
+      "free_or_paid_category": "free_open_populated",
+      "lane_name": "advanced_team_player_stats",
+      "reason": "Team season-stat release validates structured stat labels and values.",
+      "sport": "basketball_nba"
+    },
+    {
+      "action": "add_schema_field",
+      "allowed_action": true,
+      "calibration_impact": "core total/spread calibration input; reduces variance miscalibration for tempo-sensitive games",
+      "free_or_paid_category": "free_open_populated",
+      "lane_name": "pace_possessions",
+      "reason": "Possessions are derivable from verified team box score fields with provenance to the sampled source.",
+      "sport": "basketball_nba"
+    },
+    {
+      "action": "add_schema_field",
+      "allowed_action": true,
+      "calibration_impact": "adds shot-quality proxies and style context for totals/player-prop calibration",
+      "free_or_paid_category": "free_open_populated",
+      "lane_name": "shot_location",
+      "reason": "One-season shot CSV sample validates shot coordinate fields.",
+      "sport": "basketball_nba"
+    },
+    {
+      "action": "add_schema_field",
+      "allowed_action": true,
+      "calibration_impact": "supports foul-rate/free-throw-rate context after sufficient historical sample",
+      "free_or_paid_category": "free_open_populated",
+      "lane_name": "referee_official_assignments",
+      "reason": "One-season officials CSV sample validates official names/positions by game.",
+      "sport": "basketball_nba"
+    },
+    {
+      "action": "add_schema_field",
+      "allowed_action": true,
+      "calibration_impact": "material for fatigue-sensitive spread/totals calibration and stake-size confidence caps",
+      "free_or_paid_category": "free_open_populated",
+      "lane_name": "rest_travel_features",
+      "reason": "Rest/back-to-back features are derivable from verified dated schedule rows; travel distance remains estimate-only without venue coordinates.",
+      "sport": "basketball_nba"
+    },
+    {
+      "action": "add_schema_field",
+      "allowed_action": true,
+      "calibration_impact": "supports neutral/home-court and travel-context calibration",
+      "free_or_paid_category": "free_open_populated",
+      "lane_name": "arena_venue_features",
+      "reason": "Schedule samples expose venue and neutral-site fields.",
+      "sport": "basketball_nba"
+    },
+    {
+      "action": "add_schema_field",
+      "allowed_action": true,
+      "calibration_impact": "stabilizes player availability, minutes priors, and team continuity calibration",
+      "free_or_paid_category": "free_open_populated",
+      "lane_name": "roster_continuity",
+      "reason": "Game roster samples are available for one-season verification.",
+      "sport": "basketball_nba"
+    },
+    {
+      "action": "create_manual_import_template",
+      "allowed_action": true,
+      "calibration_impact": "high for player props, WNBA/NBA minutes, and college late-scratch uncertainty",
+      "free_or_paid_category": "free_open_manual_import_needed",
+      "lane_name": "injuries_availability",
+      "reason": "No policy-safe complete historical automated injury feed was verified; manual NBA/WNBA reports can be imported, college coverage needs a licensed vendor.",
+      "sport": "basketball_nba"
+    },
+    {
+      "action": "mark_paid_subscription_required",
+      "allowed_action": true,
+      "calibration_impact": "medium-high for player props and late-season roster uncertainty",
+      "free_or_paid_category": "paid_data_subscription_required",
+      "lane_name": "transaction_availability_volatility",
+      "reason": "Free releases validate rosters but not complete timestamped transaction volatility.",
+      "sport": "basketball_nba"
+    },
+    {
+      "action": "mark_paid_subscription_required",
+      "allowed_action": true,
+      "calibration_impact": "high for shot quality, lineup matchup, and player-prop calibration; not required for baseline game markets",
+      "free_or_paid_category": "paid_data_subscription_required",
+      "lane_name": "optical_tracking_player_location",
+      "reason": "True player/ball tracking is not available in the verified free release lanes.",
+      "sport": "basketball_nba"
+    },
+    {
+      "action": "mark_policy_blocked",
+      "allowed_action": true,
+      "calibration_impact": "not needed; open release lanes cover core box/schedule/play-by-play data",
+      "free_or_paid_category": "blocked_reference_or_restricted_source",
+      "lane_name": "restricted_reference_tables",
+      "reason": "User explicitly prohibited Basketball Reference, Sports Reference, and College Basketball Reference scraping.",
+      "sport": "basketball_nba"
+    },
+    {
+      "action": "mark_obsolete_or_duplicate",
+      "allowed_action": true,
+      "calibration_impact": "none; would add source drift without new calibration signal",
+      "free_or_paid_category": "obsolete_or_duplicate",
+      "lane_name": "duplicate_box_score_mirror_sources",
+      "reason": "Verified SportsDataverse release lanes already cover the same box-score surface with provenance.",
+      "sport": "basketball_nba"
+    },
+    {
+      "action": "escalate_manual_review",
+      "allowed_action": true,
+      "calibration_impact": "high for player impact and matchup calibration, but not required for baseline team markets",
+      "free_or_paid_category": "license_terms_unclear",
+      "lane_name": "lineup_on_off",
+      "reason": "nba_api documents lineup/on-off endpoints, but direct NBA Stats API path needs exact policy review before retrieval.",
+      "sport": "basketball_nba"
+    },
+    {
+      "action": "backfill_approved_seasons",
+      "allowed_action": true,
+      "calibration_impact": "anchors event identity, final result labels, rest windows, and score calibration joins",
+      "free_or_paid_category": "free_open_populated",
+      "lane_name": "schedule_results",
+      "reason": "One-season SportsDataverse schedule CSV sample is available with stable game/date/team/result fields.",
+      "sport": "basketball_wnba"
+    },
+    {
+      "action": "backfill_approved_seasons",
+      "allowed_action": true,
+      "calibration_impact": "supports possession estimates, efficiency priors, and team-strength calibration",
+      "free_or_paid_category": "free_open_populated",
+      "lane_name": "team_box_scores",
+      "reason": "One-season team box score CSV sample validates team-game statistics.",
+      "sport": "basketball_wnba"
+    },
+    {
+      "action": "backfill_approved_seasons",
+      "allowed_action": true,
+      "calibration_impact": "supports minutes/usage volatility, roster continuity, and player-impact calibration",
+      "free_or_paid_category": "free_open_populated",
+      "lane_name": "player_box_scores",
+      "reason": "One-season player box score CSV sample validates player-game statistics.",
+      "sport": "basketball_wnba"
+    },
+    {
+      "action": "backfill_approved_seasons",
+      "allowed_action": true,
+      "calibration_impact": "enables possession segmentation, pace, foul/turnover context, and in-game state calibration",
+      "free_or_paid_category": "free_open_populated",
+      "lane_name": "play_by_play",
+      "reason": "One-season play-by-play CSV sample validates event-level basketball data.",
+      "sport": "basketball_wnba"
+    },
+    {
+      "action": "backfill_approved_seasons",
+      "allowed_action": true,
+      "calibration_impact": "improves priors for rating strength, matchup efficiency, and probability calibration caps",
+      "free_or_paid_category": "free_open_populated",
+      "lane_name": "advanced_team_player_stats",
+      "reason": "Team season-stat release validates structured stat labels and values.",
+      "sport": "basketball_wnba"
+    },
+    {
+      "action": "add_schema_field",
+      "allowed_action": true,
+      "calibration_impact": "core total/spread calibration input; reduces variance miscalibration for tempo-sensitive games",
+      "free_or_paid_category": "free_open_populated",
+      "lane_name": "pace_possessions",
+      "reason": "Possessions are derivable from verified team box score fields with provenance to the sampled source.",
+      "sport": "basketball_wnba"
+    },
+    {
+      "action": "add_schema_field",
+      "allowed_action": true,
+      "calibration_impact": "adds shot-quality proxies and style context for totals/player-prop calibration",
+      "free_or_paid_category": "free_open_populated",
+      "lane_name": "shot_location",
+      "reason": "One-season shot CSV sample validates shot coordinate fields.",
+      "sport": "basketball_wnba"
+    },
+    {
+      "action": "add_schema_field",
+      "allowed_action": true,
+      "calibration_impact": "supports foul-rate/free-throw-rate context after sufficient historical sample",
+      "free_or_paid_category": "free_open_populated",
+      "lane_name": "referee_official_assignments",
+      "reason": "One-season officials CSV sample validates official names/positions by game.",
+      "sport": "basketball_wnba"
+    },
+    {
+      "action": "add_schema_field",
+      "allowed_action": true,
+      "calibration_impact": "material for fatigue-sensitive spread/totals calibration and stake-size confidence caps",
+      "free_or_paid_category": "free_open_populated",
+      "lane_name": "rest_travel_features",
+      "reason": "Rest/back-to-back features are derivable from verified dated schedule rows; travel distance remains estimate-only without venue coordinates.",
+      "sport": "basketball_wnba"
+    },
+    {
+      "action": "add_schema_field",
+      "allowed_action": true,
+      "calibration_impact": "supports neutral/home-court and travel-context calibration",
+      "free_or_paid_category": "free_open_populated",
+      "lane_name": "arena_venue_features",
+      "reason": "Schedule samples expose venue and neutral-site fields.",
+      "sport": "basketball_wnba"
+    },
+    {
+      "action": "add_schema_field",
+      "allowed_action": true,
+      "calibration_impact": "stabilizes player availability, minutes priors, and team continuity calibration",
+      "free_or_paid_category": "free_open_populated",
+      "lane_name": "roster_continuity",
+      "reason": "Game roster samples are available for one-season verification.",
+      "sport": "basketball_wnba"
+    },
+    {
+      "action": "create_manual_import_template",
+      "allowed_action": true,
+      "calibration_impact": "high for player props, WNBA/NBA minutes, and college late-scratch uncertainty",
+      "free_or_paid_category": "free_open_manual_import_needed",
+      "lane_name": "injuries_availability",
+      "reason": "No policy-safe complete historical automated injury feed was verified; manual NBA/WNBA reports can be imported, college coverage needs a licensed vendor.",
+      "sport": "basketball_wnba"
+    },
+    {
+      "action": "mark_paid_subscription_required",
+      "allowed_action": true,
+      "calibration_impact": "medium-high for player props and late-season roster uncertainty",
+      "free_or_paid_category": "paid_data_subscription_required",
+      "lane_name": "transaction_availability_volatility",
+      "reason": "Free releases validate rosters but not complete timestamped transaction volatility.",
+      "sport": "basketball_wnba"
+    },
+    {
+      "action": "mark_paid_subscription_required",
+      "allowed_action": true,
+      "calibration_impact": "high for shot quality, lineup matchup, and player-prop calibration; not required for baseline game markets",
+      "free_or_paid_category": "paid_data_subscription_required",
+      "lane_name": "optical_tracking_player_location",
+      "reason": "True player/ball tracking is not available in the verified free release lanes.",
+      "sport": "basketball_wnba"
+    },
+    {
+      "action": "mark_policy_blocked",
+      "allowed_action": true,
+      "calibration_impact": "not needed; open release lanes cover core box/schedule/play-by-play data",
+      "free_or_paid_category": "blocked_reference_or_restricted_source",
+      "lane_name": "restricted_reference_tables",
+      "reason": "User explicitly prohibited Basketball Reference, Sports Reference, and College Basketball Reference scraping.",
+      "sport": "basketball_wnba"
+    },
+    {
+      "action": "mark_obsolete_or_duplicate",
+      "allowed_action": true,
+      "calibration_impact": "none; would add source drift without new calibration signal",
+      "free_or_paid_category": "obsolete_or_duplicate",
+      "lane_name": "duplicate_box_score_mirror_sources",
+      "reason": "Verified SportsDataverse release lanes already cover the same box-score surface with provenance.",
+      "sport": "basketball_wnba"
+    },
+    {
+      "action": "backfill_approved_seasons",
+      "allowed_action": true,
+      "calibration_impact": "high for WNBA lineup continuity and player-prop calibration; historical depth still partial",
+      "free_or_paid_category": "free_open_partial",
+      "lane_name": "lineup_on_off",
+      "reason": "WNBA Stats lineup release has a current-season CSV sample; completed-season historical coverage still needs validation.",
+      "sport": "basketball_wnba"
+    },
+    {
+      "action": "backfill_approved_seasons",
+      "allowed_action": true,
+      "calibration_impact": "anchors event identity, final result labels, rest windows, and score calibration joins",
+      "free_or_paid_category": "free_open_populated",
+      "lane_name": "schedule_results",
+      "reason": "One-season SportsDataverse schedule CSV sample is available with stable game/date/team/result fields.",
+      "sport": "basketball_ncaab"
+    },
+    {
+      "action": "backfill_approved_seasons",
+      "allowed_action": true,
+      "calibration_impact": "supports possession estimates, efficiency priors, and team-strength calibration",
+      "free_or_paid_category": "free_open_populated",
+      "lane_name": "team_box_scores",
+      "reason": "One-season team box score CSV sample validates team-game statistics.",
+      "sport": "basketball_ncaab"
+    },
+    {
+      "action": "backfill_approved_seasons",
+      "allowed_action": true,
+      "calibration_impact": "supports minutes/usage volatility, roster continuity, and player-impact calibration",
+      "free_or_paid_category": "free_open_populated",
+      "lane_name": "player_box_scores",
+      "reason": "One-season player box score CSV sample validates player-game statistics.",
+      "sport": "basketball_ncaab"
+    },
+    {
+      "action": "backfill_approved_seasons",
+      "allowed_action": true,
+      "calibration_impact": "enables possession segmentation, pace, foul/turnover context, and in-game state calibration",
+      "free_or_paid_category": "free_open_populated",
+      "lane_name": "play_by_play",
+      "reason": "One-season play-by-play CSV sample validates event-level basketball data.",
+      "sport": "basketball_ncaab"
+    },
+    {
+      "action": "backfill_approved_seasons",
+      "allowed_action": true,
+      "calibration_impact": "improves priors for rating strength, matchup efficiency, and probability calibration caps",
+      "free_or_paid_category": "free_open_populated",
+      "lane_name": "advanced_team_player_stats",
+      "reason": "Team season-stat release validates structured stat labels and values.",
+      "sport": "basketball_ncaab"
+    },
+    {
+      "action": "add_schema_field",
+      "allowed_action": true,
+      "calibration_impact": "core total/spread calibration input; reduces variance miscalibration for tempo-sensitive games",
+      "free_or_paid_category": "free_open_populated",
+      "lane_name": "pace_possessions",
+      "reason": "Possessions are derivable from verified team box score fields with provenance to the sampled source.",
+      "sport": "basketball_ncaab"
+    },
+    {
+      "action": "add_schema_field",
+      "allowed_action": true,
+      "calibration_impact": "adds shot-quality proxies and style context for totals/player-prop calibration",
+      "free_or_paid_category": "free_open_populated",
+      "lane_name": "shot_location",
+      "reason": "One-season shot CSV sample validates shot coordinate fields.",
+      "sport": "basketball_ncaab"
+    },
+    {
+      "action": "add_schema_field",
+      "allowed_action": true,
+      "calibration_impact": "supports foul-rate/free-throw-rate context after sufficient historical sample",
+      "free_or_paid_category": "free_open_populated",
+      "lane_name": "referee_official_assignments",
+      "reason": "One-season officials CSV sample validates official names/positions by game.",
+      "sport": "basketball_ncaab"
+    },
+    {
+      "action": "add_schema_field",
+      "allowed_action": true,
+      "calibration_impact": "material for fatigue-sensitive spread/totals calibration and stake-size confidence caps",
+      "free_or_paid_category": "free_open_populated",
+      "lane_name": "rest_travel_features",
+      "reason": "Rest/back-to-back features are derivable from verified dated schedule rows; travel distance remains estimate-only without venue coordinates.",
+      "sport": "basketball_ncaab"
+    },
+    {
+      "action": "add_schema_field",
+      "allowed_action": true,
+      "calibration_impact": "supports neutral/home-court and travel-context calibration",
+      "free_or_paid_category": "free_open_populated",
+      "lane_name": "arena_venue_features",
+      "reason": "Schedule samples expose venue and neutral-site fields.",
+      "sport": "basketball_ncaab"
+    },
+    {
+      "action": "add_schema_field",
+      "allowed_action": true,
+      "calibration_impact": "stabilizes player availability, minutes priors, and team continuity calibration",
+      "free_or_paid_category": "free_open_populated",
+      "lane_name": "roster_continuity",
+      "reason": "Game roster samples are available for one-season verification.",
+      "sport": "basketball_ncaab"
+    },
+    {
+      "action": "mark_paid_subscription_required",
+      "allowed_action": true,
+      "calibration_impact": "high for player props, WNBA/NBA minutes, and college late-scratch uncertainty",
+      "free_or_paid_category": "paid_data_subscription_required",
+      "lane_name": "injuries_availability",
+      "reason": "No policy-safe complete historical automated injury feed was verified; manual NBA/WNBA reports can be imported, college coverage needs a licensed vendor.",
+      "sport": "basketball_ncaab"
+    },
+    {
+      "action": "mark_paid_subscription_required",
+      "allowed_action": true,
+      "calibration_impact": "medium-high for player props and late-season roster uncertainty",
+      "free_or_paid_category": "paid_data_subscription_required",
+      "lane_name": "transaction_availability_volatility",
+      "reason": "Free releases validate rosters but not complete timestamped transaction volatility.",
+      "sport": "basketball_ncaab"
+    },
+    {
+      "action": "mark_paid_subscription_required",
+      "allowed_action": true,
+      "calibration_impact": "high for shot quality, lineup matchup, and player-prop calibration; not required for baseline game markets",
+      "free_or_paid_category": "paid_data_subscription_required",
+      "lane_name": "optical_tracking_player_location",
+      "reason": "True player/ball tracking is not available in the verified free release lanes.",
+      "sport": "basketball_ncaab"
+    },
+    {
+      "action": "mark_policy_blocked",
+      "allowed_action": true,
+      "calibration_impact": "not needed; open release lanes cover core box/schedule/play-by-play data",
+      "free_or_paid_category": "blocked_reference_or_restricted_source",
+      "lane_name": "restricted_reference_tables",
+      "reason": "User explicitly prohibited Basketball Reference, Sports Reference, and College Basketball Reference scraping.",
+      "sport": "basketball_ncaab"
+    },
+    {
+      "action": "mark_obsolete_or_duplicate",
+      "allowed_action": true,
+      "calibration_impact": "none; would add source drift without new calibration signal",
+      "free_or_paid_category": "obsolete_or_duplicate",
+      "lane_name": "duplicate_box_score_mirror_sources",
+      "reason": "Verified SportsDataverse release lanes already cover the same box-score surface with provenance.",
+      "sport": "basketball_ncaab"
+    },
+    {
+      "action": "mark_paid_subscription_required",
+      "allowed_action": true,
+      "calibration_impact": "medium-high for player impact; not required for baseline college possession variance model",
+      "free_or_paid_category": "paid_data_subscription_required",
+      "lane_name": "lineup_on_off",
+      "reason": "No policy-safe free college lineup/on-off release was verified; licensed data is needed for reliable lineup continuity.",
+      "sport": "basketball_ncaab"
+    },
+    {
+      "action": "create_manual_import_template",
+      "allowed_action": true,
+      "calibration_impact": "high for college spread/moneyline calibration and moderate activation requirements",
+      "free_or_paid_category": "free_open_manual_import_needed",
+      "lane_name": "strength_of_schedule_context",
+      "reason": "Official NET tables are public but automated scraping is not enabled; manual snapshots can fill the lane.",
+      "sport": "basketball_ncaab"
+    },
+    {
+      "action": "add_schema_field",
+      "allowed_action": true,
+      "calibration_impact": "medium for college late-season and neutral-site calibration",
+      "free_or_paid_category": "free_open_populated",
+      "lane_name": "conference_tournament_context",
+      "reason": "Schedule samples expose conference/season-type/neutral-site fields usable for tournament context.",
+      "sport": "basketball_ncaab"
+    },
+    {
+      "action": "backfill_approved_seasons",
+      "allowed_action": true,
+      "calibration_impact": "anchors event identity, final result labels, rest windows, and score calibration joins",
+      "free_or_paid_category": "free_open_populated",
+      "lane_name": "schedule_results",
+      "reason": "One-season SportsDataverse schedule CSV sample is available with stable game/date/team/result fields.",
+      "sport": "basketball_ncaaw"
+    },
+    {
+      "action": "backfill_approved_seasons",
+      "allowed_action": true,
+      "calibration_impact": "supports possession estimates, efficiency priors, and team-strength calibration",
+      "free_or_paid_category": "free_open_populated",
+      "lane_name": "team_box_scores",
+      "reason": "One-season team box score CSV sample validates team-game statistics.",
+      "sport": "basketball_ncaaw"
+    },
+    {
+      "action": "backfill_approved_seasons",
+      "allowed_action": true,
+      "calibration_impact": "supports minutes/usage volatility, roster continuity, and player-impact calibration",
+      "free_or_paid_category": "free_open_populated",
+      "lane_name": "player_box_scores",
+      "reason": "One-season player box score CSV sample validates player-game statistics.",
+      "sport": "basketball_ncaaw"
+    },
+    {
+      "action": "backfill_approved_seasons",
+      "allowed_action": true,
+      "calibration_impact": "enables possession segmentation, pace, foul/turnover context, and in-game state calibration",
+      "free_or_paid_category": "free_open_populated",
+      "lane_name": "play_by_play",
+      "reason": "One-season play-by-play CSV sample validates event-level basketball data.",
+      "sport": "basketball_ncaaw"
+    },
+    {
+      "action": "backfill_approved_seasons",
+      "allowed_action": true,
+      "calibration_impact": "improves priors for rating strength, matchup efficiency, and probability calibration caps",
+      "free_or_paid_category": "free_open_populated",
+      "lane_name": "advanced_team_player_stats",
+      "reason": "Team season-stat release validates structured stat labels and values.",
+      "sport": "basketball_ncaaw"
+    },
+    {
+      "action": "add_schema_field",
+      "allowed_action": true,
+      "calibration_impact": "core total/spread calibration input; reduces variance miscalibration for tempo-sensitive games",
+      "free_or_paid_category": "free_open_populated",
+      "lane_name": "pace_possessions",
+      "reason": "Possessions are derivable from verified team box score fields with provenance to the sampled source.",
+      "sport": "basketball_ncaaw"
+    },
+    {
+      "action": "add_schema_field",
+      "allowed_action": true,
+      "calibration_impact": "adds shot-quality proxies and style context for totals/player-prop calibration",
+      "free_or_paid_category": "free_open_populated",
+      "lane_name": "shot_location",
+      "reason": "One-season shot CSV sample validates shot coordinate fields.",
+      "sport": "basketball_ncaaw"
+    },
+    {
+      "action": "add_schema_field",
+      "allowed_action": true,
+      "calibration_impact": "supports foul-rate/free-throw-rate context after sufficient historical sample",
+      "free_or_paid_category": "free_open_populated",
+      "lane_name": "referee_official_assignments",
+      "reason": "One-season officials CSV sample validates official names/positions by game.",
+      "sport": "basketball_ncaaw"
+    },
+    {
+      "action": "add_schema_field",
+      "allowed_action": true,
+      "calibration_impact": "material for fatigue-sensitive spread/totals calibration and stake-size confidence caps",
+      "free_or_paid_category": "free_open_populated",
+      "lane_name": "rest_travel_features",
+      "reason": "Rest/back-to-back features are derivable from verified dated schedule rows; travel distance remains estimate-only without venue coordinates.",
+      "sport": "basketball_ncaaw"
+    },
+    {
+      "action": "add_schema_field",
+      "allowed_action": true,
+      "calibration_impact": "supports neutral/home-court and travel-context calibration",
+      "free_or_paid_category": "free_open_populated",
+      "lane_name": "arena_venue_features",
+      "reason": "Schedule samples expose venue and neutral-site fields.",
+      "sport": "basketball_ncaaw"
+    },
+    {
+      "action": "add_schema_field",
+      "allowed_action": true,
+      "calibration_impact": "stabilizes player availability, minutes priors, and team continuity calibration",
+      "free_or_paid_category": "free_open_populated",
+      "lane_name": "roster_continuity",
+      "reason": "Game roster samples are available for one-season verification.",
+      "sport": "basketball_ncaaw"
+    },
+    {
+      "action": "mark_paid_subscription_required",
+      "allowed_action": true,
+      "calibration_impact": "high for player props, WNBA/NBA minutes, and college late-scratch uncertainty",
+      "free_or_paid_category": "paid_data_subscription_required",
+      "lane_name": "injuries_availability",
+      "reason": "No policy-safe complete historical automated injury feed was verified; manual NBA/WNBA reports can be imported, college coverage needs a licensed vendor.",
+      "sport": "basketball_ncaaw"
+    },
+    {
+      "action": "mark_paid_subscription_required",
+      "allowed_action": true,
+      "calibration_impact": "medium-high for player props and late-season roster uncertainty",
+      "free_or_paid_category": "paid_data_subscription_required",
+      "lane_name": "transaction_availability_volatility",
+      "reason": "Free releases validate rosters but not complete timestamped transaction volatility.",
+      "sport": "basketball_ncaaw"
+    },
+    {
+      "action": "mark_paid_subscription_required",
+      "allowed_action": true,
+      "calibration_impact": "high for shot quality, lineup matchup, and player-prop calibration; not required for baseline game markets",
+      "free_or_paid_category": "paid_data_subscription_required",
+      "lane_name": "optical_tracking_player_location",
+      "reason": "True player/ball tracking is not available in the verified free release lanes.",
+      "sport": "basketball_ncaaw"
+    },
+    {
+      "action": "mark_policy_blocked",
+      "allowed_action": true,
+      "calibration_impact": "not needed; open release lanes cover core box/schedule/play-by-play data",
+      "free_or_paid_category": "blocked_reference_or_restricted_source",
+      "lane_name": "restricted_reference_tables",
+      "reason": "User explicitly prohibited Basketball Reference, Sports Reference, and College Basketball Reference scraping.",
+      "sport": "basketball_ncaaw"
+    },
+    {
+      "action": "mark_obsolete_or_duplicate",
+      "allowed_action": true,
+      "calibration_impact": "none; would add source drift without new calibration signal",
+      "free_or_paid_category": "obsolete_or_duplicate",
+      "lane_name": "duplicate_box_score_mirror_sources",
+      "reason": "Verified SportsDataverse release lanes already cover the same box-score surface with provenance.",
+      "sport": "basketball_ncaaw"
+    },
+    {
+      "action": "mark_paid_subscription_required",
+      "allowed_action": true,
+      "calibration_impact": "medium-high for player impact; not required for baseline college possession variance model",
+      "free_or_paid_category": "paid_data_subscription_required",
+      "lane_name": "lineup_on_off",
+      "reason": "No policy-safe free college lineup/on-off release was verified; licensed data is needed for reliable lineup continuity.",
+      "sport": "basketball_ncaaw"
+    },
+    {
+      "action": "create_manual_import_template",
+      "allowed_action": true,
+      "calibration_impact": "high for college spread/moneyline calibration and moderate activation requirements",
+      "free_or_paid_category": "free_open_manual_import_needed",
+      "lane_name": "strength_of_schedule_context",
+      "reason": "Official NET tables are public but automated scraping is not enabled; manual snapshots can fill the lane.",
+      "sport": "basketball_ncaaw"
+    },
+    {
+      "action": "add_schema_field",
+      "allowed_action": true,
+      "calibration_impact": "medium for college late-season and neutral-site calibration",
+      "free_or_paid_category": "free_open_populated",
+      "lane_name": "conference_tournament_context",
+      "reason": "Schedule samples expose conference/season-type/neutral-site fields usable for tournament context.",
+      "sport": "basketball_ncaaw"
+    }
+  ],
+  "actual_bets_submitted": 0,
+  "actual_crypto_swaps_submitted": 0,
+  "actual_orders_submitted": 0,
+  "actual_trades_submitted": 0,
+  "auto_execution_enabled": false,
+  "broker_order_execution_enabled": false,
+  "created_at": "2026-06-05T03:30:50.517927+00:00",
+  "crypto_trade_execution_enabled": false,
+  "execution_allowed": false,
+  "execution_allowed_count": 0,
+  "gap_rows_total": 72,
+  "generic_unknown_action_count": 0,
+  "kalshi_order_execution_enabled": false,
+  "live_execution_enabled": false,
+  "ok": true,
+  "paid_source_enabled_count": 1,
+  "provider_write": false,
+  "raw_html_persisted": false,
+  "raw_payload_included": false,
+  "raw_screenshot_persisted": false,
+  "report_name": "BASKETBALL_FREE_VS_PAID_GAP_ACTION_PLAN",
+  "schema_version": "basketball_free_vs_paid_gap_action_plan_v1",
+  "secrets_included": false,
+  "sportsbook_bet_execution_enabled": false,
+  "status": "ok",
+  "stock_trade_execution_enabled": false,
+  "unresolved_or_partial_lane_count": 22
+}

@@ -1,0 +1,468 @@
+{
+  "actual_bets_submitted": 0,
+  "actual_crypto_swaps_submitted": 0,
+  "actual_orders_submitted": 0,
+  "actual_trades_submitted": 0,
+  "auto_execution_enabled": false,
+  "broker_order_execution_enabled": false,
+  "created_at": "2026-06-05T03:30:50.519109+00:00",
+  "crypto_trade_execution_enabled": false,
+  "execution_allowed": false,
+  "execution_allowed_count": 0,
+  "kalshi_order_execution_enabled": false,
+  "live_execution_enabled": false,
+  "models": [
+    {
+      "blocked_lanes": [
+        "restricted_reference_tables",
+        "lineup_on_off"
+      ],
+      "calibration_fields_impacted": [
+        "raw_model_probability",
+        "calibrated_model_probability",
+        "market_anchor_probability",
+        "probability_calibration_applied",
+        "probability_sanity_flags",
+        "probability_cap_reason"
+      ],
+      "confidence_stake_sizing_impact": "confidence capped by manual/paid availability lanes; NO_BET suggested_stake=0 preserved",
+      "current_usable_data_categories": [
+        "schedule_results",
+        "team_box_scores",
+        "player_box_scores",
+        "play_by_play",
+        "advanced_team_player_stats",
+        "pace_possessions",
+        "shot_location",
+        "referee_official_assignments",
+        "rest_travel_features",
+        "arena_venue_features",
+        "roster_continuity"
+      ],
+      "feature_groups_model_eligible": [
+        "schedule_results",
+        "team_box_scores",
+        "player_box_scores",
+        "play_by_play",
+        "advanced_team_player_stats",
+        "pace_possessions",
+        "shot_location",
+        "referee_official_assignments",
+        "rest_travel_features",
+        "arena_venue_features",
+        "roster_continuity"
+      ],
+      "feature_groups_not_model_eligible": [
+        "injuries_availability",
+        "transaction_availability_volatility",
+        "optical_tracking_player_location",
+        "restricted_reference_tables",
+        "lineup_on_off"
+      ],
+      "free_sources_requiring_loaders": [],
+      "free_sources_usable_now": [
+        "schedule_results",
+        "team_box_scores",
+        "player_box_scores",
+        "play_by_play",
+        "advanced_team_player_stats",
+        "pace_possessions",
+        "shot_location",
+        "referee_official_assignments",
+        "rest_travel_features",
+        "arena_venue_features",
+        "roster_continuity"
+      ],
+      "manual_import_lanes": [
+        "injuries_availability"
+      ],
+      "market_types_impacted": [
+        "moneyline",
+        "spread",
+        "totals",
+        "team totals",
+        "player props"
+      ],
+      "missing_data_categories": [
+        "injuries_availability",
+        "transaction_availability_volatility",
+        "optical_tracking_player_location",
+        "restricted_reference_tables",
+        "lineup_on_off"
+      ],
+      "model": "basketball_nba model/readiness path",
+      "model_inputs_currently_strong": [
+        "schedule_results",
+        "team_box_scores",
+        "play_by_play",
+        "pace_possessions"
+      ],
+      "model_inputs_currently_weak": [
+        "injuries_availability",
+        "transaction_availability_volatility",
+        "optical_tracking_player_location",
+        "restricted_reference_tables",
+        "lineup_on_off"
+      ],
+      "more_paid_data_materially_improves_accuracy": true,
+      "paid_sources_needed": [
+        "transaction_availability_volatility",
+        "optical_tracking_player_location"
+      ],
+      "production_ready": false,
+      "recommendation": "ready_but_paid_data_would_improve",
+      "sport": "basketball_nba"
+    },
+    {
+      "blocked_lanes": [
+        "restricted_reference_tables"
+      ],
+      "calibration_fields_impacted": [
+        "raw_model_probability",
+        "calibrated_model_probability",
+        "market_anchor_probability",
+        "probability_calibration_applied",
+        "probability_sanity_flags",
+        "probability_cap_reason"
+      ],
+      "confidence_stake_sizing_impact": "confidence capped by manual/paid availability lanes; NO_BET suggested_stake=0 preserved",
+      "current_usable_data_categories": [
+        "schedule_results",
+        "team_box_scores",
+        "player_box_scores",
+        "play_by_play",
+        "advanced_team_player_stats",
+        "pace_possessions",
+        "shot_location",
+        "referee_official_assignments",
+        "rest_travel_features",
+        "arena_venue_features",
+        "roster_continuity",
+        "lineup_on_off"
+      ],
+      "feature_groups_model_eligible": [
+        "schedule_results",
+        "team_box_scores",
+        "player_box_scores",
+        "play_by_play",
+        "advanced_team_player_stats",
+        "pace_possessions",
+        "shot_location",
+        "referee_official_assignments",
+        "rest_travel_features",
+        "arena_venue_features",
+        "roster_continuity",
+        "lineup_on_off"
+      ],
+      "feature_groups_not_model_eligible": [
+        "injuries_availability",
+        "transaction_availability_volatility",
+        "optical_tracking_player_location",
+        "restricted_reference_tables"
+      ],
+      "free_sources_requiring_loaders": [],
+      "free_sources_usable_now": [
+        "schedule_results",
+        "team_box_scores",
+        "player_box_scores",
+        "play_by_play",
+        "advanced_team_player_stats",
+        "pace_possessions",
+        "shot_location",
+        "referee_official_assignments",
+        "rest_travel_features",
+        "arena_venue_features",
+        "roster_continuity",
+        "lineup_on_off"
+      ],
+      "manual_import_lanes": [
+        "injuries_availability"
+      ],
+      "market_types_impacted": [
+        "moneyline",
+        "spread",
+        "totals",
+        "team totals",
+        "player props"
+      ],
+      "missing_data_categories": [
+        "injuries_availability",
+        "transaction_availability_volatility",
+        "optical_tracking_player_location",
+        "restricted_reference_tables"
+      ],
+      "model": "wnba_possession_rating_monte_carlo_model",
+      "model_inputs_currently_strong": [
+        "schedule_results",
+        "team_box_scores",
+        "play_by_play",
+        "pace_possessions"
+      ],
+      "model_inputs_currently_weak": [
+        "injuries_availability",
+        "transaction_availability_volatility",
+        "optical_tracking_player_location",
+        "restricted_reference_tables"
+      ],
+      "more_paid_data_materially_improves_accuracy": true,
+      "paid_sources_needed": [
+        "transaction_availability_volatility",
+        "optical_tracking_player_location"
+      ],
+      "production_ready": false,
+      "recommendation": "ready_but_paid_data_would_improve",
+      "sport": "basketball_wnba"
+    },
+    {
+      "blocked_lanes": [
+        "restricted_reference_tables"
+      ],
+      "calibration_fields_impacted": [
+        "raw_model_probability",
+        "calibrated_model_probability",
+        "market_anchor_probability",
+        "probability_calibration_applied",
+        "probability_sanity_flags",
+        "probability_cap_reason"
+      ],
+      "confidence_stake_sizing_impact": "confidence capped by manual/paid availability lanes; NO_BET suggested_stake=0 preserved",
+      "current_usable_data_categories": [
+        "schedule_results",
+        "team_box_scores",
+        "player_box_scores",
+        "play_by_play",
+        "advanced_team_player_stats",
+        "pace_possessions",
+        "shot_location",
+        "referee_official_assignments",
+        "rest_travel_features",
+        "arena_venue_features",
+        "roster_continuity",
+        "conference_tournament_context"
+      ],
+      "feature_groups_model_eligible": [
+        "schedule_results",
+        "team_box_scores",
+        "player_box_scores",
+        "play_by_play",
+        "advanced_team_player_stats",
+        "pace_possessions",
+        "shot_location",
+        "referee_official_assignments",
+        "rest_travel_features",
+        "arena_venue_features",
+        "roster_continuity",
+        "conference_tournament_context"
+      ],
+      "feature_groups_not_model_eligible": [
+        "injuries_availability",
+        "transaction_availability_volatility",
+        "optical_tracking_player_location",
+        "restricted_reference_tables",
+        "lineup_on_off",
+        "strength_of_schedule_context"
+      ],
+      "free_sources_requiring_loaders": [],
+      "free_sources_usable_now": [
+        "schedule_results",
+        "team_box_scores",
+        "player_box_scores",
+        "play_by_play",
+        "advanced_team_player_stats",
+        "pace_possessions",
+        "shot_location",
+        "referee_official_assignments",
+        "rest_travel_features",
+        "arena_venue_features",
+        "roster_continuity",
+        "conference_tournament_context"
+      ],
+      "manual_import_lanes": [
+        "strength_of_schedule_context"
+      ],
+      "market_types_impacted": [
+        "moneyline",
+        "spread",
+        "totals",
+        "team totals",
+        "player props"
+      ],
+      "missing_data_categories": [
+        "injuries_availability",
+        "transaction_availability_volatility",
+        "optical_tracking_player_location",
+        "restricted_reference_tables",
+        "lineup_on_off",
+        "strength_of_schedule_context"
+      ],
+      "model": "mens_college_basketball_possession_variance_model",
+      "model_inputs_currently_strong": [
+        "schedule_results",
+        "team_box_scores",
+        "play_by_play",
+        "pace_possessions"
+      ],
+      "model_inputs_currently_weak": [
+        "injuries_availability",
+        "transaction_availability_volatility",
+        "optical_tracking_player_location",
+        "restricted_reference_tables",
+        "lineup_on_off",
+        "strength_of_schedule_context"
+      ],
+      "more_paid_data_materially_improves_accuracy": true,
+      "paid_sources_needed": [
+        "injuries_availability",
+        "transaction_availability_volatility",
+        "optical_tracking_player_location",
+        "lineup_on_off"
+      ],
+      "production_ready": false,
+      "recommendation": "manual_import_needed",
+      "sport": "basketball_ncaab"
+    },
+    {
+      "blocked_lanes": [
+        "restricted_reference_tables"
+      ],
+      "calibration_fields_impacted": [
+        "raw_model_probability",
+        "calibrated_model_probability",
+        "market_anchor_probability",
+        "probability_calibration_applied",
+        "probability_sanity_flags",
+        "probability_cap_reason"
+      ],
+      "confidence_stake_sizing_impact": "confidence capped by manual/paid availability lanes; NO_BET suggested_stake=0 preserved",
+      "current_usable_data_categories": [
+        "schedule_results",
+        "team_box_scores",
+        "player_box_scores",
+        "play_by_play",
+        "advanced_team_player_stats",
+        "pace_possessions",
+        "shot_location",
+        "referee_official_assignments",
+        "rest_travel_features",
+        "arena_venue_features",
+        "roster_continuity",
+        "conference_tournament_context"
+      ],
+      "feature_groups_model_eligible": [
+        "schedule_results",
+        "team_box_scores",
+        "player_box_scores",
+        "play_by_play",
+        "advanced_team_player_stats",
+        "pace_possessions",
+        "shot_location",
+        "referee_official_assignments",
+        "rest_travel_features",
+        "arena_venue_features",
+        "roster_continuity",
+        "conference_tournament_context"
+      ],
+      "feature_groups_not_model_eligible": [
+        "injuries_availability",
+        "transaction_availability_volatility",
+        "optical_tracking_player_location",
+        "restricted_reference_tables",
+        "lineup_on_off",
+        "strength_of_schedule_context"
+      ],
+      "free_sources_requiring_loaders": [],
+      "free_sources_usable_now": [
+        "schedule_results",
+        "team_box_scores",
+        "player_box_scores",
+        "play_by_play",
+        "advanced_team_player_stats",
+        "pace_possessions",
+        "shot_location",
+        "referee_official_assignments",
+        "rest_travel_features",
+        "arena_venue_features",
+        "roster_continuity",
+        "conference_tournament_context"
+      ],
+      "manual_import_lanes": [
+        "strength_of_schedule_context"
+      ],
+      "market_types_impacted": [
+        "moneyline",
+        "spread",
+        "totals",
+        "team totals",
+        "player props"
+      ],
+      "missing_data_categories": [
+        "injuries_availability",
+        "transaction_availability_volatility",
+        "optical_tracking_player_location",
+        "restricted_reference_tables",
+        "lineup_on_off",
+        "strength_of_schedule_context"
+      ],
+      "model": "womens_college_basketball_possession_variance_model",
+      "model_inputs_currently_strong": [
+        "schedule_results",
+        "team_box_scores",
+        "play_by_play",
+        "pace_possessions"
+      ],
+      "model_inputs_currently_weak": [
+        "injuries_availability",
+        "transaction_availability_volatility",
+        "optical_tracking_player_location",
+        "restricted_reference_tables",
+        "lineup_on_off",
+        "strength_of_schedule_context"
+      ],
+      "more_paid_data_materially_improves_accuracy": true,
+      "paid_sources_needed": [
+        "injuries_availability",
+        "transaction_availability_volatility",
+        "optical_tracking_player_location",
+        "lineup_on_off"
+      ],
+      "production_ready": false,
+      "recommendation": "manual_import_needed",
+      "sport": "basketball_ncaaw"
+    }
+  ],
+  "ok": true,
+  "paid_required_count": 12,
+  "paid_source_enabled_count": 1,
+  "preserved_model_behavior": {
+    "NO_BET_suggested_stake_zero": true,
+    "calibration_fields": [
+      "raw_model_probability",
+      "calibrated_model_probability",
+      "market_anchor_probability",
+      "probability_calibration_applied",
+      "probability_sanity_flags",
+      "probability_cap_reason"
+    ],
+    "confirmed_bets_no_bets_mutual_exclusivity": true,
+    "missing_partial_bad_input_no_500": true,
+    "odds_stability": true,
+    "preservation_evidence": [
+      "tests/test_nba_model_activation.py",
+      "tests/test_wnba_model_activation.py",
+      "tests/test_mens_college_basketball_model_activation.py",
+      "tests/test_womens_college_basketball_model_activation.py",
+      "tests/test_screenshot_analysis.py"
+    ],
+    "screenshot_analysis_parity": true
+  },
+  "provider_write": false,
+  "raw_html_persisted": false,
+  "raw_payload_included": false,
+  "raw_screenshot_persisted": false,
+  "report_name": "BASKETBALL_DATA_CALIBRATION_READINESS_REPORT",
+  "schema_version": "basketball_data_calibration_readiness_v1",
+  "secrets_included": false,
+  "sportsbook_bet_execution_enabled": false,
+  "status": "ok",
+  "stock_trade_execution_enabled": false
+}

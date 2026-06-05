@@ -1,0 +1,1837 @@
+{
+  "NBA_sample_result": {
+    "records_tested": 33,
+    "sample_blocked_count": 6,
+    "sample_no_records_count": 0,
+    "sample_verified_count": 11
+  },
+  "NBA_verdict": "ready_but_paid_data_would_improve",
+  "NCAAB_sample_result": {
+    "records_tested": 36,
+    "sample_blocked_count": 7,
+    "sample_no_records_count": 0,
+    "sample_verified_count": 12
+  },
+  "NCAAB_verdict": "manual_import_needed",
+  "NCAAW_sample_result": {
+    "records_tested": 36,
+    "sample_blocked_count": 7,
+    "sample_no_records_count": 0,
+    "sample_verified_count": 12
+  },
+  "NCAAW_verdict": "manual_import_needed",
+  "WNBA_sample_result": {
+    "records_tested": 36,
+    "sample_blocked_count": 5,
+    "sample_no_records_count": 0,
+    "sample_verified_count": 12
+  },
+  "WNBA_verdict": "ready_but_paid_data_would_improve",
+  "actual_bets_submitted": 0,
+  "actual_crypto_swaps_submitted": 0,
+  "actual_orders_submitted": 0,
+  "actual_trades_submitted": 0,
+  "auto_execution_enabled": false,
+  "branch_name": "basketball-free-vs-paid-calibration-readiness",
+  "broker_order_execution_enabled": false,
+  "calibration_readiness_report_path": "reports/BASKETBALL_DATA_CALIBRATION_READINESS_REPORT.json",
+  "commit_hash": "57a78cb31345b558293f926172ba4555ff76aa94",
+  "created_at": "2026-06-05T03:30:50.519109+00:00",
+  "crypto_trade_execution_enabled": false,
+  "current_NBA_readiness_recommendation": "ready_but_paid_data_would_improve",
+  "current_NCAAB_readiness_recommendation": "manual_import_needed",
+  "current_NCAAW_readiness_recommendation": "manual_import_needed",
+  "current_WNBA_readiness_recommendation": "ready_but_paid_data_would_improve",
+  "execution_allowed": false,
+  "execution_allowed_count": 0,
+  "fields_closed_count": 292,
+  "fields_missing_count": 90,
+  "fields_partial_count": 7,
+  "fields_total": 389,
+  "files_changed": [
+    "automation_scheduler/basketball_active_source_discovery.py",
+    "automation_scheduler/basketball_free_vs_paid_readiness.py",
+    "automation_scheduler/basketball_schema_expansion.py",
+    "automation_scheduler/basketball_source_discovery_policy.py",
+    "automation_scheduler/basketball_source_discovery_query_builder.py",
+    "automation_scheduler/nba_free_data_loader.py",
+    "automation_scheduler/nba_sample_verifier.py",
+    "automation_scheduler/nba_schema_expansion.py",
+    "automation_scheduler/ncaab_free_data_loader.py",
+    "automation_scheduler/ncaab_sample_verifier.py",
+    "automation_scheduler/ncaab_schema_expansion.py",
+    "automation_scheduler/ncaaw_free_data_loader.py",
+    "automation_scheduler/ncaaw_sample_verifier.py",
+    "automation_scheduler/ncaaw_schema_expansion.py",
+    "automation_scheduler/wnba_free_data_loader.py",
+    "automation_scheduler/wnba_sample_verifier.py",
+    "automation_scheduler/wnba_schema_expansion.py",
+    "data/manual_import_templates/nba_remaining_fields_template.csv",
+    "data/manual_import_templates/ncaab_remaining_fields_template.csv",
+    "data/manual_import_templates/ncaaw_remaining_fields_template.csv",
+    "data/manual_import_templates/wnba_remaining_fields_template.csv",
+    "docs/MANUAL_IMPORT_TEMPLATES_BASKETBALL.md",
+    "reports/BASKETBALL_ACTIVE_SOURCE_DISCOVERY_LOG.json",
+    "reports/BASKETBALL_ACTIVE_SOURCE_DISCOVERY_LOG.md",
+    "reports/BASKETBALL_ARCHITECTURE_INVENTORY.json",
+    "reports/BASKETBALL_ARCHITECTURE_INVENTORY.md",
+    "reports/BASKETBALL_DATA_CALIBRATION_READINESS_REPORT.json",
+    "reports/BASKETBALL_DATA_CALIBRATION_READINESS_REPORT.md",
+    "reports/BASKETBALL_FREE_VS_PAID_FINAL_REPORT.json",
+    "reports/BASKETBALL_FREE_VS_PAID_FINAL_REPORT.md",
+    "reports/BASKETBALL_FREE_VS_PAID_GAP_ACTION_PLAN.json",
+    "reports/BASKETBALL_FREE_VS_PAID_GAP_ACTION_PLAN.md",
+    "reports/BASKETBALL_FREE_VS_PAID_SOURCE_LEDGER.json",
+    "reports/BASKETBALL_FREE_VS_PAID_SOURCE_LEDGER.md",
+    "reports/BASKETBALL_PAID_DATA_REQUIREMENT_MATRIX.json",
+    "reports/BASKETBALL_PAID_DATA_REQUIREMENT_MATRIX.md",
+    "reports/BASKETBALL_SCHEMA_EXPANSION_REPORT.json",
+    "reports/BASKETBALL_SCHEMA_EXPANSION_REPORT.md",
+    "reports/BASKETBALL_TARGETED_SAMPLE_VERIFICATION_RESULTS.json",
+    "reports/BASKETBALL_TARGETED_SAMPLE_VERIFICATION_RESULTS.md",
+    "tests/test_basketball_active_source_discovery.py",
+    "tests/test_basketball_architecture_inventory.py",
+    "tests/test_basketball_data_calibration_readiness_report.py",
+    "tests/test_basketball_free_vs_paid_final_report.py",
+    "tests/test_basketball_free_vs_paid_source_ledger.py",
+    "tests/test_basketball_gap_action_plan.py",
+    "tests/test_basketball_paid_data_requirement_matrix.py",
+    "tests/test_basketball_schema_expansion.py",
+    "tests/test_basketball_source_discovery_policy.py",
+    "tests/test_basketball_source_discovery_query_builder.py",
+    "tests/test_basketball_targeted_sample_verification.py",
+    "tests/test_nba_free_data_loader.py",
+    "tests/test_nba_sample_verifier.py",
+    "tests/test_nba_schema_expansion.py",
+    "tests/test_ncaab_free_data_loader.py",
+    "tests/test_ncaab_sample_verifier.py",
+    "tests/test_ncaab_schema_expansion.py",
+    "tests/test_ncaaw_free_data_loader.py",
+    "tests/test_ncaaw_sample_verifier.py",
+    "tests/test_ncaaw_schema_expansion.py",
+    "tests/test_wnba_free_data_loader.py",
+    "tests/test_wnba_sample_verifier.py",
+    "tests/test_wnba_schema_expansion.py"
+  ],
+  "free_open_loader_needed_count": 0,
+  "free_open_manual_import_needed_count": 4,
+  "free_open_partial_count": 1,
+  "free_open_populated_count": 46,
+  "free_open_sample_required_count": 0,
+  "kalshi_order_execution_enabled": false,
+  "lanes_now_loader_ready": [
+    "advanced_team_player_stats",
+    "arena_venue_features",
+    "conference_tournament_context",
+    "lineup_on_off",
+    "pace_possessions",
+    "play_by_play",
+    "player_box_scores",
+    "referee_official_assignments",
+    "rest_travel_features",
+    "roster_continuity",
+    "schedule_results",
+    "shot_location",
+    "team_box_scores"
+  ],
+  "lanes_now_populated": [
+    "advanced_team_player_stats",
+    "arena_venue_features",
+    "conference_tournament_context",
+    "pace_possessions",
+    "play_by_play",
+    "player_box_scores",
+    "referee_official_assignments",
+    "rest_travel_features",
+    "roster_continuity",
+    "schedule_results",
+    "shot_location",
+    "team_box_scores"
+  ],
+  "lanes_requiring_manual_import": [
+    "injuries_availability",
+    "strength_of_schedule_context"
+  ],
+  "lanes_requiring_paid_data": [
+    "injuries_availability",
+    "lineup_on_off",
+    "optical_tracking_player_location",
+    "transaction_availability_volatility"
+  ],
+  "license_terms_unclear_count": 1,
+  "live_execution_enabled": false,
+  "manual_templates_added_or_updated": [
+    "data/manual_import_templates/nba_remaining_fields_template.csv",
+    "data/manual_import_templates/wnba_remaining_fields_template.csv",
+    "data/manual_import_templates/ncaab_remaining_fields_template.csv",
+    "data/manual_import_templates/ncaaw_remaining_fields_template.csv"
+  ],
+  "new_fields_created": 53,
+  "new_fields_created_entries": [
+    {
+      "confidence": "high",
+      "coverage_end": "2025",
+      "coverage_start": "2025",
+      "cutoff_safe": true,
+      "data_type": "string",
+      "description": "possession_estimate_source derived from pace/possessions for NBA",
+      "entity_level": "team_game",
+      "field_catalog_entry": {
+        "field_name": "possession_estimate_source",
+        "module": "basketball_nba",
+        "source_family": "espn_nba_team_boxscores",
+        "table": "basketball_possession_context"
+      },
+      "field_name": "possession_estimate_source",
+      "future_leakage_risk": "low_if_joined_by_game_start",
+      "license_or_terms_note": "Free/open GitHub release assets; upstream ESPN/NBA/WNBA/NCAA terms still require conservative normalized-use review.",
+      "model_eligible": true,
+      "report_entry": true,
+      "retrieval_method": "github_release_csv_range_read",
+      "source_id": "espn_nba_team_boxscores",
+      "source_url_hash": "f11c5751ba1b282d631b80c921e7a6f1d1387b69a661c737698a840d2eb23cdc",
+      "sport": "basketball_nba",
+      "table": "basketball_possession_context",
+      "tests": [
+        "tests/test_basketball_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "2025",
+      "coverage_start": "2025",
+      "cutoff_safe": true,
+      "data_type": "float",
+      "description": "pace_stability derived from pace/possessions for NBA",
+      "entity_level": "team_game",
+      "field_catalog_entry": {
+        "field_name": "pace_stability",
+        "module": "basketball_nba",
+        "source_family": "espn_nba_team_boxscores",
+        "table": "basketball_possession_context"
+      },
+      "field_name": "pace_stability",
+      "future_leakage_risk": "low_if_joined_by_game_start",
+      "license_or_terms_note": "Free/open GitHub release assets; upstream ESPN/NBA/WNBA/NCAA terms still require conservative normalized-use review.",
+      "model_eligible": true,
+      "report_entry": true,
+      "retrieval_method": "github_release_csv_range_read",
+      "source_id": "espn_nba_team_boxscores",
+      "source_url_hash": "f11c5751ba1b282d631b80c921e7a6f1d1387b69a661c737698a840d2eb23cdc",
+      "sport": "basketball_nba",
+      "table": "basketball_possession_context",
+      "tests": [
+        "tests/test_basketball_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "2025",
+      "coverage_start": "2025",
+      "cutoff_safe": true,
+      "data_type": "float",
+      "description": "shot_quality_proxy derived from shot location/shot chart data for NBA",
+      "entity_level": "shot",
+      "field_catalog_entry": {
+        "field_name": "shot_quality_proxy",
+        "module": "basketball_nba",
+        "source_family": "espn_nba_shots",
+        "table": "basketball_shot_context"
+      },
+      "field_name": "shot_quality_proxy",
+      "future_leakage_risk": "low_if_joined_by_game_start",
+      "license_or_terms_note": "Free/open GitHub release assets; upstream ESPN/NBA/WNBA/NCAA terms still require conservative normalized-use review.",
+      "model_eligible": true,
+      "report_entry": true,
+      "retrieval_method": "github_release_csv_range_read",
+      "source_id": "espn_nba_shots",
+      "source_url_hash": "bbaec214a1c3cf2a2e03e1b9637f917e3457d8c7cf20e91a254629fe3c6aec49",
+      "sport": "basketball_nba",
+      "table": "basketball_shot_context",
+      "tests": [
+        "tests/test_basketball_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "2025",
+      "coverage_start": "2025",
+      "cutoff_safe": true,
+      "data_type": "string",
+      "description": "referee_crew_id derived from referee/official assignments for NBA",
+      "entity_level": "official_game",
+      "field_catalog_entry": {
+        "field_name": "referee_crew_id",
+        "module": "basketball_nba",
+        "source_family": "espn_nba_officials",
+        "table": "basketball_official_assignments"
+      },
+      "field_name": "referee_crew_id",
+      "future_leakage_risk": "low_if_joined_by_game_start",
+      "license_or_terms_note": "Free/open GitHub release assets; upstream ESPN/NBA/WNBA/NCAA terms still require conservative normalized-use review.",
+      "model_eligible": true,
+      "report_entry": true,
+      "retrieval_method": "github_release_csv_range_read",
+      "source_id": "espn_nba_officials",
+      "source_url_hash": "825c645fbe6f9d4f662b83209f9b6c9802061978e16121fdf6b922d72f8aa070",
+      "sport": "basketball_nba",
+      "table": "basketball_official_assignments",
+      "tests": [
+        "tests/test_basketball_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "2025",
+      "coverage_start": "2025",
+      "cutoff_safe": true,
+      "data_type": "string",
+      "description": "referee_tendency_candidates derived from referee/official assignments for NBA",
+      "entity_level": "official_game",
+      "field_catalog_entry": {
+        "field_name": "referee_tendency_candidates",
+        "module": "basketball_nba",
+        "source_family": "espn_nba_officials",
+        "table": "basketball_official_assignments"
+      },
+      "field_name": "referee_tendency_candidates",
+      "future_leakage_risk": "low_if_joined_by_game_start",
+      "license_or_terms_note": "Free/open GitHub release assets; upstream ESPN/NBA/WNBA/NCAA terms still require conservative normalized-use review.",
+      "model_eligible": true,
+      "report_entry": true,
+      "retrieval_method": "github_release_csv_range_read",
+      "source_id": "espn_nba_officials",
+      "source_url_hash": "825c645fbe6f9d4f662b83209f9b6c9802061978e16121fdf6b922d72f8aa070",
+      "sport": "basketball_nba",
+      "table": "basketball_official_assignments",
+      "tests": [
+        "tests/test_basketball_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "2025",
+      "coverage_start": "2025",
+      "cutoff_safe": true,
+      "data_type": "string",
+      "description": "rest_disadvantage derived from rest/back-to-back/travel features for NBA",
+      "entity_level": "team_game",
+      "field_catalog_entry": {
+        "field_name": "rest_disadvantage",
+        "module": "basketball_nba",
+        "source_family": "espn_nba_schedules",
+        "table": "basketball_schedule_context_features"
+      },
+      "field_name": "rest_disadvantage",
+      "future_leakage_risk": "low_if_joined_by_game_start",
+      "license_or_terms_note": "Free/open GitHub release assets; upstream ESPN/NBA/WNBA/NCAA terms still require conservative normalized-use review.",
+      "model_eligible": true,
+      "report_entry": true,
+      "retrieval_method": "github_release_csv_range_read",
+      "source_id": "espn_nba_schedules",
+      "source_url_hash": "ca54f22134517366a824d24596db97029ab84ab663a319579365743b21038db5",
+      "sport": "basketball_nba",
+      "table": "basketball_schedule_context_features",
+      "tests": [
+        "tests/test_basketball_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "2025",
+      "coverage_start": "2025",
+      "cutoff_safe": true,
+      "data_type": "boolean",
+      "description": "back_to_back_flag derived from rest/back-to-back/travel features for NBA",
+      "entity_level": "team_game",
+      "field_catalog_entry": {
+        "field_name": "back_to_back_flag",
+        "module": "basketball_nba",
+        "source_family": "espn_nba_schedules",
+        "table": "basketball_schedule_context_features"
+      },
+      "field_name": "back_to_back_flag",
+      "future_leakage_risk": "low_if_joined_by_game_start",
+      "license_or_terms_note": "Free/open GitHub release assets; upstream ESPN/NBA/WNBA/NCAA terms still require conservative normalized-use review.",
+      "model_eligible": true,
+      "report_entry": true,
+      "retrieval_method": "github_release_csv_range_read",
+      "source_id": "espn_nba_schedules",
+      "source_url_hash": "ca54f22134517366a824d24596db97029ab84ab663a319579365743b21038db5",
+      "sport": "basketball_nba",
+      "table": "basketball_schedule_context_features",
+      "tests": [
+        "tests/test_basketball_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "2025",
+      "coverage_start": "2025",
+      "cutoff_safe": true,
+      "data_type": "boolean",
+      "description": "three_in_four_nights_flag derived from rest/back-to-back/travel features for NBA",
+      "entity_level": "team_game",
+      "field_catalog_entry": {
+        "field_name": "three_in_four_nights_flag",
+        "module": "basketball_nba",
+        "source_family": "espn_nba_schedules",
+        "table": "basketball_schedule_context_features"
+      },
+      "field_name": "three_in_four_nights_flag",
+      "future_leakage_risk": "low_if_joined_by_game_start",
+      "license_or_terms_note": "Free/open GitHub release assets; upstream ESPN/NBA/WNBA/NCAA terms still require conservative normalized-use review.",
+      "model_eligible": true,
+      "report_entry": true,
+      "retrieval_method": "github_release_csv_range_read",
+      "source_id": "espn_nba_schedules",
+      "source_url_hash": "ca54f22134517366a824d24596db97029ab84ab663a319579365743b21038db5",
+      "sport": "basketball_nba",
+      "table": "basketball_schedule_context_features",
+      "tests": [
+        "tests/test_basketball_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "2025",
+      "coverage_start": "2025",
+      "cutoff_safe": true,
+      "data_type": "float",
+      "description": "travel_distance_estimate derived from rest/back-to-back/travel features for NBA",
+      "entity_level": "team_game",
+      "field_catalog_entry": {
+        "field_name": "travel_distance_estimate",
+        "module": "basketball_nba",
+        "source_family": "espn_nba_schedules",
+        "table": "basketball_schedule_context_features"
+      },
+      "field_name": "travel_distance_estimate",
+      "future_leakage_risk": "low_if_joined_by_game_start",
+      "license_or_terms_note": "Free/open GitHub release assets; upstream ESPN/NBA/WNBA/NCAA terms still require conservative normalized-use review.",
+      "model_eligible": true,
+      "report_entry": true,
+      "retrieval_method": "github_release_csv_range_read",
+      "source_id": "espn_nba_schedules",
+      "source_url_hash": "ca54f22134517366a824d24596db97029ab84ab663a319579365743b21038db5",
+      "sport": "basketball_nba",
+      "table": "basketball_schedule_context_features",
+      "tests": [
+        "tests/test_basketball_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "2025",
+      "coverage_start": "2025",
+      "cutoff_safe": true,
+      "data_type": "boolean",
+      "description": "neutral_site_flag derived from arena/venue features for NBA",
+      "entity_level": "venue_game",
+      "field_catalog_entry": {
+        "field_name": "neutral_site_flag",
+        "module": "basketball_nba",
+        "source_family": "espn_nba_schedules",
+        "table": "basketball_venue_context"
+      },
+      "field_name": "neutral_site_flag",
+      "future_leakage_risk": "low_if_joined_by_game_start",
+      "license_or_terms_note": "Free/open GitHub release assets; upstream ESPN/NBA/WNBA/NCAA terms still require conservative normalized-use review.",
+      "model_eligible": true,
+      "report_entry": true,
+      "retrieval_method": "github_release_csv_range_read",
+      "source_id": "espn_nba_schedules",
+      "source_url_hash": "ca54f22134517366a824d24596db97029ab84ab663a319579365743b21038db5",
+      "sport": "basketball_nba",
+      "table": "basketball_venue_context",
+      "tests": [
+        "tests/test_basketball_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "2025",
+      "coverage_start": "2025",
+      "cutoff_safe": true,
+      "data_type": "string",
+      "description": "roster_continuity derived from roster continuity for NBA",
+      "entity_level": "player_game",
+      "field_catalog_entry": {
+        "field_name": "roster_continuity",
+        "module": "basketball_nba",
+        "source_family": "espn_nba_game_rosters",
+        "table": "basketball_roster_continuity_features"
+      },
+      "field_name": "roster_continuity",
+      "future_leakage_risk": "low_if_joined_by_game_start",
+      "license_or_terms_note": "Free/open GitHub release assets; upstream ESPN/NBA/WNBA/NCAA terms still require conservative normalized-use review.",
+      "model_eligible": true,
+      "report_entry": true,
+      "retrieval_method": "github_release_csv_range_read",
+      "source_id": "espn_nba_game_rosters",
+      "source_url_hash": "b9229b3eb020caa05fd5acc7e1d30d163d1e3a87d6545008df3dc160a2134145",
+      "sport": "basketball_nba",
+      "table": "basketball_roster_continuity_features",
+      "tests": [
+        "tests/test_basketball_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "2025",
+      "coverage_start": "2025",
+      "cutoff_safe": true,
+      "data_type": "float",
+      "description": "rotation_stability derived from roster continuity for NBA",
+      "entity_level": "player_game",
+      "field_catalog_entry": {
+        "field_name": "rotation_stability",
+        "module": "basketball_nba",
+        "source_family": "espn_nba_game_rosters",
+        "table": "basketball_roster_continuity_features"
+      },
+      "field_name": "rotation_stability",
+      "future_leakage_risk": "low_if_joined_by_game_start",
+      "license_or_terms_note": "Free/open GitHub release assets; upstream ESPN/NBA/WNBA/NCAA terms still require conservative normalized-use review.",
+      "model_eligible": true,
+      "report_entry": true,
+      "retrieval_method": "github_release_csv_range_read",
+      "source_id": "espn_nba_game_rosters",
+      "source_url_hash": "b9229b3eb020caa05fd5acc7e1d30d163d1e3a87d6545008df3dc160a2134145",
+      "sport": "basketball_nba",
+      "table": "basketball_roster_continuity_features",
+      "tests": [
+        "tests/test_basketball_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "2025",
+      "coverage_start": "2025",
+      "cutoff_safe": true,
+      "data_type": "string",
+      "description": "possession_estimate_source derived from pace/possessions for WNBA",
+      "entity_level": "team_game",
+      "field_catalog_entry": {
+        "field_name": "possession_estimate_source",
+        "module": "basketball_wnba",
+        "source_family": "espn_wnba_team_boxscores",
+        "table": "basketball_possession_context"
+      },
+      "field_name": "possession_estimate_source",
+      "future_leakage_risk": "low_if_joined_by_game_start",
+      "license_or_terms_note": "Free/open GitHub release assets; upstream ESPN/NBA/WNBA/NCAA terms still require conservative normalized-use review.",
+      "model_eligible": true,
+      "report_entry": true,
+      "retrieval_method": "github_release_csv_range_read",
+      "source_id": "espn_wnba_team_boxscores",
+      "source_url_hash": "e933d3edb3c30a5b2823f86a12c75f6171d3e80160550e3e1698f3e0661aefc4",
+      "sport": "basketball_wnba",
+      "table": "basketball_possession_context",
+      "tests": [
+        "tests/test_basketball_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "2025",
+      "coverage_start": "2025",
+      "cutoff_safe": true,
+      "data_type": "float",
+      "description": "pace_stability derived from pace/possessions for WNBA",
+      "entity_level": "team_game",
+      "field_catalog_entry": {
+        "field_name": "pace_stability",
+        "module": "basketball_wnba",
+        "source_family": "espn_wnba_team_boxscores",
+        "table": "basketball_possession_context"
+      },
+      "field_name": "pace_stability",
+      "future_leakage_risk": "low_if_joined_by_game_start",
+      "license_or_terms_note": "Free/open GitHub release assets; upstream ESPN/NBA/WNBA/NCAA terms still require conservative normalized-use review.",
+      "model_eligible": true,
+      "report_entry": true,
+      "retrieval_method": "github_release_csv_range_read",
+      "source_id": "espn_wnba_team_boxscores",
+      "source_url_hash": "e933d3edb3c30a5b2823f86a12c75f6171d3e80160550e3e1698f3e0661aefc4",
+      "sport": "basketball_wnba",
+      "table": "basketball_possession_context",
+      "tests": [
+        "tests/test_basketball_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "2025",
+      "coverage_start": "2025",
+      "cutoff_safe": true,
+      "data_type": "float",
+      "description": "shot_quality_proxy derived from shot location/shot chart data for WNBA",
+      "entity_level": "shot",
+      "field_catalog_entry": {
+        "field_name": "shot_quality_proxy",
+        "module": "basketball_wnba",
+        "source_family": "espn_wnba_shots",
+        "table": "basketball_shot_context"
+      },
+      "field_name": "shot_quality_proxy",
+      "future_leakage_risk": "low_if_joined_by_game_start",
+      "license_or_terms_note": "Free/open GitHub release assets; upstream ESPN/NBA/WNBA/NCAA terms still require conservative normalized-use review.",
+      "model_eligible": true,
+      "report_entry": true,
+      "retrieval_method": "github_release_csv_range_read",
+      "source_id": "espn_wnba_shots",
+      "source_url_hash": "f2ad23f915de932be88c5077060b24002f79e847ff9e48ad597581b3d47aa0ad",
+      "sport": "basketball_wnba",
+      "table": "basketball_shot_context",
+      "tests": [
+        "tests/test_basketball_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "2025",
+      "coverage_start": "2025",
+      "cutoff_safe": true,
+      "data_type": "string",
+      "description": "referee_crew_id derived from referee/official assignments for WNBA",
+      "entity_level": "official_game",
+      "field_catalog_entry": {
+        "field_name": "referee_crew_id",
+        "module": "basketball_wnba",
+        "source_family": "espn_wnba_officials",
+        "table": "basketball_official_assignments"
+      },
+      "field_name": "referee_crew_id",
+      "future_leakage_risk": "low_if_joined_by_game_start",
+      "license_or_terms_note": "Free/open GitHub release assets; upstream ESPN/NBA/WNBA/NCAA terms still require conservative normalized-use review.",
+      "model_eligible": true,
+      "report_entry": true,
+      "retrieval_method": "github_release_csv_range_read",
+      "source_id": "espn_wnba_officials",
+      "source_url_hash": "77ecb20e98a4eecf7c9980c470849c7f80934b007a3633d01046104664aff041",
+      "sport": "basketball_wnba",
+      "table": "basketball_official_assignments",
+      "tests": [
+        "tests/test_basketball_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "2025",
+      "coverage_start": "2025",
+      "cutoff_safe": true,
+      "data_type": "string",
+      "description": "referee_tendency_candidates derived from referee/official assignments for WNBA",
+      "entity_level": "official_game",
+      "field_catalog_entry": {
+        "field_name": "referee_tendency_candidates",
+        "module": "basketball_wnba",
+        "source_family": "espn_wnba_officials",
+        "table": "basketball_official_assignments"
+      },
+      "field_name": "referee_tendency_candidates",
+      "future_leakage_risk": "low_if_joined_by_game_start",
+      "license_or_terms_note": "Free/open GitHub release assets; upstream ESPN/NBA/WNBA/NCAA terms still require conservative normalized-use review.",
+      "model_eligible": true,
+      "report_entry": true,
+      "retrieval_method": "github_release_csv_range_read",
+      "source_id": "espn_wnba_officials",
+      "source_url_hash": "77ecb20e98a4eecf7c9980c470849c7f80934b007a3633d01046104664aff041",
+      "sport": "basketball_wnba",
+      "table": "basketball_official_assignments",
+      "tests": [
+        "tests/test_basketball_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "2025",
+      "coverage_start": "2025",
+      "cutoff_safe": true,
+      "data_type": "string",
+      "description": "rest_disadvantage derived from rest/back-to-back/travel features for WNBA",
+      "entity_level": "team_game",
+      "field_catalog_entry": {
+        "field_name": "rest_disadvantage",
+        "module": "basketball_wnba",
+        "source_family": "espn_wnba_schedules",
+        "table": "basketball_schedule_context_features"
+      },
+      "field_name": "rest_disadvantage",
+      "future_leakage_risk": "low_if_joined_by_game_start",
+      "license_or_terms_note": "Free/open GitHub release assets; upstream ESPN/NBA/WNBA/NCAA terms still require conservative normalized-use review.",
+      "model_eligible": true,
+      "report_entry": true,
+      "retrieval_method": "github_release_csv_range_read",
+      "source_id": "espn_wnba_schedules",
+      "source_url_hash": "a9990c8f20b9627c75ecb83104d1674b87622d310afb36326999d69146ba1674",
+      "sport": "basketball_wnba",
+      "table": "basketball_schedule_context_features",
+      "tests": [
+        "tests/test_basketball_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "2025",
+      "coverage_start": "2025",
+      "cutoff_safe": true,
+      "data_type": "boolean",
+      "description": "back_to_back_flag derived from rest/back-to-back/travel features for WNBA",
+      "entity_level": "team_game",
+      "field_catalog_entry": {
+        "field_name": "back_to_back_flag",
+        "module": "basketball_wnba",
+        "source_family": "espn_wnba_schedules",
+        "table": "basketball_schedule_context_features"
+      },
+      "field_name": "back_to_back_flag",
+      "future_leakage_risk": "low_if_joined_by_game_start",
+      "license_or_terms_note": "Free/open GitHub release assets; upstream ESPN/NBA/WNBA/NCAA terms still require conservative normalized-use review.",
+      "model_eligible": true,
+      "report_entry": true,
+      "retrieval_method": "github_release_csv_range_read",
+      "source_id": "espn_wnba_schedules",
+      "source_url_hash": "a9990c8f20b9627c75ecb83104d1674b87622d310afb36326999d69146ba1674",
+      "sport": "basketball_wnba",
+      "table": "basketball_schedule_context_features",
+      "tests": [
+        "tests/test_basketball_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "2025",
+      "coverage_start": "2025",
+      "cutoff_safe": true,
+      "data_type": "boolean",
+      "description": "three_in_four_nights_flag derived from rest/back-to-back/travel features for WNBA",
+      "entity_level": "team_game",
+      "field_catalog_entry": {
+        "field_name": "three_in_four_nights_flag",
+        "module": "basketball_wnba",
+        "source_family": "espn_wnba_schedules",
+        "table": "basketball_schedule_context_features"
+      },
+      "field_name": "three_in_four_nights_flag",
+      "future_leakage_risk": "low_if_joined_by_game_start",
+      "license_or_terms_note": "Free/open GitHub release assets; upstream ESPN/NBA/WNBA/NCAA terms still require conservative normalized-use review.",
+      "model_eligible": true,
+      "report_entry": true,
+      "retrieval_method": "github_release_csv_range_read",
+      "source_id": "espn_wnba_schedules",
+      "source_url_hash": "a9990c8f20b9627c75ecb83104d1674b87622d310afb36326999d69146ba1674",
+      "sport": "basketball_wnba",
+      "table": "basketball_schedule_context_features",
+      "tests": [
+        "tests/test_basketball_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "2025",
+      "coverage_start": "2025",
+      "cutoff_safe": true,
+      "data_type": "float",
+      "description": "travel_distance_estimate derived from rest/back-to-back/travel features for WNBA",
+      "entity_level": "team_game",
+      "field_catalog_entry": {
+        "field_name": "travel_distance_estimate",
+        "module": "basketball_wnba",
+        "source_family": "espn_wnba_schedules",
+        "table": "basketball_schedule_context_features"
+      },
+      "field_name": "travel_distance_estimate",
+      "future_leakage_risk": "low_if_joined_by_game_start",
+      "license_or_terms_note": "Free/open GitHub release assets; upstream ESPN/NBA/WNBA/NCAA terms still require conservative normalized-use review.",
+      "model_eligible": true,
+      "report_entry": true,
+      "retrieval_method": "github_release_csv_range_read",
+      "source_id": "espn_wnba_schedules",
+      "source_url_hash": "a9990c8f20b9627c75ecb83104d1674b87622d310afb36326999d69146ba1674",
+      "sport": "basketball_wnba",
+      "table": "basketball_schedule_context_features",
+      "tests": [
+        "tests/test_basketball_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "2025",
+      "coverage_start": "2025",
+      "cutoff_safe": true,
+      "data_type": "boolean",
+      "description": "neutral_site_flag derived from arena/venue features for WNBA",
+      "entity_level": "venue_game",
+      "field_catalog_entry": {
+        "field_name": "neutral_site_flag",
+        "module": "basketball_wnba",
+        "source_family": "espn_wnba_schedules",
+        "table": "basketball_venue_context"
+      },
+      "field_name": "neutral_site_flag",
+      "future_leakage_risk": "low_if_joined_by_game_start",
+      "license_or_terms_note": "Free/open GitHub release assets; upstream ESPN/NBA/WNBA/NCAA terms still require conservative normalized-use review.",
+      "model_eligible": true,
+      "report_entry": true,
+      "retrieval_method": "github_release_csv_range_read",
+      "source_id": "espn_wnba_schedules",
+      "source_url_hash": "a9990c8f20b9627c75ecb83104d1674b87622d310afb36326999d69146ba1674",
+      "sport": "basketball_wnba",
+      "table": "basketball_venue_context",
+      "tests": [
+        "tests/test_basketball_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "2025",
+      "coverage_start": "2025",
+      "cutoff_safe": true,
+      "data_type": "string",
+      "description": "roster_continuity derived from roster continuity for WNBA",
+      "entity_level": "player_game",
+      "field_catalog_entry": {
+        "field_name": "roster_continuity",
+        "module": "basketball_wnba",
+        "source_family": "espn_wnba_game_rosters",
+        "table": "basketball_roster_continuity_features"
+      },
+      "field_name": "roster_continuity",
+      "future_leakage_risk": "low_if_joined_by_game_start",
+      "license_or_terms_note": "Free/open GitHub release assets; upstream ESPN/NBA/WNBA/NCAA terms still require conservative normalized-use review.",
+      "model_eligible": true,
+      "report_entry": true,
+      "retrieval_method": "github_release_csv_range_read",
+      "source_id": "espn_wnba_game_rosters",
+      "source_url_hash": "16b4c338429b6c0662df33bdb8962ac52658a053a9f145cb139cbab6af0a5232",
+      "sport": "basketball_wnba",
+      "table": "basketball_roster_continuity_features",
+      "tests": [
+        "tests/test_basketball_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "2025",
+      "coverage_start": "2025",
+      "cutoff_safe": true,
+      "data_type": "float",
+      "description": "rotation_stability derived from roster continuity for WNBA",
+      "entity_level": "player_game",
+      "field_catalog_entry": {
+        "field_name": "rotation_stability",
+        "module": "basketball_wnba",
+        "source_family": "espn_wnba_game_rosters",
+        "table": "basketball_roster_continuity_features"
+      },
+      "field_name": "rotation_stability",
+      "future_leakage_risk": "low_if_joined_by_game_start",
+      "license_or_terms_note": "Free/open GitHub release assets; upstream ESPN/NBA/WNBA/NCAA terms still require conservative normalized-use review.",
+      "model_eligible": true,
+      "report_entry": true,
+      "retrieval_method": "github_release_csv_range_read",
+      "source_id": "espn_wnba_game_rosters",
+      "source_url_hash": "16b4c338429b6c0662df33bdb8962ac52658a053a9f145cb139cbab6af0a5232",
+      "sport": "basketball_wnba",
+      "table": "basketball_roster_continuity_features",
+      "tests": [
+        "tests/test_basketball_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "2026",
+      "coverage_start": "2026",
+      "cutoff_safe": true,
+      "data_type": "string",
+      "description": "lineup_continuity derived from lineup/on-off data for WNBA",
+      "entity_level": "lineup",
+      "field_catalog_entry": {
+        "field_name": "lineup_continuity",
+        "module": "basketball_wnba",
+        "source_family": "wnba_stats_lineups",
+        "table": "basketball_lineup_context"
+      },
+      "field_name": "lineup_continuity",
+      "future_leakage_risk": "low_if_joined_by_game_start",
+      "license_or_terms_note": "Free/open GitHub release assets; upstream ESPN/NBA/WNBA/NCAA terms still require conservative normalized-use review.",
+      "model_eligible": true,
+      "report_entry": true,
+      "retrieval_method": "github_release_csv_range_read",
+      "source_id": "wnba_stats_lineups",
+      "source_url_hash": "abc82ea7c99a219ab4032aed23f83623c1623ed4b4ab14ab2a761497c1820e82",
+      "sport": "basketball_wnba",
+      "table": "basketball_lineup_context",
+      "tests": [
+        "tests/test_basketball_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "2025",
+      "coverage_start": "2025",
+      "cutoff_safe": true,
+      "data_type": "string",
+      "description": "possession_estimate_source derived from pace/possessions for NCAAB",
+      "entity_level": "team_game",
+      "field_catalog_entry": {
+        "field_name": "possession_estimate_source",
+        "module": "basketball_ncaab",
+        "source_family": "espn_mens_college_basketball_team_boxscores",
+        "table": "basketball_possession_context"
+      },
+      "field_name": "possession_estimate_source",
+      "future_leakage_risk": "low_if_joined_by_game_start",
+      "license_or_terms_note": "Free/open GitHub release assets; upstream ESPN/NBA/WNBA/NCAA terms still require conservative normalized-use review.",
+      "model_eligible": true,
+      "report_entry": true,
+      "retrieval_method": "github_release_csv_range_read",
+      "source_id": "espn_mens_college_basketball_team_boxscores",
+      "source_url_hash": "1dc770f3b67f8a76bdf154a1626a251392c6f8bc7943f481a909bb53bfd59a67",
+      "sport": "basketball_ncaab",
+      "table": "basketball_possession_context",
+      "tests": [
+        "tests/test_basketball_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "2025",
+      "coverage_start": "2025",
+      "cutoff_safe": true,
+      "data_type": "float",
+      "description": "pace_stability derived from pace/possessions for NCAAB",
+      "entity_level": "team_game",
+      "field_catalog_entry": {
+        "field_name": "pace_stability",
+        "module": "basketball_ncaab",
+        "source_family": "espn_mens_college_basketball_team_boxscores",
+        "table": "basketball_possession_context"
+      },
+      "field_name": "pace_stability",
+      "future_leakage_risk": "low_if_joined_by_game_start",
+      "license_or_terms_note": "Free/open GitHub release assets; upstream ESPN/NBA/WNBA/NCAA terms still require conservative normalized-use review.",
+      "model_eligible": true,
+      "report_entry": true,
+      "retrieval_method": "github_release_csv_range_read",
+      "source_id": "espn_mens_college_basketball_team_boxscores",
+      "source_url_hash": "1dc770f3b67f8a76bdf154a1626a251392c6f8bc7943f481a909bb53bfd59a67",
+      "sport": "basketball_ncaab",
+      "table": "basketball_possession_context",
+      "tests": [
+        "tests/test_basketball_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "2025",
+      "coverage_start": "2025",
+      "cutoff_safe": true,
+      "data_type": "float",
+      "description": "shot_quality_proxy derived from shot location/shot chart data for NCAAB",
+      "entity_level": "shot",
+      "field_catalog_entry": {
+        "field_name": "shot_quality_proxy",
+        "module": "basketball_ncaab",
+        "source_family": "espn_mens_college_basketball_shots",
+        "table": "basketball_shot_context"
+      },
+      "field_name": "shot_quality_proxy",
+      "future_leakage_risk": "low_if_joined_by_game_start",
+      "license_or_terms_note": "Free/open GitHub release assets; upstream ESPN/NBA/WNBA/NCAA terms still require conservative normalized-use review.",
+      "model_eligible": true,
+      "report_entry": true,
+      "retrieval_method": "github_release_csv_range_read",
+      "source_id": "espn_mens_college_basketball_shots",
+      "source_url_hash": "f8272ef98eed7cbcca7f6a5a654ea163a093c7cc28faf367eac4b1186c93750e",
+      "sport": "basketball_ncaab",
+      "table": "basketball_shot_context",
+      "tests": [
+        "tests/test_basketball_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "2025",
+      "coverage_start": "2025",
+      "cutoff_safe": true,
+      "data_type": "string",
+      "description": "referee_crew_id derived from referee/official assignments for NCAAB",
+      "entity_level": "official_game",
+      "field_catalog_entry": {
+        "field_name": "referee_crew_id",
+        "module": "basketball_ncaab",
+        "source_family": "espn_mens_college_basketball_officials",
+        "table": "basketball_official_assignments"
+      },
+      "field_name": "referee_crew_id",
+      "future_leakage_risk": "low_if_joined_by_game_start",
+      "license_or_terms_note": "Free/open GitHub release assets; upstream ESPN/NBA/WNBA/NCAA terms still require conservative normalized-use review.",
+      "model_eligible": true,
+      "report_entry": true,
+      "retrieval_method": "github_release_csv_range_read",
+      "source_id": "espn_mens_college_basketball_officials",
+      "source_url_hash": "ffcf7a05bc5ebe43e92ee20a39baa31e9f672aef401506f5f996b8ecf173981c",
+      "sport": "basketball_ncaab",
+      "table": "basketball_official_assignments",
+      "tests": [
+        "tests/test_basketball_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "2025",
+      "coverage_start": "2025",
+      "cutoff_safe": true,
+      "data_type": "string",
+      "description": "referee_tendency_candidates derived from referee/official assignments for NCAAB",
+      "entity_level": "official_game",
+      "field_catalog_entry": {
+        "field_name": "referee_tendency_candidates",
+        "module": "basketball_ncaab",
+        "source_family": "espn_mens_college_basketball_officials",
+        "table": "basketball_official_assignments"
+      },
+      "field_name": "referee_tendency_candidates",
+      "future_leakage_risk": "low_if_joined_by_game_start",
+      "license_or_terms_note": "Free/open GitHub release assets; upstream ESPN/NBA/WNBA/NCAA terms still require conservative normalized-use review.",
+      "model_eligible": true,
+      "report_entry": true,
+      "retrieval_method": "github_release_csv_range_read",
+      "source_id": "espn_mens_college_basketball_officials",
+      "source_url_hash": "ffcf7a05bc5ebe43e92ee20a39baa31e9f672aef401506f5f996b8ecf173981c",
+      "sport": "basketball_ncaab",
+      "table": "basketball_official_assignments",
+      "tests": [
+        "tests/test_basketball_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "2025",
+      "coverage_start": "2025",
+      "cutoff_safe": true,
+      "data_type": "string",
+      "description": "rest_disadvantage derived from rest/back-to-back/travel features for NCAAB",
+      "entity_level": "team_game",
+      "field_catalog_entry": {
+        "field_name": "rest_disadvantage",
+        "module": "basketball_ncaab",
+        "source_family": "espn_mens_college_basketball_schedules",
+        "table": "basketball_schedule_context_features"
+      },
+      "field_name": "rest_disadvantage",
+      "future_leakage_risk": "low_if_joined_by_game_start",
+      "license_or_terms_note": "Free/open GitHub release assets; upstream ESPN/NBA/WNBA/NCAA terms still require conservative normalized-use review.",
+      "model_eligible": true,
+      "report_entry": true,
+      "retrieval_method": "github_release_csv_range_read",
+      "source_id": "espn_mens_college_basketball_schedules",
+      "source_url_hash": "bb607b4ea61219daaf802fdc8c1ac6ccf8208fb7c2c6a33cd24630f5d08f434b",
+      "sport": "basketball_ncaab",
+      "table": "basketball_schedule_context_features",
+      "tests": [
+        "tests/test_basketball_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "2025",
+      "coverage_start": "2025",
+      "cutoff_safe": true,
+      "data_type": "boolean",
+      "description": "back_to_back_flag derived from rest/back-to-back/travel features for NCAAB",
+      "entity_level": "team_game",
+      "field_catalog_entry": {
+        "field_name": "back_to_back_flag",
+        "module": "basketball_ncaab",
+        "source_family": "espn_mens_college_basketball_schedules",
+        "table": "basketball_schedule_context_features"
+      },
+      "field_name": "back_to_back_flag",
+      "future_leakage_risk": "low_if_joined_by_game_start",
+      "license_or_terms_note": "Free/open GitHub release assets; upstream ESPN/NBA/WNBA/NCAA terms still require conservative normalized-use review.",
+      "model_eligible": true,
+      "report_entry": true,
+      "retrieval_method": "github_release_csv_range_read",
+      "source_id": "espn_mens_college_basketball_schedules",
+      "source_url_hash": "bb607b4ea61219daaf802fdc8c1ac6ccf8208fb7c2c6a33cd24630f5d08f434b",
+      "sport": "basketball_ncaab",
+      "table": "basketball_schedule_context_features",
+      "tests": [
+        "tests/test_basketball_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "2025",
+      "coverage_start": "2025",
+      "cutoff_safe": true,
+      "data_type": "boolean",
+      "description": "three_in_four_nights_flag derived from rest/back-to-back/travel features for NCAAB",
+      "entity_level": "team_game",
+      "field_catalog_entry": {
+        "field_name": "three_in_four_nights_flag",
+        "module": "basketball_ncaab",
+        "source_family": "espn_mens_college_basketball_schedules",
+        "table": "basketball_schedule_context_features"
+      },
+      "field_name": "three_in_four_nights_flag",
+      "future_leakage_risk": "low_if_joined_by_game_start",
+      "license_or_terms_note": "Free/open GitHub release assets; upstream ESPN/NBA/WNBA/NCAA terms still require conservative normalized-use review.",
+      "model_eligible": true,
+      "report_entry": true,
+      "retrieval_method": "github_release_csv_range_read",
+      "source_id": "espn_mens_college_basketball_schedules",
+      "source_url_hash": "bb607b4ea61219daaf802fdc8c1ac6ccf8208fb7c2c6a33cd24630f5d08f434b",
+      "sport": "basketball_ncaab",
+      "table": "basketball_schedule_context_features",
+      "tests": [
+        "tests/test_basketball_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "2025",
+      "coverage_start": "2025",
+      "cutoff_safe": true,
+      "data_type": "float",
+      "description": "travel_distance_estimate derived from rest/back-to-back/travel features for NCAAB",
+      "entity_level": "team_game",
+      "field_catalog_entry": {
+        "field_name": "travel_distance_estimate",
+        "module": "basketball_ncaab",
+        "source_family": "espn_mens_college_basketball_schedules",
+        "table": "basketball_schedule_context_features"
+      },
+      "field_name": "travel_distance_estimate",
+      "future_leakage_risk": "low_if_joined_by_game_start",
+      "license_or_terms_note": "Free/open GitHub release assets; upstream ESPN/NBA/WNBA/NCAA terms still require conservative normalized-use review.",
+      "model_eligible": true,
+      "report_entry": true,
+      "retrieval_method": "github_release_csv_range_read",
+      "source_id": "espn_mens_college_basketball_schedules",
+      "source_url_hash": "bb607b4ea61219daaf802fdc8c1ac6ccf8208fb7c2c6a33cd24630f5d08f434b",
+      "sport": "basketball_ncaab",
+      "table": "basketball_schedule_context_features",
+      "tests": [
+        "tests/test_basketball_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "2025",
+      "coverage_start": "2025",
+      "cutoff_safe": true,
+      "data_type": "boolean",
+      "description": "neutral_site_flag derived from arena/venue features for NCAAB",
+      "entity_level": "venue_game",
+      "field_catalog_entry": {
+        "field_name": "neutral_site_flag",
+        "module": "basketball_ncaab",
+        "source_family": "espn_mens_college_basketball_schedules",
+        "table": "basketball_venue_context"
+      },
+      "field_name": "neutral_site_flag",
+      "future_leakage_risk": "low_if_joined_by_game_start",
+      "license_or_terms_note": "Free/open GitHub release assets; upstream ESPN/NBA/WNBA/NCAA terms still require conservative normalized-use review.",
+      "model_eligible": true,
+      "report_entry": true,
+      "retrieval_method": "github_release_csv_range_read",
+      "source_id": "espn_mens_college_basketball_schedules",
+      "source_url_hash": "bb607b4ea61219daaf802fdc8c1ac6ccf8208fb7c2c6a33cd24630f5d08f434b",
+      "sport": "basketball_ncaab",
+      "table": "basketball_venue_context",
+      "tests": [
+        "tests/test_basketball_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "2025",
+      "coverage_start": "2025",
+      "cutoff_safe": true,
+      "data_type": "string",
+      "description": "roster_continuity derived from roster continuity for NCAAB",
+      "entity_level": "player_game",
+      "field_catalog_entry": {
+        "field_name": "roster_continuity",
+        "module": "basketball_ncaab",
+        "source_family": "espn_mens_college_basketball_game_rosters",
+        "table": "basketball_roster_continuity_features"
+      },
+      "field_name": "roster_continuity",
+      "future_leakage_risk": "low_if_joined_by_game_start",
+      "license_or_terms_note": "Free/open GitHub release assets; upstream ESPN/NBA/WNBA/NCAA terms still require conservative normalized-use review.",
+      "model_eligible": true,
+      "report_entry": true,
+      "retrieval_method": "github_release_csv_range_read",
+      "source_id": "espn_mens_college_basketball_game_rosters",
+      "source_url_hash": "3bcb7f1f9a8523d6c68956afcfe2d03c9d523cf2e4f6494ec55af8f92a7744fb",
+      "sport": "basketball_ncaab",
+      "table": "basketball_roster_continuity_features",
+      "tests": [
+        "tests/test_basketball_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "2025",
+      "coverage_start": "2025",
+      "cutoff_safe": true,
+      "data_type": "float",
+      "description": "rotation_stability derived from roster continuity for NCAAB",
+      "entity_level": "player_game",
+      "field_catalog_entry": {
+        "field_name": "rotation_stability",
+        "module": "basketball_ncaab",
+        "source_family": "espn_mens_college_basketball_game_rosters",
+        "table": "basketball_roster_continuity_features"
+      },
+      "field_name": "rotation_stability",
+      "future_leakage_risk": "low_if_joined_by_game_start",
+      "license_or_terms_note": "Free/open GitHub release assets; upstream ESPN/NBA/WNBA/NCAA terms still require conservative normalized-use review.",
+      "model_eligible": true,
+      "report_entry": true,
+      "retrieval_method": "github_release_csv_range_read",
+      "source_id": "espn_mens_college_basketball_game_rosters",
+      "source_url_hash": "3bcb7f1f9a8523d6c68956afcfe2d03c9d523cf2e4f6494ec55af8f92a7744fb",
+      "sport": "basketball_ncaab",
+      "table": "basketball_roster_continuity_features",
+      "tests": [
+        "tests/test_basketball_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "2025",
+      "coverage_start": "2025",
+      "cutoff_safe": true,
+      "data_type": "float",
+      "description": "conference_tournament_context derived from conference/tournament context for NCAAB",
+      "entity_level": "game",
+      "field_catalog_entry": {
+        "field_name": "conference_tournament_context",
+        "module": "basketball_ncaab",
+        "source_family": "espn_mens_college_basketball_schedules",
+        "table": "basketball_college_tournament_context"
+      },
+      "field_name": "conference_tournament_context",
+      "future_leakage_risk": "low_if_joined_by_game_start",
+      "license_or_terms_note": "Free/open GitHub release assets; upstream ESPN/NBA/WNBA/NCAA terms still require conservative normalized-use review.",
+      "model_eligible": true,
+      "report_entry": true,
+      "retrieval_method": "github_release_csv_range_read",
+      "source_id": "espn_mens_college_basketball_schedules",
+      "source_url_hash": "bb607b4ea61219daaf802fdc8c1ac6ccf8208fb7c2c6a33cd24630f5d08f434b",
+      "sport": "basketball_ncaab",
+      "table": "basketball_college_tournament_context",
+      "tests": [
+        "tests/test_basketball_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "2025",
+      "coverage_start": "2025",
+      "cutoff_safe": true,
+      "data_type": "float",
+      "description": "late_season_motivation_context derived from conference/tournament context for NCAAB",
+      "entity_level": "game",
+      "field_catalog_entry": {
+        "field_name": "late_season_motivation_context",
+        "module": "basketball_ncaab",
+        "source_family": "espn_mens_college_basketball_schedules",
+        "table": "basketball_college_tournament_context"
+      },
+      "field_name": "late_season_motivation_context",
+      "future_leakage_risk": "low_if_joined_by_game_start",
+      "license_or_terms_note": "Free/open GitHub release assets; upstream ESPN/NBA/WNBA/NCAA terms still require conservative normalized-use review.",
+      "model_eligible": true,
+      "report_entry": true,
+      "retrieval_method": "github_release_csv_range_read",
+      "source_id": "espn_mens_college_basketball_schedules",
+      "source_url_hash": "bb607b4ea61219daaf802fdc8c1ac6ccf8208fb7c2c6a33cd24630f5d08f434b",
+      "sport": "basketball_ncaab",
+      "table": "basketball_college_tournament_context",
+      "tests": [
+        "tests/test_basketball_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "2026",
+      "coverage_start": "2026",
+      "cutoff_safe": true,
+      "data_type": "string",
+      "description": "possession_estimate_source derived from pace/possessions for NCAAW",
+      "entity_level": "team_game",
+      "field_catalog_entry": {
+        "field_name": "possession_estimate_source",
+        "module": "basketball_ncaaw",
+        "source_family": "espn_womens_college_basketball_team_boxscores",
+        "table": "basketball_possession_context"
+      },
+      "field_name": "possession_estimate_source",
+      "future_leakage_risk": "low_if_joined_by_game_start",
+      "license_or_terms_note": "Free/open GitHub release assets; upstream ESPN/NBA/WNBA/NCAA terms still require conservative normalized-use review.",
+      "model_eligible": true,
+      "report_entry": true,
+      "retrieval_method": "github_release_csv_range_read",
+      "source_id": "espn_womens_college_basketball_team_boxscores",
+      "source_url_hash": "d981ab3ba0a61db04979bdd31397601fd6cd47be5d4017f589ba584405fd0993",
+      "sport": "basketball_ncaaw",
+      "table": "basketball_possession_context",
+      "tests": [
+        "tests/test_basketball_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "2026",
+      "coverage_start": "2026",
+      "cutoff_safe": true,
+      "data_type": "float",
+      "description": "pace_stability derived from pace/possessions for NCAAW",
+      "entity_level": "team_game",
+      "field_catalog_entry": {
+        "field_name": "pace_stability",
+        "module": "basketball_ncaaw",
+        "source_family": "espn_womens_college_basketball_team_boxscores",
+        "table": "basketball_possession_context"
+      },
+      "field_name": "pace_stability",
+      "future_leakage_risk": "low_if_joined_by_game_start",
+      "license_or_terms_note": "Free/open GitHub release assets; upstream ESPN/NBA/WNBA/NCAA terms still require conservative normalized-use review.",
+      "model_eligible": true,
+      "report_entry": true,
+      "retrieval_method": "github_release_csv_range_read",
+      "source_id": "espn_womens_college_basketball_team_boxscores",
+      "source_url_hash": "d981ab3ba0a61db04979bdd31397601fd6cd47be5d4017f589ba584405fd0993",
+      "sport": "basketball_ncaaw",
+      "table": "basketball_possession_context",
+      "tests": [
+        "tests/test_basketball_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "2026",
+      "coverage_start": "2026",
+      "cutoff_safe": true,
+      "data_type": "float",
+      "description": "shot_quality_proxy derived from shot location/shot chart data for NCAAW",
+      "entity_level": "shot",
+      "field_catalog_entry": {
+        "field_name": "shot_quality_proxy",
+        "module": "basketball_ncaaw",
+        "source_family": "espn_womens_college_basketball_shots",
+        "table": "basketball_shot_context"
+      },
+      "field_name": "shot_quality_proxy",
+      "future_leakage_risk": "low_if_joined_by_game_start",
+      "license_or_terms_note": "Free/open GitHub release assets; upstream ESPN/NBA/WNBA/NCAA terms still require conservative normalized-use review.",
+      "model_eligible": true,
+      "report_entry": true,
+      "retrieval_method": "github_release_csv_range_read",
+      "source_id": "espn_womens_college_basketball_shots",
+      "source_url_hash": "273da3c51305a6e3a1b585d7d77999b9a054099ae1dc0a01fc0ce3e6ef41e8d3",
+      "sport": "basketball_ncaaw",
+      "table": "basketball_shot_context",
+      "tests": [
+        "tests/test_basketball_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "2026",
+      "coverage_start": "2026",
+      "cutoff_safe": true,
+      "data_type": "string",
+      "description": "referee_crew_id derived from referee/official assignments for NCAAW",
+      "entity_level": "official_game",
+      "field_catalog_entry": {
+        "field_name": "referee_crew_id",
+        "module": "basketball_ncaaw",
+        "source_family": "espn_womens_college_basketball_officials",
+        "table": "basketball_official_assignments"
+      },
+      "field_name": "referee_crew_id",
+      "future_leakage_risk": "low_if_joined_by_game_start",
+      "license_or_terms_note": "Free/open GitHub release assets; upstream ESPN/NBA/WNBA/NCAA terms still require conservative normalized-use review.",
+      "model_eligible": true,
+      "report_entry": true,
+      "retrieval_method": "github_release_csv_range_read",
+      "source_id": "espn_womens_college_basketball_officials",
+      "source_url_hash": "21301ecd179a0e0307137ad203dbb5f56371458a30634e6724974503cb8c533c",
+      "sport": "basketball_ncaaw",
+      "table": "basketball_official_assignments",
+      "tests": [
+        "tests/test_basketball_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "2026",
+      "coverage_start": "2026",
+      "cutoff_safe": true,
+      "data_type": "string",
+      "description": "referee_tendency_candidates derived from referee/official assignments for NCAAW",
+      "entity_level": "official_game",
+      "field_catalog_entry": {
+        "field_name": "referee_tendency_candidates",
+        "module": "basketball_ncaaw",
+        "source_family": "espn_womens_college_basketball_officials",
+        "table": "basketball_official_assignments"
+      },
+      "field_name": "referee_tendency_candidates",
+      "future_leakage_risk": "low_if_joined_by_game_start",
+      "license_or_terms_note": "Free/open GitHub release assets; upstream ESPN/NBA/WNBA/NCAA terms still require conservative normalized-use review.",
+      "model_eligible": true,
+      "report_entry": true,
+      "retrieval_method": "github_release_csv_range_read",
+      "source_id": "espn_womens_college_basketball_officials",
+      "source_url_hash": "21301ecd179a0e0307137ad203dbb5f56371458a30634e6724974503cb8c533c",
+      "sport": "basketball_ncaaw",
+      "table": "basketball_official_assignments",
+      "tests": [
+        "tests/test_basketball_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "2026",
+      "coverage_start": "2026",
+      "cutoff_safe": true,
+      "data_type": "string",
+      "description": "rest_disadvantage derived from rest/back-to-back/travel features for NCAAW",
+      "entity_level": "team_game",
+      "field_catalog_entry": {
+        "field_name": "rest_disadvantage",
+        "module": "basketball_ncaaw",
+        "source_family": "espn_womens_college_basketball_schedules",
+        "table": "basketball_schedule_context_features"
+      },
+      "field_name": "rest_disadvantage",
+      "future_leakage_risk": "low_if_joined_by_game_start",
+      "license_or_terms_note": "Free/open GitHub release assets; upstream ESPN/NBA/WNBA/NCAA terms still require conservative normalized-use review.",
+      "model_eligible": true,
+      "report_entry": true,
+      "retrieval_method": "github_release_csv_range_read",
+      "source_id": "espn_womens_college_basketball_schedules",
+      "source_url_hash": "f02f613e2c69fd0a091fd957b3a713fa09e2bb685dbd800c9d0687703fcad8ca",
+      "sport": "basketball_ncaaw",
+      "table": "basketball_schedule_context_features",
+      "tests": [
+        "tests/test_basketball_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "2026",
+      "coverage_start": "2026",
+      "cutoff_safe": true,
+      "data_type": "boolean",
+      "description": "back_to_back_flag derived from rest/back-to-back/travel features for NCAAW",
+      "entity_level": "team_game",
+      "field_catalog_entry": {
+        "field_name": "back_to_back_flag",
+        "module": "basketball_ncaaw",
+        "source_family": "espn_womens_college_basketball_schedules",
+        "table": "basketball_schedule_context_features"
+      },
+      "field_name": "back_to_back_flag",
+      "future_leakage_risk": "low_if_joined_by_game_start",
+      "license_or_terms_note": "Free/open GitHub release assets; upstream ESPN/NBA/WNBA/NCAA terms still require conservative normalized-use review.",
+      "model_eligible": true,
+      "report_entry": true,
+      "retrieval_method": "github_release_csv_range_read",
+      "source_id": "espn_womens_college_basketball_schedules",
+      "source_url_hash": "f02f613e2c69fd0a091fd957b3a713fa09e2bb685dbd800c9d0687703fcad8ca",
+      "sport": "basketball_ncaaw",
+      "table": "basketball_schedule_context_features",
+      "tests": [
+        "tests/test_basketball_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "2026",
+      "coverage_start": "2026",
+      "cutoff_safe": true,
+      "data_type": "boolean",
+      "description": "three_in_four_nights_flag derived from rest/back-to-back/travel features for NCAAW",
+      "entity_level": "team_game",
+      "field_catalog_entry": {
+        "field_name": "three_in_four_nights_flag",
+        "module": "basketball_ncaaw",
+        "source_family": "espn_womens_college_basketball_schedules",
+        "table": "basketball_schedule_context_features"
+      },
+      "field_name": "three_in_four_nights_flag",
+      "future_leakage_risk": "low_if_joined_by_game_start",
+      "license_or_terms_note": "Free/open GitHub release assets; upstream ESPN/NBA/WNBA/NCAA terms still require conservative normalized-use review.",
+      "model_eligible": true,
+      "report_entry": true,
+      "retrieval_method": "github_release_csv_range_read",
+      "source_id": "espn_womens_college_basketball_schedules",
+      "source_url_hash": "f02f613e2c69fd0a091fd957b3a713fa09e2bb685dbd800c9d0687703fcad8ca",
+      "sport": "basketball_ncaaw",
+      "table": "basketball_schedule_context_features",
+      "tests": [
+        "tests/test_basketball_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "2026",
+      "coverage_start": "2026",
+      "cutoff_safe": true,
+      "data_type": "float",
+      "description": "travel_distance_estimate derived from rest/back-to-back/travel features for NCAAW",
+      "entity_level": "team_game",
+      "field_catalog_entry": {
+        "field_name": "travel_distance_estimate",
+        "module": "basketball_ncaaw",
+        "source_family": "espn_womens_college_basketball_schedules",
+        "table": "basketball_schedule_context_features"
+      },
+      "field_name": "travel_distance_estimate",
+      "future_leakage_risk": "low_if_joined_by_game_start",
+      "license_or_terms_note": "Free/open GitHub release assets; upstream ESPN/NBA/WNBA/NCAA terms still require conservative normalized-use review.",
+      "model_eligible": true,
+      "report_entry": true,
+      "retrieval_method": "github_release_csv_range_read",
+      "source_id": "espn_womens_college_basketball_schedules",
+      "source_url_hash": "f02f613e2c69fd0a091fd957b3a713fa09e2bb685dbd800c9d0687703fcad8ca",
+      "sport": "basketball_ncaaw",
+      "table": "basketball_schedule_context_features",
+      "tests": [
+        "tests/test_basketball_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "2026",
+      "coverage_start": "2026",
+      "cutoff_safe": true,
+      "data_type": "boolean",
+      "description": "neutral_site_flag derived from arena/venue features for NCAAW",
+      "entity_level": "venue_game",
+      "field_catalog_entry": {
+        "field_name": "neutral_site_flag",
+        "module": "basketball_ncaaw",
+        "source_family": "espn_womens_college_basketball_schedules",
+        "table": "basketball_venue_context"
+      },
+      "field_name": "neutral_site_flag",
+      "future_leakage_risk": "low_if_joined_by_game_start",
+      "license_or_terms_note": "Free/open GitHub release assets; upstream ESPN/NBA/WNBA/NCAA terms still require conservative normalized-use review.",
+      "model_eligible": true,
+      "report_entry": true,
+      "retrieval_method": "github_release_csv_range_read",
+      "source_id": "espn_womens_college_basketball_schedules",
+      "source_url_hash": "f02f613e2c69fd0a091fd957b3a713fa09e2bb685dbd800c9d0687703fcad8ca",
+      "sport": "basketball_ncaaw",
+      "table": "basketball_venue_context",
+      "tests": [
+        "tests/test_basketball_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "2026",
+      "coverage_start": "2026",
+      "cutoff_safe": true,
+      "data_type": "string",
+      "description": "roster_continuity derived from roster continuity for NCAAW",
+      "entity_level": "player_game",
+      "field_catalog_entry": {
+        "field_name": "roster_continuity",
+        "module": "basketball_ncaaw",
+        "source_family": "espn_womens_college_basketball_game_rosters",
+        "table": "basketball_roster_continuity_features"
+      },
+      "field_name": "roster_continuity",
+      "future_leakage_risk": "low_if_joined_by_game_start",
+      "license_or_terms_note": "Free/open GitHub release assets; upstream ESPN/NBA/WNBA/NCAA terms still require conservative normalized-use review.",
+      "model_eligible": true,
+      "report_entry": true,
+      "retrieval_method": "github_release_csv_range_read",
+      "source_id": "espn_womens_college_basketball_game_rosters",
+      "source_url_hash": "cebde4192dc55d9ed19dd52e4561195652f4afeaa1e4e05f82fe3df49e208fbb",
+      "sport": "basketball_ncaaw",
+      "table": "basketball_roster_continuity_features",
+      "tests": [
+        "tests/test_basketball_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "2026",
+      "coverage_start": "2026",
+      "cutoff_safe": true,
+      "data_type": "float",
+      "description": "rotation_stability derived from roster continuity for NCAAW",
+      "entity_level": "player_game",
+      "field_catalog_entry": {
+        "field_name": "rotation_stability",
+        "module": "basketball_ncaaw",
+        "source_family": "espn_womens_college_basketball_game_rosters",
+        "table": "basketball_roster_continuity_features"
+      },
+      "field_name": "rotation_stability",
+      "future_leakage_risk": "low_if_joined_by_game_start",
+      "license_or_terms_note": "Free/open GitHub release assets; upstream ESPN/NBA/WNBA/NCAA terms still require conservative normalized-use review.",
+      "model_eligible": true,
+      "report_entry": true,
+      "retrieval_method": "github_release_csv_range_read",
+      "source_id": "espn_womens_college_basketball_game_rosters",
+      "source_url_hash": "cebde4192dc55d9ed19dd52e4561195652f4afeaa1e4e05f82fe3df49e208fbb",
+      "sport": "basketball_ncaaw",
+      "table": "basketball_roster_continuity_features",
+      "tests": [
+        "tests/test_basketball_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "2026",
+      "coverage_start": "2026",
+      "cutoff_safe": true,
+      "data_type": "float",
+      "description": "conference_tournament_context derived from conference/tournament context for NCAAW",
+      "entity_level": "game",
+      "field_catalog_entry": {
+        "field_name": "conference_tournament_context",
+        "module": "basketball_ncaaw",
+        "source_family": "espn_womens_college_basketball_schedules",
+        "table": "basketball_college_tournament_context"
+      },
+      "field_name": "conference_tournament_context",
+      "future_leakage_risk": "low_if_joined_by_game_start",
+      "license_or_terms_note": "Free/open GitHub release assets; upstream ESPN/NBA/WNBA/NCAA terms still require conservative normalized-use review.",
+      "model_eligible": true,
+      "report_entry": true,
+      "retrieval_method": "github_release_csv_range_read",
+      "source_id": "espn_womens_college_basketball_schedules",
+      "source_url_hash": "f02f613e2c69fd0a091fd957b3a713fa09e2bb685dbd800c9d0687703fcad8ca",
+      "sport": "basketball_ncaaw",
+      "table": "basketball_college_tournament_context",
+      "tests": [
+        "tests/test_basketball_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "2026",
+      "coverage_start": "2026",
+      "cutoff_safe": true,
+      "data_type": "float",
+      "description": "late_season_motivation_context derived from conference/tournament context for NCAAW",
+      "entity_level": "game",
+      "field_catalog_entry": {
+        "field_name": "late_season_motivation_context",
+        "module": "basketball_ncaaw",
+        "source_family": "espn_womens_college_basketball_schedules",
+        "table": "basketball_college_tournament_context"
+      },
+      "field_name": "late_season_motivation_context",
+      "future_leakage_risk": "low_if_joined_by_game_start",
+      "license_or_terms_note": "Free/open GitHub release assets; upstream ESPN/NBA/WNBA/NCAA terms still require conservative normalized-use review.",
+      "model_eligible": true,
+      "report_entry": true,
+      "retrieval_method": "github_release_csv_range_read",
+      "source_id": "espn_womens_college_basketball_schedules",
+      "source_url_hash": "f02f613e2c69fd0a091fd957b3a713fa09e2bb685dbd800c9d0687703fcad8ca",
+      "sport": "basketball_ncaaw",
+      "table": "basketball_college_tournament_context",
+      "tests": [
+        "tests/test_basketball_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    }
+  ],
+  "new_tables_created": 8,
+  "new_tables_created_entries": [
+    "basketball_college_tournament_context",
+    "basketball_lineup_context",
+    "basketball_official_assignments",
+    "basketball_possession_context",
+    "basketball_roster_continuity_features",
+    "basketball_schedule_context_features",
+    "basketball_shot_context",
+    "basketball_venue_context"
+  ],
+  "obsolete_or_duplicate_count": 4,
+  "ok": true,
+  "overall_basketball_verdict": "BASKETBALL_FREE_VS_PAID_COMPLETE",
+  "oxylabs_residential_proxy_status": {
+    "available": true,
+    "reason": "not needed after free/open release sample verification",
+    "used": false
+  },
+  "oxylabs_web_scraper_api_status": {
+    "available": true,
+    "reason": "not needed after free/open release sample verification",
+    "used": false
+  },
+  "paid_data_requirement_matrix_path": "reports/BASKETBALL_PAID_DATA_REQUIREMENT_MATRIX.json",
+  "paid_data_subscription_required_count": 12,
+  "paid_source_enabled_count": 1,
+  "policy_blocked_count": 4,
+  "provider_write": false,
+  "raw_html_persisted": false,
+  "raw_payload_included": false,
+  "raw_screenshot_persisted": false,
+  "records_added_by_sport": {
+    "basketball_nba": 0,
+    "basketball_ncaab": 0,
+    "basketball_ncaaw": 0,
+    "basketball_wnba": 0
+  },
+  "remaining_manual_actions": [
+    "Review direct NBA/WNBA Stats and ESPN endpoint terms before enabling direct endpoint loaders.",
+    "Import timestamped NBA/WNBA injury reports manually if player-prop calibration requires them.",
+    "License paid college injury/lineup/tracking feeds only if calibration gains justify cost."
+  ],
+  "report_name": "BASKETBALL_FREE_VS_PAID_FINAL_REPORT",
+  "run_mode": "basketball_free_vs_paid_sample_verification_and_calibration_readiness",
+  "sample_blocked_count": 25,
+  "sample_no_records_count": 0,
+  "sample_records_tested_by_sport": {
+    "basketball_nba": 33,
+    "basketball_ncaab": 36,
+    "basketball_ncaaw": 36,
+    "basketball_wnba": 36
+  },
+  "sample_verified_count": 47,
+  "schema_version": "basketball_free_vs_paid_final_v1",
+  "secrets_included": false,
+  "source_count": 72,
+  "sports_included": [
+    "basketball_nba",
+    "basketball_wnba",
+    "basketball_ncaab",
+    "basketball_ncaaw"
+  ],
+  "sportsbook_bet_execution_enabled": false,
+  "status": "ok",
+  "stock_trade_execution_enabled": false,
+  "tests_result": "passed",
+  "tests_run": [
+    "python -m pytest tests/test_basketball_architecture_inventory.py -q",
+    "python -m pytest tests/test_basketball_free_vs_paid_source_ledger.py -q",
+    "python -m pytest tests/test_basketball_gap_action_plan.py -q",
+    "python -m pytest tests/test_basketball_targeted_sample_verification.py -q",
+    "python -m pytest tests/test_basketball_active_source_discovery.py -q",
+    "python -m pytest tests/test_basketball_source_discovery_query_builder.py -q",
+    "python -m pytest tests/test_basketball_source_discovery_policy.py -q",
+    "python -m pytest tests/test_nba_sample_verifier.py -q",
+    "python -m pytest tests/test_nba_free_data_loader.py -q",
+    "python -m pytest tests/test_nba_schema_expansion.py -q",
+    "python -m pytest tests/test_wnba_sample_verifier.py -q",
+    "python -m pytest tests/test_wnba_free_data_loader.py -q",
+    "python -m pytest tests/test_wnba_schema_expansion.py -q",
+    "python -m pytest tests/test_ncaab_sample_verifier.py -q",
+    "python -m pytest tests/test_ncaab_free_data_loader.py -q",
+    "python -m pytest tests/test_ncaab_schema_expansion.py -q",
+    "python -m pytest tests/test_ncaaw_sample_verifier.py -q",
+    "python -m pytest tests/test_ncaaw_free_data_loader.py -q",
+    "python -m pytest tests/test_ncaaw_schema_expansion.py -q",
+    "python -m pytest tests/test_basketball_schema_expansion.py -q",
+    "python -m pytest tests/test_basketball_paid_data_requirement_matrix.py -q",
+    "python -m pytest tests/test_basketball_data_calibration_readiness_report.py -q",
+    "python -m pytest tests/test_basketball_free_vs_paid_final_report.py -q",
+    "python -m pytest tests -q",
+    "python -m compileall automation_scheduler scripts tests"
+  ],
+  "unavailable_after_max_effort_count": 0,
+  "user_approved_paid_transport_needed_count": 0,
+  "what_can_be_manually_imported": [
+    "injuries_availability",
+    "strength_of_schedule_context"
+  ],
+  "what_is_free": [
+    "advanced_team_player_stats",
+    "arena_venue_features",
+    "conference_tournament_context",
+    "lineup_on_off",
+    "pace_possessions",
+    "play_by_play",
+    "player_box_scores",
+    "referee_official_assignments",
+    "rest_travel_features",
+    "roster_continuity",
+    "schedule_results",
+    "shot_location",
+    "team_box_scores"
+  ],
+  "what_is_policy_blocked": [
+    "lineup_on_off",
+    "restricted_reference_tables"
+  ],
+  "what_requires_paid_data": [
+    "injuries_availability",
+    "lineup_on_off",
+    "optical_tracking_player_location",
+    "transaction_availability_volatility"
+  ],
+  "what_should_be_ignored_as_obsolete_or_duplicate": [
+    "duplicate_box_score_mirror_sources"
+  ]
+}

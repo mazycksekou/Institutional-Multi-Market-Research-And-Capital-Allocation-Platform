@@ -1,0 +1,60 @@
+# Basketball Schema Expansion Report
+
+- new_fields_created_count: 53
+- new_tables_created_count: 8
+
+| sport | table | field_name | entity_level | source_id | validation_status | cutoff_safe | model_eligible |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| basketball_nba | basketball_possession_context | possession_estimate_source | team_game | espn_nba_team_boxscores | sample_verified | True | True |
+| basketball_nba | basketball_possession_context | pace_stability | team_game | espn_nba_team_boxscores | sample_verified | True | True |
+| basketball_nba | basketball_shot_context | shot_quality_proxy | shot | espn_nba_shots | sample_verified | True | True |
+| basketball_nba | basketball_official_assignments | referee_crew_id | official_game | espn_nba_officials | sample_verified | True | True |
+| basketball_nba | basketball_official_assignments | referee_tendency_candidates | official_game | espn_nba_officials | sample_verified | True | True |
+| basketball_nba | basketball_schedule_context_features | rest_disadvantage | team_game | espn_nba_schedules | sample_verified | True | True |
+| basketball_nba | basketball_schedule_context_features | back_to_back_flag | team_game | espn_nba_schedules | sample_verified | True | True |
+| basketball_nba | basketball_schedule_context_features | three_in_four_nights_flag | team_game | espn_nba_schedules | sample_verified | True | True |
+| basketball_nba | basketball_schedule_context_features | travel_distance_estimate | team_game | espn_nba_schedules | sample_verified | True | True |
+| basketball_nba | basketball_venue_context | neutral_site_flag | venue_game | espn_nba_schedules | sample_verified | True | True |
+| basketball_nba | basketball_roster_continuity_features | roster_continuity | player_game | espn_nba_game_rosters | sample_verified | True | True |
+| basketball_nba | basketball_roster_continuity_features | rotation_stability | player_game | espn_nba_game_rosters | sample_verified | True | True |
+| basketball_wnba | basketball_possession_context | possession_estimate_source | team_game | espn_wnba_team_boxscores | sample_verified | True | True |
+| basketball_wnba | basketball_possession_context | pace_stability | team_game | espn_wnba_team_boxscores | sample_verified | True | True |
+| basketball_wnba | basketball_shot_context | shot_quality_proxy | shot | espn_wnba_shots | sample_verified | True | True |
+| basketball_wnba | basketball_official_assignments | referee_crew_id | official_game | espn_wnba_officials | sample_verified | True | True |
+| basketball_wnba | basketball_official_assignments | referee_tendency_candidates | official_game | espn_wnba_officials | sample_verified | True | True |
+| basketball_wnba | basketball_schedule_context_features | rest_disadvantage | team_game | espn_wnba_schedules | sample_verified | True | True |
+| basketball_wnba | basketball_schedule_context_features | back_to_back_flag | team_game | espn_wnba_schedules | sample_verified | True | True |
+| basketball_wnba | basketball_schedule_context_features | three_in_four_nights_flag | team_game | espn_wnba_schedules | sample_verified | True | True |
+| basketball_wnba | basketball_schedule_context_features | travel_distance_estimate | team_game | espn_wnba_schedules | sample_verified | True | True |
+| basketball_wnba | basketball_venue_context | neutral_site_flag | venue_game | espn_wnba_schedules | sample_verified | True | True |
+| basketball_wnba | basketball_roster_continuity_features | roster_continuity | player_game | espn_wnba_game_rosters | sample_verified | True | True |
+| basketball_wnba | basketball_roster_continuity_features | rotation_stability | player_game | espn_wnba_game_rosters | sample_verified | True | True |
+| basketball_wnba | basketball_lineup_context | lineup_continuity | lineup | wnba_stats_lineups | sample_verified | True | True |
+| basketball_ncaab | basketball_possession_context | possession_estimate_source | team_game | espn_mens_college_basketball_team_boxscores | sample_verified | True | True |
+| basketball_ncaab | basketball_possession_context | pace_stability | team_game | espn_mens_college_basketball_team_boxscores | sample_verified | True | True |
+| basketball_ncaab | basketball_shot_context | shot_quality_proxy | shot | espn_mens_college_basketball_shots | sample_verified | True | True |
+| basketball_ncaab | basketball_official_assignments | referee_crew_id | official_game | espn_mens_college_basketball_officials | sample_verified | True | True |
+| basketball_ncaab | basketball_official_assignments | referee_tendency_candidates | official_game | espn_mens_college_basketball_officials | sample_verified | True | True |
+| basketball_ncaab | basketball_schedule_context_features | rest_disadvantage | team_game | espn_mens_college_basketball_schedules | sample_verified | True | True |
+| basketball_ncaab | basketball_schedule_context_features | back_to_back_flag | team_game | espn_mens_college_basketball_schedules | sample_verified | True | True |
+| basketball_ncaab | basketball_schedule_context_features | three_in_four_nights_flag | team_game | espn_mens_college_basketball_schedules | sample_verified | True | True |
+| basketball_ncaab | basketball_schedule_context_features | travel_distance_estimate | team_game | espn_mens_college_basketball_schedules | sample_verified | True | True |
+| basketball_ncaab | basketball_venue_context | neutral_site_flag | venue_game | espn_mens_college_basketball_schedules | sample_verified | True | True |
+| basketball_ncaab | basketball_roster_continuity_features | roster_continuity | player_game | espn_mens_college_basketball_game_rosters | sample_verified | True | True |
+| basketball_ncaab | basketball_roster_continuity_features | rotation_stability | player_game | espn_mens_college_basketball_game_rosters | sample_verified | True | True |
+| basketball_ncaab | basketball_college_tournament_context | conference_tournament_context | game | espn_mens_college_basketball_schedules | sample_verified | True | True |
+| basketball_ncaab | basketball_college_tournament_context | late_season_motivation_context | game | espn_mens_college_basketball_schedules | sample_verified | True | True |
+| basketball_ncaaw | basketball_possession_context | possession_estimate_source | team_game | espn_womens_college_basketball_team_boxscores | sample_verified | True | True |
+| basketball_ncaaw | basketball_possession_context | pace_stability | team_game | espn_womens_college_basketball_team_boxscores | sample_verified | True | True |
+| basketball_ncaaw | basketball_shot_context | shot_quality_proxy | shot | espn_womens_college_basketball_shots | sample_verified | True | True |
+| basketball_ncaaw | basketball_official_assignments | referee_crew_id | official_game | espn_womens_college_basketball_officials | sample_verified | True | True |
+| basketball_ncaaw | basketball_official_assignments | referee_tendency_candidates | official_game | espn_womens_college_basketball_officials | sample_verified | True | True |
+| basketball_ncaaw | basketball_schedule_context_features | rest_disadvantage | team_game | espn_womens_college_basketball_schedules | sample_verified | True | True |
+| basketball_ncaaw | basketball_schedule_context_features | back_to_back_flag | team_game | espn_womens_college_basketball_schedules | sample_verified | True | True |
+| basketball_ncaaw | basketball_schedule_context_features | three_in_four_nights_flag | team_game | espn_womens_college_basketball_schedules | sample_verified | True | True |
+| basketball_ncaaw | basketball_schedule_context_features | travel_distance_estimate | team_game | espn_womens_college_basketball_schedules | sample_verified | True | True |
+| basketball_ncaaw | basketball_venue_context | neutral_site_flag | venue_game | espn_womens_college_basketball_schedules | sample_verified | True | True |
+| basketball_ncaaw | basketball_roster_continuity_features | roster_continuity | player_game | espn_womens_college_basketball_game_rosters | sample_verified | True | True |
+| basketball_ncaaw | basketball_roster_continuity_features | rotation_stability | player_game | espn_womens_college_basketball_game_rosters | sample_verified | True | True |
+| basketball_ncaaw | basketball_college_tournament_context | conference_tournament_context | game | espn_womens_college_basketball_schedules | sample_verified | True | True |
+| basketball_ncaaw | basketball_college_tournament_context | late_season_motivation_context | game | espn_womens_college_basketball_schedules | sample_verified | True | True |
