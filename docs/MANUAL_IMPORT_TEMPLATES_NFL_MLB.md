@@ -27,3 +27,7 @@ This pass creates manual import templates for unresolved NFL and MLB fields that
 - Include the source URL hash and validation evidence when backfilling manually.
 - Keep cutoff-sensitive fields aligned with the appropriate pregame or historical window.
 
+## Completed Sports Policy Note
+
+- The combined completed-sports policy review now classifies unresolved NFL and MLB public paths path-by-path as manual-only, paid/licensed, blocked, duplicate, unavailable, or license-unclear.
+- Use `data/manual_import_templates/completed_sports_policy_review_template.csv` when you need the source-policy blocker or legal-review context alongside the sport-specific template rows.
