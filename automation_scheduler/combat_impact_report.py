@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from typing import Any
 
@@ -260,3 +260,4 @@ def build_combat_impact_diagnostics(
         "readiness": build_combat_impact_readiness(),
     }
     return finalize_combat_response(payload, source_payload=source_payload)
+

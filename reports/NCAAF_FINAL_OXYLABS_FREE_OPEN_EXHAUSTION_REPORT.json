@@ -15,7 +15,7 @@
   "calibration_readiness_report_path": "reports/NCAAF_DATA_CALIBRATION_READINESS_REPORT.json",
   "candidate_paths_policy_reviewed": 14,
   "candidate_sources_discovered": 14,
-  "commit_hash": "80db831982fa712759d7adc112020ab145e5a055",
+  "commit_hash": "1840afeb5cbcb976502f6a417dc312199295b95c",
   "data_dictionaries_checked": 5,
   "execution_allowed": false,
   "fields_closed_this_pass": 12,

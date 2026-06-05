@@ -6,7 +6,7 @@
   "all_paid_manual_policy_terms_lanes_rechecked": true,
   "all_sample_required_lanes_verified_or_hard_blocked": true,
   "all_unresolved_lanes_oxylabs_checked_or_hard_blocked": true,
-  "created_at": "2026-06-05T21:55:04.235816+00:00",
+  "created_at": "2026-06-05T22:29:06.948367+00:00",
   "execution_allowed": false,
   "finality_evidence_summary": "NCAAF free/open lanes were exhausted with mandatory Oxylabs policy review, five CFBD-style loader lanes were backfilled, metadata lanes were accepted only as metadata, and remaining official, roster, weather, injury, depth-chart, advanced-stat, blocked, paid, and license-unclear lanes have final actionable states.",
   "free_sources_checked": 14,

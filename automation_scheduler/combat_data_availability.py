@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from typing import Any
 
@@ -180,3 +180,4 @@ def evaluate_combat_data_availability(
         },
         source_payload=row,
     )
+

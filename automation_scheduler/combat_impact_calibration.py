@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from typing import Any
 
@@ -86,3 +86,4 @@ def evaluate_combat_impact_calibration(
     if source.get("fill_prices") not in (None, "") or source.get("slippage_observations") not in (None, ""):
         result["slippage_proxy"] = source.get("slippage_observations", "available")
     return finalize_combat_response(result, source_payload=source)
+

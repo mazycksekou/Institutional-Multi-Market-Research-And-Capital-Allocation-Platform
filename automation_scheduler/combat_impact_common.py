@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import math
 from typing import Any, Iterable
@@ -358,3 +358,4 @@ def finalize_combat_response(payload: dict[str, Any], *, source_payload: Any | N
     safe["live_execution_enabled"] = False
     safe["auto_execution"] = False
     return safe
+

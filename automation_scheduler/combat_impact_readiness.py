@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from .combat_impact_common import DATA_TIER_REQUIREMENTS, SUPPORTED_COMBAT_MARKETS, SUPPORTED_COMBAT_PHASES, SUPPORTED_COMBAT_SPORTS, finalize_combat_response
 
@@ -73,3 +73,4 @@ def build_combat_impact_readiness() -> dict:
             ],
         }
     )
+

@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from typing import Any
 
@@ -55,3 +55,4 @@ def evaluate_combat_availability_context(row: dict[str, Any] | None = None) -> d
         },
         source_payload=source,
     )
+

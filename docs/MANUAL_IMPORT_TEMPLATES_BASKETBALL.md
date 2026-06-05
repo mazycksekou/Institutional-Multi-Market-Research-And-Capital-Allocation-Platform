@@ -29,8 +29,3 @@ Manual templates cover unresolved basketball lanes that are paid, terms-review g
 - Basketball modules remain separate: NBA, WNBA, NCAAB, and NCAAW are not merged.
 
 Template rows: 21
-
-## Completed Sports Policy Note
-
-- The combined completed-sports policy review now resolves the remaining basketball public-path questions into final path-level states such as manual-only, paid/licensed, blocked, duplicate, or license-unclear.
-- Use `data/manual_import_templates/completed_sports_policy_review_template.csv` when you need the path-level blocker, policy-doc coverage, or legal-review status next to the sport-specific basketball templates.
