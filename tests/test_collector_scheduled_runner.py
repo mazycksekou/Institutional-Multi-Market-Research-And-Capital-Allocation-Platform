@@ -74,9 +74,10 @@ class TestCollectorScheduledRunner(unittest.TestCase):
                     headers={"X-Collector-Token": "secret"},
                     json={
                         "trigger_type": "render_cron",
-                        "target_daily_new_contracts": 250,
-                        "hard_cap_daily_new_contracts": 500,
-                        "max_new_contracts_per_cycle": 50,
+                        "target_daily_new_contracts": 100,
+                        "hard_cap_daily_new_contracts": 250,
+                        "max_new_contracts_per_cycle": 25,
+                        "max_markets_scanned": 5000,
                         "adaptive_throttle": True,
                     },
                 )
@@ -87,7 +88,7 @@ class TestCollectorScheduledRunner(unittest.TestCase):
         self.assertEqual(payload["execution_allowed_count"], 0)
         self.assertEqual(payload["storage"]["env_var"], "AUTOMATION_DATA_DIR")
         self.assertNotIn("secret", response.text)
-        self.assertEqual(mocked.call_args.args[0]["max_new_contracts_per_cycle"], 50)
+        self.assertEqual(mocked.call_args.args[0]["max_new_contracts_per_cycle"], 25)
 
     def test_rejects_unsafe_overrides_before_collector_runs(self):
         config, errors = build_scheduled_collector_config(
@@ -130,10 +131,10 @@ class TestCollectorScheduledRunner(unittest.TestCase):
         kwargs = mocked.call_args.kwargs
         self.assertFalse(kwargs["dry_run"])
         self.assertTrue(kwargs["persist_outcomes"])
-        self.assertEqual(kwargs["max_new_contracts"], 50)
-        self.assertEqual(kwargs["target_daily_new_contracts"], 250)
-        self.assertEqual(kwargs["hard_cap_daily_new_contracts"], 500)
-        self.assertEqual(kwargs["max_markets_scanned"], 25000)
+        self.assertEqual(kwargs["max_new_contracts"], 25)
+        self.assertEqual(kwargs["target_daily_new_contracts"], 100)
+        self.assertEqual(kwargs["hard_cap_daily_new_contracts"], 250)
+        self.assertEqual(kwargs["max_markets_scanned"], 5000)
         self.assertTrue(kwargs["adaptive_throttle"])
         self.assertFalse(result["provider_write"])
         self.assertEqual(result["actual_orders_submitted"], 0)

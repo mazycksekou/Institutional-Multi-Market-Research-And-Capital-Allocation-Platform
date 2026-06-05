@@ -13,10 +13,10 @@ CRON_TOKEN_ENV = "COLLECTOR_CRON_TOKEN"
 DEFAULT_SCHEDULED_COLLECTOR_CONFIG = {
     "dry_run": False,
     "persist_outcomes": True,
-    "target_daily_new_contracts": 250,
-    "hard_cap_daily_new_contracts": 500,
-    "max_new_contracts_per_cycle": 50,
-    "max_markets_scanned": 25000,
+    "target_daily_new_contracts": 100,
+    "hard_cap_daily_new_contracts": 250,
+    "max_new_contracts_per_cycle": 25,
+    "max_markets_scanned": 5000,
     "adaptive_throttle": True,
     "include_short_term": True,
     "include_medium_term": True,
@@ -111,7 +111,7 @@ def _validate_overrides(payload: dict[str, Any]) -> list[str]:
     if isinstance(hard_cap, str) and hard_cap.strip().lower() in {"unlimited", "none", "infinite", "inf"}:
         errors.append("hard_cap_daily_new_contracts_unlimited_rejected")
     try:
-        if hard_cap is not None and int(hard_cap) > 500:
+        if hard_cap is not None and int(hard_cap) > 250:
             errors.append("hard_cap_daily_new_contracts_exceeds_scheduled_cap")
     except (TypeError, ValueError):
         pass

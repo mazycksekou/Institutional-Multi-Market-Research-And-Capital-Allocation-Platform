@@ -47,7 +47,7 @@ Do not run the Kalshi collector script directly from a Render Cron Job when usin
    curl -fsS -X POST "https://betting-stock-api-code-integration.onrender.com/api/automation/calibration-collector/scheduled-run" \
      -H "Content-Type: application/json" \
      -H "X-Collector-Token: $COLLECTOR_CRON_TOKEN" \
-     -d "{\"trigger_type\":\"manual_storage_verification\",\"target_daily_new_contracts\":250,\"hard_cap_daily_new_contracts\":500,\"max_new_contracts_per_cycle\":50,\"adaptive_throttle\":true}"
+     -d "{\"trigger_type\":\"manual_storage_verification\",\"target_daily_new_contracts\":100,\"hard_cap_daily_new_contracts\":250,\"max_new_contracts_per_cycle\":25,\"max_markets_scanned\":5000,\"adaptive_throttle\":true}"
    ```
 
 9. Confirm files are written under:
@@ -97,7 +97,7 @@ Cron command:
 curl -fsS -X POST "$APP_BASE_URL/api/automation/calibration-collector/scheduled-run" \
   -H "Content-Type: application/json" \
   -H "X-Collector-Token: $COLLECTOR_CRON_TOKEN" \
-  -d "{\"trigger_type\":\"render_cron\",\"target_daily_new_contracts\":250,\"hard_cap_daily_new_contracts\":500,\"max_new_contracts_per_cycle\":50,\"adaptive_throttle\":true}"
+  -d "{\"trigger_type\":\"render_cron\",\"target_daily_new_contracts\":100,\"hard_cap_daily_new_contracts\":250,\"max_new_contracts_per_cycle\":25,\"max_markets_scanned\":5000,\"adaptive_throttle\":true}"
 ```
 
 Start at every 30 minutes because Kalshi recently returned `http_429`. Move to every 15 minutes only after clean runs. Do not run both Cron and a background worker unless lock and idempotency behavior are verified in production.
@@ -119,4 +119,4 @@ actual_bets_submitted=0
 actual_trades_submitted=0
 ```
 
-The endpoint rejects live execution flags, provider-write flags, inferred-outcome flags, negative limits, and hard caps above `500`.
+The endpoint rejects live execution flags, provider-write flags, inferred-outcome flags, negative limits, and hard caps above `250`.

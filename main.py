@@ -980,6 +980,13 @@ class AutomationRunOnceRequest(BaseModel):
     injected_data: dict[str, Any] = Field(default_factory=dict)
 
 
+class KalshiProviderSnapshotRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", protected_namespaces=())
+
+    dry_run: bool = True
+    write_snapshot: bool = False
+
+
 class AutomationOutcomeIngestRequest(BaseModel):
     model_config = ConfigDict(extra="forbid", protected_namespaces=())
 
@@ -1015,10 +1022,10 @@ class AutomationCalibrationCollectorRunRequest(BaseModel):
 
     dry_run: bool = True
     persist_outcomes: bool = False
-    max_new_contracts: Optional[int] = 50
-    target_daily_new_contracts: Optional[int] = 250
-    hard_cap_daily_new_contracts: Optional[int] = 500
-    max_markets_scanned: Optional[int] = 25000
+    max_new_contracts: Optional[int] = 25
+    target_daily_new_contracts: Optional[int] = 100
+    hard_cap_daily_new_contracts: Optional[int] = 250
+    max_markets_scanned: Optional[int] = 5000
     include_short_term: bool = True
     include_medium_term: bool = True
     include_long_term: bool = True
@@ -1030,10 +1037,10 @@ class AutomationCalibrationCollectorScheduledRunRequest(BaseModel):
     model_config = ConfigDict(extra="allow", protected_namespaces=())
 
     trigger_type: Optional[str] = "scheduled_endpoint"
-    target_daily_new_contracts: Optional[int] = 250
-    hard_cap_daily_new_contracts: Optional[int] = 500
-    max_new_contracts_per_cycle: Optional[int] = 50
-    max_markets_scanned: Optional[int] = 25000
+    target_daily_new_contracts: Optional[int] = 100
+    hard_cap_daily_new_contracts: Optional[int] = 250
+    max_new_contracts_per_cycle: Optional[int] = 25
+    max_markets_scanned: Optional[int] = 5000
     adaptive_throttle: bool = True
     include_short_term: bool = True
     include_medium_term: bool = True
@@ -4456,12 +4463,21 @@ async def get_kalshi_provider_health_endpoint(verbose: bool = Query(default=Fals
 
 
 @app.post("/api/providers/kalshi/snapshot", operation_id="createKalshiProviderSnapshot")
-async def create_kalshi_provider_snapshot_endpoint(verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=10)):
-    payload = automation_scheduler.run_kalshi_provider_snapshot()
-    compact = compact_provider_status(payload)
+async def create_kalshi_provider_snapshot_endpoint(
+    payload: Optional[KalshiProviderSnapshotRequest] = None,
+    verbose: bool = Query(default=False),
+    include_debug: bool = Query(default=False),
+    limit: int = Query(default=10),
+):
+    request_payload = payload or KalshiProviderSnapshotRequest()
+    result = automation_scheduler.run_kalshi_provider_snapshot(
+        write_snapshot=bool(request_payload.write_snapshot) and request_payload.dry_run is False
+    )
+    result["dry_run"] = bool(request_payload.dry_run)
+    compact = compact_provider_status(result)
     cap = min(max(int(limit), 1), 100 if verbose else 10)
     if verbose or include_debug:
-        compact["debug"] = redact_and_limit_payload(payload, limit=cap, verbose=verbose)
+        compact["debug"] = redact_and_limit_payload(result, limit=cap, verbose=verbose)
     return compact
 
 

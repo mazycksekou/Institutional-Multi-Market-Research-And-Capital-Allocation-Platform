@@ -471,11 +471,31 @@ class TestAutomationSchedulerEndpoints(unittest.TestCase):
         self.assertEqual(health_payload['provider_id'], 'kalshi_prediction_market')
         self.assertNotIn('records', health_payload)
 
-        snap = self.client.post('/api/providers/kalshi/snapshot')
+        with patch(
+            "automation_scheduler.run_kalshi_provider_snapshot",
+            return_value={
+                "ok": True,
+                "status": "live_snapshot_complete",
+                "provider_id": "kalshi_prediction_market",
+                "provider_enabled": True,
+                "dry_run": False,
+                "live_calls_enabled": True,
+                "credential_status": "ok",
+                "records_received": 1,
+                "records_valid": 1,
+                "records_rejected": 0,
+                "blockers": [],
+                "snapshot_path": None,
+            },
+        ) as mocked:
+            snap = self.client.post('/api/providers/kalshi/snapshot', json={"dry_run": True})
         self.assertEqual(snap.status_code, 200)
         snap_payload = snap.json()
         self.assertIn('status', snap_payload)
         self.assertIn('blockers', snap_payload)
+        self.assertTrue(snap_payload["dry_run"])
+        self.assertIsNone(snap_payload["snapshot_path"])
+        self.assertFalse(mocked.call_args.kwargs["write_snapshot"])
         self.assertNotIn('api_key', str(snap_payload).lower())
 
     def test_institutional_lab_health_endpoint_is_safe(self):
