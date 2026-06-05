@@ -506,7 +506,11 @@ def build_soccer_final_oxylabs_free_open_exhaustion_report(
         if row.get("source_category") in unresolved_categories
     )
     all_lanes_have_state = len(audit_rows) == len(soccer_lane_catalog()) and all(row.get("final_actionable_state") in FINAL_ACTIONABLE_STATES for row in audit_rows)
-    remaining_states = {row.get("final_actionable_state") for row in audit_rows if row.get("final_actionable_state") != "free_open_backfilled"}
+    remaining_states = {
+        row.get("final_actionable_state")
+        for row in audit_rows
+        if row.get("final_actionable_state") not in {"free_open_backfilled", "free_open_loader_ready_hard_blocked_from_backfill"}
+    }
     remaining_actions_only = remaining_states.issubset(
         {"paid_subscription_required", "manual_import_required", "policy_blocked", "license_terms_unclear", "obsolete_or_duplicate"}
     )

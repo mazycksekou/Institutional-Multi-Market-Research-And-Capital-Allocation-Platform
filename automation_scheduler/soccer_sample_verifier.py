@@ -52,7 +52,12 @@ def _sample_lane(lane: dict[str, Any], *, cache: dict[str, Any] | None = None) -
     records = list(result.get("normalized_records") or [])
     fields_found = sorted({key for row in records[:10] for key in row.keys()})
     missing = [field for field in lane["fields"] if field not in fields_found]
-    validation_status = "sample_verified" if result.get("ok") and not missing else "validation_failed"
+    if result.get("ok") and not missing:
+        validation_status = "sample_verified"
+    elif not result.get("ok"):
+        validation_status = "hard_blocked"
+    else:
+        validation_status = "validation_failed"
     sample_type = "one_match" if lane.get("entity_level", "match") in {"match", "team_match", "player_match", "event"} else "one_team"
     return {
         "sport": lane["sport"],
@@ -71,9 +76,9 @@ def _sample_lane(lane: dict[str, Any], *, cache: dict[str, Any] | None = None) -
         "repo_fields_mapped": list(lane["fields"]),
         "new_fields_recommended": _new_fields_for_lane(lane),
         "validation_status": validation_status,
-        "loader_recommendation": "loader_ready" if validation_status == "sample_verified" else "validation_failed",
-        "backfill_recommendation": lane["next_action"] if validation_status == "sample_verified" else "validation_failed",
-        "final_actionable_state": lane_final_state(lane, backfill_written=bool(result.get("ok"))),
+        "loader_recommendation": "loader_ready" if validation_status == "sample_verified" else "hard_blocked" if validation_status == "hard_blocked" else "validation_failed",
+        "backfill_recommendation": lane["next_action"] if validation_status == "sample_verified" else "hard_blocked" if validation_status == "hard_blocked" else "validation_failed",
+        "final_actionable_state": lane_final_state(lane, backfill_written=bool(result.get("ok")), hard_blocked=not bool(result.get("ok"))),
         "sample_attempted": True,
         "hard_blocker": False,
         "blocked_reason": result.get("blocked_reason"),
