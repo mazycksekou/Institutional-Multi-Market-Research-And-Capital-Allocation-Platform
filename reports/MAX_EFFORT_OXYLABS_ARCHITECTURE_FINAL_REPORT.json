@@ -1,0 +1,4590 @@
+{
+  "branch_name": "active-discovery-paid-retrieval-field-expansion",
+  "commit_hash": "b2c74ef91c5e06912be2cf2fde6357d16191cc81",
+  "created_at": "2026-06-05T01:30:43.704773+00:00",
+  "cutoff_safety_summary": {
+    "mlb": {
+      "cutoff_safe_feature_count": 1,
+      "future_leakage_checks_passed": true
+    },
+    "nfl": {
+      "cutoff_safe_feature_count": 6,
+      "future_leakage_checks_passed": true
+    }
+  },
+  "feature_groups_updated": [
+    "nfl_staff_role_history",
+    "nfl_official_assignment_history",
+    "nfl_venue_context",
+    "mlb_staff_role_history",
+    "mlb_draft_history",
+    "mlb_official_assignment_history",
+    "mlb_pitcher_context"
+  ],
+  "fields_closed_this_pass": 161,
+  "fields_partially_closed_this_pass": 33,
+  "files_changed": [
+    "automation_scheduler/max_effort_retrieval_policy.py",
+    "automation_scheduler/max_effort_source_discovery.py",
+    "automation_scheduler/mlb_max_effort_field_closure.py",
+    "automation_scheduler/nfl_max_effort_field_closure.py",
+    "automation_scheduler/remaining_field_closure.py",
+    "automation_scheduler/schema_expansion_v2.py",
+    "automation_scheduler/source_discovery_query_builder.py",
+    "automation_scheduler/source_discovery_result_ranker.py",
+    "data/manual_import_templates/mlb_remaining_fields_template.csv",
+    "data/manual_import_templates/nfl_remaining_fields_template.csv",
+    "docs/MANUAL_IMPORT_TEMPLATES_NFL_MLB.md",
+    "reports/MAX_EFFORT_ARCHITECTURE_INVENTORY.json",
+    "reports/MAX_EFFORT_ARCHITECTURE_INVENTORY.md",
+    "reports/MAX_EFFORT_EXISTING_FIELD_CLOSURE_REPORT.json",
+    "reports/MAX_EFFORT_EXISTING_FIELD_CLOSURE_REPORT.md",
+    "reports/MAX_EFFORT_OXYLABS_ARCHITECTURE_FINAL_REPORT.json",
+    "reports/MAX_EFFORT_OXYLABS_ARCHITECTURE_FINAL_REPORT.md",
+    "reports/MAX_EFFORT_REMAINING_FIELD_GAP_INDEX.json",
+    "reports/MAX_EFFORT_REMAINING_FIELD_GAP_INDEX.md",
+    "reports/MAX_EFFORT_SCHEMA_EXPANSION_V2_REPORT.json",
+    "reports/MAX_EFFORT_SCHEMA_EXPANSION_V2_REPORT.md",
+    "reports/MAX_EFFORT_SOURCE_DISCOVERY_LOG.json",
+    "reports/MAX_EFFORT_SOURCE_DISCOVERY_LOG.md",
+    "reports/MLB_MAX_EFFORT_FIELD_CLOSURE_REPORT.json",
+    "reports/MLB_MAX_EFFORT_FIELD_CLOSURE_REPORT.md",
+    "reports/NFL_MAX_EFFORT_FIELD_CLOSURE_REPORT.json",
+    "reports/NFL_MAX_EFFORT_FIELD_CLOSURE_REPORT.md",
+    "reports/NFL_MLB_EXISTING_FIELD_COMPLETION_REPORT.json",
+    "reports/NFL_MLB_EXISTING_FIELD_COMPLETION_REPORT.md",
+    "reports/NFL_MLB_SCHEMA_EXPANSION_REPORT.json",
+    "reports/NFL_MLB_SCHEMA_EXPANSION_REPORT.md",
+    "tests/test_manual_import_templates_nfl_mlb.py",
+    "tests/test_max_effort_architecture_inventory.py",
+    "tests/test_max_effort_retrieval_policy.py",
+    "tests/test_max_effort_source_discovery.py",
+    "tests/test_mlb_max_effort_field_closure.py",
+    "tests/test_nfl_max_effort_field_closure.py",
+    "tests/test_remaining_field_closure.py",
+    "tests/test_schema_expansion_v2.py",
+    "tests/test_source_discovery_query_builder.py"
+  ],
+  "future_leakage_checks_passed": true,
+  "manual_templates_created": 170,
+  "mlb_draft_before_after": {
+    "after": 0,
+    "before": 0
+  },
+  "mlb_managers_coaches_before_after": {
+    "after": 9,
+    "before": 9
+  },
+  "mlb_records_added": 0,
+  "mlb_records_after": 2233,
+  "mlb_records_before": 2233,
+  "model_eligible_features_added": [
+    "coaching_staff_role_history",
+    "staff_turnover_severity",
+    "official_assignment_tendency",
+    "stadium_surface_roof_state",
+    "manager_coach_role_history",
+    "draft_pick_origin",
+    "umpire_assignment_tendency"
+  ],
+  "new_existing_fields_completed": 1658,
+  "new_fields_created_this_pass": 8,
+  "new_remaining_incomplete_fields": 112,
+  "new_tables_created_this_pass": 4,
+  "new_verdict": "MAX_EFFORT_COMPLETE_WITH_POLICY_BLOCKED_SOURCES",
+  "nfl_coaching_before_after": {
+    "after": 0,
+    "before": 0
+  },
+  "nfl_records_added": 0,
+  "nfl_records_after": 6461599,
+  "nfl_records_before": 6461599,
+  "obsolete_or_duplicate_fields_found": 0,
+  "ok": true,
+  "oxylabs_residential_proxy_status": {
+    "allow_oxylabs_required": true,
+    "allow_paid_retrieval_required": true,
+    "allowlist_required": true,
+    "blocklist_enforced": true,
+    "disabled_by_default": true,
+    "no_raw_html": true,
+    "no_raw_payloads": true,
+    "no_secret_logging": true,
+    "present": true
+  },
+  "oxylabs_web_scraper_api_status": {
+    "allow_oxylabs_required": true,
+    "allow_paid_retrieval_required": true,
+    "allowlist_required": true,
+    "blocklist_enforced": true,
+    "disabled_by_default": true,
+    "no_raw_html": true,
+    "no_raw_payloads": true,
+    "no_secret_logging": true,
+    "present": true
+  },
+  "paid_source_enabled_count": 1,
+  "prior_existing_fields_completed": 1497,
+  "prior_existing_fields_total": 1770,
+  "prior_remaining_incomplete_fields": 273,
+  "prior_verdict": "PARTIAL_DISCOVERY_SUCCESS",
+  "raw_payload_scan_result": {
+    "findings": [
+      {
+        "context": "redacted",
+        "file": "main.py",
+        "pattern": "raw_payload_marker"
+      },
+      {
+        "context": "redacted",
+        "file": "multi_sport_model_registry.py",
+        "pattern": "raw_payload_marker"
+      },
+      {
+        "context": "redacted",
+        "file": ".git/index",
+        "pattern": "raw_payload_marker"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/advanced_red_team_report.py",
+        "pattern": "raw_payload_marker"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/advanced_shape_diagnostics.py",
+        "pattern": "raw_payload_marker"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/audit_ledger.py",
+        "pattern": "raw_payload_marker"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/baseball_availability_context.py",
+        "pattern": "raw_payload_marker"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/baseball_batter_impact.py",
+        "pattern": "raw_payload_marker"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/baseball_bullpen_context.py",
+        "pattern": "raw_payload_marker"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/baseball_data_availability.py",
+        "pattern": "raw_payload_marker"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/baseball_defense_baserunning_context.py",
+        "pattern": "raw_payload_marker"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/baseball_impact_calibration.py",
+        "pattern": "raw_payload_marker"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/baseball_impact_common.py",
+        "pattern": "raw_payload_marker"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/baseball_impact_readiness.py",
+        "pattern": "raw_payload_marker"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/baseball_impact_red_team.py",
+        "pattern": "raw_payload_marker"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/baseball_impact_report.py",
+        "pattern": "raw_payload_marker"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/baseball_incentive_context.py",
+        "pattern": "raw_payload_marker"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/baseball_lineup_context.py",
+        "pattern": "raw_payload_marker"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/baseball_market_relevance.py",
+        "pattern": "raw_payload_marker"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/baseball_matchup_context.py",
+        "pattern": "raw_payload_marker"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/baseball_park_weather_umpire_context.py",
+        "pattern": "raw_payload_marker"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/baseball_pitcher_impact.py",
+        "pattern": "raw_payload_marker"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/baseball_run_value_impact.py",
+        "pattern": "raw_payload_marker"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/basketball_incentive_context.py",
+        "pattern": "raw_payload_marker"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/basketball_lineup_matchup_context.py",
+        "pattern": "raw_payload_marker"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/basketball_market_relevance.py",
+        "pattern": "raw_payload_marker"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/basketball_player_impact.py",
+        "pattern": "raw_payload_marker"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/basketball_player_impact_calibration.py",
+        "pattern": "raw_payload_marker"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/basketball_player_impact_common.py",
+        "pattern": "raw_payload_marker"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/basketball_player_impact_readiness.py",
+        "pattern": "raw_payload_marker"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/basketball_player_impact_red_team.py",
+        "pattern": "raw_payload_marker"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/basketball_possession_impact.py",
+        "pattern": "raw_payload_marker"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/basketball_role_context.py",
+        "pattern": "raw_payload_marker"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/basketball_tracking_opportunity.py",
+        "pattern": "raw_payload_marker"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/broker_quality_scoring.py",
+        "pattern": "raw_payload_marker"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/calibration.py",
+        "pattern": "raw_payload_marker"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/calibration_collector.py",
+        "pattern": "raw_payload_marker"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/causal_scaffold.py",
+        "pattern": "raw_payload_marker"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/collector_scheduled_runner.py",
+        "pattern": "raw_payload_marker"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/combat_availability_context.py",
+        "pattern": "raw_payload_marker"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/combat_damage_durability_context.py",
+        "pattern": "raw_payload_marker"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/combat_data_availability.py",
+        "pattern": "raw_payload_marker"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/combat_grappling_control_impact.py",
+        "pattern": "raw_payload_marker"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/combat_impact_calibration.py",
+        "pattern": "raw_payload_marker"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/combat_impact_common.py",
+        "pattern": "raw_payload_marker"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/combat_impact_red_team.py",
+        "pattern": "raw_payload_marker"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/combat_impact_report.py",
+        "pattern": "raw_payload_marker"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/combat_incentive_context.py",
+        "pattern": "raw_payload_marker"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/combat_market_relevance.py",
+        "pattern": "raw_payload_marker"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/combat_matchup_context.py",
+        "pattern": "raw_payload_marker"
+      }
+    ],
+    "notes": [
+      "No tracked raw HTML, raw screenshot, or raw provider payload artifacts were committed."
+    ],
+    "status": "findings"
+  },
+  "remaining_manual_actions": [
+    "review true_policy_blocked source lanes before any future retrieval",
+    "approve paid retrieval if market-odds coverage is later budgeted",
+    "apply schema refactor to the 33 partially completed MLB rows",
+    "manual templates created for unresolved NFL and MLB fields"
+  ],
+  "role_standard_used": "30-year principal systems engineer, senior data architect, model architect, and adversarial source-discovery/audit lead",
+  "run_mode": "maximum_effort_user_approved_paid_retrieval_mode",
+  "safety_invariants": {
+    "actual_bets_submitted": 0,
+    "actual_crypto_swaps_submitted": 0,
+    "actual_orders_submitted": 0,
+    "actual_trades_submitted": 0,
+    "auto_execution_enabled": false,
+    "broker_order_execution_enabled": false,
+    "crypto_trade_execution_enabled": false,
+    "enabled_source_count": 0,
+    "execution_allowed": false,
+    "execution_allowed_count": 0,
+    "kalshi_order_execution_enabled": false,
+    "live_execution_enabled": false,
+    "paid_source_enabled_count": 0,
+    "provider_write": false,
+    "raw_payload_included": false,
+    "secrets_included": false,
+    "sportsbook_bet_execution_enabled": false,
+    "stock_trade_execution_enabled": false
+  },
+  "schema_version": "max_effort_oxylabs_architecture_final_report_v1",
+  "secret_scan_result": {
+    "findings": [
+      {
+        "context": "redacted",
+        "file": ".gitignore",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "config.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "odds_providers.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": "sharp_client.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".git/index",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/bankroll_state.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/deepseek_reviewer.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/derived_feature_backfill_report.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/institutional_cross_asset_adapters.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/kalshi_readonly_adapter.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/kalshi_readonly_readiness.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/kalshi_readonly_readiness.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/local_sports_history_audit.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/local_sports_history_audit.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/manifold_feature_builder.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/max_effort_source_discovery.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/max_effort_source_discovery.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/mlb_open_data_adapters.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/ncaaf_collegefootballdata_adapter.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/nfl_open_data_adapters.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/open_sports_history_import.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/ops_workflow.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/outcome_migration.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/outcome_store.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/oxylabs_residential_proxy_adapter.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/oxylabs_web_scraper_api_adapter.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/paper_decision_ledger.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/prediction_market_outcome_candidates.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/provider_secret_policy.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/representation_feature_builder.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/response_compactor.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/scheduler_config.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/secret_safety.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/session_risk_rules.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/small_account_strategy.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": "docs/KALSHI_READONLY_LOCAL_SETUP.md",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "docs/NFL_OPEN_DATA_EXPANSION.md",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "docs/OPS_WORKFLOW.md",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "scripts/analyze_json_data.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "scripts/analyze_json_data.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "scripts/live_payloads.ps1",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": "scripts/review_json_audit_with_deepseek.ps1",
+        "pattern": "Authorization"
+      },
+      {
+        "context": "redacted",
+        "file": "scripts/review_json_audit_with_deepseek.ps1",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "scripts/review_json_audit_with_deepseek.ps1.bak_20260602_001441",
+        "pattern": "Authorization"
+      },
+      {
+        "context": "redacted",
+        "file": "scripts/review_json_audit_with_deepseek.ps1.bak_unicode_fix_20260602_001916",
+        "pattern": "Authorization"
+      },
+      {
+        "context": "redacted",
+        "file": "tests/test_advanced_red_team.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "tests/test_automation_scheduler_endpoints.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "tests/test_collector_scheduled_runner.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "tests/test_data_intelligence_stack.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "tests/test_data_paths.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "tests/test_data_source_endpoints.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "tests/test_deepseek_data_pull_check_contract.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "tests/test_deepseek_profit_lab.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "tests/test_deepseek_reviewer.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "tests/test_extreme_randomness_diagnostics.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "tests/test_kalshi_market_provider.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "tests/test_kalshi_provider_shape_contract.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "tests/test_kalshi_readonly_adapter.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "tests/test_kalshi_readonly_readiness_contract.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "tests/test_local_sports_history_audit.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "tests/test_mlb_open_data_backfill.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": "tests/test_ncaaf_collegefootballdata_adapter.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "tests/test_nfl_open_data_backfill.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": "tests/test_ops_workflow.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "tests/test_outcome_import_endpoint.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "tests/test_outcome_migration.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "tests/test_oxylabs_residential_proxy_adapter.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "tests/test_oxylabs_web_scraper_api_adapter.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "tests/test_pattern_review_queue.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": "tests/test_provider_registry.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "tests/test_provider_secret_policy.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "tests/test_scheduler_runner.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "tests/test_screenshot_analysis.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "tests/test_security_framework.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "tests/test_sharp_cross_book_review_queue.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "tests/test_sharp_scheduler_flow.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "tests/test_sharp_sportsbook_adapter.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "tests/test_sportsbook_odds_provider.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "tests/test_strategy_framework.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".git/cursor/crepe/da98317ef990050ae5163cb7fdf94918b0a16073/index.bin",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/distutils-precedence.pth",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/peewee.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pwiz.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/anyio/pytest_plugin.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/cffi/ffiplatform.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/cffi/verifier.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/click/core.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/click/core.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/click/decorators.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/click/shell_completion.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/click/testing.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/click/types.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/click/utils.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/click/_termui_impl.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/colorama/ansitowin32.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/coverage/cmdline.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/coverage/config.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/coverage/control.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/coverage/multiproc.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/coverage/patch.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/coverage/tomlconfig.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/dotenv/cli.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/dotenv/ipython.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/dotenv/main.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/fastapi/applications.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/fastapi/exceptions.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/fastapi/params.py",
+        "pattern": "cookie"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/fastapi/routing.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/fastapi/routing.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/httpcore/_models.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/httpx/_api.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/httpx/_auth.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/httpx/_client.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/httpx/_config.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/httpx/_config.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/httpx/_main.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/httpx/_models.py",
+        "pattern": "cookie"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/httpx/_types.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/httpx/_urlparse.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/httpx/_urls.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/httpx/_utils.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/markdown_it/port.yaml",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/markdown_it/ruler.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/numpy/conftest.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/numpy/__init__.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/packaging/direct_url.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/packaging/pylock.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pandas/_version.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pandas/__init__.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/peewee-4.0.5.dist-info/METADATA",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/platformdirs/android.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/platformdirs/unix.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/platformdirs/windows.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/platformdirs/_xdg.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/playhouse/db_url.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/playhouse/reflection.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pydantic/networks.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pydantic/types.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pydantic_core/_pydantic_core.cp312-win_amd64.pyd",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pydantic_core/_pydantic_core.pyi",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pydantic_core/__init__.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pygments/cmdline.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/python_dotenv-1.0.1.dist-info/METADATA",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/python_dotenv-1.0.1.dist-info/METADATA",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pytz/__init__.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/requests/adapters.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/requests/api.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/requests/auth.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/requests/cookies.py",
+        "pattern": "cookie"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/requests/sessions.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/requests/sessions.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/requests/utils.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/requests/utils.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/rich/console.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/rich/console.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/rich/logging.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/rich/prompt.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/setuptools/installer.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/setuptools/_path.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/setuptools/_scripts.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/setuptools-82.0.1.dist-info/METADATA",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/soupsieve/css_parser.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/starlette/config.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/starlette/datastructures.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/starlette/requests.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/starlette/responses.py",
+        "pattern": "cookie"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/starlette/routing.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/starlette/templating.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/starlette/testclient.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/uvicorn/config.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/uvicorn/config.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/uvicorn/main.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/uvicorn/workers.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/watchfiles/run.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/websockets/client.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/websockets/frames.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/websockets/headers.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/websockets/http11.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/websockets/proxy.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/websockets/uri.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/wheel/macosx_libfile.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/wheel/wheelfile.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/yfinance/base.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/yfinance/cache.py",
+        "pattern": "cookie"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/yfinance/data.py",
+        "pattern": "cookie"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/yfinance/data.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/yfinance/multi.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/yfinance/ticker.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/yfinance/tickers.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/yfinance/utils.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/yfinance-0.2.40.dist-info/METADATA",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/_distutils_hack/__init__.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/_pytest/cacheprovider.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/_pytest/cacheprovider.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/_pytest/compat.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/_pytest/fixtures.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/_pytest/hookspec.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/_pytest/logging.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/_pytest/main.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/_pytest/monkeypatch.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/_pytest/nodes.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/_pytest/pathlib.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/_pytest/pytester.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/_pytest/pytester.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/_pytest/python.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/_pytest/reports.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/_pytest/runner.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/_pytest/runner.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/_pytest/scope.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/_pytest/setuponly.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/_pytest/stepwise.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/_pytest/terminal.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/_pytest/terminalprogress.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/_pytest/tmpdir.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/_pytest/warnings.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/_pytest/_argcomplete.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/__pycache__/peewee.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/click/__pycache__/core.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/click/__pycache__/core.cpython-312.pyc",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/click/__pycache__/decorators.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/colorama/tests/utils.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/cryptography/hazmat/bindings/_rust.pyd",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/cryptography/hazmat/bindings/_rust.pyd",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/cryptography/hazmat/primitives/_serialization.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/cryptography/hazmat/bindings/openssl/binding.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/cryptography/hazmat/bindings/_rust/pkcs12.pyi",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/cryptography/hazmat/bindings/_rust/openssl/keys.pyi",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/cryptography/hazmat/primitives/serialization/ssh.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/cryptography/hazmat/primitives/__pycache__/_serialization.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/cryptography/hazmat/primitives/serialization/__pycache__/ssh.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/dateutil/tz/tz.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/dotenv/__pycache__/main.cpython-312.pyc",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/fastapi/dependencies/utils.py",
+        "pattern": "cookie"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/fastapi/openapi/models.py",
+        "pattern": "cookie"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/fastapi/openapi/models.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/fastapi/security/api_key.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/fastapi/security/http.py",
+        "pattern": "Authorization"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/fastapi/security/http.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/fastapi/security/oauth2.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/fastapi/__pycache__/applications.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/fastapi/__pycache__/exceptions.cpython-312.pyc",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/fastapi/__pycache__/routing.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/fastapi/dependencies/__pycache__/utils.cpython-312.pyc",
+        "pattern": "cookie"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/fastapi/openapi/__pycache__/models.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/fastapi/security/__pycache__/api_key.cpython-312.pyc",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/fastapi/security/__pycache__/http.cpython-312.pyc",
+        "pattern": "Authorization"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/fastapi/security/__pycache__/http.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/fastapi/security/__pycache__/oauth2.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/httpcore/_async/http_proxy.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/httpcore/_async/socks_proxy.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/httpcore/_sync/http_proxy.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/httpcore/_sync/socks_proxy.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/httpcore/__pycache__/_models.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/httpcore/_async/__pycache__/http_proxy.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/httpcore/_async/__pycache__/socks_proxy.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/httpcore/_sync/__pycache__/http_proxy.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/httpcore/_sync/__pycache__/socks_proxy.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/httpx/__pycache__/_api.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/httpx/__pycache__/_auth.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/httpx/__pycache__/_client.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/httpx/__pycache__/_config.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/httpx/__pycache__/_main.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/httpx/__pycache__/_models.cpython-312.pyc",
+        "pattern": "cookie"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/httpx/__pycache__/_urls.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/markdown_it/rules_block/reference.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/markdown_it/rules_block/state_block.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/markdown_it/rules_core/block.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/markdown_it/rules_core/inline.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/markdown_it/rules_core/state_core.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/markdown_it/rules_inline/image.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/markdown_it/rules_inline/link.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/markdown_it/rules_inline/state_inline.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/numpy/f2py/rules.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/numpy/tests/test_public_api.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/numpy/_core/_add_newdocs_scalars.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/numpy/_core/__init__.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/numpy/testing/_private/utils.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/numpy/typing/tests/test_typing.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/numpy/_core/tests/test_cpu_features.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/numpy/_core/tests/test_mem_policy.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/numpy-2.4.4.dist-info/licenses/LICENSE.txt",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pandas/compat/__init__.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pandas/core/accessor.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pandas/core/config_init.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pandas/core/generic.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pandas/core/shared_docs.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pandas/util/_print_versions.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pandas/_testing/contexts.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pandas/core/computation/engines.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pandas/core/computation/expr.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pandas/core/computation/ops.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pandas/core/computation/pytables.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pandas/core/__pycache__/accessor.cpython-312.pyc",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pandas/core/__pycache__/config_init.cpython-312.pyc",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pandas/core/__pycache__/generic.cpython-312.pyc",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pandas/core/__pycache__/shared_docs.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pandas/io/clipboard/__init__.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pandas/io/formats/style.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pandas/io/formats/style_render.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pandas/tests/config/test_localization.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pandas/tests/internals/test_managers.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pandas/tests/io/test_sql.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pandas/tests/io/pytables/test_select.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pandas/tests/io/formats/style/test_html.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pandas/tests/io/formats/style/test_to_latex.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_internal/build_env.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_internal/build_env.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_internal/configuration.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_internal/self_outdated_check.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_internal/cli/autocompletion.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_internal/cli/base_command.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_internal/cli/cmdoptions.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_internal/cli/index_command.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_internal/cli/main_parser.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_internal/cli/parser.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_internal/cli/req_command.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_internal/cli/req_command.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_internal/commands/configuration.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_internal/commands/debug.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_internal/commands/download.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_internal/commands/index.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_internal/commands/install.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_internal/commands/list.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_internal/commands/lock.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_internal/commands/search.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_internal/commands/uninstall.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_internal/commands/wheel.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_internal/index/collector.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_internal/metadata/__init__.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_internal/models/link.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_internal/network/auth.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_internal/network/auth.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_internal/network/download.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_internal/network/lazy_wheel.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_internal/network/session.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_internal/network/xmlrpc.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_internal/operations/prepare.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_internal/req/req_file.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_internal/utils/entrypoints.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_internal/utils/misc.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_internal/utils/misc.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_internal/utils/pylock.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_internal/utils/subprocess.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_internal/utils/wheel.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_internal/vcs/git.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_internal/vcs/subversion.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_internal/vcs/versioncontrol.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_internal/operations/build/build_tracker.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_internal/operations/install/wheel.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_internal/resolution/resolvelib/resolver.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_vendor/cachecontrol/wrapper.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_vendor/cachecontrol/_cmd.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_vendor/distlib/compat.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_vendor/distlib/scripts.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_vendor/distlib/util.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_vendor/distlib/util.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_vendor/distro/distro.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_vendor/msgpack/__init__.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_vendor/packaging/direct_url.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_vendor/packaging/pylock.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_vendor/pkg_resources/__init__.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_vendor/platformdirs/android.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_vendor/platformdirs/unix.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_vendor/platformdirs/windows.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_vendor/pyproject_hooks/_impl.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_vendor/requests/adapters.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_vendor/requests/api.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_vendor/requests/auth.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_vendor/requests/cookies.py",
+        "pattern": "cookie"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_vendor/requests/sessions.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_vendor/requests/sessions.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_vendor/requests/utils.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_vendor/requests/utils.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_vendor/rich/console.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_vendor/rich/console.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_vendor/rich/logging.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_vendor/rich/prompt.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_vendor/truststore/_api.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_vendor/truststore/_api.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_vendor/pyproject_hooks/_in_process/_in_process.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_vendor/urllib3/contrib/pyopenssl.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_vendor/urllib3/contrib/socks.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_vendor/urllib3/util/request.py",
+        "pattern": "Authorization"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_vendor/urllib3/util/request.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_vendor/urllib3/util/ssl_.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_vendor/urllib3/util/ssl_.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pip/_vendor/urllib3/util/url.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pydantic/v1/env_settings.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pydantic/v1/mypy.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pydantic/v1/networks.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pydantic/v1/types.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pydantic/v1/__init__.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pydantic/_internal/_core_utils.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pydantic/__pycache__/types.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pydantic/v1/__pycache__/networks.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pydantic/v1/__pycache__/types.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pydantic/v1/__pycache__/__init__.cpython-312.pyc",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pydantic_core/__pycache__/__init__.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pygments/formatters/latex.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pygments/lexers/sql.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pygments/lexers/verifpal.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pygments/lexers/_googlesql_builtins.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pygments/lexers/_mysql_builtins.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pygments/lexers/_openedge_builtins.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pygments/lexers/_php_builtins.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/pygments/lexers/_postgres_builtins.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/requests/__pycache__/auth.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/requests/__pycache__/cookies.cpython-312.pyc",
+        "pattern": "cookie"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/requests/__pycache__/utils.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/rich/_unicode_data/__init__.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/rich/__pycache__/console.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/setuptools/command/easy_install.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/setuptools/tests/contexts.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/setuptools/tests/environment.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/setuptools/tests/fixtures.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/setuptools/tests/test_bdist_egg.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/setuptools/tests/test_build_ext.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/setuptools/tests/test_build_meta.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/setuptools/tests/test_develop.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/setuptools/tests/test_distutils_adoption.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/setuptools/tests/test_editable_install.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/setuptools/tests/test_egg_info.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/setuptools/tests/test_sdist.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/setuptools/tests/test_virtualenv.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/setuptools/_distutils/debug.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/setuptools/_distutils/dist.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/setuptools/_distutils/spawn.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/setuptools/_distutils/sysconfig.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/setuptools/_distutils/util.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/setuptools/_distutils/util.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/setuptools/tests/integration/helpers.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/setuptools/_distutils/command/build_ext.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/setuptools/_distutils/command/_framework_compat.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/setuptools/_distutils/tests/test_bdist_rpm.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/setuptools/_distutils/tests/test_build_ext.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/setuptools/_distutils/tests/test_spawn.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/setuptools/_distutils/tests/test_sysconfig.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/setuptools/_distutils/tests/test_util.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/setuptools/_distutils/compilers/C/cygwin.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/setuptools/_distutils/compilers/C/msvc.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/setuptools/_distutils/compilers/C/zos.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/setuptools/_distutils/compilers/C/tests/test_msvc.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/setuptools/_distutils/compilers/C/tests/test_unix.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/setuptools/_vendor/platformdirs/android.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/setuptools/_vendor/platformdirs/unix.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/setuptools/_vendor/platformdirs/windows.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/setuptools/_vendor/platformdirs-4.4.0.dist-info/METADATA",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/setuptools/_vendor/wheel/macosx_libfile.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/setuptools/_vendor/wheel/wheelfile.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/soupsieve/__pycache__/css_parser.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/starlette/middleware/sessions.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/urllib3/contrib/pyopenssl.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/urllib3/contrib/socks.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/urllib3/util/request.py",
+        "pattern": "Authorization"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/urllib3/util/request.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/urllib3/util/ssl_.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/urllib3/util/ssl_.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/urllib3/util/url.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/urllib3/contrib/__pycache__/socks.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/urllib3/util/__pycache__/request.cpython-312.pyc",
+        "pattern": "Authorization"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/urllib3/util/__pycache__/request.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/urllib3/util/__pycache__/ssl_.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/urllib3/util/__pycache__/url.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/websockets/asyncio/client.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/websockets/asyncio/client.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/websockets/asyncio/server.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/websockets/legacy/auth.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/websockets/legacy/client.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/websockets/legacy/http.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/websockets/sync/client.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/websockets/sync/server.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/yfinance/scrapers/history.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/yfinance/__pycache__/data.cpython-312.pyc",
+        "pattern": "cookie"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/yfinance/__pycache__/multi.cpython-312.pyc",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/_pytest/assertion/rewrite.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/_pytest/assertion/__init__.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/_pytest/config/__init__.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/_pytest/_io/terminalwriter.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/_pytest/_py/path.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/_pytest/__pycache__/cacheprovider.cpython-312.pyc",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/_pytest/__pycache__/hookspec.cpython-312.pyc",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/_pytest/__pycache__/monkeypatch.cpython-312.pyc",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/_pytest/__pycache__/python.cpython-312.pyc",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": ".venv/Lib/site-packages/_pytest/__pycache__/reports.cpython-312.pyc",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/__pycache__/bankroll_state.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/__pycache__/deepseek_reviewer.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/__pycache__/derived_feature_backfill_report.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/__pycache__/institutional_cross_asset_adapters.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/__pycache__/kalshi_readonly_adapter.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/__pycache__/kalshi_readonly_readiness.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/__pycache__/kalshi_readonly_readiness.cpython-312.pyc",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/__pycache__/local_sports_history_audit.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/__pycache__/local_sports_history_audit.cpython-312.pyc",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/__pycache__/manifold_feature_builder.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/__pycache__/max_effort_source_discovery.cpython-312.pyc",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/__pycache__/mlb_open_data_adapters.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/__pycache__/ncaaf_collegefootballdata_adapter.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/__pycache__/nfl_open_data_adapters.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/__pycache__/open_sports_history_import.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/__pycache__/ops_workflow.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/__pycache__/outcome_migration.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/__pycache__/outcome_store.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/__pycache__/oxylabs_residential_proxy_adapter.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/__pycache__/oxylabs_web_scraper_api_adapter.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/__pycache__/paper_decision_ledger.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/__pycache__/prediction_market_outcome_candidates.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/__pycache__/provider_secret_policy.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/__pycache__/representation_feature_builder.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/__pycache__/response_compactor.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/__pycache__/scheduler_config.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "automation_scheduler/__pycache__/secret_safety.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "scripts/__pycache__/analyze_json_data.cpython-312.pyc",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "scripts/__pycache__/analyze_json_data.cpython-312.pyc",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "tests/__pycache__/test_advanced_red_team.cpython-312-pytest-9.0.3.pyc",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "tests/__pycache__/test_advanced_red_team.cpython-312.pyc",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "tests/__pycache__/test_automation_scheduler_endpoints.cpython-312-pytest-9.0.3.pyc",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "tests/__pycache__/test_automation_scheduler_endpoints.cpython-312.pyc",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "tests/__pycache__/test_deepseek_data_pull_check_contract.cpython-312-pytest-9.0.3.pyc",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "tests/__pycache__/test_deepseek_data_pull_check_contract.cpython-312.pyc",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "tests/__pycache__/test_kalshi_provider_shape_contract.cpython-312-pytest-9.0.3.pyc",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "tests/__pycache__/test_kalshi_provider_shape_contract.cpython-312.pyc",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "tests/__pycache__/test_local_sports_history_audit.cpython-312-pytest-9.0.3.pyc",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "tests/__pycache__/test_local_sports_history_audit.cpython-312.pyc",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "tests/__pycache__/test_outcome_migration.cpython-312-pytest-9.0.3.pyc",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "tests/__pycache__/test_outcome_migration.cpython-312.pyc",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "tests/__pycache__/test_scheduler_runner.cpython-312-pytest-9.0.3.pyc",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "tests/__pycache__/test_scheduler_runner.cpython-312.pyc",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Scripts/activate_this.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/peewee.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pwiz.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/anyio/pytest_plugin.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/click/core.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/click/core.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/click/decorators.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/click/shell_completion.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/click/testing.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/click/types.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/click/utils.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/click/_termui_impl.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/colorama/ansitowin32.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/dns/edns.py",
+        "pattern": "cookie"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/dns/query.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/dotenv/cli.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/dotenv/ipython.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/dotenv/main.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/email_validator/__main__.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/fastapi/applications.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/fastapi/exceptions.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/fastapi/params.py",
+        "pattern": "cookie"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/fastapi/routing.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/httpcore/_models.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/httpx/_api.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/httpx/_auth.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/httpx/_client.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/httpx/_config.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/httpx/_config.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/httpx/_main.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/httpx/_models.py",
+        "pattern": "cookie"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/httpx/_types.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/httpx/_urlparse.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/httpx/_urls.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/httpx/_utils.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/jinja2/async_utils.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/jinja2/bccache.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/jinja2/compiler.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/jinja2/environment.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/jinja2/ext.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/jinja2/filters.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/jinja2/lexer.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/jinja2/loaders.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/jinja2/meta.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/jinja2/nativetypes.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/jinja2/nodes.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/jinja2/optimizer.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/jinja2/parser.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/jinja2/runtime.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/jinja2/sandbox.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/jinja2/tests.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/jinja2/utils.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/jinja2/__init__.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/markdown_it/port.yaml",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/markdown_it/ruler.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/numpy/conftest.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/numpy/__init__.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/orjson-3.11.9.dist-info/METADATA",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pandas/_version.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pandas/__init__.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/peewee-4.0.5.dist-info/METADATA",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/platformdirs/android.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/platformdirs/unix.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/platformdirs/windows.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/platformdirs/_xdg.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/playhouse/db_url.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/playhouse/reflection.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pydantic/networks.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pydantic/types.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pydantic_core/_pydantic_core.cp312-win_amd64.pyd",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pydantic_core/_pydantic_core.pyi",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pydantic_core/__init__.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pygments/cmdline.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/python_dotenv-1.0.1.dist-info/METADATA",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/python_dotenv-1.0.1.dist-info/METADATA",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pytz/__init__.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/requests/adapters.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/requests/api.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/requests/auth.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/requests/cookies.py",
+        "pattern": "cookie"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/requests/sessions.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/requests/sessions.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/requests/utils.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/requests/utils.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/rich/console.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/rich/console.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/rich/logging.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/rich/prompt.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/rich_toolkit/form.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/rich_toolkit/input.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/rich_toolkit/toolkit.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/shellingham-1.5.4.dist-info/METADATA",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/soupsieve/css_parser.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/starlette/config.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/starlette/datastructures.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/starlette/responses.py",
+        "pattern": "cookie"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/starlette/routing.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/starlette/templating.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/starlette/testclient.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/typer/core.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/typer/main.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/typer/models.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/typer/params.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/typer/_completion_classes.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/uvicorn/config.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/uvicorn/config.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/uvicorn/main.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/uvicorn/workers.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/watchfiles/run.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/websockets/client.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/websockets/frames.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/websockets/headers.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/websockets/http11.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/websockets/proxy.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/websockets/uri.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/yfinance/base.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/yfinance/cache.py",
+        "pattern": "cookie"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/yfinance/data.py",
+        "pattern": "cookie"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/yfinance/data.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/yfinance/multi.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/yfinance/ticker.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/yfinance/tickers.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/yfinance/utils.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/yfinance-0.2.40.dist-info/METADATA",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/colorama/tests/utils.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/dateutil/tz/tz.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/dns/dnssecalgs/base.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/dns/dnssecalgs/cryptography.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/fastapi/dependencies/utils.py",
+        "pattern": "cookie"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/fastapi/openapi/models.py",
+        "pattern": "cookie"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/fastapi/openapi/models.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/fastapi/security/api_key.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/fastapi/security/http.py",
+        "pattern": "Authorization"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/fastapi/security/http.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/fastapi/security/oauth2.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/httpcore/_async/http_proxy.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/httpcore/_async/socks_proxy.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/httpcore/_sync/http_proxy.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/httpcore/_sync/socks_proxy.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/markdown_it/rules_block/reference.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/markdown_it/rules_block/state_block.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/markdown_it/rules_core/block.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/markdown_it/rules_core/inline.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/markdown_it/rules_core/state_core.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/markdown_it/rules_inline/image.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/markdown_it/rules_inline/link.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/markdown_it/rules_inline/state_inline.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/numpy/f2py/rules.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/numpy/tests/test_public_api.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/numpy/_core/_add_newdocs_scalars.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/numpy/_core/__init__.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/numpy/testing/_private/utils.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/numpy/typing/tests/test_typing.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/numpy/_core/tests/test_cpu_features.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/numpy/_core/tests/test_mem_policy.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/numpy-2.4.4.dist-info/licenses/LICENSE.txt",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pandas/compat/__init__.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pandas/core/accessor.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pandas/core/config_init.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pandas/core/generic.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pandas/core/shared_docs.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pandas/util/_print_versions.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pandas/_testing/contexts.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pandas/core/computation/engines.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pandas/core/computation/expr.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pandas/core/computation/ops.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pandas/core/computation/pytables.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pandas/io/clipboard/__init__.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pandas/io/formats/style.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pandas/io/formats/style_render.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pandas/tests/config/test_localization.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pandas/tests/internals/test_managers.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pandas/tests/io/test_sql.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pandas/tests/io/pytables/test_select.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pandas/tests/io/formats/style/test_html.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pandas/tests/io/formats/style/test_to_latex.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_internal/build_env.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_internal/configuration.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_internal/self_outdated_check.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_internal/cli/autocompletion.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_internal/cli/base_command.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_internal/cli/index_command.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_internal/cli/main_parser.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_internal/cli/req_command.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_internal/commands/configuration.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_internal/commands/debug.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_internal/commands/download.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_internal/commands/index.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_internal/commands/install.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_internal/commands/list.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_internal/commands/search.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_internal/commands/uninstall.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_internal/commands/wheel.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_internal/index/collector.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_internal/metadata/__init__.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_internal/models/direct_url.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_internal/models/link.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_internal/network/auth.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_internal/network/auth.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_internal/network/download.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_internal/network/lazy_wheel.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_internal/network/session.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_internal/network/xmlrpc.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_internal/operations/prepare.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_internal/req/req_file.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_internal/utils/entrypoints.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_internal/utils/misc.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_internal/utils/misc.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_internal/utils/subprocess.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_internal/utils/wheel.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_internal/vcs/subversion.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_internal/vcs/versioncontrol.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_internal/operations/build/build_tracker.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_internal/operations/install/wheel.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_internal/resolution/resolvelib/resolver.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_vendor/cachecontrol/wrapper.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_vendor/cachecontrol/_cmd.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_vendor/distlib/compat.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_vendor/distlib/index.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_vendor/distlib/scripts.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_vendor/distlib/util.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_vendor/distlib/util.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_vendor/distro/distro.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_vendor/msgpack/__init__.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_vendor/pkg_resources/__init__.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_vendor/platformdirs/android.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_vendor/platformdirs/unix.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_vendor/platformdirs/windows.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_vendor/pygments/cmdline.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_vendor/pyproject_hooks/_impl.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_vendor/requests/adapters.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_vendor/requests/api.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_vendor/requests/auth.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_vendor/requests/cookies.py",
+        "pattern": "cookie"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_vendor/requests/sessions.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_vendor/requests/sessions.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_vendor/requests/utils.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_vendor/requests/utils.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_vendor/rich/console.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_vendor/rich/console.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_vendor/rich/logging.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_vendor/rich/prompt.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_vendor/truststore/_api.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_vendor/truststore/_api.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_vendor/pygments/formatters/latex.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_vendor/pyproject_hooks/_in_process/_in_process.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_vendor/urllib3/contrib/ntlmpool.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_vendor/urllib3/contrib/pyopenssl.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_vendor/urllib3/contrib/securetransport.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_vendor/urllib3/contrib/socks.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_vendor/urllib3/contrib/_appengine_environ.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_vendor/urllib3/util/request.py",
+        "pattern": "Authorization"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_vendor/urllib3/util/request.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_vendor/urllib3/util/ssl_.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_vendor/urllib3/util/ssl_.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_vendor/urllib3/util/url.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pip/_vendor/urllib3/contrib/_securetransport/low_level.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pydantic/v1/env_settings.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pydantic/v1/mypy.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pydantic/v1/networks.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pydantic/v1/types.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pydantic/v1/__init__.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pydantic/_internal/_core_utils.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pygments/formatters/latex.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pygments/lexers/sql.py",
+        "pattern": "session"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pygments/lexers/verifpal.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pygments/lexers/_googlesql_builtins.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pygments/lexers/_mysql_builtins.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pygments/lexers/_openedge_builtins.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pygments/lexers/_php_builtins.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/pygments/lexers/_postgres_builtins.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/rich/_unicode_data/__init__.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/rich_toolkit/styles/base.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/shellingham/posix/__init__.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/urllib3/contrib/pyopenssl.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/urllib3/contrib/socks.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/urllib3/util/request.py",
+        "pattern": "Authorization"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/urllib3/util/request.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/urllib3/util/ssl_.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/urllib3/util/ssl_.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/urllib3/util/url.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/websockets/asyncio/client.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/websockets/asyncio/client.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/websockets/asyncio/server.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/websockets/legacy/auth.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/websockets/legacy/client.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/websockets/legacy/http.py",
+        "pattern": ".env"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/websockets/sync/client.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/websockets/sync/server.py",
+        "pattern": "password"
+      },
+      {
+        "context": "redacted",
+        "file": "venv/Lib/site-packages/yfinance/scrapers/history.py",
+        "pattern": "session"
+      }
+    ],
+    "notes": [
+      "Repository scan checked for secrets, auth headers, cookies, sessions, .env files, raw payloads, raw HTML, and raw screenshots."
+    ],
+    "status": "findings"
+  },
+  "source_lanes_changed_from_blocked_or_research_to_populated": [
+    "awards_allstar_lahman",
+    "batting_stats_lahman",
+    "bullpen_usage_mlb_stats_api",
+    "defensive_positions_mlb_stats_api",
+    "fielding_stats_lahman",
+    "franchises_lahman",
+    "injuries_mlb_stats_api",
+    "lineups_mlb_stats_api",
+    "minor_league_links_chadwick",
+    "park_factors_lahman",
+    "people_identifiers_chadwick",
+    "pitching_stats_lahman",
+    "player_master_lahman",
+    "postseason_labels_retrosheet",
+    "probable_pitchers_mlb_stats_api",
+    "retrosheet_game_logs",
+    "retrosheet_play_by_play_events",
+    "retrosheet_schedules_results",
+    "rosters_mlb_stats_api",
+    "stadiums_lahman",
+    "standings_mlb_stats_api",
+    "starting_pitchers_mlb_stats_api",
+    "team_stats_lahman",
+    "transactions_mlb_stats_api",
+    "umpires_officials_mlb_stats_api",
+    "weather_mlb_stats_api"
+  ],
+  "source_lanes_still_policy_blocked": [
+    "nflverse_coaching_research",
+    "nflverse_ftn_charting_blocked",
+    "nflverse_pfr_advstats_blocked",
+    "official_public_web_research",
+    "pitch_by_pitch_research_lane",
+    "statcast_batted_ball_research_lane"
+  ],
+  "source_lanes_unavailable_after_max_effort": [
+    "draft_lahman",
+    "managers_coaches_mlb_stats_api",
+    "manual_csv_import",
+    "market_odds_blocked",
+    "structured_wiki_seed"
+  ],
+  "source_queries_run_count": 3883,
+  "sources_accepted_count": 3849,
+  "sources_discovered_count": 3883,
+  "sources_rejected_count": 34,
+  "status": "ok",
+  "structured_wiki_seed_before_after": {
+    "after": 0,
+    "before": 0
+  },
+  "tests_failed": [],
+  "tests_passed": [
+    "python -m pytest tests/test_max_effort_architecture_inventory.py -q",
+    "python -m pytest tests/test_max_effort_source_discovery.py -q",
+    "python -m pytest tests/test_source_discovery_query_builder.py -q",
+    "python -m pytest tests/test_max_effort_retrieval_policy.py -q",
+    "python -m pytest tests/test_remaining_field_closure.py -q",
+    "python -m pytest tests/test_schema_expansion_v2.py -q",
+    "python -m pytest tests/test_nfl_max_effort_field_closure.py -q",
+    "python -m pytest tests/test_mlb_max_effort_field_closure.py -q",
+    "python -m pytest tests/test_manual_import_templates_nfl_mlb.py -q",
+    "python -m pytest tests -q",
+    "python -m compileall automation_scheduler scripts tests"
+  ],
+  "tests_run": [
+    "python -m pytest tests/test_max_effort_architecture_inventory.py -q",
+    "python -m pytest tests/test_max_effort_source_discovery.py -q",
+    "python -m pytest tests/test_source_discovery_query_builder.py -q",
+    "python -m pytest tests/test_max_effort_retrieval_policy.py -q",
+    "python -m pytest tests/test_remaining_field_closure.py -q",
+    "python -m pytest tests/test_schema_expansion_v2.py -q",
+    "python -m pytest tests/test_nfl_max_effort_field_closure.py -q",
+    "python -m pytest tests/test_mlb_max_effort_field_closure.py -q",
+    "python -m pytest tests/test_manual_import_templates_nfl_mlb.py -q",
+    "python -m pytest tests -q",
+    "python -m compileall automation_scheduler scripts tests"
+  ]
+}
