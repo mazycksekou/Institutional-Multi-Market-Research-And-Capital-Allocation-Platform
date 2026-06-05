@@ -1,0 +1,105 @@
+{
+  "created_at": "2026-06-05T21:55:04.235816+00:00",
+  "execution_allowed": false,
+  "models": [
+    {
+      "calibration_fields": [
+        "raw_model_probability",
+        "calibrated_model_probability",
+        "market_anchor_probability",
+        "probability_calibration_applied",
+        "probability_sanity_flags",
+        "probability_cap_reason"
+      ],
+      "calibration_readiness_score": 35,
+      "coaching_readiness": "manual_import_needed",
+      "confidence_stake_sizing_impact": "NO_BET suggested_stake=0 remains preserved. EPA/drive samples improve calibration scaffolding, while injuries, depth charts, weather, roster certainty, and advanced paid feeds still cap confidence.",
+      "current_production_readiness": false,
+      "defensive_efficiency_readiness": "paid_data_would_materially_improve",
+      "depth_chart_readiness": "manual_or_paid_data_needed",
+      "drive_rating_readiness": "improved_with_free_open_sample_backfill",
+      "epa_readiness": "improved_with_free_open_sample_backfill",
+      "fields_improved": 15,
+      "fields_still_missing": 97,
+      "free_open_exhaustion_status": true,
+      "injury_availability_readiness": "paid_subscription_required",
+      "loader_ready_lanes_backfilled": 5,
+      "manual_import_still_required": [
+        "official_ncaa_stats_pages",
+        "conference_official_context",
+        "school_roster_depth_chart",
+        "bowl_cfp_official_context"
+      ],
+      "market_types_impacted": [
+        "moneyline",
+        "spread",
+        "total",
+        "team_total",
+        "player_props_if_supported"
+      ],
+      "model": "college_football_epa_drive_rating_monte_carlo_model",
+      "model_inputs_strong": [
+        "team_identity_crosswalk",
+        "schedule_game_results",
+        "drive_summary_epa",
+        "play_by_play_epa",
+        "venue_stadium_metadata"
+      ],
+      "model_inputs_weak": [
+        "advanced_team_player_stats_feed",
+        "bowl_cfp_official_context",
+        "cfbfastr_sportsdataverse_context",
+        "conference_official_context",
+        "espn_scoreboard_context",
+        "injury_availability_depth_chart_feed",
+        "kaggle_dataset_catalog_context",
+        "official_ncaa_stats_pages",
+        "public_weather_stadium_context",
+        "school_roster_depth_chart",
+        "sports_reference_context"
+      ],
+      "moneyline_readiness": "moderate_activation_requirements_preserved",
+      "neutral_site_bowl_cfp_readiness": "manual_import_needed",
+      "offensive_efficiency_readiness": "paid_data_would_materially_improve",
+      "oxylabs_improvements": 7,
+      "pace_tempo_readiness": "manual_or_paid_data_needed",
+      "paid_data_still_required": [
+        "injury_availability_depth_chart_feed",
+        "advanced_team_player_stats_feed"
+      ],
+      "play_by_play_readiness": "improved_with_free_open_sample_backfill",
+      "player_prop_readiness": "not_ready_without_paid_or_manual_player_level_data",
+      "preserved_behavior": [
+        "college_football_epa_drive_rating_monte_carlo_model alias preserved",
+        "moderate activation requirements language preserved",
+        "NO_BET suggested_stake=0 preserved",
+        "confirmed_bets and no_bets remain mutually exclusive",
+        "screenshot-analysis parity preserved",
+        "odds stability preserved",
+        "calibration fields preserved"
+      ],
+      "recommendation": "manual_import_needed",
+      "records_added_this_pass": 10,
+      "recruiting_transfer_readiness": "manual_or_paid_data_needed",
+      "rest_travel_readiness": "manual_import_needed",
+      "roster_readiness": "manual_import_needed",
+      "source_policy_improvements": 18,
+      "special_teams_readiness": "paid_subscription_required",
+      "sport": "americanfootball_ncaaf",
+      "spread_readiness": "moderate_activation_requirements_preserved",
+      "team_strength_readiness": "moderate_activation_requirements_met_for_sample_scope",
+      "total_readiness": "moderate_activation_requirements_preserved",
+      "venue_weather_readiness": "venue_improved_weather_unavailable_or_manual"
+    }
+  ],
+  "ok": true,
+  "paid_source_enabled_count": 1,
+  "provider_write": false,
+  "raw_html_persisted": false,
+  "raw_payload_included": false,
+  "raw_screenshot_persisted": false,
+  "report_name": "NCAAF_DATA_CALIBRATION_READINESS_REPORT",
+  "schema_version": "ncaaf_data_calibration_readiness_report_v1",
+  "secrets_included": false,
+  "status": "ok"
+}

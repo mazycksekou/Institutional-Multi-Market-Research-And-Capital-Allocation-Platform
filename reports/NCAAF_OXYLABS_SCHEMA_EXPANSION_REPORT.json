@@ -1,0 +1,453 @@
+{
+  "created_at": "2026-06-05T21:55:04.228837+00:00",
+  "execution_allowed": false,
+  "new_fields_created": [
+    {
+      "confidence": "high",
+      "coverage_end": "historical_public_sample_scope",
+      "coverage_start": "historical_public_sample_scope",
+      "cutoff_safe": true,
+      "data_type": "string",
+      "description": "team_slug derived from team identity and conference crosswalk for NCAAF",
+      "entity_level": "team",
+      "field_catalog_entry": {
+        "field_name": "team_slug",
+        "module": "americanfootball_ncaaf",
+        "source_family": "cfbd_api_docs",
+        "table": "ncaaf_teams"
+      },
+      "field_name": "team_slug",
+      "future_leakage_risk": "low_if_joined_by_game_start_or_postgame_training_only",
+      "lane_name": "",
+      "license_or_terms_note": "CFBD remains free-key/API-doc governed; this pass uses deterministic normalized sample facts only and records paid/API-key constraints.",
+      "model_eligible": true,
+      "oxylabs_used": true,
+      "report_entry": true,
+      "retrieval_method": "residential_proxy",
+      "source_id": "ncaaf_cfbd_api_docs",
+      "source_url_hash": "49fd51e22111cebce55c4369b0e9527872f7390eeddd92b2b654a55e6bf9c5b5",
+      "sport": "americanfootball_ncaaf",
+      "table": "ncaaf_teams",
+      "tests": [
+        "tests/test_NCAAF_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "historical_public_sample_scope",
+      "coverage_start": "historical_public_sample_scope",
+      "cutoff_safe": true,
+      "data_type": "string",
+      "description": "conference_slug derived from team identity and conference crosswalk for NCAAF",
+      "entity_level": "team",
+      "field_catalog_entry": {
+        "field_name": "conference_slug",
+        "module": "americanfootball_ncaaf",
+        "source_family": "cfbd_api_docs",
+        "table": "ncaaf_teams"
+      },
+      "field_name": "conference_slug",
+      "future_leakage_risk": "low_if_joined_by_game_start_or_postgame_training_only",
+      "lane_name": "",
+      "license_or_terms_note": "CFBD remains free-key/API-doc governed; this pass uses deterministic normalized sample facts only and records paid/API-key constraints.",
+      "model_eligible": true,
+      "oxylabs_used": true,
+      "report_entry": true,
+      "retrieval_method": "residential_proxy",
+      "source_id": "ncaaf_cfbd_api_docs",
+      "source_url_hash": "49fd51e22111cebce55c4369b0e9527872f7390eeddd92b2b654a55e6bf9c5b5",
+      "sport": "americanfootball_ncaaf",
+      "table": "ncaaf_teams",
+      "tests": [
+        "tests/test_NCAAF_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "historical_public_sample_scope",
+      "coverage_start": "historical_public_sample_scope",
+      "cutoff_safe": true,
+      "data_type": "string",
+      "description": "final_margin_bucket derived from schedule and final results for NCAAF",
+      "entity_level": "game",
+      "field_catalog_entry": {
+        "field_name": "final_margin_bucket",
+        "module": "americanfootball_ncaaf",
+        "source_family": "cfbd_api_docs",
+        "table": "ncaaf_games"
+      },
+      "field_name": "final_margin_bucket",
+      "future_leakage_risk": "low_if_joined_by_game_start_or_postgame_training_only",
+      "lane_name": "",
+      "license_or_terms_note": "CFBD remains free-key/API-doc governed; this pass uses deterministic normalized sample facts only and records paid/API-key constraints.",
+      "model_eligible": true,
+      "oxylabs_used": true,
+      "report_entry": true,
+      "retrieval_method": "residential_proxy",
+      "source_id": "ncaaf_cfbd_api_docs",
+      "source_url_hash": "49fd51e22111cebce55c4369b0e9527872f7390eeddd92b2b654a55e6bf9c5b5",
+      "sport": "americanfootball_ncaaf",
+      "table": "ncaaf_games",
+      "tests": [
+        "tests/test_NCAAF_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "historical_public_sample_scope",
+      "coverage_start": "historical_public_sample_scope",
+      "cutoff_safe": true,
+      "data_type": "string",
+      "description": "total_points_bucket derived from schedule and final results for NCAAF",
+      "entity_level": "game",
+      "field_catalog_entry": {
+        "field_name": "total_points_bucket",
+        "module": "americanfootball_ncaaf",
+        "source_family": "cfbd_api_docs",
+        "table": "ncaaf_games"
+      },
+      "field_name": "total_points_bucket",
+      "future_leakage_risk": "low_if_joined_by_game_start_or_postgame_training_only",
+      "lane_name": "",
+      "license_or_terms_note": "CFBD remains free-key/API-doc governed; this pass uses deterministic normalized sample facts only and records paid/API-key constraints.",
+      "model_eligible": true,
+      "oxylabs_used": true,
+      "report_entry": true,
+      "retrieval_method": "residential_proxy",
+      "source_id": "ncaaf_cfbd_api_docs",
+      "source_url_hash": "49fd51e22111cebce55c4369b0e9527872f7390eeddd92b2b654a55e6bf9c5b5",
+      "sport": "americanfootball_ncaaf",
+      "table": "ncaaf_games",
+      "tests": [
+        "tests/test_NCAAF_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "historical_public_sample_scope",
+      "coverage_start": "historical_public_sample_scope",
+      "cutoff_safe": true,
+      "data_type": "string",
+      "description": "postgame_training_join_key derived from schedule and final results for NCAAF",
+      "entity_level": "game",
+      "field_catalog_entry": {
+        "field_name": "postgame_training_join_key",
+        "module": "americanfootball_ncaaf",
+        "source_family": "cfbd_api_docs",
+        "table": "ncaaf_games"
+      },
+      "field_name": "postgame_training_join_key",
+      "future_leakage_risk": "low_if_joined_by_game_start_or_postgame_training_only",
+      "lane_name": "",
+      "license_or_terms_note": "CFBD remains free-key/API-doc governed; this pass uses deterministic normalized sample facts only and records paid/API-key constraints.",
+      "model_eligible": true,
+      "oxylabs_used": true,
+      "report_entry": true,
+      "retrieval_method": "residential_proxy",
+      "source_id": "ncaaf_cfbd_api_docs",
+      "source_url_hash": "49fd51e22111cebce55c4369b0e9527872f7390eeddd92b2b654a55e6bf9c5b5",
+      "sport": "americanfootball_ncaaf",
+      "table": "ncaaf_games",
+      "tests": [
+        "tests/test_NCAAF_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "historical_public_sample_scope",
+      "coverage_start": "historical_public_sample_scope",
+      "cutoff_safe": true,
+      "data_type": "float",
+      "description": "drive_success_rate_proxy derived from drive-level EPA and efficiency for NCAAF",
+      "entity_level": "drive",
+      "field_catalog_entry": {
+        "field_name": "drive_success_rate_proxy",
+        "module": "americanfootball_ncaaf",
+        "source_family": "cfbd_api_docs",
+        "table": "ncaaf_drives"
+      },
+      "field_name": "drive_success_rate_proxy",
+      "future_leakage_risk": "low_if_joined_by_game_start_or_postgame_training_only",
+      "lane_name": "",
+      "license_or_terms_note": "CFBD remains free-key/API-doc governed; this pass uses deterministic normalized sample facts only and records paid/API-key constraints.",
+      "model_eligible": true,
+      "oxylabs_used": true,
+      "report_entry": true,
+      "retrieval_method": "residential_proxy",
+      "source_id": "ncaaf_cfbd_api_docs",
+      "source_url_hash": "49fd51e22111cebce55c4369b0e9527872f7390eeddd92b2b654a55e6bf9c5b5",
+      "sport": "americanfootball_ncaaf",
+      "table": "ncaaf_drives",
+      "tests": [
+        "tests/test_NCAAF_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "historical_public_sample_scope",
+      "coverage_start": "historical_public_sample_scope",
+      "cutoff_safe": true,
+      "data_type": "string",
+      "description": "drive_points_per_opportunity derived from drive-level EPA and efficiency for NCAAF",
+      "entity_level": "drive",
+      "field_catalog_entry": {
+        "field_name": "drive_points_per_opportunity",
+        "module": "americanfootball_ncaaf",
+        "source_family": "cfbd_api_docs",
+        "table": "ncaaf_drives"
+      },
+      "field_name": "drive_points_per_opportunity",
+      "future_leakage_risk": "low_if_joined_by_game_start_or_postgame_training_only",
+      "lane_name": "",
+      "license_or_terms_note": "CFBD remains free-key/API-doc governed; this pass uses deterministic normalized sample facts only and records paid/API-key constraints.",
+      "model_eligible": true,
+      "oxylabs_used": true,
+      "report_entry": true,
+      "retrieval_method": "residential_proxy",
+      "source_id": "ncaaf_cfbd_api_docs",
+      "source_url_hash": "49fd51e22111cebce55c4369b0e9527872f7390eeddd92b2b654a55e6bf9c5b5",
+      "sport": "americanfootball_ncaaf",
+      "table": "ncaaf_drives",
+      "tests": [
+        "tests/test_NCAAF_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "historical_public_sample_scope",
+      "coverage_start": "historical_public_sample_scope",
+      "cutoff_safe": true,
+      "data_type": "boolean",
+      "description": "play_success_flag derived from play-by-play EPA candidates for NCAAF",
+      "entity_level": "play",
+      "field_catalog_entry": {
+        "field_name": "play_success_flag",
+        "module": "americanfootball_ncaaf",
+        "source_family": "cfbd_api_docs",
+        "table": "ncaaf_plays"
+      },
+      "field_name": "play_success_flag",
+      "future_leakage_risk": "low_if_joined_by_game_start_or_postgame_training_only",
+      "lane_name": "",
+      "license_or_terms_note": "CFBD remains free-key/API-doc governed; this pass uses deterministic normalized sample facts only and records paid/API-key constraints.",
+      "model_eligible": true,
+      "oxylabs_used": true,
+      "report_entry": true,
+      "retrieval_method": "residential_proxy",
+      "source_id": "ncaaf_cfbd_api_docs",
+      "source_url_hash": "49fd51e22111cebce55c4369b0e9527872f7390eeddd92b2b654a55e6bf9c5b5",
+      "sport": "americanfootball_ncaaf",
+      "table": "ncaaf_plays",
+      "tests": [
+        "tests/test_NCAAF_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "historical_public_sample_scope",
+      "coverage_start": "historical_public_sample_scope",
+      "cutoff_safe": true,
+      "data_type": "boolean",
+      "description": "explosive_play_flag derived from play-by-play EPA candidates for NCAAF",
+      "entity_level": "play",
+      "field_catalog_entry": {
+        "field_name": "explosive_play_flag",
+        "module": "americanfootball_ncaaf",
+        "source_family": "cfbd_api_docs",
+        "table": "ncaaf_plays"
+      },
+      "field_name": "explosive_play_flag",
+      "future_leakage_risk": "low_if_joined_by_game_start_or_postgame_training_only",
+      "lane_name": "",
+      "license_or_terms_note": "CFBD remains free-key/API-doc governed; this pass uses deterministic normalized sample facts only and records paid/API-key constraints.",
+      "model_eligible": true,
+      "oxylabs_used": true,
+      "report_entry": true,
+      "retrieval_method": "residential_proxy",
+      "source_id": "ncaaf_cfbd_api_docs",
+      "source_url_hash": "49fd51e22111cebce55c4369b0e9527872f7390eeddd92b2b654a55e6bf9c5b5",
+      "sport": "americanfootball_ncaaf",
+      "table": "ncaaf_plays",
+      "tests": [
+        "tests/test_NCAAF_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "historical_public_sample_scope",
+      "coverage_start": "historical_public_sample_scope",
+      "cutoff_safe": true,
+      "data_type": "string",
+      "description": "epa_bucket derived from play-by-play EPA candidates for NCAAF",
+      "entity_level": "play",
+      "field_catalog_entry": {
+        "field_name": "epa_bucket",
+        "module": "americanfootball_ncaaf",
+        "source_family": "cfbd_api_docs",
+        "table": "ncaaf_plays"
+      },
+      "field_name": "epa_bucket",
+      "future_leakage_risk": "low_if_joined_by_game_start_or_postgame_training_only",
+      "lane_name": "",
+      "license_or_terms_note": "CFBD remains free-key/API-doc governed; this pass uses deterministic normalized sample facts only and records paid/API-key constraints.",
+      "model_eligible": true,
+      "oxylabs_used": true,
+      "report_entry": true,
+      "retrieval_method": "residential_proxy",
+      "source_id": "ncaaf_cfbd_api_docs",
+      "source_url_hash": "49fd51e22111cebce55c4369b0e9527872f7390eeddd92b2b654a55e6bf9c5b5",
+      "sport": "americanfootball_ncaaf",
+      "table": "ncaaf_plays",
+      "tests": [
+        "tests/test_NCAAF_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "historical_public_sample_scope",
+      "coverage_start": "historical_public_sample_scope",
+      "cutoff_safe": true,
+      "data_type": "string",
+      "description": "venue_slug derived from venue and stadium context for NCAAF",
+      "entity_level": "venue",
+      "field_catalog_entry": {
+        "field_name": "venue_slug",
+        "module": "americanfootball_ncaaf",
+        "source_family": "cfbd_api_docs",
+        "table": "ncaaf_venues"
+      },
+      "field_name": "venue_slug",
+      "future_leakage_risk": "low_if_joined_by_game_start_or_postgame_training_only",
+      "lane_name": "",
+      "license_or_terms_note": "CFBD remains free-key/API-doc governed; this pass uses deterministic normalized sample facts only and records paid/API-key constraints.",
+      "model_eligible": true,
+      "oxylabs_used": true,
+      "report_entry": true,
+      "retrieval_method": "residential_proxy",
+      "source_id": "ncaaf_cfbd_api_docs",
+      "source_url_hash": "49fd51e22111cebce55c4369b0e9527872f7390eeddd92b2b654a55e6bf9c5b5",
+      "sport": "americanfootball_ncaaf",
+      "table": "ncaaf_venues",
+      "tests": [
+        "tests/test_NCAAF_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "historical_public_sample_scope",
+      "coverage_start": "historical_public_sample_scope",
+      "cutoff_safe": true,
+      "data_type": "string",
+      "description": "altitude_bucket derived from venue and stadium context for NCAAF",
+      "entity_level": "venue",
+      "field_catalog_entry": {
+        "field_name": "altitude_bucket",
+        "module": "americanfootball_ncaaf",
+        "source_family": "cfbd_api_docs",
+        "table": "ncaaf_venues"
+      },
+      "field_name": "altitude_bucket",
+      "future_leakage_risk": "low_if_joined_by_game_start_or_postgame_training_only",
+      "lane_name": "",
+      "license_or_terms_note": "CFBD remains free-key/API-doc governed; this pass uses deterministic normalized sample facts only and records paid/API-key constraints.",
+      "model_eligible": true,
+      "oxylabs_used": true,
+      "report_entry": true,
+      "retrieval_method": "residential_proxy",
+      "source_id": "ncaaf_cfbd_api_docs",
+      "source_url_hash": "49fd51e22111cebce55c4369b0e9527872f7390eeddd92b2b654a55e6bf9c5b5",
+      "sport": "americanfootball_ncaaf",
+      "table": "ncaaf_venues",
+      "tests": [
+        "tests/test_NCAAF_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "historical_public_sample_scope",
+      "coverage_start": "historical_public_sample_scope",
+      "cutoff_safe": true,
+      "data_type": "string",
+      "description": "team_wikidata_slug derived from team structured metadata for NCAAF",
+      "entity_level": "team",
+      "field_catalog_entry": {
+        "field_name": "team_wikidata_slug",
+        "module": "americanfootball_ncaaf",
+        "source_family": "structured_open_metadata",
+        "table": "ncaaf_team_metadata"
+      },
+      "field_name": "team_wikidata_slug",
+      "future_leakage_risk": "low_if_joined_by_game_start_or_postgame_training_only",
+      "lane_name": "",
+      "license_or_terms_note": "Wikidata is metadata-only enrichment with attribution retained.",
+      "model_eligible": false,
+      "oxylabs_used": true,
+      "report_entry": true,
+      "retrieval_method": "web_scraper_api",
+      "source_id": "ncaaf_wikidata_team_entities",
+      "source_url_hash": "b52bfa6ef870cd9754d8409df6ea1b49b2b45ef9d45432d8a7d90d9d7e34abce",
+      "sport": "americanfootball_ncaaf",
+      "table": "ncaaf_team_metadata",
+      "tests": [
+        "tests/test_NCAAF_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    },
+    {
+      "confidence": "high",
+      "coverage_end": "historical_public_sample_scope",
+      "coverage_start": "historical_public_sample_scope",
+      "cutoff_safe": true,
+      "data_type": "string",
+      "description": "postseason_context_slug derived from bowl CFP and conference championship metadata for NCAAF",
+      "entity_level": "game",
+      "field_catalog_entry": {
+        "field_name": "postseason_context_slug",
+        "module": "americanfootball_ncaaf",
+        "source_family": "structured_open_metadata",
+        "table": "ncaaf_postseason_metadata"
+      },
+      "field_name": "postseason_context_slug",
+      "future_leakage_risk": "low_if_joined_by_game_start_or_postgame_training_only",
+      "lane_name": "postseason_metadata",
+      "license_or_terms_note": "Wikipedia tables remain supplemental metadata only with attribution retained.",
+      "model_eligible": false,
+      "oxylabs_used": true,
+      "report_entry": true,
+      "retrieval_method": "web_scraper_api",
+      "source_id": "ncaaf_wikipedia_bowl_tables",
+      "source_url_hash": "32ac803afcbfcee0037702f86c31dd2baa84faf749a518bd4f4f8848f63ff090",
+      "sport": "americanfootball_ncaaf",
+      "table": "ncaaf_postseason_metadata",
+      "tests": [
+        "tests/test_NCAAF_schema_expansion.py"
+      ],
+      "validation_status": "sample_verified"
+    }
+  ],
+  "new_fields_created_count": 14,
+  "new_tables_created_count": 7,
+  "ok": true,
+  "oxylabs_verified_field_count": 14,
+  "paid_source_enabled_count": 1,
+  "provider_write": false,
+  "raw_html_persisted": false,
+  "raw_payload_included": false,
+  "report_name": "NCAAF_OXYLABS_SCHEMA_EXPANSION_REPORT",
+  "schema_version": "NCAAF_oxylabs_schema_expansion_v1",
+  "secrets_included": false,
+  "sport": "NCAAF",
+  "status": "ok"
+}

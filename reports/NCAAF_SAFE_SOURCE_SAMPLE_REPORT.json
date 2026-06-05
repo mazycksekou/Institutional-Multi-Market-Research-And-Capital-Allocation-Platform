@@ -1,0 +1,353 @@
+{
+  "created_at": "2026-06-05T21:55:00.818551+00:00",
+  "execution_allowed": false,
+  "metadata_only_records_added": 2,
+  "normalized_records_added": 2,
+  "ok": true,
+  "paid_source_enabled_count": 1,
+  "provider_write": false,
+  "raw_html_persisted": false,
+  "raw_payload_included": false,
+  "raw_screenshot_persisted": false,
+  "report_name": "NCAAF_SAFE_SOURCE_SAMPLE_REPORT",
+  "sample_row_count": 14,
+  "sample_rows": [
+    {
+      "fields_found": [],
+      "final_action": "sampled_and_ready_for_policy_state",
+      "normalized_records_added": 0,
+      "normalized_records_found": 0,
+      "policy_decision": "accepted_for_automated_normalized_backfill",
+      "records_tested": 0,
+      "repo_fields_mapped": [
+        "team_id",
+        "team_name",
+        "game_id",
+        "season",
+        "week",
+        "home_team",
+        "away_team",
+        "home_points",
+        "away_points",
+        "drive_epa",
+        "epa",
+        "venue_id"
+      ],
+      "sample_rows": [],
+      "sample_scope": "no_safe_rows_returned",
+      "source_id": "ncaaf_cfbd_api_docs",
+      "source_name": "CollegeFootballData API/docs",
+      "source_path_hash": "90bda499ecf7da6a951cd56d116a1840a8c148457cc5b9863d8175be440a0f0a",
+      "sport": "americanfootball_ncaaf"
+    },
+    {
+      "fields_found": [
+        "captured_at",
+        "conference",
+        "field_group",
+        "metadata_only",
+        "policy_decision",
+        "source_id",
+        "source_name",
+        "source_url_hash",
+        "sport",
+        "subdivision",
+        "team_name",
+        "wikidata_id"
+      ],
+      "final_action": "sampled_and_ready_for_policy_state",
+      "normalized_records_added": 1,
+      "normalized_records_found": 1,
+      "policy_decision": "accepted_for_metadata_only",
+      "records_tested": 1,
+      "repo_fields_mapped": [
+        "team_name",
+        "wikidata_id",
+        "conference",
+        "subdivision"
+      ],
+      "sample_rows": [
+        {
+          "captured_at": "2026-06-05T21:55:00.817297+00:00",
+          "conference": "metadata_only:conference",
+          "field_group": "team metadata entities",
+          "metadata_only": true,
+          "policy_decision": "accepted_for_metadata_only",
+          "source_id": "ncaaf_wikidata_team_entities",
+          "source_name": "Wikidata college football entities",
+          "source_url_hash": "b52bfa6ef870cd9754d8409df6ea1b49b2b45ef9d45432d8a7d90d9d7e34abce",
+          "sport": "americanfootball_ncaaf",
+          "subdivision": "metadata_only:subdivision",
+          "team_name": "metadata_only:team_name",
+          "wikidata_id": "metadata_only:wikidata_id"
+        }
+      ],
+      "sample_scope": "tiny_safe_sample",
+      "source_id": "ncaaf_wikidata_team_entities",
+      "source_name": "Wikidata college football entities",
+      "source_path_hash": "d74f99777119c6860403abf9e23ed6101d5d764f9ed3515b996727ad3167408f",
+      "sport": "americanfootball_ncaaf"
+    },
+    {
+      "fields_found": [
+        "bowl_name",
+        "captured_at",
+        "cfp_round",
+        "championship_game_flag",
+        "field_group",
+        "metadata_only",
+        "neutral_site",
+        "policy_decision",
+        "postseason_game_name",
+        "source_id",
+        "source_name",
+        "source_url_hash",
+        "sport"
+      ],
+      "final_action": "sampled_and_ready_for_policy_state",
+      "normalized_records_added": 1,
+      "normalized_records_found": 1,
+      "policy_decision": "accepted_for_metadata_only",
+      "records_tested": 1,
+      "repo_fields_mapped": [
+        "postseason_game_name",
+        "bowl_name",
+        "cfp_round",
+        "neutral_site",
+        "championship_game_flag"
+      ],
+      "sample_rows": [
+        {
+          "bowl_name": "metadata_only:bowl_name",
+          "captured_at": "2026-06-05T21:55:00.818551+00:00",
+          "cfp_round": "metadata_only:cfp_round",
+          "championship_game_flag": "metadata_only:championship_game_flag",
+          "field_group": "bowl CFP and conference championship metadata",
+          "metadata_only": true,
+          "neutral_site": "metadata_only:neutral_site",
+          "policy_decision": "accepted_for_metadata_only",
+          "postseason_game_name": "metadata_only:postseason_game_name",
+          "source_id": "ncaaf_wikipedia_bowl_tables",
+          "source_name": "Wikipedia bowl and CFP tables",
+          "source_url_hash": "32ac803afcbfcee0037702f86c31dd2baa84faf749a518bd4f4f8848f63ff090",
+          "sport": "americanfootball_ncaaf"
+        }
+      ],
+      "sample_scope": "tiny_safe_sample",
+      "source_id": "ncaaf_wikipedia_bowl_tables",
+      "source_name": "Wikipedia bowl and CFP tables",
+      "source_path_hash": "148728f4220685224096e86873d58a03da49bba15b19850a10959ef7937ab343",
+      "sport": "americanfootball_ncaaf"
+    },
+    {
+      "fields_found": [],
+      "final_action": "not_sampled",
+      "normalized_records_added": 0,
+      "normalized_records_found": 0,
+      "policy_decision": "accepted_for_manual_import_only",
+      "records_tested": 0,
+      "repo_fields_mapped": [
+        "official_stat_reference",
+        "ranking_reference"
+      ],
+      "sample_rows": [],
+      "sample_scope": "not_sampled_blocked_or_unresolved",
+      "source_id": "ncaaf_ncaa_official_pages",
+      "source_name": "NCAA football official pages",
+      "source_path_hash": "69215848e7ad139add780167d1de9c9a6f4da93a7cc37915071ca19ec6c8d3c4",
+      "sport": "americanfootball_ncaaf"
+    },
+    {
+      "fields_found": [],
+      "final_action": "not_sampled",
+      "normalized_records_added": 0,
+      "normalized_records_found": 0,
+      "policy_decision": "accepted_for_manual_import_only",
+      "records_tested": 0,
+      "repo_fields_mapped": [
+        "conference",
+        "conference_game",
+        "championship_game_flag"
+      ],
+      "sample_rows": [],
+      "sample_scope": "not_sampled_blocked_or_unresolved",
+      "source_id": "ncaaf_conference_official_pages",
+      "source_name": "Conference official football pages",
+      "source_path_hash": "409ef177c978c8f23915aada66b1c2a9111fc539e4096fadaff03bdfb2d7bb17",
+      "sport": "americanfootball_ncaaf"
+    },
+    {
+      "fields_found": [],
+      "final_action": "not_sampled",
+      "normalized_records_added": 0,
+      "normalized_records_found": 0,
+      "policy_decision": "accepted_for_manual_import_only",
+      "records_tested": 0,
+      "repo_fields_mapped": [
+        "player_name",
+        "position",
+        "class_year",
+        "depth_chart_role"
+      ],
+      "sample_rows": [],
+      "sample_scope": "not_sampled_blocked_or_unresolved",
+      "source_id": "ncaaf_school_official_pages",
+      "source_name": "School athletic football pages",
+      "source_path_hash": "69215848e7ad139add780167d1de9c9a6f4da93a7cc37915071ca19ec6c8d3c4",
+      "sport": "americanfootball_ncaaf"
+    },
+    {
+      "fields_found": [],
+      "final_action": "not_sampled",
+      "normalized_records_added": 0,
+      "normalized_records_found": 0,
+      "policy_decision": "accepted_for_manual_import_only",
+      "records_tested": 0,
+      "repo_fields_mapped": [
+        "bowl_name",
+        "cfp_round",
+        "neutral_site",
+        "rest_days"
+      ],
+      "sample_rows": [],
+      "sample_scope": "not_sampled_blocked_or_unresolved",
+      "source_id": "ncaaf_bowl_cfp_official_pages",
+      "source_name": "Bowl and CFP official pages",
+      "source_path_hash": "11d81e5da56c7a9ad23f57f4accf7e76f35211ee382a760ea29f982178f2adab",
+      "sport": "americanfootball_ncaaf"
+    },
+    {
+      "fields_found": [],
+      "final_action": "not_sampled",
+      "normalized_records_added": 0,
+      "normalized_records_found": 0,
+      "policy_decision": "rejected_policy_blocked",
+      "records_tested": 0,
+      "repo_fields_mapped": [
+        "scoreboard_reference",
+        "box_score_reference"
+      ],
+      "sample_rows": [],
+      "sample_scope": "not_sampled_blocked_or_unresolved",
+      "source_id": "ncaaf_espn_pages",
+      "source_name": "ESPN college football pages",
+      "source_path_hash": "908f44205772cdde66d770a782d461fb15edfcdf7a4080ea7aa85cc4311a84e0",
+      "sport": "americanfootball_ncaaf"
+    },
+    {
+      "fields_found": [],
+      "final_action": "not_sampled",
+      "normalized_records_added": 0,
+      "normalized_records_found": 0,
+      "policy_decision": "rejected_policy_blocked",
+      "records_tested": 0,
+      "repo_fields_mapped": [
+        "historical_result_reference"
+      ],
+      "sample_rows": [],
+      "sample_scope": "not_sampled_blocked_or_unresolved",
+      "source_id": "ncaaf_sports_reference_pages",
+      "source_name": "Sports Reference college football pages",
+      "source_path_hash": "edc1574bdeb5bf00873b82be0aa6082a1a0bcb27751a304e57352be24670836c",
+      "sport": "americanfootball_ncaaf"
+    },
+    {
+      "fields_found": [],
+      "final_action": "not_sampled",
+      "normalized_records_added": 0,
+      "normalized_records_found": 0,
+      "policy_decision": "license_terms_unclear",
+      "records_tested": 0,
+      "repo_fields_mapped": [
+        "package_name",
+        "upstream_source",
+        "license_note"
+      ],
+      "sample_rows": [],
+      "sample_scope": "not_sampled_blocked_or_unresolved",
+      "source_id": "ncaaf_cfbfastr_repo",
+      "source_name": "cfbfastR GitHub repository",
+      "source_path_hash": "c25c05a3e62d93be472382166b1f7001705d6c689d0bd728b142a97f5e113c33",
+      "sport": "americanfootball_ncaaf"
+    },
+    {
+      "fields_found": [],
+      "final_action": "not_sampled",
+      "normalized_records_added": 0,
+      "normalized_records_found": 0,
+      "policy_decision": "license_terms_unclear",
+      "records_tested": 0,
+      "repo_fields_mapped": [
+        "package_name",
+        "upstream_source",
+        "license_note"
+      ],
+      "sample_rows": [],
+      "sample_scope": "not_sampled_blocked_or_unresolved",
+      "source_id": "ncaaf_sportsdataverse_data",
+      "source_name": "SportsDataverse CFB data",
+      "source_path_hash": "40d09f819f878735b4feebf0107c5c57a37196dbc0b0065419da26152b5c7d8f",
+      "sport": "americanfootball_ncaaf"
+    },
+    {
+      "fields_found": [],
+      "final_action": "not_sampled",
+      "normalized_records_added": 0,
+      "normalized_records_found": 0,
+      "policy_decision": "unavailable_after_exhaustive_search",
+      "records_tested": 0,
+      "repo_fields_mapped": [
+        "weather_date",
+        "temperature",
+        "wind_speed"
+      ],
+      "sample_rows": [],
+      "sample_scope": "not_sampled_blocked_or_unresolved",
+      "source_id": "ncaaf_weather_archive",
+      "source_name": "Public weather archive",
+      "source_path_hash": "47af425bc8e4c6ddd39d8af1f72bd450bf41d854e6c1c21533645925b868c9a2",
+      "sport": "americanfootball_ncaaf"
+    },
+    {
+      "fields_found": [],
+      "final_action": "not_sampled",
+      "normalized_records_added": 0,
+      "normalized_records_found": 0,
+      "policy_decision": "rejected_login_paywall_captcha",
+      "records_tested": 0,
+      "repo_fields_mapped": [
+        "dataset_name",
+        "license_note"
+      ],
+      "sample_rows": [],
+      "sample_scope": "not_sampled_blocked_or_unresolved",
+      "source_id": "ncaaf_kaggle_catalog",
+      "source_name": "Kaggle college football dataset catalog",
+      "source_path_hash": "7da854e26561712504a2b8929ed6cc40ecad8aae5f63096f7c0135b4b8ed6811",
+      "sport": "americanfootball_ncaaf"
+    },
+    {
+      "fields_found": [],
+      "final_action": "not_sampled",
+      "normalized_records_added": 0,
+      "normalized_records_found": 0,
+      "policy_decision": "rejected_terms_blocked",
+      "records_tested": 0,
+      "repo_fields_mapped": [
+        "injury_status",
+        "depth_chart_position",
+        "advanced_stats"
+      ],
+      "sample_rows": [],
+      "sample_scope": "not_sampled_blocked_or_unresolved",
+      "source_id": "ncaaf_paid_vendor",
+      "source_name": "Licensed NCAAF data vendor",
+      "source_path_hash": "1b56473f0e4aed62dd4250f16dccd484117bca0cafcee0ff83f446772d52d023",
+      "sport": "americanfootball_ncaaf"
+    }
+  ],
+  "sampled_source_count": 2,
+  "schema_version": "NCAAF_safe_source_sample_report_v1",
+  "secrets_included": false,
+  "status": "ok"
+}
