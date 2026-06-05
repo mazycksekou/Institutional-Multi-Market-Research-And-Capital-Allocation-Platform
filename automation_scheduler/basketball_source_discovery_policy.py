@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from .basketball_free_vs_paid_readiness import FREE_VS_PAID_CATEGORIES, SOURCE_REFERENCES
+from .basketball_oxylabs_source_policy import basketball_oxylabs_policy_registry, evaluate_basketball_oxylabs_source_policy
 
 
 BLOCKED_BASKETBALL_DOMAINS = {
@@ -35,6 +36,14 @@ def evaluate_basketball_source_policy(source_name: str, domain: str = "", source
         category = "free_open_sample_required"
         status = "sample_allowed"
         reason = "sample_verification_allowed_with_no_raw_payload_persistence"
+    oxylabs_policy = evaluate_basketball_oxylabs_source_policy(
+        source_id="basketball_release_page" if category == "free_open_sample_required" else "basketball_docs_page",
+        domain=domain or "github.com",
+        transport="web_scraper_api" if category != "blocked_reference_or_restricted_source" else "hard_blocked",
+        allow_oxylabs=True,
+        allow_paid_retrieval=True,
+        source_type=source_type,
+    )
     return {
         "ok": True,
         "source_name": source_name,
@@ -43,6 +52,12 @@ def evaluate_basketball_source_policy(source_name: str, domain: str = "", source
         "free_or_paid_category": category,
         "policy_status": status,
         "reason": reason,
+        "oxylabs_used": bool(oxylabs_policy.get("oxylabs_used")),
+        "oxylabs_transport_used": oxylabs_policy.get("oxylabs_transport_used"),
+        "oxylabs_calls_attempted": oxylabs_policy.get("oxylabs_calls_attempted", 0),
+        "oxylabs_calls_successful": oxylabs_policy.get("oxylabs_calls_successful", 0),
+        "oxylabs_calls_failed": oxylabs_policy.get("oxylabs_calls_failed", 0),
+        "oxylabs_not_used_reason": None if oxylabs_policy.get("oxylabs_used") else oxylabs_policy.get("blocked_reason"),
         "allowed_categories": list(FREE_VS_PAID_CATEGORIES),
         "provider_write": False,
         "execution_allowed": False,
@@ -56,6 +71,7 @@ def basketball_source_policy_registry() -> dict[str, Any]:
         "ok": True,
         "status": "ok",
         "source_references": SOURCE_REFERENCES,
+        "oxylabs_policy_registry": basketball_oxylabs_policy_registry(),
         "blocked_domains": sorted(BLOCKED_BASKETBALL_DOMAINS),
         "provider_write": False,
         "execution_allowed": False,
