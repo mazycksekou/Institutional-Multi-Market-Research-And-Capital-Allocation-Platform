@@ -227,6 +227,11 @@ def _load_base_report_path(base: Path, sport: str) -> Path:
     return base / "reports" / "MLB_COMPLETION_FINAL_REPORT.json"
 
 
+def _report_root(base_data_dir: str | Path | None = None) -> Path:
+    base = resolve_base_data_dir(base_data_dir)
+    return base.parent / "reports"
+
+
 def _default_validation_commands() -> list[str]:
     return [
         "python -m pytest tests/test_active_source_discovery_policy.py -q",
@@ -928,11 +933,11 @@ def build_paid_retrieval_enrichment_report(
     before_populated = int(before_report.get("verified_field_count", 0) or 0)
     after_populated = sum(1 for row in sport_fields if row.get("current_population_status") in {"populated", "partial"})
     if sport == "nfl":
-        coaching_before = _read_json(base := resolve_base_data_dir(base_data_dir) / "reports" / "NFL_COMPLETION_FINAL_REPORT.json").get("coaching_feature_report", {}).get("coaching_records_loaded", 0)
+        coaching_before = _read_json(_report_root(base_data_dir) / "NFL_COMPLETION_FINAL_REPORT.json").get("coaching_feature_report", {}).get("coaching_records_loaded", 0)
         coaching_after = coaching_before
         extra = {"coaching_records_before": coaching_before, "coaching_records_after": coaching_after, "records_added": 0}
     else:
-        completion = _read_json(resolve_base_data_dir(base_data_dir) / "reports" / "MLB_COMPLETION_FINAL_REPORT.json")
+        completion = _read_json(_report_root(base_data_dir) / "MLB_COMPLETION_FINAL_REPORT.json")
         extra = {
             "managers_coaches_records_before": completion.get("feature_readiness_report", {}).get("expanded_feature_readiness", {}).get("managers_coaches_records_before", 0),
             "managers_coaches_records_after": completion.get("feature_readiness_report", {}).get("expanded_feature_readiness", {}).get("managers_coaches_records_after", 0),
@@ -1031,11 +1036,12 @@ def build_active_discovery_final_report(
     final_verdict: str = "PARTIAL_DISCOVERY_SUCCESS",
 ) -> dict[str, Any]:
     base = resolve_base_data_dir(base_data_dir)
+    report_root = _report_root(base_data_dir)
     inventory = build_field_inventory_report(base_data_dir=base)
     nfl_enrichment = build_paid_retrieval_enrichment_report(sport="nfl", base_data_dir=base, allow_oxylabs=allow_oxylabs, allow_paid_retrieval=allow_paid_retrieval)
     mlb_enrichment = build_paid_retrieval_enrichment_report(sport="mlb", base_data_dir=base, allow_oxylabs=allow_oxylabs, allow_paid_retrieval=allow_paid_retrieval)
-    nfl_completion = _read_json(base / "reports" / "NFL_COMPLETION_FINAL_REPORT.json")
-    mlb_completion = _read_json(base / "reports" / "MLB_COMPLETION_FINAL_REPORT.json")
+    nfl_completion = _read_json(report_root / "NFL_COMPLETION_FINAL_REPORT.json")
+    mlb_completion = _read_json(report_root / "MLB_COMPLETION_FINAL_REPORT.json")
     nfl_schema = build_schema_expansion_report(sport="nfl", base_data_dir=base)
     mlb_schema = build_schema_expansion_report(sport="mlb", base_data_dir=base)
     discovery = build_active_source_discovery_log(base_data_dir=base, allow_oxylabs=allow_oxylabs, allow_paid_retrieval=allow_paid_retrieval)
