@@ -1,0 +1,26 @@
+import unittest
+from unittest.mock import patch
+
+from automation_scheduler import nfl_mlb_free_vs_paid_calibration as mod
+
+
+class FakeAdapter:
+    def __init__(self, result):
+        self.result = result
+
+    def run_tiny_sample(self, **kwargs):
+        return self.result
+
+
+class TestMlbRetrosheetSampleVerifier(unittest.TestCase):
+    def test_report_counts_verified_and_blocked_sources(self):
+        with patch.object(mod, "mlb_adapter_by_id", side_effect=lambda source_id: FakeAdapter({"status": "sample_ready", "records_validated": 3, "records_rejected": 0, "fields_available": ["game_id", "season"], "field_count": 2, "downloads_attempted": 1, "downloads_succeeded": 1, "provider_calls_attempted": 1, "provider_calls_succeeded": 1, "provider_calls_failed": 0, "blocked_reason": None, "sample_shape": {"rows": 3}}) if source_id != "retrosheet_play_by_play_events" else FakeAdapter({"status": "blocked", "records_validated": 0, "records_rejected": 0, "fields_available": [], "field_count": 0, "downloads_attempted": 1, "downloads_succeeded": 0, "provider_calls_attempted": 1, "provider_calls_succeeded": 0, "provider_calls_failed": 1, "blocked_reason": "no_records_found"})):
+            report = mod.build_mlb_retrosheet_sample_verification_report()
+        self.assertTrue(report["ok"])
+        self.assertEqual(report["report_name"], "MLB_RETROSHEET_SAMPLE_VERIFICATION_REPORT")
+        self.assertGreaterEqual(report["sample_verified_count"], 2)
+        self.assertGreaterEqual(report["sample_blocked_count"], 1)
+
+
+if __name__ == "__main__":
+    unittest.main()
