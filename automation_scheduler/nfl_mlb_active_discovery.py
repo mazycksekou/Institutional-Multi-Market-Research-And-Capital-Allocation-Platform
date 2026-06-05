@@ -247,6 +247,15 @@ def _default_validation_commands() -> list[str]:
     ]
 
 
+def _as_string_list(value: Any) -> list[str]:
+    if isinstance(value, list):
+        return [str(item) for item in value if str(item).strip()]
+    if value is None:
+        return []
+    text = str(value).strip()
+    return [text] if text else []
+
+
 def _git_changed_files(*, include_report_artifacts: bool = True) -> list[str]:
     try:
         tracked = subprocess.check_output(["git", "diff", "--name-only"], text=True).splitlines()
@@ -1091,9 +1100,32 @@ def build_active_discovery_final_report(
         "mlb_draft_before_after": {"before": 0, "after": 0},
         "structured_wiki_seed_before_after": {"before": 0, "after": 0},
         "source_lanes_changed_from_blocked_to_populated": [],
-        "source_lanes_still_blocked": sorted(set((nfl_completion.get("source_families_blocked") or []) + (mlb_completion.get("source_families_blocked") or []))),
-        "source_lanes_still_research": sorted(set((nfl_completion.get("source_families_research") or []) + (mlb_completion.get("source_families_research") or []))),
-        "new_feature_groups_created": nfl_schema.get("feature_groups_updated", []) + mlb_schema.get("feature_groups_updated", []),
+        "source_lanes_still_blocked": sorted(
+            set(
+                _as_string_list(nfl_completion.get("source_families_blocked"))
+                + _as_string_list(mlb_completion.get("source_families_blocked"))
+                + _as_string_list(nfl_completion.get("blocked_policy_sources", {}).get("nfl"))
+                + _as_string_list(mlb_completion.get("blocked_policy_sources", {}).get("mlb"))
+            )
+        ),
+        "source_lanes_still_research": sorted(
+            set(
+                _as_string_list(nfl_completion.get("source_families_research"))
+                + _as_string_list(mlb_completion.get("source_families_research"))
+                + _as_string_list(nfl_completion.get("research_sources", {}).get("nfl"))
+                + _as_string_list(mlb_completion.get("research_sources", {}).get("mlb"))
+            )
+        ),
+        "new_feature_groups_created": [
+            row.get("field_name")
+            for row in (nfl_schema.get("new_fields_created") or [])
+            if row.get("field_name")
+        ]
+        + [
+            row.get("field_name")
+            for row in (mlb_schema.get("new_fields_created") or [])
+            if row.get("field_name")
+        ],
         "feature_groups_model_eligible": sorted(set((nfl_completion.get("feature_groups_model_eligible") or []) + (mlb_completion.get("feature_groups_model_eligible") or []))),
         "nfl_feature_groups_model_eligible": nfl_completion.get("feature_groups_model_eligible") or [],
         "mlb_feature_groups_model_eligible": mlb_completion.get("feature_groups_model_eligible") or [],
