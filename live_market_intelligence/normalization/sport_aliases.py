@@ -1,0 +1,3 @@
+from ..core import SUPPORTED_REQUESTED_SPORTS, SUPPORTED_SPORT_ALIASES, normalize_sport
+
+__all__ = ["SUPPORTED_REQUESTED_SPORTS", "SUPPORTED_SPORT_ALIASES", "normalize_sport"]

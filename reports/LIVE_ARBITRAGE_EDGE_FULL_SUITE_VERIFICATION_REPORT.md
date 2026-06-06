@@ -1,0 +1,39 @@
+# Live Arbitrage Edge Full Suite Verification Report
+
+- `chunk_count`: `21`
+- `chunk_tests_timed_out`: `0`
+- `chunked_full_suite_equivalent`: `True`
+- `created_at`: `2026-06-06T02:37:20Z`
+- `failing_test_if_any`: `None`
+- `full_suite_status`: `monolithic_timeout_clean_in_deterministic_chunks`
+- `original_failure_reproduced`: `True`
+- `original_failure_type`: `timeout_plus_pytest_stdout_flush_oserror`
+- `post_fix_monolithic_status`: `timeout_only_at_5_minutes_no_failure_trace`
+- `report_name`: `LIVE_ARBITRAGE_EDGE_FULL_SUITE_VERIFICATION_REPORT`
+- `root_cause`: `The literal monolithic command exceeds the 5-minute execution ceiling. The original reproduction raised pytest OSError while flushing stdout after timeout; after fixing independent collector cap and sharp scheduler env-isolation blockers, the monolithic command still times out but produces no failure trace. All 507 test files passed in deterministic chunks.`
+- `safety_flags_clean`: `True`
+- `test_files_chunked`: `507`
+- `tests_failed`: `0`
+- `tests_passed`: `4058`
+- `tests_skipped`: `0`
+- `tests_timed_out`: `1`
+- `unrelated_dirty_files_preserved`: `True`
+- `unresolved_risk`: `Monolithic pytest remains longer than the 5-minute command ceiling; deterministic chunks are the reliable full-suite verification artifact.`
+- `provider_write`: `False`
+- `execution_allowed`: `False`
+- `execution_allowed_count`: `0`
+- `live_execution_enabled`: `False`
+- `auto_execution_enabled`: `False`
+- `kalshi_order_execution_enabled`: `False`
+- `sportsbook_bet_execution_enabled`: `False`
+- `broker_order_execution_enabled`: `False`
+- `stock_trade_execution_enabled`: `False`
+- `crypto_trade_execution_enabled`: `False`
+- `actual_orders_submitted`: `0`
+- `actual_bets_submitted`: `0`
+- `actual_trades_submitted`: `0`
+- `actual_crypto_swaps_submitted`: `0`
+- `raw_payload_included`: `False`
+- `raw_html_persisted`: `False`
+- `raw_screenshot_persisted`: `False`
+- `secrets_included`: `False`

@@ -1,0 +1,25 @@
+# Live Arbitrage Edge Architecture Inventory
+
+- `report_name`: `LIVE_ARBITRAGE_EDGE_ARCHITECTURE_INVENTORY`
+- `created_at`: `2026-06-06T02:38:33Z`
+- `existing_sport_model_file_count`: `58`
+- `existing_source_policy_module_count`: `28`
+- `existing_test_coverage_count`: `507`
+- `provider_write`: `False`
+- `execution_allowed`: `False`
+- `execution_allowed_count`: `0`
+- `live_execution_enabled`: `False`
+- `auto_execution_enabled`: `False`
+- `kalshi_order_execution_enabled`: `False`
+- `sportsbook_bet_execution_enabled`: `False`
+- `broker_order_execution_enabled`: `False`
+- `stock_trade_execution_enabled`: `False`
+- `crypto_trade_execution_enabled`: `False`
+- `actual_orders_submitted`: `0`
+- `actual_bets_submitted`: `0`
+- `actual_trades_submitted`: `0`
+- `actual_crypto_swaps_submitted`: `0`
+- `raw_payload_included`: `False`
+- `raw_html_persisted`: `False`
+- `raw_screenshot_persisted`: `False`
+- `secrets_included`: `False`

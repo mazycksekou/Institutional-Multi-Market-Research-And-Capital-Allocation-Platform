@@ -1,0 +1,31 @@
+# Live Market Source Policy Matrix
+
+- `report_name`: `LIVE_MARKET_SOURCE_POLICY_MATRIX`
+- `created_at`: `2026-06-06T02:38:33Z`
+- `source_policy_sources_reviewed`: `10`
+- `source_policy_sources_accepted_for_ingestion`: `2`
+- `source_policy_sources_replay_only`: `2`
+- `source_policy_sources_manual_only`: `1`
+- `source_policy_sources_paid_license_required`: `1`
+- `source_policy_sources_policy_blocked`: `1`
+- `source_policy_sources_terms_blocked`: `1`
+- `source_policy_sources_license_unclear`: `1`
+- `all_sources_final_actionable`: `True`
+- `provider_write`: `False`
+- `execution_allowed`: `False`
+- `execution_allowed_count`: `0`
+- `live_execution_enabled`: `False`
+- `auto_execution_enabled`: `False`
+- `kalshi_order_execution_enabled`: `False`
+- `sportsbook_bet_execution_enabled`: `False`
+- `broker_order_execution_enabled`: `False`
+- `stock_trade_execution_enabled`: `False`
+- `crypto_trade_execution_enabled`: `False`
+- `actual_orders_submitted`: `0`
+- `actual_bets_submitted`: `0`
+- `actual_trades_submitted`: `0`
+- `actual_crypto_swaps_submitted`: `0`
+- `raw_payload_included`: `False`
+- `raw_html_persisted`: `False`
+- `raw_screenshot_persisted`: `False`
+- `secrets_included`: `False`

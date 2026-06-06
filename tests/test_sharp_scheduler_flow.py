@@ -85,14 +85,32 @@ def _sharp_snapshot_two_books() -> dict:
 
 class TestSharpSchedulerFlow(unittest.TestCase):
     def setUp(self):
+        self._env_backup = {
+            name: os.environ.get(name)
+            for name in (
+                "SHARP_PROVIDER_ENABLED",
+                "SHARP_LIVE_READS_ENABLED",
+                "SHARP_API_KEY",
+                "KALSHI_PROVIDER_ENABLED",
+                "KALSHI_LIVE_READS_ENABLED",
+                "KALSHI_API_KEY",
+                "KALSHI_API_SECRET",
+            )
+        }
         os.environ["SHARP_PROVIDER_ENABLED"] = "true"
         os.environ["SHARP_LIVE_READS_ENABLED"] = "true"
         os.environ["SHARP_API_KEY"] = "sharp_key_test_value"
+        os.environ["KALSHI_PROVIDER_ENABLED"] = "false"
+        os.environ["KALSHI_LIVE_READS_ENABLED"] = "false"
+        os.environ.pop("KALSHI_API_KEY", None)
+        os.environ.pop("KALSHI_API_SECRET", None)
 
     def tearDown(self):
-        os.environ.pop("SHARP_PROVIDER_ENABLED", None)
-        os.environ.pop("SHARP_LIVE_READS_ENABLED", None)
-        os.environ.pop("SHARP_API_KEY", None)
+        for name, value in self._env_backup.items():
+            if value is None:
+                os.environ.pop(name, None)
+            else:
+                os.environ[name] = value
 
     @patch("automation_scheduler.scheduler_runner.SharpSportsbookAdapter.fetch_snapshot")
     def test_sharp_records_flow_to_scheduler_read_only(self, mock_snapshot):

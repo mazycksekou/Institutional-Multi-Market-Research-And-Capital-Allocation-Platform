@@ -1,0 +1,23 @@
+# Live Arbitrage Report
+
+- `report_name`: `LIVE_ARBITRAGE_REPORT`
+- `created_at`: `2026-06-06T02:38:33Z`
+- `alert_count`: `1`
+- `provider_write`: `False`
+- `execution_allowed`: `False`
+- `execution_allowed_count`: `0`
+- `live_execution_enabled`: `False`
+- `auto_execution_enabled`: `False`
+- `kalshi_order_execution_enabled`: `False`
+- `sportsbook_bet_execution_enabled`: `False`
+- `broker_order_execution_enabled`: `False`
+- `stock_trade_execution_enabled`: `False`
+- `crypto_trade_execution_enabled`: `False`
+- `actual_orders_submitted`: `0`
+- `actual_bets_submitted`: `0`
+- `actual_trades_submitted`: `0`
+- `actual_crypto_swaps_submitted`: `0`
+- `raw_payload_included`: `False`
+- `raw_html_persisted`: `False`
+- `raw_screenshot_persisted`: `False`
+- `secrets_included`: `False`
