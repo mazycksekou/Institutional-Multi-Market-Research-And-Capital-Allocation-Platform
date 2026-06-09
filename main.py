@@ -5037,3 +5037,417 @@ def math_catalog(
 
 # --- End math catalog endpoint ---
 
+
+# --- Live opportunity scanner: arb, middles, line shopping, no-vig edge ---
+@app.get("/odds/opportunities/live")
+def odds_opportunities_live(
+    sport: str = "basketball_nba",
+    regions: str = "us",
+    markets: str = "h2h,spreads,totals",
+    odds_format: str = "american",
+    limit: int = 30,
+    arb_stake: float = 100.0,
+    near_arb_max_hold_percent: float = 1.25,
+    value_edge_min_percent: float = 0.25,
+    middle_min_width: float = 0.5
+):
+    import os
+    import json
+    import urllib.parse
+    import urllib.request
+    import urllib.error
+    from itertools import combinations
+    from fastapi.responses import JSONResponse
+
+    def american_to_decimal(price):
+        price = float(price)
+        if price > 0:
+            return 1.0 + price / 100.0
+        return 1.0 + 100.0 / abs(price)
+
+    def american_to_prob(price):
+        price = float(price)
+        if price < 0:
+            return abs(price) / (abs(price) + 100.0)
+        return 100.0 / (price + 100.0)
+
+    def best_price(offers):
+        return max(offers, key=lambda x: float(x["price"]))
+
+    def norm_line(market_key, outcome):
+        point = outcome.get("point")
+        if point is None:
+            return None
+        try:
+            point = float(point)
+        except Exception:
+            return point
+
+        if market_key == "spreads":
+            return abs(point)
+
+        if market_key == "totals":
+            return point
+
+        return point
+
+    def arb_stakes(best_offers, total_stake):
+        inv_sum = sum(1.0 / o["decimal_odds"] for o in best_offers)
+        payout = total_stake / inv_sum
+        rows = []
+
+        for o in best_offers:
+            stake = (total_stake * (1.0 / o["decimal_odds"])) / inv_sum
+            rows.append({
+                "selection": o["selection"],
+                "book": o["book"],
+                "odds": o["price"],
+                "stake": round(stake, 2),
+                "payout": round(stake * o["decimal_odds"], 2)
+            })
+
+        return {
+            "total_stake": round(total_stake, 2),
+            "guaranteed_payout": round(payout, 2),
+            "guaranteed_profit": round(payout - total_stake, 2),
+            "guaranteed_roi_percent": round((payout / total_stake - 1.0) * 100.0, 3),
+            "stake_split": rows
+        }
+
+    api_key = os.getenv("THE_ODDS_API_KEY") or os.getenv("ODDS_API_KEY")
+
+    if not api_key:
+        return JSONResponse(
+            status_code=500,
+            content={"ok": False, "error": "Missing THE_ODDS_API_KEY or ODDS_API_KEY"}
+        )
+
+    params = urllib.parse.urlencode({
+        "apiKey": api_key,
+        "regions": regions,
+        "markets": markets,
+        "oddsFormat": odds_format
+    })
+
+    url = f"https://api.the-odds-api.com/v4/sports/{sport}/odds?{params}"
+
+    try:
+        request = urllib.request.Request(
+            url,
+            headers={
+                "Accept": "application/json",
+                "User-Agent": "betting-stock-api/1.0"
+            }
+        )
+
+        with urllib.request.urlopen(request, timeout=20) as response:
+            raw = response.read().decode("utf-8")
+            events = json.loads(raw)
+
+    except urllib.error.HTTPError as e:
+        return JSONResponse(
+            status_code=e.code,
+            content={
+                "ok": False,
+                "provider": "The Odds API",
+                "status_code": e.code,
+                "error": e.read().decode("utf-8")
+            }
+        )
+
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"ok": False, "error": str(e)}
+        )
+
+    events = events[:limit]
+
+    groups = {}
+    all_offers = []
+    book_holds = []
+
+    for event in events:
+        event_id = event.get("id")
+        home = event.get("home_team")
+        away = event.get("away_team")
+        event_name = f"{away} vs {home}"
+
+        for book in event.get("bookmakers", []):
+            book_name = book.get("title") or book.get("key")
+            last_update = book.get("last_update")
+
+            for market in book.get("markets", []):
+                market_key = market.get("key")
+                outcomes = market.get("outcomes", [])
+
+                valid = [o for o in outcomes if o.get("price") is not None]
+
+                if len(valid) < 2:
+                    continue
+
+                raw_probs = [american_to_prob(o.get("price")) for o in valid]
+                total_raw_prob = sum(raw_probs)
+                hold = total_raw_prob - 1.0
+
+                line_for_hold = None
+                if market_key in ["spreads", "totals"] and valid[0].get("point") is not None:
+                    line_for_hold = norm_line(market_key, valid[0])
+
+                book_holds.append({
+                    "event": event_name,
+                    "market": market_key,
+                    "line": line_for_hold,
+                    "book": book_name,
+                    "hold_percent": round(hold * 100.0, 3),
+                    "raw_probability_sum_percent": round(total_raw_prob * 100.0, 3)
+                })
+
+                for outcome in valid:
+                    price = outcome.get("price")
+                    implied = american_to_prob(price)
+                    no_vig = implied / total_raw_prob if total_raw_prob > 0 else None
+                    point = outcome.get("point")
+                    line_key = norm_line(market_key, outcome)
+
+                    group_key = (
+                        event_id,
+                        event_name,
+                        market_key,
+                        line_key
+                    )
+
+                    offer = {
+                        "event_id": event_id,
+                        "event": event_name,
+                        "home_team": home,
+                        "away_team": away,
+                        "market": market_key,
+                        "selection": outcome.get("name"),
+                        "line": line_key,
+                        "point": point,
+                        "book": book_name,
+                        "price": price,
+                        "decimal_odds": american_to_decimal(price),
+                        "implied_probability": implied,
+                        "book_no_vig_probability": no_vig,
+                        "last_update": last_update
+                    }
+
+                    groups.setdefault(group_key, []).append(offer)
+                    all_offers.append(offer)
+
+    arbs = []
+    near_arbs = []
+    value_watch = []
+    best_prices = []
+
+    for group_key, offers in groups.items():
+        event_id, event_name, market_key, line_key = group_key
+
+        by_selection = {}
+        for offer in offers:
+            by_selection.setdefault(offer["selection"], []).append(offer)
+
+        if len(by_selection) < 2:
+            continue
+
+        best_offers = [best_price(selection_offers) for selection_offers in by_selection.values()]
+        implied_sum = sum(1.0 / o["decimal_odds"] for o in best_offers)
+        hold_percent = (implied_sum - 1.0) * 100.0
+
+        for selection, selection_offers in by_selection.items():
+            best = best_price(selection_offers)
+            consensus_true = sum(o["book_no_vig_probability"] for o in selection_offers if o["book_no_vig_probability"] is not None) / len(selection_offers)
+            best_implied = american_to_prob(best["price"])
+            edge = consensus_true - best_implied
+
+            best_prices.append({
+                "event": event_name,
+                "market": market_key,
+                "selection": selection,
+                "line": line_key,
+                "best_book": best["book"],
+                "best_odds": best["price"],
+                "implied_probability_percent": round(best_implied * 100.0, 3),
+                "market_true_no_vig_percent": round(consensus_true * 100.0, 3),
+                "market_edge_percent": round(edge * 100.0, 3),
+                "book_count": len(selection_offers)
+            })
+
+            if edge * 100.0 >= value_edge_min_percent:
+                value_watch.append({
+                    "type": "market_derived_value_watch",
+                    "event": event_name,
+                    "market": market_key,
+                    "selection": selection,
+                    "line": line_key,
+                    "best_book": best["book"],
+                    "best_odds": best["price"],
+                    "implied_probability_percent": round(best_implied * 100.0, 3),
+                    "market_true_no_vig_percent": round(consensus_true * 100.0, 3),
+                    "edge_percent": round(edge * 100.0, 3),
+                    "note": "Market-derived edge only. Not independent model-confirmed."
+                })
+
+        if implied_sum < 1.0:
+            arbs.append({
+                "type": "arbitrage",
+                "event": event_name,
+                "market": market_key,
+                "line": line_key,
+                "combined_implied_percent": round(implied_sum * 100.0, 3),
+                "arb_profit_percent": round((1.0 / implied_sum - 1.0) * 100.0, 3),
+                "books": [
+                    {
+                        "selection": o["selection"],
+                        "book": o["book"],
+                        "odds": o["price"]
+                    }
+                    for o in best_offers
+                ],
+                "stake_plan": arb_stakes(best_offers, arb_stake)
+            })
+
+        elif hold_percent <= near_arb_max_hold_percent:
+            near_arbs.append({
+                "type": "near_arb_or_scalp_watch",
+                "event": event_name,
+                "market": market_key,
+                "line": line_key,
+                "combined_implied_percent": round(implied_sum * 100.0, 3),
+                "remaining_hold_percent": round(hold_percent, 3),
+                "books": [
+                    {
+                        "selection": o["selection"],
+                        "book": o["book"],
+                        "odds": o["price"]
+                    }
+                    for o in best_offers
+                ],
+                "note": "Not risk-free. Close to arb, useful for line shopping or price movement watch."
+            })
+
+    spread_middles = []
+    total_middles = []
+
+    offers_by_event = {}
+    for offer in all_offers:
+        offers_by_event.setdefault(offer["event_id"], []).append(offer)
+
+    for event_id, offers in offers_by_event.items():
+        spreads = [o for o in offers if o["market"] == "spreads" and o["point"] is not None]
+        totals = [o for o in offers if o["market"] == "totals" and o["point"] is not None]
+
+        for a, b in combinations(spreads, 2):
+            if a["selection"] == b["selection"]:
+                continue
+
+            try:
+                pa = float(a["point"])
+                pb = float(b["point"])
+            except Exception:
+                continue
+
+            middle_width = pa + pb
+
+            if middle_width >= middle_min_width:
+                combined_implied = american_to_prob(a["price"]) + american_to_prob(b["price"])
+
+                spread_middles.append({
+                    "type": "spread_middle_watch",
+                    "event": a["event"],
+                    "side_1": {
+                        "selection": a["selection"],
+                        "point": a["point"],
+                        "book": a["book"],
+                        "odds": a["price"]
+                    },
+                    "side_2": {
+                        "selection": b["selection"],
+                        "point": b["point"],
+                        "book": b["book"],
+                        "odds": b["price"]
+                    },
+                    "middle_width_points": round(middle_width, 3),
+                    "combined_implied_percent": round(combined_implied * 100.0, 3),
+                    "note": "Middle, not guaranteed arb. Both bets can win if final margin lands inside the window."
+                })
+
+        overs = [o for o in totals if str(o["selection"]).lower() == "over"]
+        unders = [o for o in totals if str(o["selection"]).lower() == "under"]
+
+        for over in overs:
+            for under in unders:
+                try:
+                    over_line = float(over["point"])
+                    under_line = float(under["point"])
+                except Exception:
+                    continue
+
+                if under_line - over_line >= middle_min_width:
+                    combined_implied = american_to_prob(over["price"]) + american_to_prob(under["price"])
+
+                    total_middles.append({
+                        "type": "total_middle_watch",
+                        "event": over["event"],
+                        "over": {
+                            "line": over_line,
+                            "book": over["book"],
+                            "odds": over["price"]
+                        },
+                        "under": {
+                            "line": under_line,
+                            "book": under["book"],
+                            "odds": under["price"]
+                        },
+                        "middle_width_points": round(under_line - over_line, 3),
+                        "combined_implied_percent": round(combined_implied * 100.0, 3),
+                        "note": "Middle, not guaranteed arb. Over lower number and under higher number can both win."
+                    })
+
+    book_holds_sorted = sorted(book_holds, key=lambda x: x["hold_percent"])
+    best_prices_sorted = sorted(best_prices, key=lambda x: x["market_edge_percent"], reverse=True)
+    value_watch_sorted = sorted(value_watch, key=lambda x: x["edge_percent"], reverse=True)
+    arbs_sorted = sorted(arbs, key=lambda x: x["arb_profit_percent"], reverse=True)
+    near_arbs_sorted = sorted(near_arbs, key=lambda x: x["remaining_hold_percent"])
+    spread_middles_sorted = sorted(spread_middles, key=lambda x: x["middle_width_points"], reverse=True)
+    total_middles_sorted = sorted(total_middles, key=lambda x: x["middle_width_points"], reverse=True)
+
+    return {
+        "ok": True,
+        "source": "The Odds API",
+        "sport": sport,
+        "regions": regions,
+        "markets": markets,
+        "events_checked": len(events),
+        "offers_checked": len(all_offers),
+        "checks_included": [
+            "arbitrage",
+            "near-arb/scalp watch",
+            "spread middles",
+            "total middles",
+            "best-line shopping",
+            "market-derived no-vig edge",
+            "low-hold book markets",
+            "book disagreement"
+        ],
+        "summary": {
+            "arbs_found": len(arbs_sorted),
+            "near_arbs_found": len(near_arbs_sorted),
+            "spread_middles_found": len(spread_middles_sorted),
+            "total_middles_found": len(total_middles_sorted),
+            "value_watch_count": len(value_watch_sorted)
+        },
+        "arbitrage": arbs_sorted[:25],
+        "near_arbs": near_arbs_sorted[:25],
+        "spread_middles": spread_middles_sorted[:25],
+        "total_middles": total_middles_sorted[:25],
+        "value_watch": value_watch_sorted[:25],
+        "best_prices": best_prices_sorted[:50],
+        "lowest_hold_markets": book_holds_sorted[:50],
+        "important_note": "Arbs are risk-free only if all legs can be placed at the listed odds before line movement. Middles and value-watch plays are not guaranteed profit."
+    }
+
+# --- End live opportunity scanner ---
+
