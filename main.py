@@ -4675,7 +4675,7 @@ def the_odds_api_live(
     markets: str = "h2h,spreads,totals",
     odds_format: str = "american"
 ):
-    api_key = os.getenv("THE_ODDS_API_KEY")
+    api_key = os.getenv("THE_ODDS_API_KEY") or os.getenv("ODDS_API_KEY")
 
     if not api_key:
         return JSONResponse(
@@ -4749,7 +4749,7 @@ def the_odds_api_test():
     import urllib.error
     from fastapi.responses import JSONResponse
 
-    api_key = os.getenv("THE_ODDS_API_KEY")
+    api_key = os.getenv("THE_ODDS_API_KEY") or os.getenv("ODDS_API_KEY")
 
     if not api_key:
         return JSONResponse(
