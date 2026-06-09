@@ -4585,3 +4585,222 @@ def custom_openapi():
 
 
 app.openapi = custom_openapi;
+
+import os
+import json
+import urllib.parse
+import urllib.request
+import urllib.error
+from fastapi.responses import JSONResponse
+
+
+@app.get("/odds/live")
+def odds_live(limit: int = 10):
+    api_key = os.getenv("SPORTSGAMEODDS_API_KEY")
+
+    if not api_key:
+        return JSONResponse(
+            status_code=500,
+            content={
+                "ok": False,
+                "error": "SPORTSGAMEODDS_API_KEY is missing"
+            }
+        )
+
+    params = urllib.parse.urlencode({
+        "oddsAvailable": "true",
+        "limit": limit
+    })
+
+    url = f"https://api.sportsgameodds.com/v1/events/?{params}"
+
+    try:
+        request = urllib.request.Request(
+            url,
+            headers={
+                "x-api-key": api_key,
+                "Accept": "application/json",
+                "User-Agent": "betting-stock-api/1.0"
+            }
+        )
+
+        with urllib.request.urlopen(request, timeout=20) as response:
+            raw = response.read().decode("utf-8")
+            data = json.loads(raw)
+
+        return {
+            "ok": True,
+            "source": "SportsGameOdds",
+            "endpoint": "/odds/live",
+            "limit": limit,
+            "data": data
+        }
+
+    except urllib.error.HTTPError as e:
+        error_body = e.read().decode("utf-8")
+
+        return JSONResponse(
+            status_code=e.code,
+            content={
+                "ok": False,
+                "provider": "SportsGameOdds",
+                "status_code": e.code,
+                "error": error_body
+            }
+        )
+
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={
+                "ok": False,
+                "provider": "SportsGameOdds",
+                "error": str(e)
+            }
+        )
+
+
+import os
+import json
+import urllib.parse
+import urllib.request
+import urllib.error
+from fastapi.responses import JSONResponse
+
+
+@app.get("/odds/the-odds-api/live")
+def the_odds_api_live(
+    sport: str = "basketball_nba",
+    regions: str = "us",
+    markets: str = "h2h,spreads,totals",
+    odds_format: str = "american"
+):
+    api_key = os.getenv("THE_ODDS_API_KEY")
+
+    if not api_key:
+        return JSONResponse(
+            status_code=500,
+            content={
+                "ok": False,
+                "error": "THE_ODDS_API_KEY is missing"
+            }
+        )
+
+    params = urllib.parse.urlencode({
+        "apiKey": api_key,
+        "regions": regions,
+        "markets": markets,
+        "oddsFormat": odds_format
+    })
+
+    url = f"https://api.the-odds-api.com/v4/sports/{sport}/odds?{params}"
+
+    try:
+        request = urllib.request.Request(
+            url,
+            headers={
+                "Accept": "application/json",
+                "User-Agent": "betting-stock-api/1.0"
+            }
+        )
+
+        with urllib.request.urlopen(request, timeout=20) as response:
+            raw = response.read().decode("utf-8")
+            data = json.loads(raw)
+
+        return {
+            "ok": True,
+            "source": "The Odds API",
+            "sport": sport,
+            "regions": regions,
+            "markets": markets,
+            "odds_format": odds_format,
+            "data": data
+        }
+
+    except urllib.error.HTTPError as e:
+        error_body = e.read().decode("utf-8")
+
+        return JSONResponse(
+            status_code=e.code,
+            content={
+                "ok": False,
+                "provider": "The Odds API",
+                "status_code": e.code,
+                "error": error_body
+            }
+        )
+
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={
+                "ok": False,
+                "provider": "The Odds API",
+                "error": str(e)
+            }
+        )
+
+@app.get("/odds/the-odds-api/test")
+def the_odds_api_test():
+    import os
+    import json
+    import urllib.request
+    import urllib.error
+    from fastapi.responses import JSONResponse
+
+    api_key = os.getenv("THE_ODDS_API_KEY")
+
+    if not api_key:
+        return JSONResponse(
+            status_code=500,
+            content={
+                "ok": False,
+                "error": "THE_ODDS_API_KEY is missing"
+            }
+        )
+
+    url = f"https://api.the-odds-api.com/v4/sports/?apiKey={api_key}"
+
+    try:
+        request = urllib.request.Request(
+            url,
+            headers={
+                "Accept": "application/json",
+                "User-Agent": "betting-stock-api/1.0"
+            }
+        )
+
+        with urllib.request.urlopen(request, timeout=20) as response:
+            raw = response.read().decode("utf-8")
+            data = json.loads(raw)
+
+            return {
+                "ok": True,
+                "source": "The Odds API",
+                "requests_remaining": response.headers.get("x-requests-remaining"),
+                "requests_used": response.headers.get("x-requests-used"),
+                "sports_count": len(data),
+                "sample": data[:5]
+            }
+
+    except urllib.error.HTTPError as e:
+        return JSONResponse(
+            status_code=e.code,
+            content={
+                "ok": False,
+                "provider": "The Odds API",
+                "status_code": e.code,
+                "error": e.read().decode("utf-8")
+            }
+        )
+
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={
+                "ok": False,
+                "provider": "The Odds API",
+                "error": str(e)
+            }
+        )
