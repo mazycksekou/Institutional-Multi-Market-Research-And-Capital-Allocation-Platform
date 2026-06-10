@@ -16,7 +16,7 @@ class TheOddsApiAdapter(ProviderAdapter):
 
     def __init__(self) -> None:
         self.base_url = os.getenv("ODDS_API_BASE_URL", "https://api.the-odds-api.com/v4").rstrip("/")
-        self.api_key = os.getenv("ODDS_API_KEY", "").strip()
+        self.api_key = (os.getenv("THE_ODDS_API_KEY") or os.getenv("ODDS_API_KEY") or "").strip()
         self.default_bookmakers = os.getenv(
             "DEFAULT_BOOKMAKERS",
             "draftkings,fanduel,betmgm,caesars,espnbet,bet365",

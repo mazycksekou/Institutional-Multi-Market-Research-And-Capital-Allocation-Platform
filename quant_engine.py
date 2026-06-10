@@ -1,6 +1,16 @@
 from datetime import date
 from typing import Any
 
+from src.core.math_utils import (
+    american_to_decimal as _core_american_to_decimal,
+    american_to_implied_probability as _core_american_to_implied_probability,
+    calculate_kelly_stake as _core_calculate_kelly_stake,
+    edge_percent as _core_edge_percent,
+    expected_value as _core_expected_value,
+    fractional_kelly as _core_fractional_kelly,
+    implied_probability_to_american as _core_implied_probability_to_american,
+)
+
 
 def _validate_american_odds(odds: int | float) -> float:
     if odds == 0:
@@ -16,10 +26,7 @@ def _validate_probability(probability: float) -> float:
 
 
 def american_to_decimal(odds: int | float) -> float:
-    odds = _validate_american_odds(odds)
-    if odds > 0:
-        return 1 + (odds / 100)
-    return 1 + (100 / abs(odds))
+    return _core_american_to_decimal(odds)
 
 
 def american_to_implied_probability(odds: int | float) -> dict[str, float]:
@@ -31,10 +38,7 @@ def american_to_implied_probability(odds: int | float) -> dict[str, float]:
 
 
 def implied_probability_from_american(odds: int | float) -> float:
-    odds = _validate_american_odds(odds)
-    if odds > 0:
-        return 100 / (odds + 100)
-    return abs(odds) / (abs(odds) + 100)
+    return _core_american_to_implied_probability(odds)
 
 
 def decimal_to_american(decimal_odds: float) -> int:
@@ -47,16 +51,11 @@ def decimal_to_american(decimal_odds: float) -> int:
 
 
 def probability_to_fair_american(probability: float) -> int:
-    probability = _validate_probability(probability)
-    return decimal_to_american(1 / probability)
+    return _core_implied_probability_to_american(probability)
 
 
 def expected_value_per_unit(odds: int | float, true_probability: float) -> float:
-    true_probability = _validate_probability(true_probability)
-    decimal_odds = american_to_decimal(odds)
-    profit_per_unit = decimal_odds - 1
-    loss_probability = 1 - true_probability
-    return (true_probability * profit_per_unit) - loss_probability
+    return _core_expected_value(odds, true_probability, stake=1.0)
 
 
 def expected_value_dollars(odds: int | float, true_probability: float, stake: float) -> float:
@@ -64,14 +63,7 @@ def expected_value_dollars(odds: int | float, true_probability: float, stake: fl
 
 
 def kelly_fraction(odds: int | float, true_probability: float) -> float:
-    true_probability = _validate_probability(true_probability)
-    decimal_odds = american_to_decimal(odds)
-    b = decimal_odds - 1
-    p = true_probability
-    q = 1 - p
-    if b <= 0:
-        return 0
-    return max(0, ((b * p) - q) / b)
+    return _core_fractional_kelly(odds, true_probability, fraction=1.0)
 
 
 def suggested_stake(
@@ -81,12 +73,13 @@ def suggested_stake(
     fractional_kelly: float = 0.25,
     max_bankroll_pct: float = 0.02,
 ) -> float:
-    bankroll = max(0, float(bankroll))
-    fractional_kelly = max(0, float(fractional_kelly))
-    max_bankroll_pct = max(0, float(max_bankroll_pct))
-    kelly = kelly_fraction(american_odds, true_probability)
-    stake = bankroll * kelly * fractional_kelly
-    return max(0, min(stake, bankroll * max_bankroll_pct))
+    return _core_calculate_kelly_stake(
+        bankroll,
+        american_odds,
+        true_probability,
+        fraction=fractional_kelly,
+        max_bankroll_pct=max_bankroll_pct,
+    )
 
 
 def suggested_bet_size(
@@ -239,7 +232,7 @@ def fair_odds_american_from_probability(probability: float) -> int:
 
 
 def edge_percentage(true_probability: float, implied_probability: float) -> float:
-    return (float(true_probability) - float(implied_probability)) * 100
+    return _core_edge_percent(true_probability, implied_probability)
 
 
 def expected_value_per_100(odds: int | float, true_probability: float) -> float:

@@ -1,0 +1,38 @@
+{
+  "avg_clv_percent": 1.090882207019675,
+  "calibrator": {
+    "method": "identity",
+    "positive_count": 24,
+    "reason": "sklearn_unavailable",
+    "requested_method": "platt",
+    "sample_size": 48
+  },
+  "feature_columns": [
+    "is_home",
+    "rest_days",
+    "elo_diff",
+    "offensive_rating_diff",
+    "defensive_rating_diff",
+    "pace_diff",
+    "efg_pct_diff",
+    "turnover_pct_diff",
+    "rebound_pct_diff",
+    "free_throw_rate_diff",
+    "injury_impact_diff",
+    "travel_miles_diff",
+    "form_win_pct_diff",
+    "market_implied_probability",
+    "book_count"
+  ],
+  "market": "h2h",
+  "min_edge": 0.01,
+  "model_type": "simple_logistic_fallback",
+  "model_version": "v1",
+  "python": "3.12.10",
+  "qualified_bets": 92,
+  "roi": 0.3099494627587834,
+  "sport_key": "basketball_nba",
+  "status": "backtest_complete",
+  "trained_at": "2026-06-10T00:42:42.649653+00:00",
+  "training_rows": 240
+}

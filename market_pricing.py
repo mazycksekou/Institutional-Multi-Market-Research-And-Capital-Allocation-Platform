@@ -4,7 +4,11 @@ from __future__ import annotations
 import statistics
 from typing import Any
 
-from quant_engine import american_to_decimal, book_hold_n_way, book_hold_two_way, implied_probability_from_american, no_vig_probabilities_n_way, probability_to_fair_american
+from quant_engine import book_hold_n_way, book_hold_two_way, no_vig_probabilities_n_way, probability_to_fair_american
+from src.core.math_utils import (
+    american_to_decimal,
+    american_to_implied_probability as implied_probability_from_american,
+)
 
 
 def book_hold_from_american_pair(american_a: int | float, american_b: int | float) -> float:
