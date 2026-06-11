@@ -30,6 +30,7 @@ from src.api.quant_routes import register_quant_routes
 from src.api.governance_routes import register_governance_routes
 from src.api.schemas.bet_csv import BetLogRequest
 from src.api.schemas.quant import BetAnalysisRequest, MarketPricingRequest, StockAnalysisRequest
+from src.api.schemas.performance import PerformanceBacktestRequest
 from src.services.bet_csv_service import BETS_FILE, append_bet, summarize_bets
 import automation_scheduler
 import bet_log
@@ -1328,13 +1329,6 @@ class InstitutionalExecutionSimulationRequest(BaseModel):
     broker_order_execution_enabled: bool = False
 
 
-class PerformanceBacktestRequest(BaseModel):
-    model_config = ConfigDict(extra="forbid", protected_namespaces=())
-
-    model_id: str = Field(min_length=1, max_length=120)
-    historical_rows_path: Optional[str] = None
-    rows: Optional[list[dict[str, Any]]] = None
-    dry_run: bool = True
 
 
 def utc_now() -> str:
