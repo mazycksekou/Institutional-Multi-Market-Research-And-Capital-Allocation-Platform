@@ -1,1 +1,1 @@
-"""API integration helpers for the predictive modeling framework."""
+"""API service helpers for thin FastAPI routes."""

@@ -115,6 +115,11 @@ def normalize_timestamp(value: Any) -> int | None:
 
 def normalize_offer(offer: dict[str, Any]) -> dict[str, Any]:
     normalized = dict(offer)
+    timestamp_source = offer.get("timestamp")
+    if timestamp_source in (None, ""):
+        timestamp_source = offer.get("odds_timestamp")
+    if timestamp_source in (None, ""):
+        timestamp_source = offer.get("last_update")
     normalized["bookmaker"] = normalize_bookmaker_name(offer.get("bookmaker") or offer.get("book"))
     normalized["event_name"] = normalize_event_name(offer.get("event_name") or offer.get("event"))
     normalized["participant"] = normalize_entity_name(offer.get("participant") or offer.get("team") or offer.get("player"))
@@ -122,7 +127,7 @@ def normalize_offer(offer: dict[str, Any]) -> dict[str, Any]:
     normalized["selection"] = normalize_selection_name(offer.get("selection"))
     normalized["odds"] = normalize_odds_value(offer.get("odds") if "odds" in offer else offer.get("odds_american"))
     normalized["line"] = normalize_line_value(offer.get("line"))
-    normalized["timestamp"] = normalize_timestamp(offer.get("timestamp") or offer.get("odds_timestamp") or offer.get("last_update"))
+    normalized["timestamp"] = normalize_timestamp(timestamp_source)
     confidence = 0
     for key in ("bookmaker", "event_name", "market", "selection", "odds", "timestamp"):
         if normalized.get(key) not in (None, "", "unknown"):

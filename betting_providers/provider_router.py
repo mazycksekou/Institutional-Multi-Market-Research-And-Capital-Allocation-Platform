@@ -4,6 +4,7 @@ from typing import Any, Optional
 from .base import PREDICTION_MARKET, SPORTSBOOK_ODDS, provider_disabled, unknown_provider
 from .kalshi_api import KalshiApiAdapter
 from .sharp_api import SharpApiAdapter
+from .sportsgameodds import SportsGameOddsAdapter
 from .the_odds_api import TheOddsApiAdapter
 
 
@@ -11,6 +12,7 @@ class ProviderRouter:
     def __init__(self) -> None:
         self.providers = {
             "the_odds_api": TheOddsApiAdapter(),
+            "sportsgameodds": SportsGameOddsAdapter(),
             "sharp_api": SharpApiAdapter(),
             "kalshi": KalshiApiAdapter(),
         }
@@ -76,6 +78,14 @@ class ProviderRouter:
         if error:
             return error
         return await provider.get_first_event_odds(sport, league, **kwargs)
+
+    async def get_odds_events(self, provider_id: Optional[str], sport: Optional[str], league: Optional[str], **kwargs: Any) -> dict[str, Any]:
+        provider, error = self.get_provider(provider_id, SPORTSBOOK_ODDS)
+        if error:
+            return error
+        if not hasattr(provider, "get_odds_events"):
+            return await provider.get_first_event_odds(sport, league, **kwargs)
+        return await provider.get_odds_events(sport, league, **kwargs)
 
     async def get_kalshi_events(self, **kwargs: Any) -> dict[str, Any]:
         provider, error = self.get_provider("kalshi", PREDICTION_MARKET)

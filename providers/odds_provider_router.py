@@ -2,16 +2,20 @@ from __future__ import annotations
 
 from typing import Any
 
-from .kalshi_provider import enrich_with_kalshi
-from .sharp_provider import enrich_with_sharp
+from src.services.enrichment_service import EnrichmentService
 
 
 def enrich_ticket(ticket: dict[str, Any]) -> dict[str, Any]:
-    return {
-        "sharp": enrich_with_sharp(ticket),
-        "kalshi": enrich_with_kalshi(ticket),
-        "notes": [
-            "Provider data is enrichment only.",
-            "Kalshi is treated as prediction market context, not sportsbook odds.",
-        ],
-    }
+    """
+    LEGACY COMPATIBILITY WRAPPER.
+
+    Canonical owner: src/services/enrichment_service.py
+
+    Retained because screenshot_intake.py imports this function and multiple
+    tests patch providers.odds_provider_router.enrich_ticket.
+
+    Planned deletion condition:
+    delete only after screenshot_intake.py and tests migrate to the canonical
+    enrichment service path.
+    """
+    return EnrichmentService.enrich_ticket(ticket)

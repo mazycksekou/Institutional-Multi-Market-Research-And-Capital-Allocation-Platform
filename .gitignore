@@ -71,3 +71,46 @@ reports/
 
 # Generated script backup files
 *.bak_*
+# Runtime/generated data artifacts
+data/backtests/
+data/calibration/
+data/calibration_reports/
+data/clv/
+data/data_sources/
+data/reports/
+data/review_queue/
+data/snapshots/
+data/paper_ledger/
+data/ops_checks/
+data/deepseek_profit_lab/
+data/deepseek_data_checks/
+data/manifold/
+data/prediction_market_outcome_candidates/
+data/institutional_lab/
+data/collector_scheduler/
+
+# Heavy runtime/model/database artifacts
+data/**/*.db
+data/**/*.sqlite
+data/**/*.sqlite3
+data/**/*.pkl
+data/**/*.joblib
+data/**/*.bin
+data/**/*.pt
+data/**/*.pth
+data/**/*.onnx
+
+# Python/runtime caches
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+
+
+# Local/editor footprint artifacts
+.cursor/
+.vscode/
+
+# Expired local handoff/context files
+PHASE4_CONTEXT_FOR_CHATGPT.txt

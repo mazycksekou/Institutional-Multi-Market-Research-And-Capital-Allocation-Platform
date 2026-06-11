@@ -6,9 +6,317 @@ opportunities. It does not place bets and does not claim independent model edge.
 from __future__ import annotations
 
 from itertools import combinations
+import math
 from typing import Any
 
 from src.core.math_utils import american_to_decimal, american_to_implied_probability
+
+
+def offer_set_is_stale(offers: list[dict[str, Any]], max_timestamp_skew_seconds: int) -> bool:
+    timestamps = [int(offer.get("timestamp")) for offer in offers if isinstance(offer.get("timestamp"), (int, float))]
+    if not timestamps:
+        return False
+    return (max(timestamps) - min(timestamps)) > max_timestamp_skew_seconds
+
+
+def best_arbitrage_prices_by_selection(offers: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    best: dict[str, dict[str, Any]] = {}
+    for offer in offers:
+        if offer.get("odds") in (None, 0):
+            continue
+        selection = str(offer.get("selection"))
+        decimal_price = american_to_decimal(offer["odds"])
+        existing = best.get(selection)
+        if existing is None or decimal_price > existing["decimal_odds"]:
+            best[selection] = {**offer, "decimal_odds": decimal_price}
+    return best
+
+
+def arbitrage_stake_split(best_prices: list[dict[str, Any]], total_stake: float) -> tuple[list[dict[str, Any]], float]:
+    implied_sum = sum(1.0 / price["decimal_odds"] for price in best_prices)
+    plan = []
+    for price in best_prices:
+        stake = total_stake * ((1.0 / price["decimal_odds"]) / implied_sum)
+        plan.append({**price, "stake": round(stake, 2), "payout": round(stake * price["decimal_odds"], 2)})
+    return plan, implied_sum
+
+
+def detect_arbitrage_from_normalized_offers(
+    offers: list[dict[str, Any]],
+    *,
+    total_stake: float = 100.0,
+    market_identity_confidence: float = 100.0,
+    max_timestamp_skew_seconds: int = 120,
+    stale_data_risk: bool = False,
+) -> dict[str, Any]:
+    if len(offers) < 2:
+        return {"candidate_found": False, "reason": "not_enough_offers", "candidate_type": None}
+    if stale_data_risk or offer_set_is_stale(offers, max_timestamp_skew_seconds):
+        return {"candidate_found": False, "reason": "stale_data", "candidate_type": None}
+    if market_identity_confidence < 85:
+        return {"candidate_found": False, "reason": "low_market_identity_confidence", "candidate_type": None}
+
+    best_by_selection = best_arbitrage_prices_by_selection(offers)
+    if len(best_by_selection) < 2:
+        return {"candidate_found": False, "reason": "same_side_only", "candidate_type": None}
+    if len(best_by_selection) not in {2, 3}:
+        return {"candidate_found": False, "reason": "unsupported_selection_count", "candidate_type": None}
+
+    implied_sum = sum(1.0 / row["decimal_odds"] for row in best_by_selection.values())
+    if implied_sum >= 1.0:
+        return {
+            "candidate_found": False,
+            "reason": "no_arbitrage_after_vig",
+            "candidate_type": None,
+            "arbitrage_implied_sum": round(implied_sum, 6),
+        }
+
+    stake_plan = []
+    payouts = []
+    for selection, row in best_by_selection.items():
+        stake = total_stake * ((1.0 / row["decimal_odds"]) / implied_sum)
+        payout = stake * row["decimal_odds"]
+        payouts.append(payout)
+        stake_plan.append(
+            {
+                "selection": selection,
+                "bookmaker": row["bookmaker"],
+                "odds": row["odds"],
+                "decimal_odds": round(row["decimal_odds"], 6),
+                "stake": round(stake, 2),
+                "payout": round(payout, 2),
+            }
+        )
+
+    total_stake_value = round(sum(item["stake"] for item in stake_plan), 2)
+    profits = [round(payout - total_stake_value, 2) for payout in payouts]
+    min_profit = min(profits)
+    max_profit = max(profits)
+    return {
+        "candidate_found": True,
+        "candidate_type": "arbitrage_candidate",
+        "books_compared": len({item["bookmaker"] for item in stake_plan}),
+        "arbitrage_implied_sum": round(implied_sum, 6),
+        "stake_plan": stake_plan,
+        "total_stake": total_stake_value,
+        "min_profit": min_profit,
+        "max_profit": max_profit,
+        "estimated_roi_percent": round((min_profit / total_stake_value) * 100.0, 4),
+        "line_match_confidence": round(float(market_identity_confidence), 2),
+        "stale_data_risk": False,
+        "human_approval_required": True,
+        "auto_execution_enabled": False,
+        "auto_bet_enabled": False,
+        "auto_trade_enabled": False,
+        "user_facing_label": "arbitrage_candidate",
+    }
+
+
+def detect_n_way_arbitrage_from_normalized_offers(
+    offers: list[dict[str, Any]],
+    *,
+    expected_selection_count: int,
+    total_stake: float = 100.0,
+    market_identity_confidence: float = 100.0,
+    confidence_field: str = "market_identity_confidence",
+) -> dict[str, Any]:
+    if len(offers) != expected_selection_count:
+        return {"candidate_found": False, "reason": f"{expected_selection_count}_way_requires_{expected_selection_count}_offers"}
+    if market_identity_confidence < 85:
+        return {"candidate_found": False, "reason": "low_market_identity_confidence"}
+    best_prices = [{**offer, "decimal_odds": american_to_decimal(offer["odds"])} for offer in offers]
+    stake_plan, implied_sum = arbitrage_stake_split(best_prices, total_stake)
+    if implied_sum >= 1:
+        return {"candidate_found": False, "reason": "no_arbitrage_after_vig", "arbitrage_implied_sum": round(implied_sum, 6)}
+    total = round(sum(item["stake"] for item in stake_plan), 2)
+    profits = [round(item["payout"] - total, 2) for item in stake_plan]
+    result = {
+        "candidate_found": True,
+        "candidate_type": "arbitrage_candidate",
+        "stake_plan": stake_plan,
+        "arbitrage_implied_sum": round(implied_sum, 6),
+        "estimated_roi_percent": round((min(profits) / total) * 100.0, 4),
+        "max_gain": max(profits),
+        "max_loss": 0.0,
+    }
+    if expected_selection_count == 2:
+        result[confidence_field] = round(float(market_identity_confidence), 2)
+    return result
+
+
+def normal_probability_between(low: float, high: float, mean: float, std_dev: float) -> float:
+    if std_dev <= 0:
+        return 0.0
+    z_low = (low - mean) / (std_dev * math.sqrt(2))
+    z_high = (high - mean) / (std_dev * math.sqrt(2))
+    return max(0.0, min(1.0, (math.erf(z_high) - math.erf(z_low)) / 2))
+
+
+def detect_middle_from_normalized_offers(
+    left: dict[str, Any],
+    right: dict[str, Any],
+    *,
+    market: str,
+    confidence: float,
+    stake_per_side: float = 100.0,
+    model_distribution: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    left_line = float(left.get("line") or 0)
+    right_line = float(right.get("line") or 0)
+    left_decimal = american_to_decimal(left["odds"])
+    right_decimal = american_to_decimal(right["odds"])
+    left_profit = stake_per_side * (left_decimal - 1)
+    right_profit = stake_per_side * (right_decimal - 1)
+    max_loss = round(stake_per_side * 2 - min(left_profit, right_profit), 2)
+    non_middle_profit = min(left_profit - stake_per_side, right_profit - stake_per_side)
+
+    left_selection = str(left.get("selection") or "").lower()
+    right_selection = str(right.get("selection") or "").lower()
+    if market == "total":
+        over_line = left_line if left_selection == "over" else right_line
+        under_line = left_line if left_selection == "under" else right_line
+        middle_width = round(under_line - over_line, 4)
+        middle_zone = [round(over_line, 4), round(under_line, 4)]
+    else:
+        favorite_line = left_line if left_line < right_line else right_line
+        dog_line = right_line if favorite_line == left_line else left_line
+        middle_width = round(dog_line - favorite_line, 4)
+        middle_zone = [round(abs(favorite_line), 4), round(abs(dog_line), 4)]
+
+    if middle_width <= 0:
+        return {"candidate_found": False, "reason": "watch_recheck_no_corridor"}
+
+    middle_hit_probability = float(
+        (model_distribution or {}).get("middle_hit_probability")
+        or normal_probability_between(
+            middle_zone[0],
+            middle_zone[1],
+            float((model_distribution or {}).get("mean", sum(middle_zone) / 2.0)),
+            float((model_distribution or {}).get("std_dev", max(1.0, middle_width))),
+        )
+    )
+    middle_win = round(left_profit + right_profit, 2)
+    break_even_probability = round(max_loss / (middle_win + max_loss), 6) if (middle_win + max_loss) > 0 else 1.0
+    expected_value = round((middle_hit_probability * middle_win) + ((1 - middle_hit_probability) * non_middle_profit), 4)
+    risk_acceptable = middle_hit_probability >= break_even_probability
+    if expected_value <= 0 and not risk_acceptable:
+        return {
+            "candidate_found": False,
+            "reason": "negative_middle_ev",
+            "middle_width": middle_width,
+            "break_even_probability": break_even_probability,
+        }
+
+    return {
+        "candidate_found": True,
+        "candidate_type": "middle_candidate",
+        "market": market,
+        "middle_zone": middle_zone,
+        "middle_width": middle_width,
+        "middle_hit_probability": round(middle_hit_probability, 6),
+        "break_even_probability": break_even_probability,
+        "expected_value": expected_value,
+        "estimated_roi_percent": round((expected_value / (stake_per_side * 2)) * 100.0, 4),
+        "max_loss": round(max_loss, 2),
+        "max_gain": middle_win,
+        "line_match_confidence": round(float(confidence), 2),
+        "stale_data_risk": False,
+        "stake_plan": [
+            {"bookmaker": left["bookmaker"], "selection": left["selection"], "line": left_line, "stake": round(stake_per_side, 2)},
+            {"bookmaker": right["bookmaker"], "selection": right["selection"], "line": right_line, "stake": round(stake_per_side, 2)},
+        ],
+        "human_approval_required": True,
+        "auto_execution_enabled": False,
+        "auto_bet_enabled": False,
+        "auto_trade_enabled": False,
+    }
+
+
+def simulate_middle_ev_from_prices(
+    *,
+    left_odds_american: Any,
+    right_odds_american: Any,
+    middle_hit_probability: float,
+    stake_per_side: float = 100.0,
+) -> dict[str, Any]:
+    left_decimal = american_to_decimal(left_odds_american)
+    right_decimal = american_to_decimal(right_odds_american)
+    left_win = stake_per_side * (left_decimal - 1)
+    right_win = stake_per_side * (right_decimal - 1)
+    max_gain = round(left_win + right_win, 2)
+    non_middle_profit = round(min(left_win - stake_per_side, right_win - stake_per_side), 2)
+    max_loss = abs(non_middle_profit)
+    break_even_probability = round(max_loss / (max_gain + max_loss), 6) if (max_gain + max_loss) > 0 else 1.0
+    estimated_ev = round((middle_hit_probability * max_gain) + ((1 - middle_hit_probability) * non_middle_profit), 4)
+    return {
+        "max_gain": max_gain,
+        "max_loss": round(max_loss, 2),
+        "break_even_probability": break_even_probability,
+        "estimated_ev": estimated_ev,
+        "estimated_roi_percent": round((estimated_ev / (stake_per_side * 2)) * 100.0, 4),
+    }
+
+
+def detect_exchange_back_lay_arbitrage_from_prices(
+    *,
+    back_odds_american: Any,
+    lay_decimal_odds: Any,
+    total_stake: float = 100.0,
+) -> dict[str, Any]:
+    back_decimal = american_to_decimal(back_odds_american)
+    lay_decimal = float(lay_decimal_odds)
+    if lay_decimal <= 1:
+        return {"candidate_found": False, "reason": "invalid_lay_odds"}
+    back_stake = float(total_stake)
+    lay_stake = (back_stake * back_decimal) / lay_decimal
+    back_profit = back_stake * (back_decimal - 1)
+    lay_liability = lay_stake * (lay_decimal - 1)
+    outcome_a = round(back_profit - lay_liability, 2)
+    outcome_b = round(lay_stake - back_stake, 2)
+    if min(outcome_a, outcome_b) <= 0:
+        return {"candidate_found": False, "reason": "no_exchange_arbitrage"}
+    return {
+        "candidate_found": True,
+        "candidate_type": "arbitrage_candidate",
+        "stake_plan": [
+            {"side": "back", "stake": round(back_stake, 2), "odds": back_odds_american},
+            {"side": "lay", "stake": round(lay_stake, 2), "odds": round(lay_decimal, 4)},
+        ],
+        "max_gain": max(outcome_a, outcome_b),
+        "max_loss": 0.0,
+        "estimated_roi_percent": round((min(outcome_a, outcome_b) / back_stake) * 100.0, 4),
+    }
+
+
+def detect_prediction_market_vs_sportsbook_arbitrage_from_prices(
+    *,
+    sportsbook_odds_american: Any,
+    prediction_market_yes_price: Any,
+    total_stake: float = 100.0,
+) -> dict[str, Any]:
+    sportsbook_prob = american_to_implied_probability(sportsbook_odds_american)
+    prediction_prob = float(prediction_market_yes_price)
+    if prediction_prob > 1:
+        prediction_prob /= 100.0
+    if prediction_prob < 0 or prediction_prob > 1:
+        raise ValueError("prediction_market_yes_price must be between 0 and 1")
+    implied_sum = sportsbook_prob + prediction_prob
+    if implied_sum >= 1:
+        return {"candidate_found": False, "reason": "no_prediction_market_arbitrage", "arbitrage_implied_sum": round(implied_sum, 6)}
+    sportsbook_stake = total_stake * (sportsbook_prob / implied_sum)
+    prediction_stake = total_stake * (prediction_prob / implied_sum)
+    return {
+        "candidate_found": True,
+        "candidate_type": "arbitrage_candidate",
+        "arbitrage_implied_sum": round(implied_sum, 6),
+        "stake_plan": [
+            {"side": "sportsbook", "stake": round(sportsbook_stake, 2), "odds": sportsbook_odds_american},
+            {"side": "prediction_market", "stake": round(prediction_stake, 2), "price": prediction_market_yes_price},
+        ],
+        "max_gain": round(total_stake * ((1 - implied_sum) / implied_sum), 2),
+        "max_loss": 0.0,
+        "estimated_roi_percent": round(((1 - implied_sum) / implied_sum) * 100.0, 4),
+    }
 
 
 def _norm_line(market_key: str, outcome: dict[str, Any]) -> float | str | None:

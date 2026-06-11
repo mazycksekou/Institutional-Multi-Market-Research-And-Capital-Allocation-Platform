@@ -1,16 +1,17 @@
 from typing import Any
 
+from src.core.math_utils import (
+    american_to_decimal as _core_american_to_decimal,
+    american_to_implied_probability as _core_american_to_implied_probability,
+)
+
 
 def american_to_decimal(odds: int | float) -> float:
-    if odds > 0:
-        return 1 + (odds / 100)
-    return 1 + (100 / abs(odds))
+    return _core_american_to_decimal(odds)
 
 
 def implied_probability_from_american(odds: int | float) -> float:
-    if odds > 0:
-        return 100 / (odds + 100)
-    return abs(odds) / (abs(odds) + 100)
+    return _core_american_to_implied_probability(odds)
 
 
 def normalize_sportsbook_event(provider: str, event: dict[str, Any], league: str | None = None) -> dict[str, Any]:

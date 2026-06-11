@@ -2,12 +2,21 @@
 from __future__ import annotations
 
 import statistics
-from typing import Any
+from typing import Any, Optional
 
-from quant_engine import book_hold_n_way, book_hold_two_way, no_vig_probabilities_n_way, probability_to_fair_american
+from src.core.clv import (
+    closing_line_value_pct as _core_closing_line_value_pct,
+    current_vs_projected_close_delta as _core_current_vs_projected_close_delta,
+    opening_vs_current_clv_implied_change_pct as _core_opening_vs_current_clv_implied_change_pct,
+    steam_move_from_implied_series,
+)
 from src.core.math_utils import (
     american_to_decimal,
     american_to_implied_probability as implied_probability_from_american,
+    book_hold_n_way,
+    book_hold_two_way,
+    no_vig_probabilities_n_way,
+    probability_to_fair_american,
 )
 
 
@@ -105,22 +114,14 @@ def opening_vs_current_clv_implied_change_pct(
     opening_american: Optional[int],
     current_american: int,
 ) -> Optional[float]:
-    if opening_american is None:
-        return None
-    o0 = implied_probability_from_american(opening_american)
-    o1 = implied_probability_from_american(current_american)
-    if o0 <= 0:
-        return None
-    return round((o1 - o0) / o0 * 100, 3)
+    return _core_opening_vs_current_clv_implied_change_pct(opening_american, current_american)
 
 
 def current_vs_projected_close_delta(
     current_implied: float,
     projected_close_implied: Optional[float],
 ) -> Optional[float]:
-    if projected_close_implied is None:
-        return None
-    return round((current_implied - projected_close_implied) * 100, 3)
+    return _core_current_vs_projected_close_delta(current_implied, projected_close_implied)
 
 
 def closing_line_value_pct(
@@ -128,16 +129,12 @@ def closing_line_value_pct(
     closing_implied: Optional[float],
 ) -> Optional[float]:
     """Positive CLV if closing line is sharper against the bettor's side (implied rose for underdog side)."""
-    if closing_implied is None:
-        return None
-    return round((bet_implied_at_bet - closing_implied) * 100, 3)
+    return _core_closing_line_value_pct(bet_implied_at_bet, closing_implied)
 
 
 def steam_move_detection(implied_series: list[float], threshold: float = 0.012) -> bool:
     """True if last move exceeds threshold in absolute single step."""
-    if len(implied_series) < 2:
-        return False
-    return abs(implied_series[-1] - implied_series[-2]) >= threshold
+    return steam_move_from_implied_series(implied_series, threshold)
 
 
 def reverse_line_movement_flag(

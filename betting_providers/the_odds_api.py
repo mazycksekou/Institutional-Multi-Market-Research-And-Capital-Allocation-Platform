@@ -65,7 +65,13 @@ class TheOddsApiAdapter(ProviderAdapter):
                 status_code=response.status_code,
                 raw_response=raw,
             )
-        return {"ok": True, "provider": self.id, "raw_response": raw, "status_code": response.status_code}
+        return {
+            "ok": True,
+            "provider": self.id,
+            "raw_response": raw,
+            "status_code": response.status_code,
+            "response_headers": dict(response.headers),
+        }
 
     async def get_supported_sports(self) -> dict[str, Any]:
         if self._sports_cache and time.time() - self._sports_cache[0] < 300:
@@ -80,9 +86,51 @@ class TheOddsApiAdapter(ProviderAdapter):
             "provider_type": self.provider_type,
             "count": len(sports),
             "sports": sports,
+            "response_headers": response.get("response_headers") or {},
         }
         self._sports_cache = (time.time(), result)
         return result
+
+    async def get_odds_events(
+        self,
+        sport: Optional[str],
+        league: Optional[str],
+        markets: Optional[str] = None,
+        bookmakers: Optional[str] = None,
+        regions: Optional[str] = None,
+        odds_format: str = "american",
+        limit: Optional[int] = None,
+    ) -> dict[str, Any]:
+        sport_key, league_label, error = resolve_sport_key(sport, league)
+        if error:
+            return error
+        response = await self._get(
+            f"/sports/{sport_key}/odds",
+            {
+                "regions": regions or self.default_regions,
+                "markets": markets or self.default_markets,
+                "oddsFormat": odds_format or "american",
+                "bookmakers": bookmakers or self.default_bookmakers,
+            },
+        )
+        if not response.get("ok"):
+            return {**response, "sport_key": sport_key, "league": league_label, "events": []}
+        raw_events = response.get("raw_response")
+        if not isinstance(raw_events, list):
+            return clean_error("PROVIDER_ERROR", "The Odds API returned an unexpected odds payload.", provider=self.id)
+        events = raw_events[: max(0, int(limit))] if limit is not None else raw_events
+        return {
+            "ok": True,
+            "result_type": "odds_events",
+            "provider": self.id,
+            "provider_type": self.provider_type,
+            "sport_key": sport_key,
+            "league": league_label,
+            "count": len(events),
+            "events": events,
+            "raw_response": events,
+            "response_headers": response.get("response_headers") or {},
+        }
 
     async def get_active_events(self, sport: Optional[str], league: Optional[str], **filters: Any) -> dict[str, Any]:
         sport_key, league_label, error = resolve_sport_key(sport, league)

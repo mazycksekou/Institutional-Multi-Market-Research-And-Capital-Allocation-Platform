@@ -2,15 +2,22 @@ from __future__ import annotations
 
 from typing import Any
 
-from .odds_math import american_to_decimal, decimal_to_american, normalize_probability
+from src.core.math_utils import (
+    book_hold_n_way,
+    decimal_to_american,
+    fair_decimal_odds_from_probability,
+    no_vig_probabilities_n_way,
+    no_vig_probabilities_three_way,
+    no_vig_probabilities_two_way,
+    normalize_probability,
+)
 
 
 def calculate_market_hold(probabilities: list[Any]) -> float:
     normalized = [normalize_probability(value) for value in probabilities]
-    hold = round(sum(normalized) - 1.0, 6)
     if sum(normalized) <= 0:
         raise ValueError("impossible market")
-    return hold
+    return round(book_hold_n_way(normalized), 6)
 
 
 def calculate_fair_probability(implied_probabilities: list[Any], index: int) -> float:
@@ -20,17 +27,15 @@ def calculate_fair_probability(implied_probabilities: list[Any], index: int) -> 
     total = sum(normalized)
     if total <= 0:
         raise ValueError("impossible market")
-    return round(normalized[index] / total, 6)
+    return round(no_vig_probabilities_n_way(normalized)[index], 6)
 
 
 def remove_two_way_vig(probability_a: Any, probability_b: Any) -> dict[str, float]:
     probabilities = [normalize_probability(probability_a), normalize_probability(probability_b)]
-    total = sum(probabilities)
-    if total <= 0:
-        raise ValueError("impossible market")
+    fair_a, fair_b = no_vig_probabilities_two_way(probabilities[0], probabilities[1])
     return {
-        "fair_probability_a": round(probabilities[0] / total, 6),
-        "fair_probability_b": round(probabilities[1] / total, 6),
+        "fair_probability_a": round(fair_a, 6),
+        "fair_probability_b": round(fair_b, 6),
         "market_hold": calculate_market_hold(probabilities),
     }
 
@@ -41,13 +46,11 @@ def remove_three_way_vig(probability_a: Any, probability_b: Any, probability_c: 
         normalize_probability(probability_b),
         normalize_probability(probability_c),
     ]
-    total = sum(probabilities)
-    if total <= 0:
-        raise ValueError("impossible market")
+    fair_a, fair_b, fair_c = no_vig_probabilities_three_way(probabilities[0], probabilities[1], probabilities[2])
     return {
-        "fair_probability_a": round(probabilities[0] / total, 6),
-        "fair_probability_b": round(probabilities[1] / total, 6),
-        "fair_probability_c": round(probabilities[2] / total, 6),
+        "fair_probability_a": round(fair_a, 6),
+        "fair_probability_b": round(fair_b, 6),
+        "fair_probability_c": round(fair_c, 6),
         "market_hold": calculate_market_hold(probabilities),
     }
 
@@ -56,7 +59,7 @@ def calculate_fair_odds(probability: Any) -> dict[str, float | int]:
     normalized = normalize_probability(probability)
     if normalized <= 0:
         raise ValueError("impossible market")
-    decimal_odds = round(1.0 / normalized, 6)
+    decimal_odds = round(fair_decimal_odds_from_probability(normalized), 6)
     return {
         "fair_probability": normalized,
         "decimal_odds": decimal_odds,

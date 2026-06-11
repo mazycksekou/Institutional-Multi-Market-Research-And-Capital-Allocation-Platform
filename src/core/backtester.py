@@ -12,7 +12,8 @@ from pathlib import Path
 from typing import Any, Sequence
 
 from src.core.calibrator import IdentityCalibrator, PlattCalibrator
-from src.core.math_utils import clv_percent, edge_percent, expected_value, profit_units
+from src.core.clv import price_ratio_clv_percent as clv_percent
+from src.core.math_utils import edge_percent, expected_value, profit_units
 from src.sports.nba_features import build_training_rows, get_feature_columns
 
 DEFAULT_DB_PATH = Path("data") / "sports_master.db"

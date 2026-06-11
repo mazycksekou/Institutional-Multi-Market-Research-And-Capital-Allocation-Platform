@@ -6,6 +6,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from src.core.clv import price_ratio_clv_percent
+from src.core.math_utils import american_to_decimal, american_to_implied_probability
+
 BET_LOG_PATH = Path("data") / "bet_log.jsonl"
 
 CORE_FIELDS = [
@@ -85,16 +88,20 @@ def _american_to_decimal(odds: Any) -> float | None:
     odds_int = _to_int(odds)
     if odds_int is None or odds_int == 0:
         return None
-    if odds_int > 0:
-        return 1 + odds_int / 100
-    return 1 + 100 / abs(odds_int)
+    try:
+        return american_to_decimal(odds_int)
+    except ValueError:
+        return None
 
 
 def _implied_probability(odds: Any) -> float | None:
-    decimal_odds = _american_to_decimal(odds)
-    if not decimal_odds:
+    odds_int = _to_int(odds)
+    if odds_int is None:
         return None
-    return 1 / decimal_odds
+    try:
+        return american_to_implied_probability(odds_int)
+    except ValueError:
+        return None
 
 
 def _is_worse_price(actual_odds: Any, minimum_odds: Any) -> bool:
@@ -121,11 +128,7 @@ def calculate_profit_loss(result: str | None, stake: Any, odds_american: Any) ->
 
 
 def calculate_clv_percent(actual_odds_taken: Any, closing_odds: Any) -> float | None:
-    actual_decimal = _american_to_decimal(actual_odds_taken)
-    closing_decimal = _american_to_decimal(closing_odds)
-    if actual_decimal is None or closing_decimal is None:
-        return None
-    return round(((actual_decimal - closing_decimal) / closing_decimal) * 100, 4)
+    return price_ratio_clv_percent(actual_odds_taken, closing_odds)
 
 
 def _resolve_error_type(entry: dict[str, Any]) -> str | None:

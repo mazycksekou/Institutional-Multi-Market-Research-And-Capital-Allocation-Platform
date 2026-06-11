@@ -6,8 +6,8 @@ from .bookmaker_normalizer import normalize_offer
 from .clv_tracker import build_clv_record
 from .cross_book_line_comparator import compare_cross_book_lines
 from .market_identity_resolver import resolve_market_identity
-from .odds_math import american_to_implied_probability, calculate_ev, calculate_roi
 from .no_vig_pricing import calculate_consensus_probability
+from src.core.math_utils import american_to_implied_probability, calculate_ev, calculate_roi
 
 
 def _ev_candidate(

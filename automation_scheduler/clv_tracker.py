@@ -5,54 +5,30 @@ from pathlib import Path
 from statistics import median
 from typing import Any
 
+from src.core.clv import (
+    calculate_clv,
+    calculate_clv_for_american_odds,
+    calculate_clv_percent,
+    calculate_positive_clv_rate,
+    clv_percent_bettor_perspective,
+    detect_clv_decay,
+    projected_close_placeholder,
+    steam_move_from_implied_series,
+)
+
 from .data_paths import get_runtime_data_path
 from .scheduler_config import SCHEMA_VERSION, redact_secrets, sanitize_filename, utc_now_iso
 
-def _to_float(value: Any, default: float = 0.0) -> float:
+
+def _summary_float(value: Any) -> float:
     try:
         return float(value)
     except (TypeError, ValueError):
-        return default
-
-
-def _american_to_implied_probability(odds: Any) -> float:
-    american = _to_float(odds)
-    if american == 0:
         return 0.0
-    if american > 0:
-        return 100.0 / (american + 100.0)
-    return abs(american) / (abs(american) + 100.0)
-
-
-def calculate_clv_percent(recommended_implied_probability: float, closing_implied_probability: float) -> float:
-    return round((_to_float(closing_implied_probability) - _to_float(recommended_implied_probability)) * 100.0, 4)
-
-
-def calculate_clv_for_american_odds(recommended_odds: float, closing_odds: float) -> float:
-    recommended_ip = _american_to_implied_probability(recommended_odds)
-    closing_ip = _american_to_implied_probability(closing_odds)
-    return calculate_clv_percent(recommended_ip, closing_ip)
-
-
-def calculate_positive_clv_rate(clv_values: list[float]) -> float:
-    if not clv_values:
-        return 0.0
-    positives = sum(1 for value in clv_values if _to_float(value) > 0)
-    return round(positives / len(clv_values), 4)
-
-
-def detect_clv_decay(clv_values: list[float], threshold_percent: float = 1.5) -> bool:
-    if len(clv_values) < 6:
-        return False
-    values = [_to_float(v) for v in clv_values]
-    midpoint = len(values) // 2
-    early_avg = sum(values[:midpoint]) / max(1, len(values[:midpoint]))
-    late_avg = sum(values[midpoint:]) / max(1, len(values[midpoint:]))
-    return (early_avg - late_avg) >= _to_float(threshold_percent, default=1.5)
 
 
 def _build_summary(clv_values: list[float]) -> dict[str, Any]:
-    values = [_to_float(v) for v in clv_values]
+    values = [_summary_float(v) for v in clv_values]
     if not values:
         return {
             "average_clv_percent": 0.0,
@@ -92,17 +68,6 @@ def summarize_clv_by_market(entries: list[dict[str, Any]]) -> dict[str, dict[str
             calculate_clv_for_american_odds(entry.get("recommended_odds"), entry.get("closing_odds"))
         )
     return {market: _build_summary(values) for market, values in by_market.items()}
-
-
-def calculate_clv(opening_odds: Any, current_odds: Any, closing_odds: Any | None = None) -> dict[str, float]:
-    opening = _to_float(opening_odds)
-    current = _to_float(current_odds)
-    closing = _to_float(closing_odds if closing_odds is not None else current_odds)
-    return {
-        "opening_to_current": round(current - opening, 4),
-        "opening_to_closing": round(closing - opening, 4),
-        "current_to_closing": round(closing - current, 4),
-    }
 
 
 def build_clv_record(payload: dict[str, Any]) -> dict[str, Any]:

@@ -11,6 +11,11 @@ import httpx
 from .provider_payload_validator import validate_provider_payload
 from .provider_secret_policy import credential_status_from_env, redact_http_diagnostic, redact_mapping
 from .scheduler_config import utc_now_iso
+from src.core.math_utils import (
+    american_to_decimal,
+    american_to_implied_probability,
+    decimal_to_implied_probability,
+)
 
 PROVIDER_ID = "sharp_sportsbook"
 PROVIDER_TYPE = "sportsbook_odds"
@@ -60,36 +65,23 @@ def _blocker_from_http_status(http_status: int) -> str:
 
 def _american_to_decimal(american_odds: float | int | None) -> float | None:
     try:
-        odds = float(american_odds)
+        return round(american_to_decimal(float(american_odds)), 6)
     except (TypeError, ValueError):
         return None
-    if odds == 0:
-        return None
-    if odds > 0:
-        return round(1.0 + (odds / 100.0), 6)
-    return round(1.0 + (100.0 / abs(odds)), 6)
 
 
 def _implied_probability_from_american(american_odds: float | int | None) -> float | None:
     try:
-        odds = float(american_odds)
+        return round(american_to_implied_probability(float(american_odds)), 8)
     except (TypeError, ValueError):
         return None
-    if odds == 0:
-        return None
-    if odds > 0:
-        return round(100.0 / (odds + 100.0), 8)
-    return round(abs(odds) / (abs(odds) + 100.0), 8)
 
 
 def _implied_probability_from_decimal(decimal_odds: float | int | None) -> float | None:
     try:
-        odds = float(decimal_odds)
+        return round(decimal_to_implied_probability(float(decimal_odds)), 8)
     except (TypeError, ValueError):
         return None
-    if odds <= 1.0:
-        return None
-    return round(1.0 / odds, 8)
 
 
 def _as_dict(value: Any) -> dict[str, Any]:

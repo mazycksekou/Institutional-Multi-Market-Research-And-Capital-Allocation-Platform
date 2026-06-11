@@ -5,19 +5,23 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
 
-import httpx
 import pandas as pd
 import yfinance as yf
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
+from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute
 from pydantic import BaseModel, ConfigDict, Field
 
 from betting_providers import aliases as betting_aliases
 from betting_providers.base import PREDICTION_MARKET
 from betting_providers.provider_router import ProviderRouter
+from src.api.model_card_service import ModelCardService
+from src.api.system_routes import register_system_routes
+from src.api.provider_status_routes import register_provider_status_routes
+from src.api.debug_routes import register_debug_routes
 import automation_scheduler
 import bet_log
 import bet_decision_engine
@@ -116,7 +120,6 @@ from quant_engine import (
 load_dotenv()
 
 API_BASE_URL = "https://betting-stock-api-code-integration.onrender.com"
-ODDS_BASE_URL = "https://api.the-odds-api.com/v4"
 DEFAULT_BOOKMAKERS = os.getenv(
     "DEFAULT_BOOKMAKERS",
     "draftkings,fanduel,betmgm,caesars,espnbet,bet365",
@@ -182,8 +185,8 @@ SPORT_LABELS = {
     "golf_pga": "PGA",
 }
 
-LINE_SNAPSHOTS: dict[str, dict[str, Any]] = {}
 PROVIDER_ROUTER = ProviderRouter()
+MODEL_CARD_SERVICE = ModelCardService(PROVIDER_ROUTER)
 
 ACTION_SAFE_EVENT_KEYS: frozenset[str] = frozenset({
     "provider",
@@ -1452,231 +1455,6 @@ def resolve_sport_key(sport: Optional[str], league: Optional[str]) -> tuple[Opti
     return sport_key, SPORT_LABELS.get(sport_key, raw.upper()), None
 
 
-async def odds_api_get(path: str, params: dict[str, Any]) -> dict[str, Any]:
-    api_key = os.getenv("ODDS_API_KEY", "")
-    if not api_key:
-        return provider_error_response("ODDS_API_KEY is required for sports odds.")
-
-    request_params = {"apiKey": api_key, **{k: v for k, v in params.items() if v not in (None, "")}}
-    try:
-        async with httpx.AsyncClient(timeout=10) as client:
-            response = await client.get(f"{ODDS_BASE_URL}{path}", params=request_params)
-    except Exception as error:
-        return provider_error_response(f"The Odds API request failed: {error}")
-
-    try:
-        raw_response = response.json()
-    except ValueError:
-        raw_response = {"text": response.text}
-
-    if not response.is_success:
-        return provider_error_response(
-            f"The Odds API returned HTTP {response.status_code}.",
-            status_code=response.status_code,
-            raw_response=raw_response,
-        )
-
-    return {"ok": True, "raw_response": raw_response, "status_code": response.status_code}
-
-
-def event_matches(event: dict[str, Any], team: Optional[str], home_team: Optional[str], away_team: Optional[str], event_date: Optional[str]) -> bool:
-    home = str(event.get("home_team", "")).lower()
-    away = str(event.get("away_team", "")).lower()
-    commence_time = str(event.get("commence_time", ""))
-    if team:
-        needle = team.lower()
-        if needle not in home and needle not in away:
-            return False
-    if home_team and home_team.lower() not in home:
-        return False
-    if away_team and away_team.lower() not in away:
-        return False
-    if event_date and not commence_time.startswith(event_date):
-        return False
-    return True
-
-
-def normalize_event(event: dict[str, Any]) -> dict[str, Any]:
-    return {
-        "event_id": event.get("id"),
-        "id": event.get("id"),
-        "sport_key": event.get("sport_key"),
-        "sport_title": event.get("sport_title"),
-        "commence_time": event.get("commence_time"),
-        "home_team": event.get("home_team"),
-        "away_team": event.get("away_team"),
-    }
-
-
-async def fetch_active_events_filtered(
-    sport_key: str,
-    league_label: str,
-    team: Optional[str] = None,
-    home_team: Optional[str] = None,
-    away_team: Optional[str] = None,
-    event_date: Optional[str] = None,
-) -> dict[str, Any]:
-    response = await odds_api_get(f"/sports/{sport_key}/events", {})
-    if not response.get("ok"):
-        return {
-            **response,
-            "sport_key": sport_key,
-            "league": league_label,
-            "count": 0,
-            "events": [],
-            "filters": {
-                "team": team,
-                "home_team": home_team,
-                "away_team": away_team,
-                "date": event_date,
-            },
-            "provider": "the_odds_api",
-        }
-
-    raw_events = response.get("raw_response")
-    if not isinstance(raw_events, list):
-        return provider_error_response("The Odds API returned an unexpected events payload.", response.get("status_code"), raw_events)
-
-    events = [
-        normalize_event(event)
-        for event in raw_events
-        if isinstance(event, dict) and event_matches(event, team, home_team, away_team, event_date)
-    ]
-    return {
-        "ok": True,
-        "result_type": "events",
-        "sport_key": sport_key,
-        "league": league_label,
-        "count": len(events),
-        "events": events,
-        "filters": {
-            "team": team,
-            "home_team": home_team,
-            "away_team": away_team,
-            "date": event_date,
-        },
-        "updated_at": utc_now(),
-        "provider": "the_odds_api",
-        "message": "Active events returned for requested sport/league only." if events else "No active events found for requested filters.",
-    }
-
-
-def snapshot_key(event_id: str, bookmaker_key: str, market_key: str, outcome_name: str, point: Any) -> str:
-    return "|".join([event_id, bookmaker_key, market_key, outcome_name, "" if point is None else str(point)])
-
-
-def flatten_odds(event: dict[str, Any]) -> list[dict[str, Any]]:
-    rows = []
-    event_id = str(event.get("id"))
-    for bookmaker in event.get("bookmakers") or []:
-        for market in bookmaker.get("markets") or []:
-            for outcome in market.get("outcomes") or []:
-                price = outcome.get("price")
-                point = outcome.get("point")
-                key = snapshot_key(event_id, bookmaker.get("key", ""), market.get("key", ""), outcome.get("name", ""), point)
-                if key not in LINE_SNAPSHOTS:
-                    LINE_SNAPSHOTS[key] = {
-                        "first_seen_at": utc_now(),
-                        "opening_price_american": price,
-                        "opening_point": point,
-                    }
-                opening = LINE_SNAPSHOTS[key]
-                rows.append({
-                    "event_id": event_id,
-                    "bookmaker_key": bookmaker.get("key"),
-                    "bookmaker_title": bookmaker.get("title"),
-                    "market_key": market.get("key"),
-                    "outcome_name": outcome.get("name"),
-                    "price_american": price,
-                    "decimal_odds": american_to_decimal(price) if isinstance(price, int) else None,
-                    "implied_probability": implied_probability_from_american(price) if isinstance(price, int) else None,
-                    "point": point,
-                    "last_update": market.get("last_update") or bookmaker.get("last_update"),
-                    "first_seen_at": opening["first_seen_at"],
-                    "opening_price_american": opening["opening_price_american"],
-                    "opening_point": opening["opening_point"],
-                    "price_movement": price - opening["opening_price_american"] if isinstance(price, int) and isinstance(opening["opening_price_american"], int) else None,
-                    "point_movement": point - opening["opening_point"] if isinstance(point, (int, float)) and isinstance(opening["opening_point"], (int, float)) else None,
-                })
-    return rows
-
-
-def best_prices(flat: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    grouped: dict[tuple[Any, ...], dict[str, Any]] = {}
-    for row in flat:
-        if row["market_key"] in {"spreads", "totals"}:
-            key = (row["market_key"], row["outcome_name"], row["point"])
-        else:
-            key = (row["market_key"], row["outcome_name"])
-        current = grouped.get(key)
-        if current is None or (row.get("price_american") is not None and row["price_american"] > current.get("price_american", -100000)):
-            grouped[key] = row
-    return list(grouped.values())
-
-
-async def fetch_event_odds(
-    sport_key: str,
-    league_label: str,
-    event_id: str,
-    markets: str = DEFAULT_MARKETS,
-    bookmakers: str = DEFAULT_BOOKMAKERS,
-) -> dict[str, Any]:
-    response = await odds_api_get(
-        f"/sports/{sport_key}/odds",
-        {
-            "regions": DEFAULT_REGIONS,
-            "markets": markets,
-            "oddsFormat": "american",
-            "bookmakers": bookmakers,
-        },
-    )
-    if not response.get("ok"):
-        return {
-            **response,
-            "sport_key": sport_key,
-            "league": league_label,
-            "event_id": event_id,
-            "provider": "the_odds_api",
-        }
-
-    raw_events = response.get("raw_response")
-    if not isinstance(raw_events, list):
-        return provider_error_response("The Odds API returned an unexpected odds payload.", response.get("status_code"), raw_events)
-
-    matched = next((event for event in raw_events if str(event.get("id")) == str(event_id)), None)
-    if not matched:
-        return no_data_response(
-            "No sportsbook odds found for requested sport/league/event.",
-            sport_key=sport_key,
-            league=league_label,
-            event_id=event_id,
-        )
-
-    flat = flatten_odds(matched)
-    if not flat:
-        return no_data_response(
-            "No sportsbook odds found for requested sport/league/event.",
-            sport_key=sport_key,
-            league=league_label,
-            event_id=event_id,
-        )
-
-    return {
-        "ok": True,
-        "result_type": "odds",
-        "has_actual_odds": True,
-        "sport_key": sport_key,
-        "league": league_label,
-        "event_id": event_id,
-        "event": normalize_event(matched),
-        "odds": flat,
-        "best_prices": best_prices(flat),
-        "provider": "the_odds_api",
-        "updated_at": utc_now(),
-        "message": "Sportsbook odds returned for requested sport/league/event only.",
-    }
-
-
 def stock_data(ticker: str, period: str, interval: str) -> dict[str, Any]:
     try:
         history = yf.Ticker(ticker.upper()).history(period=period, interval=interval)
@@ -1721,66 +1499,13 @@ def stock_data(ticker: str, period: str, interval: str) -> dict[str, Any]:
         "recent_history": recent.to_dict(orient="index"),
     }
 
-
-@app.get("/", operation_id="root")
-async def root():
-    return {"ok": True, "service": "betting-stock-api", "message": "API is running."}
-
-
-@app.head("/", include_in_schema=False)
-async def root_head():
-    return {}
-
-
-@app.get("/health", operation_id="healthCheck")
-async def health_check():
-    return {"ok": True, "status": "ok", "service": "betting-stock-api"}
-
-
-@app.get("/ping", operation_id="ping")
-async def ping():
-    return {"ok": True}
-
-
-@app.get("/debug/routes", include_in_schema=False)
-async def debug_routes():
-    paths = sorted({route.path for route in app.routes if isinstance(route, APIRoute)})
-    return {"ok": True, "paths": paths, "count": len(paths)}
-
-
-@app.get("/api/debug/config", operation_id="debugConfig", dependencies=[Depends(require_action_key)])
-async def debug_config():
-    return {
-        "ok": True,
-        "environment": {
-            "ODDS_API_KEY": bool(os.getenv("ODDS_API_KEY")),
-            "ODDS_API_ENABLED": os.getenv("ODDS_API_ENABLED", "true").lower() == "true",
-            "ACTION_API_KEY": bool(os.getenv("ACTION_API_KEY")),
-            "SHARP_API_KEY": bool(os.getenv("SHARP_API_KEY")),
-            "SHARP_API_BASE_URL": bool(os.getenv("SHARP_API_BASE_URL")),
-            "SHARP_API_ENABLED": os.getenv("SHARP_API_ENABLED", "false").lower() == "true",
-            "OPENAI_API_KEY": bool(os.getenv("OPENAI_API_KEY")),
-            "KALSHI_ENABLED": os.getenv("KALSHI_ENABLED", "false").lower() == "true",
-            "KALSHI_ENV": os.getenv("KALSHI_ENV", "demo"),
-            "KALSHI_BASE_URL": bool(os.getenv("KALSHI_BASE_URL")),
-            "KALSHI_API_KEY_ID": bool(os.getenv("KALSHI_API_KEY_ID")),
-            "KALSHI_PRIVATE_KEY": bool(os.getenv("KALSHI_PRIVATE_KEY")),
-        },
-        "default_bookmakers": DEFAULT_BOOKMAKERS,
-        "default_regions": DEFAULT_REGIONS,
-        "default_betting_provider": PROVIDER_ROUTER.default_betting_provider(),
-        "default_market_provider": PROVIDER_ROUTER.default_market_provider(),
-    }
-
-
-@app.get("/api/debug/auth-status", operation_id="getAuthStatus")
-async def auth_status():
-    return {
-        "action_api_key_configured": bool(get_configured_action_key()),
-        "accepted_headers": ["X-API-Key", "Authorization: Bearer"],
-        "auth_dependency_loaded": True,
-    }
-
+register_system_routes(app)
+register_provider_status_routes(app)
+register_debug_routes(
+    app,
+    require_action_key=require_action_key,
+    get_configured_action_key=get_configured_action_key,
+)
 
 @app.get("/api/betting/providers", operation_id="getBettingProviders", dependencies=[Depends(require_action_key)])
 async def get_betting_providers():
@@ -4404,67 +4129,6 @@ async def run_performance_paper_summary_endpoint(verbose: bool = Query(default=F
         compact["debug"] = redact_and_limit_payload(payload, limit=cap, verbose=verbose)
     return compact
 
-
-@app.get("/api/providers/health", operation_id="getProvidersHealth")
-async def get_providers_health_endpoint(verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=10)):
-    payload = automation_scheduler.get_provider_health()
-    compact = compact_provider_health_response(payload)
-    cap = min(max(int(limit), 1), 100 if verbose else 10)
-    if verbose or include_debug:
-        compact["debug"] = redact_and_limit_payload(payload, limit=cap, verbose=verbose)
-    return compact
-
-
-@app.get("/api/providers/registry", operation_id="getProvidersRegistry")
-async def get_providers_registry_endpoint(verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=10)):
-    payload = automation_scheduler.get_provider_registry_snapshot()
-    cap = min(max(int(limit), 1), 100 if verbose else 10)
-    compact = compact_provider_registry_response(payload, limit=cap)
-    if verbose or include_debug:
-        compact["debug"] = redact_and_limit_payload(payload, limit=cap, verbose=verbose)
-    return compact
-
-
-@app.get("/api/providers/sharp/health", operation_id="getSharpProviderHealth")
-async def get_sharp_provider_health_endpoint(verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=10)):
-    payload = automation_scheduler.get_sharp_provider_health()
-    compact = compact_provider_status(payload)
-    cap = min(max(int(limit), 1), 100 if verbose else 10)
-    if verbose or include_debug:
-        compact["debug"] = redact_and_limit_payload(payload, limit=cap, verbose=verbose)
-    return compact
-
-
-@app.post("/api/providers/sharp/snapshot", operation_id="createSharpProviderSnapshot")
-async def create_sharp_provider_snapshot_endpoint(verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=10)):
-    payload = automation_scheduler.run_sharp_provider_snapshot()
-    compact = compact_provider_status(payload)
-    cap = min(max(int(limit), 1), 100 if verbose else 10)
-    if verbose or include_debug:
-        compact["debug"] = redact_and_limit_payload(payload, limit=cap, verbose=verbose)
-    return compact
-
-
-@app.get("/api/providers/kalshi/health", operation_id="getKalshiProviderHealth")
-async def get_kalshi_provider_health_endpoint(verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=10)):
-    payload = automation_scheduler.get_kalshi_provider_health()
-    compact = compact_provider_status(payload)
-    cap = min(max(int(limit), 1), 100 if verbose else 10)
-    if verbose or include_debug:
-        compact["debug"] = redact_and_limit_payload(payload, limit=cap, verbose=verbose)
-    return compact
-
-
-@app.post("/api/providers/kalshi/snapshot", operation_id="createKalshiProviderSnapshot")
-async def create_kalshi_provider_snapshot_endpoint(verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=10)):
-    payload = automation_scheduler.run_kalshi_provider_snapshot()
-    compact = compact_provider_status(payload)
-    cap = min(max(int(limit), 1), 100 if verbose else 10)
-    if verbose or include_debug:
-        compact["debug"] = redact_and_limit_payload(payload, limit=cap, verbose=verbose)
-    return compact
-
-
 PUBLIC_OPENAPI_PATH_METHODS = frozenset({
     ("/", "get"),
     ("/health", "get"),
@@ -4586,224 +4250,90 @@ def custom_openapi():
 
 app.openapi = custom_openapi;
 
-import os
-import json
-import urllib.parse
-import urllib.request
-import urllib.error
-from fastapi.responses import JSONResponse
-
 
 @app.get("/odds/live")
-def odds_live(limit: int = 10):
-    api_key = os.getenv("SPORTSGAMEODDS_API_KEY")
-
-    if not api_key:
+async def odds_live(limit: int = 10):
+    payload = await PROVIDER_ROUTER.get_active_events("sportsgameodds", None, None, limit=limit)
+    if not payload.get("ok"):
+        status_code = int(payload.get("status_code") or 500)
+        error = (
+            "SPORTSGAMEODDS_API_KEY is missing"
+            if payload.get("error_type") == "PROVIDER_NOT_CONFIGURED"
+            else str(payload.get("message") or "SportsGameOdds provider request failed.")
+        )
         return JSONResponse(
-            status_code=500,
-            content={
-                "ok": False,
-                "error": "SPORTSGAMEODDS_API_KEY is missing"
-            }
+            status_code=status_code,
+            content={"ok": False, "provider": "SportsGameOdds", "status_code": status_code, "error": error},
         )
-
-    params = urllib.parse.urlencode({
-        "oddsAvailable": "true",
-        "limit": limit
-    })
-
-    url = f"https://api.sportsgameodds.com/v1/events/?{params}"
-
-    try:
-        request = urllib.request.Request(
-            url,
-            headers={
-                "x-api-key": api_key,
-                "Accept": "application/json",
-                "User-Agent": "betting-stock-api/1.0"
-            }
-        )
-
-        with urllib.request.urlopen(request, timeout=20) as response:
-            raw = response.read().decode("utf-8")
-            data = json.loads(raw)
-
-        return {
-            "ok": True,
-            "source": "SportsGameOdds",
-            "endpoint": "/odds/live",
-            "limit": limit,
-            "data": data
-        }
-
-    except urllib.error.HTTPError as e:
-        error_body = e.read().decode("utf-8")
-
-        return JSONResponse(
-            status_code=e.code,
-            content={
-                "ok": False,
-                "provider": "SportsGameOdds",
-                "status_code": e.code,
-                "error": error_body
-            }
-        )
-
-    except Exception as e:
-        return JSONResponse(
-            status_code=500,
-            content={
-                "ok": False,
-                "provider": "SportsGameOdds",
-                "error": str(e)
-            }
-        )
-
-
-import os
-import json
-import urllib.parse
-import urllib.request
-import urllib.error
-from fastapi.responses import JSONResponse
+    return {
+        "ok": True,
+        "source": "SportsGameOdds",
+        "endpoint": "/odds/live",
+        "limit": limit,
+        "data": payload.get("raw_response", payload.get("events", [])),
+    }
 
 
 @app.get("/odds/the-odds-api/live")
-def the_odds_api_live(
+async def the_odds_api_live(
     sport: str = "basketball_nba",
     regions: str = "us",
     markets: str = "h2h,spreads,totals",
     odds_format: str = "american"
 ):
-    api_key = os.getenv("THE_ODDS_API_KEY") or os.getenv("ODDS_API_KEY")
-
-    if not api_key:
-        return JSONResponse(
-            status_code=500,
-            content={
-                "ok": False,
-                "error": "THE_ODDS_API_KEY is missing"
-            }
+    payload = await PROVIDER_ROUTER.get_odds_events(
+        "the_odds_api",
+        sport,
+        None,
+        regions=regions,
+        markets=markets,
+        odds_format=odds_format,
+    )
+    if not payload.get("ok"):
+        status_code = int(payload.get("status_code") or 500)
+        error = (
+            "THE_ODDS_API_KEY is missing"
+            if payload.get("error_type") == "PROVIDER_NOT_CONFIGURED"
+            else str(payload.get("message") or "The Odds API provider request failed.")
         )
-
-    params = urllib.parse.urlencode({
-        "apiKey": api_key,
+        return JSONResponse(
+            status_code=status_code,
+            content={"ok": False, "provider": "The Odds API", "status_code": status_code, "error": error},
+        )
+    return {
+        "ok": True,
+        "source": "The Odds API",
+        "sport": sport,
         "regions": regions,
         "markets": markets,
-        "oddsFormat": odds_format
-    })
-
-    url = f"https://api.the-odds-api.com/v4/sports/{sport}/odds?{params}"
-
-    try:
-        request = urllib.request.Request(
-            url,
-            headers={
-                "Accept": "application/json",
-                "User-Agent": "betting-stock-api/1.0"
-            }
-        )
-
-        with urllib.request.urlopen(request, timeout=20) as response:
-            raw = response.read().decode("utf-8")
-            data = json.loads(raw)
-
-        return {
-            "ok": True,
-            "source": "The Odds API",
-            "sport": sport,
-            "regions": regions,
-            "markets": markets,
-            "odds_format": odds_format,
-            "data": data
-        }
-
-    except urllib.error.HTTPError as e:
-        error_body = e.read().decode("utf-8")
-
-        return JSONResponse(
-            status_code=e.code,
-            content={
-                "ok": False,
-                "provider": "The Odds API",
-                "status_code": e.code,
-                "error": error_body
-            }
-        )
-
-    except Exception as e:
-        return JSONResponse(
-            status_code=500,
-            content={
-                "ok": False,
-                "provider": "The Odds API",
-                "error": str(e)
-            }
-        )
+        "odds_format": odds_format,
+        "data": payload.get("raw_response", payload.get("events", [])),
+    }
 
 @app.get("/odds/the-odds-api/test")
-def the_odds_api_test():
-    import os
-    import json
-    import urllib.request
-    import urllib.error
-    from fastapi.responses import JSONResponse
-
-    api_key = os.getenv("THE_ODDS_API_KEY") or os.getenv("ODDS_API_KEY")
-
-    if not api_key:
+async def the_odds_api_test():
+    payload = await PROVIDER_ROUTER.get_supported_sports("the_odds_api")
+    if not payload.get("ok"):
+        status_code = int(payload.get("status_code") or 500)
+        error = (
+            "THE_ODDS_API_KEY is missing"
+            if payload.get("error_type") == "PROVIDER_NOT_CONFIGURED"
+            else str(payload.get("message") or "The Odds API provider request failed.")
+        )
         return JSONResponse(
-            status_code=500,
-            content={
-                "ok": False,
-                "error": "THE_ODDS_API_KEY is missing"
-            }
+            status_code=status_code,
+            content={"ok": False, "provider": "The Odds API", "status_code": status_code, "error": error},
         )
-
-    url = f"https://api.the-odds-api.com/v4/sports/?apiKey={api_key}"
-
-    try:
-        request = urllib.request.Request(
-            url,
-            headers={
-                "Accept": "application/json",
-                "User-Agent": "betting-stock-api/1.0"
-            }
-        )
-
-        with urllib.request.urlopen(request, timeout=20) as response:
-            raw = response.read().decode("utf-8")
-            data = json.loads(raw)
-
-            return {
-                "ok": True,
-                "source": "The Odds API",
-                "requests_remaining": response.headers.get("x-requests-remaining"),
-                "requests_used": response.headers.get("x-requests-used"),
-                "sports_count": len(data),
-                "sample": data[:5]
-            }
-
-    except urllib.error.HTTPError as e:
-        return JSONResponse(
-            status_code=e.code,
-            content={
-                "ok": False,
-                "provider": "The Odds API",
-                "status_code": e.code,
-                "error": e.read().decode("utf-8")
-            }
-        )
-
-    except Exception as e:
-        return JSONResponse(
-            status_code=500,
-            content={
-                "ok": False,
-                "provider": "The Odds API",
-                "error": str(e)
-            }
-        )
+    sports = payload.get("sports") if isinstance(payload.get("sports"), list) else []
+    headers = payload.get("response_headers") if isinstance(payload.get("response_headers"), dict) else {}
+    return {
+        "ok": True,
+        "source": "The Odds API",
+        "requests_remaining": headers.get("x-requests-remaining"),
+        "requests_used": headers.get("x-requests-used"),
+        "sports_count": len(sports),
+        "sample": sports[:5],
+    }
 
 # --- Math catalog endpoint: lists models/calculations/regression tools in repo ---
 @app.get("/math/catalog")
@@ -4827,18 +4357,14 @@ def math_catalog(
         "model_probability.py",
         "quant_engine.py",
         "market_pricing.py",
-        "edge_engine.py",
         "bet_decision_engine.py",
         "risk_engine.py",
-        "staking_engine.py",
         "full_board_engine.py",
         "multi_sport_model_registry.py",
         "model_blender.py",
-        "odds_providers.py",
         "sharp_client.py",
         "kalshi_client.py",
-        "logbook_engine.py",
-        "bankroll_engine.py"
+        "logbook_engine.py"
     }
 
     priority_dirs = {
@@ -5040,7 +4566,7 @@ def math_catalog(
 
 # --- Live opportunity scanner: arb, middles, line shopping, no-vig edge ---
 @app.get("/odds/opportunities/live")
-def odds_opportunities_live(
+async def odds_opportunities_live(
     sport: str = "basketball_nba",
     regions: str = "us",
     markets: str = "h2h,spreads,totals",
@@ -5051,50 +4577,29 @@ def odds_opportunities_live(
     value_edge_min_percent: float = 0.25,
     middle_min_width: float = 0.5
 ):
-    import json
-    import os
-    import urllib.error
-    import urllib.parse
-    import urllib.request
-    from fastapi.responses import JSONResponse
     from src.core.opportunity_scanner import scan_opportunities
 
-    api_key = os.getenv("THE_ODDS_API_KEY") or os.getenv("ODDS_API_KEY")
-    if not api_key:
+    payload = await PROVIDER_ROUTER.get_odds_events(
+        "the_odds_api",
+        sport,
+        None,
+        regions=regions,
+        markets=markets,
+        odds_format=odds_format,
+        limit=limit,
+    )
+    if not payload.get("ok"):
+        status_code = int(payload.get("status_code") or 500)
+        error = (
+            "Missing THE_ODDS_API_KEY or ODDS_API_KEY"
+            if payload.get("error_type") == "PROVIDER_NOT_CONFIGURED"
+            else str(payload.get("message") or "The Odds API provider request failed.")
+        )
         return JSONResponse(
-            status_code=500,
-            content={"ok": False, "error": "Missing THE_ODDS_API_KEY or ODDS_API_KEY"},
+            status_code=status_code,
+            content={"ok": False, "provider": "The Odds API", "status_code": status_code, "error": error},
         )
-
-    params = urllib.parse.urlencode({
-        "apiKey": api_key,
-        "regions": regions,
-        "markets": markets,
-        "oddsFormat": odds_format,
-    })
-    url = f"https://api.the-odds-api.com/v4/sports/{sport}/odds?{params}"
-
-    try:
-        request = urllib.request.Request(
-            url,
-            headers={"Accept": "application/json", "User-Agent": "betting-stock-api/1.0"},
-        )
-        with urllib.request.urlopen(request, timeout=20) as response:
-            events = json.loads(response.read().decode("utf-8"))
-    except urllib.error.HTTPError as e:
-        return JSONResponse(
-            status_code=e.code,
-            content={
-                "ok": False,
-                "provider": "The Odds API",
-                "status_code": e.code,
-                "error": e.read().decode("utf-8"),
-            },
-        )
-    except Exception as e:
-        return JSONResponse(status_code=500, content={"ok": False, "error": str(e)})
-
-    events = events[:limit]
+    events = payload.get("raw_response") if isinstance(payload.get("raw_response"), list) else []
     scan = scan_opportunities(
         events,
         stake=arb_stake,
@@ -5158,7 +4663,7 @@ def model_backtest(
 
 
 @app.get("/model/live-card")
-def model_live_card(
+async def model_live_card(
     sport: str = "basketball_nba",
     market: str = "h2h",
     min_edge: float = 0.01,
@@ -5166,174 +4671,11 @@ def model_live_card(
     odds_format: str = "american",
     limit: int = 25,
 ):
-    import json
-    import os
-    import urllib.error
-    import urllib.parse
-    import urllib.request
-    from fastapi.responses import JSONResponse
-    from src.core.backtester import load_model_bundle, load_model_metadata
-    from src.core.math_utils import edge_percent, expected_value
-    from src.sports.nba_features import build_live_features_matrix, get_feature_columns
-
-    model_version = "v1"
-    bundle = load_model_bundle(sport, model_version=model_version)
-    metadata = load_model_metadata(sport, model_version=model_version)
-    if bundle is None or metadata is None:
-        return {
-            "ok": True,
-            "status": "NO_MODEL",
-            "sport": sport,
-            "market": market,
-            "message": "No local calibrated model artifact is available. Run /model/backtest first.",
-        }
-
-    expected_columns = get_feature_columns()
-    mismatch_reasons = []
-    if bundle.get("sport_key") != sport or metadata.get("sport_key") != sport:
-        mismatch_reasons.append("sport_key")
-    if bundle.get("market") != market or metadata.get("market") != market:
-        mismatch_reasons.append("market")
-    if list(bundle.get("feature_columns") or []) != expected_columns:
-        mismatch_reasons.append("feature_columns")
-    if mismatch_reasons:
-        return {
-            "ok": True,
-            "status": "MODEL_METADATA_MISMATCH",
-            "sport": sport,
-            "market": market,
-            "mismatch_reasons": mismatch_reasons,
-        }
-
-    if metadata.get("status") == "INSUFFICIENT_HISTORY" or int(metadata.get("training_rows") or 0) < 40:
-        return {
-            "ok": True,
-            "status": "INSUFFICIENT_HISTORY",
-            "sport": sport,
-            "market": market,
-            "training_rows": metadata.get("training_rows", 0),
-            "message": "The model artifact exists but does not have enough historical training rows.",
-        }
-
-    api_key = os.getenv("THE_ODDS_API_KEY") or os.getenv("ODDS_API_KEY")
-    if not api_key:
-        return {
-            "ok": True,
-            "status": "NO_BET",
-            "sport": sport,
-            "market": market,
-            "message": "Live odds provider is not configured.",
-        }
-
-    params = urllib.parse.urlencode({
-        "apiKey": api_key,
-        "regions": regions,
-        "markets": market,
-        "oddsFormat": odds_format,
-    })
-    url = f"https://api.the-odds-api.com/v4/sports/{sport}/odds?{params}"
-    try:
-        request = urllib.request.Request(
-            url,
-            headers={"Accept": "application/json", "User-Agent": "betting-stock-api/1.0"},
-        )
-        with urllib.request.urlopen(request, timeout=20) as response:
-            events = json.loads(response.read().decode("utf-8"))[:limit]
-    except urllib.error.HTTPError as e:
-        return JSONResponse(
-            status_code=e.code,
-            content={
-                "ok": True,
-                "status": "NO_BET",
-                "provider": "The Odds API",
-                "status_code": e.code,
-                "error": e.read().decode("utf-8"),
-            },
-        )
-    except Exception as e:
-        return JSONResponse(status_code=500, content={"ok": True, "status": "NO_BET", "error": str(e)})
-
-    live_matrix = build_live_features_matrix(events)
-    rows = live_matrix.get("rows") or []
-    matrix = live_matrix.get("matrix") or []
-    if not rows or not matrix:
-        return {
-            "ok": True,
-            "status": "NO_BET",
-            "sport": sport,
-            "market": market,
-            "events_checked": len(events),
-            "cards": [],
-            "message": "No live h2h rows were available for scoring.",
-        }
-
-    model = bundle["model"]
-    calibrator = bundle.get("calibrator")
-    model_probs = _predict_model_probabilities(model, matrix)
-    calibrated_probs = calibrator.predict_proba(model_probs) if calibrator else model_probs
-
-    qualified_bets = int(metadata.get("qualified_bets") or 0)
-    historical_roi = float(metadata.get("roi") or 0.0)
-    avg_clv = metadata.get("avg_clv_percent")
-    avg_clv_value = float(avg_clv) if avg_clv is not None else None
-    confirmation_ready = qualified_bets >= 500 and historical_roi > 0 and avg_clv_value is not None and avg_clv_value > 0
-
-    cards = []
-    for row, model_prob, calibrated_prob in zip(rows, model_probs, calibrated_probs):
-        implied = float(row.get("implied_probability") or 0.5)
-        edge = float(calibrated_prob) - implied
-        ev = expected_value(row["price_american"], float(calibrated_prob), stake=100.0)
-        if edge >= min_edge and ev > 0:
-            status = "CONFIRMED_BACKTESTED_EDGE" if confirmation_ready else "MODEL_VALUE"
-        elif edge > 0 or ev > 0:
-            status = "WATCHLIST"
-        else:
-            status = "NO_BET"
-
-        cards.append({
-            "status": status,
-            "event_id": row.get("event_id"),
-            "event": row.get("event"),
-            "market": market,
-            "selection": row.get("selection"),
-            "best_book": row.get("best_book"),
-            "best_odds": row.get("price_american"),
-            "model_probability": round(float(model_prob), 6),
-            "calibrated_probability": round(float(calibrated_prob), 6),
-            "implied_probability": round(implied, 6),
-            "edge_percent": round(edge_percent(float(calibrated_prob), implied), 3),
-            "ev_per_100": round(ev, 4),
-            "confirmation_blockers": [] if status == "CONFIRMED_BACKTESTED_EDGE" else [
-                "requires_500_qualified_historical_model_bets_positive_roi_positive_avg_clv_current_positive_ev"
-            ],
-        })
-
-    status_rank = {
-        "CONFIRMED_BACKTESTED_EDGE": 6,
-        "MODEL_VALUE": 5,
-        "WATCHLIST": 4,
-        "NO_BET": 3,
-        "INSUFFICIENT_HISTORY": 2,
-        "MODEL_METADATA_MISMATCH": 1,
-        "NO_MODEL": 0,
-    }
-    top_status = max((card["status"] for card in cards), key=lambda value: status_rank[value]) if cards else "NO_BET"
-    if top_status not in LIVE_CARD_STATUSES:
-        top_status = "NO_BET"
-
-    return {
-        "ok": True,
-        "status": top_status,
-        "sport": sport,
-        "market": market,
-        "events_checked": len(events),
-        "cards": sorted(cards, key=lambda item: item["ev_per_100"], reverse=True)[:50],
-        "model_metadata": {
-            "model_version": model_version,
-            "training_rows": metadata.get("training_rows"),
-            "qualified_bets": qualified_bets,
-            "roi": historical_roi,
-            "avg_clv_percent": avg_clv_value,
-        },
-        "note": "Live-card output is model research unless the status is CONFIRMED_BACKTESTED_EDGE.",
-    }
+    return await MODEL_CARD_SERVICE.assemble_live_card(
+        sport=sport,
+        market=market,
+        min_edge=min_edge,
+        regions=regions,
+        odds_format=odds_format,
+        limit=limit,
+    )

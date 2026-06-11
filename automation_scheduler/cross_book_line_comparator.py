@@ -5,7 +5,7 @@ from typing import Any
 
 from .bookmaker_normalizer import normalize_line_value, normalize_offer, normalize_selection_name
 from .market_identity_resolver import resolve_market_identity
-from .odds_math import american_to_decimal
+from src.core.math_utils import american_to_decimal
 
 
 def _line_value_for_ranking(offer: dict[str, Any]) -> float:

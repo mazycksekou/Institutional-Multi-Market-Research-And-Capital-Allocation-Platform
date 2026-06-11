@@ -2,6 +2,12 @@ from __future__ import annotations
 
 from typing import Any
 
+from src.core.math_utils import (
+    american_to_decimal,
+    kelly_binary_fraction_from_decimal,
+    scale_kelly_fraction,
+)
+
 
 KELLY_PARAMS = {
     "kelly_mode": "full_kelly_primary",
@@ -31,11 +37,7 @@ def _valid_probability(probability: float) -> bool:
 
 
 def _american_to_decimal(american_odds: float) -> float:
-    if american_odds == 0:
-        raise ValueError("american_odds cannot be zero")
-    if american_odds > 0:
-        return 1.0 + (american_odds / 100.0)
-    return 1.0 + (100.0 / abs(american_odds))
+    return american_to_decimal(american_odds)
 
 
 def calculate_full_kelly_binary(probability: float, decimal_odds: float) -> float:
@@ -43,13 +45,13 @@ def calculate_full_kelly_binary(probability: float, decimal_odds: float) -> floa
         return return_zero_if_probability_invalid()
     if not isinstance(decimal_odds, (int, float)) or float(decimal_odds) <= 1.0:
         return return_zero_if_odds_invalid()
-    b = float(decimal_odds) - 1.0
-    p = float(probability)
-    q = 1.0 - p
-    edge = (b * p) - q
-    if edge <= 0:
+    try:
+        raw_full_kelly = kelly_binary_fraction_from_decimal(probability, decimal_odds)
+    except ValueError:
+        return return_zero_if_odds_invalid()
+    if raw_full_kelly <= 0:
         return return_zero_if_no_edge()
-    return max(0.0, edge / b)
+    return raw_full_kelly
 
 
 def calculate_full_kelly_american(probability: float, american_odds: float) -> float:
@@ -67,7 +69,7 @@ def calculate_raw_full_kelly(probability: float, odds: float) -> float:
 
 
 def calculate_fractional_kelly(raw_full_kelly: float, fraction: float) -> float:
-    return max(0.0, float(raw_full_kelly) * max(0.0, float(fraction)))
+    return scale_kelly_fraction(raw_full_kelly, fraction)
 
 
 def select_kelly_mode(raw_full_kelly: float, confidence_inputs: dict[str, Any], risk_inputs: dict[str, Any]) -> str:

@@ -4,11 +4,37 @@ from typing import Any
 from src.core.math_utils import (
     american_to_decimal as _core_american_to_decimal,
     american_to_implied_probability as _core_american_to_implied_probability,
-    calculate_kelly_stake as _core_calculate_kelly_stake,
+    book_hold_n_way as _core_book_hold_n_way,
+    book_hold_two_way as _core_book_hold_two_way,
+    break_even_probability_american as _core_break_even_probability_american,
+    break_even_probability_decimal as _core_break_even_probability_decimal,
+    decimal_to_american as _core_decimal_to_american,
+    decimal_to_implied_probability as _core_decimal_to_implied_probability,
     edge_percent as _core_edge_percent,
     expected_value as _core_expected_value,
+    expected_value_per_100 as _core_expected_value_per_100,
+    expected_value_per_dollar as _core_expected_value_per_dollar,
+    expected_value_per_unit as _core_expected_value_per_unit,
+    fair_decimal_odds_from_probability as _core_fair_decimal_odds_from_probability,
+    fair_odds_american_from_probability as _core_fair_odds_american_from_probability,
     fractional_kelly as _core_fractional_kelly,
+    fractional_kelly_percent as _core_fractional_kelly_percent,
+    full_kelly_fraction as _core_full_kelly_fraction,
+    full_kelly_percent as _core_full_kelly_percent,
+    implied_probability_from_decimal as _core_implied_probability_from_decimal,
     implied_probability_to_american as _core_implied_probability_to_american,
+    no_vig_probabilities_n_way as _core_no_vig_probabilities_n_way,
+    no_vig_probabilities_three_way as _core_no_vig_probabilities_three_way,
+    no_vig_probabilities_two_way as _core_no_vig_probabilities_two_way,
+)
+from risk_engine import (
+    confidence_adjusted_stake as _risk_confidence_adjusted_stake,
+    exposure_check as _risk_exposure_check,
+    risk_adjusted_stake as _risk_adjusted_stake,
+    risk_profile_settings as _risk_profile_settings,
+    suggested_bet_size as _risk_suggested_bet_size,
+    suggested_stake as _risk_suggested_stake,
+    suggested_stake_with_risk_controls as _risk_suggested_stake_with_risk_controls,
 )
 
 
@@ -42,12 +68,7 @@ def implied_probability_from_american(odds: int | float) -> float:
 
 
 def decimal_to_american(decimal_odds: float) -> int:
-    decimal_odds = float(decimal_odds)
-    if decimal_odds <= 1:
-        raise ValueError("Decimal odds must be greater than 1.")
-    if decimal_odds >= 2:
-        return int(round((decimal_odds - 1) * 100))
-    return int(round(-100 / (decimal_odds - 1)))
+    return _core_decimal_to_american(decimal_odds)
 
 
 def probability_to_fair_american(probability: float) -> int:
@@ -55,7 +76,7 @@ def probability_to_fair_american(probability: float) -> int:
 
 
 def expected_value_per_unit(odds: int | float, true_probability: float) -> float:
-    return _core_expected_value(odds, true_probability, stake=1.0)
+    return _core_expected_value_per_unit(odds, true_probability)
 
 
 def expected_value_dollars(odds: int | float, true_probability: float, stake: float) -> float:
@@ -73,11 +94,11 @@ def suggested_stake(
     fractional_kelly: float = 0.25,
     max_bankroll_pct: float = 0.02,
 ) -> float:
-    return _core_calculate_kelly_stake(
+    return _risk_suggested_stake(
         bankroll,
         american_odds,
         true_probability,
-        fraction=fractional_kelly,
+        fractional_kelly=fractional_kelly,
         max_bankroll_pct=max_bankroll_pct,
     )
 
@@ -88,8 +109,7 @@ def suggested_bet_size(
     fractional_kelly: float = 0.25,
     max_bankroll_risk: float = 0.02,
 ) -> float:
-    stake = bankroll * kelly * fractional_kelly
-    return max(0, min(stake, bankroll * max_bankroll_risk))
+    return _risk_suggested_bet_size(bankroll, kelly, fractional_kelly, max_bankroll_risk)
 
 
 def classify_edge(edge_pct: float, ev_per_unit: float) -> str:
@@ -173,62 +193,40 @@ def exposure_check(
     current_group_exposure: float,
     group_exposure_cap: float = 0.05,
 ) -> dict:
-    max_group_exposure = bankroll * group_exposure_cap
-    projected_group_exposure = current_group_exposure + suggested_stake
-    allowed_stake = max(0, max_group_exposure - current_group_exposure)
-    approved = projected_group_exposure <= max_group_exposure
-    return {
-        "approved": approved,
-        "max_group_exposure": round(max_group_exposure, 2),
-        "projected_group_exposure": round(projected_group_exposure, 2),
-        "allowed_stake": round(allowed_stake if not approved else suggested_stake, 2),
-        "message": "Exposure acceptable" if approved else "Exposure cap exceeded",
-    }
+    return _risk_exposure_check(bankroll, suggested_stake, current_group_exposure, group_exposure_cap)
 
 
 # --- Extended quant primitives (betting evaluation engine) ---
 
 
 def decimal_to_implied_probability(decimal_odds: float) -> float:
-    d = float(decimal_odds)
-    if d <= 1:
-        raise ValueError("Decimal odds must be greater than 1.")
-    return 1 / d
+    return _core_decimal_to_implied_probability(decimal_odds)
 
 
 def break_even_probability_american(odds: int | float) -> float:
     """Minimum win rate to break even betting at these odds (equals implied prob)."""
-    return implied_probability_from_american(odds)
+    return _core_break_even_probability_american(odds)
 
 
 def book_hold_two_way(implied_a: float, implied_b: float) -> float:
     """Overround / vig as implied_a + implied_b - 1."""
-    return float(implied_a) + float(implied_b) - 1
+    return _core_book_hold_two_way(implied_a, implied_b)
 
 
 def no_vig_probabilities_two_way(implied_a: float, implied_b: float) -> tuple[float, float]:
-    s = implied_a + implied_b
-    if s <= 0:
-        raise ValueError("Implied probabilities must sum to a positive value.")
-    return implied_a / s, implied_b / s
+    return _core_no_vig_probabilities_two_way(implied_a, implied_b)
 
 
 def no_vig_probabilities_three_way(p1: float, p2: float, p3: float) -> tuple[float, float, float]:
-    s = p1 + p2 + p3
-    if s <= 0:
-        raise ValueError("Implied probabilities must sum to a positive value.")
-    return p1 / s, p2 / s, p3 / s
+    return _core_no_vig_probabilities_three_way(p1, p2, p3)
 
 
 def no_vig_probabilities_n_way(implied: list[float]) -> list[float]:
-    s = sum(implied)
-    if s <= 0:
-        raise ValueError("Implied probabilities must sum to a positive value.")
-    return [p / s for p in implied]
+    return _core_no_vig_probabilities_n_way(implied)
 
 
 def fair_odds_american_from_probability(probability: float) -> int:
-    return probability_to_fair_american(probability)
+    return _core_fair_odds_american_from_probability(probability)
 
 
 def edge_percentage(true_probability: float, implied_probability: float) -> float:
@@ -236,7 +234,7 @@ def edge_percentage(true_probability: float, implied_probability: float) -> floa
 
 
 def expected_value_per_100(odds: int | float, true_probability: float) -> float:
-    return expected_value_per_unit(odds, true_probability) * 100
+    return _core_expected_value_per_100(odds, true_probability)
 
 
 def kelly_half(odds: int | float, true_probability: float) -> float:
@@ -268,57 +266,49 @@ def suggested_unit_size(
 
 
 def confidence_adjusted_stake(base_stake: float, confidence_0_100: float) -> float:
-    c = max(0, min(100, float(confidence_0_100))) / 100
-    return max(0, float(base_stake) * c)
+    return _risk_confidence_adjusted_stake(base_stake, confidence_0_100)
 
 
 def risk_adjusted_stake(base_stake: float, risk_multiplier: float) -> float:
     """risk_multiplier in (0, 1] reduces stake for higher perceived risk."""
-    m = max(0, min(1, float(risk_multiplier)))
-    return max(0, float(base_stake) * m)
+    return _risk_adjusted_stake(base_stake, risk_multiplier)
 
 
 def book_hold_n_way(implied_probabilities: list[float]) -> float:
     """Total overround / vig for N outcomes: sum(implied) - 1."""
-    return float(sum(implied_probabilities)) - 1
+    return _core_book_hold_n_way(implied_probabilities)
 
 
 def implied_probability_from_decimal(decimal_odds: float) -> float:
-    return decimal_to_implied_probability(decimal_odds)
+    return _core_implied_probability_from_decimal(decimal_odds)
 
 
 def break_even_probability_decimal(decimal_odds: float) -> float:
-    return implied_probability_from_decimal(decimal_odds)
+    return _core_break_even_probability_decimal(decimal_odds)
 
 
 def expected_value_per_dollar(odds: int | float, true_probability: float) -> float:
-    return expected_value_per_unit(odds, true_probability)
+    return _core_expected_value_per_dollar(odds, true_probability)
 
 
 def full_kelly_fraction(odds: int | float, true_probability: float) -> float:
-    return kelly_fraction(odds, true_probability)
+    return _core_full_kelly_fraction(odds, true_probability)
 
 
 def fair_decimal_odds_from_probability(probability: float) -> float:
-    p = _validate_probability(probability)
-    return 1 / p
+    return _core_fair_decimal_odds_from_probability(probability)
 
 
 def full_kelly_percent(odds: int | float, true_probability: float) -> float:
-    return round(full_kelly_fraction(odds, true_probability) * 100, 4)
+    return round(_core_full_kelly_percent(odds, true_probability), 4)
 
 
 def fractional_kelly_percent(odds: int | float, true_probability: float, fraction: float = 0.25) -> float:
-    return round(full_kelly_fraction(odds, true_probability) * max(0, float(fraction)) * 100, 4)
+    return round(_core_fractional_kelly_percent(odds, true_probability, fraction=fraction), 4)
 
 
 def risk_profile_settings(risk_profile: str | None = "standard") -> dict[str, float | str]:
-    profiles = {
-        "conservative": {"risk_profile": "conservative", "kelly_fraction": 0.125, "max_bankroll_pct": 0.01, "confidence_multiplier": 0.75},
-        "standard": {"risk_profile": "standard", "kelly_fraction": 0.25, "max_bankroll_pct": 0.02, "confidence_multiplier": 1.0},
-        "aggressive": {"risk_profile": "aggressive", "kelly_fraction": 0.5, "max_bankroll_pct": 0.03, "confidence_multiplier": 1.15},
-    }
-    return profiles.get((risk_profile or "standard").strip().lower(), profiles["standard"]).copy()
+    return _risk_profile_settings(risk_profile)
 
 
 def suggested_stake_with_risk_controls(
@@ -328,17 +318,13 @@ def suggested_stake_with_risk_controls(
     risk_profile: str | None = "standard",
     confidence_0_100: float | None = None,
 ) -> float:
-    profile = risk_profile_settings(risk_profile)
-    stake = suggested_stake(
+    return _risk_suggested_stake_with_risk_controls(
         bankroll,
         american_odds,
         true_probability,
-        fractional_kelly=float(profile["kelly_fraction"]),
-        max_bankroll_pct=float(profile["max_bankroll_pct"]),
+        risk_profile,
+        confidence_0_100,
     )
-    if confidence_0_100 is not None:
-        stake = confidence_adjusted_stake(stake, confidence_0_100)
-    return round(stake, 2)
 
 
 def quant_engine_component_foundation() -> dict[str, Any]:
