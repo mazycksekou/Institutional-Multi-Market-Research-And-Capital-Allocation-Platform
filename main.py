@@ -30,11 +30,11 @@ from src.api.quant_routes import register_quant_routes
 from src.api.governance_routes import register_governance_routes
 from src.api.performance_routes import register_performance_routes
 from src.api.market_utility_routes import register_market_utility_routes
+from src.api.model_backtest_routes import register_model_backtest_routes
 from src.api.schemas.bet_csv import BetLogRequest
 from src.api.schemas.quant import BetAnalysisRequest, MarketPricingRequest, StockAnalysisRequest
 from src.api.schemas.performance import PerformanceBacktestRequest
 from src.services.bet_csv_service import BETS_FILE, append_bet, summarize_bets
-from src.services.model_backtest_service import run_model_backtest
 import automation_scheduler
 import bet_log
 import bet_decision_engine
@@ -1523,6 +1523,7 @@ register_market_utility_routes(
     model_card_service=MODEL_CARD_SERVICE,
     repo_root=Path(__file__).resolve().parent,
 )
+register_model_backtest_routes(app)
 
 @app.get("/api/betting/events/active", operation_id="getActiveBettingEventsRaw", dependencies=[Depends(require_action_key)])
 async def get_active_betting_events(
@@ -3785,19 +3786,3 @@ def _predict_model_probabilities(model: Any, matrix: list[list[float]]) -> list[
         return [float(value) for value in raw]
     return [float(value) for value in raw[:, 1]]
 
-
-@app.get("/model/backtest")
-def model_backtest(
-    sport: str = "basketball_nba",
-    market: str = "h2h",
-    start_year: int = 2024,
-    min_edge: float = 0.01,
-    min_train_rows: int = 40,
-):
-    return run_model_backtest(
-        sport=sport,
-        market=market,
-        start_year=start_year,
-        min_edge=min_edge,
-        min_train_rows=min_train_rows,
-    )
