@@ -24,6 +24,7 @@ from src.api.provider_status_routes import register_provider_status_routes
 from src.api.debug_routes import register_debug_routes
 from src.api.betting_metadata_routes import register_betting_metadata_routes
 from src.api.market_metadata_routes import register_market_metadata_routes
+from src.api.bet_csv_routes import register_bet_csv_routes
 from src.api.schemas.bet_csv import BetLogRequest
 from src.services.bet_csv_service import BETS_FILE, append_bet, summarize_bets
 import automation_scheduler
@@ -1496,6 +1497,10 @@ register_market_metadata_routes(
     require_action_key=require_action_key,
     provider_router=PROVIDER_ROUTER,
 )
+register_bet_csv_routes(
+    app,
+    require_action_key=require_action_key,
+)
 
 @app.get("/api/betting/events/active", operation_id="getActiveBettingEventsRaw", dependencies=[Depends(require_action_key)])
 async def get_active_betting_events(
@@ -2662,46 +2667,6 @@ async def analyze(ticker: str = "NVDA", league: Optional[str] = None, sport: Opt
     if sport or league:
         odds = await PROVIDER_ROUTER.get_active_events(None, sport, league)
     return {"ok": True, "ticker": ticker.upper(), "stock_data": stock, "odds_data": odds}
-
-
-@app.post("/api/bets/log", operation_id="logBetCsv", dependencies=[Depends(require_action_key)])
-async def log_bet(payload: BetLogRequest):
-    row = payload.model_dump()
-    row["date"] = row["date"] or date.today().isoformat()
-    BETS_FILE.parent.mkdir(exist_ok=True)
-    exists = BETS_FILE.exists()
-    with BETS_FILE.open("a", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=list(row.keys()))
-        if not exists:
-            writer.writeheader()
-        writer.writerow(row)
-    return {"ok": True, "message": "Bet logged.", "logbook_row": row}
-
-
-@app.get("/api/bets/summary", operation_id="getBetSummary", dependencies=[Depends(require_action_key)])
-async def get_bet_summary():
-    if not BETS_FILE.exists():
-        return {"ok": True, "count": 0, "summary": {"message": "No bets logged yet."}, "records": []}
-    df = pd.read_csv(BETS_FILE)
-    if df.empty:
-        return {"ok": True, "count": 0, "summary": {"message": "No bets logged yet."}, "records": []}
-    profit_col = "profit_or_loss" if "profit_or_loss" in df.columns else "profit_loss"
-    df["stake"] = pd.to_numeric(df.get("stake", 0), errors="coerce").fillna(0)
-    df[profit_col] = pd.to_numeric(df.get(profit_col, 0), errors="coerce").fillna(0)
-    total_staked = float(df["stake"].sum())
-    total_profit = float(df[profit_col].sum())
-    return {
-        "ok": True,
-        "count": int(len(df)),
-        "summary": {
-            "total_bets": int(len(df)),
-            "total_staked": round(total_staked, 2),
-            "total_profit": round(total_profit, 2),
-            "roi_percent": round((total_profit / total_staked * 100) if total_staked else 0, 2),
-        },
-        "records": df.tail(25).to_dict(orient="records"),
-    }
-
 
 @app.post("/quant/bet-analysis", operation_id="quantBetAnalysis", dependencies=[Depends(require_action_key)])
 async def quant_bet_analysis(payload: BetAnalysisRequest):
