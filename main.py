@@ -25,6 +25,7 @@ from src.api.debug_routes import register_debug_routes
 from src.api.betting_metadata_routes import register_betting_metadata_routes
 from src.api.market_metadata_routes import register_market_metadata_routes
 from src.api.bet_csv_routes import register_bet_csv_routes
+from src.api.stock_analysis_routes import register_stock_analysis_routes
 from src.api.schemas.bet_csv import BetLogRequest
 from src.services.bet_csv_service import BETS_FILE, append_bet, summarize_bets
 import automation_scheduler
@@ -1501,6 +1502,13 @@ register_bet_csv_routes(
     app,
     require_action_key=require_action_key,
 )
+register_stock_analysis_routes(
+    app,
+    require_action_key=require_action_key,
+    provider_router=PROVIDER_ROUTER,
+    stock_data_fn=stock_data,
+    no_data_response_fn=no_data_response,
+)
 
 @app.get("/api/betting/events/active", operation_id="getActiveBettingEventsRaw", dependencies=[Depends(require_action_key)])
 async def get_active_betting_events(
@@ -2644,29 +2652,6 @@ async def action_analyze_betting_event(payload: AnalyzeEventRequest):
             "detail": str(exc),
             "step_failed": "unknown"
         }
-
-@app.get("/api/stocks/{ticker}", operation_id="getStockData", dependencies=[Depends(require_action_key)])
-async def get_stock_data(ticker: str, period: str = "1mo", interval: str = "1d"):
-    return stock_data(ticker, period, interval)
-
-
-@app.get("/api/watchlist", operation_id="getWatchlistData", dependencies=[Depends(require_action_key)])
-async def get_watchlist_data(
-    tickers: str = Query(default="AAPL,NVDA,TSLA,SPY,QQQ"),
-    period: str = "1mo",
-    interval: str = "1d",
-):
-    symbols = [ticker.strip().upper() for ticker in tickers.split(",") if ticker.strip()]
-    return {"ok": True, "tickers": symbols, "data": [stock_data(ticker, period, interval) for ticker in symbols]}
-
-
-@app.get("/api/analyze", operation_id="analyzeStocksAndOdds", dependencies=[Depends(require_action_key)])
-async def analyze(ticker: str = "NVDA", league: Optional[str] = None, sport: Optional[str] = None):
-    stock = stock_data(ticker, "1mo", "1d")
-    odds = no_data_response("sport or league was not supplied, so no betting odds were fetched.", "SPORT_REQUIRED")
-    if sport or league:
-        odds = await PROVIDER_ROUTER.get_active_events(None, sport, league)
-    return {"ok": True, "ticker": ticker.upper(), "stock_data": stock, "odds_data": odds}
 
 @app.post("/quant/bet-analysis", operation_id="quantBetAnalysis", dependencies=[Depends(require_action_key)])
 async def quant_bet_analysis(payload: BetAnalysisRequest):
