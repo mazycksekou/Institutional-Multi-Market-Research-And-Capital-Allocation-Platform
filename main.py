@@ -23,6 +23,7 @@ from src.api.system_routes import register_system_routes
 from src.api.provider_status_routes import register_provider_status_routes
 from src.api.debug_routes import register_debug_routes
 from src.api.betting_metadata_routes import register_betting_metadata_routes
+from src.api.market_metadata_routes import register_market_metadata_routes
 import automation_scheduler
 import bet_log
 import bet_decision_engine
@@ -1512,6 +1513,11 @@ register_betting_metadata_routes(
     require_action_key=require_action_key,
     provider_router=PROVIDER_ROUTER,
 )
+register_market_metadata_routes(
+    app,
+    require_action_key=require_action_key,
+    provider_router=PROVIDER_ROUTER,
+)
 
 @app.get("/api/betting/events/active", operation_id="getActiveBettingEventsRaw", dependencies=[Depends(require_action_key)])
 async def get_active_betting_events(
@@ -2655,49 +2661,6 @@ async def action_analyze_betting_event(payload: AnalyzeEventRequest):
             "detail": str(exc),
             "step_failed": "unknown"
         }
-
-
-@app.get("/api/markets/providers", operation_id="getMarketProviders", dependencies=[Depends(require_action_key)])
-async def get_market_providers():
-    return {
-        "ok": True,
-        "default_provider": PROVIDER_ROUTER.default_market_provider(),
-        "providers": PROVIDER_ROUTER.capabilities(PREDICTION_MARKET),
-    }
-
-
-@app.get("/api/markets/kalshi/events", operation_id="getKalshiEvents", dependencies=[Depends(require_action_key)])
-async def get_kalshi_events(
-    status: Optional[str] = None,
-    series_ticker: Optional[str] = None,
-    limit: int = 100,
-):
-    return await PROVIDER_ROUTER.get_kalshi_events(status=status, series_ticker=series_ticker, limit=limit)
-
-
-@app.get("/api/markets/kalshi/markets", operation_id="getKalshiMarkets", dependencies=[Depends(require_action_key)])
-async def get_kalshi_markets(
-    query: Optional[str] = None,
-    event_ticker: Optional[str] = None,
-    series_ticker: Optional[str] = None,
-    status: Optional[str] = None,
-    limit: int = 100,
-    cursor: Optional[str] = None,
-):
-    return await PROVIDER_ROUTER.get_kalshi_markets(
-        query=query,
-        event_ticker=event_ticker,
-        series_ticker=series_ticker,
-        status=status,
-        limit=limit,
-        cursor=cursor,
-    )
-
-
-@app.get("/api/markets/kalshi/markets/{ticker}/orderbook", operation_id="getKalshiOrderbook", dependencies=[Depends(require_action_key)])
-async def get_kalshi_orderbook(ticker: str):
-    return await PROVIDER_ROUTER.get_kalshi_orderbook(ticker)
-
 
 @app.get("/api/stocks/{ticker}", operation_id="getStockData", dependencies=[Depends(require_action_key)])
 async def get_stock_data(ticker: str, period: str = "1mo", interval: str = "1d"):
