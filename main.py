@@ -1543,20 +1543,3 @@ async def run_automation_scheduler_once(payload: AutomationRunOnceRequest, verbo
     if verbose or include_debug:
         compact["debug"] = redact_and_limit_payload(result, limit=cap, verbose=verbose)
     return compact
-
-LIVE_CARD_STATUSES = {
-    "NO_MODEL",
-    "MODEL_METADATA_MISMATCH",
-    "INSUFFICIENT_HISTORY",
-    "NO_BET",
-    "WATCHLIST",
-    "MODEL_VALUE",
-    "CONFIRMED_BACKTESTED_EDGE",
-}
-
-
-def _predict_model_probabilities(model: Any, matrix: list[list[float]]) -> list[float]:
-    raw = model.predict_proba(matrix)
-    if isinstance(raw, list):
-        return [float(value) for value in raw]
-    return [float(value) for value in raw[:, 1]]
