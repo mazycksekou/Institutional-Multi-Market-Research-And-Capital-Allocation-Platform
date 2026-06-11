@@ -34,6 +34,7 @@ from src.api.schemas.bet_csv import BetLogRequest
 from src.api.schemas.quant import BetAnalysisRequest, MarketPricingRequest, StockAnalysisRequest
 from src.api.schemas.performance import PerformanceBacktestRequest
 from src.services.bet_csv_service import BETS_FILE, append_bet, summarize_bets
+from src.services.model_backtest_service import run_model_backtest
 import automation_scheduler
 import bet_log
 import bet_decision_engine
@@ -3778,10 +3779,6 @@ LIVE_CARD_STATUSES = {
 }
 
 
-def _sports_master_db_path() -> Path:
-    return Path(os.getenv("SPORTS_MASTER_DB_PATH", "data/sports_master.db"))
-
-
 def _predict_model_probabilities(model: Any, matrix: list[list[float]]) -> list[float]:
     raw = model.predict_proba(matrix)
     if isinstance(raw, list):
@@ -3797,14 +3794,10 @@ def model_backtest(
     min_edge: float = 0.01,
     min_train_rows: int = 40,
 ):
-    from src.core.backtester import run_walk_forward_backtest
-
-    return run_walk_forward_backtest(
-        db_path=_sports_master_db_path(),
-        sport_key=sport,
+    return run_model_backtest(
+        sport=sport,
         market=market,
         start_year=start_year,
         min_edge=min_edge,
         min_train_rows=min_train_rows,
     )
-
