@@ -22,6 +22,7 @@ from src.api.model_card_service import ModelCardService
 from src.api.system_routes import register_system_routes
 from src.api.provider_status_routes import register_provider_status_routes
 from src.api.debug_routes import register_debug_routes
+from src.api.betting_metadata_routes import register_betting_metadata_routes
 import automation_scheduler
 import bet_log
 import bet_decision_engine
@@ -1506,20 +1507,11 @@ register_debug_routes(
     require_action_key=require_action_key,
     get_configured_action_key=get_configured_action_key,
 )
-
-@app.get("/api/betting/providers", operation_id="getBettingProviders", dependencies=[Depends(require_action_key)])
-async def get_betting_providers():
-    return {
-        "ok": True,
-        "default_provider": PROVIDER_ROUTER.default_betting_provider(),
-        "providers": PROVIDER_ROUTER.capabilities(),
-    }
-
-
-@app.get("/api/betting/sports", operation_id="getSupportedBettingSports", dependencies=[Depends(require_action_key)])
-async def get_supported_betting_sports(provider: Optional[str] = None):
-    return await PROVIDER_ROUTER.get_supported_sports(provider)
-
+register_betting_metadata_routes(
+    app,
+    require_action_key=require_action_key,
+    provider_router=PROVIDER_ROUTER,
+)
 
 @app.get("/api/betting/events/active", operation_id="getActiveBettingEventsRaw", dependencies=[Depends(require_action_key)])
 async def get_active_betting_events(
