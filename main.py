@@ -31,6 +31,7 @@ from src.api.performance_routes import register_performance_routes
 from src.api.market_utility_routes import register_market_utility_routes
 from src.api.model_backtest_routes import register_model_backtest_routes
 from src.api.betting_action_routes import register_betting_action_routes
+from src.api.automation_core_routes import register_automation_core_routes
 from src.api.schemas.bet_csv import BetLogRequest
 from src.api.schemas.automation import (
     AutomationAdvancedShapeDiagnosticsRequest,
@@ -464,37 +465,14 @@ register_betting_action_routes(
     default_bookmakers=DEFAULT_BOOKMAKERS,
     utc_now_fn=utc_now,
 )
-
-@app.get("/api/automation/health", operation_id="getAutomationSchedulerHealth")
-async def get_automation_scheduler_health():
-    health = automation_scheduler.get_scheduler_health()
-    return compact_health_response(health)
-
-
-@app.get("/api/automation/security-readiness", operation_id="getAutomationSecurityReadiness")
-async def get_automation_security_readiness_endpoint():
-    return automation_scheduler.get_security_readiness()
-
-
-@app.get("/api/automation/intelligence-readiness", operation_id="getAutomationIntelligenceReadiness")
-async def get_automation_intelligence_readiness_endpoint(verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=10)):
-    payload = automation_scheduler.get_intelligence_readiness()
-    cap = min(max(int(limit), 1), 100 if verbose else 10)
-    compact = compact_intelligence_readiness_response(payload, limit=cap)
-    if verbose or include_debug:
-        compact["debug"] = redact_and_limit_payload(payload, limit=cap, verbose=verbose)
-    return compact
-
-
-@app.get("/api/automation/strategy-readiness", operation_id="getAutomationStrategyReadiness")
-async def get_automation_strategy_readiness_endpoint(verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=50)):
-    cap = min(max(int(limit), 1), 100 if verbose else 50)
-    payload = automation_scheduler.get_strategy_readiness()
-    compact = compact_strategy_readiness_response(payload, limit=cap)
-    if verbose or include_debug:
-        compact["debug"] = redact_and_limit_payload(payload, limit=cap, verbose=verbose)
-    return compact
-
+register_automation_core_routes(
+    app,
+    automation_scheduler_dep=automation_scheduler,
+    compact_health_response_dep=compact_health_response,
+    compact_intelligence_readiness_response_dep=compact_intelligence_readiness_response,
+    compact_strategy_readiness_response_dep=compact_strategy_readiness_response,
+    redact_and_limit_payload_dep=redact_and_limit_payload,
+)
 
 @app.get("/api/automation/basketball-player-impact-readiness", operation_id="getAutomationBasketballPlayerImpactReadiness")
 async def get_automation_basketball_player_impact_readiness_endpoint(
