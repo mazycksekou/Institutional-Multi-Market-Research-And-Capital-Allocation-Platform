@@ -24,6 +24,8 @@ from src.api.provider_status_routes import register_provider_status_routes
 from src.api.debug_routes import register_debug_routes
 from src.api.betting_metadata_routes import register_betting_metadata_routes
 from src.api.market_metadata_routes import register_market_metadata_routes
+from src.api.schemas.bet_csv import BetLogRequest
+from src.services.bet_csv_service import BETS_FILE, append_bet, summarize_bets
 import automation_scheduler
 import bet_log
 import bet_decision_engine
@@ -130,7 +132,6 @@ DEFAULT_REGIONS = os.getenv("DEFAULT_REGIONS", "us")
 DEFAULT_MARKETS = "h2h,spreads,totals"
 DATA_DIR = get_automation_data_dir()
 DATA_DIR.mkdir(parents=True, exist_ok=True)
-BETS_FILE = get_runtime_data_path("bets.csv")
 
 SPORT_ALIASES = {
     "mlb": "baseball_mlb",
@@ -525,29 +526,6 @@ class StockAnalysisRequest(BaseModel):
     notes: Optional[str] = None
 
 
-class BetLogRequest(BaseModel):
-    date: Optional[str] = None
-    type: str = "bet"
-    sport: Optional[str] = None
-    event: Optional[str] = None
-    pick: Optional[str] = None
-    market: Optional[str] = None
-    odds: Optional[int] = None
-    stake: float = 0
-    bankroll: Optional[float] = None
-    true_probability_pct: Optional[float] = None
-    implied_probability_pct: Optional[float] = None
-    edge_pct: Optional[float] = None
-    ev_per_100: Optional[float] = None
-    ev_dollars: Optional[float] = None
-    kelly_pct: Optional[float] = None
-    suggested_stake: Optional[float] = None
-    correlation_group: Optional[str] = None
-    exposure_status: Optional[str] = None
-    decision: Optional[str] = None
-    result: Optional[str] = "pending"
-    profit_or_loss: float = 0
-    notes: Optional[str] = None
 
 
 class MarketPricingRequest(BaseModel):
