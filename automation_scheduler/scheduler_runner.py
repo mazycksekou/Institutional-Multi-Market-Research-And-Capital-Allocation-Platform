@@ -1,4 +1,5 @@
 from __future__ import annotations
+from pathlib import Path
 
 from datetime import datetime, timezone
 from typing import Any
@@ -40,6 +41,28 @@ from .kalshi_market_provider import get_kalshi_snapshot, summarize_kalshi_snapsh
 from .kalshi_readonly_adapter import KalshiReadonlyAdapter
 from .sharp_sportsbook_adapter import SharpSportsbookAdapter
 from .sportsbook_odds_provider import get_valid_normalized_records, summarize_sportsbook_snapshot
+
+
+def _existing_artifact_response_path(path_value, *, base_data_dir=None):
+    """Return a durable artifact path that exists from the project root."""
+    if not path_value:
+        return path_value
+
+    candidate = Path(str(path_value))
+    if candidate.exists():
+        return str(candidate)
+
+    if base_data_dir:
+        base_candidate = Path(str(base_data_dir)) / candidate
+        if base_candidate.exists():
+            return str(base_candidate)
+
+    data_candidate = Path("data") / candidate
+    if data_candidate.exists():
+        return str(data_candidate)
+
+    return str(candidate)
+
 
 KALSHI_STALE_MARKET_SECONDS = 60 * 15
 KALSHI_TELEMETRY_TOP_LEVEL_FIELDS = (
@@ -1364,13 +1387,13 @@ def _run_scheduler_once_impl(*, injected_data: dict[str, Any] | None = None, bas
         "report_path": report.get("path"),
         "review_queue_items_written": int(queue_storage.get("items_written_count", len(queue))),
         "review_queue_storage_backend": queue_storage.get("storage_backend", "file"),
-        "review_queue_write_path": queue_storage.get("queue_write_path"),
+        "review_queue_write_path": _existing_artifact_response_path(queue_storage.get("queue_write_path"), base_data_dir=base_data_dir),
         "review_queue_latest_run_id": queue_storage.get("latest_run_id"),
         "review_queue_last_updated_at": queue_storage.get("last_updated_at"),
         "paper_decisions_written": int(paper_ledger_storage.get("paper_decisions_written", len(paper_decisions))),
         "paper_decisions_count": len(paper_decisions),
         "paper_ledger_storage_backend": paper_ledger_storage.get("storage_backend", "file"),
-        "paper_ledger_write_path": paper_ledger_storage.get("paper_ledger_write_path"),
+        "paper_ledger_write_path": _existing_artifact_response_path(paper_ledger_storage.get("paper_ledger_write_path"), base_data_dir=base_data_dir),
         "paper_ledger_latest_run_id": paper_ledger_storage.get("latest_run_id"),
         "paper_ledger_last_updated_at": paper_ledger_storage.get("last_updated_at"),
         "blockers": list(sharp_evaluation.get("blockers", [])) + list(kalshi_evaluation.get("blockers", [])),
