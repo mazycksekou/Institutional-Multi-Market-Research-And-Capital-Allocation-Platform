@@ -18,7 +18,7 @@ from automation_scheduler.hockey_skater_impact import evaluate_hockey_skater_imp
 from automation_scheduler.hockey_special_teams_context import evaluate_hockey_special_teams_context
 from automation_scheduler.hockey_transition_context import evaluate_hockey_transition_context
 from automation_scheduler.response_compactor import compact_hockey_impact_diagnostics_response, redact_and_limit_payload
-from main import app
+from tests.support.action_imports import app
 
 
 def _team_context(**extra):

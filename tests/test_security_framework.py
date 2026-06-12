@@ -22,7 +22,7 @@ from automation_scheduler.security_event_types import (
     PROVIDER_WRITE_BLOCKED,
 )
 from automation_scheduler.security_policy import enforce_ai_capability_boundary, kill_switch_state
-from main import app
+from tests.support.action_imports import app
 
 
 def _future_approval(scope=None, *, nonce="nonce-1", signing_secret="owner-secret"):

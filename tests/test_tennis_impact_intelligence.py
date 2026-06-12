@@ -17,7 +17,7 @@ from automation_scheduler.tennis_pressure_tiebreak_context import evaluate_tenni
 from automation_scheduler.tennis_return_impact import evaluate_tennis_return_impact
 from automation_scheduler.tennis_serve_impact import evaluate_tennis_serve_impact
 from automation_scheduler.tennis_surface_context import evaluate_tennis_surface_context
-from main import app
+from tests.support.action_imports import app
 
 
 def _match_context(**extra):

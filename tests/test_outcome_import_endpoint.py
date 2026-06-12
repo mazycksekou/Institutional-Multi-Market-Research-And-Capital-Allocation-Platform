@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 
 from automation_scheduler.outcome_store import ingest_outcome_records, load_outcome_records
 from automation_scheduler.paper_decision_ledger import load_paper_decisions
-from main import app
+from tests.support.action_imports import app
 
 
 class TestOutcomeImportEndpoint(unittest.TestCase):

@@ -13,7 +13,7 @@ from automation_scheduler.football_personnel_context import evaluate_football_pe
 from automation_scheduler.football_play_drive_impact import evaluate_football_play_drive_impact
 from automation_scheduler.football_role_impact import evaluate_football_role_impact
 from automation_scheduler.response_compactor import compact_football_impact_diagnostics_response
-from main import app
+from tests.support.action_imports import app
 
 
 def _nfl_play_context(**extra):

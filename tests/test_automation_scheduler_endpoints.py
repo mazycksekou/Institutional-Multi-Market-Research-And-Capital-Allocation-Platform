@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
-from main import app
+from tests.support.action_imports import app
 
 
 class TestAutomationSchedulerEndpoints(unittest.TestCase):

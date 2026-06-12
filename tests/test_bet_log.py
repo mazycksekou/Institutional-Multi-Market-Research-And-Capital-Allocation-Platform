@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 
 import bet_log
-from main import ActionBetLogRequest
+from tests.support.action_imports import ActionBetLogRequest
 
 
 def _entry(**extra):

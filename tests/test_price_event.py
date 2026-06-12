@@ -164,7 +164,7 @@ class TestMarketPricing(unittest.TestCase):
 class TestPriceEventEndpoint(unittest.TestCase):
     def test_price_event_request_model_validation(self):
         """Test that PriceEventRequest can be instantiated with valid data."""
-        from main import PriceEventRequest
+        from tests.support.action_imports import PriceEventRequest
         
         # Basic request
         request = PriceEventRequest(

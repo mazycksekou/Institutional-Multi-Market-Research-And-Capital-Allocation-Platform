@@ -372,7 +372,7 @@ class TestOptionalMarketProbability(unittest.TestCase):
     def test_request_model_validation_does_not_require_market_probability(self):
         """Test OpenAPI/request model validation does not require market_probability."""
         # This should not raise a validation error
-        from main import ModelProbabilityRequest
+        from tests.support.action_imports import ModelProbabilityRequest
 
         request = ModelProbabilityRequest(
             projection_probability=0.60,

@@ -15,7 +15,7 @@ from automation_scheduler.representation_feature_builder import build_representa
 from automation_scheduler.response_compactor import compact_intelligence_readiness_response
 from automation_scheduler.tabular_ml_research import build_tabular_ml_research_lanes
 from automation_scheduler.intelligence_readiness_report import build_intelligence_readiness_report
-from main import app
+from tests.support.action_imports import app
 
 
 class TestDataIntelligenceStack(unittest.TestCase):

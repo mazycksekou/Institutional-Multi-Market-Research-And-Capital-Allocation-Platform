@@ -17,7 +17,7 @@ from automation_scheduler.combat_ruleset_referee_judging_context import evaluate
 from automation_scheduler.combat_striking_impact import evaluate_combat_striking_impact
 from automation_scheduler.combat_impact_report import build_combat_impact_diagnostics
 from automation_scheduler.response_compactor import compact_combat_impact_diagnostics_response, redact_and_limit_payload
-from main import app
+from tests.support.action_imports import app
 
 
 def _bout(**extra):

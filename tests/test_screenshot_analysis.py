@@ -5,7 +5,7 @@ from unittest.mock import Mock, patch
 
 from fastapi.testclient import TestClient
 
-from main import ScreenshotAnalysisRequest, action_analyze_ticket_screenshot, app, require_action_key
+from tests.support.action_imports import ScreenshotAnalysisRequest, action_analyze_ticket_screenshot, app, require_action_key
 from providers.kalshi_provider import normalize_kalshi_probability_market
 
 

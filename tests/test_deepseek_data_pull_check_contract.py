@@ -16,7 +16,7 @@ from automation_scheduler.prediction_market_outcome_candidates import (
     evaluate_outcome_evidence,
     run_tiny_read_only_settlement_check,
 )
-from main import app
+from tests.support.action_imports import app
 
 
 ROOT = Path(__file__).resolve().parents[1]

@@ -3,7 +3,42 @@ import inspect
 import unittest
 from unittest.mock import AsyncMock, patch
 
-from main import AnalyzeEventRequest, AnalyzeEventResponse
+from src.api.schemas.betting_actions import AnalyzeEventRequest, AnalyzeEventResponse
+from src.services.action_betting_service import analyze_betting_event_pipeline
+from src.api.schemas.betting_actions import AnalyzeEventRequest, AnalyzeEventResponse, PriceEventRequest, ModelProbabilityRequest, EvaluateLinesRequest
+
+class _AnalyzeEventTestRegistry:
+    def is_supported_sport(self, sport):
+        return True
+
+    def confirmed_bets_allowed(self, sport):
+        return True
+
+    def classify_model_level(self, sport):
+        return "test"
+
+
+class _AnalyzeEventTestActionService:
+    def parse_markets_requested(self, markets):
+        if markets is None:
+            return []
+        if isinstance(markets, str):
+            return [item.strip() for item in markets.split(",") if item.strip()]
+        return list(markets)
+
+    async def fetch_event_odds_envelope(self, **kwargs):
+        return {
+            "ok": True,
+            "markets": [],
+            "event": {},
+            "odds": {},
+            "error": None,
+            "detail": None,
+        }
+
+
+def _test_utc_now():
+    return "2026-01-01T00:00:00Z"
 
 
 def _line(
@@ -38,34 +73,48 @@ def _model_result(row, final_probability=0.55, probability_type="blended_market_
 
 
 class TestAnalyzeEvent(unittest.TestCase):
-    def _run_analyze(
-        self,
-        price_response,
-        model_response,
-        evaluate_response=None,
-        request_kwargs=None,
-    ):
-        from main import action_analyze_betting_event
+    def _run_analyze(self, price_response, model_response=None, evaluate_response=None):
+        if model_response is None:
+            model_response = {"ok": True, "results": []}
+        if evaluate_response is None:
+            evaluate_response = {"ok": True, "results": []}
 
-        evaluate_response = evaluate_response or {"ok": True, "results": []}
-        request_kwargs = request_kwargs or {}
+        async def _price_event(_request):
+            return price_response
 
-        with patch("main.action_fetch_event_odds_envelope") as mock_odds, \
-             patch("main.action_price_betting_event", new_callable=AsyncMock) as mock_price, \
-             patch("main.action_calculate_model_probability", new_callable=AsyncMock) as mock_model, \
-             patch("main.action_evaluate_betting_lines", new_callable=AsyncMock) as mock_evaluate:
-            mock_odds.return_value = {"ok": True, "markets": []}
-            mock_price.return_value = price_response
-            mock_model.return_value = model_response
-            mock_evaluate.return_value = evaluate_response
+        async def _model_probability(_request):
+            return model_response
 
-            request = AnalyzeEventRequest(
-                sport="baseball_mlb",
-                league="baseball_mlb",
-                event_id="test-event-123",
-                **request_kwargs,
+        mock_evaluate = AsyncMock(return_value=evaluate_response)
+
+        payload = AnalyzeEventRequest(
+            sport="baseball",
+            league="mlb",
+            event_id="test-event",
+            markets="h2h",
+            provider="test",
+            bankroll=1000,
+            unit_size=10,
+            risk_profile="moderate",
+            max_stake_pct=0.05,
+            independent_inputs={},
+        )
+
+        response = asyncio.run(
+            analyze_betting_event_pipeline(
+                payload,
+                action_betting_service=_AnalyzeEventTestActionService(),
+                default_bookmakers="draftkings,fanduel,betmgm",
+                price_event=_price_event,
+                calculate_model_probability=_model_probability,
+                evaluate_lines=mock_evaluate,
+                PriceEventRequest=PriceEventRequest,
+                ModelProbabilityRequest=ModelProbabilityRequest,
+                EvaluateLinesRequest=EvaluateLinesRequest,
+                multi_sport_model_registry=_AnalyzeEventTestRegistry(),
+                utc_now=_test_utc_now,
             )
-            response = asyncio.run(action_analyze_betting_event(request))
+        )
 
         return response, mock_evaluate
 
@@ -144,10 +193,9 @@ class TestAnalyzeEvent(unittest.TestCase):
         self.assertIsNone(response.step_failed)
 
     def test_analyze_event_endpoint_import(self):
-        from main import action_analyze_betting_event
-
-        self.assertTrue(callable(action_analyze_betting_event))
-        self.assertTrue(inspect.iscoroutinefunction(action_analyze_betting_event))
+        
+        self.assertTrue(callable(analyze_betting_event_pipeline))
+        self.assertTrue(inspect.iscoroutinefunction(analyze_betting_event_pipeline))
 
     def test_analyze_event_request_validation_edge_cases_and_defaults(self):
         request = AnalyzeEventRequest(

@@ -18,7 +18,7 @@ from automation_scheduler.soccer_pressing_transition_context import evaluate_soc
 from automation_scheduler.soccer_referee_context import evaluate_soccer_referee_context
 from automation_scheduler.soccer_set_piece_context import evaluate_soccer_set_piece_context
 from automation_scheduler.soccer_tactical_context import evaluate_soccer_tactical_context
-from main import app
+from tests.support.action_imports import app
 
 
 def _team(**extra):

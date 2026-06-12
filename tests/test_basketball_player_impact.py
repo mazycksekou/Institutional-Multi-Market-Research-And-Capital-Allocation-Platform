@@ -14,11 +14,7 @@ from automation_scheduler.response_compactor import (
     compact_basketball_player_impact_readiness_response,
     compact_basketball_player_impact_response,
 )
-from main import (
-    AutomationBasketballPlayerImpactRequest,
-    automation_basketball_player_impact_endpoint,
-    get_automation_basketball_player_impact_readiness_endpoint,
-)
+from tests.support.action_imports import AutomationBasketballPlayerImpactRequest, automation_basketball_player_impact_endpoint, get_automation_basketball_player_impact_readiness_endpoint
 
 
 def candidate(**extra):

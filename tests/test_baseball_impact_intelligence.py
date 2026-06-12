@@ -19,7 +19,7 @@ from automation_scheduler.baseball_park_weather_umpire_context import evaluate_b
 from automation_scheduler.baseball_pitcher_impact import evaluate_baseball_pitcher_impact
 from automation_scheduler.baseball_run_value_impact import evaluate_baseball_run_value_impact
 from automation_scheduler.response_compactor import compact_baseball_impact_diagnostics_response
-from main import app
+from tests.support.action_imports import app
 
 
 def _team_context(**extra):

@@ -18,7 +18,7 @@ from automation_scheduler.golf_short_game_putting_context import evaluate_golf_s
 from automation_scheduler.golf_strokes_gained_impact import evaluate_golf_strokes_gained_impact
 from automation_scheduler.golf_weather_wave_context import evaluate_golf_weather_wave_context
 from automation_scheduler.response_compactor import compact_golf_impact_diagnostics_response, redact_and_limit_payload
-from main import app
+from tests.support.action_imports import app
 
 
 def _tournament_context(**extra):

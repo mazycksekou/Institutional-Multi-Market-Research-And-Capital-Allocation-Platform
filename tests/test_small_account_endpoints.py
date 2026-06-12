@@ -2,7 +2,7 @@ import unittest
 
 from fastapi.testclient import TestClient
 
-from main import app
+from tests.support.action_imports import app
 
 
 class TestSmallAccountEndpoints(unittest.TestCase):

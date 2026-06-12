@@ -13,7 +13,7 @@ from automation_scheduler.manifold_no_bet_detector import detect_manifold_trap
 from automation_scheduler.market_state_manifold import map_market_state, nearest_historical_neighbors
 from automation_scheduler.response_compactor import compact_manifold_map_response
 from automation_scheduler.sportsbook_manifold_mapper import map_sportsbook_full_board
-from main import app
+from tests.support.action_imports import app
 
 
 class TestMarketStateManifold(unittest.TestCase):

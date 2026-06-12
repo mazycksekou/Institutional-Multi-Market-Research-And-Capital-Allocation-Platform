@@ -6,7 +6,7 @@ from unittest.mock import patch
 from fastapi.testclient import TestClient
 
 from automation_scheduler.data_source_registry import MANDATORY_LANES
-from main import app
+from tests.support.action_imports import app
 
 
 class TestDataSourceEndpoints(unittest.TestCase):

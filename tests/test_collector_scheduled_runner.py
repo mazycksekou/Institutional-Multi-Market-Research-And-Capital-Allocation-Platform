@@ -10,7 +10,7 @@ from automation_scheduler.collector_scheduled_runner import (
     run_scheduled_collector_cycle,
     validate_cron_token,
 )
-from main import app
+from tests.support.action_imports import app
 
 
 class TestCollectorScheduledRunner(unittest.TestCase):

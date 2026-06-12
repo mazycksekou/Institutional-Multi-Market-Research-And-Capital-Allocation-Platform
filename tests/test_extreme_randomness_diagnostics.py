@@ -16,7 +16,7 @@ from automation_scheduler.strategy_registry import get_strategy_registry
 from automation_scheduler.tail_event_classifier import classify_tail_event
 from automation_scheduler.tracy_widom_research import evaluate_tracy_widom_research
 from automation_scheduler.universality_research_lanes import build_universality_research_lane
-from main import app
+from tests.support.action_imports import app
 
 
 class TestExtremeRandomnessDiagnostics(unittest.TestCase):

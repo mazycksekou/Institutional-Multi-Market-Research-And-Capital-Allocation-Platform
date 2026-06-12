@@ -3,7 +3,7 @@ import unittest
 from copy import deepcopy
 
 import multi_sport_model_registry as registry
-from main import ScreenshotAnalysisRequest, SportAnalysisRequest, action_analyze_sport_model, action_analyze_ticket_screenshot
+from tests.support.action_imports import ScreenshotAnalysisRequest, SportAnalysisRequest, action_analyze_sport_model, action_analyze_ticket_screenshot
 
 
 MODEL_NAME = "badminton_serve_return_rally_momentum_shuttle_monte_carlo_model"

@@ -18,7 +18,7 @@ from automation_scheduler.contrastive_embedding_diagnostics import (
 from automation_scheduler.dynamical_systems_diagnostics import run_dynamical_systems_diagnostics, run_sliding_window_topology
 from automation_scheduler.information_theory_diagnostics import run_information_theory_diagnostics
 from automation_scheduler.topological_red_team import run_topological_red_team
-from main import app
+from tests.support.action_imports import app
 
 
 def _candidate(**extra):
