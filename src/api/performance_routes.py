@@ -1,6 +1,8 @@
-from typing import Any
+from typing import Any, Optional
 
 from fastapi import Body, Depends, HTTPException, Query
+from fastapi.openapi.utils import get_openapi
+from fastapi.routing import APIRoute
 
 from src.api.schemas.performance import PerformanceBacktestRequest
 
@@ -8,13 +10,10 @@ from src.api.schemas.performance import PerformanceBacktestRequest
 def register_performance_routes(
     app: Any,
     *,
-    APIRoute_dep: Any,
     API_BASE_URL_dep: Any,
-    Optional_dep: Any,
     automation_scheduler_dep: Any,
     compact_performance_health_dep: Any,
     compact_performance_report_dep: Any,
-    get_openapi_dep: Any,
     redact_and_limit_payload_dep: Any,
 ) -> None:
     """
@@ -22,13 +21,10 @@ def register_performance_routes(
 
     Canonical owner: src/api/performance_routes.py
     """
-    APIRoute = APIRoute_dep
     API_BASE_URL = API_BASE_URL_dep
-    Optional = Optional_dep
     automation_scheduler = automation_scheduler_dep
     compact_performance_health = compact_performance_health_dep
     compact_performance_report = compact_performance_report_dep
-    get_openapi = get_openapi_dep
     redact_and_limit_payload = redact_and_limit_payload_dep
 
     @app.get("/api/performance/health", operation_id="getPerformanceHealth")

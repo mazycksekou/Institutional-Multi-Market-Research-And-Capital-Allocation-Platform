@@ -20,7 +20,6 @@ from src.api.schemas.automation import (
 def register_automation_sport_impact_routes(
     app: Any,
     *,
-    Optional_dep: Any,
     automation_scheduler_dep: Any,
     compact_advanced_red_team_response_dep: Any,
     compact_baseball_impact_diagnostics_response_dep: Any,
@@ -48,7 +47,6 @@ def register_automation_sport_impact_routes(
 
     Canonical owner: src/api/automation_sport_impact_routes.py
     """
-    Optional = Optional_dep
     automation_scheduler = automation_scheduler_dep
     compact_advanced_red_team_response = compact_advanced_red_team_response_dep
     compact_baseball_impact_diagnostics_response = compact_baseball_impact_diagnostics_response_dep

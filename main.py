@@ -12,7 +12,6 @@ from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
-from fastapi.routing import APIRoute
 
 from betting_providers import aliases as betting_aliases
 from betting_providers.base import PREDICTION_MARKET
@@ -434,13 +433,10 @@ register_governance_routes(
 )
 register_performance_routes(
     app,
-    APIRoute_dep=APIRoute,
     API_BASE_URL_dep=API_BASE_URL,
-    Optional_dep=Optional,
     automation_scheduler_dep=automation_scheduler,
     compact_performance_health_dep=compact_performance_health,
     compact_performance_report_dep=compact_performance_report,
-    get_openapi_dep=get_openapi,
     redact_and_limit_payload_dep=redact_and_limit_payload,
 )
 register_market_utility_routes(
@@ -475,7 +471,6 @@ register_automation_core_routes(
 )
 register_automation_sport_impact_routes(
     app,
-    Optional_dep=Optional,
     automation_scheduler_dep=automation_scheduler,
     compact_advanced_red_team_response_dep=compact_advanced_red_team_response,
     compact_baseball_impact_diagnostics_response_dep=compact_baseball_impact_diagnostics_response,
