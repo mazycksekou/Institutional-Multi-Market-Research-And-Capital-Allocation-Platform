@@ -11,7 +11,7 @@ from model_governance.settlement_liquidity_gate import evaluate_settlement_liqui
 
 from .arbitrage_detector import detect_arbitrage
 from .alert_engine import generate_alert_candidates
-from .backtesting import run_backtesting_scaffold
+from .backtesting_engine import run_backtesting_scaffold
 from .calibration import build_calibration_report
 from .data_paths import resolve_base_data_dir
 from .cross_book_line_comparator import group_cross_book_markets

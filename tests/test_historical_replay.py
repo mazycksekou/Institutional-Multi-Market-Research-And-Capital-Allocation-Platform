@@ -2,7 +2,7 @@ import json
 import unittest
 from tempfile import TemporaryDirectory
 
-from automation_scheduler.historical_replay import (
+from automation_scheduler.backtesting_engine import (
     load_historical_rows,
     replay_rows,
     summarize_replay_result,

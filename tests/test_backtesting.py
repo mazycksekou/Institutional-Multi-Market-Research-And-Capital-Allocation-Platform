@@ -1,6 +1,6 @@
 import unittest
 
-from automation_scheduler.backtesting import run_backtesting_scaffold
+from automation_scheduler.backtesting_engine import run_backtesting_scaffold
 
 
 class TestBacktesting(unittest.TestCase):
