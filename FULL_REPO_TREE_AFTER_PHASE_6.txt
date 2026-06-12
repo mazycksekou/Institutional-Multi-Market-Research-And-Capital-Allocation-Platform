@@ -518,6 +518,7 @@ src/api/automation_deepseek_routes.py
 src/api/automation_institutional_lab_routes.py
 src/api/automation_manifold_routes.py
 src/api/automation_review_outcomes_routes.py
+src/api/automation_run_once_routes.py
 src/api/automation_security.py
 src/api/automation_small_account_routes.py
 src/api/automation_sport_impact_routes.py

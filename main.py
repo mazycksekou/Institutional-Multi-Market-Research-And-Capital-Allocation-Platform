@@ -39,6 +39,7 @@ from src.api.automation_manifold_routes import register_automation_manifold_rout
 from src.api.automation_small_account_routes import register_automation_small_account_routes
 from src.api.automation_data_source_routes import register_automation_data_source_routes
 from src.api.automation_institutional_lab_routes import register_automation_institutional_lab_routes
+from src.api.automation_run_once_routes import register_automation_run_once_routes
 from src.api.schemas.bet_csv import BetLogRequest
 from src.api.schemas.automation import (
     AutomationAdvancedShapeDiagnosticsRequest,
@@ -57,7 +58,6 @@ from src.api.schemas.automation import (
     AutomationManifoldMapRequest,
     AutomationOutcomeIngestRequest,
     AutomationOutcomeLocalSettlementImportRequest,
-    AutomationRunOnceRequest,
     AutomationSettlementDiscoveryRequest,
     AutomationSoccerImpactDiagnosticsRequest,
     AutomationTennisImpactDiagnosticsRequest,
@@ -559,22 +559,9 @@ register_automation_institutional_lab_routes(
     compact_institutional_report_response_dep=compact_institutional_report_response,
     redact_and_limit_payload_dep=redact_and_limit_payload,
 )
-
-
-@app.post("/api/automation/run-once", operation_id="runAutomationSchedulerOnce")
-async def run_automation_scheduler_once(payload: AutomationRunOnceRequest, verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=10)):
-    if payload.dry_run is not True:
-        raise HTTPException(status_code=400, detail="automation scheduler run-once only supports dry_run=true")
-    try:
-        result = automation_scheduler.run_scheduler_once(
-            injected_data=payload.injected_data,
-            dry_run=payload.dry_run,
-            run_key=payload.run_key,
-        )
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-    compact = compact_run_once_response(result)
-    cap = min(max(int(limit), 1), 100 if verbose else 10)
-    if verbose or include_debug:
-        compact["debug"] = redact_and_limit_payload(result, limit=cap, verbose=verbose)
-    return compact
+register_automation_run_once_routes(
+    app,
+    automation_scheduler_dep=automation_scheduler,
+    compact_run_once_response_dep=compact_run_once_response,
+    redact_and_limit_payload_dep=redact_and_limit_payload,
+)
