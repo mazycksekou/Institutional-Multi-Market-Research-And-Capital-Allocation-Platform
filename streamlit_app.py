@@ -255,7 +255,7 @@ show_easy_dictionary()
 menu = st.sidebar.radio(
     "Main Menu",
     [
-        "Home / Explain Like I'm 8",
+        "Operator Summary",
         "Data Library",
         "Paper Bets",
         "Backtest Dashboard",
@@ -269,7 +269,7 @@ menu = st.sidebar.radio(
 
 
 if menu == "Home / Explain Like I'm 8":
-    st.header("Home / Explain Like I'm 8")
+    st.header("Operator Summary")
 
     snapshot = load_dashboard_snapshot()
     cards = simple_home_cards(snapshot)

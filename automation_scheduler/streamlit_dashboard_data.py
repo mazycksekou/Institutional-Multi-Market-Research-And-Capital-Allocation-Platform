@@ -110,7 +110,7 @@ SAFE_DEFAULTS: dict[str, Any] = {
 
 
 RISK_PRESETS: dict[str, dict[str, Any]] = {
-    "Kid-safe demo / Tiny risk": {
+    "Tiny Risk Demo": {
         "unit_size_percent": 0.25,
         "max_stake_percent": 0.5,
         "max_drawdown_stop_percent": 5.0,

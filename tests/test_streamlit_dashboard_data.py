@@ -20,7 +20,7 @@ def test_easy_labels_include_bankroll_language():
 
 
 def test_risk_presets_include_kid_safe_and_conservative():
-    assert "Kid-safe demo / Tiny risk" in RISK_PRESETS
+    assert "Tiny Risk Demo" in RISK_PRESETS
     assert "Conservative" in RISK_PRESETS
 
 
