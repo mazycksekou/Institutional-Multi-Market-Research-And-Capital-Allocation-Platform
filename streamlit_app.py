@@ -383,11 +383,13 @@ elif menu == "Paper Bets":
         sport_filter = st.selectbox("Sport filter", ["All"] + sorted(str(x) for x in table.get("sport", pd.Series(dtype=str)).dropna().unique()))
         market_filter = st.selectbox("Bet type filter", ["All"] + sorted(str(x) for x in table.get("market", pd.Series(dtype=str)).dropna().unique()))
 
-        filtered = table.copy()
-        if sport_filter != "All" and "sport" in filtered.columns:
-            filtered = filtered[filtered["sport"].astype(str) == sport_filter]
-        if market_filter != "All" and "market" in filtered.columns:
-            filtered = filtered[filtered["market"].astype(str) == market_filter]
+        # Numeric‑safe copy for charts, Arrow‑safe copy for display
+        numeric_table = pd.DataFrame(rows)
+        table = df(rows)
+        if sport_filter != "All" and "sport" in numeric_table.columns:
+            filtered = table[table["sport"].astype(str) == sport_filter]
+        if market_filter != "All" and "market" in numeric_table.columns:
+            filtered = table[table["market"].astype(str) == market_filter]
 
         st.dataframe(filtered, use_container_width=True, hide_index=True)
 
