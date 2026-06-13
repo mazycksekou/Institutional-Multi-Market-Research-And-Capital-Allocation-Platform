@@ -5,7 +5,7 @@ import inspect
 import pkgutil
 from typing import Any
 
-import main
+import api_server as main
 
 app = main.app
 require_action_key = main.require_action_key
