@@ -273,6 +273,7 @@ def run_sqlite_historical_backtest(
     rows_converted = len(backtest_rows)
 
     bt_result: dict[str, Any] = {}
+    exception_error: str | None = None
     if rows_converted > 0:
         try:
             bt_result = run_backtest(
@@ -281,6 +282,7 @@ def run_sqlite_historical_backtest(
                 strategy_config=strategy_config,
             )
         except Exception as exc:
+            exception_error = str(exc)
             bt_result = {"error": str(exc)}
     else:
         bt_result = {
@@ -314,8 +316,13 @@ def run_sqlite_historical_backtest(
         "backtest_ran": rows_converted > 0,
     }
 
+    # ok is True when we loaded rows, converted them, and run_backtest
+    # completed without raising an exception.  A non‑exceptional run_backtest
+    # is considered a success even if it produced zero bets or negative ROI.
+    ok = rows_converted > 0 and exception_error is None
+
     return {
-        "ok": bool(bt_result.get("ok", False)) if rows_converted > 0 else False,
+        "ok": ok,
         "bridge_version": HISTORICAL_BACKTEST_BRIDGE_VERSION,
         "model_id": model_id,
         "query": query_params,
@@ -338,24 +345,31 @@ def summarize_sqlite_historical_backtest(
     bt = result.get("backtest_result") or {}
     proj = result.get("projection_summary") or {}
 
-    bets = bt.get("bets", 0)
-    no_bets = bt.get("no_bets", 0)
-    profit_loss = bt.get("profit_loss", 0.0)
-    roi_percent = bt.get("roi_percent", 0.0)
-    max_drawdown_percent = bt.get("max_drawdown_percent", 0.0)
+    # The bankroll simulation summary lives inside backtest_result under
+    # the key "strategy_bankroll_summary".  Use that when available.
+    bankroll = bt.get("strategy_bankroll_summary", {})
 
-    missing_keys = any(
-        k not in bt for k in ("bets", "no_bets", "profit_loss", "roi_percent", "max_drawdown_percent")
-    )
+    bets = bankroll.get("bets", bt.get("bets", 0))
+    no_bets = bankroll.get("no_bets", bt.get("no_bets", 0))
+    profit_loss = bankroll.get("profit_loss", bt.get("profit_loss", 0.0))
+    roi_percent = bankroll.get("roi_percent", bt.get("roi_percent", 0.0))
+    max_drawdown_percent = bankroll.get("max_drawdown_percent", bt.get("max_drawdown_percent", 0.0))
+
+    # projection_ready only requires that rows were loaded and converted,
+    # and that the backtest completed without an exception.
     projection_ready = (
-        result.get("rows_loaded", 0) > 0 and not missing_keys
+        bool(result.get("ok")) and
+        result.get("rows_loaded", 0) > 0 and
+        result.get("rows_converted", 0) > 0
     )
     reason = ""
     if not projection_ready:
         if result.get("rows_loaded", 0) == 0:
             reason = "no rows loaded from SQLite"
-        elif missing_keys:
-            reason = "backtest_result missing expected summary fields"
+        elif result.get("rows_converted", 0) == 0:
+            reason = "rows converted is 0"
+        elif not result.get("ok"):
+            reason = "bridge result indicates failure"
 
     return {
         "ok": bool(result.get("ok")),
