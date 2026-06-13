@@ -21,7 +21,7 @@ from .calibration import calculate_calibration_metrics, summarize_outcome_covera
 from .data_paths import get_runtime_data_path
 from .backtest_schema import normalize_backtest_row, normalize_backtest_rows, validate_no_leakage_features
 from .backtest_leakage import assert_backtest_rows_no_hard_leakage, summarize_backtest_leakage_report
-from .backtest_strategy_bankroll import simulate_backtest_bankroll, summarize_strategy_bankroll_report
+from .backtest_strategy_bankroll import apply_regression_strategy_to_rows, simulate_backtest_bankroll, summarize_strategy_bankroll_report
 
 # Absorbed Phase 10B canonical backtesting helpers.
 def _group_counts(rows: list[dict[str, Any]], key: str) -> dict[str, int]:
@@ -228,6 +228,7 @@ def run_backtest(
     historical_rows_path: str | None = None,
     rows: list[dict[str, Any]] | None = None,
     base_data_dir: str = "data",
+    strategy_config: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     if rows is not None:
         rows = normalize_backtest_rows(rows)
@@ -237,6 +238,8 @@ def run_backtest(
     source_rows = list(rows or [])
     if historical_rows_path:
         source_rows = load_historical_rows(historical_rows_path)
+    if strategy_config:
+        source_rows = apply_regression_strategy_to_rows(source_rows, **strategy_config)
     leakage_report = assert_backtest_rows_no_hard_leakage(source_rows)
     strategy_bankroll_report = simulate_backtest_bankroll(source_rows)
     replay = replay_rows(source_rows, model_id=model_id)
@@ -332,6 +335,7 @@ def run_backtest(
         "leakage_report": summarize_backtest_leakage_report(leakage_report),
         "strategy_bankroll_summary": summarize_strategy_bankroll_report(strategy_bankroll_report),
         "strategy_bankroll_report": strategy_bankroll_report,
+        "strategy_config": strategy_config or {},
         "ece": ece,
         "clv_path": str(clv_path),
         "calibration_path": str(calibration_path),

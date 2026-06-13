@@ -271,3 +271,91 @@ def summarize_strategy_bankroll_report(report: Mapping[str, Any]) -> dict[str, A
         "max_drawdown_percent": report.get("max_drawdown_percent", 0.0),
         "win_rate": report.get("win_rate", 0.0),
     }
+
+
+def _clamp_probability(value: float, floor: float = 0.01, ceiling: float = 0.99) -> float:
+    return max(float(floor), min(float(ceiling), float(value)))
+
+
+def calculate_regression_probability(
+    row: Mapping[str, Any],
+    *,
+    feature_weights: Mapping[str, float] | None = None,
+    intercept: float = 0.5,
+    probability_floor: float = 0.01,
+    probability_ceiling: float = 0.99,
+) -> dict[str, Any]:
+    """Calculate a transparent regression-style probability from known features.
+
+    This is a strategy hook, not a trained model. It lets us test candidate
+    feature weights inside the canonical backtest flow before building a true
+    training pipeline.
+    """
+
+    normalized = normalize_backtest_row(row)
+    features = normalized.get("features_known_at_decision_time")
+
+    if not isinstance(features, Mapping):
+        features = normalized.get("features")
+
+    if not isinstance(features, Mapping):
+        features = {}
+
+    weights = dict(feature_weights or {})
+    contribution_details: dict[str, float] = {}
+    score = float(intercept)
+
+    for feature_name, weight in weights.items():
+        value = _to_float(features.get(feature_name), 0.0)
+        contribution = value * float(weight)
+        contribution_details[str(feature_name)] = round(contribution, 8)
+        score += contribution
+
+    probability = _clamp_probability(score, floor=probability_floor, ceiling=probability_ceiling)
+
+    return {
+        "ok": True,
+        "strategy": "transparent_weighted_regression_probability",
+        "probability": round(probability, 8),
+        "raw_score": round(score, 8),
+        "intercept": float(intercept),
+        "feature_weights": weights,
+        "contributions": contribution_details,
+        "features_used": sorted(weights.keys()),
+    }
+
+
+def apply_regression_strategy_to_rows(
+    rows: list[Mapping[str, Any]] | tuple[Mapping[str, Any], ...] | None,
+    *,
+    feature_weights: Mapping[str, float] | None = None,
+    intercept: float = 0.5,
+    probability_floor: float = 0.01,
+    probability_ceiling: float = 0.99,
+    override_existing_probability: bool = True,
+) -> list[dict[str, Any]]:
+    """Apply regression-style probabilities to rows before bankroll simulation."""
+
+    output: list[dict[str, Any]] = []
+
+    for row in rows or []:
+        normalized = normalize_backtest_row(row)
+        result = calculate_regression_probability(
+            normalized,
+            feature_weights=feature_weights,
+            intercept=intercept,
+            probability_floor=probability_floor,
+            probability_ceiling=probability_ceiling,
+        )
+
+        enriched = dict(normalized)
+        enriched["regression_strategy"] = result
+        enriched["regression_probability"] = result["probability"]
+
+        if override_existing_probability or enriched.get("model_probability") in (None, ""):
+            enriched["model_probability"] = result["probability"]
+
+        output.append(enriched)
+
+    return output
+
