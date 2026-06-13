@@ -145,6 +145,48 @@ def extract_backtest_rows_from_artifact(path: str | Path) -> dict[str, Any]:
     }
 
 
+
+def summarize_dataset_field_coverage(rows: list[Mapping[str, Any]]) -> dict[str, Any]:
+    total = len(rows)
+    fields = [
+        "sport",
+        "league",
+        "market",
+        "event_id",
+        "odds_at_decision_time",
+        "model_probability",
+        "features_known_at_decision_time",
+        "final_result",
+        "profit_loss",
+        "closing_line",
+        "clv",
+    ]
+
+    coverage: dict[str, dict[str, Any]] = {}
+    for field in fields:
+        present = sum(1 for row in rows if row.get(field) not in (None, ""))
+        coverage[field] = {
+            "present": present,
+            "missing": total - present,
+            "coverage_percent": round((present / total) * 100, 4) if total else 0.0,
+        }
+
+    sport_counts: dict[str, int] = {}
+    league_counts: dict[str, int] = {}
+    for row in rows:
+        sport = row.get("sport") or "UNKNOWN"
+        league = row.get("league") or "UNKNOWN"
+        sport_counts[str(sport)] = sport_counts.get(str(sport), 0) + 1
+        league_counts[str(league)] = league_counts.get(str(league), 0) + 1
+
+    return {
+        "row_count": total,
+        "coverage": coverage,
+        "sport_counts": dict(sorted(sport_counts.items(), key=lambda item: (-item[1], item[0]))[:50]),
+        "league_counts": dict(sorted(league_counts.items(), key=lambda item: (-item[1], item[0]))[:50]),
+    }
+
+
 def build_canonical_backtest_dataset(
     *,
     artifact_paths: list[str | Path] | tuple[str | Path, ...] | None = None,
@@ -258,6 +300,7 @@ def build_canonical_backtest_dataset(
         "dropped_rows": dropped_rows[:200],
         "required_fields": list(REQUIRED_BACKTEST_FIELDS),
         "missing_required_field_counts": dict(sorted(missing_counts.items())),
+        "field_coverage": summarize_dataset_field_coverage(filtered_rows),
         "leakage_summary": leakage_summary,
         "output_jsonl_path": str(output_path),
         "schema_report_path": str(schema_report_path),
@@ -293,6 +336,7 @@ def summarize_canonical_dataset_report(report: Mapping[str, Any]) -> dict[str, A
         "rows_written": report.get("rows_written", 0),
         "rows_dropped": report.get("rows_dropped", 0),
         "missing_required_field_counts": dict(report.get("missing_required_field_counts", {})),
+        "field_coverage": dict(report.get("field_coverage", {})),
         "leakage_summary": dict(report.get("leakage_summary", {})),
         "output_jsonl_path": report.get("output_jsonl_path"),
         "schema_report_path": report.get("schema_report_path"),

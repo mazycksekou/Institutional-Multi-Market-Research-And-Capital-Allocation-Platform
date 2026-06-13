@@ -22,6 +22,29 @@ from typing import Any
 
 from .backtest_schema import normalize_backtest_row
 
+_REGRESSION_CONFIG_KEYS = {
+    "feature_weights",
+    "intercept",
+    "probability_floor",
+    "probability_ceiling",
+    "override_existing_probability",
+}
+
+_REGRESSION_METADATA_KEYS = {
+    "profile_name",
+    "profile_scope",
+    "selected_profile_key",
+    "selection_reason",
+}
+
+
+def split_regression_strategy_config(config: Mapping[str, Any] | None) -> tuple[dict[str, Any], dict[str, Any]]:
+    raw = dict(config or {})
+    regression_config = {key: raw[key] for key in _REGRESSION_CONFIG_KEYS if key in raw}
+    metadata = {key: raw[key] for key in _REGRESSION_METADATA_KEYS if key in raw}
+    return regression_config, metadata
+
+
 
 def _to_float(value: Any, default: float = 0.0) -> float:
     try:
@@ -333,10 +356,21 @@ def apply_regression_strategy_to_rows(
     probability_floor: float = 0.01,
     probability_ceiling: float = 0.99,
     override_existing_probability: bool = True,
+    profile_name: str | None = None,
+    profile_scope: str | None = None,
+    selected_profile_key: str | None = None,
+    selection_reason: str | None = None,
 ) -> list[dict[str, Any]]:
     """Apply regression-style probabilities to rows before bankroll simulation."""
 
     output: list[dict[str, Any]] = []
+    metadata = {
+        "profile_name": profile_name,
+        "profile_scope": profile_scope,
+        "selected_profile_key": selected_profile_key,
+        "selection_reason": selection_reason,
+    }
+    metadata = {key: value for key, value in metadata.items() if value not in (None, "")}
 
     for row in rows or []:
         normalized = normalize_backtest_row(row)
@@ -347,6 +381,9 @@ def apply_regression_strategy_to_rows(
             probability_floor=probability_floor,
             probability_ceiling=probability_ceiling,
         )
+
+        if metadata:
+            result["profile"] = dict(metadata)
 
         enriched = dict(normalized)
         enriched["regression_strategy"] = result

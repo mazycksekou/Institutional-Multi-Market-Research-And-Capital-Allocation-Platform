@@ -22,6 +22,7 @@ from .data_paths import get_runtime_data_path
 from .backtest_schema import normalize_backtest_row, normalize_backtest_rows, validate_no_leakage_features
 from .backtest_leakage import assert_backtest_rows_no_hard_leakage, summarize_backtest_leakage_report
 from .backtest_strategy_bankroll import apply_regression_strategy_to_rows, simulate_backtest_bankroll, summarize_strategy_bankroll_report
+from .backtest_strategy_profiles import build_strategy_config_for_row
 
 # Absorbed Phase 10B canonical backtesting helpers.
 def _group_counts(rows: list[dict[str, Any]], key: str) -> dict[str, int]:
@@ -162,6 +163,36 @@ def summarize_replay_result(result: dict[str, Any]) -> dict[str, Any]:
 
 
 
+
+def _apply_backtest_strategy_config(
+    rows: list[dict[str, Any]],
+    strategy_config: dict[str, Any] | None,
+) -> list[dict[str, Any]]:
+    if not strategy_config:
+        return rows
+
+    mode = strategy_config.get("mode") or strategy_config.get("profile_mode")
+
+    if mode != "sport_profiles":
+        return apply_regression_strategy_to_rows(rows, **strategy_config)
+
+    profile_scope = strategy_config.get("profile_scope", "auto")
+    all_sports_profile = strategy_config.get("all_sports_profile")
+    sport_profiles = strategy_config.get("sport_profiles")
+
+    enriched_rows: list[dict[str, Any]] = []
+    for row in rows:
+        row_config = build_strategy_config_for_row(
+            row,
+            profile_scope=profile_scope,
+            all_sports_profile=all_sports_profile,
+            sport_profiles=sport_profiles,
+        )
+        enriched_rows.extend(apply_regression_strategy_to_rows([row], **row_config))
+
+    return enriched_rows
+
+
 def _to_float(value: Any, default: float = 0.0) -> float:
     try:
         return float(value)
@@ -239,7 +270,7 @@ def run_backtest(
     if historical_rows_path:
         source_rows = load_historical_rows(historical_rows_path)
     if strategy_config:
-        source_rows = apply_regression_strategy_to_rows(source_rows, **strategy_config)
+        source_rows = _apply_backtest_strategy_config(source_rows, strategy_config)
     leakage_report = assert_backtest_rows_no_hard_leakage(source_rows)
     strategy_bankroll_report = simulate_backtest_bankroll(source_rows)
     replay = replay_rows(source_rows, model_id=model_id)
