@@ -1,0 +1,950 @@
+"""Streamlit dashboard data helpers.
+
+Pure Python helper layer for the local operator dashboard.
+
+Rules:
+- Streamlit UI must stay thin.
+- Betting/backtest logic stays in canonical repo modules.
+- This module can be tested without Streamlit installed.
+- Missing dashboard files are handled safely and can be generated on demand.
+"""
+
+from __future__ import annotations
+
+from collections import Counter
+from collections.abc import Mapping, Sequence
+from pathlib import Path
+from typing import Any
+import datetime
+import json
+import math
+import subprocess
+
+
+from .backtest_dataset_builder import (
+    build_canonical_backtest_dataset,
+    load_canonical_backtest_dataset,
+    summarize_canonical_dataset_report,
+)
+from .backtest_strategy_profiles import (
+    describe_regression_profiles,
+    infer_strategy_profile_key_from_row,
+    normalize_strategy_profile_key,
+)
+from .backtesting_engine import run_backtest
+
+
+DEFAULT_DASHBOARD_JSON_PATH = Path("data/backtests/dashboard/latest_dashboard.json")
+DEFAULT_DASHBOARD_MARKDOWN_PATH = Path("data/backtests/dashboard/latest_dashboard.md")
+DEFAULT_CANONICAL_JSONL_PATH = Path("data/backtests/canonical/latest.jsonl")
+DEFAULT_CANONICAL_SCHEMA_PATH = Path("data/backtests/canonical/schema_report.json")
+DEFAULT_PAPER_LEDGER_PATH = Path("data/paper_ledger/latest.json")
+DEFAULT_REVIEW_QUEUE_PATH = Path("data/review_queue/latest.json")
+DEFAULT_REVIEW_QUEUE_FULL_PATH = Path("data/review_queue/review_queue.json")
+DEFAULT_SYSTEM_HEALTH_PATH = Path("data/system_health/health.json")
+
+
+DATA_LIBRARY_PATHS: dict[str, Path] = {
+    "Dashboard JSON": DEFAULT_DASHBOARD_JSON_PATH,
+    "Dashboard Markdown": DEFAULT_DASHBOARD_MARKDOWN_PATH,
+    "Canonical Dataset JSONL": DEFAULT_CANONICAL_JSONL_PATH,
+    "Canonical Schema Report": DEFAULT_CANONICAL_SCHEMA_PATH,
+    "Paper Ledger Latest": DEFAULT_PAPER_LEDGER_PATH,
+    "Review Queue Latest": DEFAULT_REVIEW_QUEUE_PATH,
+    "Review Queue Full": DEFAULT_REVIEW_QUEUE_FULL_PATH,
+    "System Health": DEFAULT_SYSTEM_HEALTH_PATH,
+}
+
+
+EASY_LABELS: dict[str, str] = {
+    "bankroll": "Money in the account",
+    "bankroll_curve": "Line that shows money going up or down",
+    "starting_bankroll": "Starting money",
+    "ending_bankroll": "Money after test",
+    "current_bankroll": "Money right now",
+    "unit_size": "Normal bet size",
+    "stake": "Bet amount",
+    "profit_loss": "Money won or lost",
+    "pnl": "Money won or lost",
+    "roi_percent": "Return percent",
+    "max_drawdown_percent": "Worst drop percent",
+    "drawdown": "How far the money dropped from the high point",
+    "model_probability": "Model chance",
+    "market_implied_probability": "Market chance",
+    "edge": "Model advantage",
+    "clv": "Closing line value",
+    "closing_line": "Final market price",
+    "sport": "Sport",
+    "league": "League",
+    "market": "Bet type",
+    "odds": "Odds",
+    "profile": "Model profile",
+    "profile_name": "Model profile",
+    "selected_profile_key": "Selected model profile",
+    "features_known_at_decision_time": "Info known before the bet",
+    "final_result": "Final result",
+    "regression tactic": "A way to turn features into a model chance",
+    "all_sports": "One model setup for every sport",
+    "sport_specific": "A model setup picked for one sport",
+    "feature_weights": "Numbers that tell the model what matters more",
+    "intercept": "Starting chance before features move it",
+    "probability_floor": "Lowest chance allowed",
+    "probability_ceiling": "Highest chance allowed",
+    "override_existing_probability": "Let this tactic replace the old model chance",
+}
+
+
+SAFE_DEFAULTS: dict[str, Any] = {
+    "starting_bankroll": 1000.0,
+    "unit_size": 10.0,
+    "max_rows": 2000,
+    "minimum_edge": 0.0,
+    "minimum_model_probability": 0.0,
+    "probability_floor": 0.01,
+    "probability_ceiling": 0.99,
+    "intercept": 0.5,
+    "override_existing_probability": True,
+    "require_core_fields": False,
+    "force_rebuild_dataset": False,
+}
+
+
+RISK_PRESETS: dict[str, dict[str, Any]] = {
+    "Kid-safe demo / Tiny risk": {
+        "unit_size_percent": 0.25,
+        "max_stake_percent": 0.5,
+        "max_drawdown_stop_percent": 5.0,
+        "explanation": "Tiny bets. Easy to watch. Very slow swings.",
+    },
+    "Conservative": {
+        "unit_size_percent": 1.0,
+        "max_stake_percent": 2.0,
+        "max_drawdown_stop_percent": 10.0,
+        "explanation": "Small bets. Good for learning and paper testing.",
+    },
+    "Moderate": {
+        "unit_size_percent": 2.0,
+        "max_stake_percent": 4.0,
+        "max_drawdown_stop_percent": 15.0,
+        "explanation": "Bigger swings. Only for stronger evidence.",
+    },
+    "Aggressive paper only": {
+        "unit_size_percent": 5.0,
+        "max_stake_percent": 8.0,
+        "max_drawdown_stop_percent": 25.0,
+        "explanation": "Big swings. Paper testing only.",
+    },
+    "Custom": {
+        "unit_size_percent": None,
+        "max_stake_percent": None,
+        "max_drawdown_stop_percent": None,
+        "explanation": "You choose the numbers.",
+    },
+}
+
+
+REGRESSION_TACTICS: dict[str, dict[str, Any]] = {
+    "Use existing model probability": {
+        "mode": "existing_probability",
+        "friendly": "Use the chance already in the data.",
+    },
+    "All-sports regression": {
+        "mode": "sport_profiles",
+        "profile_scope": "all_sports",
+        "friendly": "Use one simple tactic for every sport.",
+    },
+    "Sport-specific regression": {
+        "mode": "sport_profiles",
+        "profile_scope": "auto",
+        "friendly": "Pick the tactic that matches the sport.",
+    },
+    "Custom feature weights": {
+        "mode": "sport_profiles",
+        "profile_scope": "custom",
+        "friendly": "Let the user type feature weights.",
+    },
+}
+
+
+def utc_now_iso() -> str:
+    return datetime.datetime.now(datetime.UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def to_float(value: Any, default: float = 0.0) -> float:
+    try:
+        if value in (None, ""):
+            return default
+        result = float(value)
+        if math.isnan(result) or math.isinf(result):
+            return default
+        return result
+    except (TypeError, ValueError):
+        return default
+
+
+def to_int(value: Any, default: int = 0) -> int:
+    try:
+        if value in (None, ""):
+            return default
+        return int(float(value))
+    except (TypeError, ValueError):
+        return default
+
+
+def read_text_if_exists(path: str | Path, *, max_chars: int | None = None) -> str:
+    file_path = Path(path)
+    if not file_path.exists():
+        return ""
+
+    text = file_path.read_text(encoding="utf-8", errors="replace")
+    if max_chars is not None and max_chars >= 0:
+        return text[:max_chars]
+    return text
+
+
+def load_json_if_exists(path: str | Path, *, default: Any = None) -> Any:
+    file_path = Path(path)
+    if not file_path.exists():
+        return default
+
+    try:
+        return json.loads(file_path.read_text(encoding="utf-8", errors="replace"))
+    except json.JSONDecodeError:
+        return default
+
+
+def write_json(path: str | Path, payload: Any) -> None:
+    file_path = Path(path)
+    file_path.parent.mkdir(parents=True, exist_ok=True)
+    file_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def read_jsonl_rows(path: str | Path, *, limit: int | None = None) -> list[dict[str, Any]]:
+    file_path = Path(path)
+    rows: list[dict[str, Any]] = []
+
+    if not file_path.exists():
+        return rows
+
+    with file_path.open("r", encoding="utf-8", errors="replace") as f:
+        for line in f:
+            if not line.strip():
+                continue
+            try:
+                item = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if isinstance(item, dict):
+                rows.append(item)
+            if limit is not None and len(rows) >= limit:
+                break
+
+    return rows
+
+
+def file_inventory() -> list[dict[str, Any]]:
+    rows = []
+    for label, path in DATA_LIBRARY_PATHS.items():
+        exists = path.exists()
+        rows.append(
+            {
+                "label": label,
+                "path": str(path),
+                "exists": exists,
+                "size_bytes": path.stat().st_size if exists else 0,
+                "kind": path.suffix.lower().lstrip("."),
+            }
+        )
+    return rows
+
+
+def flatten_preview_rows(value: Any, *, limit: int = 200) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+
+    if isinstance(value, list):
+        for idx, item in enumerate(value[:limit]):
+            if isinstance(item, Mapping):
+                row = {"_index": idx}
+                row.update(dict(item))
+                rows.append(row)
+            else:
+                rows.append({"_index": idx, "value": item})
+        return rows
+
+    if isinstance(value, Mapping):
+        for key in ("items", "rows", "decisions", "paper_decisions", "review_queue", "records", "data"):
+            nested = value.get(key)
+            if isinstance(nested, list):
+                return flatten_preview_rows(nested, limit=limit)
+
+        for idx, (key, item) in enumerate(list(value.items())[:limit]):
+            if isinstance(item, Mapping):
+                row = {"_key": key}
+                row.update(dict(item))
+                rows.append(row)
+            else:
+                rows.append({"_key": key, "value": item})
+        return rows
+
+    if value is not None:
+        rows.append({"value": value})
+
+    return rows
+
+
+def preview_path(path: str | Path, *, limit: int = 200) -> dict[str, Any]:
+    file_path = Path(path)
+
+    result = {
+        "path": str(file_path),
+        "exists": file_path.exists(),
+        "kind": file_path.suffix.lower().lstrip("."),
+        "rows": [],
+        "raw": None,
+        "text": "",
+        "warning": "",
+    }
+
+    if not file_path.exists():
+        result["warning"] = "File is missing. Use Generate Latest Dashboard if this is a dashboard file."
+        return result
+
+    suffix = file_path.suffix.lower()
+
+    if suffix == ".jsonl":
+        rows = read_jsonl_rows(file_path, limit=limit)
+        result["rows"] = rows
+        result["raw"] = rows[: min(limit, 20)]
+        return result
+
+    if suffix == ".json":
+        payload = load_json_if_exists(file_path, default={})
+        result["raw"] = payload
+        result["rows"] = flatten_preview_rows(payload, limit=limit)
+        return result
+
+    if suffix == ".md":
+        text = read_text_if_exists(file_path, max_chars=300_000)
+        result["text"] = text
+        result["raw"] = {"text": text[:5000]}
+        return result
+
+    text = read_text_if_exists(file_path, max_chars=300_000)
+    result["text"] = text
+    result["raw"] = {"text": text[:5000]}
+    return result
+
+
+def compact_counts(rows: Sequence[Mapping[str, Any]], key: str, *, limit: int = 50) -> list[dict[str, Any]]:
+    counter: Counter[str] = Counter()
+    for row in rows:
+        value = row.get(key)
+        if value in (None, ""):
+            value = "UNKNOWN"
+        counter[str(value)] += 1
+    return [{"value": value, "count": count} for value, count in counter.most_common(limit)]
+
+
+def get_available_profile_options() -> list[dict[str, Any]]:
+    description = describe_regression_profiles()
+    sport_profiles = dict(description.get("sport_profiles") or {})
+
+    options = [
+        {
+            "label": "All sports current formation",
+            "value": "all_sports",
+            "scope": "all_sports",
+        }
+    ]
+
+    for key, value in sorted(sport_profiles.items()):
+        label = str(value.get("display_name") or value.get("profile_name") or key)
+        options.append(
+            {
+                "label": label,
+                "value": key,
+                "scope": "sport_specific",
+            }
+        )
+
+    return options
+
+
+def parse_feature_weights(text: str | None) -> dict[str, float]:
+    if not text:
+        return {}
+
+    text = text.strip()
+    if not text:
+        return {}
+
+    try:
+        parsed = json.loads(text)
+        if isinstance(parsed, Mapping):
+            return {str(key): to_float(value) for key, value in parsed.items()}
+    except json.JSONDecodeError:
+        pass
+
+    weights: dict[str, float] = {}
+    for chunk in text.replace("\n", ",").split(","):
+        chunk = chunk.strip()
+        if not chunk:
+            continue
+        if "=" in chunk:
+            key, value = chunk.split("=", 1)
+        elif ":" in chunk:
+            key, value = chunk.split(":", 1)
+        else:
+            continue
+        key = key.strip()
+        if key:
+            weights[key] = to_float(value)
+
+    return weights
+
+
+def build_strategy_config(
+    *,
+    tactic: str,
+    profile_key: str | None = None,
+    intercept: float = 0.5,
+    feature_weights: Mapping[str, float] | None = None,
+    probability_floor: float = 0.01,
+    probability_ceiling: float = 0.99,
+    override_existing_probability: bool = True,
+) -> dict[str, Any] | None:
+    tactic_info = REGRESSION_TACTICS.get(tactic) or REGRESSION_TACTICS["Sport-specific regression"]
+
+    if tactic_info["mode"] == "existing_probability":
+        return None
+
+    normalized_profile = normalize_strategy_profile_key(profile_key)
+    weights = {str(key): to_float(value) for key, value in dict(feature_weights or {}).items()}
+
+    base_profile = {
+        "intercept": to_float(intercept, 0.5),
+        "feature_weights": weights,
+        "probability_floor": to_float(probability_floor, 0.01),
+        "probability_ceiling": to_float(probability_ceiling, 0.99),
+        "override_existing_probability": bool(override_existing_probability),
+    }
+
+    profile_scope = tactic_info.get("profile_scope", "auto")
+
+    if profile_scope == "all_sports":
+        return {
+            "mode": "sport_profiles",
+            "profile_scope": "all_sports",
+            "all_sports_profile": dict(base_profile),
+            "sport_profiles": {},
+        }
+
+    if profile_scope == "custom":
+        if normalized_profile and normalized_profile != "all_sports":
+            return {
+                "mode": "sport_profiles",
+                "profile_scope": "auto",
+                "all_sports_profile": dict(base_profile),
+                "sport_profiles": {normalized_profile: dict(base_profile)},
+            }
+
+        return {
+            "mode": "sport_profiles",
+            "profile_scope": "all_sports",
+            "all_sports_profile": dict(base_profile),
+            "sport_profiles": {},
+        }
+
+    return {
+        "mode": "sport_profiles",
+        "profile_scope": "auto",
+        "all_sports_profile": dict(base_profile),
+        "sport_profiles": {
+            normalized_profile: dict(base_profile)
+        } if normalized_profile and normalized_profile != "all_sports" else {},
+    }
+
+
+def ensure_canonical_dataset(
+    *,
+    base_dir: str | Path = ".",
+    dataset_jsonl_path: str | Path = DEFAULT_CANONICAL_JSONL_PATH,
+    schema_report_path: str | Path = DEFAULT_CANONICAL_SCHEMA_PATH,
+    force_rebuild: bool = False,
+    require_core_fields: bool = False,
+) -> dict[str, Any]:
+    dataset_path = Path(dataset_jsonl_path)
+    schema_path = Path(schema_report_path)
+
+    if force_rebuild or not dataset_path.exists() or not schema_path.exists():
+        report = build_canonical_backtest_dataset(
+            base_dir=base_dir,
+            output_jsonl_path=dataset_path,
+            schema_report_path=schema_path,
+            require_core_fields=require_core_fields,
+        )
+    else:
+        report = load_json_if_exists(schema_path, default={}) or {}
+
+    try:
+        return summarize_canonical_dataset_report(report)
+    except Exception:
+        return {
+            "ok": bool(report),
+            "rows_written": report.get("rows_written") if isinstance(report, Mapping) else 0,
+            "summary_error": "Could not summarize canonical dataset report.",
+        }
+
+
+def load_canonical_rows_for_dashboard(
+    *,
+    dataset_jsonl_path: str | Path = DEFAULT_CANONICAL_JSONL_PATH,
+    limit: int | None = None,
+) -> list[dict[str, Any]]:
+    path = Path(dataset_jsonl_path)
+    if not path.exists():
+        return []
+
+    try:
+        rows = load_canonical_backtest_dataset(path)
+    except Exception:
+        rows = read_jsonl_rows(path, limit=limit)
+
+    if limit is not None and limit >= 0:
+        return rows[:limit]
+    return rows
+
+
+def row_matches_profile(row: Mapping[str, Any], profile_key: str | None) -> bool:
+    target = normalize_strategy_profile_key(profile_key)
+
+    if target in (None, "", "all_sports"):
+        return True
+
+    inferred = infer_strategy_profile_key_from_row(row)
+    if inferred == target:
+        return True
+
+    for key in ("sport", "league", "module", "sport_profile", "provider", "source_type", "market"):
+        if normalize_strategy_profile_key(row.get(key)) == target:
+            return True
+
+    return False
+
+
+def filter_rows_for_profile(rows: Sequence[Mapping[str, Any]], profile_key: str | None) -> list[dict[str, Any]]:
+    return [dict(row) for row in rows if row_matches_profile(row, profile_key)]
+
+
+def summarize_backtest_result(backtest_result: Mapping[str, Any] | None) -> dict[str, Any]:
+    result = dict(backtest_result or {})
+    strategy_summary = dict(result.get("strategy_bankroll_summary") or {})
+    strategy_report = dict(result.get("strategy_bankroll_report") or {})
+    leakage_report = dict(result.get("leakage_report") or {})
+    replay_summary = dict(result.get("summary") or result.get("replay_summary") or {})
+
+    decisions = list(strategy_report.get("decisions") or [])
+
+    sport_counts: Counter[str] = Counter()
+    market_counts: Counter[str] = Counter()
+    profile_counts: Counter[str] = Counter()
+    no_bet_reasons: Counter[str] = Counter()
+
+    for decision in decisions:
+        if not isinstance(decision, Mapping):
+            continue
+
+        sport_counts[str(decision.get("sport") or "UNKNOWN")] += 1
+        market_counts[str(decision.get("market") or decision.get("market_type") or "UNKNOWN")] += 1
+
+        regression_strategy = dict(decision.get("regression_strategy") or {})
+        profile = dict(regression_strategy.get("profile") or {})
+        profile_name = (
+            decision.get("profile_name")
+            or decision.get("selected_profile_key")
+            or decision.get("strategy_profile")
+            or profile.get("profile_name")
+            or profile.get("selected_profile_key")
+            or "UNKNOWN"
+        )
+        profile_counts[str(profile_name)] += 1
+
+        reason = decision.get("reason") or decision.get("no_bet_reason")
+        if reason:
+            no_bet_reasons[str(reason)] += 1
+
+    return {
+        "bets": to_int(strategy_summary.get("bets")),
+        "no_bets": to_int(strategy_summary.get("no_bets")),
+        "profit_loss": to_float(strategy_summary.get("profit_loss")),
+        "roi_percent": to_float(strategy_summary.get("roi_percent")),
+        "max_drawdown_percent": to_float(strategy_summary.get("max_drawdown_percent")),
+        "starting_bankroll": to_float(strategy_summary.get("starting_bankroll")),
+        "ending_bankroll": to_float(strategy_summary.get("ending_bankroll")),
+        "decision_count": len(decisions),
+        "sport_counts": dict(sport_counts.most_common()),
+        "market_counts": dict(market_counts.most_common()),
+        "profile_counts": dict(profile_counts.most_common()),
+        "no_bet_reasons": dict(no_bet_reasons.most_common()),
+        "leakage_summary": leakage_report.get("summary") or leakage_report,
+        "replay_summary": replay_summary,
+    }
+
+
+def build_bankroll_curve_rows(backtest_result: Mapping[str, Any] | None) -> list[dict[str, Any]]:
+    result = dict(backtest_result or {})
+    strategy_report = dict(result.get("strategy_bankroll_report") or {})
+    decisions = list(strategy_report.get("decisions") or [])
+
+    curve: list[dict[str, Any]] = []
+    fallback_bankroll = 0.0
+
+    for idx, decision in enumerate(decisions):
+        if not isinstance(decision, Mapping):
+            continue
+
+        bankroll_value = (
+            decision.get("ending_bankroll")
+            or decision.get("bankroll_after")
+            or decision.get("current_bankroll")
+            or decision.get("bankroll")
+        )
+
+        if bankroll_value in (None, ""):
+            profit_loss = to_float(decision.get("profit_loss") or decision.get("pnl"))
+            fallback_bankroll += profit_loss
+            bankroll_value = fallback_bankroll
+
+        regression_strategy = dict(decision.get("regression_strategy") or {})
+        profile = dict(regression_strategy.get("profile") or {})
+
+        curve.append(
+            {
+                "decision_index": idx,
+                "event_id": decision.get("event_id") or decision.get("id") or idx,
+                "sport": decision.get("sport") or "UNKNOWN",
+                "market": decision.get("market") or decision.get("market_type") or "UNKNOWN",
+                "profile": (
+                    decision.get("profile_name")
+                    or decision.get("selected_profile_key")
+                    or decision.get("strategy_profile")
+                    or profile.get("profile_name")
+                    or profile.get("selected_profile_key")
+                    or "UNKNOWN"
+                ),
+                "bankroll": to_float(bankroll_value),
+                "profit_loss": to_float(decision.get("profit_loss") or decision.get("pnl")),
+                "model_probability": decision.get("model_probability"),
+                "market_implied_probability": decision.get("market_implied_probability"),
+                "edge": decision.get("edge"),
+                "odds": decision.get("odds") or decision.get("recommended_odds"),
+            }
+        )
+
+    return curve
+
+
+def calculate_dashboard_readiness(
+    *,
+    dataset_summary: Mapping[str, Any],
+    backtest_summary: Mapping[str, Any],
+) -> dict[str, Any]:
+    rows_written = to_int(dataset_summary.get("rows_written") or dataset_summary.get("raw_rows_found"))
+    bets = to_int(backtest_summary.get("bets"))
+    roi = to_float(backtest_summary.get("roi_percent"))
+    drawdown = to_float(backtest_summary.get("max_drawdown_percent"))
+
+    failed: list[str] = []
+    warnings: list[str] = []
+
+    if rows_written < 500:
+        failed.append("Need at least 500 rows before trusting a model test.")
+
+    if bets < 100:
+        failed.append("Need at least 100 bets before trusting performance.")
+
+    if drawdown > 25:
+        failed.append("Worst drop is too large.")
+
+    if roi < 0:
+        warnings.append("Return is negative in this test.")
+
+    if failed:
+        verdict = "Not ready"
+        simple = "The model needs more proof before trusting it."
+    elif warnings:
+        verdict = "Needs review"
+        simple = "The model has enough sample size but needs a human review."
+    else:
+        verdict = "Research candidate"
+        simple = "The model passed this paper-test screen, but still needs review before live use."
+
+    return {
+        "verdict": verdict,
+        "simple_explanation": simple,
+        "failed_checks": failed,
+        "warnings": warnings,
+        "rows_written": rows_written,
+        "bets": bets,
+        "roi_percent": roi,
+        "max_drawdown_percent": drawdown,
+    }
+
+
+def run_model_test(
+    *,
+    profile_key: str | None,
+    tactic: str,
+    starting_bankroll: float = 1000.0,
+    unit_size: float = 10.0,
+    max_rows: int = 2000,
+    minimum_edge: float = 0.0,
+    minimum_model_probability: float = 0.0,
+    intercept: float = 0.5,
+    feature_weights: Mapping[str, float] | None = None,
+    probability_floor: float = 0.01,
+    probability_ceiling: float = 0.99,
+    override_existing_probability: bool = True,
+    force_rebuild_dataset: bool = False,
+    require_core_fields: bool = False,
+    model_id: str = "streamlit-model-test",
+    base_dir: str | Path = ".",
+) -> dict[str, Any]:
+    dataset_summary = ensure_canonical_dataset(
+        base_dir=base_dir,
+        force_rebuild=force_rebuild_dataset,
+        require_core_fields=require_core_fields,
+    )
+
+    all_rows = load_canonical_rows_for_dashboard(limit=None)
+    filtered_rows = filter_rows_for_profile(all_rows, profile_key)
+
+    if max_rows is not None and max_rows >= 0:
+        filtered_rows = filtered_rows[:max_rows]
+
+    strategy_config = build_strategy_config(
+        tactic=tactic,
+        profile_key=profile_key,
+        intercept=intercept,
+        feature_weights=feature_weights,
+        probability_floor=probability_floor,
+        probability_ceiling=probability_ceiling,
+        override_existing_probability=override_existing_probability,
+    )
+
+    backtest_kwargs: dict[str, Any] = {
+        "model_id": model_id,
+        "rows": filtered_rows,
+        "base_data_dir": str(Path(base_dir) / "data"),
+    }
+
+    if strategy_config is not None:
+        backtest_kwargs["strategy_config"] = strategy_config
+
+    backtest_result = run_backtest(**backtest_kwargs)
+
+    backtest_summary = summarize_backtest_result(backtest_result)
+    bankroll_curve = build_bankroll_curve_rows(backtest_result)
+    readiness = calculate_dashboard_readiness(
+        dataset_summary=dataset_summary,
+        backtest_summary=backtest_summary,
+    )
+
+    return {
+        "ok": True,
+        "generated_at": utc_now_iso(),
+        "mode": "model_test",
+        "model_id": model_id,
+        "profile_key": profile_key or "all_sports",
+        "tactic": tactic,
+        "inputs": {
+            "starting_bankroll": starting_bankroll,
+            "unit_size": unit_size,
+            "max_rows": max_rows,
+            "minimum_edge": minimum_edge,
+            "minimum_model_probability": minimum_model_probability,
+            "intercept": intercept,
+            "probability_floor": probability_floor,
+            "probability_ceiling": probability_ceiling,
+            "override_existing_probability": override_existing_probability,
+        },
+        "rows_available": len(all_rows),
+        "rows_used": len(filtered_rows),
+        "dataset_summary": dataset_summary,
+        "strategy_config": strategy_config or {},
+        "backtest_result": backtest_result,
+        "backtest_summary": backtest_summary,
+        "bankroll_curve": bankroll_curve,
+        "readiness": readiness,
+    }
+
+
+def render_dashboard_markdown(dashboard: Mapping[str, Any]) -> str:
+    summary = dict(dashboard.get("backtest_summary") or {})
+    readiness = dict(dashboard.get("readiness") or {})
+    inputs = dict(dashboard.get("inputs") or {})
+
+    lines = [
+        "# Latest Backtest Dashboard",
+        "",
+        f"Generated: `{dashboard.get('generated_at')}`",
+        f"Model ID: `{dashboard.get('model_id')}`",
+        f"Profile: `{dashboard.get('profile_key')}`",
+        f"Tactic: `{dashboard.get('tactic')}`",
+        "",
+        "## Explain Like I'm 8",
+        "",
+        f"- Starting money: `{inputs.get('starting_bankroll')}`",
+        f"- Normal bet size: `{inputs.get('unit_size')}`",
+        f"- Money won or lost: `{summary.get('profit_loss')}`",
+        f"- Return percent: `{summary.get('roi_percent')}`",
+        f"- Worst drop percent: `{summary.get('max_drawdown_percent')}`",
+        f"- Decision: `{readiness.get('verdict')}`",
+        f"- Simple meaning: {readiness.get('simple_explanation')}",
+        "",
+        "## Backtest Summary",
+        "",
+        "```json",
+        json.dumps(summary, indent=2, sort_keys=True),
+        "```",
+        "",
+        "## Readiness",
+        "",
+        "```json",
+        json.dumps(readiness, indent=2, sort_keys=True),
+        "```",
+        "",
+        "## Inputs",
+        "",
+        "```json",
+        json.dumps(inputs, indent=2, sort_keys=True),
+        "```",
+        "",
+    ]
+
+    return "\n".join(lines) + "\n"
+
+
+def generate_latest_dashboard_outputs(
+    *,
+    tactic: str = "Sport-specific regression",
+    profile_key: str | None = "all_sports",
+    starting_bankroll: float = 1000.0,
+    unit_size: float = 10.0,
+    max_rows: int = 2000,
+    intercept: float = 0.5,
+    feature_weights: Mapping[str, float] | None = None,
+    probability_floor: float = 0.01,
+    probability_ceiling: float = 0.99,
+    override_existing_probability: bool = True,
+    force_rebuild_dataset: bool = False,
+    require_core_fields: bool = False,
+    output_json_path: str | Path = DEFAULT_DASHBOARD_JSON_PATH,
+    output_markdown_path: str | Path = DEFAULT_DASHBOARD_MARKDOWN_PATH,
+) -> dict[str, Any]:
+    dashboard = run_model_test(
+        profile_key=profile_key,
+        tactic=tactic,
+        starting_bankroll=starting_bankroll,
+        unit_size=unit_size,
+        max_rows=max_rows,
+        intercept=intercept,
+        feature_weights=feature_weights,
+        probability_floor=probability_floor,
+        probability_ceiling=probability_ceiling,
+        override_existing_probability=override_existing_probability,
+        force_rebuild_dataset=force_rebuild_dataset,
+        require_core_fields=require_core_fields,
+        model_id="streamlit-latest-dashboard",
+    )
+
+    output_json = Path(output_json_path)
+    output_md = Path(output_markdown_path)
+
+    write_json(output_json, dashboard)
+    output_md.parent.mkdir(parents=True, exist_ok=True)
+    output_md.write_text(render_dashboard_markdown(dashboard), encoding="utf-8")
+
+    return {
+        "ok": True,
+        "output_json_path": str(output_json),
+        "output_markdown_path": str(output_md),
+        "summary": {
+            "rows_used": dashboard.get("rows_used"),
+            "bets": dashboard.get("backtest_summary", {}).get("bets"),
+            "profit_loss": dashboard.get("backtest_summary", {}).get("profit_loss"),
+            "roi_percent": dashboard.get("backtest_summary", {}).get("roi_percent"),
+            "max_drawdown_percent": dashboard.get("backtest_summary", {}).get("max_drawdown_percent"),
+            "readiness": dashboard.get("readiness", {}).get("verdict"),
+        },
+    }
+
+
+def load_dashboard_snapshot() -> dict[str, Any]:
+    dashboard = load_json_if_exists(DEFAULT_DASHBOARD_JSON_PATH, default={}) or {}
+    markdown_exists = DEFAULT_DASHBOARD_MARKDOWN_PATH.exists()
+    schema = load_json_if_exists(DEFAULT_CANONICAL_SCHEMA_PATH, default={}) or {}
+    paper = load_json_if_exists(DEFAULT_PAPER_LEDGER_PATH, default={}) or {}
+    review = load_json_if_exists(DEFAULT_REVIEW_QUEUE_PATH, default={}) or {}
+    health = load_json_if_exists(DEFAULT_SYSTEM_HEALTH_PATH, default={}) or {}
+
+    return {
+        "dashboard_exists": DEFAULT_DASHBOARD_JSON_PATH.exists(),
+        "dashboard_markdown_exists": markdown_exists,
+        "dashboard": dashboard,
+        "dashboard_summary": dashboard.get("backtest_summary", {}) if isinstance(dashboard, Mapping) else {},
+        "readiness": dashboard.get("readiness", {}) if isinstance(dashboard, Mapping) else {},
+        "schema": schema,
+        "paper_ledger_rows": flatten_preview_rows(paper, limit=500),
+        "review_queue_rows": flatten_preview_rows(review, limit=500),
+        "health": health,
+        "files": file_inventory(),
+    }
+
+
+def get_system_health_rows() -> list[dict[str, Any]]:
+    files = file_inventory()
+
+    git_status = []
+    try:
+        git_status = subprocess.check_output(["git", "status", "--short"], text=True).splitlines()
+    except Exception:
+        git_status = ["git status unavailable"]
+
+    rows = []
+    for item in files:
+        rows.append(
+            {
+                "check": item["label"],
+                "status": "OK" if item["exists"] else "MISSING",
+                "detail": item["path"],
+                "size_bytes": item["size_bytes"],
+            }
+        )
+
+    rows.append(
+        {
+            "check": "Git working tree",
+            "status": "CLEAN" if not git_status else "DIRTY",
+            "detail": "; ".join(git_status[:10]),
+            "size_bytes": 0,
+        }
+    )
+
+    return rows
+
+
+def simple_home_cards(snapshot: Mapping[str, Any]) -> dict[str, Any]:
+    dashboard = dict(snapshot.get("dashboard") or {})
+    summary = dict(snapshot.get("dashboard_summary") or {})
+    readiness = dict(snapshot.get("readiness") or {})
+    inputs = dict(dashboard.get("inputs") or {})
+
+    return {
+        "Is the system safe?": "Paper/testing mode" if snapshot.get("dashboard_exists") else "Dashboard file missing",
+        "How much money did the test start with?": inputs.get("starting_bankroll", "Unknown"),
+        "How much money did the test end with?": summary.get("ending_bankroll", "Unknown"),
+        "Did the graph go up or down?": "Up or flat" if to_float(summary.get("profit_loss")) >= 0 else "Down",
+        "What sport/profile was tested?": dashboard.get("profile_key", "Unknown"),
+        "Is this ready or not ready?": readiness.get("verdict", "Unknown"),
+    }
