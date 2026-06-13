@@ -280,7 +280,7 @@ menu = st.sidebar.radio(
 )
 
 
-if menu == "Home / Explain Like I'm 8":
+if menu == "Operator Summary":
     st.header("Operator Summary")
 
     snapshot = load_dashboard_snapshot()
