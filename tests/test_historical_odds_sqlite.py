@@ -168,6 +168,7 @@ def test_query_filters(tmp_path: Path) -> None:
     try:
         initialize_historical_odds_db(conn)
         row1 = _make_valid_row()
+        # row2 must be fully valid (include final_result) to avoid rejection
         row2 = build_canonical_historical_odds_row(
             source_name="Other",
             source_key="sportsbookreview_scraper",
@@ -180,8 +181,14 @@ def test_query_filters(tmp_path: Path) -> None:
             market="moneyline",
             selection="Yankees",
             odds_at_decision_time=-110,
+            final_result="H",
         )
-        upsert_canonical_historical_odds_rows(conn, [row1, row2], source_file="multi.csv")
+        result = upsert_canonical_historical_odds_rows(
+            conn, [row1, row2], source_file="multi.csv"
+        )
+        # ensure both rows were inserted, none rejected
+        assert result["rows_inserted"] == 2
+        assert result["rows_rejected"] == 0
 
         # sport filter
         rows = query_historical_odds_rows(conn, sport="soccer")
