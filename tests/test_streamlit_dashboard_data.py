@@ -10,6 +10,8 @@ from automation_scheduler.streamlit_dashboard_data import (
     get_historical_import_source_options,
     get_historical_sqlite_snapshot_for_dashboard,
     import_historical_file_to_sqlite_for_dashboard,
+    make_arrow_safe_table_rows,
+    make_arrow_safe_value,
     make_historical_projection_metric_rows,
     parse_feature_weights,
     row_matches_profile,
@@ -247,8 +249,6 @@ def test_make_historical_projection_metric_rows_returns_keys():
 def test_make_arrow_safe_value_handles_list():
     import json
 
-    from automation_scheduler.streamlit_dashboard_data import make_arrow_safe_value
-
     val = make_arrow_safe_value([1, 2, 3])
     assert isinstance(val, str)
     assert json.loads(val) == [1, 2, 3]
@@ -257,29 +257,41 @@ def test_make_arrow_safe_value_handles_list():
 def test_make_arrow_safe_value_handles_dict():
     import json
 
-    from automation_scheduler.streamlit_dashboard_data import make_arrow_safe_value
-
     d = {"b": 2, "a": 1}
     val = make_arrow_safe_value(d)
     parsed = json.loads(val)
     assert parsed == {"a": 1, "b": 2}  # sorted keys
 
 
-def test_make_arrow_safe_table_rows_converts_nested():
-    from automation_scheduler.streamlit_dashboard_data import make_arrow_safe_table_rows
+def test_make_arrow_safe_value_handles_int():
+    val = make_arrow_safe_value(5)
+    assert isinstance(val, str)
+    assert val == "5"
 
+
+def test_make_arrow_safe_value_handles_bool():
+    val = make_arrow_safe_value(True)
+    assert isinstance(val, str)
+    assert val == "True"
+
+
+def test_make_arrow_safe_value_handles_none():
+    val = make_arrow_safe_value(None)
+    assert isinstance(val, str)
+    assert val == "None"
+
+
+def test_make_arrow_safe_table_rows_converts_nested():
     rows = [
         {"sports": ["soccer"], "value": 5, "nested": {"a": 1}},
     ]
     safe = make_arrow_safe_table_rows(rows)
     assert isinstance(safe[0]["sports"], str)
-    assert isinstance(safe[0]["value"], int)
+    assert isinstance(safe[0]["value"], str)   # int now becomes string
     assert isinstance(safe[0]["nested"], str)
 
 
 def test_make_arrow_safe_table_rows_does_not_mutate():
-    from automation_scheduler.streamlit_dashboard_data import make_arrow_safe_table_rows
-
     original = [{"value": [1, 2]}]
     safe = make_arrow_safe_table_rows(original)
     assert isinstance(original[0]["value"], list)

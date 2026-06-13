@@ -88,12 +88,14 @@ def show_curve(curve_rows):
         st.info("No graph data yet.")
         return
 
-    curve_df = df(rows)
-    if "decision_index" in curve_df.columns and "bankroll" in curve_df.columns:
-        st.line_chart(curve_df.set_index("decision_index")["bankroll"])
+    # Numeric-friendly DataFrame for chart (not Arrow-safe, chart needs numbers)
+    numeric_df = pd.DataFrame(rows)
+    if "decision_index" in numeric_df.columns and "bankroll" in numeric_df.columns:
+        st.line_chart(numeric_df.set_index("decision_index")["bankroll"])
 
+    # Arrow‑safe DataFrame for the display table
     with st.expander("Graph table", expanded=False):
-        st.dataframe(curve_df, use_container_width=True, hide_index=True)
+        st.dataframe(df(rows), use_container_width=True, hide_index=True)
 
 
 def show_run_result(result: dict) -> None:
@@ -391,13 +393,13 @@ elif menu == "Paper Bets":
 
         c1, c2 = st.columns(2)
         with c1:
-            if "sport" in filtered.columns:
+            if "sport" in numeric_table.columns:
                 st.subheader("Paper bets by sport")
-                st.bar_chart(filtered["sport"].fillna("UNKNOWN").astype(str).value_counts())
+                st.bar_chart(numeric_table["sport"].fillna("UNKNOWN").astype(str).value_counts())
         with c2:
-            if "market" in filtered.columns:
+            if "market" in numeric_table.columns:
                 st.subheader("Paper bets by bet type")
-                st.bar_chart(filtered["market"].fillna("UNKNOWN").astype(str).value_counts())
+                st.bar_chart(numeric_table["market"].fillna("UNKNOWN").astype(str).value_counts())
 
     with st.expander("Raw source JSON", expanded=False):
         st.json(preview["raw"])

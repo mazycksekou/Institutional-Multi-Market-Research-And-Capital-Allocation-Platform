@@ -981,17 +981,21 @@ def make_historical_projection_metric_rows(summary: dict) -> list[dict]:
 
 
 def make_arrow_safe_value(value: Any) -> Any:
-    """Convert a potentially unsafe value to an Arrow‑compatible scalar.
+    """Convert a value to a stable Arrow‑compatible string.
 
-    - Path → str
+    - str → unchanged
+    - Path → string
     - list, tuple, set, dict → JSON string (sorted keys)
-    - int, float, bool, None, str → unchanged
+    - int, float, bool, None → string (display‑safe representation)
     """
-    if isinstance(value, (int, float, bool, str)) or value is None:
+    if isinstance(value, str):
         return value
     if isinstance(value, Path):
         return str(value)
-    return json.dumps(value, ensure_ascii=False, sort_keys=True, default=str)
+    if isinstance(value, (list, tuple, set, dict)):
+        return json.dumps(value, ensure_ascii=False, sort_keys=True, default=str)
+    # int, float, bool, None → plain string
+    return str(value)
 
 
 def make_arrow_safe_table_rows(rows: list[dict]) -> list[dict]:
