@@ -40,6 +40,14 @@ from automation_scheduler.streamlit_dashboard_data import (
     run_model_test,
     simple_home_cards,
 )
+from automation_scheduler.historical_data_sources import (
+    get_historical_data_source_rows,
+    get_priority_import_sources,
+    get_source_status_counts,
+    get_model_testing_source_plan,
+    source_is_projection_ready,
+    summarize_source_registry,
+)
 
 
 st.set_page_config(
@@ -264,6 +272,10 @@ menu = st.sidebar.radio(
         "Bankroll Settings",
         "Regression Tactics",
         "System Health",
+        "Data Source Library",
+        "Import Historical Data",
+        "Data Quality Check",
+        "Model Projection",
     ],
 )
 
@@ -554,3 +566,70 @@ elif menu == "System Health":
 
     st.subheader("File Inventory")
     st.dataframe(df(file_inventory()), use_container_width=True, hide_index=True)
+
+
+elif menu == "Data Source Library":
+    st.header("Historical Data Source Registry")
+    rows = get_historical_data_source_rows(include_rejected=True)
+    if rows:
+        st.dataframe(df(rows), use_container_width=True, hide_index=True)
+    else:
+        st.info("No sources registered.")
+    with st.expander("Status counts"):
+        counts = get_source_status_counts()
+        st.json(counts)
+
+
+elif menu == "Import Historical Data":
+    st.header("Import Historical Odds Data")
+    st.warning(
+        "Importing of historical data has not been implemented yet. "
+        "Importers will be created in **Phase 10H5** (canonical historical odds importers). "
+        "After that, SQLite store will be implemented in **Phase 10H6**."
+    )
+    st.info(
+        "No downloads, scraping, or SQLite writes happen here. "
+        "This screen will activate once importers are ready."
+    )
+
+
+elif menu == "Data Quality Check":
+    st.header("Data Quality Check")
+    st.subheader("File Inventory")
+    inventory = file_inventory()
+    if inventory:
+        st.dataframe(df(inventory), use_container_width=True, hide_index=True)
+    else:
+        st.info("No inventory loaded.")
+
+    st.subheader("Schema Preview")
+    schema_preview = preview_path(DATA_LIBRARY_PATHS.get("Canonical Schema Report"), limit=200)
+    if schema_preview and schema_preview.get("exists"):
+        st.dataframe(df(schema_preview["rows"]), use_container_width=True, hide_index=True)
+    else:
+        st.info("Schema report not yet available.")
+
+
+elif menu == "Model Projection":
+    st.header("Model Projection")
+    snapshot = load_dashboard_snapshot()
+    cards = simple_home_cards(snapshot)
+    metric_row([
+        ("System", cards.get("Is the system safe?" , "Unknown")),
+        ("Start money", cards.get("How much money did the test start with?","-")),
+        ("End money", cards.get("How much money did the test end with?","-")),
+        ("Ready?", cards.get("Is this ready or not ready?","-")),
+    ])
+
+    plan_text = get_model_testing_source_plan()
+    st.markdown(plan_text)
+
+    st.subheader("Priority Import Sources")
+    priority = get_priority_import_sources()
+    if priority:
+        st.dataframe(df(priority), use_container_width=True, hide_index=True)
+    else:
+        st.info("No priority sources defined.")
+
+    summary = summarize_source_registry()
+    st.json(summary)
