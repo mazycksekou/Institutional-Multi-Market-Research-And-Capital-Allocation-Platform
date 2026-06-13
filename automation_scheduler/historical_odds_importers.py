@@ -482,8 +482,8 @@ def _parse_sbr_json(
             or event.get("commence_time")
             or ""
         )
-        market = event.get("market") or ""
-        selection = event.get("selection") or ""
+        market = normalize_market_name(event.get("market") or "")
+        selection = normalize_selection_name(event.get("selection") or "")
         odds_raw = event.get("odds") or event.get("price")
         if odds_raw is None:
             continue
@@ -525,8 +525,8 @@ def _parse_sbr_csv(
             home_team = normalize_team_name(raw.get("home_team") or "")
             away_team = normalize_team_name(raw.get("away_team") or "")
             event_date = raw.get("date") or raw.get("event_date") or ""
-            market = raw.get("market") or ""
-            selection = raw.get("selection") or ""
+            market = normalize_market_name(raw.get("market") or "")
+            selection = normalize_selection_name(raw.get("selection") or "")
             odds_str = raw.get("odds") or raw.get("price") or ""
             if not odds_str:
                 continue

@@ -207,11 +207,13 @@ def test_sbr_csv_creates_rows() -> None:
 
 
 def test_american_positive_odds() -> None:
-    assert abs(american_to_implied_probability(150) - 40.0) < 1e-9
+    # +150 → 100 / (150 + 100) = 0.4
+    assert abs(american_to_implied_probability(150) - 0.4) < 1e-9
 
 
 def test_american_negative_odds() -> None:
-    assert abs(american_to_implied_probability(-200) - 200 / 300) < 1e-9
+    # -150 → 150 / (150 + 100) = 0.6
+    assert abs(american_to_implied_probability(-150) - 0.6) < 1e-9
 
 
 def test_decimal_odds() -> None:
