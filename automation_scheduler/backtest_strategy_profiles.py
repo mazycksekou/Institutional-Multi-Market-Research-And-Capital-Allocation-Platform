@@ -52,7 +52,6 @@ DEFAULT_SPORT_REGRESSION_PROFILES: dict[str, dict[str, Any]] = {
 }
 
 
-# Extra lightweight aliases for common real-time user/API terms.
 SPORT_PROFILE_ALIASES: dict[str, str] = {
     **{str(k): str(v) for k, v in dict(MODULE_PROFILE_ALIASES).items()},
     "nba": "basketball_nba",

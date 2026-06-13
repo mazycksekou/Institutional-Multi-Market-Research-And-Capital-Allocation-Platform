@@ -1,6 +1,6 @@
 # Phase 10G2 Sport Regression Profile Wiring
 
-Generated: 2026-06-12T21:06:42
+Generated: 2026-06-12T21:21:06
 
 ## Decision
 - `data_availability_tiers.py` remains the data readiness owner.
