@@ -32,12 +32,20 @@ from automation_scheduler.streamlit_dashboard_data import (
     file_inventory,
     generate_latest_dashboard_outputs,
     get_available_profile_options,
+    get_default_historical_sqlite_path,
+    get_historical_import_source_options,
+    get_historical_sqlite_snapshot_for_dashboard,
+    get_historical_sqlite_filter_options_for_dashboard,
     get_system_health_rows,
+    import_historical_file_to_sqlite_for_dashboard,
     load_canonical_rows_for_dashboard,
     load_dashboard_snapshot,
+    make_historical_projection_metric_rows,
     parse_feature_weights,
     preview_path,
     run_model_test,
+    run_sqlite_projection_for_dashboard,
+    save_historical_upload_for_import,
     simple_home_cards,
 )
 from automation_scheduler.historical_data_sources import (
@@ -579,22 +587,97 @@ elif menu == "Data Source Library":
         counts = get_source_status_counts()
         st.json(counts)
 
+    st.info(
+        "Importable now: **Football‑Data CSV** (`football_data_uk`), "
+        "**MLB JSON** (`arnav_mlb_odds_scraper`), "
+        "**SBR‑style CSV/JSON** (`sportsbookreview_scraper`)."
+    )
+
 
 elif menu == "Import Historical Data":
     st.header("Import Historical Odds Data")
-    st.warning(
-        "Importing of historical data has not been implemented yet. "
-        "Importers will be created in **Phase 10H5** (canonical historical odds importers). "
-        "After that, SQLite store will be implemented in **Phase 10H6**."
+
+    import_source_options = get_historical_import_source_options()
+    selected_source_key = st.selectbox(
+        "Select an approved data source",
+        options=[opt["source_key"] for opt in import_source_options],
+        format_func=lambda k: next(
+            (opt["source"] for opt in import_source_options if opt["source_key"] == k),
+            k,
+        ),
     )
-    st.info(
-        "No downloads, scraping, or SQLite writes happen here. "
-        "This screen will activate once importers are ready."
+
+    default_sqlite = get_default_historical_sqlite_path()
+    db_path_input = st.text_input(
+        "SQLite database path",
+        value=default_sqlite,
+        help="Path where the historical‑odds SQLite file lives or will be created.",
     )
+
+    upload_col, local_col = st.columns(2)
+
+    uploaded_file = upload_col.file_uploader(
+        "Upload a CSV or JSON file",
+        type=["csv", "json"],
+        help=(
+            "Choose a local file from your machine. "
+            "No downloads or scraping happen here. You choose the local file."
+        ),
+    )
+
+    local_path_input = local_col.text_input(
+        "Or type an absolute path to a file already on the server",
+        value="",
+        placeholder="/absolute/path/to/file.csv",
+    )
+
+    if st.button("Import now", type="primary"):
+        file_path = None
+        source_file = None
+
+        if uploaded_file is not None:
+            # Save uploaded content to runtime directory
+            content = uploaded_file.getvalue()
+            filename = uploaded_file.name or "uploaded"
+            save_result = save_historical_upload_for_import(
+                selected_source_key, filename, content
+            )
+            file_path = save_result["path"]
+            source_file = f"upload:{save_result['filename']}"
+            st.success(f"Saved upload to {file_path}")
+        elif local_path_input.strip():
+            file_path = local_path_input.strip()
+            source_file = local_path_input.strip()
+        else:
+            st.error("Provide a file either via upload or by typing a server path.")
+            file_path = None
+
+        if file_path:
+            with st.spinner("Importing into SQLite..."):
+                import_result = import_historical_file_to_sqlite_for_dashboard(
+                    db_path_input,
+                    selected_source_key,
+                    file_path,
+                    source_file=source_file,
+                )
+            st.json(import_result)
+            if import_result.get("ok"):
+                st.success(
+                    f"✅ Imported {import_result['rows_inserted']} rows. "
+                    f"Rejected {import_result['rows_rejected']} rows."
+                )
+            else:
+                st.warning(
+                    f"⚠️ Some rows were rejected ({import_result['rows_rejected']}). "
+                    "Check the raw result above."
+                )
+    st.caption("No downloads or scraping happen here. You choose the local file.")
 
 
 elif menu == "Data Quality Check":
     st.header("Data Quality Check")
+
+    # Existing sections  -------------------------------------------------
     st.subheader("File Inventory")
     inventory = file_inventory()
     if inventory:
@@ -609,18 +692,109 @@ elif menu == "Data Quality Check":
     else:
         st.info("Schema report not yet available.")
 
+    # SQLite snapshot ----------------------------------------------------
+    st.subheader("SQLite Historical‑Odds Store Snapshot")
+    default_sqlite = get_default_historical_sqlite_path()
+    db_path_input = st.text_input(
+        "SQLite path for snapshot",
+        value=default_sqlite,
+        key="dqc_db_path",
+    )
+    if st.button("Refresh snapshot", key="dqc_refresh"):
+        with st.spinner("Reading SQLite store..."):
+            snap = get_historical_sqlite_snapshot_for_dashboard(db_path_input)
+        if snap.get("ok"):
+            st.metric("Total odds rows", snap["table_counts"].get("historical_odds", 0))
+            st.json(snap["filter_options"])
+
+            with st.expander("Table counts"):
+                st.json(snap["table_counts"])
+            with st.expander("Validation result"):
+                st.json(snap["validation"])
+        else:
+            st.warning("Could not read database. It may not exist yet.")
+
 
 elif menu == "Model Projection":
     st.header("Model Projection")
-    snapshot = load_dashboard_snapshot()
-    cards = simple_home_cards(snapshot)
-    metric_row([
-        ("System", cards.get("Is the system safe?" , "Unknown")),
-        ("Start money", cards.get("How much money did the test start with?","-")),
-        ("End money", cards.get("How much money did the test end with?","-")),
-        ("Ready?", cards.get("Is this ready or not ready?","-")),
-    ])
 
+    default_sqlite = get_default_historical_sqlite_path()
+    db_path_input = st.text_input(
+        "SQLite database path",
+        value=default_sqlite,
+        key="projection_db_path",
+    )
+
+    filter_opts = get_historical_sqlite_filter_options_for_dashboard(db_path_input) \
+        if Path(db_path_input).exists() else {}
+
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        sport_filter = st.text_input("Sport filter (optional)", key="proj_sport")
+        league_filter = st.text_input("League filter (optional)", key="proj_league")
+        market_filter = st.text_input("Market filter (optional)", key="proj_market")
+    with col2:
+        source_key_filter = st.text_input("Source key filter (optional)", key="proj_source")
+        start_date = st.text_input("Start date (YYYY-MM-DD, optional)", key="proj_start")
+        end_date = st.text_input("End date (YYYY-MM-DD, optional)", key="proj_end")
+    with col3:
+        row_limit = st.number_input(
+            "Row limit",
+            min_value=1,
+            max_value=50000,
+            value=1000,
+            step=500,
+            key="proj_limit",
+        )
+        model_prob = st.number_input(
+            "Model probability override (optional)",
+            min_value=0.0,
+            max_value=1.0,
+            value=0.0,
+            step=0.01,
+            format="%.4f",
+            key="proj_mp",
+        )
+
+    if st.button("Run SQLite‑backed projection", type="primary"):
+        with st.spinner("Running historical projection..."):
+            proj_result = run_sqlite_projection_for_dashboard(
+                db_path_input,
+                sport=sport_filter or None,
+                league=league_filter or None,
+                market=market_filter or None,
+                source_key=source_key_filter or None,
+                start_date=start_date or None,
+                end_date=end_date or None,
+                limit=int(row_limit),
+                model_probability=model_prob if model_prob > 0 else None,
+                strategy_config=None,
+            )
+        if proj_result.get("ok"):
+            summary = proj_result["summary"]
+            metric_rows = make_historical_projection_metric_rows(summary)
+            if metric_rows:
+                row = metric_rows[0]
+                metric_row(
+                    [
+                        ("Rows loaded", row["rows_loaded"], ""),
+                        ("Rows converted", row["rows_converted"], ""),
+                        ("Bets", row["bets"], ""),
+                        ("No bets", row["no_bets"], ""),
+                        ("P/L", row["profit_loss"], ""),
+                        ("ROI %", row["roi_percent"], ""),
+                        ("Max drawdown %", row["max_drawdown_percent"], ""),
+                        ("Projection ready", "✅ Yes" if row["projection_ready"] else "❌ No", row["reason"]),
+                    ]
+                )
+            with st.expander("Raw projection result"):
+                st.json(proj_result)
+            with st.expander("Filter options used"):
+                st.json(proj_result.get("filter_options", {}))
+        else:
+            st.error("Projection failed. Ensure the database has data.")
+
+    # Also show the existing source plan for reference
     plan_text = get_model_testing_source_plan()
     st.markdown(plan_text)
 

@@ -20,6 +20,19 @@ import json
 import math
 import subprocess
 
+from .historical_data_sources import get_historical_data_source_rows
+from .historical_odds_sqlite import (
+    connect_historical_odds_db,
+    initialize_historical_odds_db,
+    import_historical_odds_file_to_sqlite,
+    summarize_historical_odds_db,
+    validate_sqlite_store,
+)
+from .historical_backtest_bridge import (
+    run_sqlite_historical_backtest,
+    summarize_sqlite_historical_backtest,
+    get_sqlite_backtest_filter_options,
+)
 
 from .backtest_dataset_builder import (
     build_canonical_backtest_dataset,
@@ -54,6 +67,10 @@ DATA_LIBRARY_PATHS: dict[str, Path] = {
     "Review Queue Full": DEFAULT_REVIEW_QUEUE_FULL_PATH,
     "System Health": DEFAULT_SYSTEM_HEALTH_PATH,
 }
+
+DEFAULT_HISTORICAL_SQLITE_PATH = Path("data/historical/historical_odds.db")
+DEFAULT_HISTORICAL_UPLOAD_DIR = Path("data/historical/uploads")
+HISTORICAL_SQLITE_UI_VERSION = "10H8"
 
 
 EASY_LABELS: dict[str, str] = {
@@ -777,6 +794,195 @@ def run_model_test(
         "bankroll_curve": bankroll_curve,
         "readiness": readiness,
     }
+
+
+def get_default_historical_sqlite_path() -> str:
+    """Return default path for the historical‑odds SQLite database."""
+    return str(DEFAULT_HISTORICAL_SQLITE_PATH)
+
+
+def get_historical_import_source_options() -> list[dict]:
+    """Return an operator‑friendly list of sources that can be imported.
+
+    Only sources whose status is KEEP, KEEP_TOOL, DOWNGRADE, or EXPLORATION_ONLY
+    are shown.  The list makes clear which sources have working importers.
+    """
+    all_sources = get_historical_data_source_rows(include_rejected=False)
+    options: list[dict] = []
+    for src in all_sources:
+        if src["status"] in ("remove",):
+            continue
+        options.append(
+            {
+                "source_key": src["source_key"],
+                "source": src["name"],
+                "decision": src["status"],
+                "sports": src["sport"] if src["sport"] != "*" else "any",
+                "formats": src["format"],
+                "next_action": (
+                    "Ready" if src["projection_ready"]
+                    else "Importer not built yet"
+                ),
+            }
+        )
+    return options
+
+
+def save_historical_upload_for_import(
+    source_key: str,
+    filename: str,
+    content: bytes | str,
+    upload_dir: Path = DEFAULT_HISTORICAL_UPLOAD_DIR,
+) -> dict:
+    """Save uploaded content to a local runtime path.
+
+    The filename is sanitised so only safe characters are kept.
+    No network calls are made.
+    """
+    safe_name = "".join(c for c in filename if c.isalnum() or c in (".", "_", "-"))
+    if not safe_name:
+        safe_name = "upload"
+    file_path = upload_dir / source_key / safe_name
+    file_path.parent.mkdir(parents=True, exist_ok=True)
+
+    if isinstance(content, str):
+        file_path.write_text(content, encoding="utf-8")
+    else:
+        file_path.write_bytes(content)
+
+    return {
+        "ok": True,
+        "path": str(file_path),
+        "source_key": source_key,
+        "filename": safe_name,
+        "size_bytes": file_path.stat().st_size,
+    }
+
+
+def import_historical_file_to_sqlite_for_dashboard(
+    db_path: str | Path,
+    source_key: str,
+    file_path: str | Path,
+    source_file: str | None = None,
+) -> dict:
+    """Open/initialize the SQLite database, import a canonical file, and return a summary.
+
+    The connection is closed before returning.
+    """
+    conn = connect_historical_odds_db(str(db_path))
+    initialize_historical_odds_db(conn)
+
+    result = import_historical_odds_file_to_sqlite(
+        conn, source_key, file_path, source_file=source_file
+    )
+    conn.close()
+    # Convert to JSON‑safe dict
+    return {
+        "ok": bool(result.get("ok")),
+        "rows_seen": result.get("rows_seen", 0),
+        "rows_inserted": result.get("rows_inserted", 0),
+        "rows_rejected": result.get("rows_rejected", 0),
+        "warning_total": result.get("warning_total", 0),
+        "import_id": result.get("import_id", ""),
+    }
+
+
+def get_historical_sqlite_snapshot_for_dashboard(db_path: str | Path) -> dict:
+    """Open the SQLite database and return table counts, summary, filter options, and validation."""
+    conn = connect_historical_odds_db(str(db_path))
+    initialize_historical_odds_db(conn)
+
+    table_counts = dict(
+        conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table'"
+        ).fetchall()
+    )  # will just get names; we will count later
+    counts: dict[str, int] = {}
+    for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'"):
+        name = row["name"]
+        cnt = conn.execute(f"SELECT COUNT(*) AS c FROM [{name}]").fetchone()["c"]
+        counts[name] = cnt
+
+    db_summary = summarize_historical_odds_db(conn)
+    filter_options = get_sqlite_backtest_filter_options(conn)
+    validation = validate_sqlite_store(conn)
+    conn.close()
+
+    return {
+        "ok": True,
+        "db_path": str(db_path),
+        "table_counts": counts,
+        "db_summary": db_summary,
+        "filter_options": filter_options,
+        "validation": validation,
+    }
+
+
+def get_historical_sqlite_filter_options_for_dashboard(db_path: str | Path) -> dict:
+    """Return only filter options (sports, leagues, etc.) from the SQLite store."""
+    conn = connect_historical_odds_db(str(db_path))
+    initialize_historical_odds_db(conn)
+    opts = get_sqlite_backtest_filter_options(conn)
+    conn.close()
+    return opts
+
+
+def run_sqlite_projection_for_dashboard(
+    db_path: str | Path,
+    *,
+    sport: str | None = None,
+    league: str | None = None,
+    market: str | None = None,
+    source_key: str | None = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
+    limit: int = 1000,
+    model_probability: float | None = None,
+    strategy_config: dict | None = None,
+) -> dict:
+    """Open the SQLite store, run a historical backtest, and return summary + raw result."""
+    conn = connect_historical_odds_db(str(db_path))
+    initialize_historical_odds_db(conn)
+
+    bridge_result = run_sqlite_historical_backtest(
+        conn,
+        sport=sport,
+        league=league,
+        market=market,
+        source_key=source_key,
+        start_date=start_date,
+        end_date=end_date,
+        limit=limit,
+        model_probability=model_probability,
+        strategy_config=strategy_config,
+    )
+    summary = summarize_sqlite_historical_backtest(bridge_result)
+
+    filter_opts = get_sqlite_backtest_filter_options(conn)
+    conn.close()
+
+    return {
+        "ok": bool(bridge_result.get("ok")),
+        "summary": summary,
+        "result": bridge_result,
+        "filter_options": filter_opts,
+    }
+
+
+def make_historical_projection_metric_rows(summary: dict) -> list[dict]:
+    """Return a flat list of metric rows suitable for Streamlit data frames."""
+    row = {
+        "rows_loaded": summary.get("rows_loaded", 0),
+        "rows_converted": summary.get("rows_converted", 0),
+        "bets": summary.get("bets", 0),
+        "no_bets": summary.get("no_bets", 0),
+        "profit_loss": summary.get("profit_loss", 0.0),
+        "roi_percent": summary.get("roi_percent", 0.0),
+        "max_drawdown_percent": summary.get("max_drawdown_percent", 0.0),
+        "projection_ready": summary.get("projection_ready", False),
+        "reason": summary.get("reason", ""),
+    }
+    return [row]
 
 
 def render_dashboard_markdown(dashboard: Mapping[str, Any]) -> str:

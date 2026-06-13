@@ -135,3 +135,144 @@ def test_get_available_profile_options_has_all_sports():
 
     assert "all_sports" in values
     assert len(values) >= 2
+
+
+# ── Historical SQLite / Projection helpers ──────────────────────────────
+
+def test_get_historical_import_source_options_includes_football_and_mlb():
+    opts = get_historical_import_source_options()
+    keys = [opt["source_key"] for opt in opts]
+    assert "football_data_uk" in keys
+    assert "arnav_mlb_odds_scraper" in keys
+
+
+def test_save_historical_upload_for_import(tmp_path):
+    source_key = "football_data_uk"
+    filename = "test_upload.csv"
+    content = b"dummy,csv,content\n1,2,3"
+    result = save_historical_upload_for_import(
+        source_key, filename, content, upload_dir=tmp_path
+    )
+    assert result["ok"] is True
+    assert result["source_key"] == source_key
+    assert result["filename"] == filename
+    assert result["size_bytes"] > 0
+    saved_path = tmp_path / source_key / filename
+    assert saved_path.exists()
+
+
+def test_import_historical_file_to_sqlite_for_dashboard_inserts_rows(tmp_path):
+    # Create a small JSON file that matches the arnav_mlb_odds_scraper schema
+    import json
+
+    rows = []
+    for i in range(3):
+        rows.append(
+            {
+                "source_key": "arnav_mlb_odds_scraper",
+                "sport": "mlb",
+                "league": "MLB",
+                "event_date": f"2025-0{i+1}-01",
+                "home_team": "TeamA",
+                "away_team": "TeamB",
+                "market": "moneyline",
+                "selection": "TeamA",
+                "odds_at_decision_time": 150.0,
+                "market_implied_probability": 0.40,
+                "final_result": "W",
+            }
+        )
+    file_path = tmp_path / "test_data.json"
+    file_path.write_text(json.dumps(rows), encoding="utf-8")
+
+    db_path = tmp_path / "test_import.db"
+    result = import_historical_file_to_sqlite_for_dashboard(
+        db_path, "arnav_mlb_odds_scraper", file_path
+    )
+    assert result["ok"] is True
+    assert result["rows_seen"] == 3
+    assert result["rows_inserted"] == 3
+    assert result["rows_rejected"] == 0
+
+
+def test_get_historical_sqlite_snapshot_for_dashboard_after_import(tmp_path):
+    import json
+
+    rows = [
+        {
+            "source_key": "arnav_mlb_odds_scraper",
+            "sport": "mlb",
+            "league": "MLB",
+            "event_date": "2025-01-01",
+            "home_team": "Home",
+            "away_team": "Away",
+            "market": "moneyline",
+            "selection": "Home",
+            "odds_at_decision_time": 200.0,
+            "market_implied_probability": 0.333,
+            "final_result": "W",
+        }
+    ]
+    file_path = tmp_path / "snap.json"
+    file_path.write_text(json.dumps(rows), encoding="utf-8")
+    db_path = tmp_path / "test_snap.db"
+    import_historical_file_to_sqlite_for_dashboard(
+        db_path, "arnav_mlb_odds_scraper", file_path
+    )
+    snap = get_historical_sqlite_snapshot_for_dashboard(db_path)
+    assert snap["ok"] is True
+    assert snap["table_counts"].get("historical_odds", 0) == 1
+    filters = snap.get("filter_options", {})
+    assert "sports" in filters
+    assert "mlb" in filters.get("sports", []) or "MLB" in filters.get("sports", [])
+
+
+def test_run_sqlite_projection_for_dashboard_ok(tmp_path):
+    import json
+
+    rows = [
+        {
+            "source_key": "arnav_mlb_odds_scraper",
+            "sport": "mlb",
+            "league": "MLB",
+            "event_date": "2025-01-01",
+            "home_team": "Home",
+            "away_team": "Away",
+            "market": "moneyline",
+            "selection": "Home",
+            "odds_at_decision_time": 200.0,
+            "market_implied_probability": 0.333,
+            "final_result": "W",
+        }
+    ]
+    file_path = tmp_path / "proj.json"
+    file_path.write_text(json.dumps(rows), encoding="utf-8")
+    db_path = tmp_path / "test_proj.db"
+    import_historical_file_to_sqlite_for_dashboard(
+        db_path, "arnav_mlb_odds_scraper", file_path
+    )
+    proj = run_sqlite_projection_for_dashboard(db_path)
+    assert proj["ok"] is True
+    summary = proj["summary"]
+    assert summary["rows_loaded"] >= 1
+    assert summary["rows_converted"] >= 1
+
+
+def test_make_historical_projection_metric_rows_returns_keys():
+    dummy_summary = {
+        "rows_loaded": 100,
+        "rows_converted": 95,
+        "bets": 10,
+        "no_bets": 90,
+        "profit_loss": 5.0,
+        "roi_percent": 0.5,
+        "max_drawdown_percent": 1.0,
+        "projection_ready": True,
+        "reason": "",
+    }
+    rows = make_historical_projection_metric_rows(dummy_summary)
+    assert len(rows) == 1
+    row = rows[0]
+    assert row["rows_loaded"] == 100
+    assert row["projection_ready"] is True
+    assert row["reason"] == ""
