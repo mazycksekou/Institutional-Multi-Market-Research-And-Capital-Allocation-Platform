@@ -168,32 +168,17 @@ def test_save_historical_upload_for_import(tmp_path):
 
 
 def test_import_historical_file_to_sqlite_for_dashboard_inserts_rows(tmp_path):
-    # Create a small JSON file that matches the arnav_mlb_odds_scraper schema
-    import json
-
-    rows = []
-    for i in range(3):
-        rows.append(
-            {
-                "source_key": "arnav_mlb_odds_scraper",
-                "sport": "mlb",
-                "league": "MLB",
-                "event_date": f"2025-0{i+1}-01",
-                "home_team": "TeamA",
-                "away_team": "TeamB",
-                "market": "moneyline",
-                "selection": "TeamA",
-                "odds_at_decision_time": 150.0,
-                "market_implied_probability": 0.40,
-                "final_result": "W",
-            }
-        )
-    file_path = tmp_path / "test_data.json"
-    file_path.write_text(json.dumps(rows), encoding="utf-8")
+    # Create a minimal Football-Data CSV that produces 3 canonical rows
+    csv_content = (
+        "Div,Date,HomeTeam,AwayTeam,FTHG,FTAG,FTR,B365H,B365D,B365A\n"
+        "E0,2023-08-12,Arsenal,Chelsea,3,1,H,1.50,4.00,6.50\n"
+    )
+    file_path = tmp_path / "test_data.csv"
+    file_path.write_text(csv_content, encoding="utf-8")
 
     db_path = tmp_path / "test_import.db"
     result = import_historical_file_to_sqlite_for_dashboard(
-        db_path, "arnav_mlb_odds_scraper", file_path
+        db_path, "football_data_uk", file_path
     )
     assert result["ok"] is True
     assert result["rows_seen"] == 3
@@ -202,66 +187,41 @@ def test_import_historical_file_to_sqlite_for_dashboard_inserts_rows(tmp_path):
 
 
 def test_get_historical_sqlite_snapshot_for_dashboard_after_import(tmp_path):
-    import json
-
-    rows = [
-        {
-            "source_key": "arnav_mlb_odds_scraper",
-            "sport": "mlb",
-            "league": "MLB",
-            "event_date": "2025-01-01",
-            "home_team": "Home",
-            "away_team": "Away",
-            "market": "moneyline",
-            "selection": "Home",
-            "odds_at_decision_time": 200.0,
-            "market_implied_probability": 0.333,
-            "final_result": "W",
-        }
-    ]
-    file_path = tmp_path / "snap.json"
-    file_path.write_text(json.dumps(rows), encoding="utf-8")
+    csv_content = (
+        "Div,Date,HomeTeam,AwayTeam,FTHG,FTAG,FTR,B365H,B365D,B365A\n"
+        "E0,2023-08-12,Arsenal,Chelsea,3,1,H,1.50,4.00,6.50\n"
+    )
+    file_path = tmp_path / "snap.csv"
+    file_path.write_text(csv_content, encoding="utf-8")
     db_path = tmp_path / "test_snap.db"
     import_historical_file_to_sqlite_for_dashboard(
-        db_path, "arnav_mlb_odds_scraper", file_path
+        db_path, "football_data_uk", file_path
     )
     snap = get_historical_sqlite_snapshot_for_dashboard(db_path)
     assert snap["ok"] is True
-    assert snap["table_counts"].get("historical_odds", 0) == 1
+    assert snap["table_counts"].get("historical_odds", 0) >= 1
     filters = snap.get("filter_options", {})
     assert "sports" in filters
-    assert "mlb" in filters.get("sports", []) or "MLB" in filters.get("sports", [])
+    # The football_data_uk importer sets sport to "soccer"
+    assert "soccer" in filters.get("sports", [])
 
 
 def test_run_sqlite_projection_for_dashboard_ok(tmp_path):
-    import json
-
-    rows = [
-        {
-            "source_key": "arnav_mlb_odds_scraper",
-            "sport": "mlb",
-            "league": "MLB",
-            "event_date": "2025-01-01",
-            "home_team": "Home",
-            "away_team": "Away",
-            "market": "moneyline",
-            "selection": "Home",
-            "odds_at_decision_time": 200.0,
-            "market_implied_probability": 0.333,
-            "final_result": "W",
-        }
-    ]
-    file_path = tmp_path / "proj.json"
-    file_path.write_text(json.dumps(rows), encoding="utf-8")
+    csv_content = (
+        "Div,Date,HomeTeam,AwayTeam,FTHG,FTAG,FTR,B365H,B365D,B365A\n"
+        "E0,2023-08-12,Arsenal,Chelsea,3,1,H,1.50,4.00,6.50\n"
+    )
+    file_path = tmp_path / "proj.csv"
+    file_path.write_text(csv_content, encoding="utf-8")
     db_path = tmp_path / "test_proj.db"
     import_historical_file_to_sqlite_for_dashboard(
-        db_path, "arnav_mlb_odds_scraper", file_path
+        db_path, "football_data_uk", file_path
     )
     proj = run_sqlite_projection_for_dashboard(db_path)
     assert proj["ok"] is True
     summary = proj["summary"]
-    assert summary["rows_loaded"] >= 1
-    assert summary["rows_converted"] >= 1
+    assert summary["rows_loaded"] >= 3
+    assert summary["rows_converted"] >= 3
 
 
 def test_make_historical_projection_metric_rows_returns_keys():

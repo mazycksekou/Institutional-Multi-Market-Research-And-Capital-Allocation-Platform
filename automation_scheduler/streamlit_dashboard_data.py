@@ -892,11 +892,6 @@ def get_historical_sqlite_snapshot_for_dashboard(db_path: str | Path) -> dict:
     conn = connect_historical_odds_db(str(db_path))
     initialize_historical_odds_db(conn)
 
-    table_counts = dict(
-        conn.execute(
-            "SELECT name FROM sqlite_master WHERE type='table'"
-        ).fetchall()
-    )  # will just get names; we will count later
     counts: dict[str, int] = {}
     for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'"):
         name = row["name"]
