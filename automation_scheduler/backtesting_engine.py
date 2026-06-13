@@ -20,6 +20,7 @@ from .scheduler_config import sanitize_filename, utc_now_iso
 from .calibration import calculate_calibration_metrics, summarize_outcome_coverage
 from .data_paths import get_runtime_data_path
 from .backtest_schema import normalize_backtest_row, normalize_backtest_rows, validate_no_leakage_features
+from .backtest_leakage import assert_backtest_rows_no_hard_leakage, summarize_backtest_leakage_report
 
 # Absorbed Phase 10B canonical backtesting helpers.
 def _group_counts(rows: list[dict[str, Any]], key: str) -> dict[str, int]:
@@ -169,10 +170,7 @@ def _to_float(value: Any, default: float = 0.0) -> float:
 
 def _paper_rows_from_replay_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     rows = normalize_backtest_rows(rows)
-    for row in rows:
-        leakage = validate_no_leakage_features(row)
-        if not leakage.get("ok"):
-            raise ValueError(f"Backtest row contains leakage fields in features: {leakage.get('leakage_fields')}")
+    assert_backtest_rows_no_hard_leakage(rows)
     paper_rows = []
     for row in rows:
         result_status = str(row.get("result_status", "pending")).lower()
@@ -238,6 +236,7 @@ def run_backtest(
     source_rows = list(rows or [])
     if historical_rows_path:
         source_rows = load_historical_rows(historical_rows_path)
+    leakage_report = assert_backtest_rows_no_hard_leakage(source_rows)
     replay = replay_rows(source_rows, model_id=model_id)
     replay_path = write_replay_result(replay, base_dir=str(Path(base_data_dir) / "backtests"))
     replay_rows_data = list(replay.get("rows", []))
@@ -328,6 +327,7 @@ def run_backtest(
         "expected_vs_realized": compare_expected_vs_realized(metrics["expected_roi_percent"], metrics["realized_roi_percent"]),
         "replay_summary": summarize_replay_result(replay),
         "replay_path": replay_path,
+        "leakage_report": summarize_backtest_leakage_report(leakage_report),
         "ece": ece,
         "clv_path": str(clv_path),
         "calibration_path": str(calibration_path),
