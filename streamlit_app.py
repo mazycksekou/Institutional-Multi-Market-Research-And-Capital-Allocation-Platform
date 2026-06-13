@@ -386,6 +386,7 @@ elif menu == "Paper Bets":
         # Numeric‑safe copy for charts, Arrow‑safe copy for display
         numeric_table = pd.DataFrame(rows)
         table = df(rows)
+        filtered = table.copy()
         if sport_filter != "All" and "sport" in numeric_table.columns:
             filtered = table[table["sport"].astype(str) == sport_filter]
         if market_filter != "All" and "market" in numeric_table.columns:
