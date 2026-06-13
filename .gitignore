@@ -114,3 +114,4 @@ venv/
 
 # Expired local handoff/context files
 PHASE4_CONTEXT_FOR_CHATGPT.txt
+.aider*
