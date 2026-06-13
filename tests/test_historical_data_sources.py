@@ -7,11 +7,13 @@ import pytest
 
 from automation_scheduler.historical_data_sources import (
     HISTORICAL_DATA_SOURCES,
-    get_priority_import_sources,
+    get_historical_data_source_rows,
     get_historical_data_sources,
+    get_model_testing_source_plan,
+    get_priority_import_sources,
+    get_source_status_counts,
     source_is_projection_ready,
     summarize_source_registry,
-    get_model_testing_source_plan,
     KEEP,
     KEEP_TOOL,
     DOWNGRADE,
@@ -70,3 +72,18 @@ def test_summary_first_importer():
     """summarize_source_registry returns first_importer = football_data_uk."""
     summary = summarize_source_registry()
     assert summary["first_importer"] == "football_data_uk"
+
+
+def test_historical_data_source_rows_include_key_fields():
+    """get_historical_data_source_rows returns rows with expected columns."""
+    rows = get_historical_data_source_rows()
+    assert len(rows) > 0
+    expected = {"source_key", "name", "status", "sport", "description", "format", "priority_order", "projection_ready"}
+    for row in rows:
+        assert expected.issubset(set(row.keys()))
+
+
+def test_get_source_status_counts_returns_int_values():
+    """get_source_status_counts returns count greater than zero for keep."""
+    counts = get_source_status_counts()
+    assert counts.get("keep", 0) >= 1
