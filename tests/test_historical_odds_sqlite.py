@@ -303,3 +303,23 @@ def test_stable_hash_id_deterministic() -> None:
     h1 = stable_hash_id("test", ["a", "b"])
     h2 = stable_hash_id("test", ["a", "b"])
     assert h1 == h2
+
+
+def test_event_date_min_max_correct_after_format_normalization(tmp_path: Path) -> None:
+    csv_content = (
+        "Div,Date,HomeTeam,AwayTeam,FTHG,FTAG,FTR,B365H,B365D,B365A\n"
+        "E0,31/08/2024,Arsenal,Chelsea,3,1,H,1.5,4.0,6.5\n"
+        "E1,01/01/2025,ManU,Liverpool,0,0,D,2.0,3.0,4.0\n"
+    )
+    csv_path = tmp_path / "date_test.csv"
+    csv_path.write_text(csv_content, encoding="utf-8")
+    db_path = tmp_path / "date_store.db"
+    conn = connect_historical_odds_db(db_path)
+    initialize_historical_odds_db(conn)
+    import_historical_odds_file_to_sqlite(conn, "football_data_uk", csv_path)
+    cursor = conn.execute("SELECT MIN(event_date) AS dmin, MAX(event_date) AS dmax FROM historical_odds")
+    row = cursor.fetchone()
+    conn.close()
+    assert row is not None
+    assert row["dmin"] == "2024-08-31"
+    assert row["dmax"] == "2025-01-01"

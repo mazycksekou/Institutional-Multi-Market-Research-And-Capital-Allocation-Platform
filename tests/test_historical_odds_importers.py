@@ -362,3 +362,49 @@ def test_supported_keys_match() -> None:
     assert "football_data_uk" in keys
     assert "arnav_mlb_odds_scraper" in keys
     assert "sportsbookreview_scraper" in keys
+
+
+# -- Phase 10H9A hardening tests -------------------------------------------------
+
+
+def test_football_data_date_normalization() -> None:
+    header = [
+        "Div","Date","HomeTeam","AwayTeam","FTHG","FTAG","FTR","B365H","B365D","B365A",
+    ]
+    data = [
+        ["E0","31/08/2024","Arsenal","Chelsea","3","1","H","1.5","4.0","6.5"],
+        ["E0","01/01/2025","ManU","Liverpool","0","0","D","2.0","3.0","4.0"],
+    ]
+    with tempfile.TemporaryDirectory() as tmp:
+        path = Path(tmp) / "date_test.csv"
+        _write_csv(path, header, data)
+        rows = import_football_data_csv(path)
+    assert len(rows) == 6
+    dates = {r["event_date"] for r in rows}
+    assert "2024-08-31" in dates
+    assert "2025-01-01" in dates
+
+
+def test_football_data_settlement_fields() -> None:
+    header = [
+        "Div","Date","HomeTeam","AwayTeam","FTHG","FTAG","FTR","B365H","B365D","B365A",
+    ]
+    data = [
+        ["E0","2023-08-12","Arsenal","Chelsea","3","1","H","1.5","4.0","6.5"],
+    ]
+    with tempfile.TemporaryDirectory() as tmp:
+        path = Path(tmp) / "settle.csv"
+        _write_csv(path, header, data)
+        rows = import_football_data_csv(path)
+    assert len(rows) == 3
+    home_row = [r for r in rows if r["selection"]=="home"][0]
+    assert home_row["home_score"] == 3
+    assert home_row["away_score"] == 1
+    assert home_row["final_result"] == "H"
+    assert home_row["winner"] == "arsenal"
+    draw_row = [r for r in rows if r["selection"]=="draw"][0]
+    assert draw_row["home_score"] == 3
+    assert draw_row["away_score"] == 1
+    assert draw_row["final_result"] == "H"
+    away_row = [r for r in rows if r["selection"]=="away"][0]
+    assert away_row["final_result"] == "H"

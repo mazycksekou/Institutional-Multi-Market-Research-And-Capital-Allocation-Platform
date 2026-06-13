@@ -261,17 +261,12 @@ def get_model_testing_source_plan() -> str:
     lines = [
         "## Historical Data Source Import Plan",
         "",
-        "**Phase 10H4** – Registry completed (this module).",
-        "**Phase 10H5** – Canonical historical odds importers will be created.",
-        "**Phase 10H6** – SQLite historical odds store will be built.",
-        "",
-        (
-            "SQLite is deliberately deferred to Phase 10H6. "
-            "Importers must exist first, and they must be reliable, "
-            "so they are built in Phase 10H5. "
-            "Only after importers produce a canonical internal format "
-            "will we write to SQLite."
-        ),
+        "**Phase 10H4** – Source registry complete.",
+        "**Phase 10H5** – Importers complete.",
+        "**Phase 10H6** – SQLite store complete.",
+        "**Phase 10H7** – SQLite backtest bridge complete.",
+        "**Phase 10H8** – Streamlit SQLite UI complete.",
+        "**Phase 10H9** – Real sample import walkthrough in progress.",
         "",
         "Current priority order for first importer:",
     ]
@@ -279,7 +274,7 @@ def get_model_testing_source_plan() -> str:
     for i, src in enumerate(prio, start=1):
         lines.append(f"  {i}. {src['name']} (`{src['source_key']}`)")
     lines.append("")
-    lines.append("SQLite will not appear until Phase 10H6.")
+    lines.append("SQLite store is operational. See Phase 10H6 and later.")
     return "\n".join(lines)
 
 

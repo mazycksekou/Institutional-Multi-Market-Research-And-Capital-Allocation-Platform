@@ -11,6 +11,7 @@ No downloads, scraping, network calls, or database writes.
 from __future__ import annotations
 
 import csv
+from datetime import datetime
 import json
 import math
 from pathlib import Path
@@ -59,6 +60,18 @@ SUPPORTED_IMPORTER_KEYS: list[str] = [
     "arnav_mlb_odds_scraper",
     "sportsbookreview_scraper",
 ]
+
+
+def _normalize_football_data_event_date(raw: str) -> str:
+    """Convert Football-Data date (dd/mm/YYYY) to ISO (YYYY-MM-DD)."""
+    if not raw:
+        return raw
+    if "/" in raw:
+        try:
+            return datetime.strptime(raw, "%d/%m/%Y").strftime("%Y-%m-%d")
+        except ValueError:
+            pass
+    return raw
 
 # ---------------------------------------------------------------------------
 # Odds conversion helpers
@@ -266,7 +279,7 @@ def import_football_data_csv(
 
         for raw_idx, raw in enumerate(reader):
             league = raw.get("Div", "").strip()
-            event_date = raw.get("Date", "").strip()
+            event_date = _normalize_football_data_event_date(raw.get("Date", "").strip())
             home_team = normalize_team_name(raw.get("HomeTeam", ""))
             away_team = normalize_team_name(raw.get("AwayTeam", ""))
             try:
