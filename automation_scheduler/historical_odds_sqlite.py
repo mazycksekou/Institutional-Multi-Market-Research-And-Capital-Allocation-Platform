@@ -16,7 +16,7 @@ import json
 import sqlite3
 import tempfile
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -50,7 +50,7 @@ DEFAULT_QUERY_LIMIT: int = 1000
 
 def utc_now_iso() -> str:
     """Return current UTC time in ISO‑8601 format."""
-    return datetime.utcnow().isoformat()
+    return datetime.now(timezone.utc).isoformat()
 
 
 def stable_hash_id(prefix: str, parts: list[str]) -> str:
@@ -493,16 +493,16 @@ def query_historical_odds_rows(
     params: list[Any] = []
 
     if sport is not None:
-        conditions.append("o.sport = ?")
+        conditions.append("LOWER(o.sport) = LOWER(?)")
         params.append(sport)
     if league is not None:
-        conditions.append("o.league = ?")
+        conditions.append("LOWER(o.league) = LOWER(?)")
         params.append(league)
     if market is not None:
-        conditions.append("o.market = ?")
+        conditions.append("LOWER(o.market) = LOWER(?)")
         params.append(market)
     if source_key is not None:
-        conditions.append("o.source_key = ?")
+        conditions.append("LOWER(o.source_key) = LOWER(?)")
         params.append(source_key)
     if start_date is not None:
         conditions.append("o.event_date >= ?")

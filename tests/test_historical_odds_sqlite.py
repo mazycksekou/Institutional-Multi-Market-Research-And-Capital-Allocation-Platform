@@ -1,7 +1,7 @@
 """
 Tests for automation_scheduler/historical_odds_sqlite.py.
 
-Uses temporary SQLite databases only.
+Uses pytest tmp_path fixtures for temporary SQLite databases.
 No external network, no downloading, no scraping.
 """
 
@@ -12,7 +12,6 @@ import json
 import math
 import os
 import sys
-import tempfile
 from pathlib import Path
 
 import pytest
@@ -48,17 +47,9 @@ from automation_scheduler.historical_odds_sqlite import (
 # ---------------------------------------------------------------------------
 
 
-def _connection() -> tuple[sqlite3.Connection, Path]: ...
-
-
-def _tmp_db() -> Path:
-    return Path(tempfile.mkstemp(suffix=".db")[1])
-
-
 def _write_csv(path: Path, header: list[str], rows: list[list[str]]) -> None:
-    import csv as csvmod
     with open(path, "w", newline="", encoding="utf-8") as f:
-        writer = csvmod.writer(f)
+        writer = csv.writer(f)
         writer.writerow(header)
         for row in rows:
             writer.writerow(row)
@@ -86,10 +77,10 @@ def _make_valid_row() -> dict:
 # ---------------------------------------------------------------------------
 
 
-def test_initialize_creates_tables() -> None:
-    db_path = _tmp_db()
+def test_initialize_creates_tables(tmp_path: Path) -> None:
+    db_path = tmp_path / "test.db"
+    conn = connect_historical_odds_db(db_path)
     try:
-        conn = connect_historical_odds_db(db_path)
         initialize_historical_odds_db(conn)
         table_names = [
             r["name"]
@@ -99,9 +90,8 @@ def test_initialize_creates_tables() -> None:
         ]
         for t in HISTORICAL_ODDS_SQLITE_TABLES:
             assert t in table_names
-        conn.close()
     finally:
-        db_path.unlink(missing_ok=True)
+        conn.close()
 
 
 # ---------------------------------------------------------------------------
@@ -109,24 +99,22 @@ def test_initialize_creates_tables() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_upsert_valid_row() -> None:
-    db_path = _tmp_db()
+def test_upsert_valid_row(tmp_path: Path) -> None:
+    db_path = tmp_path / "test.db"
+    conn = connect_historical_odds_db(db_path)
     try:
-        conn = connect_historical_odds_db(db_path)
         initialize_historical_odds_db(conn)
         row = _make_valid_row()
         result = upsert_canonical_historical_odds_rows(conn, [row], source_file="test.csv")
         assert result["rows_inserted"] == 1
         assert result["rows_rejected"] == 0
-
         counts = get_sqlite_table_counts(conn)
         assert counts["historical_events"] == 1
         assert counts["historical_odds"] == 1
         assert counts["historical_results"] == 1
         assert counts["source_imports"] == 1
-        conn.close()
     finally:
-        db_path.unlink(missing_ok=True)
+        conn.close()
 
 
 # ---------------------------------------------------------------------------
@@ -134,22 +122,19 @@ def test_upsert_valid_row() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_upsert_idempotent() -> None:
-    db_path = _tmp_db()
+def test_upsert_idempotent(tmp_path: Path) -> None:
+    db_path = tmp_path / "test.db"
+    conn = connect_historical_odds_db(db_path)
     try:
-        conn = connect_historical_odds_db(db_path)
         initialize_historical_odds_db(conn)
         row = _make_valid_row()
         upsert_canonical_historical_odds_rows(conn, [row], source_file="test.csv")
         upsert_canonical_historical_odds_rows(conn, [row], source_file="test.csv")
         counts = get_sqlite_table_counts(conn)
-        # odds should still be exactly 1
         assert counts["historical_odds"] == 1
-        # source_imports records each call (2 calls)
         assert counts["source_imports"] == 2
-        conn.close()
     finally:
-        db_path.unlink(missing_ok=True)
+        conn.close()
 
 
 # ---------------------------------------------------------------------------
@@ -157,21 +142,19 @@ def test_upsert_idempotent() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_upsert_rejects_invalid() -> None:
-    db_path = _tmp_db()
+def test_upsert_rejects_invalid(tmp_path: Path) -> None:
+    db_path = tmp_path / "test.db"
+    conn = connect_historical_odds_db(db_path)
     try:
-        conn = connect_historical_odds_db(db_path)
         initialize_historical_odds_db(conn)
-        # row missing essential fields
         bad_row = build_canonical_historical_odds_row(source_name="x")
         result = upsert_canonical_historical_odds_rows(conn, [bad_row], source_file="bad.csv")
         assert result["rows_inserted"] == 0
         assert result["rows_rejected"] == 1
         counts = get_sqlite_table_counts(conn)
         assert counts["historical_odds"] == 0
-        conn.close()
     finally:
-        db_path.unlink(missing_ok=True)
+        conn.close()
 
 
 # ---------------------------------------------------------------------------
@@ -179,10 +162,10 @@ def test_upsert_rejects_invalid() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_query_filters() -> None:
-    db_path = _tmp_db()
+def test_query_filters(tmp_path: Path) -> None:
+    db_path = tmp_path / "test.db"
+    conn = connect_historical_odds_db(db_path)
     try:
-        conn = connect_historical_odds_db(db_path)
         initialize_historical_odds_db(conn)
         row1 = _make_valid_row()
         row2 = build_canonical_historical_odds_row(
@@ -204,7 +187,7 @@ def test_query_filters() -> None:
         rows = query_historical_odds_rows(conn, sport="soccer")
         assert len(rows) == 1
 
-        # league filter
+        # league filter (case‑insensitive)
         rows = query_historical_odds_rows(conn, league="MLB")
         assert len(rows) == 1
 
@@ -219,9 +202,8 @@ def test_query_filters() -> None:
         # date range
         rows = query_historical_odds_rows(conn, start_date="2023-01-01", end_date="2023-12-31")
         assert len(rows) == 1
-        conn.close()
     finally:
-        db_path.unlink(missing_ok=True)
+        conn.close()
 
 
 # ---------------------------------------------------------------------------
@@ -229,10 +211,10 @@ def test_query_filters() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_summarize() -> None:
-    db_path = _tmp_db()
+def test_summarize(tmp_path: Path) -> None:
+    db_path = tmp_path / "test.db"
+    conn = connect_historical_odds_db(db_path)
     try:
-        conn = connect_historical_odds_db(db_path)
         initialize_historical_odds_db(conn)
         row = _make_valid_row()
         upsert_canonical_historical_odds_rows(conn, [row], source_file="test.csv")
@@ -243,9 +225,8 @@ def test_summarize() -> None:
         assert "E0" in summary["leagues"]
         assert "1x2" in summary["markets"]
         assert "football_data_uk" in summary["sources"]
-        conn.close()
     finally:
-        db_path.unlink(missing_ok=True)
+        conn.close()
 
 
 # ---------------------------------------------------------------------------
@@ -253,7 +234,8 @@ def test_summarize() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_import_football_csv_via_store() -> None:
+def test_import_football_csv_via_store(tmp_path: Path) -> None:
+    csv_path = tmp_path / "test_foot.csv"
     header = [
         "Div", "Date", "HomeTeam", "AwayTeam", "FTHG", "FTAG", "FTR",
         "B365H", "B365D", "B365A",
@@ -261,11 +243,11 @@ def test_import_football_csv_via_store() -> None:
     data = [
         ["E0", "2023-08-12", "Arsenal", "Chelsea", "3", "1", "H", "1.50", "4.00", "6.50"],
     ]
-    with tempfile.TemporaryDirectory() as tmpdir:
-        csv_path = Path(tmpdir) / "test_foot.csv"
-        _write_csv(csv_path, header, data)
-        db_path = Path(tmpdir) / "store.db"
-        conn = connect_historical_odds_db(db_path)
+    _write_csv(csv_path, header, data)
+
+    db_path = tmp_path / "store.db"
+    conn = connect_historical_odds_db(db_path)
+    try:
         initialize_historical_odds_db(conn)
         res = import_historical_odds_file_to_sqlite(
             conn, "football_data_uk", csv_path, source_file="test_foot.csv"
@@ -273,6 +255,7 @@ def test_import_football_csv_via_store() -> None:
         assert res["rows_inserted"] == 3  # home, draw, away
         counts = get_sqlite_table_counts(conn)
         assert counts["historical_odds"] == 3
+    finally:
         conn.close()
 
 
@@ -281,17 +264,16 @@ def test_import_football_csv_via_store() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_validate_store() -> None:
-    db_path = _tmp_db()
+def test_validate_store(tmp_path: Path) -> None:
+    db_path = tmp_path / "test.db"
+    conn = connect_historical_odds_db(db_path)
     try:
-        conn = connect_historical_odds_db(db_path)
         initialize_historical_odds_db(conn)
         val = validate_sqlite_store(conn)
         assert val["ok"] is True
         assert val["errors"] == []
-        conn.close()
     finally:
-        db_path.unlink(missing_ok=True)
+        conn.close()
 
 
 # ---------------------------------------------------------------------------
