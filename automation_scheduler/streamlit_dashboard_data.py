@@ -980,6 +980,34 @@ def make_historical_projection_metric_rows(summary: dict) -> list[dict]:
     return [row]
 
 
+def make_arrow_safe_value(value: Any) -> Any:
+    """Convert a potentially unsafe value to an Arrow‑compatible scalar.
+
+    - Path → str
+    - list, tuple, set, dict → JSON string (sorted keys)
+    - int, float, bool, None, str → unchanged
+    """
+    if isinstance(value, (int, float, bool, str)) or value is None:
+        return value
+    if isinstance(value, Path):
+        return str(value)
+    return json.dumps(value, ensure_ascii=False, sort_keys=True, default=str)
+
+
+def make_arrow_safe_table_rows(rows: list[dict]) -> list[dict]:
+    """Return new list where each dict's values are made Arrow‑safe.
+
+    The input list is never mutated.
+    """
+    result: list[dict] = []
+    for row in rows:
+        new_row: dict[str, Any] = {}
+        for k, v in row.items():
+            new_row[k] = make_arrow_safe_value(v)
+        result.append(new_row)
+    return result
+
+
 def render_dashboard_markdown(dashboard: Mapping[str, Any]) -> str:
     summary = dict(dashboard.get("backtest_summary") or {})
     readiness = dict(dashboard.get("readiness") or {})

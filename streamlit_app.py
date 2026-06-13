@@ -40,6 +40,7 @@ from automation_scheduler.streamlit_dashboard_data import (
     import_historical_file_to_sqlite_for_dashboard,
     load_canonical_rows_for_dashboard,
     load_dashboard_snapshot,
+    make_arrow_safe_table_rows,
     make_historical_projection_metric_rows,
     parse_feature_weights,
     preview_path,
@@ -66,7 +67,7 @@ st.set_page_config(
 
 
 def df(rows):
-    return pd.DataFrame(list(rows or []))
+    return pd.DataFrame(list(make_arrow_safe_table_rows(rows) if rows else []))
 
 
 def show_easy_dictionary() -> None:

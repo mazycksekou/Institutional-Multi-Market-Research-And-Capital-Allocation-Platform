@@ -242,3 +242,45 @@ def test_make_historical_projection_metric_rows_returns_keys():
     assert row["rows_loaded"] == 100
     assert row["projection_ready"] is True
     assert row["reason"] == ""
+
+
+def test_make_arrow_safe_value_handles_list():
+    import json
+
+    from automation_scheduler.streamlit_dashboard_data import make_arrow_safe_value
+
+    val = make_arrow_safe_value([1, 2, 3])
+    assert isinstance(val, str)
+    assert json.loads(val) == [1, 2, 3]
+
+
+def test_make_arrow_safe_value_handles_dict():
+    import json
+
+    from automation_scheduler.streamlit_dashboard_data import make_arrow_safe_value
+
+    d = {"b": 2, "a": 1}
+    val = make_arrow_safe_value(d)
+    parsed = json.loads(val)
+    assert parsed == {"a": 1, "b": 2}  # sorted keys
+
+
+def test_make_arrow_safe_table_rows_converts_nested():
+    from automation_scheduler.streamlit_dashboard_data import make_arrow_safe_table_rows
+
+    rows = [
+        {"sports": ["soccer"], "value": 5, "nested": {"a": 1}},
+    ]
+    safe = make_arrow_safe_table_rows(rows)
+    assert isinstance(safe[0]["sports"], str)
+    assert isinstance(safe[0]["value"], int)
+    assert isinstance(safe[0]["nested"], str)
+
+
+def test_make_arrow_safe_table_rows_does_not_mutate():
+    from automation_scheduler.streamlit_dashboard_data import make_arrow_safe_table_rows
+
+    original = [{"value": [1, 2]}]
+    safe = make_arrow_safe_table_rows(original)
+    assert isinstance(original[0]["value"], list)
+    assert isinstance(safe[0]["value"], str)
