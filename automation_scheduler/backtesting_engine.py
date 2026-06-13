@@ -19,6 +19,7 @@ from .scheduler_config import sanitize_filename, utc_now_iso
 
 from .calibration import calculate_calibration_metrics, summarize_outcome_coverage
 from .data_paths import get_runtime_data_path
+from .backtest_schema import normalize_backtest_row, normalize_backtest_rows, validate_no_leakage_features
 
 # Absorbed Phase 10B canonical backtesting helpers.
 def _group_counts(rows: list[dict[str, Any]], key: str) -> dict[str, int]:
@@ -89,39 +90,64 @@ def load_historical_rows(path: str) -> list[dict[str, Any]]:
     if not isinstance(payload, list):
         raise ValueError("historical replay JSON must be a list of rows")
     return payload
-def replay_rows(rows: list[dict[str, Any]], model_id: str = "unknown_model") -> dict[str, Any]:
-    replay_items: list[dict[str, Any]] = []
+def replay_rows(rows: list[dict[str, Any]], model_id: str = "historical_replay") -> dict[str, Any]:
+    """Replay historical rows through the canonical backtest row schema.
+
+    This preserves the old public contract while normalizing aliases through
+    the canonical backtest schema registry.
+    """
+
+    rows = normalize_backtest_rows(rows)
+    replayed = []
+
     for row in rows:
-        replay_items.append(
+        replayed.append(
             {
                 "event_id": row.get("event_id"),
-                "market_type": row.get("market_type"),
+                "contract_id": row.get("contract_id"),
+                "sport": row.get("sport"),
+                "league": row.get("league"),
+                "market_type": row.get("market_type") or row.get("market"),
                 "event_name": row.get("event_name"),
                 "market_name": row.get("market_name"),
                 "selection_name": row.get("selection_name"),
-                "recommended_odds": row.get("odds"),
-                "closing_odds": row.get("closing_odds"),
+                "recommended_odds": row.get("recommended_odds") if row.get("recommended_odds") is not None else row.get("odds_at_decision_time"),
+                "closing_odds": row.get("closing_odds") if row.get("closing_odds") is not None else row.get("closing_line"),
                 "model_probability": _to_float(row.get("model_probability")),
-                "result_status": row.get("result_status", "pending"),
-                "timestamp": row.get("timestamp") or utc_now_iso(),
-                "model_id": model_id,
+                "market_implied_probability": _to_float(row.get("market_implied_probability")),
+                "ev_percent": _to_float(row.get("ev_percent") if row.get("ev_percent") is not None else row.get("edge"), 0.0),
+                "paper_stake": _to_float(row.get("paper_stake") if row.get("paper_stake") is not None else row.get("stake"), 1.0),
+                "recommended_stake_percent": row.get("recommended_stake_percent"),
+                "result_status": row.get("result_status") or row.get("final_result") or "pending",
+                "timestamp": row.get("timestamp") or row.get("decision_time") or utc_now_iso(),
+                "features_known_at_decision_time": row.get("features_known_at_decision_time"),
             }
         )
+
     return {
         "model_id": model_id,
         "replayed_at": utc_now_iso(),
-        "sample_size": len(replay_items),
-        "rows": replay_items,
+        "sample_size": len(replayed),
+        "rows": replayed,
     }
 def write_replay_result(result: dict[str, Any], base_dir: str = "data/backtests") -> str:
-    normalized = str(base_dir).replace("\\", "/").rstrip("/")
-    directory = get_runtime_data_path("backtests") if normalized == "data/backtests" else Path(base_dir)
-    directory.mkdir(parents=True, exist_ok=True)
-    model_id = sanitize_filename(str(result.get("model_id") or "unknown_model"))
-    replay_id = sanitize_filename(str(result.get("replayed_at") or utc_now_iso()))
-    path = directory / f"replay_{model_id}_{replay_id}.json"
-    path.write_text(json.dumps(result, indent=2, sort_keys=True), encoding="utf-8")
-    return str(path)
+    """Write replay result and guarantee the persisted contract."""
+
+    payload = dict(result or {})
+    rows = list(payload.get("rows") or [])
+
+    payload["sample_size"] = payload.get("sample_size", len(rows))
+    payload["rows"] = rows
+
+    path = Path(base_dir)
+    path.mkdir(parents=True, exist_ok=True)
+
+    model_id = sanitize_filename(str(payload.get("model_id") or "unknown_model"))
+    replay_id = sanitize_filename(str(payload.get("replayed_at") or utc_now_iso()))
+    output_path = path / f"replay_{model_id}_{replay_id}.json"
+    output_path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
+
+    return str(output_path)
 def summarize_replay_result(result: dict[str, Any]) -> dict[str, Any]:
     rows = list(result.get("rows") or [])
     settled = [row for row in rows if str(row.get("result_status")).lower() in {"win", "loss", "push"}]
@@ -142,6 +168,11 @@ def _to_float(value: Any, default: float = 0.0) -> float:
 
 
 def _paper_rows_from_replay_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    rows = normalize_backtest_rows(rows)
+    for row in rows:
+        leakage = validate_no_leakage_features(row)
+        if not leakage.get("ok"):
+            raise ValueError(f"Backtest row contains leakage fields in features: {leakage.get('leakage_fields')}")
     paper_rows = []
     for row in rows:
         result_status = str(row.get("result_status", "pending")).lower()
@@ -199,6 +230,8 @@ def run_backtest(
     rows: list[dict[str, Any]] | None = None,
     base_data_dir: str = "data",
 ) -> dict[str, Any]:
+    if rows is not None:
+        rows = normalize_backtest_rows(rows)
     base_data_dir = str(resolve_base_data_dir(base_data_dir))
     Path(base_data_dir, "clv").mkdir(parents=True, exist_ok=True)
     Path(base_data_dir, "calibration").mkdir(parents=True, exist_ok=True)
