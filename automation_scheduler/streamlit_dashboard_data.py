@@ -21,6 +21,12 @@ import math
 import subprocess
 
 from .historical_data_sources import get_historical_data_source_rows
+from .historical_line_movement import (
+    initialize_line_movement_schema,
+    upsert_line_snapshots_for_canonical_rows,
+    summarize_line_movement_store,
+    backfill_line_snapshots_from_historical_odds,
+)
 from .historical_odds_sqlite import (
     connect_historical_odds_db,
     initialize_historical_odds_db,
