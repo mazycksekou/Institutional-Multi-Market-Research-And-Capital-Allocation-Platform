@@ -1123,11 +1123,7 @@ elif menu == "Data Explorer":
 
             # ── Sport Feature Packs (Phase 10H13) ─────────────────────
             st.subheader("Sport Feature Packs")
-            st.info(
-                "Sport Feature Packs show whether each sport has "
-                "enough required and recommended data for trustworthy "
-                "model testing."
-            )
+            st.info("Sport Feature Packs show whether each sport has enough required and recommended data for trustworthy model testing.")
             sp_snap = get_sport_feature_pack_snapshot_for_dashboard(
                 db_path_input,
                 sport=sport_filter or None,
