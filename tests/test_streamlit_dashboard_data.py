@@ -510,6 +510,74 @@ def test_streamlit_app_does_not_contain_vendor_api_text():
     assert "Run Line Movement Scraper" not in content
 
 
+# ── Phase 10H22 – As‑Of Line Movement Query Engine tests ─────────────────
+
+
+def test_get_asof_line_movement_query_snapshot_for_dashboard_handles_empty_rows():
+    from automation_scheduler.streamlit_dashboard_data import (
+        get_asof_line_movement_query_snapshot_for_dashboard,
+    )
+    snap = get_asof_line_movement_query_snapshot_for_dashboard()
+    assert snap["ok"] is False  # no hypothetical_bet_time
+    assert "missing_hypothetical_bet_time" not in str(snap.get("warnings", []))
+    # Because empty rows but also no bet time results in false
+    assert "asof_query_error" not in str(snap.get("warnings", []))
+
+
+def test_get_asof_line_movement_query_snapshot_for_dashboard_returns_query():
+    from automation_scheduler.streamlit_dashboard_data import (
+        get_asof_line_movement_query_snapshot_for_dashboard,
+    )
+    rows = [
+        {
+            "event_id": "e1",
+            "snapshot_time": "2024-06-15T10:00:00Z",
+            "snapshot_id": "s1",
+            "bookmaker": "bookA",
+            "market_family": "total",
+            "market": "Over/Under",
+            "selection": "Over",
+            "line_value": 220.5,
+        }
+    ]
+    snap = get_asof_line_movement_query_snapshot_for_dashboard(
+        snapshots=rows,
+        hypothetical_bet_time="2024-06-15T12:00:00Z",
+    )
+    assert snap["ok"] is True
+    qs = snap["query_snapshot"]
+    assert qs["selection"]["selected_snapshot_count"] == 1
+    assert len(qs["summary"]["sports"]) == 0
+
+
+def test_streamlit_app_contains_asof_query_title():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert 'subheader("As‑Of Line Movement Query Engine")' in content
+
+
+def test_streamlit_app_contains_asof_query_exact_text():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    expected = (
+        "As‑Of Line Movement Query Engine filters historical snapshots to only "
+        "those available at or before a hypothetical bet time."
+    )
+    assert expected in content
+
+
+def test_streamlit_app_does_not_contain_connect_vendor_api():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert "Connect Line Movement Vendor API" not in content
+
+
+def test_streamlit_app_does_not_contain_run_scraper_text():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert "Run Line Movement API Scraper" not in content
+
+
 def test_get_line_movement_readiness_snapshot_for_dashboard_returns_messages(tmp_path):
     from automation_scheduler.streamlit_dashboard_data import (
         get_line_movement_readiness_snapshot_for_dashboard,

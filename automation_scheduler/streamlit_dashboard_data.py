@@ -66,6 +66,11 @@ from .source_event_link_resolver import (
     build_source_event_link_resolver_snapshot,
     describe_source_event_link_resolver,
 )
+from .asof_line_movement_query import (
+    build_asof_line_movement_query_snapshot,
+    build_asof_line_movement_query_snapshot_from_sqlite,
+    describe_asof_line_movement_query_engine,
+)
 from .historical_odds_sqlite import (
     connect_historical_odds_db,
     initialize_historical_odds_db,
@@ -2679,6 +2684,70 @@ def get_overall_operator_workflow_steps() -> list[dict[str, str]]:
             "detail": "When new sources are available, re-import and repeat.",
         },
     ]
+
+# ---------------------------------------------------------------------------
+# Phase 10H22 – As-Of Line Movement Query Engine (dashboard bridge)
+# ---------------------------------------------------------------------------
+
+
+def get_asof_line_movement_query_snapshot_for_dashboard(
+    snapshots: Sequence[Mapping[str, Any]] | None = None,
+    db_path: str | Path | None = None,
+    event_id: str | None = None,
+    hypothetical_bet_time: Any = None,
+    bookmaker: str | None = None,
+    market_family: str | None = None,
+    market: str | None = None,
+    selection: str | None = None,
+    limit: int = 100,
+) -> dict[str, Any]:
+    """Return as‑of line movement query snapshot with messages.
+
+    If db_path is supplied, use SQLite wrapper; otherwise in‑memory wrapper.
+    No exceptions on missing/empty rows.
+    No SQL writes.
+    No vendor connector.
+    Stable JSON‑safe dict.
+    """
+    try:
+        if db_path is not None:
+            result = build_asof_line_movement_query_snapshot_from_sqlite(
+                db_path=db_path,
+                event_id=event_id,
+                hypothetical_bet_time=hypothetical_bet_time,
+                bookmaker=bookmaker,
+                market_family=market_family,
+                market=market,
+                selection=selection,
+                limit=limit,
+            )
+        else:
+            result = build_asof_line_movement_query_snapshot(
+                snapshots=snapshots,
+                event_id=event_id,
+                hypothetical_bet_time=hypothetical_bet_time,
+                bookmaker=bookmaker,
+                market_family=market_family,
+                market=market,
+                selection=selection,
+                limit=limit,
+            )
+    except Exception as exc:
+        return {
+            "ok": False,
+            "version": "10H22",
+            "query_snapshot": None,
+            "messages": describe_asof_line_movement_query_engine(),
+            "warnings": [f"asof_query_error: {exc}"],
+        }
+    return {
+        "ok": result.get("ok", False),
+        "version": result.get("version", "10H22"),
+        "query_snapshot": result.get("query_snapshot", result),
+        "messages": describe_asof_line_movement_query_engine(),
+        "warnings": result.get("warnings", []),
+    }
+
 
 # ---------------------------------------------------------------------------
 # Phase 10H21 – Source Event Link Resolver (dashboard bridge)

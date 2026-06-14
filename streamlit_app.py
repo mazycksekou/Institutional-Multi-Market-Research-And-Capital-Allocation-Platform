@@ -1139,6 +1139,91 @@ elif menu == "Data Explorer":
             else:
                 st.info("Paste sample JSON rows and click **Preview Event Links** to see resolver output.")
 
+            # ── As‑Of Line Movement Query Engine (Phase 10H22) ─────────────
+            st.subheader("As‑Of Line Movement Query Engine")
+            from automation_scheduler.streamlit_dashboard_data import (
+                get_asof_line_movement_query_snapshot_for_dashboard,
+            )
+            asof_msgs = describe_asof_line_movement_query_engine()
+            for msg in asof_msgs:
+                st.info(msg)
+
+            asof_event_id = st.text_input("Event ID (optional)", key="asof_event")
+            asof_hypothetical_time = st.text_input(
+                "Hypothetical bet time (YYYY‑MM‑DD or ISO)",
+                key="asof_bet_time",
+            )
+            col_asof1, col_asof2, col_asof3, col_asof4 = st.columns(4)
+            with col_asof1:
+                asof_bookmaker = st.text_input("Bookmaker (optional)", key="asof_book")
+            with col_asof2:
+                asof_market_family = st.text_input("Market family (optional)", key="asof_mf")
+            with col_asof3:
+                asof_market = st.text_input("Market (optional)", key="asof_mkt")
+            with col_asof4:
+                asof_selection = st.text_input("Selection (optional)", key="asof_sel")
+
+            asof_sample_text = st.text_area(
+                "Paste sample JSON snapshot rows (optional)",
+                value="",
+                height=100,
+                key="asof_sample",
+            )
+            if st.button("Preview As‑Of Snapshots", key="asof_preview"):
+                import json
+
+                parsed_rows = []
+                if asof_sample_text.strip():
+                    try:
+                        parsed = json.loads(asof_sample_text)
+                        if isinstance(parsed, list):
+                            parsed_rows = parsed
+                        elif isinstance(parsed, dict):
+                            parsed_rows = [parsed]
+                    except Exception:
+                        pass
+
+                snap = get_asof_line_movement_query_snapshot_for_dashboard(
+                    snapshots=parsed_rows or None,
+                    event_id=asof_event_id.strip() or None,
+                    hypothetical_bet_time=asof_hypothetical_time.strip() or None,
+                    bookmaker=asof_bookmaker.strip() or None,
+                    market_family=asof_market_family.strip() or None,
+                    market=asof_market.strip() or None,
+                    selection=asof_selection.strip() or None,
+                    limit=100,
+                )
+                st.session_state["_last_asof_snapshot"] = snap
+
+            last_asof = st.session_state.get("_last_asof_snapshot")
+            if last_asof:
+                if last_asof.get("ok"):
+                    qs = last_asof.get("query_snapshot", {})
+                    sel = qs.get("selection", {})
+                    col_a1, col_a2, col_a3, col_a4 = st.columns(4)
+                    with col_a1:
+                        st.metric("Total snapshots", sel.get("total_snapshots", 0))
+                        st.metric("Available snapshots", sel.get("available_snapshots", 0))
+                    with col_a2:
+                        st.metric("Future snapshots", sel.get("excluded_counts", {}).get("future_filtered", 0))
+                        st.metric("Invalid time snapshots", sel.get("excluded_counts", {}).get("invalid_time_filtered", 0))
+                    with col_a3:
+                        st.metric("Selected snapshot count", sel.get("selected_snapshot_count", 0))
+                    with col_a4:
+                        summary = qs.get("summary", {})
+                        st.metric("Sports", len(summary.get("sports", [])))
+                        st.metric("Market families", len(summary.get("market_families", [])))
+                    latest = sel.get("latest_snapshots", [])
+                    if latest:
+                        st.dataframe(df(latest), use_container_width=True, hide_index=True)
+                    else:
+                        st.info("No latest snapshots to display.")
+                else:
+                    for w in last_asof.get("warnings", []):
+                        st.warning(w)
+            else:
+                st.info("Paste sample JSON rows and click **Preview As‑Of Snapshots** to see output.")
+
             from automation_scheduler.streamlit_dashboard_data import (
                 get_line_volatility_snapshot_for_dashboard,
             )
