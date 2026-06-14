@@ -26,6 +26,13 @@ from .historical_line_movement import (
     upsert_line_snapshots_for_canonical_rows,
     summarize_line_movement_store,
 )
+from .sport_feature_packs import (
+    normalize_sport_key,
+    get_sport_feature_pack,
+    evaluate_sport_feature_readiness,
+    summarize_sport_feature_readiness,
+    SPORT_FEATURE_PACKS_VERSION,
+)
 from .historical_odds_sqlite import (
     connect_historical_odds_db,
     initialize_historical_odds_db,
