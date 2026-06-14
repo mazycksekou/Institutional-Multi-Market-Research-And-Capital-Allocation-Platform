@@ -1,0 +1,230 @@
+"""
+Tests for automation_scheduler/historical_line_movement.py.
+"""
+
+from __future__ import annotations
+
+import sqlite3
+from pathlib import Path
+
+import pytest
+
+from automation_scheduler.historical_line_movement import (
+    LINE_MOVEMENT_SCHEMA_VERSION,
+    backfill_line_snapshots_from_historical_odds,
+    calculate_line_movement_readiness,
+    canonical_row_to_line_snapshots,
+    initialize_line_movement_schema,
+    make_line_snapshot_id,
+    normalize_snapshot_label,
+    query_line_snapshots,
+    summarize_line_movement_store,
+    upsert_line_snapshots,
+    upsert_line_snapshots_for_canonical_rows,
+)
+from automation_scheduler.historical_odds_sqlite import (
+    connect_historical_odds_db,
+    initialize_historical_odds_db,
+    import_historical_odds_file_to_sqlite,
+    query_historical_odds_rows,
+)
+
+
+def _make_conn(tmp_path: Path) -> sqlite3.Connection:
+    db = tmp_path / "test_lm.db"
+    conn = connect_historical_odds_db(db)
+    initialize_historical_odds_db(conn)
+    initialize_line_movement_schema(conn)
+    return conn
+
+
+def test_initialize_line_movement_schema_creates_table(tmp_path: Path) -> None:
+    conn = connect_historical_odds_db(tmp_path / "test.db")
+    initialize_line_movement_schema(conn)
+    tables = [
+        r["name"]
+        for r in conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
+        )
+    ]
+    assert "historical_line_snapshots" in tables
+    conn.close()
+
+
+def test_canonical_row_to_line_snapshots_creates_decision(tmp_path: Path) -> None:
+    row = {
+        "event_id": "evt001",
+        "odds_id": "odds001",
+        "source_key": "test",
+        "source_file": "test.csv",
+        "sport": "soccer",
+        "league": "E0",
+        "event_date": "2023-08-12",
+        "home_team": "arsenal",
+        "away_team": "chelsea",
+        "bookmaker": "bet365",
+        "market": "1x2",
+        "selection": "home",
+        "odds_at_decision_time": 2.0,
+        "market_implied_probability": 0.5,
+        "collected_at": "2023-08-12T12:00:00Z",
+    }
+    snaps = canonical_row_to_line_snapshots(row)
+    assert len(snaps) == 1
+    assert snaps[0]["snapshot_label"] == "decision"
+    assert snaps[0]["odds_value"] == 2.0
+
+
+def test_canonical_row_to_line_snapshots_creates_opening_and_closing(tmp_path: Path) -> None:
+    row = {
+        "event_id": "evt002",
+        "odds_id": "odds002",
+        "source_key": "test",
+        "source_file": "test.csv",
+        "sport": "soccer",
+        "league": "E0",
+        "event_date": "2023-08-12",
+        "home_team": "arsenal",
+        "away_team": "chelsea",
+        "bookmaker": "bet365",
+        "market": "1x2",
+        "selection": "home",
+        "odds_at_decision_time": 2.0,
+        "market_implied_probability": 0.5,
+        "opening_odds": 2.2,
+        "closing_odds": 1.8,
+    }
+    snaps = canonical_row_to_line_snapshots(row)
+    labels = [s["snapshot_label"] for s in snaps]
+    assert "decision" in labels
+    assert "opening" in labels
+    assert "closing" in labels
+
+
+def test_upsert_line_snapshots_idempotent(tmp_path: Path) -> None:
+    conn = _make_conn(tmp_path)
+    row = {
+        "event_id": "e1",
+        "odds_id": "o1",
+        "source_key": "s1",
+        "source_file": "f1.csv",
+        "sport": "soccer",
+        "league": "E0",
+        "event_date": "2023-01-01",
+        "home_team": "a",
+        "away_team": "b",
+        "bookmaker": "b365",
+        "market": "1x2",
+        "selection": "home",
+        "odds_at_decision_time": 1.5,
+        "market_implied_probability": 0.6667,
+    }
+    snaps = canonical_row_to_line_snapshots(row)
+    res1 = upsert_line_snapshots(conn, snaps)
+    assert res1["rows_inserted_or_updated"] == 1
+    res2 = upsert_line_snapshots(conn, snaps)
+    # idempotent: still 1 inserted and not 0?
+    # upsert may report 1 each time because it's an update; acceptable
+    assert res2["rows_inserted_or_updated"] == 1
+    assert conn.execute(
+        "SELECT COUNT(*) AS cnt FROM historical_line_snapshots"
+    ).fetchone()["cnt"] == 1
+    conn.close()
+
+
+def test_query_line_snapshots_filters(tmp_path: Path) -> None:
+    conn = _make_conn(tmp_path)
+    row1 = {
+        "event_id": "e1", "odds_id": "o1", "source_key": "s1",
+        "source_file": "f1.csv", "sport": "soccer", "league": "E0",
+        "event_date": "2023-01-01", "home_team": "a", "away_team": "b",
+        "bookmaker": "b365", "market": "1x2", "selection": "home",
+        "odds_at_decision_time": 1.5, "market_implied_probability": 0.6667,
+    }
+    row2 = {
+        "event_id": "e2", "odds_id": "o2", "source_key": "s2",
+        "source_file": "f2.csv", "sport": "baseball", "league": "MLB",
+        "event_date": "2024-06-01", "home_team": "yankees", "away_team": "redsox",
+        "bookmaker": "draftkings", "market": "moneyline", "selection": "yankees",
+        "odds_at_decision_time": -110, "market_implied_probability": 0.5238,
+    }
+    upsert_line_snapshots_for_canonical_rows(conn, [row1, row2])
+
+    res_soccer = query_line_snapshots(conn, sport="soccer")
+    assert len(res_soccer) == 1
+    res_baseball = query_line_snapshots(conn, source_key="s2")
+    assert len(res_baseball) == 1
+    res_market = query_line_snapshots(conn, market="moneyline")
+    assert len(res_market) == 1
+    conn.close()
+
+
+def test_summarize_line_movement_store_counts(tmp_path: Path) -> None:
+    conn = _make_conn(tmp_path)
+    row = {
+        "event_id": "e1", "odds_id": "o1", "source_key": "s1",
+        "source_file": "f1.csv", "sport": "soccer", "league": "E0",
+        "event_date": "2023-01-01", "home_team": "a", "away_team": "b",
+        "bookmaker": "b365", "market": "1x2", "selection": "home",
+        "odds_at_decision_time": 1.5, "market_implied_probability": 0.6667,
+        "opening_odds": 1.6, "closing_odds": 1.4,
+    }
+    upsert_line_snapshots_for_canonical_rows(conn, [row])
+    summary = summarize_line_movement_store(conn)
+    assert summary["ok"]
+    assert summary["total_snapshots"] == 3
+    assert summary["opening_snapshots"] == 1
+    assert summary["decision_snapshots"] == 1
+    assert summary["closing_snapshots"] == 1
+    assert "soccer" in summary["sports"]
+    assert "E0" in summary["leagues"]
+    assert "1x2" in summary["markets"]
+    assert "s1" in summary["source_keys"]
+    conn.close()
+
+
+def test_calculate_line_movement_readiness(tmp_path: Path) -> None:
+    # Decision only → not ready
+    r = calculate_line_movement_readiness(
+        {"opening_snapshots": 0, "decision_snapshots": 1, "closing_snapshots": 0}
+    )
+    assert r["line_movement_ready"] is False
+    assert r["clv_ready"] is False
+
+    # Full opening+decision+closing → ready
+    r2 = calculate_line_movement_readiness(
+        {"opening_snapshots": 1, "decision_snapshots": 1, "closing_snapshots": 1}
+    )
+    assert r2["line_movement_ready"] is True
+    assert r2["clv_ready"] is True
+
+
+def test_backfill_line_snapshots_from_historical_odds(tmp_path: Path) -> None:
+    from automation_scheduler.historical_odds_sqlite import (
+        connect_historical_odds_db,
+        initialize_historical_odds_db,
+    )
+    db_path = tmp_path / "backfill.db"
+    conn = connect_historical_odds_db(db_path)
+    initialize_historical_odds_db(conn)
+    initialize_line_movement_schema(conn)
+
+    # Import a tiny Football-Data CSV
+    csv_path = tmp_path / "tiny.csv"
+    csv_path.write_text(
+        "Div,Date,HomeTeam,AwayTeam,FTHG,FTAG,FTR,B365H,B365D,B365A\n"
+        "E0,2023-08-12,Arsenal,Chelsea,3,1,H,1.50,4.00,6.50\n",
+        encoding="utf-8",
+    )
+    import_historical_odds_file_to_sqlite(
+        conn, "football_data_uk", csv_path
+    )
+
+    result = backfill_line_snapshots_from_historical_odds(conn)
+    assert result["rows_read"] >= 3
+    assert result["snapshots_created"] >= 3
+    # After backfill, there should be decision snapshots for each odds row
+    summary = summarize_line_movement_store(conn)
+    assert summary["decision_snapshots"] >= 3
+    assert summary["line_movement_ready"] is False  # no opening/closing from football-data
+    conn.close()

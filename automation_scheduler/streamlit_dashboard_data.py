@@ -871,6 +871,7 @@ def import_historical_file_to_sqlite_for_dashboard(
     """Open/initialize the SQLite database, import a canonical file, and return a summary.
 
     The connection is closed before returning.
+    After importing, also backfill line snapshots (non‑blocking).
     """
     conn = connect_historical_odds_db(str(db_path))
     initialize_historical_odds_db(conn)
@@ -878,8 +879,22 @@ def import_historical_file_to_sqlite_for_dashboard(
     result = import_historical_odds_file_to_sqlite(
         conn, source_key, file_path, source_file=source_file
     )
+    # Also create line snapshots from the just‑imported rows
+    initialize_line_movement_schema(conn)
+    lm_warnings: list[str] = []
+    try:
+        # Re‑fetch the inserted rows to get their canonical form
+        inserted_rows = result.get("rows_inserted", 0)
+        if inserted_rows > 0:
+            snap_rows = query_historical_odds_rows(conn, limit=inserted_rows + 100)
+            if snap_rows:
+                lm_result = upsert_line_snapshots_for_canonical_rows(conn, snap_rows)
+                if lm_result.get("warnings"):
+                    lm_warnings = lm_result["warnings"]
+    except Exception as exc:
+        lm_warnings.append(str(exc))
+
     conn.close()
-    # Convert to JSON‑safe dict
     return {
         "ok": bool(result.get("ok")),
         "rows_seen": result.get("rows_seen", 0),
@@ -887,6 +902,32 @@ def import_historical_file_to_sqlite_for_dashboard(
         "rows_rejected": result.get("rows_rejected", 0),
         "warning_total": result.get("warning_total", 0),
         "import_id": result.get("import_id", ""),
+        "line_movement_warnings": lm_warnings,
+    }
+
+
+def get_line_movement_snapshot_for_dashboard(
+    db_path: str | Path,
+) -> dict:
+    """Open the SQLite store, initialise line movement schema, and return summary.
+
+    Closes the connection before returning.
+    """
+    conn = connect_historical_odds_db(str(db_path))
+    initialize_historical_odds_db(conn)
+    initialize_line_movement_schema(conn)
+    result = summarize_line_movement_store(conn)
+    conn.close()
+    return {
+        "ok": result.get("ok"),
+        "total_snapshots": result.get("total_snapshots", 0),
+        "opening_snapshots": result.get("opening_snapshots", 0),
+        "decision_snapshots": result.get("decision_snapshots", 0),
+        "current_snapshots": result.get("current_snapshots", 0),
+        "closing_snapshots": result.get("closing_snapshots", 0),
+        "line_movement_ready": result.get("line_movement_ready", False),
+        "clv_ready": result.get("clv_ready", False),
+        "warnings": result.get("warnings", []),
     }
 
 

@@ -911,6 +911,45 @@ elif menu == "Data Explorer":
                     hide_index=True,
                 )
 
+            st.subheader("Line Movement Readiness")
+            from automation_scheduler.streamlit_dashboard_data import (
+                get_line_movement_snapshot_for_dashboard,
+            )
+            lm = get_line_movement_snapshot_for_dashboard(
+                db_path_input
+            )
+            if lm.get("ok"):
+                col_lm1, col_lm2, col_lm3 = st.columns(3)
+                with col_lm1:
+                    st.metric("Total snapshots", lm.get("total_snapshots", 0))
+                    st.metric("Opening snapshots", lm.get("opening_snapshots", 0))
+                with col_lm2:
+                    st.metric("Decision snapshots", lm.get("decision_snapshots", 0))
+                    st.metric("Current snapshots", lm.get("current_snapshots", 0))
+                with col_lm3:
+                    st.metric("Closing snapshots", lm.get("closing_snapshots", 0))
+                    st.metric(
+                        "Movement ready",
+                        "✅ Yes" if lm.get("line_movement_ready") else "❌ No",
+                    )
+                    st.metric(
+                        "CLV ready",
+                        "✅ Yes" if lm.get("clv_ready") else "❌ No",
+                    )
+
+                if lm.get("line_movement_ready"):
+                    st.info(
+                        "Baseline testing can run with decision odds only. "
+                        "Line movement and CLV require opening/closing snapshots."
+                    )
+                else:
+                    pass
+            else:
+                st.info(
+                    "Baseline testing can run with decision odds only. "
+                    "Line movement and CLV require opening/closing snapshots."
+                )
+
             st.subheader("Feature Control Lab")
             from automation_scheduler.streamlit_dashboard_data import (
                 get_feature_control_profiles,

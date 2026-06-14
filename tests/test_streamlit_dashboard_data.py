@@ -423,6 +423,50 @@ def test_data_explorer_header_no_bad_title():
     assert 'title("Betting Model Operator Dashboard")' in content
 
 
+def test_line_movement_readiness_header_in_streamlit_app():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert 'subheader("Line Movement Readiness")' in content
+
+
+def test_line_movement_baseline_testing_note_in_streamlit_app():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert (
+        "Baseline testing can run with decision odds only."
+        in content
+    )
+
+
+def test_get_line_movement_snapshot_for_dashboard(tmp_path):
+    from automation_scheduler.streamlit_dashboard_data import (
+        get_line_movement_snapshot_for_dashboard,
+        import_historical_file_to_sqlite_for_dashboard,
+    )
+
+    # Create minimal data
+    csv_content = (
+        "Div,Date,HomeTeam,AwayTeam,FTHG,FTAG,FTR,B365H,B365D,B365A\n"
+        "E0,2023-08-12,Arsenal,Chelsea,3,1,H,1.50,4.00,6.50\n"
+    )
+    file_path = tmp_path / "lm_test.csv"
+    file_path.write_text(csv_content, encoding="utf-8")
+    db_path = tmp_path / "lm_test.db"
+    import_historical_file_to_sqlite_for_dashboard(
+        db_path, "football_data_uk", file_path
+    )
+
+    snap = get_line_movement_snapshot_for_dashboard(db_path)
+    assert snap.get("ok") is True
+    assert snap["total_snapshots"] >= 3
+    assert snap["decision_snapshots"] >= 3
+    # Football‑Data has no opening/closing, so these should be 0
+    assert snap["opening_snapshots"] == 0
+    assert snap["closing_snapshots"] == 0
+    assert snap["line_movement_ready"] is False
+    assert snap["clv_ready"] is False
+
+
 def test_get_required_field_groups_for_market_returns_dict():
     groups = get_required_field_groups_for_market("moneyline_or_1x2")
     assert "core_event" in groups

@@ -323,3 +323,29 @@ def test_event_date_min_max_correct_after_format_normalization(tmp_path: Path) -
     assert row is not None
     assert row["dmin"] == "2024-08-31"
     assert row["dmax"] == "2025-01-01"
+
+
+def test_line_movement_schema_independent(tmp_path: Path) -> None:
+    """Ensure that the new line‑movement table does not interfere with existing
+    historical odds operations."""
+    from automation_scheduler.historical_line_movement import (
+        initialize_line_movement_schema,
+        summarize_line_movement_store,
+    )
+    db_path = tmp_path / "independent.db"
+    conn = connect_historical_odds_db(db_path)
+    initialize_historical_odds_db(conn)
+    initialize_line_movement_schema(conn)
+
+    # Existing historical_odds table still works
+    row = _make_valid_row()
+    upsert_canonical_historical_odds_rows(conn, [row], source_file="test.csv")
+    counts = get_sqlite_table_counts(conn)
+    assert counts["historical_odds"] == 1
+
+    # Summary of line movement store should be empty but not crash
+    summary = summarize_line_movement_store(conn)
+    assert summary["ok"]
+    assert summary["total_snapshots"] == 0
+
+    conn.close()
