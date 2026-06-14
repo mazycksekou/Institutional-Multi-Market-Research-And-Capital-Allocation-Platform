@@ -59,6 +59,8 @@ from automation_scheduler.streamlit_dashboard_data import (
     get_feature_ablation_lab_snapshot_for_dashboard,
     get_line_movement_readiness_snapshot_for_dashboard,
     get_line_movement_import_contract_snapshot_for_dashboard,
+    build_vendor_neutral_line_movement_contract,
+    describe_line_movement_import_contract,
     get_experiment_report_export_for_dashboard,
 )
 from automation_scheduler.feature_ablation_lab import get_ablation_field_groups_for_sport
