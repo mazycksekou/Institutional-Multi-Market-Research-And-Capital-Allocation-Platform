@@ -890,3 +890,229 @@ def get_line_volatility_summary_from_sqlite(
             "warnings": [],
         }
     return calculate_line_volatility_summary(rows)
+
+
+# ---------------------------------------------------------------------------
+# Phase 10H12B – Volatility Result Breakdown
+# ---------------------------------------------------------------------------
+
+
+def attach_volatility_to_backtest_rows(
+    rows: list[dict], volatility_rows: list[dict]
+) -> list[dict]:
+    """Return new list where each row gets volatility fields matched by stable keys.
+
+    Matching keys: event_id, market, selection, player_name, team_name, bookmaker.
+    If no match, volatility_level is set to "unknown" and move fields are None.
+    Input rows are not mutated.
+    """
+    import copy
+
+    # Build lookup key -> volatility info
+    vol_map: dict[str, dict] = {}
+    for v in volatility_rows:
+        k = "|".join(
+            [
+                str(v.get("event_id", "")),
+                str(v.get("market", "")),
+                str(v.get("selection", "")),
+                str(v.get("player_name", "")),
+                str(v.get("team_name", "")),
+                str(v.get("bookmaker", "")),
+            ]
+        )
+        vol_map[k] = v
+
+    result: list[dict] = []
+    for row in rows:
+        r = copy.deepcopy(row)
+        key = "|".join(
+            [
+                str(r.get("event_id", "")),
+                str(r.get("market", "")),
+                str(r.get("selection", "")),
+                str(r.get("player_name", "")),
+                str(r.get("team_name", "")),
+                str(r.get("bookmaker", "")),
+            ]
+        )
+        matched = vol_map.get(key)
+        if matched:
+            r["volatility_level"] = matched.get("volatility_level", "unknown")
+            r["line_move_up"] = matched.get("line_move_up")
+            r["line_move_down"] = matched.get("line_move_down")
+            r["line_total_range"] = matched.get("line_total_range")
+            r["odds_move_up"] = matched.get("odds_move_up")
+            r["odds_move_down"] = matched.get("odds_move_down")
+            r["odds_total_range"] = matched.get("odds_total_range")
+        else:
+            r["volatility_level"] = "unknown"
+            r["line_move_up"] = None
+            r["line_move_down"] = None
+            r["line_total_range"] = None
+            r["odds_move_up"] = None
+            r["odds_move_down"] = None
+            r["odds_total_range"] = None
+        result.append(r)
+    return result
+
+
+def summarize_results_by_volatility(rows: list[dict]) -> dict:
+    """Group rows by volatility_level and compute performance breakdown.
+
+    Returns dict with keys: ok, groups, total_rows, operator_interpretation, warnings.
+    """
+    from collections import defaultdict
+
+    groups: dict[str, list[dict]] = defaultdict(list)
+    for r in rows:
+        level = str(r.get("volatility_level", "unknown"))
+        groups[level].append(r)
+
+    summary_groups: dict[str, dict] = {}
+
+    # helpers
+    def _safe_float(v, default=0.0):
+        if v is None:
+            return default
+        try:
+            return float(v)
+        except (ValueError, TypeError):
+            return default
+
+    def _safe_int(v, default=0):
+        if v is None:
+            return default
+        try:
+            return int(v)
+        except (ValueError, TypeError):
+            return default
+
+    total_rows_all = len(rows)
+
+    for level, grp_rows in sorted(groups.items()):
+        decisions = len(grp_rows)
+        skipped = 0
+        net = 0.0
+        rois = []
+        wins = 0
+        losses = 0
+        pushes = 0
+        settled = 0
+
+        line_up_vals: list[float] = []
+        line_down_vals: list[float] = []
+        line_range_vals: list[float] = []
+        odds_up_vals: list[float] = []
+        odds_down_vals: list[float] = []
+        odds_range_vals: list[float] = []
+
+        for r in grp_rows:
+            # skipped decisions
+            if r.get("no_bet") or r.get("reason"):
+                skipped += 1
+            else:
+                # net result
+                net += _safe_float(r.get("profit_loss") or r.get("pnl"))
+                # roi
+                roi_val = _safe_float(r.get("roi_percent"))
+                rois.append(roi_val)
+                # settlement
+                final = str(r.get("final_result", "")).strip().upper()
+                if final in ("W", "WIN", "H", "HOME"):
+                    wins += 1
+                    settled += 1
+                elif final in ("L", "LOSS", "A", "AWAY"):
+                    losses += 1
+                    settled += 1
+                elif final in ("P", "PUSH", "D", "DRAW", "T", "TIE"):
+                    pushes += 1
+                    settled += 1
+                # collect volatility avg values
+                vup = r.get("line_move_up")
+                if vup is not None:
+                    line_up_vals.append(float(vup))
+                vdown = r.get("line_move_down")
+                if vdown is not None:
+                    line_down_vals.append(float(vdown))
+                vrange = r.get("line_total_range")
+                if vrange is not None:
+                    line_range_vals.append(float(vrange))
+                oup = r.get("odds_move_up")
+                if oup is not None:
+                    odds_up_vals.append(float(oup))
+                odown = r.get("odds_move_down")
+                if odown is not None:
+                    odds_down_vals.append(float(odown))
+                orange = r.get("odds_total_range")
+                if orange is not None:
+                    odds_range_vals.append(float(orange))
+
+        roi_avg = sum(rois) / len(rois) if rois else 0.0
+        win_rate = (wins / settled * 100) if settled > 0 else 0.0
+
+        avg_line_up = sum(line_up_vals) / len(line_up_vals) if line_up_vals else None
+        avg_line_down = sum(line_down_vals) / len(line_down_vals) if line_down_vals else None
+        avg_line_range = sum(line_range_vals) / len(line_range_vals) if line_range_vals else None
+        avg_odds_up = sum(odds_up_vals) / len(odds_up_vals) if odds_up_vals else None
+        avg_odds_down = sum(odds_down_vals) / len(odds_down_vals) if odds_down_vals else None
+        avg_odds_range = sum(odds_range_vals) / len(odds_range_vals) if odds_range_vals else None
+
+        summary_groups[level] = {
+            "volatility_level": level,
+            "decisions": decisions,
+            "skipped_decisions": skipped,
+            "settled_count": settled,
+            "wins": wins,
+            "losses": losses,
+            "pushes": pushes,
+            "net_result": round(net, 2),
+            "roi_percent": round(roi_avg, 2),
+            "win_rate_percent": round(win_rate, 2),
+            "average_line_move_up": avg_line_up,
+            "average_line_move_down": avg_line_down,
+            "average_line_total_range": avg_line_range,
+            "average_odds_move_up": avg_odds_up,
+            "average_odds_move_down": avg_odds_down,
+            "average_odds_total_range": avg_odds_range,
+        }
+
+    # operator interpretation
+    interp: str = ""
+    warnings_list: list[str] = []
+    unknown_count = summary_groups.get("unknown", {}).get("decisions", 0)
+    if unknown_count == total_rows_all:
+        interp = "Volatility results are unavailable because no volatility data could be matched."
+        warnings_list.append("All rows have unknown volatility level.")
+    else:
+        best = None
+        worst = None
+        # find best ROI group (excluding unknown)
+        for lvl, data in summary_groups.items():
+            if lvl == "unknown":
+                continue
+            roi_val = data.get("roi_percent") or 0.0
+            if best is None or roi_val > summary_groups[best]["roi_percent"]:
+                best = lvl
+            if worst is None or roi_val < summary_groups[worst]["roi_percent"]:
+                worst = lvl
+        interp = f"{best.replace('_',' ').title()}-volatility rows performed best"
+        interp += f" ({summary_groups[best]['roi_percent']}%)."
+        if worst != best:
+            interp += f" {worst.replace('_',' ').title()}-volatility rows had worse ROI ({summary_groups[worst]['roi_percent']}%)."
+
+    # additional warnings
+    if unknown_count > 0 and unknown_count < total_rows_all:
+        warnings_list.append(
+            f"{unknown_count} row(s) have unknown volatility because no snapshots matched."
+        )
+    if unknown_count == 0 and "unknown" in summary_groups:
+        del summary_groups["unknown"]
+
+    return {
+        "ok": True,
+        "groups": summary_groups,
+        "total_rows": total_rows_all,
+        "operator_interpretation": interp,
+        "warnings": warnings_list,
+    }

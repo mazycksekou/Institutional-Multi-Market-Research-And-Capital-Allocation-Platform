@@ -1600,6 +1600,95 @@ def simple_home_cards(snapshot: Mapping[str, Any]) -> dict[str, Any]:
 
 
 # ---------------------------------------------------------------------------
+# Phase 10H12B – Volatility Result Breakdown Helper
+# ---------------------------------------------------------------------------
+
+
+def get_volatility_result_breakdown_for_dashboard(
+    db_path: str | Path,
+    projection_result: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Return a breakdown of backtest/projection results grouped by volatility level.
+
+    If *projection_result* contains row‑level decisions (inside its
+    ``backtest_result`` → ``strategy_bankroll_report`` → ``decisions``),
+    those rows are matched to volatility data and summarized.
+    Otherwise an availability‑only breakdown is returned with a warning.
+
+    Opens and closes the SQLite connection internally.
+    """
+    from automation_scheduler.historical_line_movement import (
+        get_line_volatility_summary_from_sqlite,
+        attach_volatility_to_backtest_rows,
+        summarize_results_by_volatility,
+    )
+    from automation_scheduler.historical_odds_sqlite import (
+        connect_historical_odds_db,
+        initialize_historical_odds_db,
+    )
+    from automation_scheduler.historical_line_movement import initialize_line_movement_schema
+
+    result: dict[str, Any] = {
+        "ok": False,
+        "db_path": str(db_path),
+        "availability_summary": {},
+        "breakdown": {},
+        "operator_interpretation": "",
+        "warnings": [],
+    }
+
+    try:
+        conn = connect_historical_odds_db(str(db_path))
+        initialize_historical_odds_db(conn)
+        initialize_line_movement_schema(conn)
+
+        vol_summary = get_line_volatility_summary_from_sqlite(conn)
+        result["availability_summary"] = {
+            "groups_seen": vol_summary.get("groups_seen", 0),
+            "high_volatility_count": vol_summary.get("high_volatility_count", 0),
+            "medium_volatility_count": vol_summary.get("medium_volatility_count", 0),
+            "low_volatility_count": vol_summary.get("low_volatility_count", 0),
+            "unknown_volatility_count": vol_summary.get("unknown_volatility_count", 0),
+        }
+        conn.close()
+    except Exception as exc:
+        result["warnings"].append(f"Could not read SQLite store: {exc}")
+        return result
+
+    # Attempt to extract row‑level decisions from projection_result
+    decisions: list[dict] = []
+    if projection_result is not None:
+        try:
+            bt = projection_result.get("backtest_result", {}) or {}
+            report = bt.get("strategy_bankroll_report", {}) or {}
+            decisions = list(report.get("decisions") or [])
+        except Exception:
+            decisions = []
+
+    if not decisions:
+        result["ok"] = True
+        result["operator_interpretation"] = (
+            "Row‑level projection results are not available for performance breakdown. "
+            "Volatility availability only is shown above."
+        )
+        result["warnings"].append(
+            "Volatility availability exists, but row‑level projection results "
+            "are not available for breakdown yet."
+        )
+        return result
+
+    vol_rows = vol_summary.get("volatility_rows", [])
+    attached = attach_volatility_to_backtest_rows(decisions, vol_rows)
+    breakdown = summarize_results_by_volatility(attached)
+
+    result["ok"] = True
+    result["breakdown"] = breakdown.get("groups", {})
+    result["operator_interpretation"] = breakdown.get("operator_interpretation", "")
+    result["warnings"] = breakdown.get("warnings", [])
+    return result
+
+
+# ---------------------------------------------------------------------------
 # Phase 10H11 – Feature Control Lab + Dashboard Instructions
 # ---------------------------------------------------------------------------
 

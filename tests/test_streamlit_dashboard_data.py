@@ -709,3 +709,52 @@ def test_get_overall_operator_workflow_steps_returns_ordered():
     assert len(steps) >= 8
     assert steps[0]["step"] == 1
     assert steps[-1]["step"] == len(steps)
+
+
+# ── Phase 10H12B – Dashboard helper tests ──────────────────────
+
+
+def test_get_volatility_result_breakdown_for_dashboard_without_projection_rows_returns_warning(tmp_path):
+    from automation_scheduler.streamlit_dashboard_data import (
+        get_volatility_result_breakdown_for_dashboard,
+    )
+    from automation_scheduler.historical_odds_sqlite import (
+        connect_historical_odds_db,
+        initialize_historical_odds_db,
+    )
+    from automation_scheduler.historical_line_movement import (
+        initialize_line_movement_schema,
+    )
+
+    db_path = tmp_path / "empty_vol.db"
+    conn = connect_historical_odds_db(db_path)
+    initialize_historical_odds_db(conn)
+    initialize_line_movement_schema(conn)
+    conn.close()
+
+    result = get_volatility_result_breakdown_for_dashboard(db_path)
+    assert result["ok"] is True
+    assert len(result["warnings"]) > 0
+    assert "Row‑level projection results are not available" in result.get("operator_interpretation", "")
+
+
+def test_volatility_result_breakdown_text_in_streamlit_app():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert 'subheader("Volatility Result Breakdown")' in content
+
+
+def test_volatility_result_breakdown_explanation_in_streamlit_app():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert (
+        "This shows whether low, medium, high, or unknown volatility "
+        "produced better results."
+    ) in content
+    from automation_scheduler.streamlit_dashboard_data import (
+        get_overall_operator_workflow_steps,
+    )
+    steps = get_overall_operator_workflow_steps()
+    assert len(steps) >= 8
+    assert steps[0]["step"] == 1
+    assert steps[-1]["step"] == len(steps)

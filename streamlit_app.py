@@ -53,6 +53,7 @@ from automation_scheduler.streamlit_dashboard_data import (
     run_sqlite_projection_for_dashboard,
     save_historical_upload_for_import,
     simple_home_cards,
+    get_volatility_result_breakdown_for_dashboard,
 )
 from automation_scheduler.historical_data_sources import (
     get_historical_data_source_rows,
@@ -463,6 +464,58 @@ elif menu == "Backtest Dashboard":
     else:
         dashboard = snapshot["dashboard"]
         show_run_result(dashboard)
+
+        # ── Volatility Result Breakdown (if backtest result available) ────
+        if isinstance(dashboard, dict):
+            st.subheader("Volatility Result Breakdown")
+            st.info(
+                "This shows whether low, medium, high, or unknown volatility "
+                "produced better results."
+            )
+            default_sqlite = get_default_historical_sqlite_path()
+            vol_breakdown = get_volatility_result_breakdown_for_dashboard(
+                default_sqlite, projection_result=dashboard
+            )
+            if vol_breakdown.get("ok"):
+                breakdown = vol_breakdown.get("breakdown", {})
+                if breakdown:
+                    vol_rows = []
+                    for level, data in breakdown.items():
+                        vol_rows.append(
+                            {
+                                "volatility_level": level,
+                                "decisions": data.get("decisions", 0),
+                                "skipped_decisions": data.get("skipped_decisions", 0),
+                                "settled_count": data.get("settled_count", 0),
+                                "wins": data.get("wins", 0),
+                                "losses": data.get("losses", 0),
+                                "pushes": data.get("pushes", 0),
+                                "net_result": data.get("net_result", 0.0),
+                                "roi_percent": data.get("roi_percent", 0.0),
+                                "win_rate_percent": data.get("win_rate_percent", 0.0),
+                                "avg_line_move_up": data.get("average_line_move_up"),
+                                "avg_line_move_down": data.get("average_line_move_down"),
+                                "avg_line_total_range": data.get("average_line_total_range"),
+                                "avg_odds_move_up": data.get("average_odds_move_up"),
+                                "avg_odds_move_down": data.get("average_odds_move_down"),
+                                "avg_odds_total_range": data.get("average_odds_total_range"),
+                            }
+                        )
+                    st.dataframe(
+                        df(vol_rows), use_container_width=True, hide_index=True
+                    )
+                    interp = vol_breakdown.get("operator_interpretation", "")
+                    if interp:
+                        st.info(interp)
+                    for w in vol_breakdown.get("warnings", []):
+                        st.warning(w)
+                else:
+                    st.info(
+                        "Volatility availability exists, but row-level projection "
+                        "results are not available for breakdown yet."
+                    )
+            else:
+                st.warning("Could not retrieve volatility breakdown.")
 
     st.subheader("Canonical Schema Preview")
     schema_preview = preview_path(DATA_LIBRARY_PATHS["Canonical Schema Report"], limit=200)
@@ -1173,6 +1226,56 @@ elif menu == "Model Projection":
                 st.json(proj_result)
             with st.expander("Filter options used"):
                 st.json(proj_result.get("filter_options", {}))
+
+            # ── Volatility Result Breakdown ──────────────────────────
+            st.subheader("Volatility Result Breakdown")
+            st.info(
+                "This shows whether low, medium, high, or unknown volatility "
+                "produced better results."
+            )
+            vol_breakdown = get_volatility_result_breakdown_for_dashboard(
+                db_path_input, projection_result=proj_result
+            )
+            if vol_breakdown.get("ok"):
+                breakdown = vol_breakdown.get("breakdown", {})
+                if breakdown:
+                    vol_rows = []
+                    for level, data in breakdown.items():
+                        vol_rows.append(
+                            {
+                                "volatility_level": level,
+                                "decisions": data.get("decisions", 0),
+                                "skipped_decisions": data.get("skipped_decisions", 0),
+                                "settled_count": data.get("settled_count", 0),
+                                "wins": data.get("wins", 0),
+                                "losses": data.get("losses", 0),
+                                "pushes": data.get("pushes", 0),
+                                "net_result": data.get("net_result", 0.0),
+                                "roi_percent": data.get("roi_percent", 0.0),
+                                "win_rate_percent": data.get("win_rate_percent", 0.0),
+                                "avg_line_move_up": data.get("average_line_move_up"),
+                                "avg_line_move_down": data.get("average_line_move_down"),
+                                "avg_line_total_range": data.get("average_line_total_range"),
+                                "avg_odds_move_up": data.get("average_odds_move_up"),
+                                "avg_odds_move_down": data.get("average_odds_move_down"),
+                                "avg_odds_total_range": data.get("average_odds_total_range"),
+                            }
+                        )
+                    st.dataframe(
+                        df(vol_rows), use_container_width=True, hide_index=True
+                    )
+                    interp = vol_breakdown.get("operator_interpretation", "")
+                    if interp:
+                        st.info(interp)
+                    for w in vol_breakdown.get("warnings", []):
+                        st.warning(w)
+                else:
+                    st.info(
+                        "Volatility availability exists, but row-level projection "
+                        "results are not available for breakdown yet."
+                    )
+            else:
+                st.warning("Could not retrieve volatility breakdown.")
         else:
             st.error("Projection failed. Ensure the database has data.")
 

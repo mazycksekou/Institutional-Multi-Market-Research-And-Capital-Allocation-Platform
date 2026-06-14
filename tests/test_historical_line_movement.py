@@ -360,6 +360,88 @@ def test_calculate_line_volatility_summary_stable_keys():
 
 
 def test_get_line_volatility_summary_from_sqlite(tmp_path):
+    # ... existing test body ...
+    conn.close()
+
+
+# ── Phase 10H12B – Volatility Result Breakdown ─────────────────
+
+
+def test_attach_volatility_to_backtest_rows_does_not_mutate_input():
+    rows = [{"event_id": "e1", "market": "1x2"}]
+    vol_rows = [{"event_id": "e1", "market": "1x2", "volatility_level": "low"}]
+    result = attach_volatility_to_backtest_rows(rows, vol_rows)
+    assert result[0]["volatility_level"] == "low"
+    # original input unchanged
+    assert "volatility_level" not in rows[0]
+    assert rows[0] is not result[0]
+
+
+def test_attach_volatility_to_backtest_rows_matches_event_market_selection():
+    rows = [{"event_id": "e1", "market": "moneyline", "selection": "home",
+             "player_name": None, "team_name": None, "bookmaker": "b365"}]
+    vol_rows = [{"event_id": "e1", "market": "moneyline", "selection": "home",
+                 "player_name": None, "team_name": None, "bookmaker": "b365",
+                 "volatility_level": "medium", "line_move_up": 1.5}]
+    result = attach_volatility_to_backtest_rows(rows, vol_rows)
+    assert result[0]["volatility_level"] == "medium"
+    assert result[0]["line_move_up"] == 1.5
+
+
+def test_attach_volatility_to_backtest_rows_sets_unknown_when_missing():
+    rows = [{"event_id": "e2", "market": "spread"}]
+    vol_rows = [{"event_id": "e1", "market": "spread"}]
+    result = attach_volatility_to_backtest_rows(rows, vol_rows)
+    assert result[0]["volatility_level"] == "unknown"
+    assert result[0]["line_move_up"] is None
+
+
+def test_summarize_results_by_volatility_groups_low_medium_high_unknown():
+    rows = [
+        {"event_id": "a", "volatility_level": "low", "profit_loss": 10, "final_result": "W"},
+        {"event_id": "b", "volatility_level": "medium", "profit_loss": -5, "final_result": "L"},
+        {"event_id": "c", "volatility_level": "high", "profit_loss": 0, "final_result": "P"},
+        {"event_id": "d", "volatility_level": "unknown", "profit_loss": 2, "final_result": "W"},
+        {"event_id": "e", "volatility_level": "unknown", "profit_loss": -1, "final_result": "L"},
+    ]
+    result = summarize_results_by_volatility(rows)
+    groups = result["groups"]
+    assert "low" in groups
+    assert "medium" in groups
+    assert "high" in groups
+    assert "unknown" in groups
+    assert groups["low"]["decisions"] == 1
+    assert groups["low"]["net_result"] == 10.0
+    assert groups["low"]["wins"] == 1
+    assert groups["medium"]["losses"] == 1
+    assert groups["high"]["pushes"] == 1
+
+
+def test_summarize_results_by_volatility_calculates_roi_and_win_rate_safely():
+    rows = [
+        {"volatility_level": "low", "profit_loss": 5, "roi_percent": 2.0, "final_result": "W"},
+        {"volatility_level": "low", "profit_loss": -3, "roi_percent": -1.5, "final_result": "L"},
+    ]
+    result = summarize_results_by_volatility(rows)
+    low = result["groups"]["low"]
+    assert low["roi_percent"] == 0.25  # (2.0 + -1.5)/2
+    assert low["win_rate_percent"] == 50.0
+    assert low["wins"] == 1
+    assert low["losses"] == 1
+    assert low["pushes"] == 0
+
+
+def test_summarize_results_by_volatility_handles_partial_rows():
+    rows = [
+        {"volatility_level": "low", "profit_loss": None, "final_result": None},
+        {"volatility_level": "low", "roi_percent": None},
+    ]
+    result = summarize_results_by_volatility(rows)
+    low = result["groups"]["low"]
+    assert low["net_result"] == 0.0
+    assert low["roi_percent"] == 0.0
+    assert low["settled_count"] == 0
+    assert low["wins"] == 0
     from automation_scheduler.historical_line_movement import (
         initialize_line_movement_schema,
         upsert_line_snapshots_for_canonical_rows,
