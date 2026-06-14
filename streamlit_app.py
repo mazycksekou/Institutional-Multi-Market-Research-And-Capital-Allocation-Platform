@@ -55,6 +55,7 @@ from automation_scheduler.streamlit_dashboard_data import (
     simple_home_cards,
     get_volatility_result_breakdown_for_dashboard,
     get_sport_feature_pack_snapshot_for_dashboard,
+    get_market_feature_pack_snapshot_for_dashboard,
 )
 from automation_scheduler.historical_data_sources import (
     get_historical_data_source_rows,
@@ -1186,6 +1187,71 @@ elif menu == "Data Explorer":
                     st.info("No sport data available.")
             else:
                 st.warning("Sport Feature Packs could not be loaded.")
+
+            # ── Market Feature Packs (Phase 10H14) ─────────────────────
+            st.subheader("Market Feature Packs")
+            st.info("Market Feature Packs show whether each market type has enough required and recommended data for trustworthy model testing.")
+            mfp_snap = get_market_feature_pack_snapshot_for_dashboard(
+                db_path_input,
+                sport=sport_filter or None,
+                league=league_filter or None,
+                market=market_filter or None,
+                source_key=source_key_filter or None,
+                start_date=start_date or None,
+                end_date=end_date or None,
+                limit=int(row_limit),
+            )
+            if mfp_snap.get("ok"):
+                summary = mfp_snap.get("summary", {})
+                if summary:
+                    st.metric("Total rows", summary.get("total_rows", 0))
+                    st.metric("Markets detected", len(summary.get("markets", {})))
+                    strongest = summary.get("strongest_markets", [])
+                    weakest = summary.get("weakest_markets", [])
+                    if strongest:
+                        st.write("**Strongest markets:**")
+                        for s in strongest:
+                            st.write(
+                                f"- {s['market_family']} ({s['readiness_level']})"
+                            )
+                    if weakest:
+                        st.write("**Weakest markets:**")
+                        for s in weakest:
+                            st.write(
+                                f"- {s['market_family']} ({s['readiness_level']})"
+                            )
+                    mkt_tbl = []
+                    for key, info in summary.get("markets", {}).items():
+                        mkt_tbl.append(
+                            {
+                                "market_family": info.get("market_family", ""),
+                                "display_name": info.get("display_name", ""),
+                                "depth_level": info.get("depth_level", ""),
+                                "total_rows": info.get("total_rows", 0),
+                                "readiness_level": info.get("readiness_level", ""),
+                                "required_coverage_%": info.get("required_coverage_percent", 0.0),
+                                "recommended_coverage_%": info.get("recommended_coverage_percent", 0.0),
+                                "missing_required_fields": ", ".join(
+                                    info.get("missing_required_fields", [])
+                                ),
+                                "missing_recommended_fields": ", ".join(
+                                    info.get("missing_recommended_fields", [])
+                                ),
+                                "operator_interpretation": info.get("operator_interpretation", ""),
+                            }
+                        )
+                    st.dataframe(
+                        df(mkt_tbl), use_container_width=True, hide_index=True
+                    )
+                    for w in mfp_snap.get("warnings", []):
+                        st.warning(w)
+                    interp = summary.get("operator_interpretation", "")
+                    if interp:
+                        st.info(interp)
+                else:
+                    st.info("No market data available.")
+            else:
+                st.warning("Market Feature Packs could not be loaded.")
 
 
 elif menu == "Model Projection":

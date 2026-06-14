@@ -712,6 +712,33 @@ def test_get_overall_operator_workflow_steps_returns_ordered():
     assert steps[-1]["step"] == len(steps)
 
 
+# ── Phase 10H14 – Market Feature Packs (dashboard helper) ──────────────────
+
+
+def test_get_market_feature_pack_snapshot_for_dashboard_handles_empty_db(tmp_path):
+    db_path = tmp_path / "empty_market_feature.db"
+    snapshot = get_market_feature_pack_snapshot_for_dashboard(db_path)
+    assert snapshot is not None
+    assert isinstance(snapshot, dict)
+    assert "summary" in snapshot
+
+
+def test_streamlit_app_contains_market_feature_packs_header():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert 'subheader("Market Feature Packs")' in content
+
+
+def test_streamlit_app_contains_exact_explanation_text():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert (
+        "Market Feature Packs show whether each market type has "
+        "enough required and recommended data for trustworthy "
+        "model testing."
+    ) in content
+
+
 # ── Phase 10H13 – Sport Feature Packs (dashboard helper) ──────────────────
 
 
