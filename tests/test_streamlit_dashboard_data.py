@@ -871,6 +871,77 @@ def test_get_overall_operator_workflow_steps_returns_ordered():
     assert steps[-1]["step"] == len(steps)
 
 
+# ── Phase 10H21 – Source Event Link Resolver tests ─────────────────────
+
+
+def test_get_source_event_link_resolver_snapshot_for_dashboard_handles_empty_rows():
+    from automation_scheduler.streamlit_dashboard_data import (
+        get_source_event_link_resolver_snapshot_for_dashboard,
+    )
+    snap = get_source_event_link_resolver_snapshot_for_dashboard()
+    assert snap["ok"] is True
+    assert "warnings" in snap
+    assert "version" in snap
+
+
+def test_get_source_event_link_resolver_snapshot_for_dashboard_returns_resolution():
+    from automation_scheduler.streamlit_dashboard_data import (
+        get_source_event_link_resolver_snapshot_for_dashboard,
+    )
+    source_rows = [
+        {
+            "sport": "soccer",
+            "league": "EPL",
+            "event_date": "2024-06-15",
+            "home_team": "Arsenal",
+            "away_team": "Chelsea",
+        }
+    ]
+    canonical = [
+        {
+            "event_id": "e1",
+            "sport": "soccer",
+            "league": "EPL",
+            "event_date": "2024-06-15",
+            "home_team": "Arsenal",
+            "away_team": "Chelsea",
+        }
+    ]
+    snap = get_source_event_link_resolver_snapshot_for_dashboard(
+        source_rows=source_rows, canonical_event_rows=canonical
+    )
+    assert snap["ok"] is True
+    assert snap["resolution"] is not None
+    assert snap["resolution"]["resolved_rows"] == 1
+
+
+def test_streamlit_app_contains_source_event_link_resolver():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert 'subheader("Source Event Link Resolver")' in content
+
+
+def test_streamlit_app_contains_explanatory_text():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert (
+        "Source Event Link Resolver maps future source rows to canonical "
+        "event_id values before line movement features are used."
+    ) in content
+
+
+def test_streamlit_app_does_not_contain_connect_vendor_text():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert "Connect Event Link Vendor API" not in content
+
+
+def test_streamlit_app_does_not_contain_runner_text():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert "Run Event Link Scraper" not in content
+
+
 # ── Phase 10H17 – Experiment History bridge tests ────────────────────────
 
 
