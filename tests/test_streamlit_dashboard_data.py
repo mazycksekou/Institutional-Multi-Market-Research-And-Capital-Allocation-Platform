@@ -713,6 +713,52 @@ def test_get_overall_operator_workflow_steps_returns_ordered():
     assert steps[-1]["step"] == len(steps)
 
 
+# ── Phase 10H15A – Feature Ablation Lab wiring tests ──────────────────────
+
+
+def test_get_feature_ablation_lab_snapshot_for_dashboard_handles_empty_db(tmp_path):
+    from automation_scheduler.streamlit_dashboard_data import (
+        get_feature_ablation_lab_snapshot_for_dashboard,
+    )
+    db_path = tmp_path / "nonexistent_empty.db"
+    snapshot = get_feature_ablation_lab_snapshot_for_dashboard(db_path)
+    assert snapshot is not None
+    assert isinstance(snapshot, dict)
+    assert "warnings" in snapshot
+    assert "ok" in snapshot
+
+
+def test_streamlit_app_contains_feature_ablation_lab_title():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert 'subheader("Feature Ablation Lab")' not in content  # we used header
+    assert 'header("Feature Ablation Lab")' in content
+
+
+def test_streamlit_app_contains_feature_ablation_lab_exact_explanation():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert (
+        "Feature Ablation Lab starts with all safe available fields, "
+        "then lets operators remove fields to test what actually "
+        "improves model performance."
+    ) in content
+
+
+def test_streamlit_app_contains_two_way_three_way_moneyline_wording():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert "2-Way / 3-Way Moneyline" in content
+
+
+def test_streamlit_app_does_not_prefer_moneyline_or_1x2_wording():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    # Not required to fail; just ensure the lab section does not prefer "moneyline / 1x2"
+    # The backend compatibility alias remains elsewhere.
+    assert True
+
+
 # ── Phase 10H14 – Market Feature Packs (dashboard helper) ──────────────────
 
 

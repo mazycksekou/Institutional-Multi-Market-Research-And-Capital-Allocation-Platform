@@ -56,7 +56,9 @@ from automation_scheduler.streamlit_dashboard_data import (
     get_volatility_result_breakdown_for_dashboard,
     get_sport_feature_pack_snapshot_for_dashboard,
     get_market_feature_pack_snapshot_for_dashboard,
+    get_feature_ablation_lab_snapshot_for_dashboard,
 )
+from automation_scheduler.feature_ablation_lab import get_ablation_field_groups_for_sport
 from automation_scheduler.historical_data_sources import (
     get_historical_data_source_rows,
     get_priority_import_sources,
@@ -296,6 +298,7 @@ menu = st.sidebar.radio(
         "Data Quality Check",
         "Data Explorer",
         "Model Projection",
+        "Feature Ablation Lab",
         "Instructions",
     ],
 )
@@ -1429,6 +1432,117 @@ elif menu == "Model Projection":
 
     summary = summarize_source_registry()
     st.json(summary)
+
+elif menu == "Feature Ablation Lab":
+    st.header("Feature Ablation Lab")
+    st.info("Feature Ablation Lab starts with all safe available fields, then lets operators remove fields to test what actually improves model performance.")
+
+    mode = st.radio("Mode", ["Single Sport", "All Sports"], key="fal_mode")
+    default_sqlite = get_default_historical_sqlite_path()
+    db_path_input = st.text_input("SQLite database path", value=default_sqlite, key="fal_db")
+
+    sport_val = ""
+    market_val = ""
+    if mode == "Single Sport":
+        sport_options = [item for item in get_available_profile_options() if item["value"] != "all_sports"]
+        sport_labels = [item["label"] for item in sport_options]
+        selected_label = st.selectbox("Sport", sport_labels, key="fal_sport")
+        sport_val = next(item["value"] for item in sport_options if item["label"] == selected_label)
+        market_val = st.text_input("Market filter (optional)", key="fal_market")
+
+    initial_groups = get_ablation_field_groups_for_sport(sport_val, market_val)
+    available_groups = [g["group_key"] for g in initial_groups.get("groups", [])]
+
+    selected_groups = st.multiselect("Field Groups", options=available_groups, default=available_groups, key="fal_groups")
+    all_selectable = initial_groups.get("all_selectable_fields", [])
+    active_fields = st.multiselect("Active Fields", options=all_selectable, default=all_selectable, key="fal_active")
+    removed_fields = st.multiselect("Removed Fields", options=all_selectable, default=[], key="fal_removed")
+    st.caption("Never‑feature/leakage fields are excluded by the backend and not shown.")
+
+    if st.button("Run Ablation Lab", type="primary", key="fal_run"):
+        with st.spinner("Running feature ablation..."):
+            snap = get_feature_ablation_lab_snapshot_for_dashboard(
+                db_path_input,
+                sport=sport_val or None,
+                market=market_val or None,
+                mode="all_sports" if mode == "All Sports" else "single_sport",
+                selected_fields=active_fields if active_fields != all_selectable else None,
+                removed_fields=removed_fields or None,
+                selected_groups=selected_groups if selected_groups != available_groups else None,
+            )
+
+        if not snap.get("ok"):
+            st.error("Feature Ablation Lab failed.")
+            for w in snap.get("warnings", []):
+                st.warning(w)
+            st.json(snap)
+        else:
+            st.subheader("Included Sports")
+            if snap.get("included_sports"):
+                st.write(", ".join(snap["included_sports"]))
+            else:
+                st.info("No calibration‑ready sports.")
+
+            st.subheader("Excluded Sports")
+            excluded = snap.get("excluded_sports", [])
+            if excluded:
+                for e in excluded:
+                    st.error(f"{e.get('sport_key','?')} – {e.get('reason','not ready')}")
+            else:
+                st.info("No sports excluded.")
+
+            st.subheader("ROI by Sport")
+            roi = snap.get("roi_by_sport", {})
+            if roi:
+                roi_rows = []
+                for sk, data in roi.items():
+                    roi_rows.append({
+                        "sport_key": sk,
+                        "rows": data.get("rows", 0),
+                        "settled_count": data.get("settled_count", 0),
+                        "wins": data.get("wins", 0),
+                        "losses": data.get("losses", 0),
+                        "pushes": data.get("pushes", 0),
+                        "net_result": data.get("net_result", 0.0),
+                        "roi_percent": data.get("roi_percent", 0.0),
+                        "win_rate_percent": data.get("win_rate_percent", 0.0),
+                    })
+                st.dataframe(df(roi_rows), use_container_width=True, hide_index=True)
+            else:
+                st.info("No ROI data.")
+
+            perf = snap.get("performance", {})
+            if perf:
+                st.subheader("Overall Performance")
+                metric_row(
+                    [
+                        ("Total rows", perf.get("total_rows", 0), ""),
+                        ("Eligible rows", perf.get("eligible_rows", 0), ""),
+                        ("Skipped rows", perf.get("skipped_rows", 0), ""),
+                        ("Decisions", perf.get("decisions", 0), ""),
+                        ("Skipped decisions", perf.get("skipped_decisions", 0), ""),
+                        ("Settled count", perf.get("settled_count", 0), ""),
+                        ("Wins", perf.get("wins", 0), ""),
+                        ("Losses", perf.get("losses", 0), ""),
+                        ("Pushes", perf.get("pushes", 0), ""),
+                        ("Net result", perf.get("net_result", 0.0), ""),
+                        ("ROI %", perf.get("roi_percent", 0.0), ""),
+                        ("Win rate %", perf.get("win_rate_percent", 0.0), ""),
+                    ]
+                )
+
+            st.subheader("Active Fields")
+            st.write(", ".join(snap.get("active_fields", [])))
+
+            st.subheader("Removed Fields")
+            st.write(", ".join(snap.get("removed_fields", [])))
+
+            st.subheader("Warnings")
+            for w in snap.get("warnings", []):
+                st.warning(w)
+
+    with st.expander("Raw snapshot JSON", expanded=False):
+        st.json({})
 
 elif menu == "Instructions":
     st.header("Instructions")
