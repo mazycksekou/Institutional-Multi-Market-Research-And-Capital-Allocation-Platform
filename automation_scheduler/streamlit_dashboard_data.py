@@ -33,6 +33,12 @@ from .experiment_history_store import (
     get_experiment_history_run,
     compare_experiment_history_runs,
 )
+from .experiment_report_exporter import (
+    build_experiment_report_export,
+)
+from .experiment_report_exporter import (
+    build_experiment_report_export,
+)
 from .sport_feature_packs import (
     normalize_sport_key,
     get_sport_feature_pack,
@@ -382,6 +388,48 @@ def preview_path(path: str | Path, *, limit: int = 200) -> dict[str, Any]:
 
 
 # ---------------------------------------------------------------------------
+# Phase 10H18 – Experiment Report Export (dashboard bridge)
+# ---------------------------------------------------------------------------
+
+
+def get_experiment_report_export_for_dashboard(
+    db_path: str | Path,
+    run_id: str,
+    export_format: str = "markdown",
+) -> dict[str, Any]:
+    """Fetch a saved run and return a report export suitable for Streamlit.
+
+    No exception on missing db_path/run_id.
+    Empty run_id returns ok False and warning missing_run_id.
+    Markdown only.
+    """
+    try:
+        export = build_experiment_report_export(
+            str(db_path), run_id, export_format=export_format
+        )
+    except Exception as exc:
+        return {
+            "ok": False,
+            "version": "10H18",
+            "run_id": run_id,
+            "export_format": export_format,
+            "filename": "",
+            "content": "",
+            "markdown": "",
+            "warnings": [f"export error: {exc}"],
+        }
+    return {
+        "ok": export.get("ok", False),
+        "version": export.get("version", "10H18"),
+        "run_id": export.get("run_id", run_id),
+        "export_format": export.get("export_format", export_format),
+        "filename": export.get("filename", ""),
+        "content": export.get("content", ""),
+        "markdown": export.get("markdown", ""),
+        "warnings": export.get("warnings", []),
+    }
+
+
 # Phase 10H17 – Experiment History (dashboard bridge)
 # ---------------------------------------------------------------------------
 

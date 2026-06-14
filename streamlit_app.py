@@ -1917,6 +1917,90 @@ elif menu == "Experiment History":
             else:
                 st.warning("Run not found.")
 
+    # ── Calibration Report Export (Phase 10H18) ─────────────────────
+    st.subheader("Calibration Report Export")
+    st.info(
+        "Calibration Report Export creates a Markdown review pack "
+        "from a saved ablation or calibration run."
+    )
+
+    if not runs:
+        st.info("No saved runs yet. Run a Feature Ablation Lab or "
+                 "Calibration‑Ready Strategy Filter and save it.")
+    else:
+        selected_export_run_id = st.selectbox(
+            "Select a run to export",
+            options=list(run_options.keys()),
+            format_func=lambda rid: run_options[rid],
+            key="exp_export_select",
+        )
+        if st.button("Generate Calibration Report", key="exp_export_gen"):
+            with st.spinner("Generating report..."):
+                exp = get_experiment_report_export_for_dashboard(
+                    db_path_input, selected_export_run_id
+                )
+            if exp.get("ok"):
+                st.session_state["_last_export_result"] = exp
+                st.success("Report generated.")
+            else:
+                st.warning("Report generation failed.")
+                for w in exp.get("warnings", []):
+                    st.warning(w)
+
+        last_export = st.session_state.get("_last_export_result")
+        if last_export and last_export.get("ok"):
+            st.subheader("Report Preview")
+            st.markdown(last_export["markdown"][:5000])
+            st.download_button(
+                label="Download Calibration Report Markdown",
+                data=last_export["markdown"],
+                file_name=last_export.get("filename", "report.md"),
+                mime="text/markdown",
+                key="exp_export_dl",
+            )
+
+    # ── Calibration Report Export (Phase 10H18) ─────────────────────
+    st.subheader("Calibration Report Export")
+    st.info(
+        "Calibration Report Export creates a Markdown review pack "
+        "from a saved ablation or calibration run."
+    )
+
+    if not runs:
+        st.info("No saved runs yet. Run a Feature Ablation Lab or "
+                 "Calibration‑Ready Strategy Filter and save it.")
+    else:
+        selected_export_run_id = st.selectbox(
+            "Select a run to export",
+            options=list(run_options.keys()),
+            format_func=lambda rid: run_options[rid],
+            key="exp_export_select",
+        )
+        if st.button("Generate Calibration Report", key="exp_export_gen"):
+            with st.spinner("Generating report..."):
+                exp = get_experiment_report_export_for_dashboard(
+                    db_path_input, selected_export_run_id
+                )
+            if exp.get("ok"):
+                st.session_state["_last_export_result"] = exp
+                st.success("Report generated.")
+            else:
+                st.warning("Report generation failed.")
+                for w in exp.get("warnings", []):
+                    st.warning(w)
+
+        last_export = st.session_state.get("_last_export_result")
+        if last_export and last_export.get("ok"):
+            st.subheader("Report Preview")
+            st.markdown(last_export["markdown"][:5000])
+            st.download_button(
+                label="Download Calibration Report Markdown",
+                data=last_export["markdown"],
+                file_name=last_export.get("filename", "report.md"),
+                mime="text/markdown",
+                key="exp_export_dl",
+            )
+
     # ── Warnings ───────────────────────────────────
     for w in hist.get("warnings", []):
         st.warning(w)

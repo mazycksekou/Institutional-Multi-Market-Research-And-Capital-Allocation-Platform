@@ -799,6 +799,102 @@ def test_compare_experiment_history_runs_for_dashboard_handles_empty_ids(tmp_pat
     assert "no run ids" in " ".join(result.get("warnings", [])).lower()
 
 
+# ── Phase 10H18 – Experiment Report Export tests ────────────────────
+
+
+def test_get_experiment_report_export_for_dashboard_handles_missing_run_id(tmp_path):
+    from automation_scheduler.streamlit_dashboard_data import (
+        get_experiment_report_export_for_dashboard,
+    )
+    db_path = tmp_path / "missing_run_export.db"
+    result = get_experiment_report_export_for_dashboard(db_path, "")
+    assert result["ok"] is False
+    assert any("missing_run_id" in w for w in result.get("warnings", []))
+
+
+def test_get_experiment_report_export_for_dashboard_returns_markdown_for_saved_run(
+    tmp_path,
+):
+    from automation_scheduler.streamlit_dashboard_data import (
+        get_experiment_report_export_for_dashboard,
+    )
+    from automation_scheduler.experiment_history_store import (
+        save_experiment_history_run,
+        initialize_experiment_history_store,
+    )
+    db_path = tmp_path / "export_dash.db"
+    init = initialize_experiment_history_store(db_path)
+    assert init["ok"]
+    result = {"total_rows": 5}
+    saved = save_experiment_history_run(db_path, result, run_label="dash_test")
+    run_id = saved["run_id"]
+    export = get_experiment_report_export_for_dashboard(db_path, run_id)
+    assert export["ok"]
+    assert export["filename"].endswith(".md")
+    assert "Calibration Report" in export["markdown"]
+    assert export["warnings"] == []
+
+
+def test_streamlit_app_contains_export_texts():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert "Calibration Report Export" in content
+    assert (
+        "Calibration Report Export creates a Markdown review pack "
+        "from a saved ablation or calibration run."
+    ) in content
+    assert "Generate Calibration Report" in content
+    assert "Download Calibration Report Markdown" in content
+
+
+# ── Phase 10H18 – Experiment Report Export tests ────────────────────
+
+
+def test_get_experiment_report_export_for_dashboard_handles_missing_run_id(tmp_path):
+    from automation_scheduler.streamlit_dashboard_data import (
+        get_experiment_report_export_for_dashboard,
+    )
+    db_path = tmp_path / "missing_run_export.db"
+    result = get_experiment_report_export_for_dashboard(db_path, "")
+    assert result["ok"] is False
+    assert any("missing_run_id" in w for w in result.get("warnings", []))
+
+
+def test_get_experiment_report_export_for_dashboard_returns_markdown_for_saved_run(
+    tmp_path,
+):
+    from automation_scheduler.streamlit_dashboard_data import (
+        get_experiment_report_export_for_dashboard,
+    )
+    from automation_scheduler.experiment_history_store import (
+        save_experiment_history_run,
+        initialize_experiment_history_store,
+    )
+    db_path = tmp_path / "export_dash.db"
+    init = initialize_experiment_history_store(db_path)
+    assert init["ok"]
+    result = {"total_rows": 5}
+    saved = save_experiment_history_run(db_path, result, run_label="dash_test")
+    run_id = saved["run_id"]
+    export = get_experiment_report_export_for_dashboard(db_path, run_id)
+    assert export["ok"]
+    assert export["filename"].endswith(".md")
+    assert "Calibration Report" in export["markdown"]
+    assert export["warnings"] == []
+
+
+def test_streamlit_app_contains_export_texts():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert "Calibration Report Export" in content
+    assert (
+        "Calibration Report Export creates a Markdown review pack "
+        "from a saved ablation or calibration run."
+    ) in content
+    assert "Generate Calibration Report" in content
+    assert "Download Calibration Report Markdown" in content
+
+
 def test_streamlit_app_contains_experiment_history_text():
     with open("streamlit_app.py", encoding="utf-8") as f:
         content = f.read()
