@@ -362,6 +362,45 @@ def test_calculate_line_volatility_summary_stable_keys():
 
 
 def test_get_line_volatility_summary_from_sqlite(tmp_path):
+    from automation_scheduler.historical_line_movement import (
+        initialize_line_movement_schema,
+        upsert_line_snapshots_for_canonical_rows,
+        get_line_volatility_summary_from_sqlite,
+    )
+    from automation_scheduler.historical_odds_sqlite import (
+        connect_historical_odds_db,
+        initialize_historical_odds_db,
+    )
+    db_path = tmp_path / "vol_test.db"
+    conn = connect_historical_odds_db(db_path)
+    initialize_historical_odds_db(conn)
+    initialize_line_movement_schema(conn)
+
+    row = {
+        "event_id": "e1",
+        "odds_id": "o1",
+        "source_key": "test",
+        "source_file": "test.csv",
+        "sport": "soccer",
+        "league": "E0",
+        "event_date": "2023-01-01",
+        "home_team": "a",
+        "away_team": "b",
+        "bookmaker": "b365",
+        "market": "1x2",
+        "selection": "home",
+        "odds_at_decision_time": 2.0,
+        "market_implied_probability": 0.5,
+        "collected_at": "2023-01-01T12:00:00Z",
+        "opening_odds": 2.2,
+        "closing_odds": 1.8,
+    }
+    upsert_line_snapshots_for_canonical_rows(conn, [row])
+    result = get_line_volatility_summary_from_sqlite(conn)
+    assert result["ok"] is True
+    assert result["groups_seen"] >= 1
+    assert result["high_volatility_count"] >= 0  # depends on odds range
+    conn.close()
 
 
 # ── Phase 10H12B – Volatility Result Breakdown ─────────────────
