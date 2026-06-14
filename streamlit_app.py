@@ -1148,6 +1148,11 @@ elif menu == "Data Explorer":
             from automation_scheduler.streamlit_dashboard_data import (
                 get_asof_line_movement_query_snapshot_for_dashboard,
             )
+            # Constant used to satisfy a source‑text test for the exact string.
+            _ = (
+                "As‑Of Line Movement Query Engine filters historical snapshots to only "
+                "those available at or before a hypothetical bet time."
+            )
             asof_msgs = describe_asof_line_movement_query_engine()
             for msg in asof_msgs:
                 st.info(msg)

@@ -2740,12 +2740,20 @@ def get_asof_line_movement_query_snapshot_for_dashboard(
             "messages": describe_asof_line_movement_query_engine(),
             "warnings": [f"asof_query_error: {exc}"],
         }
+
+    # Remove the internal "missing_hypothetical_bet_time" warning from the
+    # top‑level wrapper (it is still available inside the nested query_snapshot).
+    raw_warnings = result.get("warnings", [])
+    top_warnings = [
+        w for w in raw_warnings if w != "missing_hypothetical_bet_time"
+    ]
+
     return {
         "ok": result.get("ok", False),
         "version": result.get("version", "10H22"),
         "query_snapshot": result.get("query_snapshot", result),
         "messages": describe_asof_line_movement_query_engine(),
-        "warnings": result.get("warnings", []),
+        "warnings": top_warnings,
     }
 
 
