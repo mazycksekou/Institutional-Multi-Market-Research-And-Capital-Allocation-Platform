@@ -30,6 +30,11 @@ from .line_movement_readiness import (
     build_line_movement_readiness_snapshot,
     describe_line_movement_readiness,
 )
+from .line_movement_import_contract import (
+    build_vendor_neutral_line_movement_contract,
+    build_line_movement_import_preview,
+    describe_line_movement_import_contract,
+)
 from .experiment_history_store import (
     initialize_experiment_history_store,
     save_experiment_history_run,
@@ -1129,6 +1134,31 @@ def get_line_movement_readiness_snapshot_for_dashboard(
     messages = describe_line_movement_readiness(snapshot)
     snapshot["messages"] = messages
     return snapshot
+
+
+def get_line_movement_import_contract_snapshot_for_dashboard(
+    rows: list[dict[str, Any]] | None = None,
+    limit: int = 100,
+) -> dict[str, Any]:
+    """Return the vendor‑neutral contract, messages, and optional preview.
+
+    No exception on missing/empty rows.
+    No SQL writes.
+    No vendor connector.
+    Returns a stable JSON‑safe dict.
+    """
+    contract = build_vendor_neutral_line_movement_contract()
+    messages = describe_line_movement_import_contract()
+    preview: dict[str, Any] | None = None
+    if rows is not None:
+        preview = build_line_movement_import_preview(rows, limit=limit)
+    return {
+        "ok": True,
+        "version": "10H20_bridge",
+        "contract": contract,
+        "messages": messages,
+        "preview": preview,
+    }
 
 
 def get_line_volatility_snapshot_for_dashboard(

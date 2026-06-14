@@ -452,6 +452,64 @@ def test_get_line_movement_readiness_snapshot_for_dashboard_handles_missing_db(t
     assert "messages" in snap
 
 
+def test_get_line_movement_import_contract_snapshot_for_dashboard_handles_empty_rows():
+    from automation_scheduler.streamlit_dashboard_data import (
+        get_line_movement_import_contract_snapshot_for_dashboard,
+    )
+    snap = get_line_movement_import_contract_snapshot_for_dashboard(rows=None)
+    assert snap["ok"] is True
+    assert "contract" in snap
+    assert "messages" in snap
+    assert snap["preview"] is None
+
+
+def test_get_line_movement_import_contract_snapshot_for_dashboard_returns_preview():
+    from automation_scheduler.streamlit_dashboard_data import (
+        get_line_movement_import_contract_snapshot_for_dashboard,
+    )
+    rows = [
+        {
+            "source_name": "test",
+            "source_key": "tk",
+            "sport": "soccer",
+            "event_date": "2023-01-01",
+            "home_team": "A",
+            "away_team": "B",
+            "bookmaker": "book",
+            "market": "1x2",
+            "selection": "Home",
+            "snapshot_time": "2023-01-01T12:00:00Z",
+        }
+    ]
+    snap = get_line_movement_import_contract_snapshot_for_dashboard(rows=rows, limit=10)
+    assert snap["ok"] is True
+    assert snap["preview"] is not None
+    assert snap["preview"]["valid_rows"] == 1
+
+
+def test_streamlit_app_contains_vendor_neutral_line_movement_contract_title():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert 'subheader("Vendor‑Neutral Line Movement Import Contract")' in content
+
+
+def test_streamlit_app_contains_exact_contract_explanation():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    expected = (
+        "Vendor‑Neutral Line Movement Import Contract defines the standard row shape "
+        "future line movement sources must provide before any real connector is added."
+    )
+    assert expected in content
+
+
+def test_streamlit_app_does_not_contain_vendor_api_text():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert "Connect Vendor Line Movement API" not in content
+    assert "Run Line Movement Scraper" not in content
+
+
 def test_get_line_movement_readiness_snapshot_for_dashboard_returns_messages(tmp_path):
     from automation_scheduler.streamlit_dashboard_data import (
         get_line_movement_readiness_snapshot_for_dashboard,

@@ -58,6 +58,7 @@ from automation_scheduler.streamlit_dashboard_data import (
     get_market_feature_pack_snapshot_for_dashboard,
     get_feature_ablation_lab_snapshot_for_dashboard,
     get_line_movement_readiness_snapshot_for_dashboard,
+    get_line_movement_import_contract_snapshot_for_dashboard,
     get_experiment_report_export_for_dashboard,
 )
 from automation_scheduler.feature_ablation_lab import get_ablation_field_groups_for_sport
@@ -1010,6 +1011,48 @@ elif menu == "Data Explorer":
                 )
 
             st.subheader("Feature Control Lab")
+            # ── Vendor‑Neutral Line Movement Import Contract (Phase 10H20) ──────
+            st.subheader("Vendor‑Neutral Line Movement Import Contract")
+            st.info(
+                "Vendor‑Neutral Line Movement Import Contract defines the standard row shape "
+                "future line movement sources must provide before any real connector is added."
+            )
+            contract = build_vendor_neutral_line_movement_contract()
+            st.json({
+                "required_input_fields": contract.get("required_input_fields", []),
+                "optional_input_fields": contract.get("optional_input_fields", []),
+                "target_fields": contract.get("target_fields", []),
+            })
+            messages = describe_line_movement_import_contract()
+            for msg in messages:
+                st.info(msg)
+            st.warning("This contract does not connect to vendors, import paid data, or scrape.")
+
+            sample_json = st.text_area(
+                "Paste sample JSON rows (optional)",
+                height=120,
+                value="",
+                key="contract_sample",
+            )
+            if st.button("Preview Contract Rows", key="contract_preview"):
+                if sample_json.strip():
+                    import json
+                    try:
+                        parsed = json.loads(sample_json)
+                        if isinstance(parsed, dict):
+                            parsed = [parsed]
+                    except Exception:
+                        parsed = []
+                else:
+                    parsed = []
+                preview = get_line_movement_import_contract_snapshot_for_dashboard(
+                    parsed, limit=100
+                )
+                st.session_state["_last_contract_preview"] = preview
+            if "_last_contract_preview" in st.session_state:
+                st.subheader("Preview Result")
+                st.json(st.session_state["_last_contract_preview"])
+
             # ── Line Volatility (Phase 10H12A) ────────────────────────
             st.subheader("Line Volatility")
             from automation_scheduler.streamlit_dashboard_data import (
