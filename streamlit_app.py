@@ -2313,3 +2313,5 @@ elif menu == "Instructions":
 # Vendor‑Neutral Line Movement Import Contract defines the standard row shape future line movement sources must provide before any real connector is added.
 
 # Source Event Link Resolver maps future source rows to canonical event_id values before line movement features are used.
+
+# As‑Of Line Movement Query Engine filters historical snapshots to only those available at or before a hypothetical bet time.

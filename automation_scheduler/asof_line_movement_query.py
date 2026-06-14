@@ -119,20 +119,23 @@ _DEFAULT_ASOF_GROUP_FIELDS = [
 ]
 
 
-def build_asof_snapshot_group_key(
-    row: dict[str, Any],
-    group_fields: Sequence[str] | None = None,
-) -> str:
-    """Deterministic group key from the given fields."""
-    fields = list(group_fields) if group_fields else list(_DEFAULT_ASOF_GROUP_FIELDS)
-    parts = [normalize_asof_line_movement_value(row.get(f, "")) for f in fields]
-    return "|".join(parts)
-
-
-# ---------------------------------------------------------------------------
-# Filter snapshots as‑of
-# ---------------------------------------------------------------------------
-
+def build_asof_snapshot_group_key(row, group_fields=None) -> str:
+    """Build a stable case-insensitive grouping key for as-of snapshot selection."""
+    fields = group_fields or [
+        "event_id",
+        "bookmaker",
+        "market_family",
+        "market",
+        "selection",
+        "line_value",
+    ]
+    if not isinstance(row, dict):
+        row = {}
+    parts = []
+    for field in fields:
+        value = normalize_asof_line_movement_value(row.get(field, ''))
+        parts.append(' '.join(value.split()).lower())
+    return '|'.join(parts)
 
 def filter_line_movement_snapshots_as_of(
     snapshots: Any,
@@ -465,112 +468,120 @@ def build_asof_line_movement_query_snapshot(
 
 
 def load_line_movement_snapshots_from_sqlite(
-    db_path: str | Path,
-    event_id: str | None = None,
-    bookmaker: str | None = None,
-    market_family: str | None = None,
-    market: str | None = None,
-    selection: str | None = None,
-    limit: int | None = None,
-) -> dict[str, Any]:
-    """Read historical_line_snapshots from SQLite read‑only.
+    db_path,
+    event_id=None,
+    bookmaker=None,
+    market_family=None,
+    market=None,
+    selection=None,
+    limit=None,
+) -> dict:
+    """Read historical line movement snapshots from SQLite without writing."""
+    import sqlite3
+    from pathlib import Path as _Path
 
-    No writes, no schema changes.
-    Returns stable dict.
-    """
-    version = AS_OF_LINE_MOVEMENT_QUERY_VERSION
-    try:
-        import sqlite3
-
-        conn = sqlite3.connect(str(db_path))
-        conn.row_factory = sqlite3.Row
-    except Exception as exc:
+    warnings = []
+    db_text = normalize_asof_line_movement_value(db_path)
+    if not db_text:
         return {
             "ok": False,
-            "version": version,
+            "version": AS_OF_LINE_MOVEMENT_QUERY_VERSION,
             "total_snapshots": 0,
             "snapshots": [],
-            "warnings": [f"cannot_open_database: {exc}"],
+            "warnings": ["cannot_open_database"],
+        }
+
+    if db_text != ":memory:":
+        try:
+            db_candidate = _Path(db_text)
+        except TypeError:
+            db_candidate = None
+        if db_candidate is None or not db_candidate.exists():
+            return {
+                "ok": False,
+                "version": AS_OF_LINE_MOVEMENT_QUERY_VERSION,
+                "total_snapshots": 0,
+                "snapshots": [],
+                "warnings": ["cannot_open_database"],
+            }
+
+    try:
+        conn = sqlite3.connect(db_text)
+        conn.row_factory = sqlite3.Row
+    except sqlite3.Error:
+        return {
+            "ok": False,
+            "version": AS_OF_LINE_MOVEMENT_QUERY_VERSION,
+            "total_snapshots": 0,
+            "snapshots": [],
+            "warnings": ["cannot_open_database"],
         }
 
     try:
-        # check table exists
-        tables = conn.execute(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name='historical_line_snapshots'"
-        ).fetchall()
-        if not tables:
-            conn.close()
+        table_exists = conn.execute(
+            "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'historical_line_snapshots'"
+        ).fetchone()
+        if table_exists is None:
             return {
                 "ok": False,
-                "version": version,
+                "version": AS_OF_LINE_MOVEMENT_QUERY_VERSION,
                 "total_snapshots": 0,
                 "snapshots": [],
-                "warnings": ["table_not_found: historical_line_snapshots"],
+                "warnings": ["missing_historical_line_snapshots_table"],
             }
 
-        # Build query dynamically
-        columns_to_select = [
-            "snapshot_id", "event_id", "source_key", "source_file",
+        existing_columns = [row[1] for row in conn.execute("PRAGMA table_info(historical_line_snapshots)").fetchall()]
+        wanted_columns = [
+            "snapshot_id", "event_id", "odds_id", "source_key", "source_file",
             "sport", "league", "event_date", "home_team", "away_team",
             "bookmaker", "market", "market_family", "selection",
             "player_name", "team_name", "line_value", "odds_value",
             "implied_probability", "snapshot_label", "snapshot_time",
             "raw_market_name", "raw_selection_name", "created_at", "updated_at",
         ]
-        # ensure only existing columns
-        col_names = [r["name"] for r in conn.execute("PRAGMA table_info(historical_line_snapshots)")]
-        safe_cols = [c for c in columns_to_select if c in col_names]
+        select_columns = [col for col in wanted_columns if col in existing_columns]
+        if not select_columns:
+            select_columns = existing_columns
 
-        where_parts: list[str] = []
-        params: list[Any] = []
+        clauses = []
+        params = []
+        for column, value in [
+            ("event_id", event_id),
+            ("bookmaker", bookmaker),
+            ("market_family", market_family),
+            ("market", market),
+            ("selection", selection),
+        ]:
+            normalized = normalize_asof_line_movement_value(value)
+            if normalized and column in existing_columns:
+                clauses.append(f"{column} = ?")
+                params.append(normalized)
 
-        if event_id is not None:
-            where_parts.append("event_id = ?")
-            params.append(event_id)
-        if bookmaker is not None:
-            where_parts.append("bookmaker = ?")
-            params.append(bookmaker)
-        if market_family is not None:
-            where_parts.append("market_family = ?")
-            params.append(market_family)
-        if market is not None:
-            where_parts.append("market = ?")
-            params.append(market)
-        if selection is not None:
-            where_parts.append("selection = ?")
-            params.append(selection)
+        sql = f"SELECT {', '.join(select_columns)} FROM historical_line_snapshots"
+        if clauses:
+            sql += " WHERE " + " AND ".join(clauses)
+        if limit is not None:
+            sql += " LIMIT ?"
+            params.append(int(limit))
 
-        where_clause = " AND ".join(where_parts) if where_parts else "1=1"
-        query = f"SELECT {','.join(safe_cols)} FROM historical_line_snapshots WHERE {where_clause}"
-        if limit is not None and limit >= 0:
-            query += " LIMIT ?"
-            params.append(limit)
-
-        rows = conn.execute(query, params).fetchall()
-        snapshots = [dict(r) for r in rows]
-        conn.close()
+        rows = [dict(row) for row in conn.execute(sql, params).fetchall()]
         return {
             "ok": True,
-            "version": version,
-            "total_snapshots": len(snapshots),
-            "snapshots": snapshots,
-            "warnings": [],
+            "version": AS_OF_LINE_MOVEMENT_QUERY_VERSION,
+            "total_snapshots": len(rows),
+            "snapshots": rows,
+            "warnings": warnings,
         }
-    except Exception as exc:
-        conn.close()
+    except sqlite3.Error as exc:
         return {
             "ok": False,
-            "version": version,
+            "version": AS_OF_LINE_MOVEMENT_QUERY_VERSION,
             "total_snapshots": 0,
             "snapshots": [],
-            "warnings": [f"query_error: {exc}"],
+            "warnings": [f"sqlite_error:{exc}"],
         }
-
-
-# ---------------------------------------------------------------------------
-# Dashboard wrapper (SQLite)
-# ---------------------------------------------------------------------------
-
+    finally:
+        conn.close()
 
 def build_asof_line_movement_query_snapshot_from_sqlite(
     db_path: str | Path,
