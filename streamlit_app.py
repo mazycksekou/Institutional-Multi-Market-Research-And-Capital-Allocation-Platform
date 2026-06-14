@@ -1107,10 +1107,7 @@ elif menu == "Instructions":
     )
 
     st.subheader("Dashboard Tab Instructions")
-    tab_rows = (
-        from automation_scheduler.streamlit_dashboard_data
-        import get_dashboard_tab_instructions
-    )
+    from automation_scheduler.streamlit_dashboard_data import get_dashboard_tab_instructions
     instructions = get_dashboard_tab_instructions()
     st.dataframe(df(instructions), use_container_width=True, hide_index=True)
 
