@@ -567,14 +567,22 @@ def calculate_line_movement_readiness(
     If passed a dict with keys expected from ``summarize_line_movement_store``,
     use that. Otherwise compute summary first.
     """
-    if isinstance(summary_or_rows, dict) and "total_snapshots" in summary_or_rows:
+    # Collection of keys that identify a pre‑computed summary dict.
+    _SUMMARY_KEYS = {
+        "opening_snapshots", "decision_snapshots",
+        "closing_snapshots", "current_snapshots",
+        "total_snapshots",
+    }
+    if isinstance(summary_or_rows, dict) and _SUMMARY_KEYS & set(summary_or_rows.keys()):
         s = summary_or_rows
     else:
         # compute summary from rows
         from collections import Counter
         labels: Counter[str] = Counter()
-        for r in (summary_or_rows or []):
-            labels[r.get("snapshot_label", "unknown")] += 1
+        rows = summary_or_rows if isinstance(summary_or_rows, list) else []
+        for r in rows:
+            if isinstance(r, dict):
+                labels[r.get("snapshot_label", "unknown")] += 1
         s = {
             "opening_snapshots": labels.get("opening", 0),
             "decision_snapshots": labels.get("decision", 0),
