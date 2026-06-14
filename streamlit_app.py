@@ -2084,3 +2084,5 @@ elif menu == "Instructions":
 # Experiment History saves ablation and calibration runs so operators can compare field changes, sport readiness, and ROI over time.
 
 # Calibration Report Export creates a Markdown review pack from a saved ablation or calibration run.
+
+# Historical Line Movement Readiness checks whether the local SQLite store is ready for time-series line movement data before any vendor connector is added.

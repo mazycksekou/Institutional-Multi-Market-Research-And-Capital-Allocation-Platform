@@ -60,6 +60,7 @@ def test_get_sqlite_table_names_returns_tables(tmp_path):
     conn = sqlite3.connect(str(db_path))
     conn.execute("CREATE TABLE foo (x TEXT)")
     conn.execute("CREATE TABLE bar (y TEXT)")
+    conn.commit()
     conn.close()
     result = get_sqlite_table_names(db_path)
     assert result["ok"] is True
@@ -78,6 +79,7 @@ def test_get_sqlite_table_columns_missing_table(tmp_path):
     db_path = tmp_path / "no_table.db"
     conn = sqlite3.connect(str(db_path))
     conn.execute("CREATE TABLE foo (x TEXT)")
+    conn.commit()
     conn.close()
     result = get_sqlite_table_columns(db_path, "historical_line_snapshots")
     assert result["ok"] is False
@@ -93,6 +95,7 @@ def test_inspect_line_movement_schema_missing_table_not_ready(tmp_path):
     db_path = tmp_path / "missing_table.db"
     conn = sqlite3.connect(str(db_path))
     conn.execute("CREATE TABLE some_other (x TEXT)")
+    conn.commit()
     conn.close()
     result = inspect_line_movement_schema(db_path)
     assert result["table_exists"] is False
@@ -108,6 +111,7 @@ def test_inspect_line_movement_schema_ready_when_required_columns_exist(tmp_path
     # but we need proper types; use TEXT for all
     col_def = ", ".join(f"{c} TEXT" for c in REQUIRED_LINE_MOVEMENT_COLUMNS)
     conn.execute(f"CREATE TABLE historical_line_snapshots ({col_def})")
+    conn.commit()
     conn.close()
     result = inspect_line_movement_schema(db_path)
     assert result["table_exists"] is True
@@ -119,6 +123,7 @@ def test_inspect_line_movement_schema_reports_missing_columns(tmp_path):
     db_path = tmp_path / "partial_schema.db"
     conn = sqlite3.connect(str(db_path))
     conn.execute("CREATE TABLE historical_line_snapshots (snapshot_id TEXT, event_id TEXT)")
+    conn.commit()
     conn.close()
     result = inspect_line_movement_schema(db_path)
     assert result["table_exists"] is True
@@ -139,6 +144,7 @@ def test_build_line_movement_snapshot_coverage_empty_table(tmp_path):
     col_def = ", ".join(f"{c} TEXT" for c in REQUIRED_LINE_MOVEMENT_COLUMNS)
     conn = sqlite3.connect(str(db_path))
     conn.execute(f"CREATE TABLE historical_line_snapshots ({col_def})")
+    conn.commit()
     conn.close()
     cov = build_line_movement_snapshot_coverage(db_path)
     assert cov["ok"] is True
@@ -160,6 +166,7 @@ def test_build_line_movement_snapshot_coverage_counts_snapshots(tmp_path):
         "INSERT INTO historical_line_snapshots (snapshot_id,event_id) VALUES (?,?)",
         ("s2", "e1"),
     )
+    conn.commit()
     conn.close()
     cov = build_line_movement_snapshot_coverage(db_path)
     assert cov["total_snapshots"] == 2
@@ -180,6 +187,7 @@ def test_build_line_movement_snapshot_coverage_counts_unlinked_snapshots(tmp_pat
         "INSERT INTO historical_line_snapshots (snapshot_id,event_id) VALUES (?,?)",
         ("s2", ""),
     )
+    conn.commit()
     conn.close()
     cov = build_line_movement_snapshot_coverage(db_path)
     assert cov["total_snapshots"] == 2
@@ -196,6 +204,7 @@ def test_build_line_movement_readiness_snapshot_missing_schema(tmp_path):
     db_path = tmp_path / "no_snaps.db"
     conn = sqlite3.connect(str(db_path))
     conn.execute("CREATE TABLE foo (x TEXT)")
+    conn.commit()
     conn.close()
     result = build_line_movement_readiness_snapshot(db_path)
     assert result["ok"] is True
@@ -224,6 +233,7 @@ def test_build_line_movement_readiness_snapshot_ready_with_snapshots(tmp_path):
             "2023-01-01T12:00:00Z", "2023-01-01T12:00:00Z",
         ),
     )
+    conn.commit()
     conn.close()
     result = build_line_movement_readiness_snapshot(db_path)
     assert result["ok"] is True
@@ -249,6 +259,7 @@ def test_build_line_movement_readiness_snapshot_reasons_for_missing_data(tmp_pat
         "VALUES (?,?,?,?,?)",
         ("s1", "", "", "", ""),
     )
+    conn.commit()
     conn.close()
     result = build_line_movement_readiness_snapshot(db_path)
     assert result["ok"] is True
