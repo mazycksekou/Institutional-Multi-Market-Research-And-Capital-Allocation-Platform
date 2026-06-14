@@ -28,6 +28,9 @@ from automation_scheduler.streamlit_dashboard_data import (
     RISK_PRESETS,
     SAFE_DEFAULTS,
     build_bankroll_curve_rows,
+    build_market_readiness_report,
+    calculate_field_coverage,
+    classify_market_family,
     compact_counts,
     file_inventory,
     generate_latest_dashboard_outputs,
@@ -36,6 +39,8 @@ from automation_scheduler.streamlit_dashboard_data import (
     get_historical_import_source_options,
     get_historical_sqlite_snapshot_for_dashboard,
     get_historical_sqlite_filter_options_for_dashboard,
+    get_required_field_groups_for_market,
+    get_sqlite_data_explorer_snapshot_for_dashboard,
     get_system_health_rows,
     import_historical_file_to_sqlite_for_dashboard,
     load_canonical_rows_for_dashboard,
@@ -265,7 +270,7 @@ def sidebar_inputs():
     }
 
 
-st.title("?? Betting Model Operator Dashboard")
+st.title("Betting Model Operator Dashboard")
 st.caption("Paper/testing control room. This screen does not place real bets.")
 
 settings = sidebar_inputs()
@@ -286,6 +291,7 @@ menu = st.sidebar.radio(
         "Data Source Library",
         "Import Historical Data",
         "Data Quality Check",
+        "Data Explorer",
         "Model Projection",
     ],
 )
@@ -720,6 +726,172 @@ elif menu == "Data Quality Check":
         else:
             st.warning("Could not read database. It may not exist yet.")
 
+
+elif menu == "Data Explorer":
+    st.header("Data Explorer")
+
+    default_sqlite = get_default_historical_sqlite_path()
+    db_path_input = st.text_input(
+        "SQLite database path",
+        value=default_sqlite,
+        key="de_db_path",
+    )
+
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        sport_filter = st.text_input("Sport filter (optional)", key="de_sport")
+        league_filter = st.text_input("League filter (optional)", key="de_league")
+    with col2:
+        market_filter = st.text_input("Market filter (optional)", key="de_market")
+        source_key_filter = st.text_input(
+            "Source key filter (optional)", key="de_source"
+        )
+    with col3:
+        start_date = st.text_input(
+            "Start date (YYYY-MM-DD, optional)", key="de_start"
+        )
+        end_date = st.text_input(
+            "End date (YYYY-MM-DD, optional)", key="de_end"
+        )
+    with col4:
+        row_limit = st.number_input(
+            "Row limit",
+            min_value=1,
+            max_value=50000,
+            value=500,
+            step=100,
+            key="de_limit",
+        )
+
+    if st.button("Refresh / Explore", type="primary", key="de_explore"):
+        with st.spinner("Querying SQLite store and building coverage report..."):
+            snapshot = get_sqlite_data_explorer_snapshot_for_dashboard(
+                db_path_input,
+                sport=sport_filter or None,
+                league=league_filter or None,
+                market=market_filter or None,
+                source_key=source_key_filter or None,
+                start_date=start_date or None,
+                end_date=end_date or None,
+                limit=int(row_limit),
+            )
+
+        if not snapshot.get("ok"):
+            st.error("Could not access the database.")
+            st.json(snapshot)
+        else:
+            readiness = snapshot.get("readiness", {})
+            metric_row(
+                [
+                    ("Total rows", snapshot["total_rows"], "Rows in filtered result"),
+                    ("Sports", len(snapshot["sports"]), "Distinct sports"),
+                    ("Leagues", len(snapshot["leagues"]), "Distinct leagues"),
+                    ("Markets", len(snapshot["markets"]), "Distinct markets"),
+                    (
+                        "Projection ready",
+                        "✅ Yes" if readiness.get("projection_ready") else "❌ No",
+                        readiness.get("reason", ""),
+                    ),
+                    (
+                        "Settlement ready",
+                        "✅ Yes" if readiness.get("settlement_ready") else "❌ No",
+                        "",
+                    ),
+                    (
+                        "Line movement ready",
+                        "✅ Yes" if readiness.get("line_movement_ready") else "❌ No",
+                        "",
+                    ),
+                ]
+            )
+
+            st.subheader("Available Markets / Lines")
+            market_rows = []
+            for r in snapshot.get("sample_rows", []):
+                market_rows.append(
+                    {
+                        "sport": r.get("sport", ""),
+                        "league": r.get("league", ""),
+                        "market": r.get("market", ""),
+                        "market_family": classify_market_family(
+                            r.get("market"), r.get("selection")
+                        ),
+                        "source_key": r.get("source_key", ""),
+                    }
+                )
+            # deduplicate
+            seen = set()
+            deduped = []
+            for m in market_rows:
+                key = (m["sport"], m["league"], m["market"])
+                if key not in seen:
+                    seen.add(key)
+                    deduped.append(m)
+            st.dataframe(
+                df(deduped), use_container_width=True, hide_index=True
+            )
+
+            st.subheader("Field Coverage")
+            coverage = snapshot.get("field_coverage", {})
+            coverage_rows = []
+            for field_name, info in coverage.items():
+                coverage_rows.append(
+                    {
+                        "group": info.get("group", ""),
+                        "field": field_name,
+                        "present_count": info.get("present_count", 0),
+                        "missing_count": info.get("missing_count", 0),
+                        "coverage_%": info.get("coverage_percent", 0.0),
+                        "status": info.get("status", ""),
+                    }
+                )
+            st.dataframe(
+                df(coverage_rows), use_container_width=True, hide_index=True
+            )
+
+            missing_groups = snapshot.get("missing_field_groups", [])
+            if missing_groups:
+                st.subheader("Missing Critical Fields")
+                st.warning(
+                    "The following field groups are completely missing: "
+                    f"{' ; '.join(missing_groups[:10])}"
+                    + (
+                        f" (and {len(missing_groups)-10} more)"
+                        if len(missing_groups) > 10
+                        else ""
+                    )
+                )
+                st.json(missing_groups)
+
+            st.subheader("Operator Interpretation")
+            interp_lines = [
+                "This market has odds and results, but no line movement."
+                if readiness.get("line_movement_ready") is False
+                else "",
+                "This data can test basic 1x2/moneyline plumbing."
+                if "moneyline_or_1x2" in snapshot.get("market_families", {})
+                else "",
+                "This data is not enough for player props."
+                if not readiness.get("player_prop_ready")
+                else "",
+                "ROI may be weak or meaningless if settlement fields are missing."
+                if not readiness.get("settlement_ready")
+                else "",
+            ]
+            interp_lines = [line for line in interp_lines if line]
+            if interp_lines:
+                for line in interp_lines:
+                    st.info(line)
+
+            with st.expander("Sample rows (Arrow‑safe)", expanded=False):
+                st.dataframe(
+                    df(snapshot.get("sample_rows", [])),
+                    use_container_width=True,
+                    hide_index=True,
+                )
+
+            with st.expander("Full snapshot JSON"):
+                st.json(snapshot)
 
 elif menu == "Model Projection":
     st.header("Model Projection")

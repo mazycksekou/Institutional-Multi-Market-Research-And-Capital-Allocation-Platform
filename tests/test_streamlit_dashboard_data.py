@@ -296,3 +296,142 @@ def test_make_arrow_safe_table_rows_does_not_mutate():
     safe = make_arrow_safe_table_rows(original)
     assert isinstance(original[0]["value"], list)
     assert isinstance(safe[0]["value"], str)
+
+
+# ── Phase 10H10 – Data Explorer helpers ──────────────────────────────────
+
+
+def test_classify_market_family_identifies_1x2():
+    assert classify_market_family("1x2") == "moneyline_or_1x2"
+
+
+def test_classify_market_family_identifies_moneyline():
+    assert classify_market_family("moneyline") == "moneyline_or_1x2"
+
+
+def test_classify_market_family_identifies_runline():
+    assert classify_market_family("runline") == "spread_or_runline"
+
+
+def test_classify_market_family_identifies_spread():
+    assert classify_market_family("spread") == "spread_or_runline"
+
+
+def test_classify_market_family_identifies_total():
+    assert classify_market_family("total") == "total"
+    assert classify_market_family("over/under") == "total"
+
+
+def test_classify_market_family_identifies_player_prop():
+    assert (
+        classify_market_family("player points prop")
+        == "player_prop"
+    )
+    assert (
+        classify_market_family("player points", selection="LeBron James")
+        == "player_prop"
+    )
+    assert classify_market_family("unknown") == "unknown"
+
+
+def test_calculate_field_coverage_counts():
+    rows = [
+        {"sport": "soccer", "league": "EPL", "event_date": "2023-01-01",
+         "home_team": "A", "away_team": "B"},
+        {"sport": "soccer", "league": "EPL", "event_date": None,
+         "home_team": None, "away_team": None},
+    ]
+    groups = {"core_event": ["sport", "league", "event_date", "home_team",
+                             "away_team"]}
+    cov = calculate_field_coverage(rows, groups)
+    assert cov["sport"]["present_count"] == 2
+    assert cov["sport"]["coverage_percent"] == 100.0
+    assert cov["event_date"]["present_count"] == 1
+    assert cov["event_date"]["status"] == "partial"
+
+
+def test_build_market_readiness_report_football_data_rows():
+    rows = [
+        {
+            "sport": "soccer",
+            "league": "EPL",
+            "event_date": "2023-08-12",
+            "home_team": "Arsenal",
+            "away_team": "Chelsea",
+            "market": "1X2",
+            "selection": "Home",
+            "odds_at_decision_time": 1.5,
+            "market_implied_probability": 0.6667,
+            "final_result": "H",
+            "winner": "Home",
+            "home_score": 3,
+            "away_score": 1,
+        }
+    ]
+    report = build_market_readiness_report(rows)
+    assert report["settlement_ready"] is True
+    assert report["line_movement_ready"] is False
+    assert report["player_prop_ready"] is False
+    assert report["team_stats_ready"] is False
+    assert report["projection_ready"] is True
+
+
+def test_get_sqlite_data_explorer_snapshot_for_dashboard_works(tmp_path):
+    from automation_scheduler.historical_odds_sqlite import (
+        connect_historical_odds_db, initialize_historical_odds_db,
+        import_historical_odds_file_to_sqlite,
+    )
+    # Create a tiny Football‑Data CSV
+    csv_content = (
+        "Div,Date,HomeTeam,AwayTeam,FTHG,FTAG,FTR,B365H,B365D,B365A\n"
+        "E0,2023-08-12,Arsenal,Chelsea,3,1,H,1.50,4.00,6.50\n"
+    )
+    file_path = tmp_path / "mini.csv"
+    file_path.write_text(csv_content, encoding="utf-8")
+
+    db_path = tmp_path / "test_explorer.db"
+    conn = connect_historical_odds_db(db_path)
+    initialize_historical_odds_db(conn)
+    import_historical_odds_file_to_sqlite(
+        conn, "football_data_uk", file_path
+    )
+    conn.close()
+
+    snapshot = get_sqlite_data_explorer_snapshot_for_dashboard(db_path)
+    assert snapshot["ok"] is True
+    assert snapshot["total_rows"] >= 3
+    assert "soccer" in snapshot["sports"]
+    assert snapshot["readiness"]["settlement_ready"] is True
+    assert snapshot["readiness"]["line_movement_ready"] is False
+    assert snapshot["readiness"]["player_prop_ready"] is False
+    # Check sample rows are Arrow‑safe (all values are strings)
+    for sample in snapshot.get("sample_rows", []):
+        for val in sample.values():
+            assert isinstance(val, str)
+
+
+def test_data_explorer_header_no_bad_title():
+    # Verify that the title line in streamlit_app does not contain "??"
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert 'title("?? Betting Model Operator Dashboard")' not in content
+    assert 'title("Betting Model Operator Dashboard")' in content
+
+
+def test_get_required_field_groups_for_market_returns_dict():
+    groups = get_required_field_groups_for_market("moneyline_or_1x2")
+    assert "core_event" in groups
+    assert "line_core" in groups
+    assert "settlement" in groups
+    assert "projection_control" in groups
+
+    groups2 = get_required_field_groups_for_market("player_prop")
+    assert "player_stats" in groups2
+
+
+def test_calculate_field_coverage_serializable():
+    rows = [{"field1": 1, "field2": None}]
+    groups = {"g": ["field1", "field2"]}
+    cov = calculate_field_coverage(rows, groups)
+    import json
+    json.dumps(cov)  # must not raise

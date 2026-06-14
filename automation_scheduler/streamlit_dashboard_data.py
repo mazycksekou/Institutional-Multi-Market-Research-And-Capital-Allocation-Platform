@@ -25,6 +25,7 @@ from .historical_odds_sqlite import (
     connect_historical_odds_db,
     initialize_historical_odds_db,
     import_historical_odds_file_to_sqlite,
+    query_historical_odds_rows,
     summarize_historical_odds_db,
     validate_sqlite_store,
 )
@@ -1009,6 +1010,343 @@ def make_arrow_safe_table_rows(rows: list[dict]) -> list[dict]:
         for k, v in row.items():
             new_row[k] = make_arrow_safe_value(v)
         result.append(new_row)
+    return result
+
+
+# ---------------------------------------------------------------------------
+# Phase 10H10 – Data Explorer helpers
+# ---------------------------------------------------------------------------
+
+
+REQUIRED_FIELD_GROUPS: dict[str, list[str]] = {
+    "core_event": [
+        "sport", "league", "event_date", "home_team", "away_team",
+    ],
+    "line_core": [
+        "market", "selection", "odds_at_decision_time",
+        "market_implied_probability", "bookmaker", "line_value",
+    ],
+    "line_movement": [
+        "opening_odds", "closing_odds", "opening_line", "closing_line",
+        "current_odds", "current_line", "snapshot_time", "clv",
+    ],
+    "settlement": [
+        "final_result", "winner", "home_score", "away_score", "profit_loss",
+    ],
+    "team_stats": [
+        "home_team_stats", "away_team_stats", "pace",
+        "offensive_rating", "defensive_rating", "rest_days", "injuries",
+    ],
+    "player_stats": [
+        "player_name", "player_team", "player_prop_type", "player_line",
+        "player_minutes", "player_usage", "recent_player_average",
+        "opponent_allowed_stat",
+    ],
+    "projection_control": [
+        "model_probability", "features_known_at_decision_time",
+    ],
+}
+
+
+def classify_market_family(
+    market: str | None,
+    selection: str | None = None,
+) -> str:
+    """Return one of the seven market families."""
+    if not market:
+        return "unknown"
+    lower = (
+        market.lower()
+        .replace(" ", "")
+        .replace("-", "")
+        .replace("_", "")
+    )
+    if lower in ("1x2", "moneyline", "ml"):
+        return "moneyline_or_1x2"
+    if lower in ("runline", "spread", "pointspread"):
+        return "spread_or_runline"
+    if lower in ("total", "overunder", "totals"):
+        return "total"
+    if lower.startswith("team_total") or lower in ("team total",):
+        return "team_total"
+    if selection and "player" in selection.lower():
+        return "player_prop"
+    if lower in (
+        "playerpoints", "playerpointsprop", "playerprop",
+        "player_points", "player_points_prop",
+    ):
+        return "player_prop"
+    return "unknown"
+
+
+def get_required_field_groups_for_market(
+    market_family: str,
+) -> dict[str, list[str]]:
+    """Return required field groups for a given market family."""
+    groups: dict[str, list[str]] = {
+        "core_event": REQUIRED_FIELD_GROUPS["core_event"],
+        "line_core": REQUIRED_FIELD_GROUPS["line_core"],
+        "settlement": REQUIRED_FIELD_GROUPS["settlement"],
+        "projection_control": REQUIRED_FIELD_GROUPS["projection_control"],
+    }
+    if market_family == "player_prop":
+        groups["player_stats"] = REQUIRED_FIELD_GROUPS["player_stats"]
+    if market_family in ("spread_or_runline", "total", "team_total"):
+        groups["line_movement"] = REQUIRED_FIELD_GROUPS["line_movement"]
+    return groups
+
+
+def calculate_field_coverage(
+    rows: list[dict[str, Any]],
+    required_groups: dict[str, list[str]],
+) -> dict[str, dict[str, Any]]:
+    """For each field, compute presence / absence counts and a status."""
+    coverage: dict[str, dict[str, Any]] = {}
+    total = len(rows) or 1  # avoid division by zero
+    for group_name, fields in required_groups.items():
+        for field in fields:
+            present_count = sum(
+                1 for r in rows if field in r and r[field] is not None
+            )
+            missing_count = len(rows) - present_count
+            coverage_percent = round(present_count / total * 100, 1)
+            if coverage_percent >= 99:
+                status = "good"
+            elif coverage_percent > 0:
+                status = "partial"
+            else:
+                status = "missing"
+            coverage[field] = {
+                "present_count": present_count,
+                "missing_count": missing_count,
+                "coverage_percent": coverage_percent,
+                "status": status,
+                "group": group_name,
+            }
+    return coverage
+
+
+def build_market_readiness_report(
+    rows: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Evaluate how ready the data is for projection and optional features."""
+    if not rows:
+        return {
+            "projection_ready": False,
+            "settlement_ready": False,
+            "line_movement_ready": False,
+            "player_prop_ready": False,
+            "team_stats_ready": False,
+            "critical_missing_fields": ["No rows available"],
+            "warnings": [],
+            "reason": "No rows available",
+        }
+
+    core_present = any(
+        r.get("sport")
+        and r.get("league")
+        and r.get("event_date")
+        and r.get("home_team")
+        and r.get("away_team")
+        for r in rows
+    )
+    line_core_present = any(
+        r.get("market")
+        and r.get("selection")
+        and r.get("odds_at_decision_time") is not None
+        and r.get("market_implied_probability") is not None
+        for r in rows
+    )
+    settlement_ready = any(
+        r.get("final_result") is not None
+        or r.get("winner") is not None
+        or r.get("home_score") is not None
+        for r in rows
+    )
+    line_movement_ready = any(
+        r.get("opening_odds") is not None
+        or r.get("closing_odds") is not None
+        or r.get("current_odds") is not None
+        or r.get("opening_line") is not None
+        or r.get("closing_line") is not None
+        or r.get("clv") is not None
+        for r in rows
+    )
+    player_prop_ready = any(
+        r.get("player_name") is not None
+        and r.get("player_prop_type") is not None
+        and r.get("player_line") is not None
+        for r in rows
+    )
+    team_stats_ready = any(
+        r.get("home_team_stats") is not None
+        or r.get("away_team_stats") is not None
+        or r.get("pace") is not None
+        for r in rows
+    )
+
+    critical_missing: list[str] = []
+    if not core_present:
+        critical_missing.append(
+            "Core event fields (sport, league, event_date, home_team, away_team)"
+        )
+    if not line_core_present:
+        critical_missing.append(
+            "Line core fields (market, selection, odds_at_decision_time, "
+            "market_implied_probability)"
+        )
+    if not settlement_ready:
+        critical_missing.append("Settlement data (final_result, winner, scores)")
+    projection_ready = core_present and line_core_present and settlement_ready
+
+    warnings: list[str] = []
+    if not line_movement_ready:
+        warnings.append(
+            "No line movement data (opening/closing odds). ROI may be unreliable."
+        )
+    if not player_prop_ready:
+        warnings.append("No player prop data.")
+    if not team_stats_ready:
+        warnings.append("No team stats data.")
+
+    reason = "; ".join(critical_missing) if critical_missing else (
+        "Data sufficient for projection."
+    )
+    return {
+        "projection_ready": projection_ready,
+        "settlement_ready": settlement_ready,
+        "line_movement_ready": line_movement_ready,
+        "player_prop_ready": player_prop_ready,
+        "team_stats_ready": team_stats_ready,
+        "critical_missing_fields": critical_missing,
+        "warnings": warnings,
+        "reason": reason,
+    }
+
+
+def get_sqlite_data_explorer_snapshot_for_dashboard(
+    db_path: str | Path,
+    *,
+    sport: str | None = None,
+    league: str | None = None,
+    market: str | None = None,
+    source_key: str | None = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
+    limit: int = 500,
+) -> dict[str, Any]:
+    """Open the SQLite store, filter rows, and return a data‑explorer snapshot."""
+    result: dict[str, Any] = {
+        "ok": False,
+        "db_path": str(db_path),
+        "filters": {
+            "sport": sport,
+            "league": league,
+            "market": market,
+            "source_key": source_key,
+            "start_date": start_date,
+            "end_date": end_date,
+            "limit": limit,
+        },
+        "total_rows": 0,
+        "filter_options": {},
+        "sports": [],
+        "leagues": [],
+        "markets": [],
+        "source_keys": [],
+        "market_families": {},
+        "sample_rows": [],
+        "field_coverage": {},
+        "missing_field_groups": [],
+        "readiness": {},
+        "warnings": [],
+    }
+    try:
+        conn = connect_historical_odds_db(str(db_path))
+        initialize_historical_odds_db(conn)
+
+        raw_rows = query_historical_odds_rows(
+            conn,
+            sport=sport,
+            league=league,
+            market=market,
+            source_key=source_key,
+            start_date=start_date,
+            end_date=end_date,
+            limit=limit,
+        )
+        result["total_rows"] = len(raw_rows)
+    except Exception as exc:
+        result["warnings"].append(f"Could not open database: {exc}")
+        return result
+
+    # distribute rows
+    rows = raw_rows
+    sports = sorted(
+        {r.get("sport") for r in rows if r.get("sport")}
+    )
+    leagues = sorted(
+        {r.get("league") for r in rows if r.get("league")}
+    )
+    markets = sorted(
+        {r.get("market") for r in rows if r.get("market")}
+    )
+    source_keys = sorted(
+        {r.get("source_key") for r in rows if r.get("source_key")}
+    )
+    result["sports"] = sports
+    result["leagues"] = leagues
+    result["markets"] = markets
+    result["source_keys"] = source_keys
+
+    # market families
+    families: dict[str, int] = {}
+    for r in rows:
+        family = classify_market_family(r.get("market"), r.get("selection"))
+        families[family] = families.get(family, 0) + 1
+    result["market_families"] = {
+        k: v for k, v in sorted(families.items(), key=lambda x: -x[1])
+    }
+
+    # sample rows (Arrow‑safe)
+    result["sample_rows"] = make_arrow_safe_table_rows(rows[: min(limit, 20)])
+
+    # field coverage across all groups
+    all_groups = dict(REQUIRED_FIELD_GROUPS)
+    coverage = calculate_field_coverage(rows, all_groups)
+    result["field_coverage"] = coverage
+
+    # missing field groups
+    missing_groups: list[str] = []
+    for group_name, fields in all_groups.items():
+        for field in fields:
+            entry = coverage.get(field)
+            if entry and entry["status"] == "missing":
+                missing_groups.append(f"{group_name} / {field}")
+    result["missing_field_groups"] = missing_groups
+
+    readiness = build_market_readiness_report(rows)
+    result["readiness"] = readiness
+
+    # filter options
+    result["filter_options"] = {
+        "sports": sports,
+        "leagues": leagues,
+        "markets": markets,
+        "source_keys": source_keys,
+    }
+    result["ok"] = True
+
+    # determine any overall warnings
+    if readiness.get("warnings"):
+        result["warnings"].extend(readiness["warnings"])
+    if missing_groups:
+        result["warnings"].append(
+            f"Missing field groups: {missing_groups[0]}"
+            + (f" (+{len(missing_groups)-1} more)" if len(missing_groups) > 1 else "")
+        )
+
+    conn.close()
     return result
 
 
