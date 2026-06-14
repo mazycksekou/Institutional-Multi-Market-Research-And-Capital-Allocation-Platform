@@ -99,7 +99,7 @@ def show_curve(curve_rows):
         st.line_chart(numeric_df.set_index("decision_index")["bankroll"])
 
     # Arrow‑safe DataFrame for the display table
-    with st.expander("Graph table", expanded=False):
+    with st.expander("Performance Data Table", expanded=False):
         st.dataframe(df(rows), use_container_width=True, hide_index=True)
 
 
@@ -112,8 +112,8 @@ def show_run_result(result: dict) -> None:
     metric_row(
         [
             ("Rows used", result.get("rows_used"), "How many rows were tested."),
-            ("Bets", summary.get("bets"), "How many pretend bets were made."),
-            ("Money won/lost", summary.get("profit_loss"), "Profit or loss from the test."),
+            ("Decisions", summary.get("bets"), "How many pretend decisions were made."),
+            ("Net Result", summary.get("profit_loss"), "Profit or loss from the test."),
             ("Return %", summary.get("roi_percent"), "Percent return from the test."),
             ("Worst drop %", summary.get("max_drawdown_percent"), "Biggest drop from the high point."),
             ("Ready?", readiness.get("verdict"), "Simple model readiness answer."),
@@ -122,7 +122,7 @@ def show_run_result(result: dict) -> None:
 
     st.info(readiness.get("simple_explanation") or "No simple explanation available.")
 
-    st.subheader("Money Up/Down Graph")
+    st.subheader("Portfolio Performance Curve")
     show_curve(curve)
 
     tab1, tab2, tab3, tab4 = st.tabs(["Counts", "Decisions", "Settings", "Raw JSON"])

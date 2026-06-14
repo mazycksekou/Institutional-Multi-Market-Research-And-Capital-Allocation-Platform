@@ -440,3 +440,68 @@ def test_calculate_field_coverage_serializable():
     cov = calculate_field_coverage(rows, groups)
     import json
     json.dumps(cov)  # must not raise
+
+
+# ── Phase 10H10 – Dashboard wording / layout cleanup ─────────────────────
+
+
+def test_portfolio_performance_curve_text_exists():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert 'subheader("Portfolio Performance Curve")' in content
+
+
+def test_performance_data_table_text_exists():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert 'expander("Performance Data Table"' in content
+
+
+def test_money_up_down_graph_no_longer_present():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert 'subheader("Money Up/Down Graph")' not in content
+
+
+def test_graph_table_no_longer_present():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert 'expander("Graph table"' not in content
+
+
+def test_operator_summary_has_system_status():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert 'subheader("System Status")' in content
+
+
+def test_operator_summary_has_portfolio_snapshot():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert 'subheader("Portfolio Snapshot")' in content
+
+
+def test_operator_summary_has_what_this_means():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert 'subheader("What This Means")' in content
+
+
+def test_easy_labels_bankroll_label_updated():
+    from automation_scheduler.streamlit_dashboard_data import EASY_LABELS
+    assert EASY_LABELS["bankroll"] == "Portfolio Value"
+
+
+def test_easy_labels_profit_loss_label_updated():
+    from automation_scheduler.streamlit_dashboard_data import EASY_LABELS
+    assert EASY_LABELS["profit_loss"] == "Net Result"
+
+
+def test_easy_labels_bets_label_updated():
+    from automation_scheduler.streamlit_dashboard_data import EASY_LABELS
+    assert EASY_LABELS["bets"] == "Decisions"
+
+
+def test_easy_labels_no_bets_label_updated():
+    from automation_scheduler.streamlit_dashboard_data import EASY_LABELS
+    assert EASY_LABELS["no_bets"] == "Skipped Decisions"
