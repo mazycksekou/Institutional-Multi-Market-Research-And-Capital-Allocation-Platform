@@ -1548,10 +1548,7 @@ elif menu == "Feature Ablation Lab":
 
 elif menu == "Calibration‑Ready Strategy Filter":
     st.header("Calibration‑Ready Strategy Filter")
-    st.info(
-        "Calibration‑Ready Strategy Filter excludes sports and markets "
-        "without enough data before calculating ROI."
-    )
+    st.info("Calibration‑Ready Strategy Filter excludes sports and markets without enough data before calculating ROI.")
 
     mode = st.radio("Mode", ["Single Sport", "All Sports"], key="cal_mode")
     default_sqlite_path = get_default_historical_sqlite_path()
