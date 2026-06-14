@@ -78,6 +78,7 @@ from .backtest_strategy_profiles import (
     normalize_strategy_profile_key,
 )
 from .backtesting_engine import run_backtest
+from .calibration_strategy_filter import run_calibration_strategy_filter
 
 
 DEFAULT_DASHBOARD_JSON_PATH = Path("data/backtests/dashboard/latest_dashboard.json")
