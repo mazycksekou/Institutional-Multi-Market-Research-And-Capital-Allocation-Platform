@@ -468,10 +468,7 @@ elif menu == "Backtest Dashboard":
         # ── Volatility Result Breakdown (if backtest result available) ────
         if isinstance(dashboard, dict):
             st.subheader("Volatility Result Breakdown")
-            st.info(
-                "This shows whether low, medium, high, or unknown volatility "
-                "produced better results."
-            )
+            st.info("This shows whether low, medium, high, or unknown volatility produced better results.")
             default_sqlite = get_default_historical_sqlite_path()
             vol_breakdown = get_volatility_result_breakdown_for_dashboard(
                 default_sqlite, projection_result=dashboard
@@ -1229,10 +1226,7 @@ elif menu == "Model Projection":
 
             # ── Volatility Result Breakdown ──────────────────────────
             st.subheader("Volatility Result Breakdown")
-            st.info(
-                "This shows whether low, medium, high, or unknown volatility "
-                "produced better results."
-            )
+            st.info("This shows whether low, medium, high, or unknown volatility produced better results.")
             vol_breakdown = get_volatility_result_breakdown_for_dashboard(
                 db_path_input, projection_result=proj_result
             )
