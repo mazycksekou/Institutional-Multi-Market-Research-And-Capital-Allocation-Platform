@@ -980,24 +980,48 @@ MARKET_FEATURE_PACKS: dict[str, dict[str, Any]] = {
 # ---------------------------------------------------------------------------
 
 def normalize_market_family(
-    market: object = None,
+    value: object = None,
     selection: object = None,
     sport: object = None,
+    **kwargs: Any,
 ) -> str:
-    """Return a canonical market family for any alias, or 'general_market' for unknowns."""
+    """Return a canonical market family for any alias, or 'general_market' for unknowns.
+
+    Supports both positional and keyword ``market`` argument for backward
+    compatibility.
+    """
+    # Resolve the market value, supporting both old and new calling conventions
+    if value is not None:
+        market = value
+    else:
+        market = kwargs.get("market", None)
     if not market:
         return "general_market"
     m = str(market).strip().lower().replace("-", "_").replace(" ", "_")
     sel = (str(selection or "")).strip().lower()
     sp = (str(sport or "")).strip().lower()
 
-    # Winner markets
-    # First handle clear two‑way aliases
+    # Check draw / three‑way context early (overrides two‑way aliases)
+    if (
+        sel in ("draw", "x", "tie")
+        or "draw" in m
+        or m in ("1x2", "three_way", "three_way_moneyline", "full_time_result", "draw_market")
+    ):
+        if m in ("moneyline", "ml", "winner", "game_winner", "home_away",
+                 "moneyline_or_1x2", "match_winner"):
+            return "three_way_moneyline"
+        # Clear three‑way aliases already handled above, but also return
+        if m in ("1x2", "three_way", "three_way_moneyline", "full_time_result", "draw_market"):
+            return "three_way_moneyline"
+
+    # Winner markets – two‑way aliases (draw not detected)
     if m in ("moneyline", "ml", "winner", "game_winner", "home_away"):
         return "two_way_moneyline"
-    # Clear three‑way aliases
+
+    # Clear three‑way aliases (no draw context needed)
     if m in ("1x2", "three_way", "three_way_moneyline", "full_time_result", "draw_market"):
         return "three_way_moneyline"
+
     # match_winner: decide based on sport/selection
     if m == "match_winner":
         if sp == "tennis":
@@ -1005,7 +1029,8 @@ def normalize_market_family(
         if sel in ("draw", "x") or "draw" in market:
             return "three_way_moneyline"
         return "two_way_moneyline"
-    # Legacy alias: moneyline_or_1x2 passed directly -> safest fallback is two_way
+
+    # Legacy alias: moneyline_or_1x2 passed directly
     if m == "moneyline_or_1x2":
         if sel in ("draw", "x") or "draw" in market:
             return "three_way_moneyline"

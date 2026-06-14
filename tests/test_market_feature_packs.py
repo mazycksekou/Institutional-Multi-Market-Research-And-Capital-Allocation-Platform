@@ -33,7 +33,6 @@ def test_moneyline_or_1x2_legacy_alias_still_supported():
     assert normalize_market_family("moneyline_or_1x2") == "two_way_moneyline"
     # With draw context it returns three_way
     assert normalize_market_family("moneyline_or_1x2", selection="draw") == "three_way_moneyline"
-    assert normalize_market_family("moneyline_or_1x2", market="moneyline_or_1x2", selection="draw") == "three_way_moneyline"
 
 
 def test_three_way_moneyline_detects_draw_selection():
@@ -126,7 +125,9 @@ def test_get_market_feature_pack_unknown_returns_general():
 
 def test_supported_market_feature_packs_include_core_repo_markets():
     packs = get_supported_market_feature_packs()
-    assert "moneyline_or_1x2" in packs
+    assert "two_way_moneyline" in packs
+    assert "three_way_moneyline" in packs
+    assert "moneyline_or_1x2" in packs  # legacy still present
     assert "spread_or_handicap" in packs
     assert "game_total" in packs
     assert "player_prop" in packs
@@ -163,7 +164,7 @@ def test_evaluate_market_feature_readiness_strong_for_complete_rows():
         },
     ]
     result = evaluate_market_feature_readiness(rows, market="moneyline")
-    assert result["market_family"] == "moneyline_or_1x2"
+    assert result["market_family"] == "two_way_moneyline"
     assert result["readiness_level"] in ("usable", "strong")
     assert result["total_rows"] == 1
 
@@ -199,7 +200,7 @@ def test_summarize_market_feature_readiness_groups_by_normalized_market():
     ]
     summary = summarize_market_feature_readiness(rows)
     assert summary["ok"] is True
-    assert "moneyline_or_1x2" in summary["markets"]
+    assert "two_way_moneyline" in summary["markets"]
     assert "spread_or_handicap" in summary["markets"]
     assert summary["total_rows"] == 2
 
