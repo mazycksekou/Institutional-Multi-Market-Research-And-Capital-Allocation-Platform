@@ -228,3 +228,169 @@ def test_backfill_line_snapshots_from_historical_odds(tmp_path: Path) -> None:
     assert summary["decision_snapshots"] >= 3
     assert summary["line_movement_ready"] is False  # no opening/closing from football-data
     conn.close()
+
+
+def test_calculate_line_volatility_for_group_with_line_values():
+    from automation_scheduler.historical_line_movement import (
+        calculate_line_volatility_for_group,
+    )
+    rows = [
+        {
+            "event_id": "e1",
+            "market": "spread",
+            "market_family": "spread_or_runline",
+            "selection": "home",
+            "player_name": None,
+            "team_name": "Team A",
+            "bookmaker": "b365",
+            "snapshot_label": "opening",
+            "line_value": 7.5,
+            "odds_value": None,
+        },
+        {
+            "event_id": "e1",
+            "market": "spread",
+            "market_family": "spread_or_runline",
+            "selection": "home",
+            "player_name": None,
+            "team_name": "Team A",
+            "bookmaker": "b365",
+            "snapshot_label": "decision",
+            "line_value": 8.5,
+            "odds_value": None,
+        },
+        {
+            "event_id": "e1",
+            "market": "spread",
+            "market_family": "spread_or_runline",
+            "selection": "home",
+            "player_name": None,
+            "team_name": "Team A",
+            "bookmaker": "b365",
+            "snapshot_label": "closing",
+            "line_value": 6.5,
+            "odds_value": None,
+        },
+    ]
+    result = calculate_line_volatility_for_group(rows)
+    assert result["reference_line"] == 7.5
+    assert result["line_high"] == 8.5
+    assert result["line_low"] == 6.5
+    assert result["line_move_up"] == 1.0
+    assert result["line_move_down"] == 1.0
+    assert result["line_total_range"] == 2.0
+    assert result["line_volatility_score"] == 2.0
+    assert result["volatility_level"] == "high"
+
+
+def test_calculate_line_volatility_for_group_odds_only():
+    from automation_scheduler.historical_line_movement import (
+        calculate_line_volatility_for_group,
+    )
+    rows = [
+        {
+            "event_id": "e2",
+            "market": "moneyline",
+            "market_family": "moneyline_or_1x2",
+            "selection": "home",
+            "player_name": None,
+            "team_name": None,
+            "bookmaker": "dk",
+            "snapshot_label": "opening",
+            "line_value": None,
+            "odds_value": -110,
+        },
+        {
+            "event_id": "e2",
+            "market": "moneyline",
+            "market_family": "moneyline_or_1x2",
+            "selection": "home",
+            "player_name": None,
+            "team_name": None,
+            "bookmaker": "dk",
+            "snapshot_label": "decision",
+            "line_value": None,
+            "odds_value": -120,
+        },
+    ]
+    result = calculate_line_volatility_for_group(rows)
+    assert result["line_value"] is None
+    assert result["reference_line"] is None
+    assert result["line_high"] is None
+    assert result["reference_odds"] is not None
+    assert "Only odds volatility is available" in result["warnings"][0]
+    assert result["volatility_level"] in ("low", "medium", "high")
+
+
+def test_calculate_line_volatility_summary_stable_keys():
+    from automation_scheduler.historical_line_movement import (
+        calculate_line_volatility_summary,
+    )
+    rows = [
+        {
+            "event_id": "e1",
+            "market": "spread",
+            "market_family": "spread_or_runline",
+            "selection": "home",
+            "player_name": None,
+            "team_name": "Team A",
+            "bookmaker": "b365",
+            "snapshot_label": "opening",
+            "line_value": 7.5,
+        },
+    ]
+    result = calculate_line_volatility_summary(rows)
+    expected_keys = {
+        "ok",
+        "groups_seen",
+        "volatility_rows",
+        "high_volatility_count",
+        "medium_volatility_count",
+        "low_volatility_count",
+        "unknown_volatility_count",
+        "operator_interpretation",
+        "warnings",
+    }
+    assert set(result.keys()) == expected_keys
+
+
+def test_get_line_volatility_summary_from_sqlite(tmp_path):
+    from automation_scheduler.historical_line_movement import (
+        initialize_line_movement_schema,
+        upsert_line_snapshots_for_canonical_rows,
+        get_line_volatility_summary_from_sqlite,
+    )
+    from automation_scheduler.historical_odds_sqlite import (
+        connect_historical_odds_db,
+        initialize_historical_odds_db,
+    )
+    db_path = tmp_path / "vol_test.db"
+    conn = connect_historical_odds_db(db_path)
+    initialize_historical_odds_db(conn)
+    initialize_line_movement_schema(conn)
+
+    row = {
+        "event_id": "e1",
+        "odds_id": "o1",
+        "source_key": "test",
+        "source_file": "test.csv",
+        "sport": "soccer",
+        "league": "E0",
+        "event_date": "2023-01-01",
+        "home_team": "a",
+        "away_team": "b",
+        "bookmaker": "b365",
+        "market": "1x2",
+        "selection": "home",
+        "odds_at_decision_time": 2.0,
+        "market_implied_probability": 0.5,
+        "collected_at": "2023-01-01T12:00:00Z",
+        "opening_odds": 2.2,
+        "closing_odds": 1.8,
+    }
+    upsert_line_snapshots_for_canonical_rows(conn, [row])
+    result = get_line_volatility_summary_from_sqlite(conn)
+    assert result["ok"] is True
+    assert result["groups_seen"] >= 1
+    assert result["high_volatility_count"] >= 0  # depends on odds range
+    conn.close()

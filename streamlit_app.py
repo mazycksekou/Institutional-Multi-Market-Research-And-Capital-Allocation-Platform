@@ -951,6 +951,65 @@ elif menu == "Data Explorer":
                 )
 
             st.subheader("Feature Control Lab")
+            # ── Line Volatility (Phase 10H12A) ────────────────────────
+            st.subheader("Line Volatility")
+            from automation_scheduler.streamlit_dashboard_data import (
+                get_line_volatility_snapshot_for_dashboard,
+            )
+            lm_vol = get_line_volatility_snapshot_for_dashboard(db_path_input)
+            if lm_vol.get("ok"):
+                col_v1, col_v2, col_v3, col_v4, col_v5 = st.columns(5)
+                with col_v1:
+                    st.metric("Groups seen", lm_vol.get("groups_seen", 0))
+                with col_v2:
+                    st.metric("High volatility", lm_vol.get("high_volatility_count", 0))
+                with col_v3:
+                    st.metric("Medium volatility", lm_vol.get("medium_volatility_count", 0))
+                with col_v4:
+                    st.metric("Low volatility", lm_vol.get("low_volatility_count", 0))
+                with col_v5:
+                    st.metric("Unknown", lm_vol.get("unknown_volatility_count", 0))
+
+                vol_rows = lm_vol.get("volatility_rows", [])
+                if vol_rows:
+                    vol_table = []
+                    for vr in vol_rows:
+                        vol_table.append({
+                            "market": vr.get("market", ""),
+                            "selection": vr.get("selection", ""),
+                            "player_name": vr.get("player_name", ""),
+                            "team_name": vr.get("team_name", ""),
+                            "reference_snapshot_label": vr.get("reference_snapshot_label", ""),
+                            "reference_line": vr.get("reference_line"),
+                            "line_high": vr.get("line_high"),
+                            "line_low": vr.get("line_low"),
+                            "line_move_up": vr.get("line_move_up"),
+                            "line_move_down": vr.get("line_move_down"),
+                            "line_total_range": vr.get("line_total_range"),
+                            "reference_odds": vr.get("reference_odds"),
+                            "odds_high": vr.get("odds_high"),
+                            "odds_low": vr.get("odds_low"),
+                            "odds_move_up": vr.get("odds_move_up"),
+                            "odds_move_down": vr.get("odds_move_down"),
+                            "odds_total_range": vr.get("odds_total_range"),
+                            "volatility_level": vr.get("volatility_level", ""),
+                            "operator_interpretation": vr.get("operator_interpretation", ""),
+                        })
+                    st.dataframe(df(vol_table), use_container_width=True, hide_index=True)
+                else:
+                    st.info("No volatility groups available.")
+
+                st.info(
+                    "Line volatility shows how far the line moved up, "
+                    "how far it moved down, and the full high‑low range."
+                )
+                st.info(
+                    "Decision-only data can show odds availability, "
+                    "but true line volatility needs multiple snapshots."
+                )
+            else:
+                st.warning("Line volatility snapshot could not be retrieved.")
+
             from automation_scheduler.streamlit_dashboard_data import (
                 get_feature_control_profiles,
                 get_feature_group_definitions,

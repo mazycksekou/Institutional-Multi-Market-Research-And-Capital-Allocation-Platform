@@ -936,6 +936,36 @@ def get_line_movement_snapshot_for_dashboard(
     }
 
 
+def get_line_volatility_snapshot_for_dashboard(
+    db_path: str | Path,
+) -> dict:
+    """Open the SQLite store, initialise line movement schema, query snapshots
+    and return a line volatility summary.
+
+    Closes the connection before returning.
+    """
+    from .historical_line_movement import (
+        get_line_volatility_summary_from_sqlite,
+    )
+
+    conn = connect_historical_odds_db(str(db_path))
+    initialize_historical_odds_db(conn)
+    initialize_line_movement_schema(conn)
+    result = get_line_volatility_summary_from_sqlite(conn)
+    conn.close()
+    return {
+        "ok": result.get("ok"),
+        "groups_seen": result.get("groups_seen", 0),
+        "volatility_rows": result.get("volatility_rows", []),
+        "high_volatility_count": result.get("high_volatility_count", 0),
+        "medium_volatility_count": result.get("medium_volatility_count", 0),
+        "low_volatility_count": result.get("low_volatility_count", 0),
+        "unknown_volatility_count": result.get("unknown_volatility_count", 0),
+        "operator_interpretation": result.get("operator_interpretation", ""),
+        "warnings": result.get("warnings", []),
+    }
+
+
 def get_historical_sqlite_snapshot_for_dashboard(db_path: str | Path) -> dict:
     """Open the SQLite database and return table counts, summary, filter options, and validation."""
     conn = connect_historical_odds_db(str(db_path))

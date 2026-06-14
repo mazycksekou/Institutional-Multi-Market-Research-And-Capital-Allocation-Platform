@@ -23,6 +23,8 @@ from typing import Any
 
 LINE_MOVEMENT_SCHEMA_VERSION: str = "10H12"
 
+LINE_VOLATILITY_EXPRESSION_VERSION: str = "10H12A"
+
 # ---------------------------------------------------------------------------
 # Idempotent table / index creation SQL
 # ---------------------------------------------------------------------------
@@ -648,3 +650,243 @@ def backfill_line_snapshots_from_historical_odds(
         "snapshots_created": result.get("rows_inserted_or_updated", 0),
         "warnings": result.get("warnings", []),
     }
+
+
+# ---------------------------------------------------------------------------
+# Phase 10H12A – Line Volatility Expression
+# ---------------------------------------------------------------------------
+
+
+def group_line_snapshots_for_volatility(rows: list[dict]) -> dict[str, list[dict]]:
+    """Group line snapshots by the fields that define a unique market line.
+
+    Returns a dict where each key is ``event_id|market|selection|player_name|team_name|bookmaker``
+    and the value is a list of snapshot rows for that group.
+    """
+    groups: dict[str, list[dict]] = {}
+    for r in rows:
+        event_id = str(r.get("event_id", "") or "")
+        market   = str(r.get("market", "") or "")
+        sel      = str(r.get("selection", "") or "")
+        player   = str(r.get("player_name", "") or "")
+        team     = str(r.get("team_name", "") or "")
+        bmaker   = str(r.get("bookmaker", "") or "")
+        key = "|".join([event_id, market, sel, player, team, bmaker])
+        groups.setdefault(key, []).append(r)
+    return groups
+
+
+def _volatility_level(
+    line_total_range: float | None,
+    odds_total_range: float | None,
+) -> str:
+    if line_total_range is not None:
+        if line_total_range >= 2.0:
+            return "high"
+        if line_total_range >= 0.5:
+            return "medium"
+        return "low"
+    if odds_total_range is not None:
+        if odds_total_range >= 50:
+            return "high"
+        if odds_total_range >= 15:
+            return "medium"
+        return "low"
+    return "unknown"
+
+
+def calculate_line_volatility_for_group(rows: list[dict]) -> dict:
+    """Calculate line volatility for a single group of snapshots."""
+    if not rows:
+        return {}
+
+    # reference preference order
+    preferred = {"opening", "decision", "current", "closing"}
+    ref_order = ["opening", "decision", "current", "closing"]
+    ref_row = None
+    for label in ref_order:
+        for r in rows:
+            if r.get("snapshot_label") == label:
+                ref_row = r
+                break
+        if ref_row:
+            break
+    if ref_row is None:
+        ref_row = rows[0]
+
+    line_values = [r.get("line_value") for r in rows if r.get("line_value") is not None]
+    odds_values = [r.get("odds_value") for r in rows if r.get("odds_value") is not None]
+
+    reference_line = ref_row.get("line_value")
+    reference_odds = ref_row.get("odds_value")
+
+    line_high = max(line_values) if line_values else None
+    line_low  = min(line_values) if line_values else None
+    odds_high = max(odds_values) if odds_values else None
+    odds_low  = min(odds_values) if odds_values else None
+
+    warnings: list[str] = []
+    if line_values:
+        line_move_up = (line_high - reference_line) if reference_line is not None else None
+        line_move_down = (reference_line - line_low) if reference_line is not None else None
+        line_total_range = (line_high - line_low) if line_high is not None and line_low is not None else None
+        line_volatility_score = line_total_range
+    else:
+        line_move_up = None
+        line_move_down = None
+        line_total_range = None
+        line_volatility_score = None
+        warnings.append("Only odds volatility is available; line_value is missing.")
+
+    if odds_values:
+        odds_move_up = (odds_high - reference_odds) if reference_odds is not None else None
+        odds_move_down = (reference_odds - odds_low) if reference_odds is not None else None
+        odds_total_range = (odds_high - odds_low) if odds_high is not None and odds_low is not None else None
+        odds_volatility_score = odds_total_range
+    else:
+        odds_move_up = None
+        odds_move_down = None
+        odds_total_range = None
+        odds_volatility_score = None
+        if reference_odds is not None:
+            warnings.append("Only line volatility is available; odds_value is missing.")
+
+    volatility_level = _volatility_level(line_total_range, odds_total_range)
+
+    # operator interpretation
+    if volatility_level == "unknown":
+        operator_interpretation = (
+            "No line or odds data available for this group."
+        )
+    elif volatility_level == "high":
+        operator_interpretation = (
+            "Volatility is high: the line moved significantly within the snapshots."
+        )
+    elif volatility_level == "medium":
+        operator_interpretation = (
+            "Volatility is moderate: the line moved but not drastically."
+        )
+    else:
+        operator_interpretation = (
+            "Volatility is low: the line remained relatively stable."
+        )
+
+    # use first row for group metadata
+    first = rows[0]
+    return {
+        "snapshot_count": len(rows),
+        "event_id": first.get("event_id", ""),
+        "market": first.get("market", ""),
+        "market_family": first.get("market_family", ""),
+        "selection": first.get("selection", ""),
+        "player_name": first.get("player_name", ""),
+        "team_name": first.get("team_name", ""),
+        "bookmaker": first.get("bookmaker", ""),
+        "reference_snapshot_label": ref_row.get("snapshot_label", ""),
+        "reference_line": reference_line,
+        "line_high": line_high,
+        "line_low": line_low,
+        "line_move_up": line_move_up,
+        "line_move_down": line_move_down,
+        "line_total_range": line_total_range,
+        "line_volatility_score": line_volatility_score,
+        "reference_odds": reference_odds,
+        "odds_high": odds_high,
+        "odds_low": odds_low,
+        "odds_move_up": odds_move_up,
+        "odds_move_down": odds_move_down,
+        "odds_total_range": odds_total_range,
+        "odds_volatility_score": odds_volatility_score,
+        "volatility_level": volatility_level,
+        "warnings": warnings,
+        "operator_interpretation": operator_interpretation,
+    }
+
+
+def calculate_line_volatility_summary(rows: list[dict]) -> dict:
+    """Return a summary of line volatility across all snapshots.
+
+    Groups snapshots by (event_id, market, selection, player_name, team_name, bookmaker)
+    and computes volatility for each group.
+    """
+    groups = group_line_snapshots_for_volatility(rows)
+    volatility_rows: list[dict] = []
+    for grp_rows in groups.values():
+        v = calculate_line_volatility_for_group(grp_rows)
+        if v:
+            volatility_rows.append(v)
+
+    high_cnt   = sum(1 for v in volatility_rows if v.get("volatility_level") == "high")
+    med_cnt    = sum(1 for v in volatility_rows if v.get("volatility_level") == "medium")
+    low_cnt    = sum(1 for v in volatility_rows if v.get("volatility_level") == "low")
+    unknown_cnt= sum(1 for v in volatility_rows if v.get("volatility_level") == "unknown")
+
+    total = len(volatility_rows) or 1
+    high_pct  = round(high_cnt / total * 100, 1)
+    med_pct   = round(med_cnt / total * 100, 1)
+    low_pct   = round(low_cnt / total * 100, 1)
+    unknown_pct = round(unknown_cnt / total * 100, 1)
+
+    if high_cnt > 0:
+        interp = (
+            f"{high_cnt} group(s) show high line volatility. "
+            "This indicates significant line movement across snapshots."
+        )
+    elif med_cnt > 0:
+        interp = (
+            f"{med_cnt} group(s) show medium line volatility. "
+            "Moderate movement detected."
+        )
+    else:
+        interp = (
+            "Line volatility is low or unknown; most snapshots have stable lines."
+        )
+
+    warnings: list[str] = []
+    if unknown_cnt > 0:
+        warnings.append(
+            f"{unknown_cnt} group(s) have unknown volatility level "
+            "(no line or odds data)."
+        )
+
+    return {
+        "ok": True,
+        "groups_seen": len(volatility_rows),
+        "volatility_rows": volatility_rows,
+        "high_volatility_count": high_cnt,
+        "medium_volatility_count": med_cnt,
+        "low_volatility_count": low_cnt,
+        "unknown_volatility_count": unknown_cnt,
+        "operator_interpretation": interp,
+        "warnings": warnings,
+    }
+
+
+def get_line_volatility_summary_from_sqlite(
+    conn: sqlite3.Connection,
+    limit: int = 10000,
+) -> dict:
+    """Query ``historical_line_snapshots`` and return a line volatility summary."""
+    sql = """SELECT * FROM historical_line_snapshots
+             ORDER BY event_date, snapshot_time
+             LIMIT ?
+          """
+    rows: list[dict] = []
+    try:
+        cur = conn.execute(sql, (limit,))
+        rows = [dict(r) for r in cur.fetchall()]
+    except Exception:
+        pass
+    if not rows:
+        return {
+            "ok": True,
+            "groups_seen": 0,
+            "volatility_rows": [],
+            "high_volatility_count": 0,
+            "medium_volatility_count": 0,
+            "low_volatility_count": 0,
+            "unknown_volatility_count": 0,
+            "operator_interpretation": "No snapshots available.",
+            "warnings": [],
+        }
+    return calculate_line_volatility_summary(rows)

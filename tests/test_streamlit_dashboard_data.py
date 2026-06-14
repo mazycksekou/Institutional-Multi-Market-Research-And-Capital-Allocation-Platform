@@ -438,6 +438,46 @@ def test_line_movement_baseline_testing_note_in_streamlit_app():
     )
 
 
+def test_get_line_volatility_snapshot_for_dashboard(tmp_path):
+    from automation_scheduler.streamlit_dashboard_data import (
+        get_line_volatility_snapshot_for_dashboard,
+        import_historical_file_to_sqlite_for_dashboard,
+    )
+
+    csv_content = (
+        "Div,Date,HomeTeam,AwayTeam,FTHG,FTAG,FTR,B365H,B365D,B365A\n"
+        "E0,2023-08-12,Arsenal,Chelsea,3,1,H,1.50,4.00,6.50\n"
+    )
+    file_path = tmp_path / "vol_dash.csv"
+    file_path.write_text(csv_content, encoding="utf-8")
+    db_path = tmp_path / "vol_dash.db"
+    import_historical_file_to_sqlite_for_dashboard(
+        db_path, "football_data_uk", file_path
+    )
+    snap = get_line_volatility_snapshot_for_dashboard(db_path)
+    assert snap.get("ok") is True
+    assert snap["groups_seen"] >= 1
+    assert "high_volatility_count" in snap
+    assert "medium_volatility_count" in snap
+    assert "low_volatility_count" in snap
+    assert "unknown_volatility_count" in snap
+
+
+def test_streamlit_app_contains_line_volatility():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert 'subheader("Line Volatility")' in content
+
+
+def test_streamlit_app_contains_volatility_explanation():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert (
+        "Line volatility shows how far the line moved up"
+        in content
+    )
+
+
 def test_get_line_movement_snapshot_for_dashboard(tmp_path):
     from automation_scheduler.streamlit_dashboard_data import (
         get_line_movement_snapshot_for_dashboard,
