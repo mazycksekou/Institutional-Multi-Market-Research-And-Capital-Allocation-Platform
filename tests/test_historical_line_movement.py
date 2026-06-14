@@ -314,10 +314,15 @@ def test_calculate_line_volatility_for_group_odds_only():
         },
     ]
     result = calculate_line_volatility_for_group(rows)
-    assert result["line_value"] is None
     assert result["reference_line"] is None
     assert result["line_high"] is None
-    assert result["reference_odds"] is not None
+    assert result["line_low"] is None
+    assert result["line_total_range"] is None
+    assert result["reference_odds"] == -110
+    assert result["odds_high"] == -110
+    assert result["odds_low"] == -120
+    assert result["odds_total_range"] == 10
+    assert result["odds_volatility_score"] == 10
     assert "Only odds volatility is available" in result["warnings"][0]
     assert result["volatility_level"] in ("low", "medium", "high")
 
