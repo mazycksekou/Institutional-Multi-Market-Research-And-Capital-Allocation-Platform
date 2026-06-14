@@ -82,3 +82,18 @@ tennis, live/alternate, and the fallback).
 - **Modified** `tests/test_streamlit_dashboard_data.py` – added imports
   and three tests for the snapshot helper, header text, and explanation text.
 - **Created** `PHASE10H14_MARKET_FEATURE_PACKS.md` – this report.
+
+---
+
+## Phase 10H14A – Winner Market Naming Cleanup
+
+### What changed
+
+- The confusing user‑facing label "1x2" has been replaced with clearer language:
+  - **2‑Way Moneyline** – two possible winner outcomes
+  - **3‑Way Moneyline** – home win / draw / away win
+- Backend still accepts `moneyline_or_1x2` as a legacy alias without breaking old rows.
+- `normalize_market_family` now returns `two_way_moneyline` or `three_way_moneyline` when the input is clear.
+- A draw selection or draw‑containing market name triggers `three_way_moneyline`.
+- Dashboard and operator wording now prefer the clear names.
+- **No schema, math, or grading changes** were made.

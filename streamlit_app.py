@@ -941,8 +941,8 @@ elif menu == "Data Explorer":
                 "This market has odds and results, but no line movement."
                 if readiness.get("line_movement_ready") is False
                 else "",
-                "This data can test basic 1x2/moneyline plumbing."
-                if "moneyline_or_1x2" in snapshot.get("market_families", {})
+                "This data can test basic 2‑Way / 3‑Way Moneyline plumbing."
+                if any(fam in snapshot.get("market_families", {}) for fam in ("two_way_moneyline", "three_way_moneyline", "moneyline_or_1x2"))
                 else "",
                 "This data is not enough for player props."
                 if not readiness.get("player_prop_ready")

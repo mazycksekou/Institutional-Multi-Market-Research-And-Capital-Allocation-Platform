@@ -730,7 +730,7 @@ def test_streamlit_app_contains_market_feature_packs_header():
     assert 'subheader("Market Feature Packs")' in content
 
 
-def test_streamlit_app_contains_exact_explanation_text():
+def test_streamlit_app_contains_winner_market_naming():
     with open("streamlit_app.py", encoding="utf-8") as f:
         content = f.read()
     assert (
@@ -738,6 +738,13 @@ def test_streamlit_app_contains_exact_explanation_text():
         "enough required and recommended data for trustworthy "
         "model testing."
     ) in content
+
+
+def test_streamlit_app_contains_winner_market_clear_naming():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    # Dashboard should now refer to 2-Way / 3-Way Moneyline
+    assert "2-Way / 3-Way Moneyline" in content
 
 
 # ── Phase 10H13 – Sport Feature Packs (dashboard helper) ──────────────────

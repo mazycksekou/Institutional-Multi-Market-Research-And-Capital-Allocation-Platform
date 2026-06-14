@@ -64,16 +64,41 @@ _BASE_RECOMMENDED: list[str] = [
 
 MARKET_FEATURE_PACKS: dict[str, dict[str, Any]] = {
     # ── Winner markets ──────────────────────────────────────────────────
-    "moneyline_or_1x2": {
-        "market_family": "moneyline_or_1x2",
-        "display_name": "Moneyline / 1X2",
+    "two_way_moneyline": {
+        "market_family": "two_way_moneyline",
+        "display_name": "2-Way Moneyline",
         "depth_level": "full",
         "required_fields": _BASE_REQUIRED,
         "recommended_fields": _BASE_RECOMMENDED,
-        "optional_fields": ["home_or_away", "three_way"],
-        "missing_data_warning": "Moneyline markets need at least odds and implied probability.",
+        "optional_fields": ["home_or_away"],
+        "missing_data_warning": "Winner market needs at least odds and implied probability.",
         "operator_interpretation": (
-            "Full depth – standard winner markets have robust odds availability."
+            "2-Way Moneyline readiness checks whether the data can support winner testing with two possible outcomes."
+        ),
+    },
+    "three_way_moneyline": {
+        "market_family": "three_way_moneyline",
+        "display_name": "3-Way Moneyline",
+        "depth_level": "full",
+        "required_fields": _BASE_REQUIRED,
+        "recommended_fields": _BASE_RECOMMENDED + ["draw_odds"],
+        "optional_fields": ["home_or_away", "draw"],
+        "missing_data_warning": "3-Way winner market needs odds for home, draw, and away.",
+        "operator_interpretation": (
+            "3-Way Moneyline readiness checks whether the data can support winner testing with home, draw, and away outcomes."
+        ),
+    },
+    # keep legacy alias for backward compatibility
+    "moneyline_or_1x2": {
+        "market_family": "moneyline_or_1x2",
+        "display_name": "Moneyline / 1X2 (Legacy)",
+        "depth_level": "fallback",
+        "required_fields": _BASE_REQUIRED,
+        "recommended_fields": _BASE_RECOMMENDED,
+        "optional_fields": ["home_or_away", "three_way"],
+        "missing_data_warning": "Legacy alias – prefer 2‑Way or 3‑Way Moneyline.",
+        "operator_interpretation": (
+            "Legacy pack – use two_way_moneyline or three_way_moneyline for new code."
         ),
     },
     # ── Spread / handicap ────────────────────────────────────────────────
@@ -967,9 +992,24 @@ def normalize_market_family(
     sp = (str(sport or "")).strip().lower()
 
     # Winner markets
-    if m in ("moneyline", "ml", "winner", "match_winner", "game_winner",
-             "home_away", "1x2", "three_way", "full_time_result"):
-        return "moneyline_or_1x2"
+    # First handle clear two‑way aliases
+    if m in ("moneyline", "ml", "winner", "game_winner", "home_away"):
+        return "two_way_moneyline"
+    # Clear three‑way aliases
+    if m in ("1x2", "three_way", "three_way_moneyline", "full_time_result", "draw_market"):
+        return "three_way_moneyline"
+    # match_winner: decide based on sport/selection
+    if m == "match_winner":
+        if sp == "tennis":
+            return "match_winner"   # keep tennis specific
+        if sel in ("draw", "x") or "draw" in market:
+            return "three_way_moneyline"
+        return "two_way_moneyline"
+    # Legacy alias: moneyline_or_1x2 passed directly -> safest fallback is two_way
+    if m == "moneyline_or_1x2":
+        if sel in ("draw", "x") or "draw" in market:
+            return "three_way_moneyline"
+        return "two_way_moneyline"
 
     # Spread / handicap
     if m in ("spread", "point_spread", "handicap", "line", "asian_handicap"):

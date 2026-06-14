@@ -12,11 +12,41 @@ from automation_scheduler.market_feature_packs import (
 )
 
 
-def test_normalize_market_family_moneyline_and_1x2_aliases():
-    assert normalize_market_family("moneyline") == "moneyline_or_1x2"
-    assert normalize_market_family("1x2") == "moneyline_or_1x2"
-    assert normalize_market_family("ml") == "moneyline_or_1x2"
-    assert normalize_market_family("winner") == "moneyline_or_1x2"
+def test_normalize_market_family_two_way_moneyline_aliases():
+    assert normalize_market_family("moneyline") == "two_way_moneyline"
+    assert normalize_market_family("ml") == "two_way_moneyline"
+    assert normalize_market_family("winner") == "two_way_moneyline"
+    assert normalize_market_family("game_winner") == "two_way_moneyline"
+    assert normalize_market_family("home_away") == "two_way_moneyline"
+
+
+def test_normalize_market_family_three_way_moneyline_aliases():
+    assert normalize_market_family("1x2") == "three_way_moneyline"
+    assert normalize_market_family("three_way") == "three_way_moneyline"
+    assert normalize_market_family("three_way_moneyline") == "three_way_moneyline"
+    assert normalize_market_family("full_time_result") == "three_way_moneyline"
+    assert normalize_market_family("draw_market") == "three_way_moneyline"
+
+
+def test_moneyline_or_1x2_legacy_alias_still_supported():
+    # Direct pass of legacy key should map to two_way unless draw context
+    assert normalize_market_family("moneyline_or_1x2") == "two_way_moneyline"
+    # With draw context it returns three_way
+    assert normalize_market_family("moneyline_or_1x2", selection="draw") == "three_way_moneyline"
+    assert normalize_market_family("moneyline_or_1x2", market="moneyline_or_1x2", selection="draw") == "three_way_moneyline"
+
+
+def test_three_way_moneyline_detects_draw_selection():
+    assert normalize_market_family("moneyline", selection="draw") == "three_way_moneyline"
+    assert normalize_market_family("ml", selection="x") == "three_way_moneyline"
+    assert normalize_market_family("match_winner", selection="draw") == "three_way_moneyline"
+
+
+def test_supported_market_feature_packs_include_two_way_and_three_way_moneyline():
+    packs = get_supported_market_feature_packs()
+    assert "two_way_moneyline" in packs
+    assert "three_way_moneyline" in packs
+    assert "moneyline_or_1x2" in packs  # legacy still present
 
 
 def test_normalize_market_family_spread_runline_puckline_aliases():
