@@ -26,6 +26,10 @@ from .historical_line_movement import (
     upsert_line_snapshots_for_canonical_rows,
     summarize_line_movement_store,
 )
+from .line_movement_readiness import (
+    build_line_movement_readiness_snapshot,
+    describe_line_movement_readiness,
+)
 from .experiment_history_store import (
     initialize_experiment_history_store,
     save_experiment_history_run,
@@ -1111,6 +1115,20 @@ def get_line_movement_snapshot_for_dashboard(
         "clv_ready": result.get("clv_ready", False),
         "warnings": result.get("warnings", []),
     }
+
+
+def get_line_movement_readiness_snapshot_for_dashboard(
+    db_path: str | Path,
+) -> dict[str, Any]:
+    """Return a combined readiness snapshot of the historical_line_snapshots table.
+
+    Safe: missing DB/table returns a stable dict with ok=False.
+    No vendor connections, no paid data imports.
+    """
+    snapshot = build_line_movement_readiness_snapshot(db_path)
+    messages = describe_line_movement_readiness(snapshot)
+    snapshot["messages"] = messages
+    return snapshot
 
 
 def get_line_volatility_snapshot_for_dashboard(

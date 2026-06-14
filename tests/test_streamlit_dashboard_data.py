@@ -440,6 +440,72 @@ def test_line_movement_baseline_testing_note_in_streamlit_app():
     )
 
 
+def test_get_line_movement_readiness_snapshot_for_dashboard_handles_missing_db(tmp_path):
+    from automation_scheduler.streamlit_dashboard_data import (
+        get_line_movement_readiness_snapshot_for_dashboard,
+    )
+    missing_path = tmp_path / "does_not_exist.db"
+    snap = get_line_movement_readiness_snapshot_for_dashboard(missing_path)
+    assert snap is not None
+    assert isinstance(snap, dict)
+    # should not crash; ok may be False
+    assert "messages" in snap
+
+
+def test_get_line_movement_readiness_snapshot_for_dashboard_returns_messages(tmp_path):
+    from automation_scheduler.streamlit_dashboard_data import (
+        get_line_movement_readiness_snapshot_for_dashboard,
+    )
+    from automation_scheduler.line_movement_readiness import (
+        REQUIRED_LINE_MOVEMENT_COLUMNS,
+    )
+    import sqlite3
+
+    db_path = tmp_path / "dash_msgs.db"
+    col_def = ", ".join(f"{c} TEXT" for c in REQUIRED_LINE_MOVEMENT_COLUMNS)
+    conn = sqlite3.connect(str(db_path))
+    conn.execute(f"CREATE TABLE historical_line_snapshots ({col_def})")
+    conn.execute(
+        "INSERT INTO historical_line_snapshots ("
+        "snapshot_id,event_id,snapshot_time,market_family,bookmaker) "
+        "VALUES (?,?,?,?,?)",
+        ("s1", "e1", "2023-01-01T00:00:00Z", "total", "bookA"),
+    )
+    conn.close()
+    snap = get_line_movement_readiness_snapshot_for_dashboard(db_path)
+    assert snap.get("ok") is True
+    assert snap["messages"] is not None
+    combined = " ".join(snap["messages"])
+    assert "does not connect to vendors" in combined
+
+
+# ── Source‑text tests for streamlit_app.py ────────────────────────────────
+
+
+def test_streamlit_app_contains_historical_line_movement_readiness_title():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert 'subheader("Historical Line Movement Readiness")' in content
+
+
+def test_streamlit_app_contains_exact_readiness_explanation():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    expected = (
+        "Historical Line Movement Readiness checks whether the local "
+        "SQLite store is ready for time-series line movement data before "
+        "any vendor connector is added."
+    )
+    assert expected in content
+
+
+def test_streamlit_app_does_not_contain_vendor_api_text():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert "Connect Vendor Line Movement API" not in content
+    assert "Run Line Movement Scraper" not in content
+
+
 def test_get_line_volatility_snapshot_for_dashboard(tmp_path):
     from automation_scheduler.streamlit_dashboard_data import (
         get_line_volatility_snapshot_for_dashboard,

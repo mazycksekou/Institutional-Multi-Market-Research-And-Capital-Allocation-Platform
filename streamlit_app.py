@@ -1013,6 +1013,49 @@ elif menu == "Data Explorer":
             from automation_scheduler.streamlit_dashboard_data import (
                 get_line_volatility_snapshot_for_dashboard,
             )
+            # ── Historical Line Movement Readiness (Phase 10H19) ─────────
+            st.subheader("Historical Line Movement Readiness")
+            st.info(
+                "Historical Line Movement Readiness checks whether the local "
+                "SQLite store is ready for time-series line movement data before "
+                "any vendor connector is added."
+            )
+            lm_rd = get_line_movement_readiness_snapshot_for_dashboard(db_path_input)
+            if lm_rd.get("ok"):
+                rd = lm_rd.get("readiness", {})
+                cov = lm_rd.get("coverage", {})
+                col_r1, col_r2, col_r3, col_r4 = st.columns(4)
+                with col_r1:
+                    st.metric("Ready", "✅ Yes" if rd.get("ready") else "❌ No")
+                    st.metric("Schema ready", "✅ Yes" if rd.get("schema_ready") else "❌ No")
+                with col_r2:
+                    st.metric("Total snapshots", cov.get("total_snapshots", 0))
+                    st.metric("Linked snapshots", cov.get("linked_snapshot_count", 0))
+                with col_r3:
+                    st.metric("Unlinked snapshots", cov.get("unlinked_snapshot_count", 0))
+                    st.metric("Event count", cov.get("event_count", 0))
+                with col_r4:
+                    st.metric("Sport count", cov.get("sport_count", 0))
+                    st.metric("Market family count", cov.get("market_family_count", 0))
+                    st.metric("Bookmaker count", cov.get("bookmaker_count", 0))
+                if cov.get("earliest_snapshot_time"):
+                    st.caption(
+                        f"Snapshot time range: {cov['earliest_snapshot_time']} → "
+                        f"{cov['latest_snapshot_time']}"
+                    )
+                if cov.get("earliest_event_date"):
+                    st.caption(
+                        f"Event date range: {cov['earliest_event_date']} → "
+                        f"{cov['latest_event_date']}"
+                    )
+                for w in lm_rd.get("warnings", []):
+                    st.warning(w)
+                msg = lm_rd.get("messages", [])
+                for m in msg:
+                    st.info(m)
+            else:
+                st.warning("Could not retrieve line movement readiness snapshot.")
+
             lm_vol = get_line_volatility_snapshot_for_dashboard(db_path_input)
             if lm_vol.get("ok"):
                 col_v1, col_v2, col_v3, col_v4, col_v5 = st.columns(5)
@@ -1074,6 +1117,7 @@ elif menu == "Data Explorer":
                 apply_feature_control_to_row,
                 summarize_feature_control_impact,
                 get_never_feature_fields,
+                get_line_movement_readiness_snapshot_for_dashboard,
             )
 
             # ── Winner Market Naming (Phase 10H14A) ───────────────────
