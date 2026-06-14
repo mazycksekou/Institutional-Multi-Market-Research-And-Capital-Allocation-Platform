@@ -1065,7 +1065,7 @@ def classify_market_family(
         return "moneyline_or_1x2"
     if lower in ("runline", "spread", "pointspread"):
         return "spread_or_runline"
-    if lower in ("total", "overunder", "totals"):
+    if lower in ("total", "overunder", "totals", "over/under", "o/u", "ou", "gametotal", "totalpoints"):
         return "total"
     if lower.startswith("team_total") or lower in ("team total",):
         return "team_total"
