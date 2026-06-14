@@ -1841,6 +1841,100 @@ def get_market_feature_pack_snapshot_for_dashboard(
 
 
 # ---------------------------------------------------------------------------
+# Phase 10H15A – Feature Ablation Lab (dashboard snapshot helper)
+# ---------------------------------------------------------------------------
+
+
+def get_feature_ablation_lab_snapshot_for_dashboard(
+    db_path: str | Path,
+    *,
+    sport: str | None = None,
+    market: str | None = None,
+    mode: str = "single_sport",
+    selected_fields: list[str] | None = None,
+    removed_fields: list[str] | None = None,
+    selected_groups: list[str] | None = None,
+    limit: int = 2000,
+) -> dict[str, Any]:
+    """Open / init the SQLite historical odds store and run run_feature_ablation_lab.
+
+    Returns a stable dict suitable for the Streamlit dashboard.
+    """
+    from automation_scheduler.historical_odds_sqlite import (
+        connect_historical_odds_db,
+        initialize_historical_odds_db,
+        query_historical_odds_rows,
+    )
+    from automation_scheduler.feature_ablation_lab import (
+        run_feature_ablation_lab,
+    )
+
+    result: dict[str, Any] = {
+        "ok": False,
+        "version": "10H15",
+        "mode": mode,
+        "sport_key": "",
+        "market_family": "",
+        "field_groups": [],
+        "all_selectable_fields": [],
+        "active_fields": [],
+        "removed_fields": [],
+        "included_sports": [],
+        "excluded_sports": [],
+        "sport_readiness": {},
+        "performance": {},
+        "roi_by_sport": {},
+        "warnings": [],
+        "operator_interpretation": "",
+    }
+    try:
+        conn = connect_historical_odds_db(str(db_path))
+        initialize_historical_odds_db(conn)
+        raw_rows = query_historical_odds_rows(
+            conn,
+            sport=sport,
+            market=market,
+            limit=limit,
+        )
+        conn.close()
+    except Exception as exc:
+        result["warnings"].append(f"Cannot open database: {exc}")
+        return result
+
+    if not raw_rows:
+        result["warnings"].append("No rows in database.")
+        raw_rows = []
+
+    ablation = run_feature_ablation_lab(
+        rows=raw_rows,
+        sport=sport,
+        market=market,
+        mode=mode,
+        selected_fields=selected_fields,
+        removed_fields=removed_fields,
+        selected_groups=selected_groups,
+    )
+
+    result["ok"] = ablation.get("ok", False)
+    result["version"] = ablation.get("version", "10H15")
+    result["mode"] = ablation.get("mode", mode)
+    result["sport_key"] = ablation.get("sport_key", "")
+    result["market_family"] = ablation.get("market_family", "")
+    result["field_groups"] = ablation.get("field_groups", [])
+    result["all_selectable_fields"] = ablation.get("all_selectable_fields", [])
+    result["active_fields"] = ablation.get("active_fields", [])
+    result["removed_fields"] = ablation.get("removed_fields", [])
+    result["included_sports"] = ablation.get("included_sports", [])
+    result["excluded_sports"] = ablation.get("excluded_sports", [])
+    result["sport_readiness"] = ablation.get("sport_readiness", {})
+    result["performance"] = ablation.get("performance", {})
+    result["roi_by_sport"] = ablation.get("roi_by_sport", {})
+    result["warnings"] = ablation.get("warnings", []) + result["warnings"]
+    result["operator_interpretation"] = ablation.get("operator_interpretation", "")
+    return result
+
+
+# ---------------------------------------------------------------------------
 # Phase 10H11 – Feature Control Lab + Dashboard Instructions
 # ---------------------------------------------------------------------------
 
