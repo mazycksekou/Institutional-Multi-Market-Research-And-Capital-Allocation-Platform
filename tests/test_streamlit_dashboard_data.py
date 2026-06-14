@@ -28,8 +28,8 @@ from automation_scheduler.streamlit_dashboard_data import (
 
 
 def test_easy_labels_include_bankroll_language():
-    assert EASY_LABELS["bankroll"] == "Money in the account"
-    assert EASY_LABELS["bankroll_curve"] == "Line that shows money going up or down"
+    assert EASY_LABELS["bankroll"] == "Portfolio Value"
+    assert EASY_LABELS["bankroll_curve"] == "Line that shows portfolio value going up or down"
 
 
 def test_risk_presets_include_kid_safe_and_conservative():
