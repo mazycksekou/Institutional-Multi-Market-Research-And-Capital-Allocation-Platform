@@ -265,18 +265,29 @@ def test_load_canonical_events_from_sqlite_reads_historical_events(tmp_path):
         connect_historical_odds_db,
         initialize_historical_odds_db,
     )
+
     db_path = tmp_path / "test_events.db"
     conn = connect_historical_odds_db(db_path)
     initialize_historical_odds_db(conn)
+
+    existing_columns = {row[1] for row in conn.execute("PRAGMA table_info(historical_events)").fetchall()}
+    values_by_column = {
+        "event_id": "e1",
+        "source_key": "football_data_uk",
+        "source_file": "test.csv",
+        "sport": "soccer",
+        "league": "EPL",
+        "event_date": "2024-06-15",
+        "home_team": "Arsenal",
+        "away_team": "Chelsea",
+        "created_at": "2024-06-15T00:00:00Z",
+        "updated_at": "2024-06-15T00:00:00Z",
+    }
+    insert_columns = [col for col in values_by_column if col in existing_columns]
+    placeholders = ','.join('?' for _ in insert_columns)
     conn.execute(
-        "CREATE TABLE IF NOT EXISTS historical_events ("
-        "event_id TEXT, sport TEXT, league TEXT, event_date TEXT, "
-        "home_team TEXT, away_team TEXT, source_event_id TEXT, source_key TEXT)"
-    )
-    conn.execute(
-        "INSERT INTO historical_events (event_id, sport, league, event_date, home_team, away_team, source_event_id, source_key) "
-        "VALUES (?,?,?,?,?,?,?,?)",
-        ('e1','soccer','EPL','2024-06-15','Arsenal','Chelsea','src1','football_data_uk')
+        f"INSERT INTO historical_events ({', '.join(insert_columns)}) VALUES ({placeholders})",
+        [values_by_column[col] for col in insert_columns],
     )
     conn.commit()
     conn.close()
@@ -285,10 +296,10 @@ def test_load_canonical_events_from_sqlite_reads_historical_events(tmp_path):
     assert result["ok"] is True
     assert result["total_events"] == 1
     assert result["events"][0]["event_id"] == "e1"
-
-
-# ── build_source_event_link_resolver_snapshot ──────────────────────────
-
+    assert result["events"][0]["sport"] == "soccer"
+    assert result["events"][0]["event_date"] == "2024-06-15"
+    assert result["events"][0]["home_team"] == "Arsenal"
+    assert result["events"][0]["away_team"] == "Chelsea"
 
 def test_build_source_event_link_resolver_snapshot_empty():
     snap = build_source_event_link_resolver_snapshot()
