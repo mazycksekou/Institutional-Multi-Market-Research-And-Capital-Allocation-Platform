@@ -1545,6 +1545,230 @@ elif menu == "Feature Ablation Lab":
     with st.expander("Raw snapshot JSON", expanded=False):
         st.json({})
 
+
+elif menu == "Calibration‑Ready Strategy Filter":
+    st.header("Calibration‑Ready Strategy Filter")
+    st.info(
+        "Calibration‑Ready Strategy Filter excludes sports and markets "
+        "without enough data before calculating ROI."
+    )
+
+    mode = st.radio("Mode", ["Single Sport", "All Sports"], key="cal_mode")
+    default_sqlite_path = get_default_historical_sqlite_path()
+    db_path_input = st.text_input(
+        "SQLite database path",
+        value=default_sqlite_path,
+        key="cal_db",
+    )
+
+    sport_val = ""
+    market_val = ""
+    if mode == "Single Sport":
+        sport_options = [
+            item
+            for item in get_available_profile_options()
+            if item["value"] != "all_sports"
+        ]
+        sport_labels = [item["label"] for item in sport_options]
+        selected_label = st.selectbox("Sport", sport_labels, key="cal_sport")
+        sport_val = next(
+            item["value"]
+            for item in sport_options
+            if item["label"] == selected_label
+        )
+        market_val = st.text_input("Market filter (optional)", key="cal_market")
+
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        min_coverage = st.number_input(
+            "Min required coverage %",
+            min_value=0.0, max_value=100.0, value=80.0, step=5.0,
+            key="cal_min_cov",
+        )
+        min_active = st.number_input(
+            "Min active field coverage %",
+            min_value=0.0, max_value=100.0, value=60.0, step=5.0,
+            key="cal_min_act",
+        )
+    with col2:
+        min_sport_rows = st.number_input(
+            "Min rows per sport",
+            min_value=1, max_value=5000, value=25, step=5,
+            key="cal_min_sport",
+        )
+        min_market_rows = st.number_input(
+            "Min rows per market",
+            min_value=1, max_value=5000, value=10, step=5,
+            key="cal_min_mkt",
+        )
+    with col3:
+        from automation_scheduler.feature_ablation_lab import (
+            get_ablation_field_groups_for_sport,
+        )
+        initial_groups = get_ablation_field_groups_for_sport(sport_val, market_val)
+        available_groups = [g["group_key"] for g in initial_groups.get("groups", [])]
+        selected_groups = st.multiselect(
+            "Field Groups",
+            options=available_groups,
+            default=available_groups,
+            key="cal_groups",
+        )
+    with col4:
+        all_selectable = initial_groups.get("all_selectable_fields", [])
+        removed_fields = st.multiselect(
+            "Removed Fields",
+            options=all_selectable,
+            default=[],
+            key="cal_removed",
+        )
+        active_fields = st.multiselect(
+            "Active Fields (overrides group selection)",
+            options=all_selectable,
+            default=all_selectable,
+            key="cal_active",
+        )
+        st.caption("Never‑feature/leakage fields are excluded by the backend.")
+
+    if st.button("Run Calibration Filter", type="primary", key="cal_run"):
+        with st.spinner("Running calibration filter..."):
+            from automation_scheduler.streamlit_dashboard_data import (
+                get_calibration_strategy_filter_snapshot_for_dashboard,
+            )
+            snap = get_calibration_strategy_filter_snapshot_for_dashboard(
+                db_path_input,
+                mode="all_sports" if mode == "All Sports" else "single_sport",
+                sport=sport_val or None,
+                market=market_val or None,
+                selected_fields=active_fields if active_fields != all_selectable else None,
+                removed_fields=removed_fields or None,
+                selected_groups=selected_groups if selected_groups != available_groups else None,
+                min_required_coverage_percent=min_coverage,
+                min_active_field_coverage_percent=min_active,
+                min_rows_per_sport=int(min_sport_rows),
+                min_rows_per_market=int(min_market_rows),
+            )
+
+        if not snap.get("ok"):
+            st.error("Calibration filter failed.")
+            for w in snap.get("warnings", []):
+                st.warning(w)
+            st.json(snap)
+        else:
+            st.subheader("Included Sports")
+            inc = snap.get("included_sports", [])
+            if inc:
+                st.write(", ".join(inc))
+            else:
+                st.info("None.")
+
+            st.subheader("Excluded Sports")
+            exc = snap.get("excluded_sports", [])
+            if exc:
+                for e in exc:
+                    st.error(
+                        f"{e.get('sport_key','?')} – {e.get('reason','not ready')}"
+                    )
+            else:
+                st.info("None.")
+
+            st.subheader("Included Market Families")
+            mkt_inc = snap.get("included_market_families", [])
+            if mkt_inc:
+                st.write(", ".join(mkt_inc))
+            else:
+                st.info("None.")
+
+            st.subheader("Excluded Market Families")
+            mkt_exc = snap.get("excluded_market_families", [])
+            if mkt_exc:
+                for e in mkt_exc:
+                    st.error(
+                        f"{e.get('market_family','?')} – {e.get('reason','not ready')}"
+                    )
+            else:
+                st.info("None.")
+
+            perf = snap.get("performance", {})
+            if perf:
+                st.subheader("Row Counts")
+                metric_row(
+                    [
+                        ("Included rows", perf.get("included_row_count", 0), ""),
+                        ("Excluded rows", perf.get("excluded_row_count", 0), ""),
+                    ]
+                )
+
+                reason_counts = snap.get("exclusion_reason_counts", {})
+                if reason_counts:
+                    st.subheader("Exclusion Reasons")
+                    st.json(reason_counts)
+
+                st.subheader("ROI by Sport")
+                roi_sport = perf.get("roi_by_sport", {})
+                if roi_sport:
+                    roi_rows = []
+                    for sk, data in roi_sport.items():
+                        roi_rows.append(
+                            {
+                                "sport_key": sk,
+                                "rows": data.get("rows", 0),
+                                "net_result": data.get("net_result", 0.0),
+                                "roi_percent": data.get("roi_percent", 0.0),
+                            }
+                        )
+                    st.dataframe(
+                        df(roi_rows), use_container_width=True, hide_index=True
+                    )
+                else:
+                    st.info("No per‑sport ROI.")
+
+                st.subheader("ROI by Market Family")
+                roi_mkt = perf.get("roi_by_market_family", {})
+                if roi_mkt:
+                    roi_rows = []
+                    for mkt, data in roi_mkt.items():
+                        roi_rows.append(
+                            {
+                                "market_family": mkt,
+                                "rows": data.get("rows", 0),
+                                "net_result": data.get("net_result", 0.0),
+                                "roi_percent": data.get("roi_percent", 0.0),
+                            }
+                        )
+                    st.dataframe(
+                        df(roi_rows), use_container_width=True, hide_index=True
+                    )
+                else:
+                    st.info("No per‑market ROI.")
+
+                st.subheader("Overall Performance")
+                metric_row(
+                    [
+                        ("Decisions", perf.get("decisions", 0), ""),
+                        ("Skipped Decisions", perf.get("skipped_decisions", 0), ""),
+                        ("Settled Count", perf.get("settled_count", 0), ""),
+                        ("Wins", perf.get("wins", 0), ""),
+                        ("Losses", perf.get("losses", 0), ""),
+                        ("Pushes", perf.get("pushes", 0), ""),
+                        ("Net Result", perf.get("net_result", 0.0), ""),
+                        ("ROI %", perf.get("roi_percent", 0.0), ""),
+                        ("Win Rate %", perf.get("win_rate_percent", 0.0), ""),
+                    ]
+                )
+
+            st.subheader("Active Fields")
+            st.write(", ".join(snap.get("readiness_snapshot", {}).get("active_fields", [])))
+            st.subheader("Removed Fields")
+            st.write(", ".join(snap.get("readiness_snapshot", {}).get("removed_fields", [])))
+
+            st.subheader("Warnings")
+            for w in snap.get("warnings", []):
+                st.warning(w)
+
+    with st.expander("Raw snapshot JSON", expanded=False):
+        st.json({})
+
+
 elif menu == "Instructions":
     st.header("Instructions")
 
