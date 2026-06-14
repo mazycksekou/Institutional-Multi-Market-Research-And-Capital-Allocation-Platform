@@ -11,6 +11,7 @@ import pytest
 
 from automation_scheduler.historical_line_movement import (
     LINE_MOVEMENT_SCHEMA_VERSION,
+    attach_volatility_to_backtest_rows,
     backfill_line_snapshots_from_historical_odds,
     calculate_line_movement_readiness,
     canonical_row_to_line_snapshots,
@@ -19,6 +20,7 @@ from automation_scheduler.historical_line_movement import (
     normalize_snapshot_label,
     query_line_snapshots,
     summarize_line_movement_store,
+    summarize_results_by_volatility,
     upsert_line_snapshots,
     upsert_line_snapshots_for_canonical_rows,
 )
@@ -360,8 +362,6 @@ def test_calculate_line_volatility_summary_stable_keys():
 
 
 def test_get_line_volatility_summary_from_sqlite(tmp_path):
-    # ... existing test body ...
-    conn.close()
 
 
 # ── Phase 10H12B – Volatility Result Breakdown ─────────────────
