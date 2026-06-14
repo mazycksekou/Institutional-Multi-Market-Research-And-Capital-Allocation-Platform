@@ -62,6 +62,7 @@ from automation_scheduler.streamlit_dashboard_data import (
     build_vendor_neutral_line_movement_contract,
     describe_line_movement_import_contract,
     describe_asof_line_movement_query_engine,
+    describe_line_movement_data_quality_dashboard,
     get_experiment_report_export_for_dashboard,
 )
 from automation_scheduler.source_event_link_resolver import (
