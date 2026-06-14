@@ -258,10 +258,17 @@ def _sport_readiness_for_rows(
     result: dict[str, dict[str, Any]] = {}
     for sk, grp in groups.items():
         eval_result = evaluate_sport_feature_readiness(grp, sk)
+        # Compute actual field coverage from the eval result
+        total_required = eval_result.get("total_required_fields", 0)
+        missing_count = len(eval_result.get("missing_required_fields", []))
+        if total_required:
+            actual_coverage = round((total_required - missing_count) / total_required * 100, 1)
+        else:
+            actual_coverage = float(eval_result.get("required_coverage_percent", 0.0))
         ready = (
             eval_result.get("readiness_level") in ("usable", "strong")
             and len(grp) >= min_rows
-            and eval_result.get("required_coverage_percent", 0) >= threshold
+            and actual_coverage >= threshold
         )
         result[sk] = {
             "sport_key": eval_result["sport_key"],
@@ -280,7 +287,7 @@ def _sport_readiness_for_rows(
                     f"Readiness level: {eval_result['readiness_level']}, "
                     f"total rows: {len(grp)} (< {min_rows} min)"
                     if len(grp) < min_rows
-                    else f"Required coverage {eval_result['required_coverage_percent']}% below threshold"
+                    else f"Required coverage {actual_coverage}% below threshold"
                 )
             ) if not ready else "",
         }
@@ -301,10 +308,17 @@ def _market_readiness_for_rows(
     result: dict[str, dict[str, Any]] = {}
     for mkt_key, grp in groups.items():
         eval_result = evaluate_market_feature_readiness(grp, market=mkt_key, sport=None)
+        # Compute actual field coverage from the eval result
+        total_required = eval_result.get("total_required_fields", 0)
+        missing_count = len(eval_result.get("missing_required_fields", []))
+        if total_required:
+            actual_coverage = round((total_required - missing_count) / total_required * 100, 1)
+        else:
+            actual_coverage = float(eval_result.get("required_coverage_percent", 0.0))
         ready = (
             eval_result.get("readiness_level") in ("usable", "strong")
             and len(grp) >= min_rows
-            and eval_result.get("required_coverage_percent", 0) >= threshold
+            and actual_coverage >= threshold
         )
         result[mkt_key] = {
             "market_family": eval_result["market_family"],
@@ -322,7 +336,7 @@ def _market_readiness_for_rows(
                     f"Readiness level: {eval_result['readiness_level']}, "
                     f"total rows: {len(grp)} (< {min_rows} min)"
                     if len(grp) < min_rows
-                    else f"Required coverage {eval_result['required_coverage_percent']}% below threshold"
+                    else f"Required coverage {actual_coverage}% below threshold"
                 )
             ) if not ready else "",
         }
