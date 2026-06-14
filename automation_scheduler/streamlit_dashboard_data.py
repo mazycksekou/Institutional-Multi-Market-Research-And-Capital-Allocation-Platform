@@ -71,6 +71,11 @@ from .asof_line_movement_query import (
     build_asof_line_movement_query_snapshot_from_sqlite,
     describe_asof_line_movement_query_engine,
 )
+from .line_movement_data_quality_dashboard import (
+    build_line_movement_data_quality_snapshot,
+    build_line_movement_data_quality_snapshot_from_sqlite,
+    describe_line_movement_data_quality_dashboard,
+)
 from .historical_odds_sqlite import (
     connect_historical_odds_db,
     initialize_historical_odds_db,
@@ -1143,6 +1148,68 @@ def get_line_movement_readiness_snapshot_for_dashboard(
     messages = describe_line_movement_readiness(snapshot)
     snapshot["messages"] = messages
     return snapshot
+
+
+def get_line_movement_data_quality_snapshot_for_dashboard(
+    snapshot_rows: Any = None,
+    db_path: Any = None,
+    hypothetical_bet_time: Any = None,
+    event_id: str | None = None,
+    bookmaker: str | None = None,
+    market_family: str | None = None,
+    market: str | None = None,
+    selection: str | None = None,
+    limit: int = 100,
+) -> dict[str, Any]:
+    """Return the line movement data quality snapshot and operator messages.
+
+    If *db_path* is provided, load from SQLite (read‑only); otherwise use
+    in‑memory *snapshot_rows*.
+    No exceptions on missing/empty rows.
+    No SQL writes.
+    No vendor connector.
+    Returns a stable JSON‑safe dict.
+    """
+    try:
+        if db_path is not None:
+            snap = build_line_movement_data_quality_snapshot_from_sqlite(
+                db_path,
+                hypothetical_bet_time=hypothetical_bet_time,
+                event_id=event_id,
+                bookmaker=bookmaker,
+                market_family=market_family,
+                market=market,
+                selection=selection,
+                limit=limit,
+            )
+        else:
+            snap = build_line_movement_data_quality_snapshot(
+                snapshot_rows=snapshot_rows,
+                hypothetical_bet_time=hypothetical_bet_time,
+                event_id=event_id,
+                bookmaker=bookmaker,
+                market_family=market_family,
+                market=market,
+                selection=selection,
+                limit=limit,
+            )
+    except Exception as exc:
+        return {
+            "ok": False,
+            "version": "10H23_bridge",
+            "data_quality": None,
+            "messages": describe_line_movement_data_quality_dashboard(),
+            "warnings": [f"data_quality_error: {exc}"],
+        }
+    raw_warnings = snap.get("warnings", [])
+    top_warnings = [w for w in raw_warnings if w != "missing_hypothetical_bet_time"]
+    return {
+        "ok": snap.get("ok", False),
+        "version": snap.get("version", "10H23_bridge"),
+        "data_quality": snap,
+        "messages": describe_line_movement_data_quality_dashboard(),
+        "warnings": top_warnings,
+    }
 
 
 def get_line_movement_import_contract_snapshot_for_dashboard(

@@ -550,6 +550,73 @@ def test_get_asof_line_movement_query_snapshot_for_dashboard_returns_query():
     assert len(qs["summary"]["sports"]) == 0
 
 
+def test_get_line_movement_data_quality_snapshot_for_dashboard_handles_empty_rows():
+    from automation_scheduler.streamlit_dashboard_data import (
+        get_line_movement_data_quality_snapshot_for_dashboard,
+    )
+    snap = get_line_movement_data_quality_snapshot_for_dashboard()
+    assert snap["ok"] is True
+    assert "data_quality" in snap
+    dq = snap["data_quality"]
+    assert dq["coverage"]["total_snapshots"] == 0
+    assert "no_snapshots" in dq["coverage"]["warnings"]
+
+
+def test_get_line_movement_data_quality_snapshot_for_dashboard_returns_quality_snapshot():
+    from automation_scheduler.streamlit_dashboard_data import (
+        get_line_movement_data_quality_snapshot_for_dashboard,
+    )
+    rows = [
+        {"event_id": "e1", "snapshot_time": "2024-01-01T12:00:00Z",
+         "market_family": "total", "bookmaker": "B1", "sport": "soccer",
+         "market": "O/U", "selection": "Over", "snapshot_label": "decision",
+         "snapshot_id": "s1"},
+    ]
+    snap = get_line_movement_data_quality_snapshot_for_dashboard(snapshot_rows=rows)
+    assert snap["ok"] is True
+    dq = snap["data_quality"]
+    assert dq["coverage"]["total_snapshots"] == 1
+    assert dq["coverage"]["linked_snapshots"] == 1
+
+
+def test_streamlit_app_contains_data_quality_dashboard_text():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert "Line Movement Data Quality Dashboard" in content
+
+
+def test_streamlit_app_contains_exact_data_quality_explanation():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    expected = (
+        "Line Movement Data Quality Dashboard shows coverage, missing links, "
+        "duplicate snapshots, sports, markets, books, and readiness before "
+        "any real connector is added."
+    )
+    assert expected in content
+
+
+def test_streamlit_app_contains_stop_review_dashboard_text():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert (
+        "STOP: Review this dashboard before adding any vendor, API, "
+        "scraper, or paid data connector."
+    ) in content
+
+
+def test_streamlit_app_does_not_contain_connect_real_vendor_api():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert "Connect Real Vendor API" not in content
+
+
+def test_streamlit_app_does_not_contain_run_real_scraper():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert "Run Real Line Movement Scraper" not in content
+
+
 def test_streamlit_app_contains_asof_query_title():
     with open("streamlit_app.py", encoding="utf-8") as f:
         content = f.read()

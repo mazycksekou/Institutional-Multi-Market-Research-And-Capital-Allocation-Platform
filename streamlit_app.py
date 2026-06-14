@@ -1233,6 +1233,170 @@ elif menu == "Data Explorer":
             else:
                 st.info("Paste sample JSON rows and click **Preview As‑Of Snapshots** to see output.")
 
+            # ── Line Movement Data Quality Dashboard (Phase 10H23) ─────────
+            st.subheader("Line Movement Data Quality Dashboard")
+            st.info(
+                "Line Movement Data Quality Dashboard shows coverage, missing links, "
+                "duplicate snapshots, sports, markets, books, and readiness before "
+                "any real connector is added."
+            )
+            st.warning(
+                "STOP: Review this dashboard before adding any vendor, API, "
+                "scraper, or paid data connector."
+            )
+            from automation_scheduler.streamlit_dashboard_data import (
+                get_line_movement_data_quality_snapshot_for_dashboard,
+            )
+
+            dq_msgs = describe_line_movement_data_quality_dashboard()
+            for msg in dq_msgs:
+                st.info(msg)
+
+            dq_sample_text = st.text_area(
+                "Paste sample JSON snapshot rows (optional)",
+                value="",
+                height=100,
+                key="dq_sample",
+            )
+            dq_hypothetical = st.text_input(
+                "Hypothetical bet time (optional, YYYY‑MM‑DD or ISO)",
+                key="dq_hypo",
+            )
+            col_dq1, col_dq2, col_dq3, col_dq4 = st.columns(4)
+            with col_dq1:
+                dq_event_id = st.text_input("Event ID (optional)", key="dq_event")
+                dq_bookmaker = st.text_input("Bookmaker (optional)", key="dq_book")
+            with col_dq2:
+                dq_market_family = st.text_input("Market family (optional)", key="dq_mf")
+                dq_market = st.text_input("Market (optional)", key="dq_mkt")
+            with col_dq3:
+                dq_selection = st.text_input("Selection (optional)", key="dq_sel")
+
+            if st.button("Preview Data Quality", key="dq_preview"):
+                import json
+
+                parsed_rows = []
+                if dq_sample_text.strip():
+                    try:
+                        parsed = json.loads(dq_sample_text)
+                        if isinstance(parsed, list):
+                            parsed_rows = parsed
+                        elif isinstance(parsed, dict):
+                            parsed_rows = [parsed]
+                    except Exception:
+                        pass
+
+                snap = get_line_movement_data_quality_snapshot_for_dashboard(
+                    snapshot_rows=parsed_rows or None,
+                    hypothetical_bet_time=dq_hypothetical.strip() or None,
+                    event_id=dq_event_id.strip() or None,
+                    bookmaker=dq_bookmaker.strip() or None,
+                    market_family=dq_market_family.strip() or None,
+                    market=dq_market.strip() or None,
+                    selection=dq_selection.strip() or None,
+                    limit=100,
+                )
+                st.session_state["_last_dq_snapshot"] = snap
+
+            last_dq = st.session_state.get("_last_dq_snapshot")
+            if last_dq:
+                if last_dq.get("ok"):
+                    dq = last_dq.get("data_quality", {})
+                    coverage = dq.get("coverage", {})
+                    duplicates = dq.get("duplicates", {})
+                    missing_links = dq.get("missing_links", {})
+                    bms = dq.get("books_markets_sports", {})
+                    asof = dq.get("asof_query", {})
+                    readiness = dq.get("readiness", {})
+
+                    # coverage metrics
+                    st.subheader("Coverage")
+                    metric_row(
+                        [
+                            ("Total snapshots", coverage.get("total_snapshots", 0), ""),
+                            ("Linked snapshots", coverage.get("linked_snapshots", 0), ""),
+                            ("Unlinked snapshots", coverage.get("unlinked_snapshots", 0), ""),
+                            ("Missing event_id", coverage.get("missing_event_id_count", 0), ""),
+                            ("Missing snapshot_time", coverage.get("missing_snapshot_time_count", 0), ""),
+                            ("Missing market_family", coverage.get("missing_market_family_count", 0), ""),
+                            ("Missing bookmaker", coverage.get("missing_bookmaker_count", 0), ""),
+                        ]
+                    )
+
+                    # readiness
+                    st.subheader("Readiness")
+                    rd = readiness
+                    st.metric("Ready", "✅ Yes" if rd.get("ready") else "❌ No")
+                    st.metric("Level", rd.get("readiness_level", ""))
+                    reasons = rd.get("reasons", [])
+                    if reasons:
+                        st.error(f"Reasons: {', '.join(reasons)}")
+                    for w in rd.get("warnings", []):
+                        st.warning(w)
+
+                    # duplicates
+                    st.subheader("Duplicates")
+                    dups = duplicates
+                    st.metric("Duplicate groups", dups.get("duplicate_group_count", 0))
+                    st.metric("Duplicate snapshots", dups.get("duplicate_snapshot_count", 0))
+                    dup_groups = dups.get("duplicate_groups", [])
+                    if dup_groups:
+                        st.dataframe(df(dup_groups), use_container_width=True, hide_index=True)
+
+                    # missing links
+                    st.subheader("Missing Links")
+                    ml = missing_links
+                    st.metric("Missing link count", ml.get("missing_link_count", 0))
+                    missing_rows = ml.get("missing_link_rows", [])
+                    if missing_rows:
+                        st.dataframe(df(missing_rows), use_container_width=True, hide_index=True)
+
+                    # sports / markets / books
+                    st.subheader("Sports / Markets / Books")
+                    col_bms1, col_bms2, col_bms3 = st.columns(3)
+                    with col_bms1:
+                        st.metric("Sports", bms.get("sport_count", 0))
+                        st.write(", ".join(bms.get("sports", [])))
+                    with col_bms2:
+                        st.metric("Market families", bms.get("market_family_count", 0))
+                        st.write(", ".join(bms.get("market_families", [])))
+                    with col_bms3:
+                        st.metric("Bookmakers", bms.get("bookmaker_count", 0))
+                        st.write(", ".join(bms.get("bookmakers", [])))
+                    with st.expander("Detailed counts"):
+                        st.json(
+                            {
+                                "sports_by_count": bms.get("sports_by_snapshot_count", {}),
+                                "market_families_by_count": bms.get("market_families_by_snapshot_count", {}),
+                                "bookmakers_by_count": bms.get("bookmakers_by_snapshot_count", {}),
+                            }
+                        )
+
+                    # as-of query safety (only if hypothetical provided)
+                    if dq_hypothetical.strip():
+                        st.subheader("As-Of Query Safety")
+                        col_a1, col_a2, col_a3 = st.columns(3)
+                        with col_a1:
+                            st.metric("Available snapshots", asof.get("available_snapshots", 0))
+                        with col_a2:
+                            st.metric("Future snapshots", asof.get("future_snapshots", 0))
+                        with col_a3:
+                            st.metric("Invalid time", asof.get("invalid_time_snapshots", 0))
+                        for w in asof.get("warnings", []):
+                            st.warning(w)
+
+                    # overall warnings
+                    for w in last_dq.get("warnings", []):
+                        st.warning(w)
+                else:
+                    for w in last_dq.get("warnings", []):
+                        st.warning(w)
+            else:
+                st.info(
+                    "Paste sample JSON rows (or provide a database path) and click "
+                    "**Preview Data Quality** to see the checkpoint dashboard."
+                )
+
             from automation_scheduler.streamlit_dashboard_data import (
                 get_line_volatility_snapshot_for_dashboard,
             )
