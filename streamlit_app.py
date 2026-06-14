@@ -1060,6 +1060,88 @@ elif menu == "Data Explorer":
             from automation_scheduler.streamlit_dashboard_data import (
                 get_line_volatility_snapshot_for_dashboard,
             )
+
+            # ── Source Event Link Resolver (Phase 10H21) ─────────────────
+            st.subheader("Source Event Link Resolver")
+            resolver_msgs = describe_source_event_link_resolver()
+            for msg in resolver_msgs:
+                st.info(msg)
+
+            resolver_default_db = get_default_historical_sqlite_path()
+            resolver_source_text = st.text_area(
+                "Paste sample source JSON rows (optional)",
+                value="",
+                height=100,
+                key="resolver_source",
+            )
+            resolver_canonical_text = st.text_area(
+                "Paste canonical event JSON rows (optional)",
+                value="",
+                height=100,
+                key="resolver_canonical",
+            )
+            if st.button("Preview Event Links", key="resolver_preview"):
+                import json
+
+                source_rows = []
+                canonical_rows = []
+
+                if resolver_source_text.strip():
+                    try:
+                        parsed = json.loads(resolver_source_text)
+                        if isinstance(parsed, list):
+                            source_rows = parsed
+                        elif isinstance(parsed, dict):
+                            source_rows = [parsed]
+                    except Exception:
+                        pass
+
+                if resolver_canonical_text.strip():
+                    try:
+                        parsed = json.loads(resolver_canonical_text)
+                        if isinstance(parsed, list):
+                            canonical_rows = parsed
+                        elif isinstance(parsed, dict):
+                            canonical_rows = [parsed]
+                    except Exception:
+                        pass
+
+                from automation_scheduler.streamlit_dashboard_data import (
+                    get_source_event_link_resolver_snapshot_for_dashboard,
+                )
+
+                snap = get_source_event_link_resolver_snapshot_for_dashboard(
+                    source_rows=source_rows or None,
+                    canonical_event_rows=canonical_rows or None,
+                    db_path=resolver_default_db,
+                )
+                st.session_state["_last_resolver_snapshot"] = snap
+
+            last_snap = st.session_state.get("_last_resolver_snapshot")
+            if last_snap:
+                if last_snap.get("ok"):
+                    resolution = last_snap.get("resolution") or {}
+                    st.metric("Total rows", resolution.get("total_rows", 0))
+                    st.metric("Resolved rows", resolution.get("resolved_rows", 0))
+                    st.metric("Unresolved rows", resolution.get("unresolved_rows", 0))
+                    st.metric("Ambiguous rows", resolution.get("ambiguous_rows", 0))
+
+                    preview = resolution.get("preview_rows", [])
+                    if preview:
+                        st.dataframe(
+                            df(preview), use_container_width=True, hide_index=True
+                        )
+                    else:
+                        st.info("No preview rows available.")
+                else:
+                    for w in last_snap.get("warnings", []):
+                        st.warning(w)
+            else:
+                st.info("Paste sample JSON rows and click **Preview Event Links** to see resolver output.")
+
+            from automation_scheduler.streamlit_dashboard_data import (
+                get_line_volatility_snapshot_for_dashboard,
+            )
             # ── Historical Line Movement Readiness (Phase 10H19) ─────────
             st.subheader("Historical Line Movement Readiness")
             st.info(

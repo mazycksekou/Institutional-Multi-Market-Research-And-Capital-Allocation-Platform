@@ -62,6 +62,10 @@ from .market_feature_packs import (
     summarize_market_feature_readiness,
     MARKET_FEATURE_PACKS_VERSION,
 )
+from .source_event_link_resolver import (
+    build_source_event_link_resolver_snapshot,
+    describe_source_event_link_resolver,
+)
 from .historical_odds_sqlite import (
     connect_historical_odds_db,
     initialize_historical_odds_db,
@@ -2675,3 +2679,48 @@ def get_overall_operator_workflow_steps() -> list[dict[str, str]]:
             "detail": "When new sources are available, re-import and repeat.",
         },
     ]
+
+# ---------------------------------------------------------------------------
+# Phase 10H21 – Source Event Link Resolver (dashboard bridge)
+# ---------------------------------------------------------------------------
+
+
+def get_source_event_link_resolver_snapshot_for_dashboard(
+    source_rows: Sequence[Mapping[str, Any]] | None = None,
+    canonical_event_rows: Sequence[Mapping[str, Any]] | None = None,
+    db_path: str | Path | None = None,
+    min_score: int = 95,
+    limit: int = 100,
+) -> dict[str, Any]:
+    """Return resolver snapshot and messages.
+
+    No exceptions on missing/empty rows.
+    No SQL writes.
+    No vendor connector.
+    Stable JSON-safe dict.
+    """
+    try:
+        snap = build_source_event_link_resolver_snapshot(
+            source_rows=source_rows,
+            canonical_event_rows=canonical_event_rows,
+            db_path=db_path,
+            min_score=min_score,
+            limit=limit,
+        )
+    except Exception as exc:
+        return {
+            "ok": False,
+            "version": "10H21",
+            "event_index": {},
+            "resolution": None,
+            "messages": describe_source_event_link_resolver(),
+            "warnings": [f"resolver error: {exc}"],
+        }
+    return {
+        "ok": snap.get("ok", False),
+        "version": snap.get("version", "10H21"),
+        "event_index": snap.get("event_index", {}),
+        "resolution": snap.get("resolution"),
+        "messages": snap.get("messages", []),
+        "warnings": snap.get("warnings", []),
+    }
