@@ -64,6 +64,9 @@ from automation_scheduler.streamlit_dashboard_data import (
     describe_asof_line_movement_query_engine,
     get_experiment_report_export_for_dashboard,
 )
+from automation_scheduler.source_event_link_resolver import (
+    describe_source_event_link_resolver,
+)
 from automation_scheduler.feature_ablation_lab import get_ablation_field_groups_for_sport
 from automation_scheduler.historical_data_sources import (
     get_historical_data_source_rows,
