@@ -351,7 +351,7 @@ def build_line_movement_snapshot_coverage(db_path: str | Path) -> dict[str, Any]
     try:
         cur = conn.execute(
             "SELECT COUNT(*) AS cnt FROM historical_line_snapshots "
-            "WHERE event_id IS NOT NULL AND event_id != ''"
+            "WHERE event_id IS NOT NULL AND TRIM(event_id) != ''"
         )
         coverage["linked_snapshot_count"] = cur.fetchone()["cnt"]
     except Exception as exc:
@@ -365,7 +365,7 @@ def build_line_movement_snapshot_coverage(db_path: str | Path) -> dict[str, Any]
     try:
         cur = conn.execute(
             "SELECT COUNT(DISTINCT event_id) AS cnt FROM historical_line_snapshots "
-            "WHERE event_id IS NOT NULL AND event_id != ''"
+            "WHERE event_id IS NOT NULL AND TRIM(event_id) != ''"
         )
         coverage["event_count"] = cur.fetchone()["cnt"]
     except Exception as exc:
@@ -377,6 +377,7 @@ def build_line_movement_snapshot_coverage(db_path: str | Path) -> dict[str, Any]
     try:
         cur = conn.execute(
             "SELECT DISTINCT sport FROM historical_line_snapshots "
+            "WHERE sport IS NOT NULL AND TRIM(sport) != '' "
             "ORDER BY sport"
         )
         coverage["sports"] = [str(r["sport"]) for r in cur.fetchall()]
@@ -388,6 +389,7 @@ def build_line_movement_snapshot_coverage(db_path: str | Path) -> dict[str, Any]
     try:
         cur = conn.execute(
             "SELECT DISTINCT market_family FROM historical_line_snapshots "
+            "WHERE market_family IS NOT NULL AND TRIM(market_family) != '' "
             "ORDER BY market_family"
         )
         coverage["market_families"] = [str(r["market_family"]) for r in cur.fetchall()]
@@ -399,6 +401,7 @@ def build_line_movement_snapshot_coverage(db_path: str | Path) -> dict[str, Any]
     try:
         cur = conn.execute(
             "SELECT DISTINCT bookmaker FROM historical_line_snapshots "
+            "WHERE bookmaker IS NOT NULL AND TRIM(bookmaker) != '' "
             "ORDER BY bookmaker"
         )
         coverage["bookmakers"] = [str(r["bookmaker"]) for r in cur.fetchall()]
@@ -411,7 +414,7 @@ def build_line_movement_snapshot_coverage(db_path: str | Path) -> dict[str, Any]
         cur = conn.execute(
             "SELECT MIN(snapshot_time) AS min_t, MAX(snapshot_time) AS max_t "
             "FROM historical_line_snapshots "
-            "WHERE snapshot_time IS NOT NULL AND snapshot_time != ''"
+            "WHERE snapshot_time IS NOT NULL AND TRIM(snapshot_time) != ''"
         )
         row = cur.fetchone()
         coverage["earliest_snapshot_time"] = row["min_t"] if row else None
@@ -436,6 +439,7 @@ def build_line_movement_snapshot_coverage(db_path: str | Path) -> dict[str, Any]
     try:
         cur = conn.execute(
             "SELECT DISTINCT snapshot_label FROM historical_line_snapshots "
+            "WHERE snapshot_label IS NOT NULL AND TRIM(snapshot_label) != '' "
             "ORDER BY snapshot_label"
         )
         coverage["snapshot_labels"] = [str(r["snapshot_label"]) for r in cur.fetchall()]
