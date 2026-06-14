@@ -1950,3 +1950,5 @@ elif menu == "Instructions":
         st.markdown(
             f"**{step['step']}. {step['action']}** – {step['detail']}"
         )
+
+# Experiment History saves ablation and calibration runs so operators can compare field changes, sport readiness, and ROI over time.
