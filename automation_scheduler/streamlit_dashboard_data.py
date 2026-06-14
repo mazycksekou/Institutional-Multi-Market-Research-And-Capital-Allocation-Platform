@@ -1689,6 +1689,75 @@ def get_volatility_result_breakdown_for_dashboard(
 
 
 # ---------------------------------------------------------------------------
+# Phase 10H13 – Sport Feature Packs (dashboard snapshot helper)
+# ---------------------------------------------------------------------------
+
+
+def get_sport_feature_pack_snapshot_for_dashboard(
+    db_path: str | Path,
+    *,
+    sport: str | None = None,
+    league: str | None = None,
+    market: str | None = None,
+    source_key: str | None = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
+    limit: int = 1000,
+) -> dict[str, Any]:
+    """Open the SQLite store, query rows, and return a sport‑readiness snapshot.
+
+    No schema changes.  Uses existing query helper.
+    Closes connection safely.
+    """
+    result: dict[str, Any] = {
+        "ok": False,
+        "version": SPORT_FEATURE_PACKS_VERSION,
+        "db_path": str(db_path),
+        "filters": {
+            "sport": sport,
+            "league": league,
+            "market": market,
+            "source_key": source_key,
+            "start_date": start_date,
+            "end_date": end_date,
+            "limit": limit,
+        },
+        "summary": {},
+        "warnings": [],
+    }
+    try:
+        conn = connect_historical_odds_db(str(db_path))
+        initialize_historical_odds_db(conn)
+        raw_rows = query_historical_odds_rows(
+            conn,
+            sport=sport,
+            league=league,
+            market=market,
+            source_key=source_key,
+            start_date=start_date,
+            end_date=end_date,
+            limit=limit,
+        )
+        conn.close()
+    except Exception as exc:
+        result["warnings"].append(f"Cannot open database: {exc}")
+        return result
+
+    if not raw_rows:
+        result["ok"] = True
+        result["warnings"].append("No rows in filtered query.")
+        return result
+
+    try:
+        summary = summarize_sport_feature_readiness(raw_rows)
+        result["summary"] = summary
+        result["ok"] = True
+    except Exception as exc:
+        result["warnings"].append(f"Readiness error: {exc}")
+    return result
+
+
+# ---------------------------------------------------------------------------
 # Phase 10H11 – Feature Control Lab + Dashboard Instructions
 # ---------------------------------------------------------------------------
 

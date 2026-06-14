@@ -24,6 +24,7 @@ from automation_scheduler.streamlit_dashboard_data import (
     build_market_readiness_report,
     get_sqlite_data_explorer_snapshot_for_dashboard,
     get_required_field_groups_for_market,
+    get_sport_feature_pack_snapshot_for_dashboard,
 )
 
 
@@ -709,6 +710,34 @@ def test_get_overall_operator_workflow_steps_returns_ordered():
     assert len(steps) >= 8
     assert steps[0]["step"] == 1
     assert steps[-1]["step"] == len(steps)
+
+
+# ── Phase 10H13 – Sport Feature Packs (dashboard helper) ──────────────────
+
+
+def test_get_sport_feature_pack_snapshot_for_dashboard_handles_empty_db(tmp_path):
+    db_path = tmp_path / "empty_feature.db"
+    snapshot = get_sport_feature_pack_snapshot_for_dashboard(db_path)
+    # Should return a stable dict, not raise
+    assert snapshot is not None
+    assert isinstance(snapshot, dict)
+    assert "summary" in snapshot
+
+
+def test_streamlit_app_contains_sport_feature_packs_header():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert 'subheader("Sport Feature Packs")' in content
+
+
+def test_streamlit_app_contains_exact_explanation_text():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert (
+        "Sport Feature Packs show whether each sport has "
+        "enough required and recommended data for trustworthy "
+        "model testing."
+    ) in content
 
 
 # ── Phase 10H12B – Dashboard helper tests ──────────────────────
