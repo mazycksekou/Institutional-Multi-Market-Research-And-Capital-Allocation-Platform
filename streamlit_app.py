@@ -1464,8 +1464,6 @@ elif menu == "Feature Ablation Lab":
     if st.button("Run Ablation Lab", type="primary", key="fal_run"):
         with st.spinner("Running feature ablation..."):
             snap = get_feature_ablation_lab_snapshot_for_dashboard(
-            # Store result in session_state for history save
-            st.session_state["_last_ablation_result"] = snap
                 db_path_input,
                 sport=sport_val or None,
                 market=market_val or None,
@@ -1474,6 +1472,7 @@ elif menu == "Feature Ablation Lab":
                 removed_fields=removed_fields or None,
                 selected_groups=selected_groups if selected_groups != available_groups else None,
             )
+            st.session_state["_last_ablation_result"] = snap
 
         if not snap.get("ok"):
             st.error("Feature Ablation Lab failed.")
@@ -1655,7 +1654,6 @@ elif menu == "Calibration‑Ready Strategy Filter":
                 min_rows_per_market=int(min_market_rows),
             )
             st.session_state["_last_calibration_result"] = snap
-            )
 
         if not snap.get("ok"):
             st.error("Calibration filter failed.")
