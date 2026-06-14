@@ -471,7 +471,7 @@ def list_experiment_history_runs(
             warnings_json
         FROM experiment_history_runs
         WHERE {where_sql}
-        ORDER BY created_at DESC
+        ORDER BY created_at DESC, rowid DESC
         LIMIT ?
     """
     params.append(limit)
