@@ -301,18 +301,38 @@ if menu == "Operator Summary":
     st.header("Operator Summary")
 
     snapshot = load_dashboard_snapshot()
-    cards = simple_home_cards(snapshot)
+    dashboard = snapshot.get("dashboard") or {}
+    summary = snapshot.get("dashboard_summary") or {}
+    readiness = snapshot.get("readiness") or {}
+    inputs = dashboard.get("inputs") or {}
 
-    metric_row(
-        [
-            ("System", cards["Is the system safe?"], "Paper/test mode status."),
-            ("Start money", cards["How much money did the test start with?"], "Pretend starting money."),
-            ("End money", cards["How much money did the test end with?"], "Pretend ending money."),
-            ("Graph", cards["Did the graph go up or down?"], "Did the bankroll go up or down?"),
-            ("Profile", cards["What sport/profile was tested?"], "Sport/model setup."),
-            ("Ready?", cards["Is this ready or not ready?"], "Simple readiness answer."),
-        ]
-    )
+    st.subheader("System Status")
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("System Mode", "Paper / Testing" if snapshot.get("dashboard_exists") else "Dashboard file missing")
+        st.metric("Active Profile", dashboard.get("profile_key", "Unknown"))
+    with col2:
+        st.metric("Date Range", inputs.get("start_date", "N/A"))
+        st.metric("Projection Ready", readiness.get("verdict", "Unknown"))
+    with col3:
+        st.metric("Data Status", "Available" if snapshot.get("dashboard_exists") else "Missing")
+
+    st.subheader("Portfolio Snapshot")
+    col_a, col_b, col_c = st.columns(3)
+    with col_a:
+        st.metric("Starting Portfolio", inputs.get("starting_bankroll", "Unknown"))
+        st.metric("Current Portfolio", summary.get("ending_bankroll", "Unknown"))
+    with col_b:
+        st.metric("Net Result", summary.get("profit_loss", "Unknown"))
+        st.metric("Return %", summary.get("roi_percent", "Unknown"))
+    with col_c:
+        st.metric("Decisions", summary.get("bets", 0))
+        st.metric("Skipped Decisions", summary.get("no_bets", 0))
+
+    st.subheader("What This Means")
+    st.info("This is a paper/testing dashboard. It does not place real bets or trades.")
+    st.info("Use **Data Explorer** before **Model Projection** to confirm the data is complete enough.")
+    st.info("Projection results are only meaningful when settlement data and required fields are present.")
 
     if not snapshot.get("dashboard_exists"):
         st.warning("Dashboard file is missing. Click the button below to generate it.")
@@ -339,7 +359,7 @@ if menu == "Operator Summary":
     dashboard = snapshot.get("dashboard") or {}
     curve = dashboard.get("bankroll_curve") or []
     if curve:
-        st.subheader("Money Up/Down Graph")
+        st.subheader("Portfolio Performance Curve")
         show_curve(curve)
 
 
