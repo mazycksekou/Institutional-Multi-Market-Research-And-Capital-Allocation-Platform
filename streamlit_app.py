@@ -2480,3 +2480,7 @@ elif menu == "Instructions":
 # Source Event Link Resolver maps future source rows to canonical event_id values before line movement features are used.
 
 # As‑Of Line Movement Query Engine filters historical snapshots to only those available at or before a hypothetical bet time.
+
+# Line Movement Data Quality Dashboard shows coverage, missing links, duplicate snapshots, sports, markets, books, and readiness before any real connector is added.
+
+# STOP: Review this dashboard before adding any vendor, API, scraper, or paid data connector.
