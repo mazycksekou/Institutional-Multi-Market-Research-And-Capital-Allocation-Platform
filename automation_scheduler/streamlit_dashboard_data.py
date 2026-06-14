@@ -1793,6 +1793,13 @@ def get_dashboard_tab_instructions() -> list[dict[str, str]]:
     """Return instructions for each dashboard tab."""
     return [
         {
+            "tab": "Instructions",
+            "purpose": "Explains how to use the dashboard",
+            "how_to_use": "Start here to understand each tab and the overall testing workflow",
+            "why_it_matters": "Prevents confusion and helps the operator know what to do next",
+            "next_step": "Review Data Source Library, then Import Historical Data, then Data Explorer",
+        },
+        {
             "tab": "Operator Summary",
             "purpose": "Quick health snapshot of the latest model run.",
             "how_to_use": "Generate the dashboard or check recent metrics.",
