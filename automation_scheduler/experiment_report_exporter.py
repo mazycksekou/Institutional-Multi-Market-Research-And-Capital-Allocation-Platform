@@ -34,21 +34,19 @@ def _utc_now_iso() -> str:
     )
 
 
-def normalize_report_value(value: Any) -> str:
-    """Convert None/`‑/int/bool to readable string; list/dict → JSON."""
+def normalize_report_value(value) -> str:
+    """Convert report values into deterministic readable strings."""
     if value is None:
         return ""
     if isinstance(value, bool):
         return "Yes" if value else "No"
     if isinstance(value, (int, float)):
         return str(value)
-    if isinstance(value, (list, tuple, set, dict)):
-        try:
-            return json.dumps(value, ensure_ascii=False, sort_keys=True, default=str)
-        except (TypeError, ValueError):
-            return str(value)
+    if isinstance(value, str):
+        return value
+    if isinstance(value, (list, dict)):
+        return json.dumps(value, sort_keys=True, default=str)
     return str(value)
-
 
 def format_report_percent(value: Any) -> str:
     """None/blank → ''; numeric → two decimals + '%'; string numbers → same;

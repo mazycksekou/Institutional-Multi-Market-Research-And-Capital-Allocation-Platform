@@ -1,6 +1,6 @@
+from __future__ import annotations
 """Tests for Phase 10H18 – experiment_report_exporter."""
 
-from __future__ import annotations
 
 import json
 from pathlib import Path
@@ -248,7 +248,6 @@ def test_report_uses_2_way_3_way_moneyline_wording_not_legacy_preferred_label(
     assert "moneyline_or_1x2" not in export["markdown"]
 """Tests for Phase 10H18 – experiment_report_exporter."""
 
-from __future__ import annotations
 
 import json
 from pathlib import Path
