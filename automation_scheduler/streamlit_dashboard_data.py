@@ -26,6 +26,13 @@ from .historical_line_movement import (
     upsert_line_snapshots_for_canonical_rows,
     summarize_line_movement_store,
 )
+from .experiment_history_store import (
+    initialize_experiment_history_store,
+    save_experiment_history_run,
+    list_experiment_history_runs,
+    get_experiment_history_run,
+    compare_experiment_history_runs,
+)
 from .sport_feature_packs import (
     normalize_sport_key,
     get_sport_feature_pack,
@@ -372,6 +379,113 @@ def preview_path(path: str | Path, *, limit: int = 200) -> dict[str, Any]:
     result["text"] = text
     result["raw"] = {"text": text[:5000]}
     return result
+
+
+# ---------------------------------------------------------------------------
+# Phase 10H17 – Experiment History (dashboard bridge)
+# ---------------------------------------------------------------------------
+
+
+def get_experiment_history_snapshot_for_dashboard(
+    db_path: str | Path,
+    limit: int = 50,
+    run_type: str | None = None,
+    mode: str | None = None,
+    sport: str | None = None,
+    market: str | None = None,
+) -> dict[str, Any]:
+    """Return recent experiment history runs in a stable dict.
+
+    Empty / missing db returns an empty list, not an error.
+    """
+    try:
+        listing = list_experiment_history_runs(
+            db_path,
+            limit=limit,
+            run_type=run_type,
+            mode=mode,
+            sport=sport,
+            market=market,
+        )
+    except Exception as exc:
+        return {
+            "ok": False,
+            "version": "10H17",
+            "runs": [],
+            "total": 0,
+            "warnings": [f"Could not retrieve history: {exc}"],
+        }
+    return {
+        "ok": listing.get("ok", True),
+        "version": listing.get("version", "10H17"),
+        "runs": listing.get("runs", []),
+        "total": listing.get("total", 0),
+        "warnings": listing.get("warnings", []),
+    }
+
+
+def save_experiment_history_run_for_dashboard(
+    db_path: str | Path,
+    result: Mapping[str, Any],
+    run_type: str = "feature_ablation",
+    run_label: str | None = None,
+    notes: str | None = None,
+) -> dict[str, Any]:
+    """Save an experiment result to the history store.
+
+    Returns a stable action result.
+    """
+    try:
+        saved = save_experiment_history_run(
+            db_path,
+            result,
+            run_type=run_type,
+            run_label=run_label,
+            notes=notes,
+        )
+    except Exception as exc:
+        return {
+            "ok": False,
+            "version": "10H17",
+            "run_id": "",
+            "saved": False,
+            "warnings": [f"Could not save experiment: {exc}"],
+        }
+    return {
+        "ok": saved.get("ok", True),
+        "version": saved.get("version", "10H17"),
+        "run_id": saved.get("run_id", ""),
+        "run_type": saved.get("run_type", run_type),
+        "run_label": saved.get("run_label"),
+        "saved": saved.get("saved", False),
+        "warnings": saved.get("warnings", []),
+    }
+
+
+def compare_experiment_history_runs_for_dashboard(
+    db_path: str | Path,
+    run_ids: Sequence[str],
+) -> dict[str, Any]:
+    """Compare a set of saved runs and return stable result."""
+    try:
+        comp = compare_experiment_history_runs(db_path, run_ids)
+    except Exception as exc:
+        return {
+            "ok": False,
+            "version": "10H17",
+            "baseline_run_id": None,
+            "runs": [],
+            "comparison_rows": [],
+            "warnings": [f"Could not compare runs: {exc}"],
+        }
+    return {
+        "ok": comp.get("ok", True),
+        "version": comp.get("version", "10H17"),
+        "baseline_run_id": comp.get("baseline_run_id"),
+        "runs": comp.get("runs", []),
+        "comparison_rows": comp.get("comparison_rows", []),
+        "warnings": comp.get("warnings", []),
+    }
 
 
 def compact_counts(rows: Sequence[Mapping[str, Any]], key: str, *, limit: int = 50) -> list[dict[str, Any]]:

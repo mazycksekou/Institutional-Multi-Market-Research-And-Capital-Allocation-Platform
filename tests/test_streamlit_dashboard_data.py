@@ -747,6 +747,85 @@ def test_get_overall_operator_workflow_steps_returns_ordered():
     assert steps[-1]["step"] == len(steps)
 
 
+# ── Phase 10H17 – Experiment History bridge tests ────────────────────────
+
+
+def test_get_experiment_history_snapshot_for_dashboard_handles_empty_db(tmp_path):
+    from automation_scheduler.streamlit_dashboard_data import (
+        get_experiment_history_snapshot_for_dashboard,
+    )
+    db_path = tmp_path / "empty_history.db"
+    result = get_experiment_history_snapshot_for_dashboard(db_path)
+    assert result["ok"] is True
+    assert result["runs"] == []
+    assert result["total"] == 0
+
+
+def test_save_experiment_history_run_for_dashboard_handles_basic_result(tmp_path):
+    from automation_scheduler.streamlit_dashboard_data import (
+        save_experiment_history_run_for_dashboard,
+        get_experiment_history_snapshot_for_dashboard,
+    )
+    db_path = tmp_path / "basic_save.db"
+    result = {
+        "mode": "single_sport",
+        "sport_key": "basketball_nba",
+        "active_fields": ["odds_at_decision_time"],
+        "performance": {
+            "total_rows": 100,
+            "included_row_count": 90,
+            "excluded_row_count": 10,
+        },
+    }
+    saved = save_experiment_history_run_for_dashboard(
+        db_path, result, run_label="test"
+    )
+    assert saved["ok"] is True
+    assert saved["saved"] is True
+    assert len(saved["run_id"]) > 0
+
+    # verify appears in listing
+    listing = get_experiment_history_snapshot_for_dashboard(db_path)
+    assert listing["total"] >= 1
+
+
+def test_compare_experiment_history_runs_for_dashboard_handles_empty_ids(tmp_path):
+    from automation_scheduler.streamlit_dashboard_data import (
+        compare_experiment_history_runs_for_dashboard,
+    )
+    db_path = tmp_path / "empty_compare.db"
+    result = compare_experiment_history_runs_for_dashboard(db_path, [])
+    assert result["ok"] is False
+    assert "no run ids" in " ".join(result.get("warnings", [])).lower()
+
+
+def test_streamlit_app_contains_experiment_history_text():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert 'header("Experiment History")' in content
+
+
+def test_streamlit_app_contains_experiment_history_explanation():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert (
+        "Experiment History saves ablation and calibration runs so operators "
+        "can compare field changes, sport readiness, and ROI over time."
+    ) in content
+
+
+def test_streamlit_app_contains_save_ablation_run_button():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert 'button("Save Ablation Run to History"' in content
+
+
+def test_streamlit_app_contains_save_calibration_run_button():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert 'button("Save Calibration Run to History"' in content
+
+
 # ── Phase 10H15A – Feature Ablation Lab wiring tests ──────────────────────
 
 

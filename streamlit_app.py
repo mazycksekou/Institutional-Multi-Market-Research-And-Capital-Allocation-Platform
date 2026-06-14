@@ -300,6 +300,7 @@ menu = st.sidebar.radio(
         "Model Projection",
         "Feature Ablation Lab",
         "Calibration‑Ready Strategy Filter",
+        "Experiment History",
         "Instructions",
     ],
 )
@@ -1463,6 +1464,8 @@ elif menu == "Feature Ablation Lab":
     if st.button("Run Ablation Lab", type="primary", key="fal_run"):
         with st.spinner("Running feature ablation..."):
             snap = get_feature_ablation_lab_snapshot_for_dashboard(
+            # Store result in session_state for history save
+            st.session_state["_last_ablation_result"] = snap
                 db_path_input,
                 sport=sport_val or None,
                 market=market_val or None,
@@ -1634,6 +1637,9 @@ elif menu == "Calibration‑Ready Strategy Filter":
         with st.spinner("Running calibration filter..."):
             from automation_scheduler.streamlit_dashboard_data import (
                 get_calibration_strategy_filter_snapshot_for_dashboard,
+                get_experiment_history_snapshot_for_dashboard,
+                save_experiment_history_run_for_dashboard,
+                compare_experiment_history_runs_for_dashboard,
             )
             snap = get_calibration_strategy_filter_snapshot_for_dashboard(
                 db_path_input,
@@ -1647,6 +1653,8 @@ elif menu == "Calibration‑Ready Strategy Filter":
                 min_active_field_coverage_percent=min_active,
                 min_rows_per_sport=int(min_sport_rows),
                 min_rows_per_market=int(min_market_rows),
+            )
+            st.session_state["_last_calibration_result"] = snap
             )
 
         if not snap.get("ok"):
@@ -1769,6 +1777,151 @@ elif menu == "Calibration‑Ready Strategy Filter":
     with st.expander("Raw snapshot JSON", expanded=False):
         st.json({})
 
+
+elif menu == "Experiment History":
+    st.header("Experiment History")
+    st.info(
+        "Experiment History saves ablation and calibration runs so operators "
+        "can compare field changes, sport readiness, and ROI over time."
+    )
+
+    default_sqlite = get_default_historical_sqlite_path()
+    db_path_input = st.text_input(
+        "SQLite database path",
+        value=default_sqlite,
+        key="exp_hist_db",
+    )
+
+    # ── Save from recent run (manual) ──────────────
+    st.subheader("Save Current Run")
+    run_type = st.selectbox(
+        "Run type",
+        ["feature_ablation", "calibration_strategy_filter"],
+        key="exp_run_type",
+    )
+    run_label = st.text_input("Run label (optional)", key="exp_label")
+    notes = st.text_area("Notes (optional)", key="exp_notes")
+
+    # We need the last result from the appropriate section.
+    # Because the UI runs independently, we have to store the result
+    # in session_state when the user runs an ablation or calibration.
+    # Pre‑populate from session_state if available.
+    last_ablation_result = st.session_state.get("_last_ablation_result")
+    last_calibration_result = st.session_state.get("_last_calibration_result")
+
+    candidate = None
+    if run_type == "feature_ablation":
+        candidate = last_ablation_result
+    else:
+        candidate = last_calibration_result
+
+    if candidate and st.button("Save Run to History", key="exp_save"):
+        with st.spinner("Saving..."):
+            saved = save_experiment_history_run_for_dashboard(
+                db_path_input,
+                candidate,
+                run_type=run_type,
+                run_label=run_label or None,
+                notes=notes or None,
+            )
+        if saved.get("saved"):
+            st.success(f"Run saved: {saved['run_id']}")
+        else:
+            st.error("Failed to save; see warnings.")
+            st.json(saved)
+
+    # Also provide explicit buttons for the two result types
+    col_sa, col_sc = st.columns(2)
+    with col_sa:
+        if last_ablation_result and st.button("Save Ablation Run to History", key="exp_save_ab"):
+            saved = save_experiment_history_run_for_dashboard(
+                db_path_input,
+                last_ablation_result,
+                run_type="feature_ablation",
+                run_label=run_label or None,
+                notes=notes or None,
+            )
+            if saved.get("saved"):
+                st.success(f"Ablation saved: {saved['run_id']}")
+            else:
+                st.error("Ablation save failed")
+                st.json(saved)
+    with col_sc:
+        if last_calibration_result and st.button("Save Calibration Run to History", key="exp_save_cal"):
+            saved = save_experiment_history_run_for_dashboard(
+                db_path_input,
+                last_calibration_result,
+                run_type="calibration_strategy_filter",
+                run_label=run_label or None,
+                notes=notes or None,
+            )
+            if saved.get("saved"):
+                st.success(f"Calibration saved: {saved['run_id']}")
+            else:
+                st.error("Calibration save failed")
+                st.json(saved)
+
+    st.markdown("---")
+
+    # ── List recent runs ───────────────────────────
+    st.subheader("Recent Runs")
+    hist = get_experiment_history_snapshot_for_dashboard(db_path_input, limit=50)
+    runs = hist.get("runs", [])
+    if not runs:
+        st.info("No experiment history yet. Run a Feature Ablation Lab or Calibration‑Ready Strategy Filter and save it.")
+    else:
+        run_df = df(runs)
+        st.dataframe(run_df, use_container_width=True, hide_index=True)
+
+    # ── Compare runs ───────────────────────────────
+    st.subheader("Compare Runs")
+    if runs:
+        run_options = {r["run_id"]: r.get("run_label") or r["run_id"] for r in runs}
+        selected_run_ids = st.multiselect(
+            "Select runs to compare (first is baseline)",
+            options=list(run_options.keys()),
+            format_func=lambda rid: run_options[rid],
+            default=[],
+            key="exp_compare_ids",
+        )
+        if st.button("Compare Selected Runs", key="exp_compare_btn"):
+            if not selected_run_ids:
+                st.warning("Select at least one run.")
+            else:
+                comp = compare_experiment_history_runs_for_dashboard(
+                    db_path_input, selected_run_ids
+                )
+                if comp.get("ok") and comp.get("comparison_rows"):
+                    comp_df = df(comp["comparison_rows"])
+                    st.dataframe(comp_df, use_container_width=True, hide_index=True)
+                else:
+                    st.warning("Comparison returned no data.")
+                    st.json(comp)
+
+    # ── View single run detail ─────────────────────
+    st.subheader("Run Detail")
+    if runs:
+        selected_detail = st.selectbox(
+            "Choose a run to inspect",
+            options=[r["run_id"] for r in runs],
+            format_func=lambda rid: f"{rid} – {runs[0]['run_label'] or 'no label'}",
+            key="exp_detail",
+        )
+        if st.button("Show Run Detail", key="exp_detail_btn"):
+            from automation_scheduler.streamlit_dashboard_data import (
+                get_experiment_history_run,
+            )
+
+            detailed = get_experiment_history_run(str(db_path_input), selected_detail)
+            if detailed.get("found"):
+                run = detailed["run"]
+                st.json(run)
+            else:
+                st.warning("Run not found.")
+
+    # ── Warnings ───────────────────────────────────
+    for w in hist.get("warnings", []):
+        st.warning(w)
 
 elif menu == "Instructions":
     st.header("Instructions")
