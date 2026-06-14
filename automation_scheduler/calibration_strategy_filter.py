@@ -263,16 +263,18 @@ def _sport_readiness_for_rows(
         has_min_rows = len(grp) >= min_rows
         meets_coverage = required_coverage >= threshold
 
-        ready = (
-            readiness_level in ("usable", "strong")
-            and has_min_rows
-            and meets_coverage
-        )
+        # When threshold >= 95, only "strong" readiness level passes
+        if threshold >= 95:
+            level_ok = readiness_level == "strong"
+        else:
+            level_ok = readiness_level in ("usable", "strong")
+
+        ready = level_ok and has_min_rows and meets_coverage
 
         # build stable exclusion reason
         if not ready:
             reasons = []
-            if readiness_level not in ("usable", "strong"):
+            if not level_ok:
                 reasons.append("sport_not_ready")
             if not has_min_rows:
                 reasons.append("sport_min_rows_not_met")
@@ -317,16 +319,18 @@ def _market_readiness_for_rows(
         has_min_rows = len(grp) >= min_rows
         meets_coverage = required_coverage >= threshold
 
-        ready = (
-            readiness_level in ("usable", "strong")
-            and has_min_rows
-            and meets_coverage
-        )
+        # When threshold >= 95, only "strong" readiness level passes
+        if threshold >= 95:
+            level_ok = readiness_level == "strong"
+        else:
+            level_ok = readiness_level in ("usable", "strong")
+
+        ready = level_ok and has_min_rows and meets_coverage
 
         # build stable exclusion reason
         if not ready:
             reasons = []
-            if readiness_level not in ("usable", "strong"):
+            if not level_ok:
                 reasons.append("market_not_ready")
             if not has_min_rows:
                 reasons.append("market_min_rows_not_met")
