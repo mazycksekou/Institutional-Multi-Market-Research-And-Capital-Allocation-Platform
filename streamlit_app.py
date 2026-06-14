@@ -293,6 +293,7 @@ menu = st.sidebar.radio(
         "Data Quality Check",
         "Data Explorer",
         "Model Projection",
+        "Instructions",
     ],
 )
 
@@ -910,6 +911,61 @@ elif menu == "Data Explorer":
                     hide_index=True,
                 )
 
+            st.subheader("Feature Control Lab")
+            from automation_scheduler.streamlit_dashboard_data import (
+                get_feature_control_profiles,
+                get_feature_group_definitions,
+                build_feature_control_config,
+                apply_feature_control_to_row,
+                summarize_feature_control_impact,
+                get_never_feature_fields,
+            )
+
+            feature_profile_options = get_feature_control_profiles()
+            selected_profile = st.selectbox(
+                "Feature Control Profile",
+                options=[p["value"] for p in feature_profile_options],
+                format_func=lambda v: next(
+                    (p["label"] for p in feature_profile_options if p["value"] == v),
+                    v,
+                ),
+                key="de_fc_profile",
+            )
+
+            # Optional include/exclude groups
+            all_group_keys = list(get_feature_group_definitions().keys())
+            include_groups = st.multiselect(
+                "Include only groups (leave empty for no restriction)",
+                options=all_group_keys,
+                default=[],
+                key="de_fc_include",
+            )
+            exclude_groups = st.multiselect(
+                "Exclude groups (overrides include)",
+                options=all_group_keys,
+                default=[],
+                key="de_fc_exclude",
+            )
+
+            never_fields = get_never_feature_fields()
+            fc_config = build_feature_control_config(
+                profile=selected_profile,
+                include_groups=include_groups or None,
+                exclude_groups=exclude_groups or None,
+            )
+
+            # Show impact for the sample rows
+            impact = summarize_feature_control_impact(
+                snapshot.get("sample_rows", []), fc_config
+            )
+            st.metric("Available Feature Fields", impact["available_feature_count"])
+            st.metric("Missing Fields (not never)", impact["missing_feature_count"])
+            st.metric("Removed Fields (never)", impact["removed_feature_count"])
+            if impact["warnings"]:
+                for w in impact["warnings"]:
+                    st.warning(w)
+            st.info(impact["operator_interpretation"])
+
             with st.expander("Full snapshot JSON"):
                 st.json(snapshot)
 
@@ -954,6 +1010,36 @@ elif menu == "Model Projection":
             key="proj_mp",
         )
 
+    # Feature Control Section -------------------------------------------------
+    st.subheader("Feature Profile")
+    from automation_scheduler.streamlit_dashboard_data import (
+        get_feature_control_profiles,
+        get_feature_group_definitions,
+        build_feature_control_config,
+        get_never_feature_fields,
+    )
+
+    fc_profiles = get_feature_control_profiles()
+    selected_profile_val = st.selectbox(
+        "Feature Control Profile",
+        options=[p["value"] for p in fc_profiles],
+        format_func=lambda v: next(
+            (p["label"] for p in fc_profiles if p["value"] == v),
+            v,
+        ),
+        key="proj_fc",
+    )
+
+    never = get_never_feature_fields()
+    fc_config = build_feature_control_config(profile=selected_profile_val)
+    st.caption(
+        f"Never‑feature fields blocked: {', '.join(never[:5])} "
+        f"(and {len(never)-5} more)"
+    )
+    st.json(fc_config)
+
+    st.subheader("Run Projection")
+    st.caption("Top‑level results are for grading only. Projection never uses leakage fields as features.")
     if st.button("Run SQLite‑backed projection", type="primary"):
         with st.spinner("Running historical projection..."):
             proj_result = run_sqlite_projection_for_dashboard(
@@ -1005,3 +1091,36 @@ elif menu == "Model Projection":
 
     summary = summarize_source_registry()
     st.json(summary)
+
+elif menu == "Instructions":
+    st.header("Instructions")
+
+    st.subheader("Missing data does not stop testing")
+    st.info(
+        "Missing data does not stop testing. It tells us which model version we are testing."
+    )
+
+    st.subheader("Important Warning: Never use leakage fields as model features")
+    st.warning(
+        "**Never use final results, winner, closing line, CLV, or profit/loss as "
+        "pre‑decision model features.** These fields are for grading only."
+    )
+
+    st.subheader("Dashboard Tab Instructions")
+    tab_rows = (
+        from automation_scheduler.streamlit_dashboard_data
+        import get_dashboard_tab_instructions
+    )
+    instructions = get_dashboard_tab_instructions()
+    st.dataframe(df(instructions), use_container_width=True, hide_index=True)
+
+    st.subheader("Overall Operator Workflow")
+    from automation_scheduler.streamlit_dashboard_data import (
+        get_overall_operator_workflow_steps,
+    )
+
+    steps = get_overall_operator_workflow_steps()
+    for step in steps:
+        st.markdown(
+            f"**{step['step']}. {step['action']}** – {step['detail']}"
+        )

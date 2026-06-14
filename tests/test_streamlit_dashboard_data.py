@@ -505,3 +505,123 @@ def test_easy_labels_bets_label_updated():
 def test_easy_labels_no_bets_label_updated():
     from automation_scheduler.streamlit_dashboard_data import EASY_LABELS
     assert EASY_LABELS["no_bets"] == "Skipped Decisions"
+
+
+# ── Phase 10H11 – Feature Control Lab ──────────────────────────────────
+
+
+def test_get_feature_control_profiles_includes_baseline_odds_custom():
+    from automation_scheduler.streamlit_dashboard_data import (
+        get_feature_control_profiles,
+    )
+    profiles = get_feature_control_profiles()
+    values = [p["value"] for p in profiles]
+    assert "available_baseline" in values
+    assert "odds_only" in values
+    assert "custom" in values
+
+
+def test_get_never_feature_fields_includes_leakage():
+    from automation_scheduler.streamlit_dashboard_data import (
+        get_never_feature_fields,
+    )
+    fields = get_never_feature_fields()
+    assert "final_result" in fields
+    assert "winner" in fields
+    assert "closing_odds" in fields
+    assert "clv" in fields
+    assert "profit_loss" in fields
+
+
+def test_apply_feature_control_to_row_removes_leakage():
+    from automation_scheduler.streamlit_dashboard_data import (
+        build_feature_control_config,
+        apply_feature_control_to_row,
+        get_never_feature_fields,
+    )
+    config = build_feature_control_config()
+    row = {
+        "sport": "nba",
+        "final_result": "H",
+        "winner": "Home",
+        "profit_loss": 10,
+        "features_known_at_decision_time": {"model_probability": 0.6},
+    }
+    out = apply_feature_control_to_row(row, config)
+    # Ensure leakage fields are not inside the snapshot
+    snap = out.get("features_known_at_decision_time", {})
+    for leak in get_never_feature_fields():
+        assert leak not in snap
+    # But they remain at top level for grading
+    assert out["final_result"] == "H"
+    assert out["winner"] == "Home"
+
+
+def test_apply_feature_control_to_row_does_not_mutate_input():
+    from automation_scheduler.streamlit_dashboard_data import (
+        build_feature_control_config,
+        apply_feature_control_to_row,
+    )
+    config = build_feature_control_config()
+    row = {
+        "sport": "nba",
+        "final_result": "H",
+        "features_known_at_decision_time": {"model_probability": 0.6},
+    }
+    orig_id = id(row["features_known_at_decision_time"])
+    apply_feature_control_to_row(row, config)
+    assert id(row["features_known_at_decision_time"]) == orig_id
+    assert row["final_result"] == "H"
+
+
+def test_summarize_feature_control_impact_returns_stable_keys():
+    from automation_scheduler.streamlit_dashboard_data import (
+        build_feature_control_config,
+        summarize_feature_control_impact,
+    )
+    config = build_feature_control_config()
+    rows = [
+        {"sport": "nba", "features_known_at_decision_time": {"model_probability": 0.6}},
+        {"sport": "mlb", "features_known_at_decision_time": {"model_probability": 0.4}},
+    ]
+    impact = summarize_feature_control_impact(rows, config)
+    assert "profile" in impact
+    assert "rows_seen" in impact
+    assert "available_feature_count" in impact
+    assert "missing_feature_count" in impact
+    assert "removed_feature_count" in impact
+    assert "operator_interpretation" in impact
+    assert isinstance(impact["operator_interpretation"], str)
+
+
+def test_summarize_feature_control_impact_operator_interpretation():
+    from automation_scheduler.streamlit_dashboard_data import (
+        build_feature_control_config,
+        summarize_feature_control_impact,
+    )
+    config = build_feature_control_config()
+    rows = []
+    impact = summarize_feature_control_impact(rows, config)
+    assert "This profile can test a basic available-data baseline" in impact["operator_interpretation"]
+
+
+def test_get_dashboard_tab_instructions_contains_all_tabs():
+    from automation_scheduler.streamlit_dashboard_data import (
+        get_dashboard_tab_instructions,
+    )
+    instructions = get_dashboard_tab_instructions()
+    tabs = [i["tab"] for i in instructions]
+    assert "Instructions" in tabs
+    assert "Data Explorer" in tabs
+    assert "Model Projection" in tabs
+    assert "Data Quality Check" in tabs
+
+
+def test_get_overall_operator_workflow_steps_returns_ordered():
+    from automation_scheduler.streamlit_dashboard_data import (
+        get_overall_operator_workflow_steps,
+    )
+    steps = get_overall_operator_workflow_steps()
+    assert len(steps) >= 8
+    assert steps[0]["step"] == 1
+    assert steps[-1]["step"] == len(steps)

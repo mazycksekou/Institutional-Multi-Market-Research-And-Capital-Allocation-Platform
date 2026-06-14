@@ -1521,3 +1521,422 @@ def simple_home_cards(snapshot: Mapping[str, Any]) -> dict[str, Any]:
         "What sport/profile was tested?": dashboard.get("profile_key", "Unknown"),
         "Is this ready or not ready?": readiness.get("verdict", "Unknown"),
     }
+
+
+# ---------------------------------------------------------------------------
+# Phase 10H11 – Feature Control Lab + Dashboard Instructions
+# ---------------------------------------------------------------------------
+
+FEATURE_CONTROL_VERSION: str = "10H11"
+DEFAULT_FEATURE_CONTROL_PROFILE: str = "available_baseline"
+
+
+def get_feature_control_profiles() -> list[dict[str, str]]:
+    """Return simple profile options for feature control."""
+    return [
+        {
+            "value": "available_baseline",
+            "label": "Available Baseline",
+            "meaning": "Use the fields we currently have without pretending missing fields exist",
+        },
+        {
+            "value": "odds_only",
+            "label": "Odds Only",
+            "meaning": "Test market/odds fields only",
+        },
+        {
+            "value": "no_line_movement",
+            "label": "Remove Line Movement",
+            "meaning": "Ignore line movement fields when not available",
+        },
+        {
+            "value": "settlement_check",
+            "label": "Settlement Check",
+            "meaning": "Focus on whether outcomes/results exist",
+        },
+        {
+            "value": "custom",
+            "label": "Custom Add/Remove",
+            "meaning": "Operator chooses included/excluded fields",
+        },
+    ]
+
+
+def get_feature_group_definitions() -> dict[str, dict[str, Any]]:
+    """Return groups that match the Data Explorer coverage."""
+    return {
+        "core_event": {
+            "label": "Core Event Fields",
+            "description": "Sport, league, date, home/away team",
+            "fields": REQUIRED_FIELD_GROUPS["core_event"],
+        },
+        "line_core": {
+            "label": "Line Core Fields",
+            "description": "Market, selection, odds, implied probability, bookmaker, line value",
+            "fields": REQUIRED_FIELD_GROUPS["line_core"],
+        },
+        "line_movement": {
+            "label": "Line Movement Fields",
+            "description": "Opening/closing odds, CLV, snapshot time",
+            "fields": REQUIRED_FIELD_GROUPS["line_movement"],
+        },
+        "settlement": {
+            "label": "Settlement Fields",
+            "description": "Final result, winner, scores, profit/loss",
+            "fields": REQUIRED_FIELD_GROUPS["settlement"],
+        },
+        "team_stats": {
+            "label": "Team Stats Fields",
+            "description": "Home/away team statistics, pace, ratings, injuries",
+            "fields": REQUIRED_FIELD_GROUPS["team_stats"],
+        },
+        "player_stats": {
+            "label": "Player Stats Fields",
+            "description": "Player name, prop type, line, minutes, usage",
+            "fields": REQUIRED_FIELD_GROUPS["player_stats"],
+        },
+        "projection_control": {
+            "label": "Projection Control Fields",
+            "description": "Model probability, features known at decision time",
+            "fields": REQUIRED_FIELD_GROUPS["projection_control"],
+        },
+    }
+
+
+def get_never_feature_fields() -> list[str]:
+    """Return fields that must never be used inside model features
+    because they are leakage or grading fields."""
+    return [
+        "final_result",
+        "winner",
+        "home_score",
+        "away_score",
+        "profit_loss",
+        "closing_odds",
+        "closing_line",
+        "clv",
+        "result",
+        "settled_result",
+        "bet_result",
+        "outcome",
+    ]
+
+
+def build_feature_control_config(
+    profile: str = DEFAULT_FEATURE_CONTROL_PROFILE,
+    include_groups: list[str] | None = None,
+    exclude_groups: list[str] | None = None,
+    include_fields: list[str] | None = None,
+    exclude_fields: list[str] | None = None,
+) -> dict[str, Any]:
+    """Return a feature control configuration dictionary."""
+    never = get_never_feature_fields()
+    return {
+        "profile": profile,
+        "include_groups": include_groups or [],
+        "exclude_groups": exclude_groups or [],
+        "include_fields": include_fields or [],
+        "exclude_fields": exclude_fields or [],
+        "never_feature_fields": never,
+        "version": FEATURE_CONTROL_VERSION,
+    }
+
+
+def _safe_pre_decision_fields(row: dict, never: list[str]) -> dict[str, Any]:
+    """Build a safe pre-decision feature snapshot from row fields,
+    excluding any never_feature_fields."""
+    safe = {}
+    for k, v in row.items():
+        if k in never:
+            continue
+        if k == "features_known_at_decision_time":
+            continue  # we will rebuild
+        # keep the value as is (could be dict/list etc)
+        safe[k] = v
+    return safe
+
+
+def apply_feature_control_to_row(row: dict, config: dict) -> dict:
+    """Return a copy of *row* with *features_known_at_decision_time*
+    filtered according to *config*.
+
+    - Never mutate input row.
+    - Never include *never_feature_fields* in the filtered snapshot.
+    - If *features_known_at_decision_time* does not exist, build a safe
+      pre-decision snapshot from the row fields.
+    - Preserve top-level settlement fields for grading.
+    """
+    import copy
+
+    never = config.get("never_feature_fields", get_never_feature_fields())
+    row_copy = copy.deepcopy(row)
+
+    # Build the initial snapshot
+    existing = row_copy.get("features_known_at_decision_time")
+    if existing is not None and isinstance(existing, dict):
+        snapshot = dict(existing)
+    else:
+        snapshot = _safe_pre_decision_fields(row_copy, never)
+
+    # Remove never fields
+    for nf in never:
+        snapshot.pop(nf, None)
+
+    # Apply group includes/excludes
+    groups_def = get_feature_group_definitions()
+    all_group_fields = set()
+    for grp, grp_data in groups_def.items():
+        for f in grp_data["fields"]:
+            all_group_fields.add(f)
+
+    include_groups = set(config.get("include_groups") or [])
+    exclude_groups = set(config.get("exclude_groups") or [])
+
+    if include_groups:
+        allowed_fields: set[str] = set()
+        for grp in include_groups:
+            if grp in groups_def:
+                for f in groups_def[grp]["fields"]:
+                    allowed_fields.add(f)
+        snapshot = {k: v for k, v in snapshot.items() if k in allowed_fields}
+    elif exclude_groups:
+        blocked: set[str] = set()
+        for grp in exclude_groups:
+            if grp in groups_def:
+                for f in groups_def[grp]["fields"]:
+                    blocked.add(f)
+        snapshot = {k: v for k, v in snapshot.items() if k not in blocked}
+
+    # Apply individual field includes/excludes
+    include_fields = set(config.get("include_fields") or [])
+    exclude_fields = set(config.get("exclude_fields") or [])
+
+    if include_fields:
+        snapshot = {k: v for k, v in snapshot.items() if k in include_fields}
+    else:
+        for ex in exclude_fields:
+            snapshot.pop(ex, None)
+
+    row_copy["features_known_at_decision_time"] = snapshot
+    return row_copy
+
+
+def summarize_feature_control_impact(
+    rows: list[dict], config: dict
+) -> dict[str, Any]:
+    """Analyse the impact of applying *config* to *rows*.
+
+    Returns keys:
+    - profile, rows_seen, included_groups, excluded_groups,
+      included_fields, excluded_fields, never_feature_fields,
+      available_feature_count, missing_feature_count,
+      removed_feature_count, warnings, operator_interpretation.
+    """
+    never = config.get("never_feature_fields", get_never_feature_fields())
+    groups_def = get_feature_group_definitions()
+
+    available: set[str] = set()
+    missing: set[str] = set()
+    removed: set[str] = set()
+
+    for row in rows:
+        row_keys = set(row.keys())
+        snapshot_keys = set(row.get("features_known_at_decision_time", {}).keys())
+        available.update(snapshot_keys)
+        missing.update(k for k in row_keys if k not in snapshot_keys and k not in never)
+
+    # Fields that are in never set and thus removed
+    removed.update(f for f in never if any(f in row for row in rows))
+
+    include_groups = config.get("include_groups") or []
+    exclude_groups = config.get("exclude_groups") or []
+    include_fields = config.get("include_fields") or []
+    exclude_fields = config.get("exclude_fields") or []
+
+    warnings: list[str] = []
+    if exclude_groups or exclude_fields:
+        warnings.append("Some field groups or fields have been explicitly excluded.")
+    if any(grp in exclude_groups for grp in ("line_movement",)):
+        warnings.append("Line movement fields are missing or removed – CLV-style analysis will be limited.")
+    if any(grp in exclude_groups for grp in ("player_stats",)):
+        warnings.append("Player prop fields are missing – player prop projections are not ready.")
+
+    # Interpretation
+    profile_label = next(
+        (p["label"] for p in get_feature_control_profiles() if p["value"] == config.get("profile")),
+        config.get("profile", DEFAULT_FEATURE_CONTROL_PROFILE),
+    )
+    interp = f"Profile: {profile_label}. "
+    if not include_groups and not exclude_groups and not include_fields and not exclude_fields:
+        interp += "This profile can test a basic available-data baseline."
+    else:
+        interp += "Operator selected custom field controls."
+    interp += " Settlement fields are top-level only and are not used as model features."
+
+    return {
+        "profile": config.get("profile", DEFAULT_FEATURE_CONTROL_PROFILE),
+        "rows_seen": len(rows),
+        "included_groups": include_groups,
+        "excluded_groups": exclude_groups,
+        "included_fields": include_fields,
+        "excluded_fields": exclude_fields,
+        "never_feature_fields": never,
+        "available_feature_count": len(available),
+        "missing_feature_count": len(missing),
+        "removed_feature_count": len(removed),
+        "warnings": warnings,
+        "operator_interpretation": interp,
+    }
+
+
+def get_dashboard_tab_instructions() -> list[dict[str, str]]:
+    """Return instructions for each dashboard tab."""
+    return [
+        {
+            "tab": "Operator Summary",
+            "purpose": "Quick health snapshot of the latest model run.",
+            "how_to_use": "Generate the dashboard or check recent metrics.",
+            "why_it_matters": "Shows the most recent outcome and readiness.",
+            "next_step": "Explore deeper in Data Explorer if data seems sparse.",
+        },
+        {
+            "tab": "Data Source Library",
+            "purpose": "View all registered historical data sources.",
+            "how_to_use": "Check status column; only 'Ready' sources have working importers.",
+            "why_it_matters": "Confirms which sources can be imported.",
+            "next_step": "Pick one and import a local file.",
+        },
+        {
+            "tab": "Import Historical Data",
+            "purpose": "Upload a CSV or JSON file for a selected source.",
+            "how_to_use": "Choose source, provide file path or upload, click import.",
+            "why_it_matters": "Populates the SQLite store used by projections.",
+            "next_step": "Visit Data Quality Check to see the new rows.",
+        },
+        {
+            "tab": "Data Quality Check",
+            "purpose": "View file inventory, schema, and SQLite snapshot.",
+            "how_to_use": "Refresh the snapshot to see table counts.",
+            "why_it_matters": "Validates that imported data looks correct.",
+            "next_step": "Open Data Explorer to inspect field coverage.",
+        },
+        {
+            "tab": "Data Explorer",
+            "purpose": "Explore available fields, missing fields, and market families.",
+            "how_to_use": "Apply filters and refresh; use the Feature Control Lab to experiment.",
+            "why_it_matters": "Shows which fields are present and which groups are missing.",
+            "next_step": "Choose a feature profile and run Model Projection.",
+        },
+        {
+            "tab": "Model Projection",
+            "purpose": "Run a historical backtest using SQLite rows and a feature profile.",
+            "how_to_use": "Optional filters, choose feature profile, click run.",
+            "why_it_matters": "Produces ROI, drawdown, and skipped decision metrics.",
+            "next_step": "Review the output and compare profiles.",
+        },
+        {
+            "tab": "Paper Bets",
+            "purpose": "Browse paper‑ledger and review‑queue rows.",
+            "how_to_use": "Select source and optional sport/market filters.",
+            "why_it_matters": "Inspect the raw decisions and outcomes.",
+            "next_step": "Use filters to isolate specific sport or market.",
+        },
+        {
+            "tab": "Backtest Dashboard",
+            "purpose": "Full dashboard of the latest generated backtest.",
+            "how_to_use": "Generate or view existing dashboard JSON.",
+            "why_it_matters": "Comprehensive view of the last run.",
+            "next_step": "Compare with other tactics by generating again.",
+        },
+        {
+            "tab": "Test One Sport",
+            "purpose": "Run a paper backtest for a single sport/profile.",
+            "how_to_use": "Pick sport, click run.",
+            "why_it_matters": "Isolate performance of a specific sport.",
+            "next_step": "Adjust tactic or intercept and re‑run.",
+        },
+        {
+            "tab": "Test All Sports",
+            "purpose": "Run a paper backtest across all sports.",
+            "how_to_use": "Select mode, click run.",
+            "why_it_matters": "See overall model performance.",
+            "next_step": "Compare all‑sports vs sport‑specific results.",
+        },
+        {
+            "tab": "Bankroll Settings",
+            "purpose": "Set risk presets and testing parameters.",
+            "how_to_use": "Choose preset or tweak numbers in sidebar.",
+            "why_it_matters": "Controls simulated money management.",
+            "next_step": "Keep conservative during early testing.",
+        },
+        {
+            "tab": "Regression Tactics",
+            "purpose": "View and adjust regression tactic and feature weights.",
+            "how_to_use": "Select tactic in sidebar, see explanation here.",
+            "why_it_matters": "Defines how model chance is derived.",
+            "next_step": "Try All-sports vs Sport-specific for comparison.",
+        },
+        {
+            "tab": "System Health",
+            "purpose": "Check file inventory and git status.",
+            "how_to_use": "Read the table; red status means missing file.",
+            "why_it_matters": "Ensures all expected artifacts exist.",
+            "next_step": "Generate missing dashboard files from Operator Summary.",
+        },
+    ]
+
+
+def get_overall_operator_workflow_steps() -> list[dict[str, str]]:
+    """Return ordered workflow steps for the operator."""
+    return [
+        {
+            "step": 1,
+            "action": "Pick approved data source",
+            "detail": "Use Data Source Library to see which sources are ready.",
+        },
+        {
+            "step": 2,
+            "action": "Import local CSV/JSON",
+            "detail": "Upload file in Import Historical Data tab.",
+        },
+        {
+            "step": 3,
+            "action": "Check data quality",
+            "detail": "Open Data Quality Check to verify table counts.",
+        },
+        {
+            "step": 4,
+            "action": "Explore available fields and missing fields",
+            "detail": "Use Data Explorer and the Feature Control Lab.",
+        },
+        {
+            "step": 5,
+            "action": "Choose feature profile",
+            "detail": "Select a profile that matches what you want to test.",
+        },
+        {
+            "step": 6,
+            "action": "Run projection",
+            "detail": "Click run in Model Projection.",
+        },
+        {
+            "step": 7,
+            "action": "Review settled count, ROI, drawdown, skipped decisions",
+            "detail": "Examine the result metrics.",
+        },
+        {
+            "step": 8,
+            "action": "Adjust / remove data points",
+            "detail": "Return to Feature Control Lab and refine.",
+        },
+        {
+            "step": 9,
+            "action": "Compare consistency",
+            "detail": "Run the same projection with different profiles.",
+        },
+        {
+            "step": 10,
+            "action": "Add richer data later",
+            "detail": "When new sources are available, re-import and repeat.",
+        },
+    ]
