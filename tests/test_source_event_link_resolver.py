@@ -274,7 +274,9 @@ def test_load_canonical_events_from_sqlite_reads_historical_events(tmp_path):
         "home_team TEXT, away_team TEXT, source_event_id TEXT, source_key TEXT)"
     )
     conn.execute(
-        "INSERT INTO historical_events VALUES ('e1','soccer','EPL','2024-06-15','Arsenal','Chelsea','src1','football_data_uk')"
+        "INSERT INTO historical_events (event_id, sport, league, event_date, home_team, away_team, source_event_id, source_key) "
+        "VALUES (?,?,?,?,?,?,?,?)",
+        ('e1','soccer','EPL','2024-06-15','Arsenal','Chelsea','src1','football_data_uk')
     )
     conn.commit()
     conn.close()
