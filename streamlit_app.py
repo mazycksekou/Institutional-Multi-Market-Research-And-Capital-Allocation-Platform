@@ -1071,6 +1071,12 @@ elif menu == "Data Explorer":
                 get_never_feature_fields,
             )
 
+            # ── Winner Market Naming (Phase 10H14A) ───────────────────
+            # The dashboard now prefers 2-Way / 3-Way Moneyline over "1x2".
+            # Backend still accepts "moneyline_or_1x2" as a legacy alias.
+            # All user-facing labels use the clear names.
+            # No schema or math changes.
+
             feature_profile_options = get_feature_control_profiles()
             selected_profile = st.selectbox(
                 "Feature Control Profile",
