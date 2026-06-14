@@ -1868,6 +1868,9 @@ def get_feature_ablation_lab_snapshot_for_dashboard(
     from automation_scheduler.feature_ablation_lab import (
         run_feature_ablation_lab,
     )
+    from automation_scheduler.calibration_strategy_filter import (
+        run_calibration_strategy_filter,
+    )
 
     result: dict[str, Any] = {
         "ok": False,
@@ -1931,6 +1934,109 @@ def get_feature_ablation_lab_snapshot_for_dashboard(
     result["roi_by_sport"] = ablation.get("roi_by_sport", {})
     result["warnings"] = ablation.get("warnings", []) + result["warnings"]
     result["operator_interpretation"] = ablation.get("operator_interpretation", "")
+    return result
+
+
+
+# ---------------------------------------------------------------------------
+# Phase 10H16 – Calibration‑Ready Strategy Filter (dashboard helper)
+# ---------------------------------------------------------------------------
+
+
+def get_calibration_strategy_filter_snapshot_for_dashboard(
+    db_path: str | Path,
+    filters: dict[str, Any] | None = None,
+    mode: str = "single_sport",
+    sport: str | None = None,
+    market: str | None = None,
+    selected_fields: list[str] | None = None,
+    removed_fields: list[str] | None = None,
+    selected_groups: list[str] | None = None,
+    min_required_coverage_percent: float = 80.0,
+    min_active_field_coverage_percent: float = 60.0,
+    min_rows_per_sport: int = 25,
+    min_rows_per_market: int = 10,
+) -> dict[str, Any]:
+    """Open the SQLite store, query rows, and run the calibration strategy filter.
+
+    Returns a stable dict suitable for the Streamlit dashboard.
+    The database connection is safely closed before returning.
+    If the database is missing or empty, returns a no‑data response.
+    """
+    result: dict[str, Any] = {
+        "ok": False,
+        "version": "10H16",
+        "mode": mode,
+        "sport_key": normalize_sport_key(sport) if sport else "general",
+        "market_family": normalize_market_family(market, sport=sport) if market else "general_market",
+        "included_sports": [],
+        "excluded_sports": [],
+        "included_market_families": [],
+        "excluded_market_families": [],
+        "readiness_snapshot": {},
+        "performance": {},
+        "exclusion_reason_counts": {},
+        "warnings": [],
+        "operator_interpretation": "",
+    }
+
+    try:
+        conn = connect_historical_odds_db(str(db_path))
+        initialize_historical_odds_db(conn)
+        # Use the same filter parameters as the data explorer
+        raw_rows = query_historical_odds_rows(
+            conn,
+            sport=sport,
+            league=(filters or {}).get("league"),
+            market=market,
+            source_key=(filters or {}).get("source_key"),
+            start_date=(filters or {}).get("start_date"),
+            end_date=(filters or {}).get("end_date"),
+            limit=(filters or {}).get("limit", 5000),
+        )
+        conn.close()
+    except Exception as exc:
+        result["warnings"].append(f"Cannot open database: {exc}")
+        return result
+
+    if not raw_rows:
+        result["ok"] = True
+        result["warnings"].append("No rows in database.")
+        result["operator_interpretation"] = "No rows available for calibration filter."
+        return result
+
+    try:
+        filtered = run_calibration_strategy_filter(
+            rows=raw_rows,
+            mode=mode,
+            sport=sport,
+            market=market,
+            selected_fields=selected_fields,
+            removed_fields=removed_fields,
+            selected_groups=selected_groups,
+            min_required_coverage_percent=min_required_coverage_percent,
+            min_active_field_coverage_percent=min_active_field_coverage_percent,
+            min_rows_per_sport=min_rows_per_sport,
+            min_rows_per_market=min_rows_per_market,
+        )
+    except Exception as exc:
+        result["warnings"].append(f"Calibration filter error: {exc}")
+        result["ok"] = False
+        return result
+
+    result["ok"] = True
+    result["version"] = filtered.get("version", "10H16")
+    result["sport_key"] = filtered.get("sport_key", "general")
+    result["market_family"] = filtered.get("market_family", "general_market")
+    result["included_sports"] = filtered.get("included_sports", [])
+    result["excluded_sports"] = filtered.get("excluded_sports", [])
+    result["included_market_families"] = filtered.get("included_market_families", [])
+    result["excluded_market_families"] = filtered.get("excluded_market_families", [])
+    result["readiness_snapshot"] = filtered.get("readiness_snapshot", {})
+    result["performance"] = filtered.get("performance", {})
+    result["exclusion_reason_counts"] = filtered.get("exclusion_reason_counts", {})
+    result["warnings"] = filtered.get("warnings", [])
+    result["operator_interpretation"] = filtered.get("operator_interpretation", "")
     return result
 
 

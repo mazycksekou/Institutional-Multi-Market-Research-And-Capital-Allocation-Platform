@@ -299,6 +299,7 @@ menu = st.sidebar.radio(
         "Data Explorer",
         "Model Projection",
         "Feature Ablation Lab",
+        "Calibration‑Ready Strategy Filter",
         "Instructions",
     ],
 )

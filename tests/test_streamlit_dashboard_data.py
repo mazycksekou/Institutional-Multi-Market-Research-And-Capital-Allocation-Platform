@@ -465,6 +465,40 @@ def test_get_line_volatility_snapshot_for_dashboard(tmp_path):
     assert "unknown_volatility_count" in snap
 
 
+def test_get_calibration_strategy_filter_snapshot_for_dashboard_handles_empty_db(tmp_path):
+    from automation_scheduler.streamlit_dashboard_data import (
+        get_calibration_strategy_filter_snapshot_for_dashboard,
+    )
+    db_path = tmp_path / "nonexistent_empty_cal.db"
+    snapshot = get_calibration_strategy_filter_snapshot_for_dashboard(db_path)
+    assert snapshot is not None
+    assert isinstance(snapshot, dict)
+    assert "warnings" in snapshot
+    assert "ok" in snapshot
+
+
+def test_streamlit_app_contains_calibration_ready_strategy_filter_title():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert 'header("Calibration‑Ready Strategy Filter")' in content
+
+
+def test_streamlit_app_contains_calibration_exact_explanation():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    expected = (
+        "Calibration‑Ready Strategy Filter excludes sports and markets "
+        "without enough data before calculating ROI."
+    )
+    assert expected in content
+
+
+def test_streamlit_app_contains_two_way_three_way_moneyline_wording():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert "2-Way / 3-Way Moneyline" in content
+
+
 def test_streamlit_app_contains_line_volatility():
     with open("streamlit_app.py", encoding="utf-8") as f:
         content = f.read()
