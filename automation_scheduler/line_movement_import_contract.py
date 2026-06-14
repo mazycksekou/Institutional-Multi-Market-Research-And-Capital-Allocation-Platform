@@ -126,46 +126,37 @@ normalize_line_movement_import_value = _safe_str
 # ---------------------------------------------------------------------------
 
 
-def normalize_line_movement_market_family(value: Any) -> str:
-    """Normalise the market family without vendor‑specific logic.
+def normalize_line_movement_market_family(value) -> str:
+    """Normalize common market-family labels without vendor-specific logic."""
+    import re
 
-    Returns two_way_moneyline, three_way_moneyline,
-    spread_or_handicap, game_total, team_total, player_prop,
-    or a lowercase snake_case fallback.
-    Never returns moneyline_or_1x2 as preferred output.
-    """
-    if not value:
+    raw = normalize_line_movement_import_value(value).strip().lower()
+    if not raw:
         return "general_market"
 
-    v = (
-        str(value)
-        .lower()
-        .replace(" ", "")
-        .replace("-", "")
-        .replace("_", "")
-    )
+    raw = raw.replace("\u2011", "-").replace("\u2010", "-").replace("\u2013", "-").replace("\u2014", "-")
+    snake = re.sub(r"[^a-z0-9]+", "_", raw).strip("_")
+    compact = re.sub(r"[^a-z0-9]+", "", raw)
 
-    if v in ("moneyline", "ml", "2-way", "2way", "two-way", "two_way"):
+    if snake in {"moneyline", "ml", "two_way_moneyline", "two_way_ml", "two_way", "2_way"} or compact in {"twoway", "2way"}:
         return "two_way_moneyline"
-    if v in ("1x2", "threeway", "three-way", "three_way", "3-way"):
+
+    if "1x2" in compact or snake in {"three_way_moneyline", "three_way_ml", "three_way", "3_way"} or compact in {"threewaymoneyline", "3waymoneyline"}:
         return "three_way_moneyline"
-    if v in ("spread", "handicap", "pointspread", "runline"):
+
+    if snake in {"spread", "handicap", "point_spread", "game_spread", "asian_handicap"} or "spread" in snake or "handicap" in snake:
         return "spread_or_handicap"
-    if v in ("total", "overunder", "o/u", "ou", "game_total", "gametotal", "totalpoints"):
+
+    if snake in {"total", "game_total", "over_under", "overunder", "ou"} or compact in {"overunder", "gameoverunder"}:
         return "game_total"
-    if v in ("team_total", "teamtotal"):
+
+    if snake in {"team_total", "team_totals"}:
         return "team_total"
-    if v in ("player_prop", "playerprop", "player props", "playerpoints"):
+
+    if snake in {"player_prop", "player_props", "player"} or "player_prop" in snake:
         return "player_prop"
 
-    # fallback: lowercase snake_case
-    return v
-
-
-# ---------------------------------------------------------------------------
-# Snapshot label normalizer
-# ---------------------------------------------------------------------------
-
+    return snake or "general_market"
 
 def normalize_line_movement_snapshot_label(value: Any) -> str:
     """Normalise a snapshot label to one of the allowed canonical values."""

@@ -2131,3 +2131,7 @@ elif menu == "Instructions":
 # Calibration Report Export creates a Markdown review pack from a saved ablation or calibration run.
 
 # Historical Line Movement Readiness checks whether the local SQLite store is ready for time-series line movement data before any vendor connector is added.
+
+# Vendor-Neutral Line Movement Import Contract defines the standard row shape future line movement sources must provide before any real connector is added.
+
+# Vendor‑Neutral Line Movement Import Contract defines the standard row shape future line movement sources must provide before any real connector is added.
