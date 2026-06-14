@@ -25,6 +25,7 @@ from automation_scheduler.streamlit_dashboard_data import (
     get_sqlite_data_explorer_snapshot_for_dashboard,
     get_required_field_groups_for_market,
     get_sport_feature_pack_snapshot_for_dashboard,
+    get_market_feature_pack_snapshot_for_dashboard,
 )
 
 
