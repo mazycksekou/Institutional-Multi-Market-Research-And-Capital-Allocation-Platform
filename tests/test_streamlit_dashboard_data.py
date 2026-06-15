@@ -1006,6 +1006,12 @@ def test_get_overall_operator_workflow_steps_returns_ordered():
     assert steps[-1]["step"] == len(steps)
 
 
+def test_streamlit_app_imports_get_experiment_history_snapshot_for_dashboard():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert "get_experiment_history_snapshot_for_dashboard" in content
+
+
 # ── Phase 10H21 – Source Event Link Resolver tests ─────────────────────
 
 

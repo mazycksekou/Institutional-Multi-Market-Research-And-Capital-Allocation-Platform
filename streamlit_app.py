@@ -64,6 +64,9 @@ from automation_scheduler.streamlit_dashboard_data import (
     describe_asof_line_movement_query_engine,
     describe_line_movement_data_quality_dashboard,
     get_experiment_report_export_for_dashboard,
+    get_experiment_history_snapshot_for_dashboard,
+    save_experiment_history_run_for_dashboard,
+    compare_experiment_history_runs_for_dashboard,
 )
 from automation_scheduler.source_event_link_resolver import (
     describe_source_event_link_resolver,
