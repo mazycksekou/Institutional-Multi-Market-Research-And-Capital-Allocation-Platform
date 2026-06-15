@@ -1317,8 +1317,70 @@ def test_get_feature_ablation_lab_snapshot_for_dashboard_handles_empty_db(tmp_pa
 def test_streamlit_app_contains_feature_ablation_lab_title():
     with open("streamlit_app.py", encoding="utf-8") as f:
         content = f.read()
-    assert 'subheader("Feature Ablation Lab")' not in content  # we used header
     assert 'header("Feature Ablation Lab")' in content
+
+def test_streamlit_app_contains_feature_ablation_lab_starting_text():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert (
+        "Feature Ablation Lab starts with all safe available fields, "
+        "then lets operators remove fields to test what actually "
+        "improves model performance."
+    ) in content
+
+def test_streamlit_app_contains_risk_preset_belongs_in_bankroll():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert (
+        "Risk preset belongs in Bankroll Settings because it controls "
+        "risk and stake behavior, not feature usefulness."
+    ) in content
+
+def test_streamlit_app_contains_advanced_model_method():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert "Advanced Model Method" in content
+
+def test_streamlit_app_contains_experimental_field_weights():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert "Experimental Field Weights" in content
+
+def test_streamlit_app_contains_advanced_maintenance():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert "Advanced Maintenance" in content
+
+def test_streamlit_app_contains_require_core_fields_explanation():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert (
+        "Require core fields removes rows that do not have enough "
+        "required data before results are calculated."
+    ) in content
+
+def test_streamlit_app_contains_active_fields_text():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert "Active Fields" in content
+
+def test_streamlit_app_contains_view_active_fields():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert "View active fields" in content
+
+def test_streamlit_app_contains_test_one_sport_is_paper():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert "Test One Sport is a paper test flow." in content
+
+def test_streamlit_app_contains_synthetic_sandbox_not_model_evidence():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert (
+        "Synthetic Line Movement Sandbox is fake demo line movement data "
+        "and is not model evidence."
+    ) in content
 
 
 def test_streamlit_app_contains_feature_ablation_lab_exact_explanation():

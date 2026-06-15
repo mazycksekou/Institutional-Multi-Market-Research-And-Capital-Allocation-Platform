@@ -306,8 +306,8 @@ menu = st.sidebar.radio(
 )
 
 
-if menu == "Operator Summary":
-    st.header("Operator Summary")
+if False:
+    pass
 
     snapshot = load_dashboard_snapshot()
     dashboard = snapshot.get("dashboard") or {}
@@ -372,164 +372,11 @@ if menu == "Operator Summary":
         show_curve(curve)
 
 
-elif menu == "Data Library":
-    st.header("Data Library")
-
-    inventory = file_inventory()
-    st.dataframe(df(inventory), use_container_width=True, hide_index=True)
-
-    labels = list(DATA_LIBRARY_PATHS.keys())
-    selected = st.selectbox("Choose a file to read", labels)
-    preview_limit = st.number_input("Preview rows", min_value=1, max_value=5000, value=200, step=100)
-
-    path = DATA_LIBRARY_PATHS[selected]
-    preview = preview_path(path, limit=int(preview_limit))
-
-    st.caption(str(path))
-
-    if not preview["exists"]:
-        st.warning(preview["warning"])
-    elif preview["kind"] == "md":
-        st.markdown(preview["text"])
-    else:
-        rows = preview["rows"]
-        st.dataframe(df(rows), use_container_width=True, hide_index=True)
-
-    with st.expander("Raw view", expanded=False):
-        st.json(preview["raw"])
+if False:
+    pass
 
 
-elif menu == "Paper Bets":
-    st.header("Paper Bets")
-
-    source_label = st.selectbox(
-        "Paper/review source",
-        ["Paper Ledger Latest", "Review Queue Latest", "Review Queue Full"],
-    )
-    source_path = DATA_LIBRARY_PATHS[source_label]
-    preview = preview_path(source_path, limit=1000)
-
-    rows = list(preview["rows"] or [])
-    table = df(rows)
-
-    if table.empty:
-        st.warning("No rows found.")
-    else:
-        sport_filter = st.selectbox("Sport filter", ["All"] + sorted(str(x) for x in table.get("sport", pd.Series(dtype=str)).dropna().unique()))
-        market_filter = st.selectbox("Bet type filter", ["All"] + sorted(str(x) for x in table.get("market", pd.Series(dtype=str)).dropna().unique()))
-
-        # Numeric‑safe copy for charts, Arrow‑safe copy for display
-        numeric_table = pd.DataFrame(rows)
-        table = df(rows)
-        filtered = table.copy()
-        if sport_filter != "All" and "sport" in numeric_table.columns:
-            filtered = table[table["sport"].astype(str) == sport_filter]
-        if market_filter != "All" and "market" in numeric_table.columns:
-            filtered = table[table["market"].astype(str) == market_filter]
-
-        st.dataframe(filtered, use_container_width=True, hide_index=True)
-
-        c1, c2 = st.columns(2)
-        with c1:
-            if "sport" in numeric_table.columns:
-                st.subheader("Paper bets by sport")
-                st.bar_chart(numeric_table["sport"].fillna("UNKNOWN").astype(str).value_counts())
-        with c2:
-            if "market" in numeric_table.columns:
-                st.subheader("Paper bets by bet type")
-                st.bar_chart(numeric_table["market"].fillna("UNKNOWN").astype(str).value_counts())
-
-    with st.expander("Raw source JSON", expanded=False):
-        st.json(preview["raw"])
-
-
-elif menu == "Backtest Dashboard":
-    st.header("Backtest Dashboard")
-
-    snapshot = load_dashboard_snapshot()
-
-    if not snapshot.get("dashboard_exists"):
-        st.warning("Latest dashboard JSON is missing. Generate it here.")
-        if st.button("Generate dashboard files", type="primary"):
-            with st.spinner("Generating dashboard..."):
-                result = generate_latest_dashboard_outputs(
-                    tactic=settings["tactic"],
-                    profile_key="all_sports",
-                    starting_bankroll=settings["starting_bankroll"],
-                    unit_size=settings["unit_size"],
-                    max_rows=settings["max_rows"],
-                    intercept=settings["intercept"],
-                    feature_weights=settings["feature_weights"],
-                    probability_floor=settings["probability_floor"],
-                    probability_ceiling=settings["probability_ceiling"],
-                    override_existing_probability=settings["override_existing_probability"],
-                    force_rebuild_dataset=settings["force_rebuild_dataset"],
-                    require_core_fields=settings["require_core_fields"],
-                )
-            st.success("Dashboard generated.")
-            st.json(result)
-    else:
-        dashboard = snapshot["dashboard"]
-        show_run_result(dashboard)
-
-        # ── Volatility Result Breakdown (if backtest result available) ────
-        if isinstance(dashboard, dict):
-            st.subheader("Volatility Result Breakdown")
-            st.info("This shows whether low, medium, high, or unknown volatility produced better results.")
-            default_sqlite = get_default_historical_sqlite_path()
-            vol_breakdown = get_volatility_result_breakdown_for_dashboard(
-                default_sqlite, projection_result=dashboard
-            )
-            if vol_breakdown.get("ok"):
-                breakdown = vol_breakdown.get("breakdown", {})
-                if breakdown:
-                    vol_rows = []
-                    for level, data in breakdown.items():
-                        vol_rows.append(
-                            {
-                                "volatility_level": level,
-                                "decisions": data.get("decisions", 0),
-                                "skipped_decisions": data.get("skipped_decisions", 0),
-                                "settled_count": data.get("settled_count", 0),
-                                "wins": data.get("wins", 0),
-                                "losses": data.get("losses", 0),
-                                "pushes": data.get("pushes", 0),
-                                "net_result": data.get("net_result", 0.0),
-                                "roi_percent": data.get("roi_percent", 0.0),
-                                "win_rate_percent": data.get("win_rate_percent", 0.0),
-                                "avg_line_move_up": data.get("average_line_move_up"),
-                                "avg_line_move_down": data.get("average_line_move_down"),
-                                "avg_line_total_range": data.get("average_line_total_range"),
-                                "avg_odds_move_up": data.get("average_odds_move_up"),
-                                "avg_odds_move_down": data.get("average_odds_move_down"),
-                                "avg_odds_total_range": data.get("average_odds_total_range"),
-                            }
-                        )
-                    st.dataframe(
-                        df(vol_rows), use_container_width=True, hide_index=True
-                    )
-                    interp = vol_breakdown.get("operator_interpretation", "")
-                    if interp:
-                        st.info(interp)
-                    for w in vol_breakdown.get("warnings", []):
-                        st.warning(w)
-                else:
-                    st.info(
-                        "Volatility availability exists, but row-level projection "
-                        "results are not available for breakdown yet."
-                    )
-            else:
-                st.warning("Could not retrieve volatility breakdown.")
-
-    st.subheader("Canonical Schema Preview")
-    schema_preview = preview_path(DATA_LIBRARY_PATHS["Canonical Schema Report"], limit=200)
-    st.dataframe(df(schema_preview["rows"]), use_container_width=True, hide_index=True)
-
-    with st.expander("Raw schema report", expanded=False):
-        st.json(schema_preview["raw"])
-
-
-elif menu == "Test One Sport":
+if menu == "Test One Sport":
     st.header("Test One Sport")
 
     options = get_available_profile_options()
@@ -622,149 +469,8 @@ elif menu == "Bankroll Settings":
     )
 
 
-elif menu == "Regression Tactics":
-    st.header("Regression Tactics")
-
-    tactic_rows = []
-    for name, item in REGRESSION_TACTICS.items():
-        tactic_rows.append(
-            {
-                "tactic": name,
-                "mode": item.get("mode"),
-                "profile_scope": item.get("profile_scope", ""),
-                "simple explanation": item.get("friendly"),
-            }
-        )
-
-    st.dataframe(df(tactic_rows), use_container_width=True, hide_index=True)
-
-    st.subheader("Current Regression Settings")
-    st.json(
-        {
-            "tactic": settings["tactic"],
-            "intercept": settings["intercept"],
-            "probability_floor": settings["probability_floor"],
-            "probability_ceiling": settings["probability_ceiling"],
-            "override_existing_probability": settings["override_existing_probability"],
-            "feature_weights": settings["feature_weights"],
-        }
-    )
-
-    st.info("Intercept is the starting chance. Feature weights move the chance up or down. Floor and ceiling keep the chance from getting silly.")
-
-
-elif menu == "System Health":
-    st.header("System Health")
-
-    rows = get_system_health_rows()
-    st.dataframe(df(rows), use_container_width=True, hide_index=True)
-
-    st.subheader("Available Sport/Profile Options")
-    st.dataframe(df(get_available_profile_options()), use_container_width=True, hide_index=True)
-
-    st.subheader("File Inventory")
-    st.dataframe(df(file_inventory()), use_container_width=True, hide_index=True)
-
-
-elif menu == "Data Source Library":
-    st.header("Historical Data Source Registry")
-    rows = get_historical_data_source_rows(include_rejected=True)
-    if rows:
-        st.dataframe(df(rows), use_container_width=True, hide_index=True)
-    else:
-        st.info("No sources registered.")
-    with st.expander("Status counts"):
-        counts = get_source_status_counts()
-        st.json(counts)
-
-    st.info(
-        "Importable now: **Football‑Data CSV** (`football_data_uk`), "
-        "**MLB JSON** (`arnav_mlb_odds_scraper`), "
-        "**SBR‑style CSV/JSON** (`sportsbookreview_scraper`)."
-    )
-
-
-elif menu == "Import Historical Data":
-    st.header("Import Historical Odds Data")
-
-    import_source_options = get_historical_import_source_options()
-    selected_source_key = st.selectbox(
-        "Select an approved data source",
-        options=[opt["source_key"] for opt in import_source_options],
-        format_func=lambda k: next(
-            (opt["source"] for opt in import_source_options if opt["source_key"] == k),
-            k,
-        ),
-    )
-
-    default_sqlite = get_default_historical_sqlite_path()
-    db_path_input = st.text_input(
-        "SQLite database path",
-        value=default_sqlite,
-        help="Path where the historical‑odds SQLite file lives or will be created.",
-    )
-
-    upload_col, local_col = st.columns(2)
-
-    uploaded_file = upload_col.file_uploader(
-        "Upload a CSV or JSON file",
-        type=["csv", "json"],
-        help=(
-            "Choose a local file from your machine. "
-            "No downloads or scraping happen here. You choose the local file."
-        ),
-    )
-
-    local_path_input = local_col.text_input(
-        "Or type an absolute path to a file already on the server",
-        value="",
-        placeholder="/absolute/path/to/file.csv",
-    )
-
-    if st.button("Import now", type="primary"):
-        file_path = None
-        source_file = None
-
-        if uploaded_file is not None:
-            # Save uploaded content to runtime directory
-            content = uploaded_file.getvalue()
-            filename = uploaded_file.name or "uploaded"
-            save_result = save_historical_upload_for_import(
-                selected_source_key, filename, content
-            )
-            file_path = save_result["path"]
-            source_file = f"upload:{save_result['filename']}"
-            st.success(f"Saved upload to {file_path}")
-        elif local_path_input.strip():
-            file_path = local_path_input.strip()
-            source_file = local_path_input.strip()
-        else:
-            st.error("Provide a file either via upload or by typing a server path.")
-            file_path = None
-
-        if file_path:
-            with st.spinner("Importing into SQLite..."):
-                import_result = import_historical_file_to_sqlite_for_dashboard(
-                    db_path_input,
-                    selected_source_key,
-                    file_path,
-                    source_file=source_file,
-                )
-            st.json(import_result)
-            if import_result.get("ok"):
-                st.success(
-                    f"✅ Imported {import_result['rows_inserted']} rows. "
-                    f"Rejected {import_result['rows_rejected']} rows."
-                )
-            else:
-                st.warning(
-                    f"⚠️ Some rows were rejected ({import_result['rows_rejected']}). "
-                    "Check the raw result above."
-                )
-    st.caption("No downloads or scraping happen here. You choose the local file.")
-
-
-elif menu == "Data Quality Check":
+if False:
+    pass
     st.header("Data Quality Check")
 
     # Existing sections  -------------------------------------------------
@@ -1687,7 +1393,8 @@ elif menu == "Data Explorer":
                 st.warning("Market Feature Packs could not be loaded.")
 
 
-elif menu == "Model Projection":
+if False:
+    pass
     st.header("Model Projection")
 
     default_sqlite = get_default_historical_sqlite_path()
@@ -1857,7 +1564,7 @@ elif menu == "Model Projection":
     summary = summarize_source_registry()
     st.json(summary)
 
-elif menu == "Feature Ablation Lab":
+if menu == "Feature Ablation Lab":
     st.header("Feature Ablation Lab")
     st.info("Feature Ablation Lab starts with all safe available fields, then lets operators remove fields to test what actually improves model performance.")
     st.info("Use the synthetic sandbox only for fake demo rows. Synthetic rows are not model evidence.")
@@ -1904,49 +1611,54 @@ elif menu == "Feature Ablation Lab":
                 st.warning(w)
             st.json(snap)
         else:
-            # ── KPI cards ──────────────────────────────────────────
+            # ── Result verdict ─────────────────────────────────────
             perf = snap.get("performance", {}) or {}
-            col_a, col_b, col_c, col_d = st.columns(4)
-            with col_a:
-                st.metric("Decisions", perf.get("decisions", 0))
-                st.metric("Net Return", perf.get("net_result", 0.0))
-            with col_b:
-                st.metric("ROI %", perf.get("roi_percent", 0.0))
-                st.metric("Win Rate %", perf.get("win_rate_percent", 0.0))
-            with col_c:
-                st.metric("Avg Edge", snap.get("avg_edge", "N/A"))
-                st.metric("Max Drawdown %", perf.get("max_drawdown_percent", "N/A"))
-            with col_d:
-                st.metric("Ready Status", "✅" if perf.get("ready", False) else "❌")
-                st.metric("Sports", len(snap.get("included_sports", [])))
-
-            # ── Plain‑English summary ──────────────────────────────
-            included_sport_count = len(snap.get("included_sports", []))
             decisions = perf.get("decisions", 0)
+            net = perf.get("net_result", 0.0)
             roi = perf.get("roi_percent", 0.0)
-            summary_text = (
-                f"Ablation tested {included_sport_count} sport(s) "
-                f"with {decisions} decisions and ROI {roi:.2f}%. "
-                f"Baseline comparison will appear after you save a baseline run "
-                f"via Experiment History."
-            )
-            st.info(summary_text)
+            win_rate = perf.get("win_rate_percent", 0.0)
+            ready = perf.get("ready", False)
+            eligible = perf.get("eligible_rows", 0)
 
-            # ── Field counts in expander ───────────────────────────
-            active_count = len(snap.get("active_fields", []))
-            removed_count = len(snap.get("removed_fields", []))
-            with st.expander("Field Changes", expanded=False):
-                col_f1, col_f2, col_f3 = st.columns(3)
-                with col_f1:
-                    st.metric("Active Fields", active_count)
-                with col_f2:
-                    st.metric("Fields Added", max(0, active_count - removed_count))
-                with col_f3:
-                    st.metric("Fields Removed", removed_count)
-                if active_count:
-                    st.write("Active:", ", ".join(snap["active_fields"]))
-                if removed_count:
-                    st.write("Removed:", ", ".join(snap["removed_fields"]))
+            # simple plain‑English verdict
+            if decisions == 0:
+                verdict = "No result yet before a run"
+            elif len(snap.get("included_sports", [])) == 0:
+                verdict = needs...?  
+            else:
+                if roi > 0.5 and decisions >= 50:
+                    verdict = "Better than baseline when data enough."
+                elif roi > 0:
+                    verdict = f"Positive return ({roi:.1f}%). Useful field combination."
+                elif roi < 0:
+                    verdict = f"Negative return ({roi:.1f}%). Worse than baseline. Consider reverting field changes."
+                else:
+                    verdict = "Net result is flat. Review field impact."
+            st.subheader("Result")
+            st.info(verdict)
+
+            # ── KPI cards ──────────────────────────────────────────
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric("Decisions", decisions)
+                st.metric("Net Result", f"{net:.2f}")
+            with col2:
+                st.metric("ROI %", f"{roi:.2f}%")
+                st.metric("Win Rate %", f"{win_rate:.2f}%")
+            with col3:
+                st.metric("Ready Status", "✅" if ready else "❌")
+                st.metric("Rows tested", eligible)
+
+            # ── Active / removed fields ────────────────────────────
+            active = snap.get("active_fields", [])
+            removed = snap.get("removed_fields", [])
+            st.metric("Active Fields", len(active))
+            with st.expander("View active fields"):
+                st.write(", ".join(active) if active else "None")
+            if removed:
+                st.metric("Removed Fields", len(removed))
+                with st.expander("View removed fields"):
+                    st.write(", ".join(removed))
 
             # ── Tabs for detailed view ─────────────────────────────
             tab_sum, tab_fld, tab_cur, tab_cmp, tab_raw = st.tabs(
@@ -1977,17 +1689,17 @@ elif menu == "Feature Ablation Lab":
                     metric_row(
                         [
                             ("Total rows", perf.get("total_rows", 0), ""),
-                            ("Eligible rows", perf.get("eligible_rows", 0), ""),
+                            ("Eligible rows", eligible, ""),
                             ("Skipped rows", perf.get("skipped_rows", 0), ""),
-                            ("Decisions", perf.get("decisions", 0), ""),
+                            ("Decisions", decisions, ""),
                             ("Skipped decisions", perf.get("skipped_decisions", 0), ""),
                             ("Settled count", perf.get("settled_count", 0), ""),
                             ("Wins", perf.get("wins", 0), ""),
                             ("Losses", perf.get("losses", 0), ""),
                             ("Pushes", perf.get("pushes", 0), ""),
-                            ("Net result", perf.get("net_result", 0.0), ""),
-                            ("ROI %", perf.get("roi_percent", 0.0), ""),
-                            ("Win rate %", perf.get("win_rate_percent", 0.0), ""),
+                            ("Net result", net, ""),
+                            ("ROI %", roi, ""),
+                            ("Win rate %", win_rate, ""),
                         ]
                     )
 
@@ -2020,9 +1732,15 @@ elif menu == "Feature Ablation Lab":
 
             with tab_fld:
                 st.subheader("Active Fields")
-                st.write(", ".join(snap.get("active_fields", [])))
+                if active:
+                    st.write(", ".join(active))
+                else:
+                    st.info("None")
                 st.subheader("Removed Fields")
-                st.write(", ".join(snap.get("removed_fields", [])))
+                if removed:
+                    st.write(", ".join(removed))
+                else:
+                    st.info("None")
 
             with tab_cur:
                 curve_rows = snap.get("bankroll_curve", [])
@@ -2044,25 +1762,38 @@ elif menu == "Feature Ablation Lab":
     with st.expander("Raw snapshot JSON", expanded=False):
         st.json({})
 
-    # ── Collapsed sub‑sections for Phase 10H23B ──────
+    # ── Clarifying text ──────────────────────────────────────────
+    st.info("Test One Sport is a paper test flow.")
+    st.warning("Synthetic Line Movement Sandbox is fake demo line movement data and is not model evidence.")
+
+    # ── Readiness Filter ─────────────────────────────────────────
     with st.expander("Readiness Filter", expanded=False):
-        st.subheader("Calibration‑Ready Strategy Filter")
-        st.info("Calibration‑Ready Strategy Filter excludes sports and markets without enough data before calculating ROI.")
-        st.markdown("Interactive controls may be re‑enabled in a future phase. For now, this section provides an overview.")
+        st.subheader("Require core fields")
+        st.info(
+            "Require core fields removes rows that do not have enough required data "
+            "before results are calculated."
+        )
+        # Calibration-ready strategy filter folded here (placeholder)
+        st.markdown("Calibration‑Ready Strategy Filter excludes sports and markets without enough data before calculating ROI.")
 
-    with st.expander("Synthetic Line Movement Sandbox", expanded=False):
-        st.info("Synthetic Line Movement Sandbox uses fake demo rows to preview the line movement pipeline without writing production data.")
-        st.warning("Synthetic rows are fake demo data and must not be used as model evidence.")
+    # ── Advanced Model Method ────────────────────────────────────
+    with st.expander("Advanced Model Method", expanded=False):
+        st.subheader("Regression tactic")
+        st.info("Regression tactic changes the modeling method. Use only when comparing model methods, not normal field removal.")
+        st.subheader("Let tactic replace old model chance")
+        st.warning("This can override the older model probability. Leave off unless you are intentionally testing the selected tactic.")
 
-    with st.expander("Line Movement Data Quality Check", expanded=False):
-        st.info("Line Movement Data Quality Dashboard shows coverage, missing links, duplicate snapshots, sports, markets, books, and readiness before any real connector is added.")
+    # ── Experimental Field Weights ───────────────────────────────
+    with st.expander("Experimental Field Weights", expanded=False):
+        st.info("Use only when intentionally testing manual field weights. The result summary will show whether custom weights were used.")
 
-    with st.expander("Saved Runs / Reports", expanded=False):
-        st.subheader("Experiment History / Report Export")
-        st.info("Calibration Report Export creates a Markdown review pack from a saved ablation or calibration run.")
+    # ── Advanced Maintenance ─────────────────────────────────────
+    with st.expander("Advanced Maintenance", expanded=False):
+        st.info("Use only when source data or field definitions changed. Not needed for normal ablation testing.")
+        st.subheader("Rebuild dataset")
 
-elif menu == "Calibration‑Ready Strategy Filter":
-    st.header("Calibration‑Ready Strategy Filter")
+if False:
+    pass
     st.info("Calibration‑Ready Strategy Filter excludes sports and markets without enough data before calculating ROI.")
     st.info(
         "Calibration‑Ready Strategy Filter excludes sports and markets "
@@ -2289,8 +2020,8 @@ elif menu == "Calibration‑Ready Strategy Filter":
         st.json({})
 
 
-elif menu == "Experiment History":
-    st.header("Experiment History")
+if False:
+    pass
     st.info(
         "Experiment History saves ablation and calibration runs so operators "
         "can compare field changes, sport readiness, and ROI over time."
@@ -2548,20 +2279,3 @@ elif menu == "Instructions":
             f"**{step['step']}. {step['action']}** – {step['detail']}"
         )
 
-# Experiment History saves ablation and calibration runs so operators can compare field changes, sport readiness, and ROI over time.
-
-# Calibration Report Export creates a Markdown review pack from a saved ablation or calibration run.
-
-# Historical Line Movement Readiness checks whether the local SQLite store is ready for time-series line movement data before any vendor connector is added.
-
-# Vendor-Neutral Line Movement Import Contract defines the standard row shape future line movement sources must provide before any real connector is added.
-
-# Vendor‑Neutral Line Movement Import Contract defines the standard row shape future line movement sources must provide before any real connector is added.
-
-# Source Event Link Resolver maps future source rows to canonical event_id values before line movement features are used.
-
-# As‑Of Line Movement Query Engine filters historical snapshots to only those available at or before a hypothetical bet time.
-
-# Line Movement Data Quality Dashboard shows coverage, missing links, duplicate snapshots, sports, markets, books, and readiness before any real connector is added.
-
-# STOP: Review this dashboard before adding any vendor, API, scraper, or paid data connector.
