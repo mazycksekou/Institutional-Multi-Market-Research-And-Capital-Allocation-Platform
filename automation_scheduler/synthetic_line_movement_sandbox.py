@@ -95,7 +95,9 @@ def build_synthetic_event_rows(sport: str = "nba", event_count: int = 2) -> list
     for i in range(1, count + 1):
         event_id = f"synthetic_event_{sport_lower}_{i}"
         source_event_id = f"synthetic_source_event_{sport_lower}_{i}"
-        date_str = f"2024-0{ (i-1)//28 +1:02d }-{ ((i-1)%28)+1:02d }"  # deterministic dates
+        month = ((i - 1) // 28) + 1
+        day = ((i - 1) % 28) + 1
+        date_str = f"2024-{month:02d}-{day:02d}"  # deterministic dates
         home = f"Synthetic {sport_lower.title()} Home {i}"
         away = f"Synthetic {sport_lower.title()} Away {i}"
         rows.append(
@@ -215,7 +217,9 @@ def build_synthetic_line_movement_rows(
         source_event_id = f"synthetic_source_event_{sport_lower}_{ev_idx}"
         home = f"Synthetic {sport_lower.title()} Home {ev_idx}"
         away = f"Synthetic {sport_lower.title()} Away {ev_idx}"
-        date_str = f"2024-0{ (ev_idx-1)//28 +1:02d }-{ ((ev_idx-1)%28)+1:02d }"
+        event_month = ((ev_idx - 1) // 28) + 1
+        event_day = ((ev_idx - 1) % 28) + 1
+        date_str = f"2024-{event_month:02d}-{event_day:02d}"
 
         for mkt_idx, (market, market_family, selection) in enumerate(markets):
             for snap_idx in range(snaps):
@@ -337,6 +341,26 @@ def build_synthetic_line_movement_demo_payload(
 # ---------------------------------------------------------------------------
 
 
+
+def _add_synthetic_asof_count_aliases(asof_query: dict) -> dict:
+    """Add dashboard/test-friendly aliases without changing the as-of backend."""
+    if not isinstance(asof_query, dict):
+        return asof_query
+
+    query = asof_query.get("query")
+    if not isinstance(query, dict):
+        return asof_query
+
+    excluded = query.get("excluded_counts") or {}
+    if not isinstance(excluded, dict):
+        excluded = {}
+
+    query.setdefault("future_snapshots", int(excluded.get("future_filtered") or 0))
+    query.setdefault("invalid_time_snapshots", int(excluded.get("invalid_time_filtered") or 0))
+    query.setdefault("unmatched_snapshots", int(excluded.get("unmatched_filtered") or 0))
+    return asof_query
+
+
 def run_synthetic_line_movement_sandbox(
     sport: str = "nba",
     event_count: int = 2,
@@ -417,6 +441,8 @@ def run_synthetic_line_movement_sandbox(
     )
 
     # 4. Data quality (Phase 10H23)
+    asof_query = _add_synthetic_asof_count_aliases(asof_query)
+
     data_quality = build_line_movement_data_quality_snapshot(
         snapshot_rows=snapshot_rows,
         hypothetical_bet_time=hypothetical_bet_time,
