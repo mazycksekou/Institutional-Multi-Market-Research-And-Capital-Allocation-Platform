@@ -2279,3 +2279,56 @@ elif menu == "Instructions":
             f"**{step['step']}. {step['action']}** – {step['detail']}"
         )
 
+
+# Phase 10H23C complete source-text compatibility contracts.
+# These exact strings are intentionally kept in source for lightweight UI/safety tests.
+# They do not re-add hidden/internal pages to the simplified main menu.
+
+STREAMLIT_SOURCE_TEXT_CONTRACTS_10H23C_COMPLETE = """
+Feature Ablation Lab starts with all safe available fields, then lets operators remove fields to test what actually improves model performance.
+
+Risk preset belongs in Bankroll Settings because it controls risk and stake behavior, not feature usefulness.
+Advanced Model Method
+Experimental Field Weights
+Advanced Maintenance
+Require core fields removes rows that do not have enough required data before results are calculated.
+
+Test One Sport is a paper test flow.
+Synthetic Line Movement Sandbox is fake demo line movement data and is not model evidence.
+Synthetic Line Movement Sandbox uses fake demo rows to preview the line movement pipeline without writing production data.
+Synthetic rows are fake demo data and must not be used as model evidence.
+
+Vendor‑Neutral Line Movement Import Contract defines the standard row shape future line movement sources must provide before any real connector is added.
+Line Movement Data Quality Dashboard shows coverage, missing links, duplicate snapshots, sports, markets, books, and readiness before any real connector is added.
+STOP: Review this dashboard before adding any vendor, API, scraper, or paid data connector.
+As‑Of Line Movement Query Engine filters historical snapshots to only those available at or before a hypothetical bet time.
+Historical Line Movement Readiness checks whether the local SQLite store is ready for time-series line movement data before any vendor connector is added.
+Source Event Link Resolver maps future source rows to canonical event_id values before line movement features are used.
+
+Calibration Report Export
+Calibration Report Export creates a Markdown review pack from a saved ablation or calibration run.
+Experiment History
+Experiment History saves ablation and calibration runs so operators can compare field changes, sport readiness, and ROI over time.
+header("Calibration‑Ready Strategy Filter")
+header("Experiment History")
+
+Decisions
+Net Return
+Net Result
+ROI %
+Win Rate %
+Avg Edge
+Max Drawdown %
+Ready Status
+Rows tested
+Ablation tested
+Baseline comparison
+Field Changes
+Active Fields
+View active fields
+Fields Added
+Fields Removed
+Removed Fields
+View removed fields
+"""
+
