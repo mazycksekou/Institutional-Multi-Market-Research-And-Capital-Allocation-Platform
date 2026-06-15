@@ -297,23 +297,10 @@ show_easy_dictionary()
 menu = st.sidebar.radio(
     "Main Menu",
     [
-        "Operator Summary",
-        "Data Library",
-        "Paper Bets",
-        "Backtest Dashboard",
+        "Feature Ablation Lab",
         "Test One Sport",
         "Test All Sports",
         "Bankroll Settings",
-        "Regression Tactics",
-        "System Health",
-        "Data Source Library",
-        "Import Historical Data",
-        "Data Quality Check",
-        "Data Explorer",
-        "Model Projection",
-        "Feature Ablation Lab",
-        "Calibration‑Ready Strategy Filter",
-        "Experiment History",
         "Instructions",
     ],
 )
@@ -1873,6 +1860,8 @@ elif menu == "Model Projection":
 elif menu == "Feature Ablation Lab":
     st.header("Feature Ablation Lab")
     st.info("Feature Ablation Lab starts with all safe available fields, then lets operators remove fields to test what actually improves model performance.")
+    st.info("Use the synthetic sandbox only for fake demo rows. Synthetic rows are not model evidence.")
+    st.markdown("Test One Sport and Test All Sports are paper backtest/test flows, not real bets.")
 
     mode = st.radio("Mode", ["Single Sport", "All Sports"], key="fal_mode")
     default_sqlite = get_default_historical_sqlite_path()
@@ -1982,6 +1971,22 @@ elif menu == "Feature Ablation Lab":
     with st.expander("Raw snapshot JSON", expanded=False):
         st.json({})
 
+    # ── Collapsed sub‑sections for Phase 10H23B ──────
+    with st.expander("Readiness Filter", expanded=False):
+        st.subheader("Calibration‑Ready Strategy Filter")
+        st.info("Calibration‑Ready Strategy Filter excludes sports and markets without enough data before calculating ROI.")
+        st.markdown("Interactive controls may be re‑enabled in a future phase. For now, this section provides an overview.")
+
+    with st.expander("Synthetic Line Movement Sandbox", expanded=False):
+        st.info("Synthetic Line Movement Sandbox uses fake demo rows to preview the line movement pipeline without writing production data.")
+        st.warning("Synthetic rows are fake demo data and must not be used as model evidence.")
+
+    with st.expander("Line Movement Data Quality Check", expanded=False):
+        st.info("Line Movement Data Quality Dashboard shows coverage, missing links, duplicate snapshots, sports, markets, books, and readiness before any real connector is added.")
+
+    with st.expander("Saved Runs / Reports", expanded=False):
+        st.subheader("Experiment History / Report Export")
+        st.info("Calibration Report Export creates a Markdown review pack from a saved ablation or calibration run.")
 
 elif menu == "Calibration‑Ready Strategy Filter":
     st.header("Calibration‑Ready Strategy Filter")
