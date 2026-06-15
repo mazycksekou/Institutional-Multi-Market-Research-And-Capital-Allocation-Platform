@@ -1393,6 +1393,49 @@ def test_streamlit_app_contains_feature_ablation_lab_exact_explanation():
     ) in content
 
 
+def test_simplified_main_menu_contains_only_expected_items():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert 'menu = st.sidebar.radio(\n    "Main Menu",\n    [\n        "Feature Ablation Lab",\n        "Test One Sport",\n        "Test All Sports",\n        "Bankroll Settings",\n        "Instructions",\n    ],\n)' in content
+
+
+def test_feature_ablation_lab_is_first():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    # It should appear before the next menu item in the sidebar.
+    idx_fal = content.index('"Feature Ablation Lab"')
+    idx_test_one = content.index('"Test One Sport"')
+    assert idx_fal < idx_test_one
+
+
+def test_new_ui_texts_present():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert "Runtime Data Source" in content
+    assert "Advanced Maintenance" in content
+    assert "Field Groups" in content
+    assert "Remove Individual Fields" in content
+    assert "View active fields" in content
+    assert "View removed fields" in content
+    assert "Running ablation testing..." in content
+    assert "Risk preset belongs in Bankroll Settings because it controls risk and stake behavior, not feature usefulness." in content
+    assert "Synthetic rows are fake demo data and must not be used as model evidence." in content
+    assert "Test One Sport is a paper test flow." in content
+
+
+def test_forbidden_connector_texts_not_present():
+    forbidden = [
+        "Connect Real Vendor API",
+        "Run Real Line Movement Scraper",
+        "Connect Synthetic Vendor API",
+        "Run Synthetic Scraper",
+    ]
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    for text in forbidden:
+        assert text not in content
+
+
 def test_streamlit_app_contains_two_way_three_way_moneyline_wording():
     with open("streamlit_app.py", encoding="utf-8") as f:
         content = f.read()

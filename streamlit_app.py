@@ -1567,230 +1567,348 @@ if False:
 if menu == "Feature Ablation Lab":
     st.header("Feature Ablation Lab")
     st.info("Feature Ablation Lab starts with all safe available fields, then lets operators remove fields to test what actually improves model performance.")
-    st.info("Use the synthetic sandbox only for fake demo rows. Synthetic rows are not model evidence.")
-    st.markdown("Test One Sport and Test All Sports are paper backtest/test flows, not real bets.")
+    st.info("Synthetic rows are fake demo data and must not be used as model evidence.")
+    st.markdown("Test One Sport is a paper test flow.")
 
-    mode = st.radio("Mode", ["Single Sport", "All Sports"], key="fal_mode")
+    # ── Runtime Data Source (sidebar) ─────────────────────
     default_sqlite = get_default_historical_sqlite_path()
-    db_path_input = st.text_input("SQLite database path", value=default_sqlite, key="fal_db")
+    with st.sidebar.expander("Runtime Data Source", expanded=True):
+        db_path_input = st.text_input(
+            "SQLite database path",
+            value=default_sqlite,
+            key="fal_db_path",
+            help="Path to the historical-odds SQLite store.",
+        )
+        if Path(db_path_input).exists():
+            st.success("Database found.")
+        else:
+            st.warning("Database not found. Run will be unavailable.")
 
+    # ── Advanced Maintenance (sidebar) ─────────────────
+    with st.sidebar.expander("Advanced Maintenance", expanded=False):
+        force_rebuild = st.checkbox(
+            "Rebuild dataset",
+            value=bool(SAFE_DEFAULTS["force_rebuild_dataset"]),
+            key="fal_rebuild",
+            help="Re-scan local artifacts and rebuild canonical dataset.",
+        )
+        st.info(
+            "Use only when source data or field definitions changed. "
+            "Not needed for normal ablation testing."
+        )
+
+    # ── Mode and sport selection ──────────────────────────
+    col_mode, col_rest = st.columns([1, 3])
+    with col_mode:
+        mode = st.radio(
+            "Mode",
+            ["Single Sport", "All Sports"],
+            key="fal_mode",
+            horizontal=True,
+        )
     sport_val = ""
     market_val = ""
     if mode == "Single Sport":
-        sport_options = [item for item in get_available_profile_options() if item["value"] != "all_sports"]
+        sport_options = [
+            item
+            for item in get_available_profile_options()
+            if item["value"] != "all_sports"
+        ]
         sport_labels = [item["label"] for item in sport_options]
-        selected_label = st.selectbox("Sport", sport_labels, key="fal_sport")
-        sport_val = next(item["value"] for item in sport_options if item["label"] == selected_label)
-        market_val = st.text_input("Market filter (optional)", key="fal_market")
+        with col_rest:
+            selected_label = st.selectbox("Sport", sport_labels, key="fal_sport")
+            sport_val = next(
+                item["value"]
+                for item in sport_options
+                if item["label"] == selected_label
+            )
+            market_val = st.text_input(
+                "Market filter (optional)",
+                key="fal_market",
+                help="Leave empty to include all markets.",
+            )
 
+    # ── Field Groups & Remove Individual Fields ─────────
     initial_groups = get_ablation_field_groups_for_sport(sport_val, market_val)
     available_groups = [g["group_key"] for g in initial_groups.get("groups", [])]
 
-    selected_groups = st.multiselect("Field Groups", options=available_groups, default=available_groups, key="fal_groups")
+    st.subheader("Field Groups")
+    selected_groups = st.multiselect(
+        "Field Groups",
+        options=available_groups,
+        default=available_groups,
+        key="fal_groups",
+        help="Uncheck groups you want to remove from testing.",
+    )
+    num_removed_groups = len(available_groups) - len(selected_groups)
+    if num_removed_groups:
+        st.caption(f"{num_removed_groups} group(s) removed")
+
     all_selectable = initial_groups.get("all_selectable_fields", [])
-    active_fields = st.multiselect("Active Fields", options=all_selectable, default=all_selectable, key="fal_active")
-    removed_fields = st.multiselect("Removed Fields", options=all_selectable, default=[], key="fal_removed")
-    st.caption("Never‑feature/leakage fields are excluded by the backend and not shown.")
+    st.subheader("Remove Individual Fields")
+    removed_fields = st.multiselect(
+        "Remove Individual Fields",
+        options=all_selectable,
+        default=[],
+        key="fal_removed",
+        help="Exclude specific fields beyond group removal.",
+    )
+    active_fields = [f for f in all_selectable if f not in removed_fields]
 
-    if st.button("Run Ablation Lab", type="primary", key="fal_run"):
-        with st.spinner("Running feature ablation..."):
-            snap = get_feature_ablation_lab_snapshot_for_dashboard(
-                db_path_input,
-                sport=sport_val or None,
-                market=market_val or None,
-                mode="all_sports" if mode == "All Sports" else "single_sport",
-                selected_fields=active_fields if active_fields != all_selectable else None,
-                removed_fields=removed_fields or None,
-                selected_groups=selected_groups if selected_groups != available_groups else None,
-            )
-            st.session_state["_last_ablation_result"] = snap
+    col_f1, col_f2, col_f3 = st.columns(3)
+    with col_f1:
+        st.metric("Active Fields", len(active_fields))
+    with col_f2:
+        st.metric("Removed Fields", len(removed_fields))
+    with col_f3:
+        st.metric("Field Groups", len(selected_groups))
 
-        if not snap.get("ok"):
-            st.error("Feature Ablation Lab failed.")
-            for w in snap.get("warnings", []):
-                st.warning(w)
-            st.json(snap)
-        else:
-            # ── Result verdict ─────────────────────────────────────
-            perf = snap.get("performance", {}) or {}
-            decisions = perf.get("decisions", 0)
-            net = perf.get("net_result", 0.0)
-            roi = perf.get("roi_percent", 0.0)
-            win_rate = perf.get("win_rate_percent", 0.0)
-            ready = perf.get("ready", False)
-            eligible = perf.get("eligible_rows", 0)
+    with st.expander("View active fields", expanded=False):
+        st.write(", ".join(active_fields) if active_fields else "None")
+    with st.expander("View removed fields", expanded=False):
+        st.write(", ".join(removed_fields) if removed_fields else "None")
 
-            # simple plain‑English verdict
-            if decisions == 0:
-                verdict = "No result yet before a run"
-            elif len(snap.get("included_sports", [])) == 0:
-                verdict = "Needs more proof before trusting when sample size is small or ready status is false."
-            else:
-                if roi > 0.5 and decisions >= 50:
-                    verdict = "Better than baseline when data enough."
-                elif roi > 0:
-                    verdict = f"Positive return ({roi:.1f}%). Useful field combination."
-                elif roi < 0:
-                    verdict = f"Negative return ({roi:.1f}%). Worse than baseline. Consider reverting field changes."
-                else:
-                    verdict = "Net result is flat. Review field impact."
-            st.subheader("Result")
-            st.info(verdict)
+    # ── Readiness Filter (collapsed) ─────────────────────
+    with st.expander("Readiness Filter", expanded=False):
+        st.info(
+            "Require core fields removes rows that do not have enough "
+            "required data before results are calculated."
+        )
+        st.markdown(
+            "Calibration‑Ready Strategy Filter excludes sports and markets "
+            "without enough data before calculating ROI."
+        )
 
-            # ── KPI cards ──────────────────────────────────────────
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                st.metric("Decisions", decisions)
-                st.metric("Net Result", f"{net:.2f}")
-            with col2:
-                st.metric("ROI %", f"{roi:.2f}%")
-                st.metric("Win Rate %", f"{win_rate:.2f}%")
-            with col3:
-                st.metric("Ready Status", "✅" if ready else "❌")
-                st.metric("Rows tested", eligible)
+    # ── Run Guard ────────────────────────────────────────
+    run_disabled = False
+    warnings = []
+    if not Path(db_path_input).exists():
+        warnings.append("Database not accessible. Provide a valid SQLite path.")
+        run_disabled = True
+    if len(active_fields) == 0:
+        warnings.append("No active fields remain for testing. Add fields back.")
+        run_disabled = True
+    if mode == "Single Sport" and not sport_val:
+        warnings.append("Select a sport for single‑sport mode.")
+        run_disabled = True
 
-            # ── Active / removed fields ────────────────────────────
-            active = snap.get("active_fields", [])
-            removed = snap.get("removed_fields", [])
-            st.metric("Active Fields", len(active))
-            with st.expander("View active fields"):
-                st.write(", ".join(active) if active else "None")
-            if removed:
-                st.metric("Removed Fields", len(removed))
-                with st.expander("View removed fields"):
-                    st.write(", ".join(removed))
+    if warnings:
+        for w in warnings:
+            st.warning(w)
 
-            # ── Tabs for detailed view ─────────────────────────────
-            tab_sum, tab_fld, tab_cur, tab_cmp, tab_raw = st.tabs(
-                ["Summary", "Field Impact", "Performance Curves",
-                 "Comparison", "Raw Data"]
-            )
+    if run_disabled:
+        st.button("Run Ablation Lab", type="primary", key="fal_run", disabled=True)
+    else:
+        if st.button("Run Ablation Lab", type="primary", key="fal_run"):
+            with st.spinner("Running ablation testing..."):
+                snap = get_feature_ablation_lab_snapshot_for_dashboard(
+                    db_path_input,
+                    sport=sport_val or None,
+                    market=market_val or None,
+                    mode="all_sports" if mode == "All Sports" else "single_sport",
+                    selected_fields=active_fields
+                    if active_fields != all_selectable
+                    else None,
+                    removed_fields=removed_fields or None,
+                    selected_groups=selected_groups
+                    if selected_groups != available_groups
+                    else None,
+                )
+                st.session_state["_last_ablation_result"] = snap
 
-            with tab_sum:
-                st.subheader("Included Sports")
-                inc = snap.get("included_sports", [])
-                if inc:
-                    st.write(", ".join(inc))
-                else:
-                    st.info("None")
-
-                st.subheader("Excluded Sports")
-                exc = snap.get("excluded_sports", [])
-                if exc:
-                    for e in exc:
-                        st.error(
-                            f"{e.get('sport_key','?')} – {e.get('reason','not ready')}"
-                        )
-                else:
-                    st.info("None")
-
-                st.subheader("Overall Performance")
-                if perf:
-                    metric_row(
-                        [
-                            ("Total rows", perf.get("total_rows", 0), ""),
-                            ("Eligible rows", eligible, ""),
-                            ("Skipped rows", perf.get("skipped_rows", 0), ""),
-                            ("Decisions", decisions, ""),
-                            ("Skipped decisions", perf.get("skipped_decisions", 0), ""),
-                            ("Settled count", perf.get("settled_count", 0), ""),
-                            ("Wins", perf.get("wins", 0), ""),
-                            ("Losses", perf.get("losses", 0), ""),
-                            ("Pushes", perf.get("pushes", 0), ""),
-                            ("Net result", net, ""),
-                            ("ROI %", roi, ""),
-                            ("Win rate %", win_rate, ""),
-                        ]
-                    )
-
-                st.subheader("ROI by Sport")
-                roi_sport = snap.get("roi_by_sport", {})
-                if roi_sport:
-                    roi_rows = []
-                    for sk, data in roi_sport.items():
-                        roi_rows.append(
-                            {
-                                "sport_key": sk,
-                                "rows": data.get("rows", 0),
-                                "settled_count": data.get("settled_count", 0),
-                                "wins": data.get("wins", 0),
-                                "losses": data.get("losses", 0),
-                                "pushes": data.get("pushes", 0),
-                                "net_result": data.get("net_result", 0.0),
-                                "roi_percent": data.get("roi_percent", 0.0),
-                                "win_rate_percent": data.get("win_rate_percent", 0.0),
-                            }
-                        )
-                    st.dataframe(
-                        df(roi_rows), use_container_width=True, hide_index=True
-                    )
-                else:
-                    st.info("No ROI data.")
-
+            if not snap.get("ok"):
+                st.error("Feature Ablation Lab failed.")
                 for w in snap.get("warnings", []):
                     st.warning(w)
+                st.json(snap)
+            else:
+                # ── Result verdict ─────────────────────────────────────
+                perf = snap.get("performance", {}) or {}
+                decisions = perf.get("decisions", 0)
+                net = perf.get("net_result", 0.0)
+                roi = perf.get("roi_percent", 0.0)
+                win_rate = perf.get("win_rate_percent", 0.0)
+                ready = perf.get("ready", False)
+                eligible = perf.get("eligible_rows", 0)
 
-            with tab_fld:
-                st.subheader("Active Fields")
-                if active:
-                    st.write(", ".join(active))
+                # simple plain‑English verdict
+                if decisions == 0:
+                    verdict = "No result yet before a run"
+                elif len(snap.get("included_sports", [])) == 0:
+                    verdict = "Needs more proof before trusting when sample size is small or ready status is false."
                 else:
-                    st.info("None")
-                st.subheader("Removed Fields")
-                if removed:
-                    st.write(", ".join(removed))
-                else:
-                    st.info("None")
+                    if roi > 0.5 and decisions >= 50:
+                        verdict = "Better than baseline when data enough."
+                    elif roi > 0:
+                        verdict = f"Positive return ({roi:.1f}%). Useful field combination."
+                    elif roi < 0:
+                        verdict = f"Negative return ({roi:.1f}%). Worse than baseline. Consider reverting field changes."
+                    else:
+                        verdict = "Net result is flat. Review field impact."
+                st.subheader("Result")
+                st.info(verdict)
 
-            with tab_cur:
-                curve_rows = snap.get("bankroll_curve", [])
-                if curve_rows:
-                    show_curve(curve_rows)
-                else:
-                    st.info("No performance curve available for this run.")
+                # ── KPI cards ──────────────────────────────────────────
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.metric("Decisions", decisions)
+                    st.metric("Net Result", f"{net:.2f}")
+                with col2:
+                    st.metric("ROI %", f"{roi:.2f}%")
+                    st.metric("Win Rate %", f"{win_rate:.2f}%")
+                with col3:
+                    st.metric("Ready Status", "✅" if ready else "❌")
+                    st.metric("Rows tested", eligible)
 
-            with tab_cmp:
-                st.subheader("Baseline vs Current Run")
-                st.info(
-                    "Comparison will be available after you save a baseline "
-                    "run in Experiment History and select it here."
+                active_result_fields = snap.get("active_fields", [])
+                removed_result_fields = snap.get("removed_fields", [])
+                col_f4, col_f5, col_f6 = st.columns(3)
+                with col_f4:
+                    st.metric("Active Fields", len(active_result_fields))
+                with col_f5:
+                    st.metric("Removed Fields", len(removed_result_fields))
+                with col_f6:
+                    st.metric("Field Groups", len(snap.get("selected_groups", [])))
+
+                with st.expander("View active fields"):
+                    st.write(
+                        ", ".join(active_result_fields) if active_result_fields else "None"
+                    )
+                with st.expander("View removed fields"):
+                    st.write(
+                        ", ".join(removed_result_fields)
+                        if removed_result_fields
+                        else "None"
+                    )
+
+                # ── Tabs for detailed view ─────────────────────────────
+                tab_sum, tab_fld, tab_cur, tab_cmp, tab_raw = st.tabs(
+                    [
+                        "Summary",
+                        "Field Impact",
+                        "Performance Curves",
+                        "Comparison",
+                        "Raw Data",
+                    ]
                 )
 
-            with tab_raw:
-                st.json(snap)
+                with tab_sum:
+                    st.subheader("Included Sports")
+                    inc = snap.get("included_sports", [])
+                    if inc:
+                        st.write(", ".join(inc))
+                    else:
+                        st.info("None")
 
-    with st.expander("Raw snapshot JSON", expanded=False):
-        st.json({})
+                    st.subheader("Excluded Sports")
+                    exc = snap.get("excluded_sports", [])
+                    if exc:
+                        for e in exc:
+                            st.error(
+                                f"{e.get('sport_key','?')} – {e.get('reason','not ready')}"
+                            )
+                    else:
+                        st.info("None")
 
-    # ── Clarifying text ──────────────────────────────────────────
-    st.info("Test One Sport is a paper test flow.")
-    st.warning("Synthetic Line Movement Sandbox is fake demo line movement data and is not model evidence.")
+                    st.subheader("Overall Performance")
+                    if perf:
+                        metric_row(
+                            [
+                                ("Total rows", perf.get("total_rows", 0), ""),
+                                ("Eligible rows", eligible, ""),
+                                ("Skipped rows", perf.get("skipped_rows", 0), ""),
+                                ("Decisions", decisions, ""),
+                                (
+                                    "Skipped decisions",
+                                    perf.get("skipped_decisions", 0),
+                                    "",
+                                ),
+                                ("Settled count", perf.get("settled_count", 0), ""),
+                                ("Wins", perf.get("wins", 0), ""),
+                                ("Losses", perf.get("losses", 0), ""),
+                                ("Pushes", perf.get("pushes", 0), ""),
+                                ("Net result", net, ""),
+                                ("ROI %", roi, ""),
+                                ("Win rate %", win_rate, ""),
+                            ]
+                        )
 
-    # ── Readiness Filter ─────────────────────────────────────────
-    with st.expander("Readiness Filter", expanded=False):
-        st.subheader("Require core fields")
-        st.info(
-            "Require core fields removes rows that do not have enough required data "
-            "before results are calculated."
-        )
-        # Calibration-ready strategy filter folded here (placeholder)
-        st.markdown("Calibration‑Ready Strategy Filter excludes sports and markets without enough data before calculating ROI.")
+                    st.subheader("ROI by Sport")
+                    roi_sport = snap.get("roi_by_sport", {})
+                    if roi_sport:
+                        roi_rows = []
+                        for sk, data in roi_sport.items():
+                            roi_rows.append(
+                                {
+                                    "sport_key": sk,
+                                    "rows": data.get("rows", 0),
+                                    "settled_count": data.get("settled_count", 0),
+                                    "wins": data.get("wins", 0),
+                                    "losses": data.get("losses", 0),
+                                    "pushes": data.get("pushes", 0),
+                                    "net_result": data.get("net_result", 0.0),
+                                    "roi_percent": data.get("roi_percent", 0.0),
+                                    "win_rate_percent": data.get(
+                                        "win_rate_percent", 0.0
+                                    ),
+                                }
+                            )
+                        st.dataframe(
+                            df(roi_rows), use_container_width=True, hide_index=True
+                        )
+                    else:
+                        st.info("No ROI data.")
 
-    # ── Advanced Model Method ────────────────────────────────────
+                    for w in snap.get("warnings", []):
+                        st.warning(w)
+
+                with tab_fld:
+                    st.subheader("Active Fields")
+                    if active_result_fields:
+                        st.write(", ".join(active_result_fields))
+                    else:
+                        st.info("None")
+                    st.subheader("Removed Fields")
+                    if removed_result_fields:
+                        st.write(", ".join(removed_result_fields))
+                    else:
+                        st.info("None")
+
+                with tab_cur:
+                    curve_rows = snap.get("bankroll_curve", [])
+                    if curve_rows:
+                        show_curve(curve_rows)
+                    else:
+                        st.info("No performance curve available for this run.")
+
+                with tab_cmp:
+                    st.subheader("Baseline vs Current Run")
+                    st.info(
+                        "Comparison will be available after you save a baseline "
+                        "run in Experiment History and select it here."
+                    )
+
+                with tab_raw:
+                    st.json(snap)
+
+    # ── Advanced Model Method / Weights (collapsed) ─────────────────
     with st.expander("Advanced Model Method", expanded=False):
         st.subheader("Regression tactic")
-        st.info("Regression tactic changes the modeling method. Use only when comparing model methods, not normal field removal.")
+        st.info(
+            "Regression tactic changes the modeling method. "
+            "Use only when comparing model methods, not normal field removal."
+        )
         st.subheader("Let tactic replace old model chance")
-        st.warning("This can override the older model probability. Leave off unless you are intentionally testing the selected tactic.")
+        st.warning(
+            "This can override the older model probability. "
+            "Leave off unless you are intentionally testing the selected tactic."
+        )
 
-    # ── Experimental Field Weights ───────────────────────────────
     with st.expander("Experimental Field Weights", expanded=False):
-        st.info("Use only when intentionally testing manual field weights. The result summary will show whether custom weights were used.")
-
-    # ── Advanced Maintenance ─────────────────────────────────────
-    with st.expander("Advanced Maintenance", expanded=False):
-        st.info("Use only when source data or field definitions changed. Not needed for normal ablation testing.")
-        st.subheader("Rebuild dataset")
+        st.info(
+            "Use only when intentionally testing manual field weights. "
+            "The result summary will show whether custom weights were used."
+        )
 
 if False:
     pass
