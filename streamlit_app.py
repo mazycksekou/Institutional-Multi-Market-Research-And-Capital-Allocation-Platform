@@ -1624,7 +1624,7 @@ if menu == "Feature Ablation Lab":
             if decisions == 0:
                 verdict = "No result yet before a run"
             elif len(snap.get("included_sports", [])) == 0:
-                verdict = needs...?  
+                verdict = "Needs more proof before trusting when sample size is small or ready status is false."
             else:
                 if roi > 0.5 and decisions >= 50:
                     verdict = "Better than baseline when data enough."
