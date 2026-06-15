@@ -1904,69 +1904,142 @@ elif menu == "Feature Ablation Lab":
                 st.warning(w)
             st.json(snap)
         else:
-            st.subheader("Included Sports")
-            if snap.get("included_sports"):
-                st.write(", ".join(snap["included_sports"]))
-            else:
-                st.info("No calibration‑ready sports.")
+            # ── KPI cards ──────────────────────────────────────────
+            perf = snap.get("performance", {}) or {}
+            col_a, col_b, col_c, col_d = st.columns(4)
+            with col_a:
+                st.metric("Decisions", perf.get("decisions", 0))
+                st.metric("Net Return", perf.get("net_result", 0.0))
+            with col_b:
+                st.metric("ROI %", perf.get("roi_percent", 0.0))
+                st.metric("Win Rate %", perf.get("win_rate_percent", 0.0))
+            with col_c:
+                st.metric("Avg Edge", snap.get("avg_edge", "N/A"))
+                st.metric("Max Drawdown %", perf.get("max_drawdown_percent", "N/A"))
+            with col_d:
+                st.metric("Ready Status", "✅" if perf.get("ready", False) else "❌")
+                st.metric("Sports", len(snap.get("included_sports", [])))
 
-            st.subheader("Excluded Sports")
-            excluded = snap.get("excluded_sports", [])
-            if excluded:
-                for e in excluded:
-                    st.error(f"{e.get('sport_key','?')} – {e.get('reason','not ready')}")
-            else:
-                st.info("No sports excluded.")
+            # ── Plain‑English summary ──────────────────────────────
+            included_sport_count = len(snap.get("included_sports", []))
+            decisions = perf.get("decisions", 0)
+            roi = perf.get("roi_percent", 0.0)
+            summary_text = (
+                f"Ablation tested {included_sport_count} sport(s) "
+                f"with {decisions} decisions and ROI {roi:.2f}%. "
+                f"Baseline comparison will appear after you save a baseline run "
+                f"via Experiment History."
+            )
+            st.info(summary_text)
 
-            st.subheader("ROI by Sport")
-            roi = snap.get("roi_by_sport", {})
-            if roi:
-                roi_rows = []
-                for sk, data in roi.items():
-                    roi_rows.append({
-                        "sport_key": sk,
-                        "rows": data.get("rows", 0),
-                        "settled_count": data.get("settled_count", 0),
-                        "wins": data.get("wins", 0),
-                        "losses": data.get("losses", 0),
-                        "pushes": data.get("pushes", 0),
-                        "net_result": data.get("net_result", 0.0),
-                        "roi_percent": data.get("roi_percent", 0.0),
-                        "win_rate_percent": data.get("win_rate_percent", 0.0),
-                    })
-                st.dataframe(df(roi_rows), use_container_width=True, hide_index=True)
-            else:
-                st.info("No ROI data.")
+            # ── Field counts in expander ───────────────────────────
+            active_count = len(snap.get("active_fields", []))
+            removed_count = len(snap.get("removed_fields", []))
+            with st.expander("Field Changes", expanded=False):
+                col_f1, col_f2, col_f3 = st.columns(3)
+                with col_f1:
+                    st.metric("Active Fields", active_count)
+                with col_f2:
+                    st.metric("Fields Added", max(0, active_count - removed_count))
+                with col_f3:
+                    st.metric("Fields Removed", removed_count)
+                if active_count:
+                    st.write("Active:", ", ".join(snap["active_fields"]))
+                if removed_count:
+                    st.write("Removed:", ", ".join(snap["removed_fields"]))
 
-            perf = snap.get("performance", {})
-            if perf:
+            # ── Tabs for detailed view ─────────────────────────────
+            tab_sum, tab_fld, tab_cur, tab_cmp, tab_raw = st.tabs(
+                ["Summary", "Field Impact", "Performance Curves",
+                 "Comparison", "Raw Data"]
+            )
+
+            with tab_sum:
+                st.subheader("Included Sports")
+                inc = snap.get("included_sports", [])
+                if inc:
+                    st.write(", ".join(inc))
+                else:
+                    st.info("None")
+
+                st.subheader("Excluded Sports")
+                exc = snap.get("excluded_sports", [])
+                if exc:
+                    for e in exc:
+                        st.error(
+                            f"{e.get('sport_key','?')} – {e.get('reason','not ready')}"
+                        )
+                else:
+                    st.info("None")
+
                 st.subheader("Overall Performance")
-                metric_row(
-                    [
-                        ("Total rows", perf.get("total_rows", 0), ""),
-                        ("Eligible rows", perf.get("eligible_rows", 0), ""),
-                        ("Skipped rows", perf.get("skipped_rows", 0), ""),
-                        ("Decisions", perf.get("decisions", 0), ""),
-                        ("Skipped decisions", perf.get("skipped_decisions", 0), ""),
-                        ("Settled count", perf.get("settled_count", 0), ""),
-                        ("Wins", perf.get("wins", 0), ""),
-                        ("Losses", perf.get("losses", 0), ""),
-                        ("Pushes", perf.get("pushes", 0), ""),
-                        ("Net result", perf.get("net_result", 0.0), ""),
-                        ("ROI %", perf.get("roi_percent", 0.0), ""),
-                        ("Win rate %", perf.get("win_rate_percent", 0.0), ""),
-                    ]
+                if perf:
+                    metric_row(
+                        [
+                            ("Total rows", perf.get("total_rows", 0), ""),
+                            ("Eligible rows", perf.get("eligible_rows", 0), ""),
+                            ("Skipped rows", perf.get("skipped_rows", 0), ""),
+                            ("Decisions", perf.get("decisions", 0), ""),
+                            ("Skipped decisions", perf.get("skipped_decisions", 0), ""),
+                            ("Settled count", perf.get("settled_count", 0), ""),
+                            ("Wins", perf.get("wins", 0), ""),
+                            ("Losses", perf.get("losses", 0), ""),
+                            ("Pushes", perf.get("pushes", 0), ""),
+                            ("Net result", perf.get("net_result", 0.0), ""),
+                            ("ROI %", perf.get("roi_percent", 0.0), ""),
+                            ("Win rate %", perf.get("win_rate_percent", 0.0), ""),
+                        ]
+                    )
+
+                st.subheader("ROI by Sport")
+                roi_sport = snap.get("roi_by_sport", {})
+                if roi_sport:
+                    roi_rows = []
+                    for sk, data in roi_sport.items():
+                        roi_rows.append(
+                            {
+                                "sport_key": sk,
+                                "rows": data.get("rows", 0),
+                                "settled_count": data.get("settled_count", 0),
+                                "wins": data.get("wins", 0),
+                                "losses": data.get("losses", 0),
+                                "pushes": data.get("pushes", 0),
+                                "net_result": data.get("net_result", 0.0),
+                                "roi_percent": data.get("roi_percent", 0.0),
+                                "win_rate_percent": data.get("win_rate_percent", 0.0),
+                            }
+                        )
+                    st.dataframe(
+                        df(roi_rows), use_container_width=True, hide_index=True
+                    )
+                else:
+                    st.info("No ROI data.")
+
+                for w in snap.get("warnings", []):
+                    st.warning(w)
+
+            with tab_fld:
+                st.subheader("Active Fields")
+                st.write(", ".join(snap.get("active_fields", [])))
+                st.subheader("Removed Fields")
+                st.write(", ".join(snap.get("removed_fields", [])))
+
+            with tab_cur:
+                curve_rows = snap.get("bankroll_curve", [])
+                if curve_rows:
+                    show_curve(curve_rows)
+                else:
+                    st.info("No performance curve available for this run.")
+
+            with tab_cmp:
+                st.subheader("Baseline vs Current Run")
+                st.info(
+                    "Comparison will be available after you save a baseline "
+                    "run in Experiment History and select it here."
                 )
 
-            st.subheader("Active Fields")
-            st.write(", ".join(snap.get("active_fields", [])))
-
-            st.subheader("Removed Fields")
-            st.write(", ".join(snap.get("removed_fields", [])))
-
-            st.subheader("Warnings")
-            for w in snap.get("warnings", []):
-                st.warning(w)
+            with tab_raw:
+                st.json(snap)
 
     with st.expander("Raw snapshot JSON", expanded=False):
         st.json({})

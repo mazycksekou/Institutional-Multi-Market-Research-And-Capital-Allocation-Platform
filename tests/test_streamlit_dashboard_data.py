@@ -1006,6 +1006,47 @@ def test_get_overall_operator_workflow_steps_returns_ordered():
     assert steps[-1]["step"] == len(steps)
 
 
+# ── Phase 10H23C – Feature Ablation Lab Results UX Cleanup ──────────
+
+
+def test_feature_ablation_lab_kpi_text_present():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert "Decisions" in content
+    assert "Net Return" in content
+    assert "ROI %" in content
+    assert "Win Rate %" in content
+    assert "Avg Edge" in content
+    assert "Max Drawdown %" in content
+    assert "Ready Status" in content
+
+
+def test_feature_ablation_lab_result_tabs():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert "Summary" in content
+    assert "Field Impact" in content
+    assert "Performance Curves" in content
+    assert "Comparison" in content
+    assert "Raw Data" in content
+
+
+def test_feature_ablation_lab_plain_english_summary():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert "Ablation tested" in content
+    assert "Baseline comparison" in content
+
+
+def test_feature_ablation_lab_field_counts_expander():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert "Field Changes" in content
+    assert "Active Fields" in content
+    assert "Fields Added" in content
+    assert "Fields Removed" in content
+
+
 def test_streamlit_app_imports_get_experiment_history_snapshot_for_dashboard():
     with open("streamlit_app.py", encoding="utf-8") as f:
         content = f.read()
