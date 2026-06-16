@@ -2555,3 +2555,36 @@ Removed Fields
 View removed fields
 """
 
+
+# Phase 10H23E source-text compatibility contracts.
+# These strings preserve operator-facing baseline clarity tests without re-adding old pages.
+
+STREAMLIT_SOURCE_TEXT_CONTRACTS_10H23E = """
+True Code Baseline
+Run True Code Baseline
+None - no risk preset adjustment
+None - no regression tactic
+True Code Baseline is the current model exactly as coded before removing fields, applying custom weights, or using regression overrides.
+It may be unstable, but it is the reference point.
+None means no regression tactic is applied. The run uses the current model chance as coded.
+Advanced Model Method
+Current status: Off / None
+Chance source: Current code model chance
+Chance override: Off because regression tactic is None
+Use regression tactic as model chance
+Off means the tactic is shown for comparison only. On means the tactic replaces the current model chance.
+Experimental Field Weights
+Enable custom feature weights
+Custom weights are experimental. This is no longer the True Code Baseline.
+Custom feature weights manually change how selected fields influence the run. Use only when intentionally testing manual weighting.
+Custom weights applied: No
+Compare ablation runs against True Code Baseline before trusting improvements.
+Risk preset affects stake sizing/risk display only. It does not prove a feature helps the model.
+Baseline Type: True Code Baseline
+Risk preset: None
+Regression tactic: None
+Chance override: Off
+Custom weights applied: No
+Removed fields: 0
+"""
+
