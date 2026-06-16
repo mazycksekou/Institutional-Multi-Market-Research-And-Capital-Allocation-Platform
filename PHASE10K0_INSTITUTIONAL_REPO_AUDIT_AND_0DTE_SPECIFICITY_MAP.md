@@ -252,3 +252,24 @@ python scripts/ops_check.py
 
 **End of Phase 10K0 Audit Report**  
 *Next phase: 10K1 – Unified Research Warehouse Foundation*
+
+
+## File-by-File Change Map
+
+This section tracks current file roles, later change intent, and ownership so future phases do not duplicate functionality or delete useful code without tests.
+
+| File | Current role | Keep/change/delete later | Reason | Later phase |
+|---|---|---|---|---|
+| streamlit_app.py | Current Streamlit operator UI | Keep; expand intentionally later | Protected sports UI and current Feature Ablation Lab flow | 10K3 |
+| main.py | Runtime entry / legacy runtime path area | Audit/migrate later | May still contain CSV/runtime storage paths | 10K5 |
+| quant_engine.py | Shared betting/math primitives | Keep as canonical unless duplicate is found | EV, Kelly, implied probability, edge logic should have one owner | 10K4 |
+| automation_scheduler/feature_ablation_lab.py | Feature Ablation Lab backend | Keep protected | Current sports testing stack depends on it | Protected |
+| tests/test_feature_ablation_lab.py | Backend regression tests | Keep | Protects row threshold, included sports, and ablation behavior | Protected |
+| tests/test_streamlit_dashboard_data.py | Streamlit source/UI contract tests | Keep | Protects dashboard wording and no-connector restrictions | Protected |
+
+sports prediction testing is deferred.
+0DTE prediction testing is deferred.
+Do not implement the warehouse in this phase.
+Do not implement arbitrage in this phase.
+Do not delete duplicates in this phase.
+
