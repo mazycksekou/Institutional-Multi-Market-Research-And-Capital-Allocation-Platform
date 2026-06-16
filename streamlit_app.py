@@ -1862,7 +1862,11 @@ if menu == "Feature Ablation Lab":
                     st.metric("Removed Fields", len(removed_result_fields))
                 with col_f6:
                     st.metric("Field Groups", len(snap.get("selected_groups", [])))
-                # extra metadata
+                # extra metadata (Phase 10H23E)
+                st.caption(f"Run Type: {snap.get('run_type','ablation_test')}")
+                st.caption(f"Baseline Type: {snap.get('baseline_type','None')}")
+                st.caption(f"Risk Preset: {risk_preset_used if risk_preset_used else 'None'}")
+                st.caption(f"Regression Tactic: {regression_tactic_used if regression_tactic_used else 'None'}")
                 st.caption(f"Chance override: {'Off' if not chance_override_used else 'On'}")
                 st.caption(f"Custom weights applied: {'Yes' if custom_weights_used else 'No'}")
 
