@@ -1086,6 +1086,103 @@ def test_streamlit_app_contains_risk_preset_note():
     ) in content
 
 
+def test_streamlit_app_contains_advanced_model_method():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert "Advanced Model Method" in content
+
+
+def test_streamlit_app_contains_current_status_off_text():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert "Current status: Off / None" in content
+
+
+def test_streamlit_app_contains_chance_source():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert "Chance source: Current code model chance" in content
+
+
+def test_streamlit_app_contains_use_regression_tactic_as_model_chance():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert "Use regression tactic as model chance" in content
+
+
+def test_streamlit_app_contains_regression_tactic_off_explanation():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert (
+        "Off means the tactic is shown for comparison only. "
+        "On means the tactic replaces the current model chance."
+    ) in content
+
+
+def test_streamlit_app_contains_experimental_field_weights():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert "Experimental Field Weights" in content
+
+
+def test_streamlit_app_contains_enable_custom_feature_weights():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert "Enable custom feature weights" in content
+
+
+def test_streamlit_app_contains_custom_weights_experimental_warning():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert "Custom weights are experimental. This is no longer the True Code Baseline." in content
+
+
+def test_streamlit_app_contains_custom_weights_manual_changes_text():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert (
+        "Custom feature weights manually change how selected fields "
+        "influence the run. Use only when intentionally testing "
+        "manual weighting."
+    ) in content
+
+
+def test_streamlit_app_contains_custom_weights_applied_no():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert "Custom weights applied: No" in content
+
+
+def test_simplified_main_menu_still_unchanged():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    menu_start = content.find(
+        'menu = st.sidebar.radio(\n    "Main Menu",\n    [\n'
+    )
+    menu_end = content.find(
+        "],\n)"
+    )
+    menu_section = content[menu_start:menu_end]
+    assert '"Feature Ablation Lab"' in menu_section
+    assert '"Test One Sport"' in menu_section
+    assert '"Test All Sports"' in menu_section
+    assert '"Bankroll Settings"' in menu_section
+    assert '"Instructions"' in menu_section
+
+
+def test_forbidden_connector_texts_not_present_10H23E_unique():
+    forbidden = [
+        "Connect Real Vendor API",
+        "Run Real Line Movement Scraper",
+        "Connect Synthetic Vendor API",
+        "Run Synthetic Scraper",
+    ]
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    for text in forbidden:
+        assert text not in content
+
+
 def test_simplified_main_menu_still_unchanged():
     with open("streamlit_app.py", encoding="utf-8") as f:
         content = f.read()
