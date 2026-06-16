@@ -290,9 +290,9 @@ def sidebar_inputs():
     )
 
     require_core_fields = st.sidebar.checkbox(
-        "Require core fields",
+        "Data Validity Check",
         value=bool(SAFE_DEFAULTS["require_core_fields"]),
-        help="Strict mode. Usually leave off during early paper testing.",
+        help="Data Validity Check removes rows missing the minimum fields needed to run a fair test.",
     )
 
     return {
@@ -1721,13 +1721,24 @@ if menu == "Feature Ablation Lab":
     # ── Readiness Filter (collapsed) ─────────────────────
     with st.expander("Readiness Filter", expanded=False):
         st.info(
-            "Require core fields removes rows that do not have enough "
-            "required data before results are calculated."
+            "Data Validity Check removes rows missing the minimum fields needed to run a fair test."
         )
         st.markdown(
             "Calibration‑Ready Strategy Filter excludes sports and markets "
             "without enough data before calculating ROI."
         )
+
+    # ── Row Count Threshold ─────────────────────────
+    st.subheader("Review Threshold")
+    user_row_threshold = st.number_input(
+        "Rows needed before I trust this result",
+        min_value=1,
+        max_value=100000,
+        value=1,
+        step=1,
+        key="fal_row_threshold",
+        help="This number is your personal review threshold. It does not block the run.",
+    )
 
     # ── Run Guard ────────────────────────────────────────
     run_disabled = False
@@ -1774,6 +1785,7 @@ if menu == "Feature Ablation Lab":
                         selected_fields=None,
                         removed_fields=None,
                         selected_groups=None,
+                        user_row_threshold=int(user_row_threshold),
                     )
                     if snap.get("ok"):
                         snap["run_type"] = "true_code_baseline"
@@ -1808,6 +1820,7 @@ if menu == "Feature Ablation Lab":
                         selected_groups=selected_groups
                         if selected_groups != available_groups
                         else None,
+                        user_row_threshold=int(user_row_threshold),
                     )
                     if snap.get("ok"):
                         snap.setdefault("run_type", "ablation_test")
@@ -1943,14 +1956,33 @@ if menu == "Feature Ablation Lab":
                 with col_kp8:
                     st.metric("Pushes", perf.get("pushes", 0))
 
+                # Phase 10H23I – Row count threshold metrics
+                user_threshold = last_ablation_result.get("user_row_threshold", 1)
+                rows_tested = last_ablation_result.get("rows_tested", eligible)
+                row_threshold_met = last_ablation_result.get("row_threshold_met", False)
+                row_threshold_note = last_ablation_result.get(
+                    "row_threshold_note", ""
+                )
                 col_kp9, col_kp10, col_kp11, col_kp12 = st.columns(4)
                 with col_kp9:
-                    st.metric("Average Edge", "N/A")
+                    st.metric("User Row Threshold", str(user_threshold))
                 with col_kp10:
-                    st.metric("Max Drawdown %", "N/A")
+                    st.metric("Row Threshold Met", "Yes" if row_threshold_met else "No")
                 with col_kp11:
-                    st.metric("Active Fields", len(active_result_fields))
+                    st.metric("", "")
                 with col_kp12:
+                    st.metric("", "")
+                if row_threshold_note:
+                    st.info(row_threshold_note)
+
+                col_kp13, col_kp14, col_kp15, col_kp16 = st.columns(4)
+                with col_kp13:
+                    st.metric("Average Edge", "N/A")
+                with col_kp14:
+                    st.metric("Max Drawdown %", "N/A")
+                with col_kp15:
+                    st.metric("Active Fields", len(active_result_fields))
+                with col_kp16:
                     st.metric("Removed Fields", len(removed_result_fields))
 
             st.markdown("---")

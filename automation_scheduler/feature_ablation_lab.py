@@ -544,6 +544,7 @@ def apply_field_ablation(
     sport: object = None,
     market: object = None,
     mode: str = "single_sport",
+    user_row_threshold: int = 1,
 ) -> dict[str, Any]:
     """Determine which fields are active after ablation and which rows are eligible."""
     never_set = set(ABLATION_NEVER_FEATURE_FIELDS)
@@ -592,6 +593,19 @@ def apply_field_ablation(
     total = len(rows) or 1
     eligibility_rate = round(len(eligible_rows) / total * 100, 1)
 
+    rows_tested = len(eligible_rows)
+    rows_needed_before_trust = user_row_threshold
+    row_threshold_met = rows_tested >= rows_needed_before_trust
+    if row_threshold_met:
+        row_threshold_note = (
+            f"Rows tested: {rows_tested} / {rows_needed_before_trust} selected by user."
+        )
+    else:
+        row_threshold_note = (
+            f"Rows tested: {rows_tested} / {rows_needed_before_trust} selected by user. "
+            f"The run is allowed, but the row count is below your selected review threshold."
+        )
+
     warnings: list[str] = []
     if removed - set(all_selectable):
         warnings.append("Some removed fields were not selectable.")
@@ -615,6 +629,11 @@ def apply_field_ablation(
         "skipped_rows": skipped_rows,
         "eligibility_rate_percent": eligibility_rate,
         "warnings": warnings,
+        "rows_tested": rows_tested,
+        "rows_needed_before_trust": rows_needed_before_trust,
+        "row_threshold_met": row_threshold_met,
+        "row_threshold_note": row_threshold_note,
+        "user_row_threshold": user_row_threshold,
         "operator_interpretation": (
             f"{len(eligible_rows)} of {len(rows)} rows ({eligibility_rate}%) have "
             f"sufficient active pre‑decision fields."
@@ -755,6 +774,7 @@ def run_feature_ablation_lab(
     selected_fields: list[str] | None = None,
     removed_fields: list[str] | None = None,
     selected_groups: list[str] | None = None,
+    user_row_threshold: int = 1,
 ) -> dict[str, Any]:
     """Run the ablation lab: filter rows by mode, apply field ablation,
     and summarise performance."""
@@ -800,6 +820,7 @@ def run_feature_ablation_lab(
         sport=mode_sport_key,
         market=mode_market_family,
         mode=mode,
+        user_row_threshold=user_row_threshold,
     )
     eligible = ablation_result["eligible_rows"]
 
@@ -869,6 +890,21 @@ def run_feature_ablation_lab(
     result["custom_weights_used"] = False
     result["true_baseline_mode"] = False
     result["baseline_warning"] = None
+    # Phase 10H23I row‑count threshold metadata (not blocking)
+    rows_tested = len(eligible)
+    result["rows_tested"] = rows_tested
+    result["rows_needed_before_trust"] = user_row_threshold
+    result["user_row_threshold"] = user_row_threshold
+    result["row_threshold_met"] = rows_tested >= user_row_threshold
+    if result["row_threshold_met"]:
+        result["row_threshold_note"] = (
+            f"Rows tested: {rows_tested} / {user_row_threshold} selected by user."
+        )
+    else:
+        result["row_threshold_note"] = (
+            f"Rows tested: {rows_tested} / {user_row_threshold} selected by user. "
+            f"The run is allowed, but the row count is below your selected review threshold."
+        )
 
     # detect baseline automatically
     if (

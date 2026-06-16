@@ -132,6 +132,65 @@ def test_ablation_field_groups_no_leakage() -> None:
     assert all_safe.isdisjoint(never)
 
 
+# Phase 10H23I – Row Count Threshold metadata tests ──────────────────
+
+def test_user_row_threshold_default_is_low() -> None:
+    """Default user_row_threshold should be 1 and not block a run."""
+    rows = [_make_row()]
+    result = run_feature_ablation_lab(rows, sport="basketball_nba", mode="single_sport")
+    assert "user_row_threshold" in result
+    assert result["user_row_threshold"] == 1
+    assert "rows_tested" in result
+    assert result["rows_tested"] == 1
+    assert result["row_threshold_met"] is True
+    assert "row_threshold_note" in result
+    assert "selected by user" in result["row_threshold_note"]
+
+
+def test_user_row_threshold_met_when_rows_exceed() -> None:
+    rows = [_make_row(), _make_row()]
+    result = run_feature_ablation_lab(
+        rows, sport="basketball_nba", mode="single_sport", user_row_threshold=2
+    )
+    assert result["rows_tested"] == 2
+    assert result["row_threshold_met"] is True
+
+
+def test_user_row_threshold_not_met_when_below() -> None:
+    rows = [_make_row()]
+    result = run_feature_ablation_lab(
+        rows, sport="basketball_nba", mode="single_sport", user_row_threshold=10
+    )
+    assert result["rows_tested"] == 1
+    assert result["row_threshold_met"] is False
+    # included_sports should still be populated
+    assert "basketball_nba" in result["included_sports"]
+    assert result["included_sport_count"] == 1
+    # no_sports_reason should be None because rows exist
+    assert result.get("no_sports_reason") is None
+    # row_threshold_note should mention below threshold
+    assert "below your selected review threshold" in result["row_threshold_note"]
+
+
+def test_user_row_threshold_does_not_block_empty_rows() -> None:
+    rows: list[dict] = []
+    result = run_feature_ablation_lab(
+        rows, sport="basketball_nba", mode="single_sport", user_row_threshold=5
+    )
+    assert result["rows_tested"] == 0
+    assert result["row_threshold_met"] is False
+    assert result["no_sports_reason"] is not None
+    assert "no rows" in result["no_sports_reason"].lower()
+
+
+def test_rows_needed_before_trust_field_present() -> None:
+    rows = [_make_row()]
+    result = run_feature_ablation_lab(
+        rows, sport="basketball_nba", mode="single_sport", user_row_threshold=50
+    )
+    assert result.get("rows_needed_before_trust") == 50
+
+
 # ── Phase 10H23F – included/excluded sports population ──────────────
 
 def test_run_feature_ablation_lab_includes_included_sports_and_excluded_sports() -> None:

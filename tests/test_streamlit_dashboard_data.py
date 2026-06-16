@@ -1115,6 +1115,61 @@ def test_no_nested_plain_english_helper_expander():
     assert any("show_easy_dictionary" in line for line in lines)
 
 
+# ── Phase 10H23I – Row Count Threshold UI checks ────────────────────
+
+
+def test_streamlit_app_contains_data_validity_check():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert "Data Validity Check" in content
+
+
+def test_streamlit_app_contains_data_validity_check_helper():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert (
+        "Data Validity Check removes rows missing the minimum fields needed to run a fair test."
+    ) in content
+
+
+def test_streamlit_app_contains_rows_needed_input():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert "Rows needed before I trust this result" in content
+
+
+def test_streamlit_app_contains_personal_review_threshold_text():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert (
+        "This number is your personal review threshold. It does not block the run."
+    ) in content
+
+
+def test_streamlit_app_contains_user_row_threshold_metrics():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert "User Row Threshold" in content
+    assert "Row Threshold Met" in content
+    assert "selected by user" in content
+
+
+def test_streamlit_app_shows_below_threshold_note():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert (
+        "The run is allowed, but the row count is below your selected review threshold."
+    ) in content
+
+
+def test_streamlit_app_does_not_contain_named_readiness_modes():
+    forbidden = ["Exploratory", "Standard", "Strict", "Production Grade", "Great Run"]
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    for name in forbidden:
+        assert name not in content
+
+
 # ── Phase 10H23E – True Baseline + Neutral Presets ──────────────────
 
 
