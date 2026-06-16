@@ -576,6 +576,7 @@ def apply_field_ablation(
 
     eligible_rows: list[dict] = []
     skipped_rows: list[dict] = []
+    core_rows: list[dict] = []
 
     required = list(_REQUIRED_BASE_FIELDS)
     for raw in rows:
@@ -583,6 +584,7 @@ def apply_field_ablation(
         if not _row_has_requisite_fields(r, required):
             skipped_rows.append(r)
             continue
+        core_rows.append(r)
         # Base fields are always required; active_extra = active_fields - required
         active_extra = active_fields - set(required)
         if _row_has_sufficient_active_fields(r, active_extra, threshold_pct=60.0):
@@ -593,7 +595,7 @@ def apply_field_ablation(
     total = len(rows) or 1
     eligibility_rate = round(len(eligible_rows) / total * 100, 1)
 
-    rows_tested = len(eligible_rows)
+    rows_tested = len(core_rows)
     rows_needed_before_trust = user_row_threshold
     row_threshold_met = rows_tested >= rows_needed_before_trust
     if row_threshold_met:
@@ -627,6 +629,7 @@ def apply_field_ablation(
         "excluded_never_fields": list(ABLATION_NEVER_FEATURE_FIELDS),
         "eligible_rows": eligible_rows,
         "skipped_rows": skipped_rows,
+        "core_rows": core_rows,
         "eligibility_rate_percent": eligibility_rate,
         "warnings": warnings,
         "rows_tested": rows_tested,
@@ -891,7 +894,7 @@ def run_feature_ablation_lab(
     result["true_baseline_mode"] = False
     result["baseline_warning"] = None
     # Phase 10H23I row‑count threshold metadata (not blocking)
-    rows_tested = len(eligible)
+    rows_tested = len(ablation_result.get("core_rows", []))
     result["rows_tested"] = rows_tested
     result["rows_needed_before_trust"] = user_row_threshold
     result["user_row_threshold"] = user_row_threshold
