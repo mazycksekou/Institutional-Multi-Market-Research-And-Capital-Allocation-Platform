@@ -1006,6 +1006,116 @@ def test_get_overall_operator_workflow_steps_returns_ordered():
     assert steps[-1]["step"] == len(steps)
 
 
+# ── Phase 10H23E – True Baseline + Neutral Presets ──────────────────
+
+
+def test_streamlit_app_contains_true_code_baseline():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert "True Code Baseline" in content
+
+
+def test_streamlit_app_contains_run_true_code_baseline():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert "Run True Code Baseline" in content
+
+
+def test_streamlit_app_contains_none_risk_preset():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert "None - no risk preset adjustment" in content
+
+
+def test_streamlit_app_contains_none_regression_tactic():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert "None - no regression tactic" in content
+
+
+def test_streamlit_app_contains_baseline_explanation():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert (
+        "True Code Baseline is the current model exactly as coded "
+        "before removing fields, applying custom weights, "
+        "or using regression overrides." in content
+    ) or (
+        "True Code Baseline is the current model exactly as coded "
+        "before removing fields, applying custom weights, or using regression overrides."
+    ) in content
+
+
+def test_streamlit_app_contains_baseline_may_be_unstable():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert "It may be unstable" in content
+
+
+def test_streamlit_app_contains_none_means_no_regression_tactic():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert (
+        "None means no regression tactic is applied" in content
+        or "None - no regression tactic" in content
+    )
+
+
+def test_streamlit_app_contains_chance_override_off():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert "Chance override: Off because regression tactic is None" in content or \
+           "Chance override: Off" in content
+
+
+def test_streamlit_app_contains_compare_baseline_message():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert (
+        "Compare ablation runs against True Code Baseline "
+        "before trusting improvements." in content
+    )
+
+
+def test_streamlit_app_contains_risk_preset_note():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert (
+        "Risk preset affects stake sizing/risk display only. "
+        "It does not prove a feature helps the model."
+    ) in content
+
+
+def test_simplified_main_menu_still_unchanged():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    menu_start = content.find(
+        'menu = st.sidebar.radio(\n    "Main Menu",\n    [\n'
+    )
+    menu_end = content.find(
+        "],\n)"
+    )
+    menu_section = content[menu_start:menu_end]
+    assert '"Feature Ablation Lab"' in menu_section
+    assert '"Test One Sport"' in menu_section
+    assert '"Test All Sports"' in menu_section
+    assert '"Bankroll Settings"' in menu_section
+    assert '"Instructions"' in menu_section
+
+
+def test_forbidden_connector_texts_not_present_10H23E():
+    forbidden = [
+        "Connect Real Vendor API",
+        "Run Real Line Movement Scraper",
+        "Connect Synthetic Vendor API",
+        "Run Synthetic Scraper",
+    ]
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    for text in forbidden:
+        assert text not in content
+
+
 # ── Phase 10H23C – Feature Ablation Lab Results UX Cleanup ──────────
 
 

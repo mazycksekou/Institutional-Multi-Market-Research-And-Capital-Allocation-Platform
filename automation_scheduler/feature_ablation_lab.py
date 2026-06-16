@@ -805,7 +805,7 @@ def run_feature_ablation_lab(
             + ", ".join(e["sport_key"] for e in excluded_sports)
         )
 
-    return {
+    result = {
         "ok": True,
         "version": FEATURE_ABLATION_LAB_VERSION,
         "mode": mode,
@@ -826,3 +826,30 @@ def run_feature_ablation_lab(
             f"{eligible} eligible rows, {perf['settled_count']} settled outcomes."
         ),
     }
+
+    # Phase 10H23E metadata fields (defaults, caller may override)
+    result["run_type"] = "ablation_test"
+    result["baseline_type"] = None
+    result["risk_preset_used"] = None
+    result["regression_tactic_used"] = None
+    result["chance_override_used"] = False
+    result["custom_weights_used"] = False
+    result["true_baseline_mode"] = False
+    result["baseline_warning"] = None
+
+    # detect baseline automatically
+    if (
+        not result["removed_fields"]
+        and not result.get("custom_feature_weights")
+        and result.get("regression_tactic_used") is None
+        and result.get("risk_preset_used") is None
+    ):
+        result["run_type"] = "true_code_baseline"
+        result["true_baseline_mode"] = True
+        result["baseline_warning"] = (
+            "True Code Baseline is the current model exactly as coded "
+            "before removing fields, applying custom weights, or using regression overrides. "
+            "It may be unstable, but it is the reference point."
+        )
+
+    return result

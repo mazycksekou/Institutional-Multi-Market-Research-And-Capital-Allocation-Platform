@@ -72,6 +72,7 @@ from automation_scheduler.source_event_link_resolver import (
     describe_source_event_link_resolver,
 )
 from automation_scheduler.feature_ablation_lab import get_ablation_field_groups_for_sport
+from automation_scheduler.feature_ablation_lab import run_feature_ablation_lab
 from automation_scheduler.historical_data_sources import (
     get_historical_data_source_rows,
     get_priority_import_sources,
@@ -183,9 +184,14 @@ def show_run_result(result: dict) -> None:
 def sidebar_inputs():
     st.sidebar.header("Test Settings")
 
-    risk_preset = st.sidebar.selectbox("Risk preset", list(RISK_PRESETS.keys()), index=1)
-    preset = RISK_PRESETS[risk_preset]
-    st.sidebar.caption(preset["explanation"])
+    risk_preset_options = ["None - no risk preset adjustment"] + list(RISK_PRESETS.keys())
+    risk_preset = st.sidebar.selectbox("Risk preset", risk_preset_options, index=0)
+    if risk_preset == "None - no risk preset adjustment":
+        preset = None
+        st.sidebar.caption("No risk preset adjustment. The model uses the base unit behavior.")
+    else:
+        preset = RISK_PRESETS[risk_preset]
+        st.sidebar.caption(preset["explanation"])
 
     starting_bankroll = st.sidebar.number_input(
         "Starting money",
@@ -196,7 +202,7 @@ def sidebar_inputs():
     )
 
     default_unit = float(SAFE_DEFAULTS["unit_size"])
-    if preset.get("unit_size_percent") is not None:
+    if preset is not None and preset.get("unit_size_percent") is not None:
         default_unit = max(1.0, round(starting_bankroll * float(preset["unit_size_percent"]) / 100.0, 2))
 
     unit_size = st.sidebar.number_input(
@@ -216,13 +222,17 @@ def sidebar_inputs():
         help="More rows means a bigger test.",
     )
 
+    tactic_options = ["None - no regression tactic"] + list(REGRESSION_TACTICS.keys())
     tactic = st.sidebar.selectbox(
         "Regression tactic",
-        list(REGRESSION_TACTICS.keys()),
-        index=2,
+        tactic_options,
+        index=0,
         help="How the model chance is formed.",
     )
-    st.sidebar.caption(REGRESSION_TACTICS[tactic]["friendly"])
+    if tactic == "None - no regression tactic":
+        st.sidebar.caption("No regression tactic applied. The run uses the current model chance as coded.")
+    else:
+        st.sidebar.caption(REGRESSION_TACTICS[tactic]["friendly"])
 
     intercept = st.sidebar.slider(
         "Starting chance",
@@ -249,10 +259,13 @@ def sidebar_inputs():
         step=0.01,
     )
 
-    override_existing_probability = st.sidebar.checkbox(
-        "Let tactic replace old model chance",
-        value=bool(SAFE_DEFAULTS["override_existing_probability"]),
-    )
+    if tactic == "None - no regression tactic":
+        override_existing_probability = False
+    else:
+        override_existing_probability = st.sidebar.checkbox(
+            "Let tactic replace old model chance",
+            value=bool(SAFE_DEFAULTS["override_existing_probability"]),
+        )
 
     feature_weight_text = st.sidebar.text_area(
         "Custom feature weights",
@@ -389,9 +402,14 @@ if menu == "Test One Sport":
 
     if st.button("Run one-sport test", type="primary"):
         with st.spinner(f"Testing {selected['value']}..."):
+            # Determine tactic to use: for baseline we need none
+            tactic_to_use = settings["tactic"]
+            if tactic_to_use == "None - no regression tactic":
+                tactic_to_use = "Use existing model probability"
+            # Use settings as is
             result = run_model_test(
                 profile_key=selected["value"],
-                tactic=settings["tactic"],
+                tactic=tactic_to_use,
                 starting_bankroll=settings["starting_bankroll"],
                 unit_size=settings["unit_size"],
                 max_rows=settings["max_rows"],
@@ -444,7 +462,15 @@ elif menu == "Bankroll Settings":
 
     st.write("These settings are for paper testing. They do not place real bets.")
 
-    preset_rows = []
+    preset_rows = [
+        {
+            "preset": "None - no risk preset adjustment",
+            "normal bet %": None,
+            "max bet %": None,
+            "stop if down %": None,
+            "simple explanation": "No risk preset adjustment. Keeps the base unit behavior.",
+        }
+    ]
     for name, preset in RISK_PRESETS.items():
         preset_rows.append(
             {
@@ -1699,22 +1725,64 @@ if menu == "Feature Ablation Lab":
     if run_disabled:
         st.button("Run Ablation Lab", type="primary", key="fal_run", disabled=True)
     else:
-        if st.button("Run Ablation Lab", type="primary", key="fal_run"):
-            with st.spinner("Running ablation testing..."):
-                snap = get_feature_ablation_lab_snapshot_for_dashboard(
-                    db_path_input,
-                    sport=sport_val or None,
-                    market=market_val or None,
-                    mode="all_sports" if mode == "All Sports" else "single_sport",
-                    selected_fields=active_fields
-                    if active_fields != all_selectable
-                    else None,
-                    removed_fields=removed_fields or None,
-                    selected_groups=selected_groups
-                    if selected_groups != available_groups
-                    else None,
-                )
-                st.session_state["_last_ablation_result"] = snap
+        # ── Baseline run button ──────────────────────────────────────
+        baseline_disabled = run_disabled or (not Path(db_path_input).exists())
+        if not baseline_disabled:
+            if st.button("Run True Code Baseline", type="primary", key="fal_baseline"):
+                with st.spinner("Running True Code Baseline..."):
+                    snap = get_feature_ablation_lab_snapshot_for_dashboard(
+                        db_path_input,
+                        sport=sport_val or None,
+                        market=market_val or None,
+                        mode="all_sports" if mode == "All Sports" else "single_sport",
+                        selected_fields=None,
+                        removed_fields=None,
+                        selected_groups=None,
+                    )
+                    if snap.get("ok"):
+                        snap["run_type"] = "true_code_baseline"
+                        snap["true_baseline_mode"] = True
+                        snap["risk_preset_used"] = None
+                        snap["regression_tactic_used"] = None
+                        snap["chance_override_used"] = False
+                        snap["custom_weights_used"] = False
+                        snap["baseline_type"] = "True Code Baseline"
+                        snap["baseline_warning"] = (
+                            "True Code Baseline is the current model exactly as coded "
+                            "before removing fields, applying custom weights, or using regression overrides. "
+                            "It may be unstable, but it is the reference point."
+                        )
+                    st.session_state["_last_ablation_result"] = snap
+
+        # ── Normal run button ────────────────────────────────────────
+        if run_disabled:
+            st.button("Run Ablation Lab", type="primary", key="fal_run", disabled=True)
+        else:
+            if st.button("Run Ablation Lab", type="primary", key="fal_run"):
+                with st.spinner("Running ablation testing..."):
+                    snap = get_feature_ablation_lab_snapshot_for_dashboard(
+                        db_path_input,
+                        sport=sport_val or None,
+                        market=market_val or None,
+                        mode="all_sports" if mode == "All Sports" else "single_sport",
+                        selected_fields=active_fields
+                        if active_fields != all_selectable
+                        else None,
+                        removed_fields=removed_fields or None,
+                        selected_groups=selected_groups
+                        if selected_groups != available_groups
+                        else None,
+                    )
+                    if snap.get("ok"):
+                        snap.setdefault("run_type", "ablation_test")
+                        snap.setdefault("true_baseline_mode", False)
+                        snap.setdefault("risk_preset_used", None)
+                        snap.setdefault("regression_tactic_used", None)
+                        snap.setdefault("chance_override_used", False)
+                        snap.setdefault("custom_weights_used", False)
+                        snap.setdefault("baseline_type", None)
+                        snap.setdefault("baseline_warning", None)
+                    st.session_state["_last_ablation_result"] = snap
 
             if not snap.get("ok"):
                 st.error("Feature Ablation Lab failed.")
@@ -1722,6 +1790,18 @@ if menu == "Feature Ablation Lab":
                     st.warning(w)
                 st.json(snap)
             else:
+                # ── Run type identification ──────────────────────────
+                run_type = snap.get("run_type", "ablation_test")
+                baseline_type = snap.get("baseline_type", None)
+                is_baseline = run_type == "true_code_baseline" or snap.get("true_baseline_mode", False)
+
+                # additional run context
+                risk_preset_used = snap.get("risk_preset_used", None)
+                regression_tactic_used = snap.get("regression_tactic_used", None)
+                chance_override_used = snap.get("chance_override_used", False)
+                custom_weights_used = snap.get("custom_weights_used", False)
+                baseline_warning = snap.get("baseline_warning", None)
+
                 # ── Result verdict ─────────────────────────────────────
                 perf = snap.get("performance", {}) or {}
                 decisions = perf.get("decisions", 0)
@@ -1730,6 +1810,19 @@ if menu == "Feature Ablation Lab":
                 win_rate = perf.get("win_rate_percent", 0.0)
                 ready = perf.get("ready", False)
                 eligible = perf.get("eligible_rows", 0)
+
+                # plain‑English verdict
+                if decisions == 0:
+                    verdict = "No result yet before a run"
+                else:
+                    if is_baseline and risk_preset_used is None and regression_tactic_used is None and not custom_weights_used:
+                        verdict = "True Code Baseline (no preset, no regression, no custom weights)."
+                    elif snap.get("ablation_test") or active_fields != all_selectable or removed_fields:
+                        verdict = f"Ablation test with {len(active_fields)} active fields."
+                    else:
+                        verdict = f"Ablation test (custom weights or regression tactic used) produced ROI {roi:.1f}%."
+                st.subheader("Result")
+                st.info(verdict)
 
                 # simple plain‑English verdict
                 if decisions == 0:
@@ -1769,6 +1862,9 @@ if menu == "Feature Ablation Lab":
                     st.metric("Removed Fields", len(removed_result_fields))
                 with col_f6:
                     st.metric("Field Groups", len(snap.get("selected_groups", [])))
+                # extra metadata
+                st.caption(f"Chance override: {'Off' if not chance_override_used else 'On'}")
+                st.caption(f"Custom weights applied: {'Yes' if custom_weights_used else 'No'}")
 
                 with st.expander("View active fields"):
                     st.write(
@@ -1780,6 +1876,11 @@ if menu == "Feature Ablation Lab":
                         if removed_result_fields
                         else "None"
                     )
+
+                if baseline_warning:
+                    st.warning(baseline_warning)
+                else:
+                    st.info("Compare ablation runs against True Code Baseline before trusting improvements.")
 
                 # ── Tabs for detailed view ─────────────────────────────
                 tab_sum, tab_fld, tab_cur, tab_cmp, tab_raw = st.tabs(

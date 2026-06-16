@@ -1,0 +1,132 @@
+"""Tests for Phase 10H23E True Baseline + Neutral Presets in feature_ablation_lab.py"""
+
+from __future__ import annotations
+
+from typing import Any
+
+import pytest
+
+from automation_scheduler.feature_ablation_lab import (
+    FEATURE_ABLATION_LAB_VERSION,
+    ABLATION_NEVER_FEATURE_FIELDS,
+    BASE_FIELD_GROUPS,
+    _all_safe_fields_for_combination,
+    get_ablation_field_groups_for_sport,
+    apply_field_ablation,
+    run_feature_ablation_lab,
+)
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def _make_row(**overrides: Any) -> dict[str, Any]:
+    """Return a minimal row that passes the base required fields test."""
+    row = {
+        "sport": "basketball_nba",
+        "event_date": "2024-01-15",
+        "market": "moneyline",
+        "selection": "Home",
+        "odds_at_decision_time": 1.5,
+        "market_implied_probability": 0.6667,
+    }
+    row.update(overrides)
+    return row
+
+
+def _all_safe_for_sport():
+    """Convenience wrapper for default sport."""
+    return _all_safe_fields_for_combination("basketball_nba", None)
+
+
+# ---------------------------------------------------------------------------
+# 1. True baseline uses all safe fields
+# ---------------------------------------------------------------------------
+
+def test_true_baseline_uses_all_safe_fields() -> None:
+    """True baseline should have zero removed fields and include all safe fields."""
+    rows = [_make_row()]
+    result = run_feature_ablation_lab(rows, sport="basketball_nba", mode="single_sport")
+    active = result.get("active_fields", [])
+    removed = result.get("removed_fields", [])
+    assert len(removed) == 0
+    safe = _all_safe_for_sport()
+    # active may be a subset of safe if some not present in rows, but baseline should contain them
+    for f in safe:
+        # at least the field must be listed in active (if it's defined in the field groups)
+        assert f in active or f in ABLATION_NEVER_FEATURE_FIELDS
+    assert result["true_baseline_mode"] is True or result.get("run_type") == "true_code_baseline"
+
+
+# ---------------------------------------------------------------------------
+# 2. True baseline reports risk_preset_used as None
+# ---------------------------------------------------------------------------
+
+def test_true_baseline_risk_preset_none() -> None:
+    rows = [_make_row()]
+    result = run_feature_ablation_lab(rows, sport="basketball_nba", mode="single_sport")
+    # The result dict currently does not carry risk_preset; we check fallback
+    # Phase 10H23E adds these fields:
+    assert result.get("risk_preset_used") is None or not result.get("risk_preset_used")
+
+
+# ---------------------------------------------------------------------------
+# 3. True baseline reports regression_tactic_used as None
+# ---------------------------------------------------------------------------
+
+def test_true_baseline_regression_tactic_none() -> None:
+    rows = [_make_row()]
+    result = run_feature_ablation_lab(rows, sport="basketball_nba", mode="single_sport")
+    assert result.get("regression_tactic_used") is None or not result.get("regression_tactic_used")
+
+
+# ---------------------------------------------------------------------------
+# 4. True baseline reports custom_weights_used as false
+# ---------------------------------------------------------------------------
+
+def test_true_baseline_custom_weights_false() -> None:
+    rows = [_make_row()]
+    result = run_feature_ablation_lab(rows, sport="basketball_nba", mode="single_sport")
+    assert result.get("custom_weights_used") is False
+
+
+# ---------------------------------------------------------------------------
+# 5. True baseline reports chance_override_used as false
+# ---------------------------------------------------------------------------
+
+def test_true_baseline_chance_override_false() -> None:
+    rows = [_make_row()]
+    result = run_feature_ablation_lab(rows, sport="basketball_nba", mode="single_sport")
+    assert result.get("chance_override_used") is False
+
+
+# ---------------------------------------------------------------------------
+# 6. Baseline label when fields are removed becomes ablation_test
+# ---------------------------------------------------------------------------
+
+def test_fields_removed_changes_baseline_type() -> None:
+    """If removed_fields is non‑empty, run_type must be ablation_test, not true_code_baseline."""
+    rows = [_make_row()]
+    result = run_feature_ablation_lab(
+        rows,
+        sport="basketball_nba",
+        mode="single_sport",
+        removed_fields=["odds_at_decision_time"],
+    )
+    assert result["run_type"] == "ablation_test"
+    assert result["true_baseline_mode"] is False
+
+
+# ---------------------------------------------------------------------------
+# 7. get_ablation_field_groups returns nothing outside the safe set
+# ---------------------------------------------------------------------------
+
+def test_ablation_field_groups_no_leakage() -> None:
+    groups = get_ablation_field_groups_for_sport("basketball_nba")
+    all_safe = set()
+    for grp in groups["groups"]:
+        for f in grp["fields"]:
+            all_safe.add(f)
+    never = set(ABLATION_NEVER_FEATURE_FIELDS)
+    assert all_safe.isdisjoint(never)
