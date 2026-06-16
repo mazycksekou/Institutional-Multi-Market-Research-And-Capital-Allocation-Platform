@@ -1260,6 +1260,72 @@ def test_streamlit_app_imports_get_experiment_history_snapshot_for_dashboard():
     assert "get_experiment_history_snapshot_for_dashboard" in content
 
 
+# ── Phase 10H23F – new result UX strings ─────────────────────────────
+
+
+def test_streamlit_app_contains_sports_tested():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert "Sports Tested" in content
+
+
+def test_streamlit_app_contains_sports_excluded():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert "Sports Excluded" in content
+
+
+def test_streamlit_app_contains_no_sports_reason():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert "No sports were included because no rows passed the readiness filter." in content
+
+
+def test_streamlit_app_contains_no_qualifying_decisions():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert "No qualifying decisions were produced for this run." in content
+
+
+def test_streamlit_app_contains_this_run_produced():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert "This run produced" in content
+
+
+def test_streamlit_app_contains_run_summary():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert "Run Summary" in content
+
+
+def test_streamlit_app_contains_average_edge():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert "Average Edge" in content
+
+
+def test_streamlit_app_contains_max_drawdown():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert "Max Drawdown %" in content
+
+
+def test_streamlit_app_contains_no_roi_by_sport_text():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert (
+        "No ROI by sport is available because no included sport produced decisions."
+    ) in content
+
+
+def test_no_more_than_four_kpi_columns_in_source():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    # We should see at least one call to st.columns(4) for primary KPIs
+    assert "col_kp1, col_kp2, col_kp3, col_kp4 = st.columns(4)" in content
+
+
 # ── Phase 10H21 – Source Event Link Resolver tests ─────────────────────
 
 

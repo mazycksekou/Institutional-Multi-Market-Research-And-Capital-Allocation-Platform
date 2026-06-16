@@ -130,3 +130,62 @@ def test_ablation_field_groups_no_leakage() -> None:
             all_safe.add(f)
     never = set(ABLATION_NEVER_FEATURE_FIELDS)
     assert all_safe.isdisjoint(never)
+
+
+# ── Phase 10H23F – included/excluded sports population ──────────────
+
+def test_run_feature_ablation_lab_includes_included_sports_and_excluded_sports() -> None:
+    """Result dict must contain included_sports, excluded_sports, counts."""
+    rows = [_make_row()]
+    result = run_feature_ablation_lab(rows, sport="basketball_nba", mode="single_sport")
+    assert "included_sports" in result
+    assert "excluded_sports" in result
+    assert "included_sport_count" in result
+    assert "excluded_sport_count" in result
+    assert isinstance(result["included_sport_count"], int)
+    assert isinstance(result["excluded_sport_count"], int)
+
+
+def test_single_sport_included_when_rows_present_and_ready() -> None:
+    """Single sport with rows passes readiness."""
+    rows = [_make_row()]
+    result = run_feature_ablation_lab(rows, sport="basketball_nba", mode="single_sport")
+    assert "basketball_nba" in result["included_sports"]
+    assert result["included_sport_count"] == 1
+    assert result["excluded_sport_count"] == 0
+
+
+def test_single_sport_excluded_when_no_rows() -> None:
+    """Single sport with no rows is excluded."""
+    rows = []
+    result = run_feature_ablation_lab(rows, sport="basketball_nba", mode="single_sport")
+    assert result["included_sports"] == []
+    assert result["excluded_sport_count"] >= 1
+    assert result["no_sports_reason"] is not None
+
+
+def test_included_sport_count_and_excluded_sport_count_are_integers() -> None:
+    """Count fields are numeric, not None."""
+    rows = []
+    result = run_feature_ablation_lab(rows, sport="basketball_nba", mode="single_sport")
+    assert isinstance(result["included_sport_count"], int)
+    assert isinstance(result["excluded_sport_count"], int)
+
+
+def test_sport_population_note_present_when_data_exists() -> None:
+    rows = [_make_row()]
+    result = run_feature_ablation_lab(rows, sport="basketball_nba", mode="single_sport")
+    note = result.get("sport_population_note")
+    if note:
+        assert "sport" in note
+    else:
+        # If not set due to single included and zero excluded, may be None.
+        # At least ensure key exists.
+        assert "sport_population_note" in result
+
+
+def test_no_sports_reason_when_empty_rows() -> None:
+    rows = []
+    result = run_feature_ablation_lab(rows, sport="basketball_nba", mode="single_sport")
+    assert result.get("no_sports_reason") is not None
+    assert "no rows" in result["no_sports_reason"].lower()

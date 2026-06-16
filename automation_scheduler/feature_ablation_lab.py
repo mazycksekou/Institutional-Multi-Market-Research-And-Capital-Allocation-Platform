@@ -774,8 +774,33 @@ def run_feature_ablation_lab(
         working_rows = _rows_for_sport(rows, sport_key) if sport else list(rows)
         if market:
             working_rows = _rows_for_market(working_rows, market)
-        included_sports = [sport_key] if working_rows else []
-        excluded_sports = []
+        # decide readiness for single sport
+        if working_rows:
+            ready_info = is_sport_calibration_ready(working_rows, sport_key)
+            is_ready = ready_info.get("ready", False)
+            if is_ready:
+                included_sports = [sport_key]
+                excluded_sports = []
+            else:
+                included_sports = []
+                excluded_sports = [
+                    {
+                        "sport_key": sport_key,
+                        "readiness_level": ready_info.get("readiness_level", ""),
+                        "missing_required_fields": ready_info.get("missing_required_fields", []),
+                        "reason": ready_info.get("reason", "Not calibration ready"),
+                    }
+                ]
+        else:
+            included_sports = []
+            excluded_sports = [
+                {
+                    "sport_key": sport_key,
+                    "readiness_level": "no_data",
+                    "missing_required_fields": [],
+                    "reason": "No rows found for this sport.",
+                }
+            ]
         sport_readiness = {}
         mode_sport_key = sport_key
         mode_market_family = normalize_market_family(market, sport=sport_key) if market else "mixed"
@@ -805,6 +830,17 @@ def run_feature_ablation_lab(
             + ", ".join(e["sport_key"] for e in excluded_sports)
         )
 
+    included_sport_count = len(included_sports)
+    excluded_sport_count = len(excluded_sports)
+    sport_population_note: str | None = None
+    no_sports_reason: str | None = None
+    if not included_sports and not excluded_sports:
+        no_sports_reason = "No sports were included because no rows passed the readiness filter."
+    elif not included_sports and excluded_sports:
+        no_sports_reason = "No sports were included because all sports failed the readiness filter."
+    else:
+        sport_population_note = f"{included_sport_count} sport(s) included, {excluded_sport_count} excluded."
+
     result = {
         "ok": True,
         "version": FEATURE_ABLATION_LAB_VERSION,
@@ -817,6 +853,10 @@ def run_feature_ablation_lab(
         "removed_fields": ablation_result.get("removed_fields", []),
         "included_sports": included_sports,
         "excluded_sports": excluded_sports,
+        "included_sport_count": included_sport_count,
+        "excluded_sport_count": excluded_sport_count,
+        "sport_population_note": sport_population_note,
+        "no_sports_reason": no_sports_reason,
         "sport_readiness": sport_readiness,
         "performance": perf,
         "roi_by_sport": roi_by_sport,
