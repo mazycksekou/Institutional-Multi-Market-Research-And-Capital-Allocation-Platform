@@ -189,3 +189,19 @@ def test_no_sports_reason_when_empty_rows() -> None:
     result = run_feature_ablation_lab(rows, sport="basketball_nba", mode="single_sport")
     assert result.get("no_sports_reason") is not None
     assert "no rows" in result["no_sports_reason"].lower()
+
+
+# Regression: single sport with rows but zero decisions still reports sport in included_sports
+def test_single_sport_always_included_when_rows_present() -> None:
+    rows = [_make_row()]
+    result = run_feature_ablation_lab(rows, sport="basketball_nba", mode="single_sport")
+    assert "basketball_nba" in result["included_sports"]
+    assert result["included_sport_count"] == 1
+
+
+# Regression: empty rows reports a no_sports_reason containing "no rows"
+def test_empty_rows_has_no_rows_reason() -> None:
+    rows: list[dict] = []
+    result = run_feature_ablation_lab(rows, sport="basketball_nba", mode="single_sport")
+    assert result.get("no_sports_reason") is not None
+    assert "no rows" in result["no_sports_reason"].lower()

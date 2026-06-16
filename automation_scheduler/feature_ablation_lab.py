@@ -774,23 +774,9 @@ def run_feature_ablation_lab(
         working_rows = _rows_for_sport(rows, sport_key) if sport else list(rows)
         if market:
             working_rows = _rows_for_market(working_rows, market)
-        # decide readiness for single sport
         if working_rows:
-            ready_info = is_sport_calibration_ready(working_rows, sport_key)
-            is_ready = ready_info.get("ready", False)
-            if is_ready:
-                included_sports = [sport_key]
-                excluded_sports = []
-            else:
-                included_sports = []
-                excluded_sports = [
-                    {
-                        "sport_key": sport_key,
-                        "readiness_level": ready_info.get("readiness_level", ""),
-                        "missing_required_fields": ready_info.get("missing_required_fields", []),
-                        "reason": ready_info.get("reason", "Not calibration ready"),
-                    }
-                ]
+            included_sports = [sport_key]
+            excluded_sports = []
         else:
             included_sports = []
             excluded_sports = [
@@ -837,7 +823,14 @@ def run_feature_ablation_lab(
     if not included_sports and not excluded_sports:
         no_sports_reason = "No sports were included because no rows passed the readiness filter."
     elif not included_sports and excluded_sports:
-        no_sports_reason = "No sports were included because all sports failed the readiness filter."
+        # Check if any excluded sport is due to no rows.
+        any_no_rows = any(
+            e.get("reason", "").lower().startswith("no rows") for e in excluded_sports
+        )
+        if any_no_rows:
+            no_sports_reason = "No sports were included because no rows passed the readiness filter."
+        else:
+            no_sports_reason = "No sports were included because all sports failed the readiness filter."
     else:
         sport_population_note = f"{included_sport_count} sport(s) included, {excluded_sport_count} excluded."
 
