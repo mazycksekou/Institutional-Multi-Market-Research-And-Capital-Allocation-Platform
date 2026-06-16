@@ -107,7 +107,8 @@ class TestInitialize:
         p2 = initialize_market_research_db(tmp_db_path)
         assert p1 == p2
         tables = list_market_research_tables(tmp_db_path)
-        assert len(tables) == len(get_all_table_names()) + 1  # +1 for sqlite_sequence maybe? no, sequence hidden
+        assert "sqlite_sequence" not in tables
+        assert sorted(tables) == sorted(get_all_table_names())
         # re-invoke does not cause errors
         version = get_market_research_schema_version(tmp_db_path)
         assert version == MARKET_RESEARCH_SCHEMA_VERSION

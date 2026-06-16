@@ -5,7 +5,7 @@ Defines the master schema (CREATE TABLE statements) for
 ``research/market_research.db``.
 
 One database, many clean tables.
-No vendor connectors, no API calls, no scraper logic.
+No vendor connectors, no API calls, no external collection logic.
 """
 
 from typing import Dict

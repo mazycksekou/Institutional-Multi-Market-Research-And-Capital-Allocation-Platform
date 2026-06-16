@@ -4,7 +4,7 @@ Phase 10K1 Unified Research Warehouse Foundation – store layer.
 Safe functions for initialising and inspecting
 ``research/market_research.db``.
 
-No vendor connectors, no API calls, no scraper logic.
+No vendor connectors, no API calls, no external collection logic.
 """
 
 from __future__ import annotations
@@ -72,22 +72,25 @@ def initialize_market_research_db(
     return db_path
 
 
-def list_market_research_tables(
-    db_path: Optional[Path | str] = None,
-) -> List[str]:
-    """Return a list of user-created table names in the database."""
-    if db_path is None:
-        db_path = get_default_market_research_db_path()
-    conn = connect_market_research_db(db_path)
+def list_market_research_tables(db_path=None) -> list[str]:
+    """Return warehouse table names, excluding SQLite internal tables."""
+    path = Path(db_path) if db_path is not None else get_default_market_research_db_path()
+    if not path.exists():
+        return []
+
+    conn = connect_market_research_db(path)
     try:
-        cursor = conn.execute(
-            "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
+        rows = conn.execute(
+            "SELECT name FROM sqlite_master WHERE type = ? ORDER BY name",
+            ("table",),
+        ).fetchall()
+        return sorted(
+            name
+            for (name,) in rows
+            if name and not name.startswith('sqlite_')
         )
-        return [row[0] for row in cursor.fetchall()]
     finally:
         conn.close()
-
-
 def get_market_research_schema_version(
     db_path: Optional[Path | str] = None,
 ) -> str:
