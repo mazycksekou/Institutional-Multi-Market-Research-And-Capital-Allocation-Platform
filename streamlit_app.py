@@ -306,14 +306,11 @@ st.title("Betting Model Operator Dashboard")
 st.caption("Paper/testing control room. This screen does not place real bets.")
 
 settings = sidebar_inputs()
-show_easy_dictionary()
 
 menu = st.sidebar.radio(
     "Main Menu",
     [
         "Feature Ablation Lab",
-        "Test One Sport",
-        "Test All Sports",
         "Bankroll Settings",
         "Instructions",
     ],
@@ -1632,7 +1629,7 @@ if menu == "Feature Ablation Lab":
     with col_mode:
         mode = st.radio(
             "Mode",
-            ["Single Sport", "All Sports"],
+            ["One Sport", "All Ready Sports"],
             key="fal_mode",
             horizontal=True,
         )
@@ -2081,6 +2078,21 @@ if menu == "Feature Ablation Lab":
             )
         else:
             st.caption("Custom weights applied: No")
+
+    # ── Plain‑English Helper at bottom of Feature Ablation Lab ────
+    with st.expander("Plain-English Helper", expanded=False):
+        st.markdown(
+            """
+- **True Code Baseline** means the current model exactly as coded.
+- **One Sport** tests only the selected sport.
+- **All Ready Sports** tests only sports that pass readiness checks.
+- **Custom Ablation Test** removes fields or field groups to see what changes.
+- **Risk preset** affects stake sizing/risk display only.
+- **Regression tactic** is off when set to None.
+- **Custom weights** are experimental and off by default.
+"""
+        )
+        show_easy_dictionary()
 
 if False:
     pass

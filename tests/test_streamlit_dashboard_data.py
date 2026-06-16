@@ -1164,8 +1164,8 @@ def test_simplified_main_menu_still_unchanged():
     )
     menu_section = content[menu_start:menu_end]
     assert '"Feature Ablation Lab"' in menu_section
-    assert '"Test One Sport"' in menu_section
-    assert '"Test All Sports"' in menu_section
+    assert '"Test One Sport"' not in menu_section
+    assert '"Test All Sports"' not in menu_section
     assert '"Bankroll Settings"' in menu_section
     assert '"Instructions"' in menu_section
 
@@ -1194,8 +1194,8 @@ def test_simplified_main_menu_still_unchanged():
     )
     menu_section = content[menu_start:menu_end]
     assert '"Feature Ablation Lab"' in menu_section
-    assert '"Test One Sport"' in menu_section
-    assert '"Test All Sports"' in menu_section
+    assert '"Test One Sport"' not in menu_section
+    assert '"Test All Sports"' not in menu_section
     assert '"Bankroll Settings"' in menu_section
     assert '"Instructions"' in menu_section
 
@@ -1680,7 +1680,7 @@ def test_streamlit_app_contains_feature_ablation_lab_exact_explanation():
 def test_simplified_main_menu_contains_only_expected_items():
     with open("streamlit_app.py", encoding="utf-8") as f:
         content = f.read()
-    assert 'menu = st.sidebar.radio(\n    "Main Menu",\n    [\n        "Feature Ablation Lab",\n        "Test One Sport",\n        "Test All Sports",\n        "Bankroll Settings",\n        "Instructions",\n    ],\n)' in content
+    assert 'menu = st.sidebar.radio(\n    "Main Menu",\n    [\n        "Feature Ablation Lab",\n        "Bankroll Settings",\n        "Instructions",\n    ],\n)' in content
 
 
 def test_feature_ablation_lab_is_first():
