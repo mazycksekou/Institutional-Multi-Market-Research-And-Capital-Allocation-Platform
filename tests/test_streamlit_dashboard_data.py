@@ -1304,6 +1304,17 @@ def test_get_source_event_link_resolver_snapshot_for_dashboard_returns_resolutio
     assert snap["resolution"]["resolved_rows"] == 1
 
 
+# ── Phase 10H23E1 – Feature Ablation Lab session_state guard ─────────
+
+
+def test_feature_ablation_lab_uses_session_state_in_streamlit_app():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert "_last_ablation_result" in content
+    assert "last_ablation_result" in content
+    assert "No ablation result yet. Run True Code Baseline or Run Ablation Lab." in content
+
+
 def test_streamlit_app_contains_source_event_link_resolver():
     with open("streamlit_app.py", encoding="utf-8") as f:
         content = f.read()

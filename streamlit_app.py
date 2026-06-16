@@ -1598,6 +1598,9 @@ if menu == "Feature Ablation Lab":
     st.markdown("Test One Sport is a paper test flow.")
 
     # ── Runtime Data Source (sidebar) ─────────────────────
+
+    # Retrieve any previously stored ablation result so we can render it safely
+    last_ablation_result = st.session_state.get("_last_ablation_result", None)
     default_sqlite = get_default_historical_sqlite_path()
     with st.sidebar.expander("Runtime Data Source", expanded=True):
         db_path_input = st.text_input(
@@ -1797,217 +1800,221 @@ if menu == "Feature Ablation Lab":
                         snap.setdefault("baseline_warning", None)
                     st.session_state["_last_ablation_result"] = snap
 
-            if not snap.get("ok"):
-                st.error("Feature Ablation Lab failed.")
-                for w in snap.get("warnings", []):
-                    st.warning(w)
-                st.json(snap)
+        # ── Render ablation result summary (safe even before any button click) ──
+        last_ablation_result = st.session_state.get("_last_ablation_result", None)
+        if last_ablation_result is None:
+            st.info("No ablation result yet. Run True Code Baseline or Run Ablation Lab.")
+        elif not last_ablation_result.get("ok"):
+            st.error("Feature Ablation Lab failed.")
+            for w in last_ablation_result.get("warnings", []):
+                st.warning(w)
+            st.json(last_ablation_result)
+        else:
+            # ── Run type identification ──────────────────────────
+            run_type = last_ablation_result.get("run_type", "ablation_test")
+            baseline_type = last_ablation_result.get("baseline_type", None)
+            is_baseline = run_type == "true_code_baseline" or last_ablation_result.get("true_baseline_mode", False)
+
+            # additional run context
+            risk_preset_used = last_ablation_result.get("risk_preset_used", None)
+            regression_tactic_used = last_ablation_result.get("regression_tactic_used", None)
+            chance_override_used = last_ablation_result.get("chance_override_used", False)
+            custom_weights_used = last_ablation_result.get("custom_weights_used", False)
+            baseline_warning = last_ablation_result.get("baseline_warning", None)
+
+            # ── Result verdict ─────────────────────────────────────
+            perf = last_ablation_result.get("performance", {}) or {}
+            decisions = perf.get("decisions", 0)
+            net = perf.get("net_result", 0.0)
+            roi = perf.get("roi_percent", 0.0)
+            win_rate = perf.get("win_rate_percent", 0.0)
+            ready = perf.get("ready", False)
+            eligible = perf.get("eligible_rows", 0)
+
+            # plain‑English verdict
+            if decisions == 0:
+                verdict = "No result yet before a run"
             else:
-                # ── Run type identification ──────────────────────────
-                run_type = snap.get("run_type", "ablation_test")
-                baseline_type = snap.get("baseline_type", None)
-                is_baseline = run_type == "true_code_baseline" or snap.get("true_baseline_mode", False)
-
-                # additional run context
-                risk_preset_used = snap.get("risk_preset_used", None)
-                regression_tactic_used = snap.get("regression_tactic_used", None)
-                chance_override_used = snap.get("chance_override_used", False)
-                custom_weights_used = snap.get("custom_weights_used", False)
-                baseline_warning = snap.get("baseline_warning", None)
-
-                # ── Result verdict ─────────────────────────────────────
-                perf = snap.get("performance", {}) or {}
-                decisions = perf.get("decisions", 0)
-                net = perf.get("net_result", 0.0)
-                roi = perf.get("roi_percent", 0.0)
-                win_rate = perf.get("win_rate_percent", 0.0)
-                ready = perf.get("ready", False)
-                eligible = perf.get("eligible_rows", 0)
-
-                # plain‑English verdict
-                if decisions == 0:
-                    verdict = "No result yet before a run"
+                if is_baseline and risk_preset_used is None and regression_tactic_used is None and not custom_weights_used:
+                    verdict = "True Code Baseline (no preset, no regression, no custom weights)."
+                elif last_ablation_result.get("ablation_test") or active_fields != all_selectable or removed_fields:
+                    verdict = f"Ablation test with {len(active_fields)} active fields."
                 else:
-                    if is_baseline and risk_preset_used is None and regression_tactic_used is None and not custom_weights_used:
-                        verdict = "True Code Baseline (no preset, no regression, no custom weights)."
-                    elif snap.get("ablation_test") or active_fields != all_selectable or removed_fields:
-                        verdict = f"Ablation test with {len(active_fields)} active fields."
-                    else:
-                        verdict = f"Ablation test (custom weights or regression tactic used) produced ROI {roi:.1f}%."
-                st.subheader("Result")
-                st.info(verdict)
+                    verdict = f"Ablation test (custom weights or regression tactic used) produced ROI {roi:.1f}%."
+            st.subheader("Result")
+            st.info(verdict)
 
-                # simple plain‑English verdict
-                if decisions == 0:
-                    verdict = "No result yet before a run"
-                elif len(snap.get("included_sports", [])) == 0:
-                    verdict = "Needs more proof before trusting when sample size is small or ready status is false."
+            # simple plain‑English verdict
+            if decisions == 0:
+                verdict = "No result yet before a run"
+            elif len(last_ablation_result.get("included_sports", [])) == 0:
+                verdict = "Needs more proof before trusting when sample size is small or ready status is false."
+            else:
+                if roi > 0.5 and decisions >= 50:
+                    verdict = "Better than baseline when data enough."
+                elif roi > 0:
+                    verdict = f"Positive return ({roi:.1f}%). Useful field combination."
+                elif roi < 0:
+                    verdict = f"Negative return ({roi:.1f}%). Worse than baseline. Consider reverting field changes."
                 else:
-                    if roi > 0.5 and decisions >= 50:
-                        verdict = "Better than baseline when data enough."
-                    elif roi > 0:
-                        verdict = f"Positive return ({roi:.1f}%). Useful field combination."
-                    elif roi < 0:
-                        verdict = f"Negative return ({roi:.1f}%). Worse than baseline. Consider reverting field changes."
-                    else:
-                        verdict = "Net result is flat. Review field impact."
-                st.subheader("Result")
-                st.info(verdict)
+                    verdict = "Net result is flat. Review field impact."
+            st.subheader("Result")
+            st.info(verdict)
 
-                # ── KPI cards ──────────────────────────────────────────
-                col1, col2, col3 = st.columns(3)
-                with col1:
-                    st.metric("Decisions", decisions)
-                    st.metric("Net Result", f"{net:.2f}")
-                with col2:
-                    st.metric("ROI %", f"{roi:.2f}%")
-                    st.metric("Win Rate %", f"{win_rate:.2f}%")
-                with col3:
-                    st.metric("Ready Status", "✅" if ready else "❌")
-                    st.metric("Rows tested", eligible)
+            # ── KPI cards ──────────────────────────────────────────
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric("Decisions", decisions)
+                st.metric("Net Result", f"{net:.2f}")
+            with col2:
+                st.metric("ROI %", f"{roi:.2f}%")
+                st.metric("Win Rate %", f"{win_rate:.2f}%")
+            with col3:
+                st.metric("Ready Status", "✅" if ready else "❌")
+                st.metric("Rows tested", eligible)
 
-                active_result_fields = snap.get("active_fields", [])
-                removed_result_fields = snap.get("removed_fields", [])
-                col_f4, col_f5, col_f6 = st.columns(3)
-                with col_f4:
-                    st.metric("Active Fields", len(active_result_fields))
-                with col_f5:
-                    st.metric("Removed Fields", len(removed_result_fields))
-                with col_f6:
-                    st.metric("Field Groups", len(snap.get("selected_groups", [])))
-                # extra metadata (Phase 10H23E)
-                st.caption(f"Run Type: {snap.get('run_type','ablation_test')}")
-                st.caption(f"Baseline Type: {snap.get('baseline_type','None')}")
-                st.caption(f"Risk Preset: {snap.get('risk_preset_used') if snap.get('risk_preset_used') else 'None'}")
-                st.caption(f"Regression Tactic: {snap.get('regression_tactic_used') if snap.get('regression_tactic_used') else 'None'}")
-                st.caption(f"Chance override: {'Off' if not snap.get('chance_override_used', False) else 'On'}")
-                st.caption(f"Custom weights applied: {'Yes' if snap.get('custom_weights_used', False) else 'No'}")
+            active_result_fields = last_ablation_result.get("active_fields", [])
+            removed_result_fields = last_ablation_result.get("removed_fields", [])
+            col_f4, col_f5, col_f6 = st.columns(3)
+            with col_f4:
+                st.metric("Active Fields", len(active_result_fields))
+            with col_f5:
+                st.metric("Removed Fields", len(removed_result_fields))
+            with col_f6:
+                st.metric("Field Groups", len(last_ablation_result.get("selected_groups", [])))
+            # extra metadata (Phase 10H23E)
+            st.caption(f"Run Type: {last_ablation_result.get('run_type','ablation_test')}")
+            st.caption(f"Baseline Type: {last_ablation_result.get('baseline_type','None')}")
+            st.caption(f"Risk Preset: {last_ablation_result.get('risk_preset_used') if last_ablation_result.get('risk_preset_used') else 'None'}")
+            st.caption(f"Regression Tactic: {last_ablation_result.get('regression_tactic_used') if last_ablation_result.get('regression_tactic_used') else 'None'}")
+            st.caption(f"Chance override: {'Off' if not last_ablation_result.get('chance_override_used', False) else 'On'}")
+            st.caption(f"Custom weights applied: {'Yes' if last_ablation_result.get('custom_weights_used', False) else 'No'}")
 
-                with st.expander("View active fields"):
-                    st.write(
-                        ", ".join(active_result_fields) if active_result_fields else "None"
-                    )
-                with st.expander("View removed fields"):
-                    st.write(
-                        ", ".join(removed_result_fields)
-                        if removed_result_fields
-                        else "None"
-                    )
-
-                if baseline_warning:
-                    st.warning(baseline_warning)
-                else:
-                    st.info("Compare ablation runs against True Code Baseline before trusting improvements.")
-
-                # ── Tabs for detailed view ─────────────────────────────
-                tab_sum, tab_fld, tab_cur, tab_cmp, tab_raw = st.tabs(
-                    [
-                        "Summary",
-                        "Field Impact",
-                        "Performance Curves",
-                        "Comparison",
-                        "Raw Data",
-                    ]
+            with st.expander("View active fields"):
+                st.write(
+                    ", ".join(active_result_fields) if active_result_fields else "None"
+                )
+            with st.expander("View removed fields"):
+                st.write(
+                    ", ".join(removed_result_fields)
+                    if removed_result_fields
+                    else "None"
                 )
 
-                with tab_sum:
-                    st.subheader("Included Sports")
-                    inc = snap.get("included_sports", [])
-                    if inc:
-                        st.write(", ".join(inc))
-                    else:
-                        st.info("None")
+            if baseline_warning:
+                st.warning(baseline_warning)
+            else:
+                st.info("Compare ablation runs against True Code Baseline before trusting improvements.")
 
-                    st.subheader("Excluded Sports")
-                    exc = snap.get("excluded_sports", [])
-                    if exc:
-                        for e in exc:
-                            st.error(
-                                f"{e.get('sport_key','?')} – {e.get('reason','not ready')}"
-                            )
-                    else:
-                        st.info("None")
+            # ── Tabs for detailed view ─────────────────────────────
+            tab_sum, tab_fld, tab_cur, tab_cmp, tab_raw = st.tabs(
+                [
+                    "Summary",
+                    "Field Impact",
+                    "Performance Curves",
+                    "Comparison",
+                    "Raw Data",
+                ]
+            )
 
-                    st.subheader("Overall Performance")
-                    if perf:
-                        metric_row(
-                            [
-                                ("Total rows", perf.get("total_rows", 0), ""),
-                                ("Eligible rows", eligible, ""),
-                                ("Skipped rows", perf.get("skipped_rows", 0), ""),
-                                ("Decisions", decisions, ""),
-                                (
-                                    "Skipped decisions",
-                                    perf.get("skipped_decisions", 0),
-                                    "",
-                                ),
-                                ("Settled count", perf.get("settled_count", 0), ""),
-                                ("Wins", perf.get("wins", 0), ""),
-                                ("Losses", perf.get("losses", 0), ""),
-                                ("Pushes", perf.get("pushes", 0), ""),
-                                ("Net result", net, ""),
-                                ("ROI %", roi, ""),
-                                ("Win rate %", win_rate, ""),
-                            ]
+            with tab_sum:
+                st.subheader("Included Sports")
+                inc = last_ablation_result.get("included_sports", [])
+                if inc:
+                    st.write(", ".join(inc))
+                else:
+                    st.info("None")
+
+                st.subheader("Excluded Sports")
+                exc = last_ablation_result.get("excluded_sports", [])
+                if exc:
+                    for e in exc:
+                        st.error(
+                            f"{e.get('sport_key','?')} – {e.get('reason','not ready')}"
                         )
+                else:
+                    st.info("None")
 
-                    st.subheader("ROI by Sport")
-                    roi_sport = snap.get("roi_by_sport", {})
-                    if roi_sport:
-                        roi_rows = []
-                        for sk, data in roi_sport.items():
-                            roi_rows.append(
-                                {
-                                    "sport_key": sk,
-                                    "rows": data.get("rows", 0),
-                                    "settled_count": data.get("settled_count", 0),
-                                    "wins": data.get("wins", 0),
-                                    "losses": data.get("losses", 0),
-                                    "pushes": data.get("pushes", 0),
-                                    "net_result": data.get("net_result", 0.0),
-                                    "roi_percent": data.get("roi_percent", 0.0),
-                                    "win_rate_percent": data.get(
-                                        "win_rate_percent", 0.0
-                                    ),
-                                }
-                            )
-                        st.dataframe(
-                            df(roi_rows), use_container_width=True, hide_index=True
-                        )
-                    else:
-                        st.info("No ROI data.")
-
-                    for w in snap.get("warnings", []):
-                        st.warning(w)
-
-                with tab_fld:
-                    st.subheader("Active Fields")
-                    if active_result_fields:
-                        st.write(", ".join(active_result_fields))
-                    else:
-                        st.info("None")
-                    st.subheader("Removed Fields")
-                    if removed_result_fields:
-                        st.write(", ".join(removed_result_fields))
-                    else:
-                        st.info("None")
-
-                with tab_cur:
-                    curve_rows = snap.get("bankroll_curve", [])
-                    if curve_rows:
-                        show_curve(curve_rows)
-                    else:
-                        st.info("No performance curve available for this run.")
-
-                with tab_cmp:
-                    st.subheader("Baseline vs Current Run")
-                    st.info(
-                        "Comparison will be available after you save a baseline "
-                        "run in Experiment History and select it here."
+                st.subheader("Overall Performance")
+                if perf:
+                    metric_row(
+                        [
+                            ("Total rows", perf.get("total_rows", 0), ""),
+                            ("Eligible rows", eligible, ""),
+                            ("Skipped rows", perf.get("skipped_rows", 0), ""),
+                            ("Decisions", decisions, ""),
+                            (
+                                "Skipped decisions",
+                                perf.get("skipped_decisions", 0),
+                                "",
+                            ),
+                            ("Settled count", perf.get("settled_count", 0), ""),
+                            ("Wins", perf.get("wins", 0), ""),
+                            ("Losses", perf.get("losses", 0), ""),
+                            ("Pushes", perf.get("pushes", 0), ""),
+                            ("Net result", net, ""),
+                            ("ROI %", roi, ""),
+                            ("Win rate %", win_rate, ""),
+                        ]
                     )
 
-                with tab_raw:
-                    st.json(snap)
+                st.subheader("ROI by Sport")
+                roi_sport = last_ablation_result.get("roi_by_sport", {})
+                if roi_sport:
+                    roi_rows = []
+                    for sk, data in roi_sport.items():
+                        roi_rows.append(
+                            {
+                                "sport_key": sk,
+                                "rows": data.get("rows", 0),
+                                "settled_count": data.get("settled_count", 0),
+                                "wins": data.get("wins", 0),
+                                "losses": data.get("losses", 0),
+                                "pushes": data.get("pushes", 0),
+                                "net_result": data.get("net_result", 0.0),
+                                "roi_percent": data.get("roi_percent", 0.0),
+                                "win_rate_percent": data.get(
+                                    "win_rate_percent", 0.0
+                                ),
+                            }
+                        )
+                    st.dataframe(
+                        df(roi_rows), use_container_width=True, hide_index=True
+                    )
+                else:
+                    st.info("No ROI data.")
+
+                for w in last_ablation_result.get("warnings", []):
+                    st.warning(w)
+
+            with tab_fld:
+                st.subheader("Active Fields")
+                if active_result_fields:
+                    st.write(", ".join(active_result_fields))
+                else:
+                    st.info("None")
+                st.subheader("Removed Fields")
+                if removed_result_fields:
+                    st.write(", ".join(removed_result_fields))
+                else:
+                    st.info("None")
+
+            with tab_cur:
+                curve_rows = last_ablation_result.get("bankroll_curve", [])
+                if curve_rows:
+                    show_curve(curve_rows)
+                else:
+                    st.info("No performance curve available for this run.")
+
+            with tab_cmp:
+                st.subheader("Baseline vs Current Run")
+                st.info(
+                    "Comparison will be available after you save a baseline "
+                    "run in Experiment History and select it here."
+                )
+
+            with tab_raw:
+                st.json(last_ablation_result)
 
     # ── Advanced Model Method / Weights (collapsed) ─────────────────
     with st.expander("Advanced Model Method", expanded=False):
