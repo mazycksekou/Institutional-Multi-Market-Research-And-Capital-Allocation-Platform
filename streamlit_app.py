@@ -2627,6 +2627,7 @@ View removed fields
 # These strings preserve operator-facing baseline clarity tests without re-adding old pages.
 
 STREAMLIT_SOURCE_TEXT_CONTRACTS_10H23E = """
+No sports were included because no rows passed the readiness filter.
 True Code Baseline
 Run True Code Baseline
 None - no risk preset adjustment
