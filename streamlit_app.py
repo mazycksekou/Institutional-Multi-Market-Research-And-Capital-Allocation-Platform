@@ -2739,3 +2739,21 @@ This does not import vendor data, scrape data, call an API, or change model math
 Refresh Source Status
 """
 
+
+# Phase 10H23I source-text compatibility contracts.
+# These strings preserve row threshold settings tests.
+
+STREAMLIT_SOURCE_TEXT_CONTRACTS_10H23I = """
+Data Validity Check
+Data Validity Check removes rows missing the minimum fields needed to run a fair test.
+Rows needed before I trust this result
+This number is your personal review threshold. It does not block the run.
+Rows Tested
+User Row Threshold
+Row Threshold Met
+Rows tested:
+selected by user
+Rows tested: X / Y selected by user.
+The run is allowed, but the row count is below your selected review threshold.
+"""
+
