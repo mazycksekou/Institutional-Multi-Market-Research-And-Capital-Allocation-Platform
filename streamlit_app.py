@@ -263,8 +263,9 @@ def sidebar_inputs():
         override_existing_probability = False
     else:
         override_existing_probability = st.sidebar.checkbox(
-            "Let tactic replace old model chance",
+            "Use regression tactic as model chance",
             value=bool(SAFE_DEFAULTS["override_existing_probability"]),
+            help="Off means the tactic is shown for comparison only. On means the tactic replaces the current model chance.",
         )
 
     feature_weight_text = st.sidebar.text_area(
@@ -1730,6 +1731,18 @@ if menu == "Feature Ablation Lab":
         if not baseline_disabled:
             if st.button("Run True Code Baseline", type="primary", key="fal_baseline"):
                 with st.spinner("Running True Code Baseline..."):
+                    # Enforce None for risk preset and regression tactic
+                    risk_preset_for_baseline = settings.get("risk_preset")
+                    if risk_preset_for_baseline == "None - no risk preset adjustment":
+                        risk_preset_val = None
+                    else:
+                        risk_preset_val = risk_preset_for_baseline
+                    tactic_for_baseline = settings.get("tactic")
+                    if tactic_for_baseline == "None - no regression tactic":
+                        tactic_val = None
+                    else:
+                        tactic_val = tactic_for_baseline
+
                     snap = get_feature_ablation_lab_snapshot_for_dashboard(
                         db_path_input,
                         sport=sport_val or None,
@@ -1742,8 +1755,8 @@ if menu == "Feature Ablation Lab":
                     if snap.get("ok"):
                         snap["run_type"] = "true_code_baseline"
                         snap["true_baseline_mode"] = True
-                        snap["risk_preset_used"] = None
-                        snap["regression_tactic_used"] = None
+                        snap["risk_preset_used"] = risk_preset_val
+                        snap["regression_tactic_used"] = tactic_val
                         snap["chance_override_used"] = False
                         snap["custom_weights_used"] = False
                         snap["baseline_type"] = "True Code Baseline"
@@ -1865,10 +1878,10 @@ if menu == "Feature Ablation Lab":
                 # extra metadata (Phase 10H23E)
                 st.caption(f"Run Type: {snap.get('run_type','ablation_test')}")
                 st.caption(f"Baseline Type: {snap.get('baseline_type','None')}")
-                st.caption(f"Risk Preset: {risk_preset_used if risk_preset_used else 'None'}")
-                st.caption(f"Regression Tactic: {regression_tactic_used if regression_tactic_used else 'None'}")
-                st.caption(f"Chance override: {'Off' if not chance_override_used else 'On'}")
-                st.caption(f"Custom weights applied: {'Yes' if custom_weights_used else 'No'}")
+                st.caption(f"Risk Preset: {snap.get('risk_preset_used') if snap.get('risk_preset_used') else 'None'}")
+                st.caption(f"Regression Tactic: {snap.get('regression_tactic_used') if snap.get('regression_tactic_used') else 'None'}")
+                st.caption(f"Chance override: {'Off' if not snap.get('chance_override_used', False) else 'On'}")
+                st.caption(f"Custom weights applied: {'Yes' if snap.get('custom_weights_used', False) else 'No'}")
 
                 with st.expander("View active fields"):
                     st.write(
@@ -1998,22 +2011,47 @@ if menu == "Feature Ablation Lab":
 
     # ── Advanced Model Method / Weights (collapsed) ─────────────────
     with st.expander("Advanced Model Method", expanded=False):
-        st.subheader("Regression tactic")
-        st.info(
-            "Regression tactic changes the modeling method. "
-            "Use only when comparing model methods, not normal field removal."
-        )
-        st.subheader("Let tactic replace old model chance")
-        st.warning(
-            "This can override the older model probability. "
-            "Leave off unless you are intentionally testing the selected tactic."
-        )
+        current_tactic = settings.get("tactic", "None - no regression tactic")
+        tactic_is_none = current_tactic == "None - no regression tactic"
+        if tactic_is_none:
+            st.caption("Current status: Off / None")
+            st.caption("Regression tactic: None - no regression tactic")
+            st.caption("Chance source: Current code model chance")
+            st.caption("Chance override: Off because regression tactic is None")
+        else:
+            st.caption("Advanced method is active. This is no longer the True Code Baseline.")
+            st.caption(f"Current tactic: {current_tactic}")
+            st.caption("Chance source: Regression tactic override")
+            st.caption("Chance override: On (if checkbox enabled)")
+            st.checkbox(
+                "Use regression tactic as model chance",
+                value=bool(SAFE_DEFAULTS.get("override_existing_probability", False)),
+                key="fal_reg_override",
+                help="Off means the tactic is shown for comparison only. "
+                     "On means the tactic replaces the current model chance.",
+            )
+            st.info("Off means the tactic is shown for comparison only. "
+                    "On means the tactic replaces the current model chance.")
 
     with st.expander("Experimental Field Weights", expanded=False):
-        st.info(
-            "Use only when intentionally testing manual field weights. "
-            "The result summary will show whether custom weights were used."
+        st.caption("Custom weights: Off by default")
+        enable_custom = st.checkbox(
+            "Enable custom feature weights",
+            key="fal_custom_weights_toggle",
+            value=False,
         )
+        if enable_custom:
+            st.warning(
+                "Custom weights are experimental. "
+                "This is no longer the True Code Baseline."
+            )
+            st.info(
+                "Custom feature weights manually change how selected fields "
+                "influence the run. Use only when intentionally testing "
+                "manual weighting."
+            )
+        else:
+            st.caption("Custom weights applied: No")
 
 if False:
     pass
