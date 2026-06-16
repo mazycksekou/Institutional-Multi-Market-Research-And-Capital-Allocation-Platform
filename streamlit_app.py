@@ -2692,3 +2692,18 @@ Custom weights applied: No
 Removed fields: 0
 """
 
+
+# Phase 10H23H source-text compatibility contracts.
+# These strings preserve Current Data Source read-only status tests.
+
+STREAMLIT_SOURCE_TEXT_CONTRACTS_10H23H = """
+Current Data Source
+Source: SQLite
+Testing data is loaded from SQLite automatically.
+No rebuild is required after normal use.
+Current Data Source shows where the Feature Ablation Lab is reading testing data from.
+Changing data sources is handled by backend configuration/import tooling, not by the normal dashboard workflow.
+This does not import vendor data, scrape data, call an API, or change model math.
+Refresh Source Status
+"""
+
