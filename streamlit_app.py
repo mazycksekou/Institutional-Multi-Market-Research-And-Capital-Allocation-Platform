@@ -94,9 +94,18 @@ def df(rows):
     return pd.DataFrame(list(make_arrow_safe_table_rows(rows) if rows else []))
 
 
-def show_easy_dictionary() -> None:
-    with st.expander("Simple word helper", expanded=False):
-        rows = [{"field": key, "simple meaning": value} for key, value in sorted(EASY_LABELS.items())]
+def show_easy_dictionary(
+    title: str = "Simple word helper",
+    expanded: bool = False,
+    extra_markdown: str = "",
+) -> None:
+    with st.expander(title, expanded=expanded):
+        if extra_markdown:
+            st.markdown(extra_markdown)
+        rows = [
+            {"field": key, "simple meaning": value}
+            for key, value in sorted(EASY_LABELS.items())
+        ]
         st.dataframe(df(rows), use_container_width=True, hide_index=True)
 
 
@@ -2080,9 +2089,7 @@ if menu == "Feature Ablation Lab":
             st.caption("Custom weights applied: No")
 
     # ── Plain‑English Helper at bottom of Feature Ablation Lab ────
-    with st.expander("Plain-English Helper", expanded=False):
-        st.markdown(
-            """
+    helper_markdown = """\
 - **True Code Baseline** means the current model exactly as coded.
 - **One Sport** tests only the selected sport.
 - **All Ready Sports** tests only sports that pass readiness checks.
@@ -2091,8 +2098,11 @@ if menu == "Feature Ablation Lab":
 - **Regression tactic** is off when set to None.
 - **Custom weights** are experimental and off by default.
 """
-        )
-        show_easy_dictionary()
+    show_easy_dictionary(
+        title="Plain-English Helper",
+        expanded=False,
+        extra_markdown=helper_markdown,
+    )
 
 if False:
     pass

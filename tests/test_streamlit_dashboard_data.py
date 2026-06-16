@@ -1006,6 +1006,27 @@ def test_get_overall_operator_workflow_steps_returns_ordered():
     assert steps[-1]["step"] == len(steps)
 
 
+def test_no_nested_plain_english_helper_expander():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        lines = f.readlines()
+    # check that there is no "show_easy_dictionary()" inside a "with st.expander("Plain‑English Helper""
+    helper_line = None
+    for i, line in enumerate(lines):
+        if 'with st.expander("Plain-English Helper"' in line:
+            helper_line = i
+            break
+    if helper_line is not None:
+        # scan next 20 lines for show_easy_dictionary
+        for j in range(helper_line + 1, min(helper_line + 20, len(lines))):
+            if "show_easy_dictionary" in lines[j]:
+                raise AssertionError(
+                    "show_easy_dictionary() appears inside expander (nested)"
+                )
+    # verify the helper string is present and a call exists (our new version)
+    assert any("Plain-English Helper" in line for line in lines)
+    assert any("show_easy_dictionary" in line for line in lines)
+
+
 # ── Phase 10H23E – True Baseline + Neutral Presets ──────────────────
 
 
