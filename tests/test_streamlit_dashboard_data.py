@@ -1006,6 +1006,94 @@ def test_get_overall_operator_workflow_steps_returns_ordered():
     assert steps[-1]["step"] == len(steps)
 
 
+# ── Phase 10H23H – Current Data Source Read‑Only Panel ────────────
+
+
+def test_streamlit_app_contains_current_data_source_panel_header():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert '"Current Data Source"' in content
+
+
+def test_streamlit_app_contains_source_sqlite_text():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert "Source: SQLite" in content
+
+
+def test_streamlit_app_contains_auto_loaded_text():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert "Testing data is loaded from SQLite automatically." in content
+
+
+def test_streamlit_app_contains_no_rebuild_needed_text():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert "No rebuild is required after normal use." in content
+
+
+def test_streamlit_app_contains_panel_explanation_text():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert (
+        "Current Data Source shows where the Feature Ablation Lab is "
+        "reading testing data from."
+    ) in content
+
+
+def test_streamlit_app_contains_backend_control_text():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert (
+        "Changing data sources is handled by backend configuration/import "
+        "tooling, not by the normal dashboard workflow."
+    ) in content
+
+
+def test_streamlit_app_contains_vendor_safety_text():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert (
+        "This does not import vendor data, scrape data, call an API, "
+        "or change model math."
+    ) in content
+
+
+def test_streamlit_app_contains_refresh_source_status():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert "Refresh Source Status" in content
+
+
+def test_forbidden_connector_texts_not_present_after_10h23h():
+    forbidden = [
+        "Connect Real Vendor API",
+        "Run Real Line Movement Scraper",
+        "Connect Synthetic Vendor API",
+        "Run Synthetic Scraper",
+    ]
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    for text in forbidden:
+        assert text not in content
+
+
+def test_main_menu_still_only_three_items():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    # locate the menu definition
+    start = content.find('menu = st.sidebar.radio(\n    "Main Menu",\n    [')
+    end = content.find("],\n)", start)
+    menu_section = content[start:end]
+    assert '"Feature Ablation Lab"' in menu_section
+    assert '"Bankroll Settings"' in menu_section
+    assert '"Instructions"' in menu_section
+    # verify old items are not present
+    assert '"Test One Sport"' not in menu_section
+    assert '"Test All Sports"' not in menu_section
+
+
 def test_no_nested_plain_english_helper_expander():
     with open("streamlit_app.py", encoding="utf-8") as f:
         lines = f.readlines()

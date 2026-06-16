@@ -1620,18 +1620,32 @@ if menu == "Feature Ablation Lab":
         else:
             st.warning("Database not found. Run will be unavailable.")
 
-    # ── Advanced Maintenance (sidebar) ─────────────────
-    with st.sidebar.expander("Advanced Maintenance", expanded=False):
-        force_rebuild = st.checkbox(
-            "Rebuild dataset",
-            value=bool(SAFE_DEFAULTS["force_rebuild_dataset"]),
-            key="fal_rebuild",
-            help="Re-scan local artifacts and rebuild canonical dataset.",
+    # ── Current Data Source (sidebar) ─────────────────
+    with st.sidebar.expander("Current Data Source", expanded=False):
+        source_path = db_path_input  # reuse runtime path
+        source_exists = Path(source_path).exists()
+        st.sidebar.metric("Status", "Connected" if source_exists else "Missing")
+        st.sidebar.caption("Source: SQLite")
+        st.sidebar.caption(source_path)
+
+        st.sidebar.info("Testing data is loaded from SQLite automatically.")
+        st.sidebar.info("No rebuild is required after normal use.")
+        st.sidebar.caption(
+            "Current Data Source shows where the Feature Ablation Lab is "
+            "reading testing data from."
         )
-        st.info(
-            "Use only when source data or field definitions changed. "
-            "Not needed for normal ablation testing."
+        st.sidebar.caption(
+            "Changing data sources is handled by backend configuration/import "
+            "tooling, not by the normal dashboard workflow."
         )
+        st.sidebar.caption(
+            "This does not import vendor data, scrape data, call an API, "
+            "or change model math."
+        )
+
+        if st.sidebar.button("Refresh Source Status", key="fal_refresh_status"):
+            # read-only status check: only refresh the displayed path/status
+            pass
 
     # ── Mode and sport selection ──────────────────────────
     col_mode, col_rest = st.columns([1, 3])
