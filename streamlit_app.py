@@ -60,6 +60,8 @@ from automation_scheduler.streamlit_dashboard_data import (
     get_line_movement_readiness_snapshot_for_dashboard,
     get_line_movement_import_contract_snapshot_for_dashboard,
     build_vendor_neutral_line_movement_contract,
+    build_readiness_display_payload,
+    build_readiness_display_rows,
     describe_line_movement_import_contract,
     describe_asof_line_movement_query_engine,
     describe_line_movement_data_quality_dashboard,
@@ -92,6 +94,40 @@ st.set_page_config(
 
 def df(rows):
     return pd.DataFrame(list(make_arrow_safe_table_rows(rows) if rows else []))
+
+
+def show_controlled_readiness_preview(section_label: str) -> None:
+    payload = build_readiness_display_payload(
+        market_name=section_label,
+        data_source_name="Local shell placeholder",
+        validation_status="Shell preview only",
+        row_counts={
+            "tested": 12,
+            "valid": 12,
+            "invalid": 0,
+        },
+        rows_tested=12,
+        rows_valid=12,
+        rows_invalid=0,
+        missing_field_reasons=["none"],
+        warning_reasons=["static shell preview"],
+        user_threshold_value=5,
+        user_threshold_met=False,
+    )
+    rows = build_readiness_display_rows(payload)
+
+    st.subheader(f"{section_label} readiness display preview")
+    st.caption("readiness display preview")
+    st.info("shell-only")
+    st.info("no prediction testing")
+    st.info("no live connectors")
+    st.info("no API calls")
+    st.info("no database writes")
+    st.info("user threshold review-only")
+    st.info("validity check only")
+    st.info("do not hide valid results because sample size is low")
+    st.info("do not label quality automatically")
+    st.dataframe(df(rows), use_container_width=True, hide_index=True)
 
 
 def show_easy_dictionary(
@@ -2634,12 +2670,9 @@ elif menu == "Instructions":
         key="controlled_navigation_shell",
     )
     st.info(f"{controlled_navigation} is a shell-only readiness/navigation shell.")
-    st.info("shell-only")
     st.info("readiness/navigation shell")
-    st.info("no prediction testing")
     st.info("no live connectors")
-    st.info("no API calls")
-    st.info("no database writes")
+    show_controlled_readiness_preview(controlled_navigation)
 
     st.subheader("Important Warning: Never use leakage fields as model features")
     st.warning(
