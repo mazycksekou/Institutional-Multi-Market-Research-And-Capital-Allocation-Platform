@@ -41,3 +41,16 @@ def detect_cross_book_total_arbitrage(offers: list[dict[str, Any]], **kwargs: An
 
 def detect_alt_line_arbitrage(offers: list[dict[str, Any]], **kwargs: Any) -> dict[str, Any]:
     return detect_two_way_arbitrage(offers, **kwargs)
+
+
+def detect_prediction_arbitrage(
+    yes_price: float,
+    no_price: float,
+    fee: float = 0.0,
+) -> bool:
+    """Return True if yes+no price (after fee) < 1 indicating arbitrage."""
+    if yes_price <= 0.0 or no_price <= 0.0:
+        raise ValueError("prices must be positive")
+    if fee < 0.0:
+        raise ValueError("fee cannot be negative")
+    return (yes_price + no_price) < (1.0 - fee)
