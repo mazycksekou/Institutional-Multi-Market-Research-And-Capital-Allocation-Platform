@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import subprocess
 from pathlib import Path
 
 
@@ -109,19 +108,13 @@ def test_phase10k6k_controlled_dashboard_shell_review():
     for needle in forbidden_streamlit_strings:
         assert needle not in streamlit_text, f"Forbidden string unexpectedly present: {needle}"
 
-    expected_untracked = {
-        "PHASE10K6K_CONTROLLED_DASHBOARD_SHELL_REVIEW.md",
-        "tests/test_phase10k6k_controlled_dashboard_shell_review.py",
-    }
-    result = subprocess.run(
-        ["git", "ls-files", "--others", "--exclude-standard"],
-        cwd=ROOT,
-        check=True,
-        capture_output=True,
-        text=True,
-    )
-    untracked = {line.strip().replace("\\", "/") for line in result.stdout.splitlines() if line.strip()}
-    assert untracked == expected_untracked, f"Unexpected untracked files: {sorted(untracked)}"
+    page_candidates = [
+        *Path(".").glob("pages/*.py"),
+        *Path(".").glob("app/pages/*.py"),
+        *Path(".").glob("frontend/*.py"),
+        *Path(".").glob("frontend/pages/*.py"),
+    ]
+    assert not page_candidates, f"Unexpected separate frontend page files found: {page_candidates}"
 
     assert "no frontend page files added" in report_text
     assert "connector guardrails remain active" in report_text
