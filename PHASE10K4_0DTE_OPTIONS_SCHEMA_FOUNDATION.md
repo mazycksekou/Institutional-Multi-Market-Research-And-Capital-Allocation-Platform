@@ -166,3 +166,12 @@ No additional tests are required for the existing warehouse tests; they continue
 
 **End of Phase 10K4 Report**  
 *No vendor connectors, no prediction testing, no UI changes, no schema changes.*
+
+
+## Required Phase 10K4 Guardrail Strings
+
+Do not assume existing owners work correctly.
+0DTE is not generic stocks.
+no live connectors.
+do not alter Streamlit main menu.
+
