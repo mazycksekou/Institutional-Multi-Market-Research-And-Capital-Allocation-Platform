@@ -136,14 +136,7 @@ class TestPhase10K5CoreArbitrageEngine(unittest.TestCase):
             total_stake=100.0,
             market_identity_confidence=100.0,
         )
-        detected = bool(
-            result.get("candidate_found")
-            or result.get("arbitrage")
-            or result.get("is_arbitrage")
-            or result.get("arbitrage_flag")
-        )
-        self.assertTrue(result, result)
-        self.assertTrue(detected, result)
+        self.assertTrue(result.get("candidate_found"), result)
 
     def test_two_way_arbitrage_negative(self) -> None:
         """-110/-110 -> no arbitrage using the existing one-argument owner."""
@@ -180,13 +173,7 @@ class TestPhase10K5CoreArbitrageEngine(unittest.TestCase):
             total_stake=100.0,
             market_identity_confidence=100.0,
         )
-        detected = bool(
-            result.get("candidate_found")
-            or result.get("arbitrage")
-            or result.get("is_arbitrage")
-            or result.get("arbitrage_flag")
-        )
-        self.assertFalse(detected, result)
+        self.assertFalse(result.get("candidate_found"), result)
 
     def test_three_way_arbitrage_positive(self) -> None:
         """+250/+250/+250 -> three-way arbitrage using the existing one-argument owner."""
@@ -231,13 +218,7 @@ class TestPhase10K5CoreArbitrageEngine(unittest.TestCase):
             },
         ]
         result = detect_three_way_arbitrage(offers, total_stake=100.0)
-        detected = bool(
-            result.get("candidate_found")
-            or result.get("arbitrage")
-            or result.get("is_arbitrage")
-            or result.get("arbitrage_flag")
-        )
-        self.assertTrue(detected, result)
+        self.assertTrue(result.get("candidate_found"), result)
 
     def test_prediction_market_yes_no_positive(self) -> None:
         """yes=0.47, no=0.47 -> prediction-market yes/no arbitrage."""

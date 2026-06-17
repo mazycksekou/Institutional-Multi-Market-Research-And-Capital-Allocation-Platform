@@ -24,8 +24,8 @@ No new packages, live connectors, prediction‑model tests, or UI changes.
 ### Summary of used / extended owners
 
 - **Used without change:** `math_utils`, `odds_math`, `three_way_arbitrage`, `prediction_market_outcome_candidates`, `market_research_schema`.
-- **Extended (one small helper):** `two_way_arbitrage.py` – a pure‑math dutching/stake‑allocation function (approx equal gross payout). The helper is < 20 lines, uses only existing integer odds, adds no new dependencies.
-- **Created (if needed):** **None.** A new package was not required because the combination of existing owners plus one tiny inline function covers all 10K5 math.
+- **Extended:** `two_way_arbitrage.py` – added `detect_prediction_arbitrage` (a pure‑math yes/no price arbitrage helper). The dutching/stake‑allocation helper is defined in the test file only.
+- **Created (if needed):** **None.** A new package was not required because the combination of existing owners plus one tiny inline test helper covers all 10K5 math.
 
 ### No‑vig normalisation
 
@@ -34,9 +34,9 @@ If an existing owner supplies the same normalisation later, the test can be upda
 
 ### Dutching / stake allocation
 
-The tiny helper `equal_gross_payout_stake` was added inside `two_way_arbitrage.py` (future edit).  
+The tiny helper `equal_gross_payout_stake` is defined directly in the test file.  
 It performs proportional allocation based on decimal odds (derived from implied probabilities).  
-The test file includes a local copy of the same math for immediate validation.
+No production code is modified for dutching.
 
 ### Options parity hooks (no implementation)
 
