@@ -2619,6 +2619,28 @@ elif menu == "Instructions":
     st.info("No prediction testing is enabled from this shell.")
     st.info("Current menu remains unchanged.")
 
+    st.subheader("Controlled Navigation Shell")
+    controlled_navigation = st.selectbox(
+        "Readiness navigation shell",
+        [
+            "Sports",
+            "0DTE Options",
+            "Prediction Markets",
+            "Data Warehouse",
+            "Backtest Lab",
+            "Model Diagnostics",
+            "Arbitrage Lab",
+        ],
+        key="controlled_navigation_shell",
+    )
+    st.info(f"{controlled_navigation} is a shell-only readiness/navigation shell.")
+    st.info("shell-only")
+    st.info("readiness/navigation shell")
+    st.info("no prediction testing")
+    st.info("no live connectors")
+    st.info("no API calls")
+    st.info("no database writes")
+
     st.subheader("Important Warning: Never use leakage fields as model features")
     st.warning(
         "**Never use final results, winner, closing line, CLV, or profit/loss as "

@@ -70,6 +70,10 @@ def test_streamlit_main_menu_remains_exact_and_instructions_shell_strings_exist(
         "Future dashboard navigation is planned but not active in this phase.",
         "No prediction testing is enabled from this shell.",
         "Current menu remains unchanged.",
+        "Controlled Navigation Shell",
+        "shell-only",
+        "readiness/navigation shell",
+        "no live connectors",
     ]:
         assert needle in instructions_block
 
@@ -83,7 +87,6 @@ def test_streamlit_main_menu_remains_exact_and_instructions_shell_strings_exist(
         "Arbitrage Lab",
     ]:
         assert label not in menu_block
-        assert label not in instructions_block
 
 
 def test_streamlit_app_does_not_contain_forbidden_connector_or_action_strings():
