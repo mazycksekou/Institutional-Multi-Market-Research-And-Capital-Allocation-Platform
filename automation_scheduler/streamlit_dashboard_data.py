@@ -988,6 +988,71 @@ def build_readiness_display_payload(
     return payload
 
 
+def build_readiness_display_rows(payload: Mapping[str, Any]) -> list[dict[str, Any]]:
+    """Convert a readiness payload into plain display rows."""
+    contract = build_readiness_display_contract()
+    fields = contract.get("fields") or READINESS_DISPLAY_FIELDS
+
+    labels = {
+        "market_name": "Market name",
+        "data_source_name": "Data source name",
+        "validation_status": "Validation status",
+        "row_counts": "Row counts",
+        "rows_tested": "Rows tested",
+        "rows_valid": "Rows valid",
+        "rows_invalid": "Rows invalid",
+        "missing_field_reasons": "Missing field reasons",
+        "warning_reasons": "Warning reasons",
+        "user_threshold_value": "User threshold value",
+        "user_threshold_met": "User threshold met",
+        "threshold_review_only": "Threshold review-only",
+        "validity_is_backend_gate": "Validity is backend gate",
+        "low_sample_size_does_not_hide_valid_results": "Low sample size does not hide valid results",
+        "quality_not_automatically_labeled": "Quality not automatically labeled",
+    }
+    policy_notes = {
+        "market_name": "display only",
+        "data_source_name": "display only",
+        "validation_status": "validity check only",
+        "row_counts": "row counts",
+        "rows_tested": "row counts",
+        "rows_valid": "row counts",
+        "rows_invalid": "row counts",
+        "missing_field_reasons": "missing field reasons",
+        "warning_reasons": "warning reasons",
+        "user_threshold_value": "user threshold review-only",
+        "user_threshold_met": "user threshold review-only",
+        "threshold_review_only": "user threshold review-only",
+        "validity_is_backend_gate": "validity check only; low backend gate",
+        "low_sample_size_does_not_hide_valid_results": "do not hide valid results because sample size is low",
+        "quality_not_automatically_labeled": "do not label quality automatically",
+    }
+
+    rows: list[dict[str, Any]] = []
+    for field in fields:
+        value = payload.get(field)
+        if isinstance(value, Mapping):
+            display_value: Any = json.dumps(dict(value), sort_keys=True)
+        elif isinstance(value, (list, tuple)):
+            display_value = json.dumps(list(value))
+        elif isinstance(value, bool):
+            display_value = "Yes" if value else "No"
+        elif value is None:
+            display_value = ""
+        else:
+            display_value = value
+
+        rows.append(
+            {
+                "label": labels.get(field, field),
+                "value": display_value,
+                "policy_note": policy_notes.get(field, ""),
+            }
+        )
+
+    return rows
+
+
 def run_model_test(
     *,
     profile_key: str | None,
