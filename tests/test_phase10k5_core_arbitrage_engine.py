@@ -102,74 +102,155 @@ class TestPhase10K5CoreArbitrageEngine(unittest.TestCase):
     # 4. Two‑way arbitrage – automation_scheduler/arbitrage/two_way_arbitrage.py
     # ------------------------------------------------------------------
     def test_two_way_arbitrage_positive(self) -> None:
-        """+120/+120 → arbitrage exists (implied sum ≈ 0.909)."""
-        try:
-            from automation_scheduler.arbitrage.two_way_arbitrage import detect_two_way_arbitrage
-        except ImportError as exc:
-            self.skipTest(f"detect_two_way_arbitrage not available: {exc}")
+        """+120/+120 -> arbitrage exists using the existing one-argument owner."""
+        from automation_scheduler.arbitrage.two_way_arbitrage import detect_two_way_arbitrage
+
+        offers = [
+            {
+                "book": "BookA",
+                "bookmaker": "BookA",
+                "event_id": "evt-10k5",
+                "market": "moneyline",
+                "market_type": "moneyline",
+                "selection": "Team A",
+                "outcome": "Team A",
+                "oddstype": "american",
+                "odds": 120,
+                "american_odds": 120,
+            },
+            {
+                "book": "BookB",
+                "bookmaker": "BookB",
+                "event_id": "evt-10k5",
+                "market": "moneyline",
+                "market_type": "moneyline",
+                "selection": "Team B",
+                "outcome": "Team B",
+                "oddstype": "american",
+                "odds": 120,
+                "american_odds": 120,
+            },
+        ]
         result = detect_two_way_arbitrage(
-            {"oddstype": "american", "odds": 120},
-            {"oddstype": "american", "odds": 120},
+            offers,
+            total_stake=100.0,
+            market_identity_confidence=100.0,
         )
-        # The owner should return a truthy indicator of arbitrage
-        self.assertTrue(result.get("arbitrage", False))
+        detected = bool(
+            result.get("candidate_found")
+            or result.get("arbitrage")
+            or result.get("is_arbitrage")
+            or result.get("arbitrage_flag")
+        )
+        self.assertTrue(result, result)
+        self.assertTrue(detected, result)
 
     def test_two_way_arbitrage_negative(self) -> None:
-        """-110/-110 → no arbitrage (implied sum ≈ 1.0476)."""
-        try:
-            from automation_scheduler.arbitrage.two_way_arbitrage import detect_two_way_arbitrage
-        except ImportError as exc:
-            self.skipTest(f"detect_two_way_arbitrage not available: {exc}")
+        """-110/-110 -> no arbitrage using the existing one-argument owner."""
+        from automation_scheduler.arbitrage.two_way_arbitrage import detect_two_way_arbitrage
+
+        offers = [
+            {
+                "book": "BookA",
+                "bookmaker": "BookA",
+                "event_id": "evt-10k5",
+                "market": "moneyline",
+                "market_type": "moneyline",
+                "selection": "Team A",
+                "outcome": "Team A",
+                "oddstype": "american",
+                "odds": -110,
+                "american_odds": -110,
+            },
+            {
+                "book": "BookB",
+                "bookmaker": "BookB",
+                "event_id": "evt-10k5",
+                "market": "moneyline",
+                "market_type": "moneyline",
+                "selection": "Team B",
+                "outcome": "Team B",
+                "oddstype": "american",
+                "odds": -110,
+                "american_odds": -110,
+            },
+        ]
         result = detect_two_way_arbitrage(
-            {"oddstype": "american", "odds": -110},
-            {"oddstype": "american", "odds": -110},
+            offers,
+            total_stake=100.0,
+            market_identity_confidence=100.0,
         )
-        self.assertFalse(result.get("arbitrage", True))
+        detected = bool(
+            result.get("candidate_found")
+            or result.get("arbitrage")
+            or result.get("is_arbitrage")
+            or result.get("arbitrage_flag")
+        )
+        self.assertFalse(detected, result)
 
-    # ------------------------------------------------------------------
-    # 5. Three‑way arbitrage – automation_scheduler/arbitrage/three_way_arbitrage.py
-    # ------------------------------------------------------------------
     def test_three_way_arbitrage_positive(self) -> None:
-        """+250/+250/+250 → arbitrage exists (implied sum ≈ 0.857)."""
-        try:
-            from automation_scheduler.arbitrage.three_way_arbitrage import detect_three_way_arbitrage
-        except ImportError as exc:
-            self.skipTest(f"detect_three_way_arbitrage not available: {exc}")
-        result = detect_three_way_arbitrage([
-            {"oddstype": "american", "odds": 250},
-            {"oddstype": "american", "odds": 250},
-            {"oddstype": "american", "odds": 250},
-        ])
-        self.assertTrue(result.get("arbitrage", False))
+        """+250/+250/+250 -> three-way arbitrage using the existing one-argument owner."""
+        from automation_scheduler.arbitrage.three_way_arbitrage import detect_three_way_arbitrage
 
-    # ------------------------------------------------------------------
-    # 6. Prediction‑market yes/no – automation_scheduler/prediction_market_outcome_candidates.py
-    # ------------------------------------------------------------------
+        offers = [
+            {
+                "book": "BookA",
+                "bookmaker": "BookA",
+                "event_id": "evt-10k5",
+                "market": "soccer_1x2",
+                "market_type": "soccer_1x2",
+                "selection": "Home",
+                "outcome": "Home",
+                "oddstype": "american",
+                "odds": 250,
+                "american_odds": 250,
+            },
+            {
+                "book": "BookB",
+                "bookmaker": "BookB",
+                "event_id": "evt-10k5",
+                "market": "soccer_1x2",
+                "market_type": "soccer_1x2",
+                "selection": "Draw",
+                "outcome": "Draw",
+                "oddstype": "american",
+                "odds": 250,
+                "american_odds": 250,
+            },
+            {
+                "book": "BookC",
+                "bookmaker": "BookC",
+                "event_id": "evt-10k5",
+                "market": "soccer_1x2",
+                "market_type": "soccer_1x2",
+                "selection": "Away",
+                "outcome": "Away",
+                "oddstype": "american",
+                "odds": 250,
+                "american_odds": 250,
+            },
+        ]
+        result = detect_three_way_arbitrage(offers, total_stake=100.0)
+        detected = bool(
+            result.get("candidate_found")
+            or result.get("arbitrage")
+            or result.get("is_arbitrage")
+            or result.get("arbitrage_flag")
+        )
+        self.assertTrue(detected, result)
+
     def test_prediction_market_yes_no_positive(self) -> None:
-        """yes=0.47, no=0.47 → arbitrage (sum < 1)."""
-        try:
-            from automation_scheduler.prediction_market_outcome_candidates import evaluate_outcome_evidence
-        except ImportError:
-            self.skipTest("evaluate_outcome_evidence not available")
-        row = {"yes_probability": 0.47, "no_probability": 0.47, "source_record_type": "test"}
-        result = evaluate_outcome_evidence(row)
-        # The function ought to signal an arbitrage opportunity when sum < 1
-        self.assertIn("arbitrage_flag", result)
-        self.assertEqual(result["arbitrage_flag"], True)
+        """yes=0.47, no=0.47 -> prediction-market yes/no arbitrage."""
+        from automation_scheduler.arbitrage.two_way_arbitrage import detect_prediction_arbitrage
+
+        self.assertTrue(detect_prediction_arbitrage(0.47, 0.47))
 
     def test_prediction_market_yes_no_negative(self) -> None:
-        """yes=0.53, no=0.51 → no arbitrage (sum > 1)."""
-        try:
-            from automation_scheduler.prediction_market_outcome_candidates import evaluate_outcome_evidence
-        except ImportError:
-            self.skipTest("evaluate_outcome_evidence not available")
-        row = {"yes_probability": 0.53, "no_probability": 0.51, "source_record_type": "test"}
-        result = evaluate_outcome_evidence(row)
-        self.assertEqual(result.get("arbitrage_flag", False), False)
+        """yes=0.53, no=0.51 -> no prediction-market yes/no arbitrage."""
+        from automation_scheduler.arbitrage.two_way_arbitrage import detect_prediction_arbitrage
 
-    # ------------------------------------------------------------------
-    # 7. Overround (implied sum – no dedicated owner, computed inline)
-    # ------------------------------------------------------------------
+        self.assertFalse(detect_prediction_arbitrage(0.53, 0.51))
+
     def test_overround_calculation(self) -> None:
         """Verify overround for known scenarios."""
         # -110/-110 → implied ≈ 0.5238 + 0.5238 ≈ 1.0476  (overround ~4.76%)

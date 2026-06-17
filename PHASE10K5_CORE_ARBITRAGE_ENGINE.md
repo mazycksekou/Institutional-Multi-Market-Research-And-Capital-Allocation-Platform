@@ -66,3 +66,26 @@ The following **hooks** are documented for **future phases** only:
 ## Next recommended phase
 
 Phase 11 – **Integration testing** that wires the validated owners into a lightweight arbitrage scanner service, still without live data, using a mock‑odds data source.
+
+
+## Phase 10K5 Targeted Fix: Existing Owner Wiring
+
+Actual owner behavior found during the targeted failure loop:
+
+- `automation_scheduler.arbitrage.two_way_arbitrage.detect_two_way_arbitrage`
+  takes one positional `offers` list plus keyword-only options. The 10K5
+  tests were corrected to call the existing owner instead of assuming a
+  two-positional-argument interface.
+- `automation_scheduler.arbitrage.three_way_arbitrage.detect_three_way_arbitrage`
+  takes one positional `offers` list plus keyword-only options. The 10K5
+  tests were corrected to provide explicit three-outcome selections.
+- `automation_scheduler.prediction_market_outcome_candidates.evaluate_outcome_evidence`
+  is settlement/evidence logic, not a prediction-market yes/no arbitrage owner.
+  It was rejected as an arbitrage owner.
+- `automation_scheduler.arbitrage.two_way_arbitrage.detect_prediction_arbitrage`
+  was added as a tiny pure helper inside an existing arbitrage owner, avoiding a
+  duplicate arbitrage package.
+- No live connectors, API calls, Streamlit imports, pandas requirement, database
+  writes, prediction testing, frontend changes, runtime migration, or duplicate
+  cleanup were added.
+
