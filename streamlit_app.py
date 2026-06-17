@@ -2614,6 +2614,10 @@ elif menu == "Instructions":
     st.info(
         "Missing data does not stop testing. It tells us which model version we are testing."
     )
+    st.info("Controlled Dashboard Shell")
+    st.info("Future dashboard navigation is planned but not active in this phase.")
+    st.info("No prediction testing is enabled from this shell.")
+    st.info("Current menu remains unchanged.")
 
     st.subheader("Important Warning: Never use leakage fields as model features")
     st.warning(
