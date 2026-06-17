@@ -916,6 +916,37 @@ def calculate_dashboard_readiness(
     }
 
 
+READINESS_DISPLAY_FIELDS: list[str] = [
+    "market_name",
+    "data_source_name",
+    "validation_status",
+    "row_counts",
+    "rows_tested",
+    "rows_valid",
+    "rows_invalid",
+    "missing_field_reasons",
+    "warning_reasons",
+    "user_threshold_value",
+    "user_threshold_met",
+    "threshold_review_only",
+    "validity_is_backend_gate",
+    "low_sample_size_does_not_hide_valid_results",
+    "quality_not_automatically_labeled",
+]
+
+
+def build_readiness_display_contract() -> dict[str, Any]:
+    """Return the readiness display field contract for future UI panels."""
+    return {
+        "fields": list(READINESS_DISPLAY_FIELDS),
+        "backend_gate": "validity check only",
+        "threshold_policy": "user threshold review-only",
+        "sample_size_policy": "do not hide valid results because sample size is low",
+        "quality_label_policy": "do not label quality automatically",
+        "prediction_testing_enabled": False,
+    }
+
+
 def run_model_test(
     *,
     profile_key: str | None,
