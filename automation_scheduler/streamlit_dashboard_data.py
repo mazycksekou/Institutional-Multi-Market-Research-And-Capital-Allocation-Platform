@@ -947,6 +947,47 @@ def build_readiness_display_contract() -> dict[str, Any]:
     }
 
 
+def build_readiness_display_payload(
+    *,
+    market_name: str,
+    data_source_name: str,
+    validation_status: str,
+    row_counts: Mapping[str, Any] | None = None,
+    rows_tested: int = 0,
+    rows_valid: int = 0,
+    rows_invalid: int = 0,
+    missing_field_reasons: list[str] | None = None,
+    warning_reasons: list[str] | None = None,
+    user_threshold_value: float | int | None = None,
+    user_threshold_met: bool | None = None,
+) -> dict[str, Any]:
+    """Build a plain readiness payload that matches the display field contract."""
+    contract = build_readiness_display_contract()
+    payload = {
+        "market_name": market_name,
+        "data_source_name": data_source_name,
+        "validation_status": validation_status,
+        "row_counts": dict(row_counts or {}),
+        "rows_tested": rows_tested,
+        "rows_valid": rows_valid,
+        "rows_invalid": rows_invalid,
+        "missing_field_reasons": list(missing_field_reasons or []),
+        "warning_reasons": list(warning_reasons or []),
+        "user_threshold_value": user_threshold_value,
+        "user_threshold_met": user_threshold_met,
+        "threshold_review_only": True,
+        "validity_is_backend_gate": True,
+        "low_sample_size_does_not_hide_valid_results": True,
+        "quality_not_automatically_labeled": True,
+    }
+
+    # Keep the new payload builder anchored to the existing contract helper.
+    if contract.get("prediction_testing_enabled") is not False:
+        payload["threshold_review_only"] = True
+
+    return payload
+
+
 def run_model_test(
     *,
     profile_key: str | None,
