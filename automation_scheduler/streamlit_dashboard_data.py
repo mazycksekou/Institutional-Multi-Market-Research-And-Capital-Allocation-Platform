@@ -1506,6 +1506,10 @@ def build_paper_only_fixture_readiness_rows(
     return rows
 
 
+build_research_backtest_fixture_readiness_payload = build_paper_only_fixture_readiness_payload
+build_research_backtest_fixture_readiness_rows = build_paper_only_fixture_readiness_rows
+
+
 def build_paper_only_evaluation_readiness_payload(
     evaluation_result: Mapping[str, Any],
     *,
@@ -1615,6 +1619,10 @@ def build_paper_only_evaluation_readiness_rows(
         ]
     )
     return rows
+
+
+build_research_backtest_evaluation_readiness_payload = build_paper_only_evaluation_readiness_payload
+build_research_backtest_evaluation_readiness_rows = build_paper_only_evaluation_readiness_rows
 
 
 def build_paper_only_fixture_pipeline_result(

@@ -943,3 +943,12 @@ def build_zero_dte_paper_pipeline_result(rows: object) -> dict[str, object]:
         "broker_execution_enabled": False,
         "real_trade_execution_enabled": False,
     }
+
+
+ZERO_DTE_RESEARCH_BACKTEST_FIXTURE_REQUIRED_FIELDS = ZERO_DTE_PAPER_FIXTURE_REQUIRED_FIELDS
+ZERO_DTE_RESEARCH_BACKTEST_FIXTURE_OPTIONAL_FIELDS = ZERO_DTE_PAPER_FIXTURE_OPTIONAL_FIELDS
+build_zero_dte_research_backtest_fixture_template_row = build_zero_dte_fixture_template_row
+validate_zero_dte_research_backtest_fixture_rows = validate_zero_dte_fixture_rows
+build_zero_dte_research_backtest_validation_result = validate_zero_dte_fixture_rows
+build_zero_dte_research_backtest_evaluation_result = evaluate_zero_dte_paper_fixture_rows
+build_zero_dte_research_backtest_pipeline_result = build_zero_dte_paper_pipeline_result
