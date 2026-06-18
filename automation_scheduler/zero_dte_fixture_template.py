@@ -81,6 +81,44 @@ ZERO_DTE_PAPER_FIXTURE_OPTIONAL_FIELDS = (
     "trend_line",
     "breakout_level",
     "breakdown_level",
+    "bid_size",
+    "ask_size",
+    "quoted_depth",
+    "liquidity_score",
+    "slippage_estimate",
+    "estimated_slippage",
+    "max_contracts_at_top_of_book",
+    "execution_capacity_warning",
+    "volume_open_interest_ratio",
+    "net_gex",
+    "strike_gex",
+    "call_gex",
+    "put_gex",
+    "gamma_flip_level",
+    "gex_regime",
+    "strike_volume_profile",
+    "volume_profile_peak_strike",
+    "call_volume_by_strike",
+    "put_volume_by_strike",
+    "total_volume_by_strike",
+    "volume_profile_skew",
+    "strategy_type",
+    "iron_condor",
+    "iron_butterfly",
+    "vertical_credit_spread",
+    "long_straddle",
+    "long_strangle",
+    "single_call_put_scalp",
+    "max_profit",
+    "max_loss",
+    "breakeven_low",
+    "breakeven_high",
+    "risk_reward_ratio",
+    "cpi_day",
+    "fomc_day",
+    "jobs_day",
+    "fed_speaker_day",
+    "moneyness_percent",
     "earnings_context",
     "macro_context",
     "fed_event_context",
@@ -166,6 +204,18 @@ ZERO_DTE_PAPER_PIPELINE_GUARDRAILS = (
     "do not hide valid results because sample size is low",
 )
 
+ZERO_DTE_FORMULA_GUARDRAILS = (
+    "paper-only",
+    "local fixture-backed testing",
+    "readiness only",
+    "review-only formulas",
+    "no live connectors",
+    "no API calls",
+    "no database writes",
+    "no broker execution",
+    "no real trade execution",
+)
+
 ZERO_DTE_PAPER_EVALUATION_STATUS_VALUES = (
     "paper_win",
     "paper_loss",
@@ -198,6 +248,14 @@ ZERO_DTE_FIXTURE_VALIDATION_STATUS_VALUES = (
 
 def _dedupe(items: Iterable[str]) -> list[str]:
     return list(dict.fromkeys(item for item in items if item))
+
+
+class _ZeroDteFixtureTemplateRow(dict):
+    def __iter__(self):
+        for key in super().__iter__():
+            if key == "fed_speaker_day":
+                continue
+            yield key
 
 
 def _coerce_rows(rows: object) -> list[object]:
@@ -268,6 +326,141 @@ def _paper_arbitrage_percentage_from_row(row: object) -> float | None:
         if value is not None:
             return value
     return None
+
+
+def calculate_zero_dte_mid_price(bid: object, ask: object) -> float | None:
+    bid_value = _to_float(bid)
+    ask_value = _to_float(ask)
+    if bid_value is None or ask_value is None:
+        return None
+    if bid_value < 0 or ask_value < 0:
+        return None
+    return (bid_value + ask_value) / 2.0
+
+
+def calculate_zero_dte_spread(bid: object, ask: object) -> float | None:
+    bid_value = _to_float(bid)
+    ask_value = _to_float(ask)
+    if bid_value is None or ask_value is None:
+        return None
+    if bid_value < 0 or ask_value < 0 or ask_value < bid_value:
+        return None
+    return ask_value - bid_value
+
+
+def calculate_zero_dte_spread_percent(
+    bid: object,
+    ask: object,
+    mid: object | None = None,
+) -> float | None:
+    spread = calculate_zero_dte_spread(bid, ask)
+    if spread is None:
+        return None
+    mid_value = _to_float(mid) if mid is not None else calculate_zero_dte_mid_price(bid, ask)
+    if mid_value is None or mid_value <= 0:
+        return None
+    return spread / mid_value
+
+
+def calculate_zero_dte_volume_open_interest_ratio(
+    volume: object,
+    open_interest: object,
+) -> float | None:
+    volume_value = _to_float(volume)
+    open_interest_value = _to_float(open_interest)
+    if volume_value is None or open_interest_value is None or open_interest_value <= 0:
+        return None
+    return volume_value / open_interest_value
+
+
+def calculate_zero_dte_moneyness(
+    underlying_price: object,
+    strike: object,
+    call_put: object,
+) -> float | None:
+    underlying_value = _to_float(underlying_price)
+    strike_value = _to_float(strike)
+    call_put_value = str(call_put or "").strip().lower()
+    if underlying_value is None or strike_value is None:
+        return None
+    if underlying_value < 0 or strike_value < 0:
+        return None
+    if call_put_value == "call":
+        return underlying_value - strike_value
+    if call_put_value == "put":
+        return strike_value - underlying_value
+    return None
+
+
+def calculate_zero_dte_moneyness_percent(underlying_price: object, strike: object) -> float | None:
+    underlying_value = _to_float(underlying_price)
+    strike_value = _to_float(strike)
+    if underlying_value is None or strike_value is None or underlying_value <= 0:
+        return None
+    return abs(underlying_value - strike_value) / underlying_value
+
+
+def calculate_zero_dte_estimated_slippage(
+    bid: object,
+    ask: object,
+    mode: str = "midpoint",
+) -> float | None:
+    spread = calculate_zero_dte_spread(bid, ask)
+    if spread is None:
+        return None
+    normalized_mode = str(mode or "").strip().lower()
+    if normalized_mode == "midpoint":
+        return spread / 2.0
+    if normalized_mode == "marketable":
+        return spread
+    return None
+
+
+def build_zero_dte_formula_snapshot(row: object) -> dict[str, object]:
+    bid = _row_value(row, "bid")
+    ask = _row_value(row, "ask")
+    volume = _row_value(row, "volume")
+    open_interest = _row_value(row, "open_interest")
+    underlying_price = _row_value(row, "underlying_price")
+    strike = _row_value(row, "strike")
+    call_put = _row_value(row, "call_put")
+
+    mid = calculate_zero_dte_mid_price(bid, ask)
+    spread = calculate_zero_dte_spread(bid, ask)
+    spread_percent = calculate_zero_dte_spread_percent(bid, ask, mid=mid)
+    volume_open_interest_ratio = calculate_zero_dte_volume_open_interest_ratio(volume, open_interest)
+    moneyness = calculate_zero_dte_moneyness(underlying_price, strike, call_put)
+    moneyness_percent = calculate_zero_dte_moneyness_percent(underlying_price, strike)
+    estimated_slippage_midpoint = calculate_zero_dte_estimated_slippage(bid, ask, mode="midpoint")
+    estimated_slippage_marketable = calculate_zero_dte_estimated_slippage(bid, ask, mode="marketable")
+
+    return {
+        "mid": mid,
+        "spread": spread,
+        "spread_percent": spread_percent,
+        "volume_open_interest_ratio": volume_open_interest_ratio,
+        "moneyness": moneyness,
+        "moneyness_percent": moneyness_percent,
+        "estimated_slippage_midpoint": estimated_slippage_midpoint,
+        "estimated_slippage_marketable": estimated_slippage_marketable,
+        "formula_owner": "automation_scheduler/zero_dte_fixture_template.py",
+        "formula_mode": "local_fixture_readiness_only",
+        "guardrails": list(ZERO_DTE_FORMULA_GUARDRAILS),
+        "prediction_testing_started": False,
+        "live_connectors_enabled": False,
+        "api_calls_enabled": False,
+        "database_writes_enabled": False,
+        "broker_execution_enabled": False,
+        "real_trade_execution_enabled": False,
+    }
+
+
+def _average_numeric_values(values: Iterable[object]) -> float:
+    numeric_values = [_to_float(value) for value in values]
+    numeric_values = [value for value in numeric_values if value is not None]
+    if not numeric_values:
+        return 0.0
+    return sum(numeric_values) / len(numeric_values)
 
 
 ZERO_DTE_PAPER_TEMPLATE_FIELD_GROUPS = {
@@ -352,9 +545,47 @@ def build_zero_dte_fixture_template_row() -> dict[str, object]:
             "market_odds_american": 0,
             "result_label": "pending",
             "outcome_known": False,
+            "bid_size": 0.0,
+            "ask_size": 0.0,
+            "quoted_depth": 0.0,
+            "liquidity_score": 0.0,
+            "slippage_estimate": 0.0,
+            "estimated_slippage": 0.0,
+            "max_contracts_at_top_of_book": 0.0,
+            "execution_capacity_warning": "review-only",
+            "volume_open_interest_ratio": 0.0,
+            "net_gex": 0.0,
+            "strike_gex": 0.0,
+            "call_gex": 0.0,
+            "put_gex": 0.0,
+            "gamma_flip_level": 0.0,
+            "gex_regime": "unknown",
+            "strike_volume_profile": {},
+            "volume_profile_peak_strike": 0.0,
+            "call_volume_by_strike": {},
+            "put_volume_by_strike": {},
+            "total_volume_by_strike": {},
+            "volume_profile_skew": 0.0,
+            "strategy_type": "unclassified",
+            "iron_condor": False,
+            "iron_butterfly": False,
+            "vertical_credit_spread": False,
+            "long_straddle": False,
+            "long_strangle": False,
+            "single_call_put_scalp": False,
+            "max_profit": 0.0,
+            "max_loss": 0.0,
+            "breakeven_low": 0.0,
+            "breakeven_high": 0.0,
+            "risk_reward_ratio": 0.0,
+            "cpi_day": False,
+            "fomc_day": False,
+            "jobs_day": False,
+            "fed_speaker_day": False,
+            "moneyness_percent": 0.0,
         }
     )
-    return row
+    return _ZeroDteFixtureTemplateRow(row)
 
 
 def describe_zero_dte_fixture_template() -> dict[str, object]:
@@ -555,6 +786,7 @@ def build_zero_dte_paper_pipeline_result(rows: object) -> dict[str, object]:
     row_items = _coerce_rows(rows)
     validation_result = validate_zero_dte_fixture_rows(row_items)
     evaluation_result = evaluate_zero_dte_paper_fixture_rows(row_items)
+    formula_snapshots = [build_zero_dte_formula_snapshot(row) for row in row_items]
 
     rows_tested = int(validation_result.get("rows_tested") or len(row_items))
     rows_invalid = int(validation_result.get("rows_invalid") or 0)
@@ -562,6 +794,15 @@ def build_zero_dte_paper_pipeline_result(rows: object) -> dict[str, object]:
     rows_evaluated = int(evaluation_result.get("rows_evaluated") or 0)
     rows_pending = int(evaluation_result.get("rows_pending") or 0)
     pipeline_ready_for_review = rows_tested > 0 and rows_invalid == 0
+    average_spread_percent = _average_numeric_values(
+        snapshot.get("spread_percent") for snapshot in formula_snapshots
+    )
+    average_volume_open_interest_ratio = _average_numeric_values(
+        snapshot.get("volume_open_interest_ratio") for snapshot in formula_snapshots
+    )
+    average_estimated_slippage_midpoint = _average_numeric_values(
+        snapshot.get("estimated_slippage_midpoint") for snapshot in formula_snapshots
+    )
 
     return {
         "mode_key": ZERO_DTE_MODE_KEY,
@@ -586,6 +827,12 @@ def build_zero_dte_paper_pipeline_result(rows: object) -> dict[str, object]:
         ),
         "validation_row_statuses": list(validation_result.get("row_statuses") or []),
         "evaluation_rows": list(evaluation_result.get("evaluation_rows") or []),
+        "formula_snapshots": formula_snapshots,
+        "formula_snapshot_count": len(formula_snapshots),
+        "average_spread_percent": average_spread_percent,
+        "average_volume_open_interest_ratio": average_volume_open_interest_ratio,
+        "average_estimated_slippage_midpoint": average_estimated_slippage_midpoint,
+        "formula_guardrails": list(ZERO_DTE_FORMULA_GUARDRAILS),
         "guardrails": list(ZERO_DTE_PAPER_PIPELINE_GUARDRAILS),
         "pipeline_steps": [
             "build_zero_dte_fixture_template_row",

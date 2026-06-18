@@ -253,12 +253,20 @@ def show_zero_dte_paper_pipeline_preview() -> None:
     st.caption("no live connectors")
     st.caption("no API calls")
     st.caption("no database writes")
+    st.caption("0DTE field and formula gap patch")
+    st.caption(
+        "build_zero_dte_formula_snapshot | calculate_zero_dte_mid_price | calculate_zero_dte_spread | "
+        "calculate_zero_dte_spread_percent | calculate_zero_dte_volume_open_interest_ratio | "
+        "calculate_zero_dte_moneyness | calculate_zero_dte_moneyness_percent | "
+        "calculate_zero_dte_estimated_slippage"
+    )
 
-    metrics = st.columns(4)
+    metrics = st.columns(5)
     metrics[0].metric("rows_tested", pipeline_result.get("rows_tested", 0))
     metrics[1].metric("rows_valid", pipeline_result.get("rows_valid", 0))
     metrics[2].metric("rows_invalid", pipeline_result.get("rows_invalid", 0))
     metrics[3].metric("rows_warning", pipeline_result.get("rows_warning", 0))
+    metrics[4].metric("formula_snapshot_count", pipeline_result.get("formula_snapshot_count", 0))
 
     st.caption(f"backend_gate: {pipeline_result.get('backend_gate')}")
     st.caption(f"threshold_mode: {pipeline_result.get('threshold_mode')}")
@@ -268,9 +276,19 @@ def show_zero_dte_paper_pipeline_preview() -> None:
         "total_paper_ev | total_paper_stake_units | total_paper_arbitrage_percentage | "
         "average_paper_arbitrage_percentage"
     )
+    st.caption(
+        "formula_snapshots | average_spread_percent | average_volume_open_interest_ratio | "
+        "average_estimated_slippage_midpoint"
+    )
+    st.caption(
+        "paper-only | readiness only | review-only formulas | local fixture-backed testing | "
+        "no broker execution | no real trade execution | no live connectors | no API calls | "
+        "no database writes"
+    )
     st.caption("pipeline_steps")
     st.caption("validation_row_statuses")
     st.caption("evaluation_rows")
+    st.table(list(pipeline_result.get("formula_snapshots") or []))
     st.table(
         [
             {

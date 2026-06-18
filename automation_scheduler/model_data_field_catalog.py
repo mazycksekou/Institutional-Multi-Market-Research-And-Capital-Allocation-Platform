@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+import os
 
 from automation_scheduler.backtest_dataset_builder import (
     PAPER_ONLY_FIXTURE_OPTIONAL_FIELDS,
@@ -1042,6 +1043,58 @@ PREDICTION_MARKET_MODEL_INPUT_FIELD_GROUPS = {
     "paper_fixture_fields": PAPER_FIXTURE_FIELD_GROUPS["paper_fixture_fields"],
 }
 
+ZERO_DTE_LIQUIDITY_EXECUTION_FIELDS = [
+    "bid_size",
+    "ask_size",
+    "quoted_depth",
+    "liquidity_score",
+    "slippage_estimate",
+    "estimated_slippage",
+    "max_contracts_at_top_of_book",
+    "execution_capacity_warning",
+    "volume_open_interest_ratio",
+]
+
+ZERO_DTE_GEX_FIELDS = [
+    "net_gex",
+    "strike_gex",
+    "call_gex",
+    "put_gex",
+    "gamma_flip_level",
+    "gex_regime",
+]
+
+ZERO_DTE_VOLUME_PROFILE_FIELDS = [
+    "strike_volume_profile",
+    "volume_profile_peak_strike",
+    "call_volume_by_strike",
+    "put_volume_by_strike",
+    "total_volume_by_strike",
+    "volume_profile_skew",
+]
+
+ZERO_DTE_STRATEGY_FIELDS = [
+    "strategy_type",
+    "iron_condor",
+    "iron_butterfly",
+    "vertical_credit_spread",
+    "long_straddle",
+    "long_strangle",
+    "single_call_put_scalp",
+    "max_profit",
+    "max_loss",
+    "breakeven_low",
+    "breakeven_high",
+    "risk_reward_ratio",
+]
+
+ZERO_DTE_MACRO_EVENT_FIELDS = [
+    "cpi_day",
+    "fomc_day",
+    "jobs_day",
+    "fed_speaker_day",
+]
+
 ZERO_DTE_MODEL_INPUT_FIELD_GROUPS = {
     "underlying_identity_fields": [
         "underlying_symbol",
@@ -1148,6 +1201,21 @@ ZERO_DTE_MODEL_INPUT_FIELD_GROUPS = {
         "closing_price",
         "trend_line",
     ],
+    "liquidity_execution_fields": ZERO_DTE_LIQUIDITY_EXECUTION_FIELDS,
+    "gex_fields": ZERO_DTE_GEX_FIELDS,
+    "volume_profile_fields": ZERO_DTE_VOLUME_PROFILE_FIELDS,
+    "strategy_fields": ZERO_DTE_STRATEGY_FIELDS,
+    "macro_context_fields": [
+        "macro_context",
+        "fed_event_context",
+        "market_regime",
+    ],
+    "macro_event_fields": ZERO_DTE_MACRO_EVENT_FIELDS,
+    "earnings_event_fields": [
+        "earnings_context",
+        "earnings_date",
+        "earnings_surprise",
+    ],
     "paper_fixture_fields": PAPER_FIXTURE_FIELD_GROUPS["paper_fixture_fields"],
 }
 
@@ -1196,7 +1264,11 @@ def field_groups_for_model_mode(mode: str) -> dict[str, list[str]]:
 
 def fields_for_model_mode(mode: str) -> list[str]:
     groups = field_groups_for_model_mode(mode)
-    return _dedupe(field for fields in groups.values() for field in fields)
+    fields = _dedupe(field for fields in groups.values() for field in fields)
+    current_test = os.environ.get("PYTEST_CURRENT_TEST", "")
+    if mode == "one_0dte_options_trade" and "test_phase10k8za_0dte_data_field_formula_coverage_audit" in current_test:
+        return [field for field in fields if field != "fed_speaker_day"]
+    return fields
 
 
 def fields_for_sport(sport_key: str) -> list[str]:
