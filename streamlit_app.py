@@ -1876,6 +1876,12 @@ if menu == "Feature Ablation Lab":
                 "validate_zero_dte_fixture_rows | validity check only | user threshold review-only | "
                 "do not label quality automatically | do not hide valid results because sample size is low"
             )
+            st.caption("Dedicated 0DTE validation readiness payload")
+            st.caption(
+                "build_zero_dte_validation_readiness_payload | build_zero_dte_validation_readiness_rows | "
+                "validity check only | user threshold review-only | do not label quality automatically | "
+                "do not hide valid results because sample size is low"
+            )
             st.caption(
                 "local fixture-backed testing | paper-only | readiness only | no broker execution | "
                 "no real trade execution | no live connectors | no API calls | no database writes"

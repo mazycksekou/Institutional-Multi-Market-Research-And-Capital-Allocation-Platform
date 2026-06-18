@@ -1055,6 +1055,159 @@ def build_readiness_display_rows(payload: Mapping[str, Any]) -> list[dict[str, A
     return rows
 
 
+def build_zero_dte_validation_readiness_payload(
+    validation_result: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Convert validate_zero_dte_fixture_rows(...) output into a plain readiness payload."""
+
+    from .zero_dte_fixture_template import (
+        ZERO_DTE_FIXTURE_VALIDATION_GUARDRAILS,
+        ZERO_DTE_MODE_KEY,
+    )
+
+    rows_tested = int(validation_result.get("rows_tested") or 0)
+    rows_valid = int(validation_result.get("rows_valid") or 0)
+    rows_invalid = int(validation_result.get("rows_invalid") or 0)
+    rows_warning = int(validation_result.get("rows_warning") or 0)
+
+    payload = {
+        "mode_key": str(validation_result.get("mode_key") or ZERO_DTE_MODE_KEY),
+        "source_type": str(validation_result.get("source_type") or "local_fixture"),
+        "execution_mode": str(validation_result.get("execution_mode") or "paper_only"),
+        "rows_tested": rows_tested,
+        "rows_valid": rows_valid,
+        "rows_invalid": rows_invalid,
+        "rows_warning": rows_warning,
+        "missing_field_reasons": dict(validation_result.get("missing_field_reasons") or {}),
+        "warning_reasons": dict(validation_result.get("warning_reasons") or {}),
+        "row_statuses": list(validation_result.get("row_statuses") or []),
+        "required_fields": list(validation_result.get("required_fields") or []),
+        "optional_fields": list(validation_result.get("optional_fields") or []),
+        "review_output_fields": list(validation_result.get("review_output_fields") or []),
+        "paper_arbitrage_output_fields": list(validation_result.get("paper_arbitrage_output_fields") or []),
+        "guardrails": list(validation_result.get("guardrails") or ZERO_DTE_FIXTURE_VALIDATION_GUARDRAILS),
+        "validity_check_only": bool(validation_result.get("validity_check_only", True)),
+        "user_threshold_review_only": bool(validation_result.get("user_threshold_review_only", True)),
+        "quality_not_automatically_labeled": bool(validation_result.get("quality_not_automatically_labeled", True)),
+        "low_sample_size_does_not_hide_valid_results": bool(
+            validation_result.get("low_sample_size_does_not_hide_valid_results", True)
+        ),
+        "prediction_testing_started": bool(validation_result.get("prediction_testing_started", False)),
+        "live_connectors_enabled": bool(validation_result.get("live_connectors_enabled", False)),
+        "api_calls_enabled": bool(validation_result.get("api_calls_enabled", False)),
+        "database_writes_enabled": bool(validation_result.get("database_writes_enabled", False)),
+        "broker_execution_enabled": bool(validation_result.get("broker_execution_enabled", False)),
+        "real_trade_execution_enabled": bool(validation_result.get("real_trade_execution_enabled", False)),
+        "backend_gate": "validity_check_only",
+        "threshold_mode": "user_threshold_review_only",
+        "quality_label": "not_automatically_labeled",
+        "readiness_summary": {
+            "rows_tested": rows_tested,
+            "rows_valid": rows_valid,
+            "rows_invalid": rows_invalid,
+            "rows_warning": rows_warning,
+            "validity_check_only": bool(validation_result.get("validity_check_only", True)),
+            "low_sample_size_does_not_hide_valid_results": bool(
+                validation_result.get("low_sample_size_does_not_hide_valid_results", True)
+            ),
+        },
+    }
+    return payload
+
+
+def build_zero_dte_validation_readiness_rows(payload: Mapping[str, Any]) -> list[dict[str, Any]]:
+    """Convert a 0DTE validation readiness payload into plain display rows."""
+
+    rows_tested = int(payload.get("rows_tested") or 0)
+    rows_valid = int(payload.get("rows_valid") or 0)
+    rows_invalid = int(payload.get("rows_invalid") or 0)
+    rows_warning = int(payload.get("rows_warning") or 0)
+
+    def status_for(label: str, value: Any) -> str:
+        if label == "rows_invalid":
+            return "blocked" if rows_invalid > 0 else "ok"
+        if label == "rows_warning":
+            return "warning" if rows_warning > 0 else "ok"
+        if label in {
+            "prediction_testing_started",
+            "live_connectors_enabled",
+            "api_calls_enabled",
+            "database_writes_enabled",
+            "broker_execution_enabled",
+            "real_trade_execution_enabled",
+        }:
+            return "blocked" if bool(value) else "ok"
+        if label in {
+            "validity_check_only",
+            "user_threshold_review_only",
+            "quality_not_automatically_labeled",
+            "low_sample_size_does_not_hide_valid_results",
+        }:
+            return "ok" if bool(value) else "blocked"
+        if label == "backend_gate":
+            return "ok" if value == "validity_check_only" else "blocked"
+        if label == "threshold_mode":
+            return "ok" if value == "user_threshold_review_only" else "blocked"
+        if label == "quality_label":
+            return "ok" if value == "not_automatically_labeled" else "blocked"
+        if label == "mode_key":
+            return "ok" if value == "one_0dte_options_trade" else "blocked"
+        if label == "execution_mode":
+            return "ok" if value == "paper_only" else "blocked"
+        if label == "source_type":
+            return "ok" if value == "local_fixture" else "blocked"
+        return "ok"
+
+    def display_value(value: Any) -> Any:
+        if isinstance(value, Mapping):
+            return json.dumps(dict(value), sort_keys=True)
+        if isinstance(value, (list, tuple)):
+            return json.dumps(list(value))
+        if isinstance(value, bool):
+            return "Yes" if value else "No"
+        return value
+
+    labels = [
+        ("mode_key", "mode_key", "0DTE mode key"),
+        ("execution_mode", "execution_mode", "paper-only execution mode"),
+        ("source_type", "source_type", "local fixture source type"),
+        ("rows_tested", rows_tested, "rows tested for validity only"),
+        ("rows_valid", rows_valid, "rows valid for readiness only"),
+        ("rows_invalid", rows_invalid, "rows invalid block readiness"),
+        ("rows_warning", rows_warning, "rows warning stays review-only"),
+        ("backend_gate", "validity_check_only", "validity check only"),
+        ("threshold_mode", "user_threshold_review_only", "user threshold review-only"),
+        ("quality_label", "not_automatically_labeled", "do not label quality automatically"),
+        ("prediction_testing_started", payload.get("prediction_testing_started"), "paper-only prediction testing"),
+        ("live_connectors_enabled", payload.get("live_connectors_enabled"), "no live connectors"),
+        ("api_calls_enabled", payload.get("api_calls_enabled"), "no API calls"),
+        ("database_writes_enabled", payload.get("database_writes_enabled"), "no database writes"),
+        ("broker_execution_enabled", payload.get("broker_execution_enabled"), "no broker execution"),
+        ("real_trade_execution_enabled", payload.get("real_trade_execution_enabled"), "no real trade execution"),
+        ("validity_check_only", payload.get("validity_check_only"), "validity check only"),
+        ("user_threshold_review_only", payload.get("user_threshold_review_only"), "user threshold review-only"),
+        ("quality_not_automatically_labeled", payload.get("quality_not_automatically_labeled"), "do not label quality automatically"),
+        (
+            "low_sample_size_does_not_hide_valid_results",
+            payload.get("low_sample_size_does_not_hide_valid_results"),
+            "do not hide valid results because sample size is low",
+        ),
+    ]
+
+    ready_rows: list[dict[str, Any]] = []
+    for label, value, detail in labels:
+        ready_rows.append(
+            {
+                "label": label,
+                "value": display_value(value),
+                "status": status_for(label, value),
+                "detail": detail,
+            }
+        )
+
+    return ready_rows
+
+
 def build_paper_only_fixture_readiness_payload(
     validation_result: Mapping[str, Any],
     *,
