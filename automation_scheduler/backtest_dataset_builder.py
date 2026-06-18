@@ -8,7 +8,7 @@ automation_scheduler.backtesting_engine.run_backtest
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from pathlib import Path
 from typing import Any
 import json
@@ -37,6 +37,38 @@ DEFAULT_CANDIDATE_DIRS: tuple[str, ...] = (
     "data/backtests",
     "data/clv",
 )
+
+
+PAPER_ONLY_FIXTURE_REQUIRED_FIELDS: tuple[str, ...] = (
+    "fixture_id",
+    "sport_or_market",
+    "event_id",
+    "prediction_target",
+    "selection",
+    "model_probability",
+    "market_odds_american",
+    "implied_probability",
+    "expected_value",
+    "stake_units",
+    "bankroll_snapshot",
+    "result_label",
+    "outcome_known",
+    "source_type",
+    "execution_mode",
+)
+
+
+PAPER_ONLY_FIXTURE_OPTIONAL_FIELDS: tuple[str, ...] = (
+    "rows_tested",
+    "rows_valid",
+    "rows_invalid",
+    "missing_field_reasons",
+    "warning_reasons",
+)
+
+
+PAPER_ONLY_FIXTURE_ALLOWED_EXECUTION_MODES: tuple[str, ...] = ("paper_only", "fixture_only")
+PAPER_ONLY_FIXTURE_ALLOWED_SOURCE_TYPES: tuple[str, ...] = ("local_fixture",)
 
 
 def _load_json(path: Path) -> Any:
@@ -184,6 +216,121 @@ def summarize_dataset_field_coverage(rows: list[Mapping[str, Any]]) -> dict[str,
         "coverage": coverage,
         "sport_counts": dict(sorted(sport_counts.items(), key=lambda item: (-item[1], item[0]))[:50]),
         "league_counts": dict(sorted(league_counts.items(), key=lambda item: (-item[1], item[0]))[:50]),
+    }
+
+
+def _safe_float(value: Any) -> float | None:
+    try:
+        if value in (None, ""):
+            return None
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    if number != number or number in (float("inf"), float("-inf")):
+        return None
+    return number
+
+
+def validate_paper_only_fixture_rows(rows: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
+    """Validate local fixture rows only.
+
+    paper-only prediction testing.
+    local fixture-backed testing.
+    no prediction testing started in 10K8C.
+    no live connectors.
+    no API calls.
+    no database writes.
+    do not label quality automatically.
+    do not hide valid results because sample size is low.
+    user threshold review-only.
+    validity check only.
+    """
+
+    rows_tested = 0
+    rows_valid = 0
+    rows_invalid = 0
+    missing_field_reasons: list[str] = []
+    warning_reasons: list[str] = []
+    observed_execution_modes: set[str] = set()
+    observed_source_types: set[str] = set()
+
+    for row in rows:
+        rows_tested += 1
+        row_missing: list[str] = []
+        row_warnings: list[str] = []
+
+        for field in PAPER_ONLY_FIXTURE_REQUIRED_FIELDS:
+            value = row.get(field)
+            if value in (None, ""):
+                row_missing.append(field)
+
+        execution_mode = str(row.get("execution_mode") or "").strip().lower()
+        if execution_mode:
+            observed_execution_modes.add(execution_mode)
+        if execution_mode not in PAPER_ONLY_FIXTURE_ALLOWED_EXECUTION_MODES:
+            row_missing.append("execution_mode")
+            row_warnings.append(f"invalid_execution_mode:{execution_mode or 'missing'}")
+
+        source_type = str(row.get("source_type") or "").strip().lower()
+        if source_type:
+            observed_source_types.add(source_type)
+        if "fixture" not in source_type:
+            row_missing.append("source_type")
+            row_warnings.append(f"invalid_source_type:{source_type or 'missing'}")
+
+        probability_fields = (
+            "model_probability",
+            "implied_probability",
+        )
+        for field in probability_fields:
+            numeric_value = _safe_float(row.get(field))
+            if numeric_value is None:
+                row_warnings.append(f"invalid_numeric_value:{field}")
+                continue
+            if not 0.0 <= numeric_value <= 1.0:
+                row_warnings.append(f"probability_out_of_range:{field}")
+
+        for field in (
+            "market_odds_american",
+            "expected_value",
+            "stake_units",
+            "bankroll_snapshot",
+        ):
+            if _safe_float(row.get(field)) is None:
+                row_warnings.append(f"invalid_numeric_value:{field}")
+
+        if row_missing:
+            rows_invalid += 1
+            missing_field_reasons.extend(row_missing)
+        else:
+            rows_valid += 1
+
+        warning_reasons.extend(row_warnings)
+
+    execution_mode_result = "mixed"
+    if len(observed_execution_modes) == 1:
+        execution_mode_result = next(iter(observed_execution_modes))
+    elif not observed_execution_modes:
+        execution_mode_result = ""
+
+    source_type_result = "mixed"
+    if len(observed_source_types) == 1:
+        source_type_result = next(iter(observed_source_types))
+    elif not observed_source_types:
+        source_type_result = ""
+
+    return {
+        "rows_tested": rows_tested,
+        "rows_valid": rows_valid,
+        "rows_invalid": rows_invalid,
+        "missing_field_reasons": missing_field_reasons,
+        "warning_reasons": warning_reasons,
+        "execution_mode": execution_mode_result,
+        "source_type": source_type_result,
+        "prediction_testing_started": False,
+        "live_connectors_enabled": False,
+        "api_calls_enabled": False,
+        "database_writes_enabled": False,
     }
 
 
