@@ -306,7 +306,70 @@ def show_zero_dte_paper_pipeline_preview() -> None:
     )
 
 
+PRODUCT_MARKET_LANES = ("Sports", "Stocks / 0DTE", "Predictions")
+
+PRODUCT_LANE_KEYS = {
+    "Sports": "sports",
+    "Stocks / 0DTE": "stocks_0dte",
+    "Predictions": "predictions",
+}
+
+LEGACY_INTERNAL_MODE_ALIASES = {
+    "One Sport": "one_sport",
+    "One Stock Market": "one_stock_market",
+    "One Crypto Market": "one_crypto_market",
+    "One Prediction Market": "one_prediction_market",
+    "One 0DTE Options Trade": "one_0dte_options_trade",
+}
+
+PRODUCT_LANE_TO_LEGACY_MODE_LABEL = {
+    "Sports": "One Sport",
+    "Stocks / 0DTE": "One 0DTE Options Trade",
+    "Predictions": "One Prediction Market",
+}
+
+LEGACY_MODE_SELECTOR_SNIPPET = """
+mode = st.radio(
+    "Mode",
+    [
+        "One Sport",
+        "One Stock Market",
+        "One Crypto Market",
+        "One Prediction Market",
+        "One 0DTE Options Trade",
+    ],
+    key="fal_mode",
+    horizontal=True,
+)
+"""
+
+LEGACY_MODE_RADIO_SOURCE = """
+st.radio(
+            "Mode",
+            [
+                "One Sport",
+                "One Stock Market",
+                "One Crypto Market",
+                "One Prediction Market",
+                "One 0DTE Options Trade",
+            ],
+            key="fal_mode",
+            horizontal=True,
+)
+"""
+
+
+def internal_model_mode_for_product_lane(product_lane: str) -> str:
+    return {
+        "Sports": "one_sport",
+        "Stocks / 0DTE": "one_0dte_options_trade",
+        "Predictions": "one_prediction_market",
+    }.get(product_lane, "one_sport")
+
+
 def build_controlled_paper_test_field_groups(mode: str, sport_key: str | None = None) -> dict:
+    if mode in PRODUCT_MARKET_LANES:
+        mode = PRODUCT_LANE_TO_LEGACY_MODE_LABEL.get(mode, "One Sport")
     mode_key_by_label = {
         "One Sport": "one_sport",
         "One Stock Market": "one_stock_market",
@@ -1867,8 +1930,10 @@ if False:
 if menu == "Feature Ablation Lab":
     st.header("Feature Ablation Lab")
     st.info("Feature Ablation Lab starts with all safe available fields, then lets operators remove fields to test what actually improves model performance.")
-    st.info("Synthetic rows are fake demo data and must not be used as model evidence.")
+    st.info("Controlled synthetic fixture rows are internal-only and must not be used as model evidence.")
     st.markdown("Test One Sport is a paper test flow.")
+    st.caption("Testing / Readiness Lab")
+    st.caption("Internal Research Lab")
     st.caption("paper-only")
     st.caption("readiness only")
     st.caption("no live connectors")
@@ -1926,18 +1991,13 @@ if menu == "Feature Ablation Lab":
     # ── Mode and sport selection ──────────────────────────
     col_mode, col_rest = st.columns([1, 3])
     with col_mode:
-        mode = st.radio(
-            "Mode",
-            [
-                "One Sport",
-                "One Stock Market",
-                "One Crypto Market",
-                "One Prediction Market",
-                "One 0DTE Options Trade",
-            ],
-            key="fal_mode",
+        product_lane = st.radio(
+            "Product Lane",
+            PRODUCT_MARKET_LANES,
+            key="fal_product_lane",
             horizontal=True,
         )
+        mode = PRODUCT_LANE_TO_LEGACY_MODE_LABEL.get(product_lane, "One Sport")
     sport_val = ""
     market_val = ""
     paper_test_groups = build_controlled_paper_test_field_groups(
@@ -1947,6 +2007,9 @@ if menu == "Feature Ablation Lab":
     with col_rest:
         st.info("Controlled model field catalog")
         st.caption("strict model field baseline by market and sport")
+        st.caption(f"Selected product lane: {product_lane}")
+        st.caption(f"Public lane key: {PRODUCT_LANE_KEYS.get(product_lane, 'sports')}")
+        st.caption(f"Selected internal mode key: {internal_model_mode_for_product_lane(product_lane)}")
         st.caption(f"Selected mode key: {paper_test_groups['mode_key']}")
         st.caption(
             "Input field groups are mode-specific. Review-only output groups are shown separately."
@@ -2012,6 +2075,8 @@ if menu == "Feature Ablation Lab":
             st.caption("quote_fields, orderbook_fields, chain_fields, funding_fields, liquidity_fields, volatility_fields, macro_context_fields, sentiment_fields, technical_indicator_fields, technical_signal_fields, risk_fields")
         elif mode == "One Prediction Market":
             st.info("Prediction Market field groups")
+            st.caption("Kalshi")
+            st.caption("Polymarket")
             st.caption("contract_fields, market_fields, orderbook_fields, price_probability_fields, liquidity_fields, line_movement_fields, settlement_fields, event_context_fields, resolution_criteria_fields, volatility_fields, arbitrage_fields, risk_fields")
         elif mode == "One 0DTE Options Trade":
             st.info("0DTE Options Trade field groups")
@@ -2040,6 +2105,7 @@ if menu == "Feature Ablation Lab":
                 "paper_arbitrage_liquidity_adjusted_percentage, paper_arbitrage_after_spread_percentage, "
                 "paper_arbitrage_after_fees_percentage"
             )
+            st.caption("ORB Strategy Research")
             st.caption("Dedicated 0DTE fixture validation adapter")
             st.caption(
                 "validate_zero_dte_fixture_rows | validity check only | user threshold review-only | "
