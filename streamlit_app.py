@@ -1771,7 +1771,29 @@ if menu == "Feature Ablation Lab":
         )
     sport_val = ""
     market_val = ""
+    paper_test_groups = build_controlled_paper_test_field_groups(
+        mode,
+        sport_val if mode == "One Sport" else None,
+    )
     with col_rest:
+        st.info("Controlled model field catalog")
+        st.caption("strict model field baseline by market and sport")
+        st.caption(f"Selected mode key: {paper_test_groups['mode_key']}")
+        st.caption(
+            "Input field groups are mode-specific. Review-only output groups are shown separately."
+        )
+        st.caption(
+            "Review-only output groups: readiness_output_fields, evaluation_output_fields, "
+            "pipeline_output_fields, universal_math_output_fields, paper_arbitrage_output_fields, "
+            "backtest_clv_output_fields"
+        )
+        st.caption(
+            "paper_arbitrage_output_fields are review-only outputs, not technical signals."
+        )
+        st.caption(
+            "technical_signal_fields are input fields and do not include EV, Kelly, edge, arbitrage, "
+            "or paper_arbitrage_percentage."
+        )
         if mode == "One Sport":
             sport_val = st.selectbox(
                 "Sport",
@@ -1827,8 +1849,23 @@ if menu == "Feature Ablation Lab":
             st.caption("Dedicated 0DTE Options Trade mode")
             st.caption("0DTE is the primary active trading lane")
             st.caption("All Ready removed as redundant")
-            st.caption("underlying_identity_fields, underlying_quote_fields, underlying_line_data_fields, underlying_price_action_fields, technical_signal_fields, options_contract_fields, options_quote_fields, greeks_fields, expiration_fields, volatility_fields, liquidity_spread_fields, risk_fields, macro_event_fields, earnings_event_fields, intraday_context_fields, paper_fixture_fields")
-            st.caption("paper_arbitrage_percentage, paper arbitrage percentage within tested timeframe, paper_arbitrage_window, paper_arbitrage_timeframe, paper_arbitrage_best_percentage, paper_arbitrage_liquidity_adjusted_percentage, paper_arbitrage_after_spread_percentage, paper_arbitrage_after_fees_percentage")
+            st.caption(
+                "paper-only | readiness only | no live connectors | no API calls | no database writes | "
+                "no broker execution | no real trade execution"
+            )
+            st.caption(
+                "underlying_identity_fields, underlying_quote_fields, underlying_line_data_fields, "
+                "underlying_price_action_fields, technical_signal_fields, options_contract_fields, "
+                "options_quote_fields, greeks_fields, expiration_fields, volatility_fields, "
+                "liquidity_spread_fields, risk_fields, macro_event_fields, earnings_event_fields, "
+                "intraday_context_fields, paper_fixture_fields"
+            )
+            st.caption(
+                "paper_arbitrage_percentage, paper arbitrage percentage within tested timeframe, "
+                "paper_arbitrage_window, paper_arbitrage_timeframe, paper_arbitrage_best_percentage, "
+                "paper_arbitrage_liquidity_adjusted_percentage, paper_arbitrage_after_spread_percentage, "
+                "paper_arbitrage_after_fees_percentage"
+            )
         else:
             st.info("Sports field groups")
             st.info("Stock Market field groups")
