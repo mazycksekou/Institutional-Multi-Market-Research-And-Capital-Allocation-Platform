@@ -1871,6 +1871,15 @@ if menu == "Feature Ablation Lab":
                 "paper_arbitrage_liquidity_adjusted_percentage, paper_arbitrage_after_spread_percentage, "
                 "paper_arbitrage_after_fees_percentage"
             )
+            st.caption("Dedicated 0DTE fixture validation adapter")
+            st.caption(
+                "validate_zero_dte_fixture_rows | validity check only | user threshold review-only | "
+                "do not label quality automatically | do not hide valid results because sample size is low"
+            )
+            st.caption(
+                "local fixture-backed testing | paper-only | readiness only | no broker execution | "
+                "no real trade execution | no live connectors | no API calls | no database writes"
+            )
         else:
             st.info("Sports field groups")
             st.info("Stock Market field groups")

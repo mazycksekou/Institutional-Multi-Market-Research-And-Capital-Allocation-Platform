@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 
 from automation_scheduler.model_data_field_catalog import (
     PAPER_ARBITRAGE_OUTPUT_FIELDS,
@@ -137,9 +137,53 @@ ZERO_DTE_PAPER_TEMPLATE_GUARDRAILS = (
     "do not hide valid results because sample size is low",
 )
 
+ZERO_DTE_FIXTURE_VALIDATION_GUARDRAILS = (
+    "paper-only",
+    "readiness only",
+    "local fixture-backed testing",
+    "validity check only",
+    "user threshold review-only",
+    "do not label quality automatically",
+    "do not hide valid results because sample size is low",
+    "no live connectors",
+    "no API calls",
+    "no database writes",
+    "no broker execution",
+    "no real trade execution",
+)
+
+ZERO_DTE_FIXTURE_VALIDATION_STATUS_VALUES = (
+    "valid",
+    "invalid",
+    "warning",
+)
+
 
 def _dedupe(items: Iterable[str]) -> list[str]:
     return list(dict.fromkeys(item for item in items if item))
+
+
+def _coerce_rows(rows: object) -> list[object]:
+    if rows is None:
+        return []
+    if isinstance(rows, Mapping):
+        return [rows]
+    try:
+        return list(rows)  # type: ignore[arg-type]
+    except TypeError as exc:
+        raise TypeError("rows must be an iterable of mapping-like rows") from exc
+
+
+def _row_value(row: object, field: str) -> object:
+    if isinstance(row, Mapping):
+        return row.get(field)
+    getter = getattr(row, "get", None)
+    if callable(getter):
+        return getter(field)
+    try:
+        return row[field]  # type: ignore[index]
+    except Exception:
+        return None
 
 
 ZERO_DTE_PAPER_TEMPLATE_FIELD_GROUPS = {
@@ -239,4 +283,79 @@ def describe_zero_dte_fixture_template() -> dict[str, object]:
         "guardrails": list(ZERO_DTE_PAPER_TEMPLATE_GUARDRAILS),
         "field_groups": groups,
         "mode_field_count": len(fields_for_model_mode(ZERO_DTE_MODE_KEY)),
+    }
+
+
+def validate_zero_dte_fixture_rows(rows: object) -> dict[str, object]:
+    """Validate local 0DTE paper fixture rows only."""
+
+    row_items = _coerce_rows(rows)
+    row_statuses: list[dict[str, object]] = []
+    required_missing_counts: dict[str, int] = {}
+    optional_warning_counts: dict[str, int] = {}
+
+    for row_index, row in enumerate(row_items):
+        missing_required_fields: list[str] = []
+        missing_optional_fields: list[str] = []
+
+        for field in ZERO_DTE_PAPER_FIXTURE_REQUIRED_FIELDS:
+            value = _row_value(row, field)
+            if value is None or (isinstance(value, str) and value.strip() == ""):
+                missing_required_fields.append(field)
+                required_missing_counts[field] = required_missing_counts.get(field, 0) + 1
+
+        for field in ZERO_DTE_PAPER_FIXTURE_OPTIONAL_FIELDS:
+            value = _row_value(row, field)
+            if value is None or (isinstance(value, str) and value.strip() == ""):
+                missing_optional_fields.append(field)
+                optional_warning_counts[field] = optional_warning_counts.get(field, 0) + 1
+
+        if missing_required_fields:
+            status = "invalid"
+        elif missing_optional_fields:
+            status = "warning"
+        else:
+            status = "valid"
+
+        warning_reasons = [f"missing optional field: {field}" for field in missing_optional_fields]
+        row_statuses.append(
+            {
+                "row_index": row_index,
+                "status": status,
+                "missing_required_fields": missing_required_fields,
+                "missing_optional_fields": missing_optional_fields,
+                "warning_reasons": warning_reasons,
+            }
+        )
+
+    rows_valid = sum(1 for status in row_statuses if status["status"] == "valid")
+    rows_invalid = sum(1 for status in row_statuses if status["status"] == "invalid")
+    rows_warning = sum(1 for status in row_statuses if status["status"] == "warning")
+
+    return {
+        "execution_mode": "paper_only",
+        "source_type": "local_fixture",
+        "mode_key": ZERO_DTE_MODE_KEY,
+        "rows_tested": len(row_items),
+        "rows_valid": rows_valid,
+        "rows_invalid": rows_invalid,
+        "rows_warning": rows_warning,
+        "missing_field_reasons": required_missing_counts,
+        "warning_reasons": optional_warning_counts,
+        "row_statuses": row_statuses,
+        "required_fields": list(ZERO_DTE_PAPER_FIXTURE_REQUIRED_FIELDS),
+        "optional_fields": list(ZERO_DTE_PAPER_FIXTURE_OPTIONAL_FIELDS),
+        "review_output_fields": list(ZERO_DTE_PAPER_REVIEW_OUTPUT_FIELDS),
+        "paper_arbitrage_output_fields": list(PAPER_ARBITRAGE_OUTPUT_FIELDS),
+        "guardrails": list(ZERO_DTE_FIXTURE_VALIDATION_GUARDRAILS),
+        "validity_check_only": True,
+        "user_threshold_review_only": True,
+        "quality_not_automatically_labeled": True,
+        "low_sample_size_does_not_hide_valid_results": True,
+        "prediction_testing_started": False,
+        "live_connectors_enabled": False,
+        "api_calls_enabled": False,
+        "database_writes_enabled": False,
+        "broker_execution_enabled": False,
+        "real_trade_execution_enabled": False,
     }
