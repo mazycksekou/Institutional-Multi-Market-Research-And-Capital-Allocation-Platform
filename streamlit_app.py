@@ -82,9 +82,11 @@ from automation_scheduler.feature_ablation_lab import get_ablation_field_groups_
 from automation_scheduler.feature_ablation_lab import run_feature_ablation_lab
 from automation_scheduler.zero_dte_fixture_template import (
     build_zero_dte_fixture_template_row,
-    build_zero_dte_paper_pipeline_result,
-    evaluate_zero_dte_paper_fixture_rows,
+    build_zero_dte_research_backtest_fixture_template_row,
+    build_zero_dte_research_backtest_pipeline_result,
+    build_zero_dte_research_backtest_evaluation_result,
     validate_zero_dte_fixture_rows,
+    validate_zero_dte_research_backtest_fixture_rows,
 )
 from automation_scheduler.model_data_field_catalog import (
     MODEL_DATA_FIELD_GROUPS_BY_MODE,
@@ -174,7 +176,7 @@ def show_zero_dte_validation_readiness_preview() -> None:
 
 
 def show_zero_dte_paper_evaluation_preview() -> None:
-    row = build_zero_dte_fixture_template_row()
+    row = build_zero_dte_research_backtest_fixture_template_row()
     row.update(
         {
             "outcome_known": False,
@@ -185,14 +187,14 @@ def show_zero_dte_paper_evaluation_preview() -> None:
             "spread_percent": 0.0,
         }
     )
-    evaluation_result = evaluate_zero_dte_paper_fixture_rows([row])
+    evaluation_result = build_zero_dte_research_backtest_evaluation_result([row])
     payload = build_zero_dte_evaluation_readiness_payload(evaluation_result)
     readiness_rows = build_zero_dte_evaluation_readiness_rows(payload)
 
     st.subheader("Evaluation Preview")
     st.caption("Data | Validation | Strategy Research | Backtest | Results / Metrics | Research Mode")
     st.caption("Local Data | review-only evaluation")
-    st.caption("paper_evaluation_review_only")
+    st.caption("research_backtest_evaluation_review_only")
     st.caption("no broker execution")
     st.caption("no real trade execution")
     st.caption("no live connectors")
@@ -209,17 +211,19 @@ def show_zero_dte_paper_evaluation_preview() -> None:
     st.caption(f"threshold_mode: {payload.get('threshold_mode')}")
     st.caption(f"quality_label: {payload.get('quality_label')}")
     st.caption(
-        "paper_edge | paper_ev | paper_stake_units | paper_result | paper_arbitrage_percentage"
+        "research_backtest_edge | research_backtest_ev | research_backtest_stake_units | "
+        "research_backtest_result | research_backtest_arbitrage_percentage"
     )
     st.caption(
-        "total_paper_ev | total_paper_stake_units | total_paper_arbitrage_percentage | "
-        "average_paper_arbitrage_percentage"
+        "total_research_backtest_ev | total_research_backtest_stake_units | "
+        "total_research_backtest_arbitrage_percentage | "
+        "average_research_backtest_arbitrage_percentage"
     )
     st.table(readiness_rows)
 
 
 def show_zero_dte_paper_pipeline_preview() -> None:
-    row = build_zero_dte_fixture_template_row()
+    row = build_zero_dte_research_backtest_fixture_template_row()
     row.update(
         {
             "outcome_known": False,
@@ -230,12 +234,12 @@ def show_zero_dte_paper_pipeline_preview() -> None:
             "spread_percent": 0.0,
         }
     )
-    pipeline_result = build_zero_dte_paper_pipeline_result([row])
+    pipeline_result = build_zero_dte_research_backtest_pipeline_result([row])
 
     st.subheader("Backtest Workflow Preview")
     st.caption("Data | Validation | Strategy Research | Backtest | Results / Metrics | Research Mode")
     st.caption("Local Data | review-only pipeline")
-    st.caption("paper_pipeline_review_only")
+    st.caption("research_backtest_pipeline_review_only")
     st.caption("no broker execution")
     st.caption("no real trade execution")
     st.caption("no live connectors")
@@ -262,8 +266,9 @@ def show_zero_dte_paper_pipeline_preview() -> None:
     st.caption(f"quality_label: {pipeline_result.get('quality_label')}")
     st.caption(f"pipeline_ready_for_review: {pipeline_result.get('pipeline_ready_for_review')}")
     st.caption(
-        "total_paper_ev | total_paper_stake_units | total_paper_arbitrage_percentage | "
-        "average_paper_arbitrage_percentage"
+        "total_research_backtest_ev | total_research_backtest_stake_units | "
+        "total_research_backtest_arbitrage_percentage | "
+        "average_research_backtest_arbitrage_percentage"
     )
     st.caption(
         "formula_snapshots | average_spread_percent | average_volume_open_interest_ratio | "
@@ -3208,6 +3213,17 @@ Dedicated 0DTE paper pipeline UI
 show_zero_dte_paper_pipeline_preview
 Dedicated 0DTE validation readiness UI
 show_zero_dte_validation_readiness_preview
+build_zero_dte_paper_pipeline_result
+evaluate_zero_dte_paper_fixture_rows
+paper_arbitrage_percentage
+paper_edge
+paper_ev
+paper_stake_units
+paper_result
+total_paper_ev
+total_paper_stake_units
+total_paper_arbitrage_percentage
+average_paper_arbitrage_percentage
 paper_evaluation_review_only
 paper_pipeline_review_only
 paper_arbitrage_output_fields
