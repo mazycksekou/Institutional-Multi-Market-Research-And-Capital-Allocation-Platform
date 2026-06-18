@@ -1208,6 +1208,167 @@ def build_zero_dte_validation_readiness_rows(payload: Mapping[str, Any]) -> list
     return ready_rows
 
 
+def build_zero_dte_evaluation_readiness_payload(
+    evaluation_result: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Convert evaluate_zero_dte_paper_fixture_rows(...) output into readiness payload."""
+
+    rows_tested = int(evaluation_result.get("rows_tested") or 0)
+    rows_evaluated = int(evaluation_result.get("rows_evaluated") or 0)
+    rows_invalid = int(evaluation_result.get("rows_invalid") or 0)
+    rows_pending = int(evaluation_result.get("rows_pending") or 0)
+    paper_result_counts = dict(evaluation_result.get("paper_result_counts") or {})
+    total_paper_ev = float(evaluation_result.get("total_paper_ev") or 0.0)
+    total_paper_stake_units = float(evaluation_result.get("total_paper_stake_units") or 0.0)
+    total_paper_arbitrage_percentage = float(evaluation_result.get("total_paper_arbitrage_percentage") or 0.0)
+    average_paper_arbitrage_percentage = float(
+        evaluation_result.get("average_paper_arbitrage_percentage") or 0.0
+    )
+
+    payload = {
+        "mode_key": str(evaluation_result.get("mode_key") or "one_0dte_options_trade"),
+        "source_type": str(evaluation_result.get("source_type") or "local_fixture"),
+        "execution_mode": str(evaluation_result.get("execution_mode") or "paper_only"),
+        "rows_tested": rows_tested,
+        "rows_evaluated": rows_evaluated,
+        "rows_invalid": rows_invalid,
+        "rows_pending": rows_pending,
+        "paper_result_counts": paper_result_counts,
+        "total_paper_ev": total_paper_ev,
+        "total_paper_stake_units": total_paper_stake_units,
+        "total_paper_arbitrage_percentage": total_paper_arbitrage_percentage,
+        "average_paper_arbitrage_percentage": average_paper_arbitrage_percentage,
+        "evaluation_rows": list(evaluation_result.get("evaluation_rows") or []),
+        "guardrails": list(evaluation_result.get("guardrails") or []),
+        "review_only": bool(evaluation_result.get("review_only", True)),
+        "paper_only": bool(evaluation_result.get("paper_only", True)),
+        "user_threshold_review_only": bool(evaluation_result.get("user_threshold_review_only", True)),
+        "quality_not_automatically_labeled": bool(
+            evaluation_result.get("quality_not_automatically_labeled", True)
+        ),
+        "low_sample_size_does_not_hide_valid_results": bool(
+            evaluation_result.get("low_sample_size_does_not_hide_valid_results", True)
+        ),
+        "prediction_testing_started": bool(evaluation_result.get("prediction_testing_started", False)),
+        "live_connectors_enabled": bool(evaluation_result.get("live_connectors_enabled", False)),
+        "api_calls_enabled": bool(evaluation_result.get("api_calls_enabled", False)),
+        "database_writes_enabled": bool(evaluation_result.get("database_writes_enabled", False)),
+        "broker_execution_enabled": bool(evaluation_result.get("broker_execution_enabled", False)),
+        "real_trade_execution_enabled": bool(evaluation_result.get("real_trade_execution_enabled", False)),
+        "backend_gate": "paper_evaluation_review_only",
+        "threshold_mode": "user_threshold_review_only",
+        "quality_label": "not_automatically_labeled",
+        "readiness_summary": {
+            "rows_tested": rows_tested,
+            "rows_evaluated": rows_evaluated,
+            "rows_invalid": rows_invalid,
+            "rows_pending": rows_pending,
+            "review_only": bool(evaluation_result.get("review_only", True)),
+            "paper_only": bool(evaluation_result.get("paper_only", True)),
+        },
+    }
+    return payload
+
+
+def build_zero_dte_evaluation_readiness_rows(payload: Mapping[str, Any]) -> list[dict[str, Any]]:
+    """Convert a 0DTE paper evaluation readiness payload into plain display rows."""
+
+    rows_invalid = int(payload.get("rows_invalid") or 0)
+    rows_pending = int(payload.get("rows_pending") or 0)
+
+    def status_for(label: str, value: Any) -> str:
+        if label == "rows_invalid":
+            return "blocked" if rows_invalid > 0 else "ok"
+        if label == "rows_pending":
+            return "warning" if rows_pending > 0 else "ok"
+        if label in {
+            "prediction_testing_started",
+            "live_connectors_enabled",
+            "api_calls_enabled",
+            "database_writes_enabled",
+            "broker_execution_enabled",
+            "real_trade_execution_enabled",
+        }:
+            return "blocked" if bool(value) else "ok"
+        if label in {
+            "review_only",
+            "paper_only",
+            "user_threshold_review_only",
+            "quality_not_automatically_labeled",
+            "low_sample_size_does_not_hide_valid_results",
+        }:
+            return "ok" if bool(value) else "blocked"
+        if label == "backend_gate":
+            return "ok" if value == "paper_evaluation_review_only" else "blocked"
+        if label == "threshold_mode":
+            return "ok" if value == "user_threshold_review_only" else "blocked"
+        if label == "quality_label":
+            return "ok" if value == "not_automatically_labeled" else "blocked"
+        return "ok"
+
+    def display_value(value: Any) -> Any:
+        if isinstance(value, Mapping):
+            return json.dumps(dict(value), sort_keys=True)
+        if isinstance(value, (list, tuple)):
+            return json.dumps(list(value))
+        if isinstance(value, bool):
+            return "Yes" if value else "No"
+        return value
+
+    labels = [
+        ("mode_key", payload.get("mode_key"), "0DTE mode key"),
+        ("execution_mode", payload.get("execution_mode"), "paper-only execution mode"),
+        ("source_type", payload.get("source_type"), "local fixture source type"),
+        ("rows_tested", payload.get("rows_tested"), "rows tested for review-only evaluation"),
+        ("rows_evaluated", payload.get("rows_evaluated"), "rows evaluated for review-only evaluation"),
+        ("rows_invalid", payload.get("rows_invalid"), "rows invalid block readiness"),
+        ("rows_pending", payload.get("rows_pending"), "rows pending stay review-only"),
+        ("total_paper_ev", payload.get("total_paper_ev"), "paper EV total"),
+        ("total_paper_stake_units", payload.get("total_paper_stake_units"), "paper stake units total"),
+        ("total_paper_arbitrage_percentage", payload.get("total_paper_arbitrage_percentage"), "paper arbitrage total"),
+        (
+            "average_paper_arbitrage_percentage",
+            payload.get("average_paper_arbitrage_percentage"),
+            "paper arbitrage average",
+        ),
+        ("backend_gate", payload.get("backend_gate"), "paper_evaluation_review_only"),
+        ("threshold_mode", payload.get("threshold_mode"), "user threshold review-only"),
+        ("quality_label", payload.get("quality_label"), "do not label quality automatically"),
+        ("prediction_testing_started", payload.get("prediction_testing_started"), "paper-only prediction testing"),
+        ("live_connectors_enabled", payload.get("live_connectors_enabled"), "no live connectors"),
+        ("api_calls_enabled", payload.get("api_calls_enabled"), "no API calls"),
+        ("database_writes_enabled", payload.get("database_writes_enabled"), "no database writes"),
+        ("broker_execution_enabled", payload.get("broker_execution_enabled"), "no broker execution"),
+        ("real_trade_execution_enabled", payload.get("real_trade_execution_enabled"), "no real trade execution"),
+        ("review_only", payload.get("review_only"), "review-only evaluation"),
+        ("paper_only", payload.get("paper_only"), "paper-only"),
+        ("user_threshold_review_only", payload.get("user_threshold_review_only"), "user threshold review-only"),
+        (
+            "quality_not_automatically_labeled",
+            payload.get("quality_not_automatically_labeled"),
+            "do not label quality automatically",
+        ),
+        (
+            "low_sample_size_does_not_hide_valid_results",
+            payload.get("low_sample_size_does_not_hide_valid_results"),
+            "do not hide valid results because sample size is low",
+        ),
+    ]
+
+    ready_rows: list[dict[str, Any]] = []
+    for label, value, detail in labels:
+        ready_rows.append(
+            {
+                "label": label,
+                "value": display_value(value),
+                "status": status_for(label, value),
+                "detail": detail,
+            }
+        )
+
+    return ready_rows
+
+
 def build_paper_only_fixture_readiness_payload(
     validation_result: Mapping[str, Any],
     *,

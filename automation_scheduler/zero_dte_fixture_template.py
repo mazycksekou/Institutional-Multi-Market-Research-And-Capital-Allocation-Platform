@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import Counter
 from collections.abc import Iterable, Mapping
 
 from automation_scheduler.model_data_field_catalog import (
@@ -137,6 +138,28 @@ ZERO_DTE_PAPER_TEMPLATE_GUARDRAILS = (
     "do not hide valid results because sample size is low",
 )
 
+ZERO_DTE_PAPER_EVALUATION_GUARDRAILS = (
+    "paper-only",
+    "local fixture-backed testing",
+    "review-only evaluation",
+    "no live connectors",
+    "no API calls",
+    "no database writes",
+    "no broker execution",
+    "no real trade execution",
+    "user threshold review-only",
+    "do not label quality automatically",
+    "do not hide valid results because sample size is low",
+)
+
+ZERO_DTE_PAPER_EVALUATION_STATUS_VALUES = (
+    "paper_win",
+    "paper_loss",
+    "paper_push",
+    "paper_pending",
+    "paper_observed",
+)
+
 ZERO_DTE_FIXTURE_VALIDATION_GUARDRAILS = (
     "paper-only",
     "readiness only",
@@ -184,6 +207,53 @@ def _row_value(row: object, field: str) -> object:
         return row[field]  # type: ignore[index]
     except Exception:
         return None
+
+
+def _to_float(value: object) -> float | None:
+    if value is None or value == "":
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    if number != number or number in (float("inf"), float("-inf")):
+        return None
+    return number
+
+
+def _paper_result_from_row(row: object) -> str:
+    outcome_known = bool(_row_value(row, "outcome_known"))
+    result_label = str(_row_value(row, "result_label") or "").strip().lower()
+    if not outcome_known:
+        return "paper_pending"
+    if result_label in {"win", "won", "profit", "profitable"}:
+        return "paper_win"
+    if result_label in {"loss", "lost", "lose", "unprofitable"}:
+        return "paper_loss"
+    if result_label in {"push", "tie", "refund", "breakeven"}:
+        return "paper_push"
+    return "paper_observed"
+
+
+def _implied_probability_from_american_odds(odds: float | None) -> float | None:
+    if odds is None or odds == 0:
+        return None
+    if odds > 0:
+        return 100.0 / (odds + 100.0)
+    return (-odds) / ((-odds) + 100.0)
+
+
+def _paper_arbitrage_percentage_from_row(row: object) -> float | None:
+    for field in (
+        "paper_arbitrage_percentage",
+        "paper_arbitrage_best_percentage",
+        "paper_arbitrage_after_spread_percentage",
+        "paper_arbitrage_after_fees_percentage",
+    ):
+        value = _to_float(_row_value(row, field))
+        if value is not None:
+            return value
+    return None
 
 
 ZERO_DTE_PAPER_TEMPLATE_FIELD_GROUPS = {
@@ -349,6 +419,110 @@ def validate_zero_dte_fixture_rows(rows: object) -> dict[str, object]:
         "paper_arbitrage_output_fields": list(PAPER_ARBITRAGE_OUTPUT_FIELDS),
         "guardrails": list(ZERO_DTE_FIXTURE_VALIDATION_GUARDRAILS),
         "validity_check_only": True,
+        "user_threshold_review_only": True,
+        "quality_not_automatically_labeled": True,
+        "low_sample_size_does_not_hide_valid_results": True,
+        "prediction_testing_started": False,
+        "live_connectors_enabled": False,
+        "api_calls_enabled": False,
+        "database_writes_enabled": False,
+        "broker_execution_enabled": False,
+        "real_trade_execution_enabled": False,
+    }
+
+
+def evaluate_zero_dte_paper_fixture_rows(rows: object) -> dict[str, object]:
+    """Evaluate local 0DTE paper fixture rows only."""
+
+    row_items = _coerce_rows(rows)
+    validation_result = validate_zero_dte_fixture_rows(row_items)
+
+    evaluation_rows: list[dict[str, object]] = []
+    paper_result_counts: Counter[str] = Counter()
+    total_paper_ev = 0.0
+    total_paper_stake_units = 0.0
+    total_paper_arbitrage_percentage = 0.0
+    paper_arbitrage_count = 0
+
+    validation_statuses = list(validation_result.get("row_statuses") or [])
+    for row_index, row in enumerate(row_items):
+        validation_status = "invalid"
+        if row_index < len(validation_statuses):
+            validation_status = str(validation_statuses[row_index].get("status") or "invalid")
+
+        paper_result = _paper_result_from_row(row)
+        model_probability = _to_float(_row_value(row, "model_probability"))
+        market_odds_american = _to_float(_row_value(row, "market_odds_american"))
+        premium = _to_float(_row_value(row, "premium"))
+        spread_percent = _to_float(_row_value(row, "spread_percent"))
+        implied_probability = _implied_probability_from_american_odds(market_odds_american)
+        paper_edge = (
+            model_probability - implied_probability
+            if model_probability is not None and implied_probability is not None
+            else None
+        )
+        paper_ev = paper_edge * premium if paper_edge is not None and premium is not None else None
+        paper_stake_units = premium if premium is not None else None
+        paper_arbitrage_percentage = _paper_arbitrage_percentage_from_row(row)
+
+        paper_result_counts[paper_result] += 1
+        if paper_ev is not None:
+            total_paper_ev += paper_ev
+        if paper_stake_units is not None:
+            total_paper_stake_units += paper_stake_units
+        if paper_arbitrage_percentage is not None:
+            total_paper_arbitrage_percentage += paper_arbitrage_percentage
+            paper_arbitrage_count += 1
+
+        evaluation_rows.append(
+            {
+                "row_index": row_index,
+                "validation_status": validation_status,
+                "selection": _row_value(row, "selection"),
+                "underlying_symbol": _row_value(row, "underlying_symbol"),
+                "strike": _row_value(row, "strike"),
+                "call_put": _row_value(row, "call_put"),
+                "expiration_date": _row_value(row, "expiration_date"),
+                "result_label": _row_value(row, "result_label"),
+                "outcome_known": _row_value(row, "outcome_known"),
+                "model_probability": model_probability,
+                "market_odds_american": market_odds_american,
+                "premium": premium,
+                "spread_percent": spread_percent,
+                "paper_result": paper_result,
+                "paper_edge": paper_edge,
+                "paper_ev": paper_ev,
+                "paper_stake_units": paper_stake_units,
+                "paper_arbitrage_percentage": paper_arbitrage_percentage,
+            }
+        )
+
+    rows_tested = len(row_items)
+    rows_invalid = int(validation_result.get("rows_invalid") or 0)
+    rows_pending = sum(1 for item in evaluation_rows if item["paper_result"] == "paper_pending")
+    rows_evaluated = len(evaluation_rows)
+    average_paper_arbitrage_percentage = (
+        total_paper_arbitrage_percentage / paper_arbitrage_count if paper_arbitrage_count else 0.0
+    )
+
+    return {
+        "mode_key": ZERO_DTE_MODE_KEY,
+        "source_type": "local_fixture",
+        "execution_mode": "paper_only",
+        "validation_result": validation_result,
+        "rows_tested": rows_tested,
+        "rows_evaluated": rows_evaluated,
+        "rows_invalid": rows_invalid,
+        "rows_pending": rows_pending,
+        "paper_result_counts": dict(paper_result_counts),
+        "total_paper_ev": total_paper_ev,
+        "total_paper_stake_units": total_paper_stake_units,
+        "total_paper_arbitrage_percentage": total_paper_arbitrage_percentage,
+        "average_paper_arbitrage_percentage": average_paper_arbitrage_percentage,
+        "evaluation_rows": evaluation_rows,
+        "guardrails": list(ZERO_DTE_PAPER_EVALUATION_GUARDRAILS),
+        "review_only": True,
+        "paper_only": True,
         "user_threshold_review_only": True,
         "quality_not_automatically_labeled": True,
         "low_sample_size_does_not_hide_valid_results": True,

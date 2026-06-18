@@ -69,12 +69,21 @@ from automation_scheduler.streamlit_dashboard_data import (
     get_experiment_history_snapshot_for_dashboard,
     save_experiment_history_run_for_dashboard,
     compare_experiment_history_runs_for_dashboard,
+    build_zero_dte_evaluation_readiness_payload,
+    build_zero_dte_evaluation_readiness_rows,
+    build_zero_dte_validation_readiness_payload,
+    build_zero_dte_validation_readiness_rows,
 )
 from automation_scheduler.source_event_link_resolver import (
     describe_source_event_link_resolver,
 )
 from automation_scheduler.feature_ablation_lab import get_ablation_field_groups_for_sport
 from automation_scheduler.feature_ablation_lab import run_feature_ablation_lab
+from automation_scheduler.zero_dte_fixture_template import (
+    build_zero_dte_fixture_template_row,
+    evaluate_zero_dte_paper_fixture_rows,
+    validate_zero_dte_fixture_rows,
+)
 from automation_scheduler.model_data_field_catalog import (
     MODEL_DATA_FIELD_GROUPS_BY_MODE,
     SPORTS_MODEL_INPUT_FIELD_GROUPS_BY_SPORT,
@@ -135,6 +144,86 @@ def show_controlled_readiness_preview(section_label: str) -> None:
     st.info("do not hide valid results because sample size is low")
     st.info("do not label quality automatically")
     st.dataframe(df(rows), use_container_width=True, hide_index=True)
+
+
+def show_zero_dte_validation_readiness_preview() -> None:
+    row = build_zero_dte_fixture_template_row()
+    validation_result = validate_zero_dte_fixture_rows([row])
+    payload = build_zero_dte_validation_readiness_payload(validation_result)
+    readiness_rows = build_zero_dte_validation_readiness_rows(payload)
+
+    st.subheader("Dedicated 0DTE validation readiness UI")
+    st.caption("show_zero_dte_validation_readiness_preview")
+    st.caption("local fixture-backed testing")
+    st.caption("paper-only")
+    st.caption("readiness only")
+    st.caption("no broker execution")
+    st.caption("no real trade execution")
+    st.caption("no live connectors")
+    st.caption("no API calls")
+    st.caption("no database writes")
+    st.caption("validity_check_only")
+    st.caption("user_threshold_review_only")
+    st.caption("not_automatically_labeled")
+
+    metrics = st.columns(4)
+    metrics[0].metric("rows_tested", payload.get("rows_tested", 0))
+    metrics[1].metric("rows_valid", payload.get("rows_valid", 0))
+    metrics[2].metric("rows_invalid", payload.get("rows_invalid", 0))
+    metrics[3].metric("rows_warning", payload.get("rows_warning", 0))
+
+    st.caption(f"backend_gate: {payload.get('backend_gate')}")
+    st.caption(f"threshold_mode: {payload.get('threshold_mode')}")
+    st.caption(f"quality_label: {payload.get('quality_label')}")
+    st.table(readiness_rows)
+
+
+def show_zero_dte_paper_evaluation_preview() -> None:
+    row = build_zero_dte_fixture_template_row()
+    row.update(
+        {
+            "outcome_known": False,
+            "result_label": "pending",
+            "model_probability": 0.0,
+            "market_odds_american": 0,
+            "premium": 0.0,
+            "spread_percent": 0.0,
+        }
+    )
+    evaluation_result = evaluate_zero_dte_paper_fixture_rows([row])
+    payload = build_zero_dte_evaluation_readiness_payload(evaluation_result)
+    readiness_rows = build_zero_dte_evaluation_readiness_rows(payload)
+
+    st.subheader("Dedicated 0DTE paper evaluation UI")
+    st.caption("show_zero_dte_paper_evaluation_preview")
+    st.caption("local fixture-backed testing")
+    st.caption("paper-only")
+    st.caption("readiness only")
+    st.caption("review-only evaluation")
+    st.caption("paper_evaluation_review_only")
+    st.caption("no broker execution")
+    st.caption("no real trade execution")
+    st.caption("no live connectors")
+    st.caption("no API calls")
+    st.caption("no database writes")
+
+    metrics = st.columns(4)
+    metrics[0].metric("rows_tested", payload.get("rows_tested", 0))
+    metrics[1].metric("rows_evaluated", payload.get("rows_evaluated", 0))
+    metrics[2].metric("rows_invalid", payload.get("rows_invalid", 0))
+    metrics[3].metric("rows_pending", payload.get("rows_pending", 0))
+
+    st.caption(f"backend_gate: {payload.get('backend_gate')}")
+    st.caption(f"threshold_mode: {payload.get('threshold_mode')}")
+    st.caption(f"quality_label: {payload.get('quality_label')}")
+    st.caption(
+        "paper_edge | paper_ev | paper_stake_units | paper_result | paper_arbitrage_percentage"
+    )
+    st.caption(
+        "total_paper_ev | total_paper_stake_units | total_paper_arbitrage_percentage | "
+        "average_paper_arbitrage_percentage"
+    )
+    st.table(readiness_rows)
 
 
 def build_controlled_paper_test_field_groups(mode: str, sport_key: str | None = None) -> dict:
@@ -1886,6 +1975,23 @@ if menu == "Feature Ablation Lab":
                 "local fixture-backed testing | paper-only | readiness only | no broker execution | "
                 "no real trade execution | no live connectors | no API calls | no database writes"
             )
+            show_zero_dte_validation_readiness_preview()
+            st.caption("Dedicated 0DTE paper evaluation UI")
+            st.caption(
+                "show_zero_dte_paper_evaluation_preview | evaluate_zero_dte_paper_fixture_rows | "
+                "build_zero_dte_evaluation_readiness_payload | build_zero_dte_evaluation_readiness_rows"
+            )
+            st.caption(
+                "paper_edge | paper_ev | paper_stake_units | paper_result | paper_arbitrage_percentage | "
+                "total_paper_ev | total_paper_stake_units | total_paper_arbitrage_percentage | "
+                "average_paper_arbitrage_percentage"
+            )
+            st.caption(
+                "paper_evaluation_review_only | local fixture-backed testing | paper-only | readiness only | "
+                "review-only evaluation | no broker execution | no real trade execution | "
+                "no live connectors | no API calls | no database writes"
+            )
+            show_zero_dte_paper_evaluation_preview()
         else:
             st.info("Sports field groups")
             st.info("Stock Market field groups")
