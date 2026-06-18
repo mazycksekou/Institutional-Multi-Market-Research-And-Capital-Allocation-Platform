@@ -1,4 +1,5 @@
 from datetime import date
+from collections.abc import Iterable, Mapping
 from typing import Any
 
 from src.core.math_utils import (
@@ -197,6 +198,188 @@ def exposure_check(
 
 
 # --- Extended quant primitives (betting evaluation engine) ---
+
+
+PAPER_ONLY_EVALUATION_REQUIRED_FIELDS: tuple[str, ...] = (
+    "fixture_id",
+    "sport_or_market",
+    "event_id",
+    "prediction_target",
+    "selection",
+    "model_probability",
+    "market_odds_american",
+    "implied_probability",
+    "expected_value",
+    "stake_units",
+    "bankroll_snapshot",
+    "result_label",
+    "outcome_known",
+    "source_type",
+    "execution_mode",
+)
+
+
+def _safe_float(value: Any) -> float | None:
+    try:
+        if value is None:
+            return None
+        if isinstance(value, bool):
+            return float(value)
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _paper_result_from_row(result_label: Any, outcome_known: Any) -> str:
+    if not bool(outcome_known):
+        return "pending"
+
+    label = str(result_label or "").strip().lower()
+    if any(token in label for token in ("win", "won")):
+        return "paper_win"
+    if any(token in label for token in ("loss", "lost")):
+        return "paper_loss"
+    if any(token in label for token in ("push", "tie", "refund")):
+        return "paper_push"
+    return "paper_observed"
+
+
+def evaluate_paper_only_fixture_rows(rows: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
+    """Evaluate local fixture rows without starting live prediction testing.
+
+    no prediction testing started in 10K8F.
+    no live connectors.
+    no API calls.
+    no database writes.
+    do not label quality automatically.
+    do not hide valid results because sample size is low.
+    user threshold review-only.
+    validity check only.
+    paper_only.
+    fixture_only.
+    local_fixture.
+    """
+
+    rows_tested = 0
+    rows_valid = 0
+    rows_invalid = 0
+    missing_field_reasons: list[str] = []
+    warning_reasons: list[str] = []
+    evaluations: list[dict[str, Any]] = []
+    observed_source_types: set[str] = set()
+    observed_execution_modes: set[str] = set()
+
+    for row in rows:
+        rows_tested += 1
+        row_missing: list[str] = []
+        row_warnings: list[str] = []
+
+        for field in PAPER_ONLY_EVALUATION_REQUIRED_FIELDS:
+            value = row.get(field)
+            if value in (None, ""):
+                row_missing.append(field)
+
+        source_type = str(row.get("source_type") or "").strip().lower()
+        if source_type:
+            observed_source_types.add(source_type)
+        if "fixture" not in source_type:
+            row_missing.append("source_type")
+            row_warnings.append(f"invalid_source_type:{source_type or 'missing'}")
+
+        execution_mode = str(row.get("execution_mode") or "").strip().lower()
+        if execution_mode:
+            observed_execution_modes.add(execution_mode)
+        if execution_mode not in {"paper_only", "fixture_only"}:
+            row_missing.append("execution_mode")
+            row_warnings.append(f"invalid_execution_mode:{execution_mode or 'missing'}")
+
+        model_probability = _safe_float(row.get("model_probability"))
+        implied_probability = _safe_float(row.get("implied_probability"))
+        expected_value = _safe_float(row.get("expected_value"))
+        stake_units = _safe_float(row.get("stake_units"))
+        bankroll_snapshot = _safe_float(row.get("bankroll_snapshot"))
+        market_odds_american = _safe_float(row.get("market_odds_american"))
+
+        for field_name, numeric_value in (
+            ("model_probability", model_probability),
+            ("implied_probability", implied_probability),
+        ):
+            if numeric_value is None:
+                row_warnings.append(f"invalid_numeric_value:{field_name}")
+            elif not 0.0 <= numeric_value <= 1.0:
+                row_warnings.append(f"probability_out_of_range:{field_name}")
+
+        for field_name, numeric_value in (
+            ("expected_value", expected_value),
+            ("stake_units", stake_units),
+            ("bankroll_snapshot", bankroll_snapshot),
+            ("market_odds_american", market_odds_american),
+        ):
+            if numeric_value is None:
+                row_warnings.append(f"invalid_numeric_value:{field_name}")
+
+        if row_missing:
+            rows_invalid += 1
+            missing_field_reasons.extend(row_missing)
+        else:
+            rows_valid += 1
+
+        paper_result = _paper_result_from_row(row.get("result_label"), row.get("outcome_known"))
+        paper_edge = None
+        if model_probability is not None and implied_probability is not None:
+            paper_edge = model_probability - implied_probability
+
+        evaluations.append(
+            {
+                "fixture_id": row.get("fixture_id"),
+                "sport_or_market": row.get("sport_or_market"),
+                "event_id": row.get("event_id"),
+                "prediction_target": row.get("prediction_target"),
+                "selection": row.get("selection"),
+                "model_probability": model_probability,
+                "implied_probability": implied_probability,
+                "market_odds_american": market_odds_american,
+                "expected_value": expected_value,
+                "stake_units": stake_units,
+                "bankroll_snapshot": bankroll_snapshot,
+                "outcome_known": row.get("outcome_known"),
+                "result_label": row.get("result_label"),
+                "paper_edge": paper_edge,
+                "paper_ev": expected_value,
+                "paper_stake_units": stake_units,
+                "paper_result": paper_result,
+                "source_type": source_type,
+                "execution_mode": execution_mode,
+            }
+        )
+        warning_reasons.extend(row_warnings)
+
+    execution_mode_result = "mixed"
+    if len(observed_execution_modes) == 1:
+        execution_mode_result = next(iter(observed_execution_modes))
+    elif not observed_execution_modes:
+        execution_mode_result = ""
+
+    source_type_result = "mixed"
+    if len(observed_source_types) == 1:
+        source_type_result = next(iter(observed_source_types))
+    elif not observed_source_types:
+        source_type_result = ""
+
+    return {
+        "rows_tested": rows_tested,
+        "rows_valid": rows_valid,
+        "rows_invalid": rows_invalid,
+        "missing_field_reasons": missing_field_reasons,
+        "warning_reasons": warning_reasons,
+        "evaluations": evaluations,
+        "source_type": source_type_result,
+        "execution_mode": execution_mode_result,
+        "prediction_testing_started": False,
+        "live_connectors_enabled": False,
+        "api_calls_enabled": False,
+        "database_writes_enabled": False,
+    }
 
 
 def decimal_to_implied_probability(decimal_odds: float) -> float:
