@@ -11,6 +11,7 @@ from .data_paths import get_data_sources_dir, get_storage_health, resolve_base_d
 from .budget_gates import build_budget_gate, default_approval_status
 from .scheduler_config import sanitize_filename
 from .source_quality_scoring import FUTURE_ONLY_ACCESS_TYPES, score_lane, score_source
+from .technical_signal_fields import technical_fields_for_market
 
 
 ACCESS_TYPES = {
@@ -286,6 +287,7 @@ def _optional_inputs_for(category: str, lane_id: str) -> list[str]:
             "options_context",
             "position_sizing_simulation",
             "paper_only_portfolio_simulation",
+            *technical_fields_for_market("stocks"),
         ]
     if lane_id == "cryptocurrency_edge_lab":
         return [
@@ -299,15 +301,64 @@ def _optional_inputs_for(category: str, lane_id: str) -> list[str]:
             "risk_asset_correlation",
             "regime_detection",
             "paper_only_strategy_replay",
+            *technical_fields_for_market("crypto"),
         ]
     if category == "sport":
         return ["injuries", "lineups", "officials", "weather", "travel", "rest", "news_context"]
     if category == "financial_market":
         return ["fundamentals", "macro", "rates", "sector", "benchmarks", "corporate_actions"]
     if category == "prediction_market":
-        return ["volume", "open_interest", "settlement_rules", "category", "event_metadata"]
+        return [
+            "volume",
+            "open_interest",
+            "settlement_rules",
+            "category",
+            "event_metadata",
+            *technical_fields_for_market("prediction_markets"),
+        ]
     if category == "odds":
-        return ["book_count", "consensus_line", "closing_line", "limits", "injuries", "weather"]
+        return [
+            "book_count",
+            "consensus_line",
+            "closing_line",
+            "limits",
+            "injuries",
+            "weather",
+            *technical_fields_for_market("sports_odds"),
+        ]
+    if category == "0dte_options" or "0dte" in lane_id:
+        return [
+            "underlying_symbol",
+            "underlying_price",
+            "trade_date",
+            "expiration_date",
+            "days_to_expiration",
+            "minutes_to_expiration",
+            "strike",
+            "option_type",
+            "call_put",
+            "bid",
+            "ask",
+            "mid",
+            "mark",
+            "last_price",
+            "volume",
+            "open_interest",
+            "implied_volatility",
+            "delta",
+            "gamma",
+            "theta",
+            "vega",
+            "rho",
+            "moneyness",
+            "intrinsic_value",
+            "extrinsic_value",
+            "spread",
+            "spread_percent",
+            "premium",
+            "risk_free_rate",
+            *technical_fields_for_market("0dte_options"),
+        ]
     return ["manual_notes", "confidence", "source_timestamp"]
 
 

@@ -75,6 +75,13 @@ from automation_scheduler.source_event_link_resolver import (
 )
 from automation_scheduler.feature_ablation_lab import get_ablation_field_groups_for_sport
 from automation_scheduler.feature_ablation_lab import run_feature_ablation_lab
+from automation_scheduler.model_data_field_catalog import (
+    MODEL_DATA_FIELD_GROUPS_BY_MODE,
+    SPORTS_MODEL_INPUT_FIELD_GROUPS_BY_SPORT,
+    field_groups_for_model_mode,
+    fields_for_model_mode,
+    fields_for_sport,
+)
 from automation_scheduler.historical_data_sources import (
     get_historical_data_source_rows,
     get_priority_import_sources,
@@ -130,106 +137,58 @@ def show_controlled_readiness_preview(section_label: str) -> None:
     st.dataframe(df(rows), use_container_width=True, hide_index=True)
 
 
-def build_controlled_paper_test_field_groups(mode: str) -> dict:
-    sports_field_groups = [
-        {"group_key": "odds_fields", "label": "Odds fields", "fields": ["opening_american_odds", "closing_american_odds", "implied_probability"]},
-        {"group_key": "market_fields", "label": "Market fields", "fields": ["market_name", "market_type", "sport_or_market"]},
-        {"group_key": "line_movement_fields", "label": "Line movement fields", "fields": ["line_open", "line_current", "line_change"]},
-        {"group_key": "volatility_fields", "label": "Volatility fields", "fields": ["implied_volatility", "volatility_rank"]},
-        {"group_key": "team_context_fields", "label": "Team context fields", "fields": ["home_team", "away_team", "team_id"]},
-        {"group_key": "player_context_fields", "label": "Player context fields", "fields": ["player_name", "player_id", "starters"]},
-        {"group_key": "injury_availability_fields", "label": "Injury availability fields", "fields": ["injury_status", "injury_count"]},
-        {"group_key": "rest_schedule_fields", "label": "Rest schedule fields", "fields": ["rest_days", "back_to_back"]},
-        {"group_key": "weather_environment_fields", "label": "Weather environment fields", "fields": ["weather", "temperature", "wind_speed"]},
-        {"group_key": "matchup_fields", "label": "Matchup fields", "fields": ["matchup_id", "matchup_type"]},
-        {"group_key": "form_fields", "label": "Form fields", "fields": ["recent_form", "last_5_games"]},
-        {"group_key": "sport_specific_fields", "label": "Sport specific fields", "fields": ["sport_specific_context"]},
-    ]
-    stock_market_field_groups = [
-        {"group_key": "quote_fields", "label": "Quote fields", "fields": ["open_price", "close_price", "last_price"]},
-        {"group_key": "line_data_fields", "label": "Line data fields", "fields": ["bid_price", "ask_price", "spread"]},
-        {"group_key": "price_action_fields", "label": "Price action fields", "fields": ["price_change", "price_change_pct"]},
-        {"group_key": "volume_liquidity_fields", "label": "Volume liquidity fields", "fields": ["volume", "average_volume", "liquidity_score"]},
-        {"group_key": "volatility_fields", "label": "Volatility fields", "fields": ["implied_volatility", "historical_volatility"]},
-        {"group_key": "options_chain_fields", "label": "Options chain fields", "fields": ["options_chain", "open_interest"]},
-        {"group_key": "earnings_calendar_fields", "label": "Earnings calendar fields", "fields": ["earnings_date", "earnings_surprise"]},
-        {"group_key": "macro_context_fields", "label": "Macro context fields", "fields": ["fed_signal", "inflation_signal"]},
-        {"group_key": "sector_context_fields", "label": "Sector context fields", "fields": ["sector", "industry"]},
-        {"group_key": "fundamentals_fields", "label": "Fundamentals fields", "fields": ["pe_ratio", "eps", "revenue_growth"]},
-        {"group_key": "technical_indicator_fields", "label": "Technical indicator fields", "fields": ["rsi", "macd", "moving_average"]},
-        {"group_key": "risk_fields", "label": "Risk fields", "fields": ["beta", "drawdown", "risk_score"]},
-    ]
-    prediction_market_field_groups = [
-        {"group_key": "contract_fields", "label": "Contract fields", "fields": ["contract_id", "contract_type", "market_name"]},
-        {"group_key": "market_fields", "label": "Market fields", "fields": ["market_name", "market_slug", "market_type"]},
-        {"group_key": "orderbook_fields", "label": "Orderbook fields", "fields": ["best_bid", "best_ask", "orderbook_depth"]},
-        {"group_key": "price_probability_fields", "label": "Price probability fields", "fields": ["price", "probability", "implied_probability"]},
-        {"group_key": "liquidity_fields", "label": "Liquidity fields", "fields": ["liquidity", "trade_count"]},
-        {"group_key": "line_movement_fields", "label": "Line movement fields", "fields": ["line_open", "line_current", "line_change"]},
-        {"group_key": "settlement_fields", "label": "Settlement fields", "fields": ["settlement_date", "settlement_status"]},
-        {"group_key": "event_context_fields", "label": "Event context fields", "fields": ["event_name", "event_id", "event_category"]},
-        {"group_key": "resolution_criteria_fields", "label": "Resolution criteria fields", "fields": ["resolution_criteria", "resolution_source"]},
-        {"group_key": "volatility_fields", "label": "Volatility fields", "fields": ["implied_volatility", "volatility_rank"]},
-        {"group_key": "arbitrage_fields", "label": "Arbitrage fields", "fields": ["arbitrage_spread", "arb_flag"]},
-        {"group_key": "risk_fields", "label": "Risk fields", "fields": ["risk_score", "risk_limit"]},
-    ]
-
-    mode_to_catalog = {
-        "One Sport": {
-            "section_label": "Sports field groups",
-            "groups": sports_field_groups,
-        },
-        "One Stock Market": {
-            "section_label": "Stock Market field groups",
-            "groups": stock_market_field_groups,
-        },
-        "One Prediction Market": {
-            "section_label": "Prediction Market field groups",
-            "groups": prediction_market_field_groups,
-        },
-        "All Ready": {
-            "section_label": "All Ready",
-            "groups": [
-                *[
-                    {
-                        "group_key": f"sports_{group['group_key']}",
-                        "label": f"Sports - {group['label']}",
-                        "fields": group["fields"],
-                    }
-                    for group in sports_field_groups
-                ],
-                *[
-                    {
-                        "group_key": f"stock_{group['group_key']}",
-                        "label": f"Stock Market - {group['label']}",
-                        "fields": group["fields"],
-                    }
-                    for group in stock_market_field_groups
-                ],
-                *[
-                    {
-                        "group_key": f"prediction_{group['group_key']}",
-                        "label": f"Prediction Market - {group['label']}",
-                        "fields": group["fields"],
-                    }
-                    for group in prediction_market_field_groups
-                ],
-            ],
-        },
+def build_controlled_paper_test_field_groups(mode: str, sport_key: str | None = None) -> dict:
+    mode_key_by_label = {
+        "One Sport": "one_sport",
+        "One Stock Market": "one_stock_market",
+        "One Crypto Market": "one_crypto_market",
+        "One Prediction Market": "one_prediction_market",
+        "One 0DTE Options Trade": "one_0dte_options_trade",
     }
+    section_label_by_mode = {
+        "One Sport": "Sports field groups",
+        "One Stock Market": "Stock Market field groups",
+        "One Crypto Market": "Crypto Market field groups",
+        "One Prediction Market": "Prediction Market field groups",
+        "One 0DTE Options Trade": "0DTE Options Trade field groups",
+    }
+    mode_key = mode_key_by_label.get(mode, "one_sport")
+    catalog = field_groups_for_model_mode(mode_key)
+    groups = [
+        {
+            "group_key": group_key,
+            "label": group_key.replace("_", " ").title(),
+            "fields": list(fields),
+        }
+        for group_key, fields in catalog.items()
+    ]
+    if mode == "One Sport":
+        selected_sport = sport_key or next(iter(SPORTS_MODEL_INPUT_FIELD_GROUPS_BY_SPORT))
+        sport_specific_fields = fields_for_sport(selected_sport)
+        groups.append(
+            {
+                "group_key": f"{selected_sport}_sport_specific_fields",
+                "label": f"{selected_sport} sport-specific fields",
+                "fields": sport_specific_fields,
+            }
+        )
 
-    catalog = mode_to_catalog.get(mode, mode_to_catalog["One Sport"])
-    groups = catalog["groups"]
-    all_selectable_fields = []
-    for group in groups:
-        for field_name in group["fields"]:
-            if field_name not in all_selectable_fields:
-                all_selectable_fields.append(field_name)
+    all_selectable_fields = fields_for_model_mode(mode_key)
+    if mode == "One Sport":
+        all_selectable_fields = list(
+            dict.fromkeys(
+                [
+                    *all_selectable_fields,
+                    *fields_for_sport(sport_key or next(iter(SPORTS_MODEL_INPUT_FIELD_GROUPS_BY_SPORT))),
+                ]
+            )
+        )
 
     return {
-        "section_label": catalog["section_label"],
+        "section_label": section_label_by_mode.get(mode, "Model field groups"),
         "groups": groups,
         "all_selectable_fields": all_selectable_fields,
+        "mode_key": mode_key,
     }
 
 
@@ -1800,29 +1759,82 @@ if menu == "Feature Ablation Lab":
     with col_mode:
         mode = st.radio(
             "Mode",
-            ["One Sport", "One Stock Market", "One Prediction Market", "All Ready"],
+            [
+                "One Sport",
+                "One Stock Market",
+                "One Crypto Market",
+                "One Prediction Market",
+                "One 0DTE Options Trade",
+            ],
             key="fal_mode",
             horizontal=True,
         )
-    paper_test_groups = build_controlled_paper_test_field_groups(mode)
     sport_val = ""
     market_val = ""
     with col_rest:
+        if mode == "One Sport":
+            sport_val = st.selectbox(
+                "Sport",
+                [
+                    "basketball_nba",
+                    "basketball_wnba",
+                    "basketball_ncaab",
+                    "basketball_ncaaw",
+                    "americanfootball_nfl",
+                    "americanfootball_ncaaf",
+                    "baseball_mlb",
+                    "icehockey_nhl",
+                    "soccer",
+                    "tennis",
+                    "ufc_mma",
+                    "boxing",
+                    "golf",
+                ],
+                key="fal_sport",
+            )
+        paper_test_groups = build_controlled_paper_test_field_groups(
+            mode,
+            sport_val if mode == "One Sport" else None,
+        )
         st.subheader(paper_test_groups["section_label"])
+        st.caption(
+            "paper-only | readiness only | no live connectors | no API calls | "
+            "no database writes | user threshold review-only | validity check only | "
+            "do not label quality automatically | do not hide valid results because sample size is low"
+        )
+        st.caption(
+            "readiness_output_fields, evaluation_output_fields, pipeline_output_fields, "
+            "universal_math_output_fields, paper_arbitrage_output_fields, backtest_clv_output_fields"
+        )
+        st.caption(
+            "universal_row_identity_fields, market_type, asset_class, data_source_name, "
+            "rows_tested, rows_valid, rows_invalid, missing_field_reasons, warning_reasons"
+        )
         if mode == "One Sport":
             st.info("Sports field groups")
             st.caption("odds_fields, market_fields, line_movement_fields, volatility_fields, team_context_fields, player_context_fields, injury_availability_fields, rest_schedule_fields, weather_environment_fields, matchup_fields, form_fields, sport_specific_fields")
         elif mode == "One Stock Market":
             st.info("Stock Market field groups")
             st.caption("quote_fields, line_data_fields, price_action_fields, volume_liquidity_fields, volatility_fields, options_chain_fields, earnings_calendar_fields, macro_context_fields, sector_context_fields, fundamentals_fields, technical_indicator_fields, risk_fields")
+        elif mode == "One Crypto Market":
+            st.info("Crypto Market field groups")
+            st.caption("quote_fields, orderbook_fields, chain_fields, funding_fields, liquidity_fields, volatility_fields, macro_context_fields, sentiment_fields, technical_indicator_fields, technical_signal_fields, risk_fields")
         elif mode == "One Prediction Market":
             st.info("Prediction Market field groups")
             st.caption("contract_fields, market_fields, orderbook_fields, price_probability_fields, liquidity_fields, line_movement_fields, settlement_fields, event_context_fields, resolution_criteria_fields, volatility_fields, arbitrage_fields, risk_fields")
+        elif mode == "One 0DTE Options Trade":
+            st.info("0DTE Options Trade field groups")
+            st.caption("Dedicated 0DTE Options Trade mode")
+            st.caption("0DTE is the primary active trading lane")
+            st.caption("All Ready removed as redundant")
+            st.caption("underlying_identity_fields, underlying_quote_fields, underlying_line_data_fields, underlying_price_action_fields, technical_signal_fields, options_contract_fields, options_quote_fields, greeks_fields, expiration_fields, volatility_fields, liquidity_spread_fields, risk_fields, macro_event_fields, earnings_event_fields, intraday_context_fields, paper_fixture_fields")
+            st.caption("paper_arbitrage_percentage, paper arbitrage percentage within tested timeframe, paper_arbitrage_window, paper_arbitrage_timeframe, paper_arbitrage_best_percentage, paper_arbitrage_liquidity_adjusted_percentage, paper_arbitrage_after_spread_percentage, paper_arbitrage_after_fees_percentage")
         else:
             st.info("Sports field groups")
             st.info("Stock Market field groups")
+            st.info("Crypto Market field groups")
             st.info("Prediction Market field groups")
-            st.caption("All Ready")
+            st.info("0DTE Options Trade field groups")
 
     # ── Field Groups & Remove Individual Fields ─────────
     initial_groups = paper_test_groups
@@ -1895,8 +1907,8 @@ if menu == "Feature Ablation Lab":
     if len(active_fields) == 0:
         warnings.append("No active fields remain for testing. Add fields back.")
         run_disabled = True
-    if False:
-        warnings.append("Select a sport for single‑sport mode.")
+    if mode == "One Sport" and not sport_val:
+        warnings.append("Select a sport for single-sport mode.")
         run_disabled = True
 
     if warnings:
@@ -1927,7 +1939,7 @@ if menu == "Feature Ablation Lab":
                         db_path_input,
                         sport=sport_val or None,
                         market=market_val or None,
-                        mode="all_sports" if mode == "All Ready" else "single_sport",
+                        mode="single_sport",
                         selected_fields=None,
                         removed_fields=None,
                         selected_groups=None,
@@ -1958,7 +1970,7 @@ if menu == "Feature Ablation Lab":
                         db_path_input,
                         sport=sport_val or None,
                         market=market_val or None,
-                        mode="all_sports" if mode == "All Ready" else "single_sport",
+                        mode="single_sport",
                         selected_fields=active_fields
                         if active_fields != all_selectable
                         else None,
@@ -2284,7 +2296,7 @@ if menu == "Feature Ablation Lab":
     helper_markdown = """\
 - **True Code Baseline** means the current model exactly as coded.
 - **One Sport** tests only the selected sport.
-- **All Ready Sports** tests only sports that pass readiness checks.
+- **Readiness-only sports** tests only sports that pass readiness checks.
 - **Custom Ablation Test** removes fields or field groups to see what changes.
 - **Risk preset** affects stake sizing/risk display only.
 - **Regression tactic** is off when set to None.
