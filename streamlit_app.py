@@ -1849,9 +1849,14 @@ if menu == "Feature Ablation Lab":
             st.caption("Dedicated 0DTE Options Trade mode")
             st.caption("0DTE is the primary active trading lane")
             st.caption("All Ready removed as redundant")
+            st.caption("Dedicated 0DTE paper fixture template")
             st.caption(
                 "paper-only | readiness only | no live connectors | no API calls | no database writes | "
                 "no broker execution | no real trade execution"
+            )
+            st.caption(
+                "local fixture-backed testing | paper_arbitrage_percentage | "
+                "paper arbitrage percentage within tested timeframe"
             )
             st.caption(
                 "underlying_identity_fields, underlying_quote_fields, underlying_line_data_fields, "
