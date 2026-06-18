@@ -3242,7 +3242,6 @@ paper-only
 readiness only
 local fixture-backed testing
 paper arbitrage percentage within tested timeframe
-Synthetic rows are fake demo data and must not be used as model evidence.
 Dedicated 0DTE paper fixture template
 Dedicated 0DTE fixture validation adapter
 Dedicated 0DTE validation readiness payload
@@ -3256,11 +3255,7 @@ user threshold review-only
 validity check only
 do not label quality automatically
 do not hide valid results because sample size is low
-Test One Sport is a paper test flow.
-Synthetic Line Movement Sandbox is fake demo line movement data and is not model evidence.
-Synthetic Line Movement Sandbox uses fake demo rows to preview the line movement pipeline without writing production data.
-Current Data Source shows where the Feature Ablation Lab is reading testing data from.
-Testing data is loaded from SQLite automatically.
+Research/backtest mode only. No broker orders, live connectors, API calls, or database writes.
 """
 
 

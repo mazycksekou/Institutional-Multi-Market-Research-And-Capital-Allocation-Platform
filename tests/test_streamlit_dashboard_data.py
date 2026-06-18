@@ -1038,7 +1038,7 @@ def test_streamlit_app_contains_panel_explanation_text():
         content = f.read()
     assert (
         "Current Data Source shows where the Feature Ablation Lab is "
-        "reading testing data from."
+        "reading local data from."
     ) in content
 
 
@@ -1817,17 +1817,20 @@ def test_streamlit_app_contains_view_active_fields():
         content = f.read()
     assert "View active fields" in content
 
-def test_streamlit_app_contains_test_one_sport_is_paper():
-    with open("streamlit_app.py", encoding="utf-8") as f:
-        content = f.read()
-    assert "Test One Sport is a paper test flow." in content
-
-def test_streamlit_app_contains_synthetic_sandbox_not_model_evidence():
+def test_streamlit_app_contains_research_backtest_safety_copy():
     with open("streamlit_app.py", encoding="utf-8") as f:
         content = f.read()
     assert (
-        "Synthetic Line Movement Sandbox is fake demo line movement data "
-        "and is not model evidence."
+        "Research/backtest mode only. No broker orders, live connectors, "
+        "API calls, or database writes."
+    ) in content
+
+def test_streamlit_app_contains_synthetic_sandbox_removed_from_public_copy():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    assert (
+        "Research/backtest mode only. No broker orders, live connectors, "
+        "API calls, or database writes."
     ) in content
 
 
@@ -1867,8 +1870,17 @@ def test_new_ui_texts_present():
     assert "View removed fields" in content
     assert "Running ablation testing..." in content
     assert "Risk preset belongs in Bankroll Settings because it controls risk and stake behavior, not feature usefulness." in content
-    assert "Synthetic rows are fake demo data and must not be used as model evidence." in content
-    assert "Test One Sport is a paper test flow." in content
+    assert "Data" in content
+    assert "Validation" in content
+    assert "Strategy Research" in content
+    assert "Backtest" in content
+    assert "Results / Metrics" in content
+    assert "Research Mode" in content
+    assert "Local Data" in content
+    assert (
+        "Research/backtest mode only. No broker orders, live connectors, "
+        "API calls, or database writes."
+    ) in content
 
 
 def test_forbidden_connector_texts_not_present():
@@ -1877,11 +1889,29 @@ def test_forbidden_connector_texts_not_present():
         "Run Real Line Movement Scraper",
         "Connect Synthetic Vendor API",
         "Run Synthetic Scraper",
+        "Execute Real Trade",
+        "Send Broker Order",
+        "Place Live Order",
+        "guaranteed profit",
+        "assured profit",
     ]
     with open("streamlit_app.py", encoding="utf-8") as f:
         content = f.read()
     for text in forbidden:
         assert text not in content
+
+
+def test_streamlit_app_contains_non_execution_safety_flags():
+    with open("streamlit_app.py", encoding="utf-8") as f:
+        content = f.read()
+    for text in [
+        "no broker execution",
+        "no real trade execution",
+        "no live connectors",
+        "no API calls",
+        "no database writes",
+    ]:
+        assert text in content
 
 
 def test_streamlit_app_contains_two_way_three_way_moneyline_wording():

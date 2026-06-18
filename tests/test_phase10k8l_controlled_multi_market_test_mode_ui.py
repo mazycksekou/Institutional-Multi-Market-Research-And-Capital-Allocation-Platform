@@ -64,7 +64,7 @@ def test_phase_report_and_source_guardrails():
         assert text in report_text, text
 
     required_streamlit_strings = [
-        "Test One Sport is a paper test flow",
+        "Research/backtest mode only. No broker orders, live connectors, API calls, or database writes.",
         "One Sport",
         "One Stock Market",
         "One Prediction Market",
@@ -89,6 +89,13 @@ def test_phase_report_and_source_guardrails():
         "event_context_fields",
         "resolution_criteria_fields",
         "arbitrage_fields",
+        "Data",
+        "Validation",
+        "Strategy Research",
+        "Backtest",
+        "Results / Metrics",
+        "Research Mode",
+        "Local Data",
         "paper-only",
         "readiness only",
         "no live connectors",
@@ -137,4 +144,3 @@ def test_phase_report_and_source_guardrails():
     assert not list(REPO_ROOT.glob("app/pages/*.py"))
     assert not list(REPO_ROOT.glob("frontend/*.py"))
     assert not list(REPO_ROOT.glob("frontend/pages/*.py"))
-
