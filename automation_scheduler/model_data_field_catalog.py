@@ -164,6 +164,122 @@ PAPER_EVALUATION_OUTPUT_FIELDS = REVIEW_OUTPUT_FIELD_GROUPS["evaluation_output_f
 
 PAPER_ARBITRAGE_OUTPUT_FIELDS = REVIEW_OUTPUT_FIELD_GROUPS["paper_arbitrage_output_fields"]
 
+SPORTS_BETTING_OUTPUT_METRICS = [
+    "expected_value",
+    "expected_closing_edge",
+    "clv_implied_probability",
+    "clv_expected_value",
+    "odds_movement",
+    "hold_percentage_drag",
+    "market_limit_drop_velocity",
+    "account_longevity_metric",
+    "odds_bucket_calibration",
+    "favorite_bucket_roi",
+    "near_even_bucket_roi",
+    "underdog_bucket_roi",
+    "longshot_bucket_roi",
+    "kelly_fraction",
+    "kelly_growth_rate",
+    "risk_of_ruin",
+    "bankroll_drawdown",
+    "losing_streak_length",
+    "arbitrage_opportunity_count",
+    "arbitrage_hold_percentage",
+    "arbitrage_realization_rate",
+    "line_move_latency",
+    "steam_move_flag",
+    "injury_news_latency",
+    "closing_line_value",
+]
+
+ZERO_DTE_OUTPUT_METRICS = [
+    "execution_cost_ratio",
+    "fill_probability",
+    "adverse_selection_rate",
+    "greek_exposure_stability",
+    "tail_gamma_exposure",
+    "variance_risk_premium",
+    "realized_volatility",
+    "implied_vs_realized_volatility",
+    "time_under_water",
+    "max_intraday_drawdown_duration",
+    "average_spread_percent",
+    "average_estimated_slippage_midpoint",
+    "average_volume_open_interest_ratio",
+    "gamma_regime_pnl",
+    "theta_decay_capture",
+    "vega_exposure_pnl",
+    "delta_exposure_pnl",
+    "pnl_by_minutes_to_expiration",
+    "pnl_by_delta_bucket",
+    "pnl_by_gamma_bucket",
+    "pnl_by_vrp_bucket",
+]
+
+PREDICTION_MARKET_OUTPUT_METRICS = [
+    "brier_score",
+    "log_loss",
+    "calibration_error",
+    "implied_probability_calibration_curve",
+    "liquidity_elasticity",
+    "order_book_depth_elasticity",
+    "arbitrage_realization_window",
+    "binary_outcome_risk",
+    "losing_streak_length",
+    "risk_of_ruin",
+    "expected_drawdown",
+    "market_resolution_latency",
+    "settlement_risk_flag",
+    "fee_drag",
+    "slippage_cost",
+    "cross_market_arbitrage_count",
+    "cross_market_arbitrage_realization_rate",
+    "probability_edge",
+    "closing_probability_edge",
+]
+
+CORE_BACKTEST_VALIDATION_METRICS = [
+    "net_profit",
+    "net_return_percent",
+    "profit_factor",
+    "net_profit_factor",
+    "sharpe_ratio",
+    "sortino_ratio",
+    "max_drawdown",
+    "max_drawdown_percent",
+    "expectancy",
+    "average_r",
+    "total_r",
+    "trade_count",
+    "win_rate",
+    "loss_rate",
+    "avg_win",
+    "avg_loss",
+    "largest_winning_day",
+    "largest_losing_day",
+    "deflated_sharpe_ratio",
+    "probability_of_backtest_overfitting",
+    "walk_forward_stability",
+    "capacity_analysis",
+    "cost_sensitivity_analysis",
+    "risk_of_ruin",
+    "turnover_ratio",
+    "market_impact_coefficient",
+    "alpha_decay_half_life",
+    "information_ratio",
+    "capacity",
+    "time_under_water",
+    "profitable_day_percent",
+    "profitable_week_percent",
+    "profitable_month_percent",
+]
+
+OUTPUT_METRIC_GROUPS_BY_PRODUCT_LANE = {
+    "Sports": SPORTS_BETTING_OUTPUT_METRICS,
+    "Stocks / 0DTE": ZERO_DTE_OUTPUT_METRICS,
+    "Predictions": PREDICTION_MARKET_OUTPUT_METRICS,
+}
+
 TECHNICAL_SIGNAL_EXCLUDED_UNIVERSAL_MATH_FIELDS = [
     "ev",
     "expected_value",
@@ -1282,3 +1398,26 @@ def fields_for_sport(sport_key: str) -> list[str]:
         ),
     ]
     return _dedupe(combined)
+
+
+def output_metrics_for_product_lane(product_lane: str) -> dict[str, list[str]]:
+    normalized_lane = {
+        "sports": "Sports",
+        "one sport": "Sports",
+        "stock": "Stocks / 0DTE",
+        "stocks": "Stocks / 0DTE",
+        "stocks / 0dte": "Stocks / 0DTE",
+        "one stock market": "Stocks / 0DTE",
+        "crypto": "Predictions",
+        "prediction": "Predictions",
+        "predictions": "Predictions",
+        "one prediction market": "Predictions",
+        "one 0dte options trade": "Stocks / 0DTE",
+    }.get(str(product_lane or "").strip().lower(), str(product_lane or "Sports"))
+    market_metrics = list(OUTPUT_METRIC_GROUPS_BY_PRODUCT_LANE.get(normalized_lane, SPORTS_BETTING_OUTPUT_METRICS))
+    core_metrics = list(CORE_BACKTEST_VALIDATION_METRICS)
+    return {
+        "market_output_metrics": market_metrics,
+        "core_backtest_validation_metrics": core_metrics,
+        "all_output_metrics": _dedupe([*market_metrics, *core_metrics]),
+    }

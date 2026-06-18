@@ -62,6 +62,7 @@ from automation_scheduler.streamlit_dashboard_data import (
     build_vendor_neutral_line_movement_contract,
     build_readiness_display_payload,
     build_readiness_display_rows,
+    build_market_metric_display_payload,
     describe_line_movement_import_contract,
     describe_asof_line_movement_query_engine,
     describe_line_movement_data_quality_dashboard,
@@ -258,7 +259,8 @@ def show_zero_dte_paper_pipeline_preview() -> None:
         "build_zero_dte_formula_snapshot | calculate_zero_dte_mid_price | calculate_zero_dte_spread | "
         "calculate_zero_dte_spread_percent | calculate_zero_dte_volume_open_interest_ratio | "
         "calculate_zero_dte_moneyness | calculate_zero_dte_moneyness_percent | "
-        "calculate_zero_dte_estimated_slippage"
+        "calculate_zero_dte_estimated_slippage | calculate_zero_dte_execution_cost_ratio | "
+        "calculate_zero_dte_variance_risk_premium"
     )
 
     metrics = st.columns(5)
@@ -278,13 +280,15 @@ def show_zero_dte_paper_pipeline_preview() -> None:
     )
     st.caption(
         "formula_snapshots | average_spread_percent | average_volume_open_interest_ratio | "
-        "average_estimated_slippage_midpoint"
+        "average_estimated_slippage_midpoint | average_execution_cost_ratio | "
+        "average_variance_risk_premium"
     )
     st.caption(
         "paper-only | readiness only | review-only formulas | local fixture-backed testing | "
         "no broker execution | no real trade execution | no live connectors | no API calls | "
         "no database writes"
     )
+    st.caption("missing_input_reasons")
     st.caption("pipeline_steps")
     st.caption("validation_row_statuses")
     st.caption("evaluation_rows")
@@ -304,6 +308,79 @@ def show_zero_dte_paper_pipeline_preview() -> None:
             {"label": "pipeline_steps", "value": str(pipeline_result.get("pipeline_steps"))},
         ]
     )
+
+
+def show_institutional_market_metric_catalog(product_lane: str) -> None:
+    metric_payload = build_market_metric_display_payload(product_lane)
+    metric_groups = metric_payload.get("metric_groups") or {}
+    core_metrics = metric_payload.get("core_backtest_validation_metrics") or []
+
+    st.caption("Institutional market metric catalog")
+    st.caption("paper-only | readiness only | review-only | local fixture-backed testing")
+    st.caption(
+        "quality_not_automatically_labeled | low_sample_size_does_not_hide_valid_results"
+    )
+    st.caption("metric_groups | core_backtest_validation_metrics")
+
+    if product_lane == "Sports":
+        st.caption("Sports metric groups")
+        st.caption("Expected Value / EV | CLV | arbitrage | Kelly Growth Rate | Risk of Ruin")
+        st.caption(
+            "expected_value, expected_closing_edge, clv_implied_probability, clv_expected_value, "
+            "odds_movement, hold_percentage_drag, market_limit_drop_velocity, account_longevity_metric, "
+            "odds_bucket_calibration, favorite_bucket_roi, near_even_bucket_roi, underdog_bucket_roi, "
+            "longshot_bucket_roi, kelly_fraction, kelly_growth_rate, risk_of_ruin, bankroll_drawdown, "
+            "losing_streak_length, arbitrage_opportunity_count, arbitrage_hold_percentage, "
+            "arbitrage_realization_rate, line_move_latency, steam_move_flag, injury_news_latency, "
+            "closing_line_value"
+        )
+    elif product_lane == "Stocks / 0DTE":
+        st.caption("Stocks / 0DTE metric groups")
+        st.caption(
+            "Execution Cost Ratio | Fill Probability | Adverse Selection Rate | Variance Risk Premium | "
+            "Deflated Sharpe Ratio | Probability of Backtest Overfitting | Walk-Forward Stability | "
+            "Capacity Analysis | Cost Sensitivity Analysis"
+        )
+        st.caption(
+            "execution_cost_ratio, fill_probability, adverse_selection_rate, greek_exposure_stability, "
+            "tail_gamma_exposure, variance_risk_premium, realized_volatility, "
+            "implied_vs_realized_volatility, time_under_water, max_intraday_drawdown_duration, "
+            "average_spread_percent, average_estimated_slippage_midpoint, average_volume_open_interest_ratio, "
+            "average_execution_cost_ratio, average_variance_risk_premium, gamma_regime_pnl, "
+            "theta_decay_capture, vega_exposure_pnl, delta_exposure_pnl, pnl_by_minutes_to_expiration, "
+            "pnl_by_delta_bucket, pnl_by_gamma_bucket, pnl_by_vrp_bucket"
+        )
+        st.caption("ORB Strategy Research")
+        st.caption("0DTE formula snapshot outputs are review-only and missing inputs stay None.")
+        st.caption("build_zero_dte_formula_snapshot")
+    else:
+        st.caption("Predictions metric groups")
+        st.caption("Brier Score | Log Loss | calibration | liquidity elasticity | binary outcome risk")
+        st.caption(
+            "brier_score, log_loss, calibration_error, implied_probability_calibration_curve, "
+            "liquidity_elasticity, order_book_depth_elasticity, arbitrage_realization_window, "
+            "binary_outcome_risk, losing_streak_length, risk_of_ruin, expected_drawdown, "
+            "market_resolution_latency, settlement_risk_flag, fee_drag, slippage_cost, "
+            "cross_market_arbitrage_count, cross_market_arbitrage_realization_rate, probability_edge, "
+            "closing_probability_edge"
+        )
+        st.caption("Kalshi")
+        st.caption("Polymarket")
+
+    st.caption("Core backtest validation metrics")
+    st.caption(
+        "net_profit, net_return_percent, profit_factor, net_profit_factor, sharpe_ratio, sortino_ratio, "
+        "max_drawdown, max_drawdown_percent, expectancy, average_r, total_r, trade_count, win_rate, "
+        "loss_rate, avg_win, avg_loss, largest_winning_day, largest_losing_day, deflated_sharpe_ratio, "
+        "probability_of_backtest_overfitting, walk_forward_stability, capacity_analysis, "
+        "cost_sensitivity_analysis, risk_of_ruin, turnover_ratio, market_impact_coefficient, "
+        "alpha_decay_half_life, information_ratio, capacity, time_under_water, profitable_day_percent, "
+        "profitable_week_percent, profitable_month_percent"
+    )
+
+    st.table([{ "label": "product_lane", "value": product_lane }])
+    st.table([{ "label": "market_output_metrics", "value": ", ".join(metric_groups.get("market_output_metrics", [])) }])
+    st.table([{ "label": "core_backtest_validation_metrics", "value": ", ".join(core_metrics) }])
 
 
 PRODUCT_MARKET_LANES = ("Sports", "Stocks / 0DTE", "Predictions")
@@ -2067,17 +2144,21 @@ if menu == "Feature Ablation Lab":
         if mode == "One Sport":
             st.info("Sports field groups")
             st.caption("odds_fields, market_fields, line_movement_fields, volatility_fields, team_context_fields, player_context_fields, injury_availability_fields, rest_schedule_fields, weather_environment_fields, matchup_fields, form_fields, sport_specific_fields")
+            show_institutional_market_metric_catalog(product_lane)
         elif mode == "One Stock Market":
             st.info("Stock Market field groups")
             st.caption("quote_fields, line_data_fields, price_action_fields, volume_liquidity_fields, volatility_fields, options_chain_fields, earnings_calendar_fields, macro_context_fields, sector_context_fields, fundamentals_fields, technical_indicator_fields, risk_fields")
+            show_institutional_market_metric_catalog(product_lane)
         elif mode == "One Crypto Market":
             st.info("Crypto Market field groups")
             st.caption("quote_fields, orderbook_fields, chain_fields, funding_fields, liquidity_fields, volatility_fields, macro_context_fields, sentiment_fields, technical_indicator_fields, technical_signal_fields, risk_fields")
+            show_institutional_market_metric_catalog(product_lane)
         elif mode == "One Prediction Market":
             st.info("Prediction Market field groups")
             st.caption("Kalshi")
             st.caption("Polymarket")
             st.caption("contract_fields, market_fields, orderbook_fields, price_probability_fields, liquidity_fields, line_movement_fields, settlement_fields, event_context_fields, resolution_criteria_fields, volatility_fields, arbitrage_fields, risk_fields")
+            show_institutional_market_metric_catalog(product_lane)
         elif mode == "One 0DTE Options Trade":
             st.info("0DTE Options Trade field groups")
             st.caption("Dedicated 0DTE Options Trade mode")
@@ -2106,6 +2187,7 @@ if menu == "Feature Ablation Lab":
                 "paper_arbitrage_after_fees_percentage"
             )
             st.caption("ORB Strategy Research")
+            show_institutional_market_metric_catalog(product_lane)
             st.caption("Dedicated 0DTE fixture validation adapter")
             st.caption(
                 "validate_zero_dte_fixture_rows | validity check only | user threshold review-only | "

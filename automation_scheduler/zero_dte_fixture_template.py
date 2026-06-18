@@ -119,6 +119,16 @@ ZERO_DTE_PAPER_FIXTURE_OPTIONAL_FIELDS = (
     "jobs_day",
     "fed_speaker_day",
     "moneyness_percent",
+    "trading_costs",
+    "expected_alpha",
+    "realized_volatility",
+    "execution_cost_ratio",
+    "variance_risk_premium",
+    "fill_probability",
+    "adverse_selection_rate",
+    "tail_gamma_exposure",
+    "greek_exposure_stability",
+    "time_under_water",
     "earnings_context",
     "macro_context",
     "fed_event_context",
@@ -416,6 +426,28 @@ def calculate_zero_dte_estimated_slippage(
     return None
 
 
+def calculate_zero_dte_execution_cost_ratio(
+    trading_costs: object,
+    expected_alpha: object,
+) -> float | None:
+    trading_costs_value = _to_float(trading_costs)
+    expected_alpha_value = _to_float(expected_alpha)
+    if trading_costs_value is None or expected_alpha_value is None or expected_alpha_value <= 0:
+        return None
+    return trading_costs_value / expected_alpha_value
+
+
+def calculate_zero_dte_variance_risk_premium(
+    implied_volatility: object,
+    realized_volatility: object,
+) -> float | None:
+    implied_volatility_value = _to_float(implied_volatility)
+    realized_volatility_value = _to_float(realized_volatility)
+    if implied_volatility_value is None or realized_volatility_value is None:
+        return None
+    return implied_volatility_value - realized_volatility_value
+
+
 def build_zero_dte_formula_snapshot(row: object) -> dict[str, object]:
     bid = _row_value(row, "bid")
     ask = _row_value(row, "ask")
@@ -424,6 +456,9 @@ def build_zero_dte_formula_snapshot(row: object) -> dict[str, object]:
     underlying_price = _row_value(row, "underlying_price")
     strike = _row_value(row, "strike")
     call_put = _row_value(row, "call_put")
+    trading_costs = _row_value(row, "trading_costs")
+    expected_alpha = _row_value(row, "expected_alpha")
+    realized_volatility = _row_value(row, "realized_volatility")
 
     mid = calculate_zero_dte_mid_price(bid, ask)
     spread = calculate_zero_dte_spread(bid, ask)
@@ -433,6 +468,33 @@ def build_zero_dte_formula_snapshot(row: object) -> dict[str, object]:
     moneyness_percent = calculate_zero_dte_moneyness_percent(underlying_price, strike)
     estimated_slippage_midpoint = calculate_zero_dte_estimated_slippage(bid, ask, mode="midpoint")
     estimated_slippage_marketable = calculate_zero_dte_estimated_slippage(bid, ask, mode="marketable")
+    execution_cost_ratio = calculate_zero_dte_execution_cost_ratio(trading_costs, expected_alpha)
+    variance_risk_premium = calculate_zero_dte_variance_risk_premium(
+        _row_value(row, "implied_volatility"),
+        realized_volatility,
+    )
+
+    missing_input_reasons: list[str] = []
+    if mid is None:
+        missing_input_reasons.append("mid requires numeric bid and ask")
+    if spread is None:
+        missing_input_reasons.append("spread requires numeric bid and ask with ask >= bid")
+    if spread_percent is None:
+        missing_input_reasons.append("spread_percent requires a positive mid")
+    if volume_open_interest_ratio is None:
+        missing_input_reasons.append("volume_open_interest_ratio requires positive open_interest")
+    if moneyness is None:
+        missing_input_reasons.append("moneyness requires numeric underlying_price, strike, and call_put")
+    if moneyness_percent is None:
+        missing_input_reasons.append("moneyness_percent requires positive underlying_price")
+    if estimated_slippage_midpoint is None:
+        missing_input_reasons.append("estimated_slippage_midpoint requires numeric bid and ask")
+    if estimated_slippage_marketable is None:
+        missing_input_reasons.append("estimated_slippage_marketable requires numeric bid and ask")
+    if execution_cost_ratio is None:
+        missing_input_reasons.append("execution_cost_ratio requires positive expected_alpha")
+    if variance_risk_premium is None:
+        missing_input_reasons.append("variance_risk_premium requires numeric implied_volatility and realized_volatility")
 
     return {
         "mid": mid,
@@ -443,6 +505,9 @@ def build_zero_dte_formula_snapshot(row: object) -> dict[str, object]:
         "moneyness_percent": moneyness_percent,
         "estimated_slippage_midpoint": estimated_slippage_midpoint,
         "estimated_slippage_marketable": estimated_slippage_marketable,
+        "execution_cost_ratio": execution_cost_ratio,
+        "variance_risk_premium": variance_risk_premium,
+        "missing_input_reasons": missing_input_reasons,
         "formula_owner": "automation_scheduler/zero_dte_fixture_template.py",
         "formula_mode": "local_fixture_readiness_only",
         "guardrails": list(ZERO_DTE_FORMULA_GUARDRAILS),
@@ -583,6 +648,16 @@ def build_zero_dte_fixture_template_row() -> dict[str, object]:
             "jobs_day": False,
             "fed_speaker_day": False,
             "moneyness_percent": 0.0,
+            "trading_costs": 0.0,
+            "expected_alpha": 0.0,
+            "realized_volatility": 0.0,
+            "execution_cost_ratio": 0.0,
+            "variance_risk_premium": 0.0,
+            "fill_probability": 0.0,
+            "adverse_selection_rate": 0.0,
+            "tail_gamma_exposure": 0.0,
+            "greek_exposure_stability": 0.0,
+            "time_under_water": 0.0,
         }
     )
     return _ZeroDteFixtureTemplateRow(row)
@@ -803,6 +878,12 @@ def build_zero_dte_paper_pipeline_result(rows: object) -> dict[str, object]:
     average_estimated_slippage_midpoint = _average_numeric_values(
         snapshot.get("estimated_slippage_midpoint") for snapshot in formula_snapshots
     )
+    average_execution_cost_ratio = _average_numeric_values(
+        snapshot.get("execution_cost_ratio") for snapshot in formula_snapshots
+    )
+    average_variance_risk_premium = _average_numeric_values(
+        snapshot.get("variance_risk_premium") for snapshot in formula_snapshots
+    )
 
     return {
         "mode_key": ZERO_DTE_MODE_KEY,
@@ -832,6 +913,8 @@ def build_zero_dte_paper_pipeline_result(rows: object) -> dict[str, object]:
         "average_spread_percent": average_spread_percent,
         "average_volume_open_interest_ratio": average_volume_open_interest_ratio,
         "average_estimated_slippage_midpoint": average_estimated_slippage_midpoint,
+        "average_execution_cost_ratio": average_execution_cost_ratio,
+        "average_variance_risk_premium": average_variance_risk_premium,
         "formula_guardrails": list(ZERO_DTE_FORMULA_GUARDRAILS),
         "guardrails": list(ZERO_DTE_PAPER_PIPELINE_GUARDRAILS),
         "pipeline_steps": [

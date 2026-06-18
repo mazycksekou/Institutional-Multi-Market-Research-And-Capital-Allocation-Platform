@@ -1055,6 +1055,31 @@ def build_readiness_display_rows(payload: Mapping[str, Any]) -> list[dict[str, A
     return rows
 
 
+def build_market_metric_display_payload(product_lane: str) -> dict[str, Any]:
+    """Return the institutional metric catalog for a public product lane."""
+
+    from .model_data_field_catalog import output_metrics_for_product_lane
+
+    metric_groups = output_metrics_for_product_lane(product_lane)
+    return {
+        "product_lane": product_lane,
+        "metric_groups": metric_groups,
+        "core_backtest_validation_metrics": list(
+            metric_groups.get("core_backtest_validation_metrics", [])
+        ),
+        "paper_only": True,
+        "readiness_only": True,
+        "review_only": True,
+        "live_connectors_enabled": False,
+        "api_calls_enabled": False,
+        "database_writes_enabled": False,
+        "broker_execution_enabled": False,
+        "real_trade_execution_enabled": False,
+        "quality_not_automatically_labeled": True,
+        "low_sample_size_does_not_hide_valid_results": True,
+    }
+
+
 def build_zero_dte_validation_readiness_payload(
     validation_result: Mapping[str, Any],
 ) -> dict[str, Any]:
