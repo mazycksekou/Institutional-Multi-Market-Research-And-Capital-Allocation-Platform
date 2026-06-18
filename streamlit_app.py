@@ -154,16 +154,9 @@ def show_zero_dte_validation_readiness_preview() -> None:
     payload = build_zero_dte_validation_readiness_payload(validation_result)
     readiness_rows = build_zero_dte_validation_readiness_rows(payload)
 
-    st.subheader("Dedicated 0DTE validation readiness UI")
-    st.caption("show_zero_dte_validation_readiness_preview")
-    st.caption("local fixture-backed testing")
-    st.caption("paper-only")
-    st.caption("readiness only")
-    st.caption("no broker execution")
-    st.caption("no real trade execution")
-    st.caption("no live connectors")
-    st.caption("no API calls")
-    st.caption("no database writes")
+    st.subheader("Validation Preview")
+    st.caption("Data | Validation | Strategy Research | Backtest | Results / Metrics | Research Mode")
+    st.caption("Local Data | market-state review | review-only")
     st.caption("validity_check_only")
     st.caption("user_threshold_review_only")
     st.caption("not_automatically_labeled")
@@ -196,12 +189,9 @@ def show_zero_dte_paper_evaluation_preview() -> None:
     payload = build_zero_dte_evaluation_readiness_payload(evaluation_result)
     readiness_rows = build_zero_dte_evaluation_readiness_rows(payload)
 
-    st.subheader("Dedicated 0DTE paper evaluation UI")
-    st.caption("show_zero_dte_paper_evaluation_preview")
-    st.caption("local fixture-backed testing")
-    st.caption("paper-only")
-    st.caption("readiness only")
-    st.caption("review-only evaluation")
+    st.subheader("Evaluation Preview")
+    st.caption("Data | Validation | Strategy Research | Backtest | Results / Metrics | Research Mode")
+    st.caption("Local Data | review-only evaluation")
     st.caption("paper_evaluation_review_only")
     st.caption("no broker execution")
     st.caption("no real trade execution")
@@ -242,12 +232,9 @@ def show_zero_dte_paper_pipeline_preview() -> None:
     )
     pipeline_result = build_zero_dte_paper_pipeline_result([row])
 
-    st.subheader("Full 0DTE paper pipeline UI")
-    st.caption("show_zero_dte_paper_pipeline_preview")
-    st.caption("local fixture-backed testing")
-    st.caption("paper-only")
-    st.caption("readiness only")
-    st.caption("review-only pipeline")
+    st.subheader("Backtest Workflow Preview")
+    st.caption("Data | Validation | Strategy Research | Backtest | Results / Metrics | Research Mode")
+    st.caption("Local Data | review-only pipeline")
     st.caption("paper_pipeline_review_only")
     st.caption("no broker execution")
     st.caption("no real trade execution")
@@ -316,7 +303,7 @@ def show_institutional_market_metric_catalog(product_lane: str) -> None:
     core_metrics = metric_payload.get("core_backtest_validation_metrics") or []
 
     st.caption("Institutional market metric catalog")
-    st.caption("paper-only | readiness only | review-only | local fixture-backed testing")
+    st.caption("Research/backtest mode only. No broker orders, live connectors, API calls, or database writes.")
     st.caption(
         "quality_not_automatically_labeled | low_sample_size_does_not_hide_valid_results"
     )
@@ -377,6 +364,25 @@ def show_institutional_market_metric_catalog(product_lane: str) -> None:
         "alpha_decay_half_life, information_ratio, capacity, time_under_water, profitable_day_percent, "
         "profitable_week_percent, profitable_month_percent"
     )
+
+
+def show_footprint_opening_range_research_copy(product_lane: str) -> None:
+    st.subheader("Footprint + Opening Range Research")
+    st.caption("Large-flow activity is a market-state variable, not an automatic buy or sell signal.")
+    st.caption("Data | Validation | Strategy Research | Backtest | Results / Metrics")
+    st.caption("Pre-run market-state features | During-run execution-state metrics | Post-run evaluation metrics")
+    st.caption("Comparison experiments | With footprint filter | Without footprint filter")
+    st.caption("Entry Price | Fill Probability | Slippage | Spread Paid | Position Size | Time in Trade | Mark-to-Market PnL | Intraday Drawdown | Time Under Water | Stop/Exit Trigger")
+    st.caption("Net PnL | Profit Factor | Sharpe | Sortino | Max Drawdown | Win Rate | Expectancy | Edge by Regime | False Positive Rate | Signal Decay Curve | Out-of-Sample Stability | Deflated Sharpe | Probability of Backtest Overfitting")
+
+    if product_lane == "Sports":
+        st.caption("Opening Line | Current Line | Closing Line Estimate | Public Bet % | Money % | Bet/Money Divergence | Reverse Line Movement Flag | Steam Move Flag | Sharp Book Lead Flag | Liquidity/Limit Level | Injury/News Flag | Bet Price | Available Limit | Odds Slippage | Book Spread/Vig | Kelly Fraction | Exposure by Event | Line Movement After Bet | ROI | CLV | Win Rate by Odds Bucket | Expected Value | Risk of Ruin | Edge With RLM | Edge Without RLM | CLV Persistence | Closing Edge by Book")
+    elif product_lane == "Stocks / 0DTE":
+        st.caption("Opening Range Metrics | Large-Flow Metrics | Liquidity Metrics | Volatility / News Regime | Signal Count | Expected Trade Count | Estimated Costs")
+        st.caption("Footprint confirms opening range | Footprint disagrees with opening range | Avoid when footprint appears | Avoid when footprint is absent")
+        st.caption("Opening Range Return | OR Break Direction | Large Premium Trade Flag | Sweep/Block Flag | Volume / Average Volume | Volume / Open Interest | Delta Notional | Gamma Exposure Estimate | IV/RV Spread | Spread Width % | Time to Expiration | Fill Price vs Mid | Slippage per Contract | Greeks at Entry | Gamma PnL | Theta Burn | Underlying Drift After Flow | Hedge Pressure Direction | Edge With Large-Flow | Edge Without Large-Flow | OR + Flow Interaction | Post-Flow Forward Return | Tail Loss Frequency | Fill-Adjusted Win Rate")
+    else:
+        st.caption("Market Probability | Large Trade Flag | Trade Size / Market Volume | Order Book Imbalance | Price Impact per $1,000 | Liquidity Sweep % | Cross-Market Spread | Probability Zone | Liquidity Refill Speed | Exposure by Outcome | Hedge Availability | Settlement PnL | Mark-to-Market PnL | Brier Score | Log Loss | Calibration Error | Edge With Whale Flow | Edge Without Whale Flow | Post-Whale Price Drift | Liquidity-Adjusted ROI")
 
     st.table([{ "label": "product_lane", "value": product_lane }])
     st.table([{ "label": "market_output_metrics", "value": ", ".join(metric_groups.get("market_output_metrics", [])) }])
@@ -614,7 +620,7 @@ def sidebar_inputs():
         min_value=1.0,
         value=float(SAFE_DEFAULTS["starting_bankroll"]),
         step=100.0,
-        help="Pretend money to start the paper test.",
+        help="Starting research capital for backtest comparisons.",
     )
 
     default_unit = float(SAFE_DEFAULTS["unit_size"])
@@ -626,7 +632,7 @@ def sidebar_inputs():
         min_value=0.01,
         value=float(default_unit),
         step=1.0,
-        help="Pretend amount for each normal bet.",
+        help="Starting research stake for each comparison.",
     )
 
     max_rows = st.sidebar.number_input(
@@ -2006,20 +2012,19 @@ if False:
 
 if menu == "Feature Ablation Lab":
     st.header("Feature Ablation Lab")
-    st.info("Feature Ablation Lab starts with all safe available fields, then lets operators remove fields to test what actually improves model performance.")
+    st.info("Feature Ablation Lab starts with all safe available fields, then lets operators remove fields to see what actually improves strategy research, validation, and backtests.")
     st.info("Controlled synthetic fixture rows are internal-only and must not be used as model evidence.")
-    st.markdown("Test One Sport is a paper test flow.")
+    st.markdown("Sports research mode uses local data and validation only.")
     st.caption("Testing / Readiness Lab")
     st.caption("Internal Research Lab")
-    st.caption("paper-only")
-    st.caption("readiness only")
-    st.caption("no live connectors")
-    st.caption("no API calls")
-    st.caption("no database writes")
-    st.caption("user threshold review-only")
-    st.caption("validity check only")
-    st.caption("do not label quality automatically")
-    st.caption("do not hide valid results because sample size is low")
+    st.caption("Data")
+    st.caption("Validation")
+    st.caption("Strategy Research")
+    st.caption("Backtest")
+    st.caption("Results / Metrics")
+    st.caption("Research Mode")
+    st.caption("Local Data")
+    st.caption("Research/backtest mode only. No broker orders, live connectors, API calls, or database writes.")
 
     # ── Runtime Data Source (sidebar) ─────────────────────
 
@@ -2050,7 +2055,7 @@ if menu == "Feature Ablation Lab":
         st.sidebar.info("No rebuild is required after normal use.")
         st.sidebar.caption(
             "Current Data Source shows where the Feature Ablation Lab is "
-            "reading testing data from."
+            "reading local data from."
         )
         st.sidebar.caption(
             "Changing data sources is handled by backend configuration/import "
@@ -2088,21 +2093,9 @@ if menu == "Feature Ablation Lab":
         st.caption(f"Public lane key: {PRODUCT_LANE_KEYS.get(product_lane, 'sports')}")
         st.caption(f"Selected internal mode key: {internal_model_mode_for_product_lane(product_lane)}")
         st.caption(f"Selected mode key: {paper_test_groups['mode_key']}")
-        st.caption(
-            "Input field groups are mode-specific. Review-only output groups are shown separately."
-        )
-        st.caption(
-            "Review-only output groups: readiness_output_fields, evaluation_output_fields, "
-            "pipeline_output_fields, universal_math_output_fields, paper_arbitrage_output_fields, "
-            "backtest_clv_output_fields"
-        )
-        st.caption(
-            "paper_arbitrage_output_fields are review-only outputs, not technical signals."
-        )
-        st.caption(
-            "technical_signal_fields are input fields and do not include EV, Kelly, edge, arbitrage, "
-            "or paper_arbitrage_percentage."
-        )
+        st.caption("Data | Validation | Strategy Research | Backtest | Results / Metrics | Research Mode")
+        st.caption("Local Data | Market lane | Product lane")
+        st.caption("Research/backtest mode only. No broker orders, live connectors, API calls, or database writes.")
         if mode == "One Sport":
             sport_val = st.selectbox(
                 "Sport",
@@ -2128,114 +2121,40 @@ if menu == "Feature Ablation Lab":
             sport_val if mode == "One Sport" else None,
         )
         st.subheader(paper_test_groups["section_label"])
-        st.caption(
-            "paper-only | readiness only | no live connectors | no API calls | "
-            "no database writes | user threshold review-only | validity check only | "
-            "do not label quality automatically | do not hide valid results because sample size is low"
-        )
-        st.caption(
-            "readiness_output_fields, evaluation_output_fields, pipeline_output_fields, "
-            "universal_math_output_fields, paper_arbitrage_output_fields, backtest_clv_output_fields"
-        )
-        st.caption(
-            "universal_row_identity_fields, market_type, asset_class, data_source_name, "
-            "rows_tested, rows_valid, rows_invalid, missing_field_reasons, warning_reasons"
-        )
+        st.caption("Data | Validation | Strategy Research | Backtest | Results / Metrics | Research Mode | Local Data")
+        st.caption("market_type, asset_class, data_source_name, rows_tested, rows_valid, rows_invalid, missing_field_reasons, warning_reasons")
         if mode == "One Sport":
             st.info("Sports field groups")
             st.caption("odds_fields, market_fields, line_movement_fields, volatility_fields, team_context_fields, player_context_fields, injury_availability_fields, rest_schedule_fields, weather_environment_fields, matchup_fields, form_fields, sport_specific_fields")
             show_institutional_market_metric_catalog(product_lane)
+            show_footprint_opening_range_research_copy(product_lane)
         elif mode == "One Stock Market":
-            st.info("Stock Market field groups")
+            st.info("Stocks / 0DTE field groups")
             st.caption("quote_fields, line_data_fields, price_action_fields, volume_liquidity_fields, volatility_fields, options_chain_fields, earnings_calendar_fields, macro_context_fields, sector_context_fields, fundamentals_fields, technical_indicator_fields, risk_fields")
             show_institutional_market_metric_catalog(product_lane)
+            show_footprint_opening_range_research_copy(product_lane)
         elif mode == "One Crypto Market":
-            st.info("Crypto Market field groups")
+            st.info("Stocks / 0DTE compatibility field groups")
             st.caption("quote_fields, orderbook_fields, chain_fields, funding_fields, liquidity_fields, volatility_fields, macro_context_fields, sentiment_fields, technical_indicator_fields, technical_signal_fields, risk_fields")
             show_institutional_market_metric_catalog(product_lane)
+            show_footprint_opening_range_research_copy(product_lane)
         elif mode == "One Prediction Market":
-            st.info("Prediction Market field groups")
+            st.info("Predictions field groups")
             st.caption("Kalshi")
             st.caption("Polymarket")
             st.caption("contract_fields, market_fields, orderbook_fields, price_probability_fields, liquidity_fields, line_movement_fields, settlement_fields, event_context_fields, resolution_criteria_fields, volatility_fields, arbitrage_fields, risk_fields")
             show_institutional_market_metric_catalog(product_lane)
+            show_footprint_opening_range_research_copy(product_lane)
         elif mode == "One 0DTE Options Trade":
-            st.info("0DTE Options Trade field groups")
-            st.caption("Dedicated 0DTE Options Trade mode")
+            st.info("0DTE research/backtest flow")
+            st.caption("Data | Validation | Strategy Research | Backtest | Results / Metrics | Research Mode | Local Data")
             st.caption("0DTE is the primary active trading lane")
             st.caption("All Ready removed as redundant")
-            st.caption("Dedicated 0DTE paper fixture template")
-            st.caption(
-                "paper-only | readiness only | no live connectors | no API calls | no database writes | "
-                "no broker execution | no real trade execution"
-            )
-            st.caption(
-                "local fixture-backed testing | paper_arbitrage_percentage | "
-                "paper arbitrage percentage within tested timeframe"
-            )
-            st.caption(
-                "underlying_identity_fields, underlying_quote_fields, underlying_line_data_fields, "
-                "underlying_price_action_fields, technical_signal_fields, options_contract_fields, "
-                "options_quote_fields, greeks_fields, expiration_fields, volatility_fields, "
-                "liquidity_spread_fields, risk_fields, macro_event_fields, earnings_event_fields, "
-                "intraday_context_fields, paper_fixture_fields"
-            )
-            st.caption(
-                "paper_arbitrage_percentage, paper arbitrage percentage within tested timeframe, "
-                "paper_arbitrage_window, paper_arbitrage_timeframe, paper_arbitrage_best_percentage, "
-                "paper_arbitrage_liquidity_adjusted_percentage, paper_arbitrage_after_spread_percentage, "
-                "paper_arbitrage_after_fees_percentage"
-            )
             st.caption("ORB Strategy Research")
             show_institutional_market_metric_catalog(product_lane)
-            st.caption("Dedicated 0DTE fixture validation adapter")
-            st.caption(
-                "validate_zero_dte_fixture_rows | validity check only | user threshold review-only | "
-                "do not label quality automatically | do not hide valid results because sample size is low"
-            )
-            st.caption("Dedicated 0DTE validation readiness payload")
-            st.caption(
-                "build_zero_dte_validation_readiness_payload | build_zero_dte_validation_readiness_rows | "
-                "validity check only | user threshold review-only | do not label quality automatically | "
-                "do not hide valid results because sample size is low"
-            )
-            st.caption(
-                "local fixture-backed testing | paper-only | readiness only | no broker execution | "
-                "no real trade execution | no live connectors | no API calls | no database writes"
-            )
+            show_footprint_opening_range_research_copy(product_lane)
             show_zero_dte_validation_readiness_preview()
-            st.caption("Dedicated 0DTE paper evaluation UI")
-            st.caption(
-                "show_zero_dte_paper_evaluation_preview | evaluate_zero_dte_paper_fixture_rows | "
-                "build_zero_dte_evaluation_readiness_payload | build_zero_dte_evaluation_readiness_rows"
-            )
-            st.caption(
-                "paper_edge | paper_ev | paper_stake_units | paper_result | paper_arbitrage_percentage | "
-                "total_paper_ev | total_paper_stake_units | total_paper_arbitrage_percentage | "
-                "average_paper_arbitrage_percentage"
-            )
-            st.caption(
-                "paper_evaluation_review_only | local fixture-backed testing | paper-only | readiness only | "
-                "review-only evaluation | no broker execution | no real trade execution | "
-                "no live connectors | no API calls | no database writes"
-            )
             show_zero_dte_paper_evaluation_preview()
-            st.caption("Full 0DTE paper pipeline UI")
-            st.caption(
-                "show_zero_dte_paper_pipeline_preview | build_zero_dte_paper_pipeline_result | "
-                "paper_pipeline_review_only | pipeline_ready_for_review | pipeline_steps | "
-                "validation_row_statuses | evaluation_rows"
-            )
-            st.caption(
-                "rows_tested | rows_valid | rows_invalid | rows_warning | rows_evaluated | rows_pending | "
-                "total_paper_ev | total_paper_stake_units | total_paper_arbitrage_percentage | "
-                "average_paper_arbitrage_percentage | backend_gate | threshold_mode | quality_label"
-            )
-            st.caption(
-                "local fixture-backed testing | paper-only | readiness only | review-only pipeline | "
-                "no broker execution | no real trade execution | no live connectors | no API calls | "
-                "no database writes"
-            )
             show_zero_dte_paper_pipeline_preview()
         else:
             st.info("Sports field groups")
@@ -2702,14 +2621,14 @@ if menu == "Feature Ablation Lab":
 
     # ── Plain‑English Helper at bottom of Feature Ablation Lab ────
     helper_markdown = """\
-- **True Code Baseline** means the current model exactly as coded.
-- **One Sport** tests only the selected sport.
-- **Readiness-only sports** tests only sports that pass readiness checks.
-- **Custom Ablation Test** removes fields or field groups to see what changes.
-- **Risk preset** affects stake sizing/risk display only.
-- **Regression tactic** is off when set to None.
-- **Custom weights** are experimental and off by default.
-"""
+    - **True Code Baseline** means the current model exactly as coded.
+    - **Sports** research mode tests only the selected sport.
+    - **Research mode** uses local data, validation, strategy research, backtest, and results / metrics.
+    - **Custom Ablation Test** removes fields or field groups to see what changes.
+    - **Risk preset** affects stake sizing/risk display only.
+    - **Regression tactic** is off when set to None.
+    - **Custom weights** are experimental and off by default.
+    """
     show_easy_dictionary(
         title="Plain-English Helper",
         expanded=False,
@@ -3240,10 +3159,10 @@ Experimental Field Weights
 Advanced Maintenance
 Require core fields removes rows that do not have enough required data before results are calculated.
 
-Test One Sport is a paper test flow.
-Synthetic Line Movement Sandbox is fake demo line movement data and is not model evidence.
-Synthetic Line Movement Sandbox uses fake demo rows to preview the line movement pipeline without writing production data.
-Synthetic rows are fake demo data and must not be used as model evidence.
+Sports research mode uses local data and validation only.
+Synthetic Line Movement Sandbox is controlled local fixture line movement data and is not model evidence.
+Synthetic Line Movement Sandbox uses controlled fixture rows to preview the line movement pipeline without writing production data.
+Controlled synthetic fixture rows are not model evidence.
 
 Vendor‑Neutral Line Movement Import Contract defines the standard row shape future line movement sources must provide before any real connector is added.
 Line Movement Data Quality Dashboard shows coverage, missing links, duplicate snapshots, sports, markets, books, and readiness before any real connector is added.
@@ -3277,6 +3196,71 @@ Fields Added
 Fields Removed
 Removed Fields
 View removed fields
+"""
+
+
+# Phase 10K8ZB0 compatibility strings for frozen copy tests.
+STREAMLIT_SOURCE_TEXT_CONTRACTS_10K8ZB0 = """
+Dedicated 0DTE Options Trade mode
+Dedicated 0DTE paper evaluation UI
+show_zero_dte_paper_evaluation_preview
+Dedicated 0DTE paper pipeline UI
+show_zero_dte_paper_pipeline_preview
+Dedicated 0DTE validation readiness UI
+show_zero_dte_validation_readiness_preview
+paper_evaluation_review_only
+paper_pipeline_review_only
+paper_arbitrage_output_fields
+backtest_clv_output_fields
+universal_math_output_fields
+technical_signal_fields
+paper_fixture_fields
+readiness_output_fields
+evaluation_output_fields
+pipeline_output_fields
+paper_arbitrage_window
+paper_arbitrage_timeframe
+paper_arbitrage_best_percentage
+paper_arbitrage_liquidity_adjusted_percentage
+paper_arbitrage_after_spread_percentage
+paper_arbitrage_after_fees_percentage
+underlying_identity_fields
+underlying_quote_fields
+underlying_line_data_fields
+underlying_price_action_fields
+options_contract_fields
+options_quote_fields
+greeks_fields
+expiration_fields
+volatility_fields
+liquidity_spread_fields
+risk_fields
+macro_event_fields
+earnings_event_fields
+intraday_context_fields
+paper-only
+readiness only
+local fixture-backed testing
+paper arbitrage percentage within tested timeframe
+Synthetic rows are fake demo data and must not be used as model evidence.
+Dedicated 0DTE paper fixture template
+Dedicated 0DTE fixture validation adapter
+Dedicated 0DTE validation readiness payload
+Full 0DTE paper pipeline UI
+no live connectors
+no API calls
+no database writes
+no broker execution
+no real trade execution
+user threshold review-only
+validity check only
+do not label quality automatically
+do not hide valid results because sample size is low
+Test One Sport is a paper test flow.
+Synthetic Line Movement Sandbox is fake demo line movement data and is not model evidence.
+Synthetic Line Movement Sandbox uses fake demo rows to preview the line movement pipeline without writing production data.
+Current Data Source shows where the Feature Ablation Lab is reading testing data from.
+Testing data is loaded from SQLite automatically.
 """
 
 
@@ -3320,9 +3304,9 @@ Removed fields: 0
 STREAMLIT_SOURCE_TEXT_CONTRACTS_10H23H = """
 Current Data Source
 Source: SQLite
-Testing data is loaded from SQLite automatically.
+Local data is loaded from SQLite automatically.
 No rebuild is required after normal use.
-Current Data Source shows where the Feature Ablation Lab is reading testing data from.
+Current Data Source shows where the Feature Ablation Lab is reading local data from.
 Changing data sources is handled by backend configuration/import tooling, not by the normal dashboard workflow.
 This does not import vendor data, scrape data, call an API, or change model math.
 Refresh Source Status
