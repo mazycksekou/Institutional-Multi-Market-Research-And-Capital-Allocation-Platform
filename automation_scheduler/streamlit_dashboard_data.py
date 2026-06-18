@@ -12,7 +12,7 @@ Rules:
 from __future__ import annotations
 
 from collections import Counter
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path
 from typing import Any
 import datetime
@@ -94,6 +94,7 @@ from .backtest_dataset_builder import (
     build_canonical_backtest_dataset,
     load_canonical_backtest_dataset,
     summarize_canonical_dataset_report,
+    validate_paper_only_fixture_rows,
 )
 from .backtest_strategy_profiles import (
     describe_regression_profiles,
@@ -102,6 +103,7 @@ from .backtest_strategy_profiles import (
 )
 from .backtesting_engine import run_backtest
 from .calibration_strategy_filter import run_calibration_strategy_filter
+from quant_engine import evaluate_paper_only_fixture_rows
 
 
 DEFAULT_DASHBOARD_JSON_PATH = Path("data/backtests/dashboard/latest_dashboard.json")
@@ -1274,6 +1276,66 @@ def build_paper_only_evaluation_readiness_rows(
         ]
     )
     return rows
+
+
+def build_paper_only_fixture_pipeline_result(
+    rows: Iterable[Mapping[str, Any]],
+    *,
+    market_name: str = "Paper-Only Pipeline",
+    data_source_name: str = "local_fixture",
+) -> dict[str, Any]:
+    """Run the paper-only fixture pipeline without starting live prediction testing.
+
+    validation_result.
+    evaluation_result.
+    readiness_payload.
+    readiness_rows.
+    no prediction testing started in 10K8I.
+    no live connectors.
+    no API calls.
+    no database writes.
+    do not label quality automatically.
+    do not hide valid results because sample size is low.
+    user threshold review-only.
+    validity check only.
+    """
+
+    fixture_rows = list(rows)
+    validation_result = validate_paper_only_fixture_rows(fixture_rows)
+    evaluation_result = evaluate_paper_only_fixture_rows(fixture_rows)
+    readiness_payload = build_paper_only_evaluation_readiness_payload(
+        evaluation_result,
+        market_name=market_name,
+        data_source_name=data_source_name,
+    )
+    readiness_rows = build_paper_only_evaluation_readiness_rows(
+        evaluation_result,
+        market_name=market_name,
+        data_source_name=data_source_name,
+    )
+
+    return {
+        "validation_result": validation_result,
+        "evaluation_result": evaluation_result,
+        "readiness_payload": readiness_payload,
+        "readiness_rows": readiness_rows,
+        "rows_tested": validation_result.get("rows_tested", 0),
+        "rows_valid": validation_result.get("rows_valid", 0),
+        "rows_invalid": validation_result.get("rows_invalid", 0),
+        "missing_field_reasons": list(validation_result.get("missing_field_reasons") or []),
+        "warning_reasons": list(validation_result.get("warning_reasons") or []),
+        "evaluations_count": readiness_payload.get("evaluations_count", 0),
+        "paper_result_counts": dict(readiness_payload.get("paper_result_counts") or {}),
+        "total_paper_ev": readiness_payload.get("total_paper_ev", 0.0),
+        "total_paper_stake_units": readiness_payload.get("total_paper_stake_units", 0.0),
+        "validation_status": readiness_payload.get("validation_status", "needs_review"),
+        "prediction_testing_started": False,
+        "live_connectors_enabled": False,
+        "api_calls_enabled": False,
+        "database_writes_enabled": False,
+        "source_type": readiness_payload.get("source_type", data_source_name),
+        "execution_mode": readiness_payload.get("execution_mode", "paper_only"),
+    }
 
 
 def run_model_test(
