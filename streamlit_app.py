@@ -81,6 +81,7 @@ from automation_scheduler.feature_ablation_lab import get_ablation_field_groups_
 from automation_scheduler.feature_ablation_lab import run_feature_ablation_lab
 from automation_scheduler.zero_dte_fixture_template import (
     build_zero_dte_fixture_template_row,
+    build_zero_dte_paper_pipeline_result,
     evaluate_zero_dte_paper_fixture_rows,
     validate_zero_dte_fixture_rows,
 )
@@ -224,6 +225,67 @@ def show_zero_dte_paper_evaluation_preview() -> None:
         "average_paper_arbitrage_percentage"
     )
     st.table(readiness_rows)
+
+
+def show_zero_dte_paper_pipeline_preview() -> None:
+    row = build_zero_dte_fixture_template_row()
+    row.update(
+        {
+            "outcome_known": False,
+            "result_label": "pending",
+            "model_probability": 0.0,
+            "market_odds_american": 0,
+            "premium": 0.0,
+            "spread_percent": 0.0,
+        }
+    )
+    pipeline_result = build_zero_dte_paper_pipeline_result([row])
+
+    st.subheader("Full 0DTE paper pipeline UI")
+    st.caption("show_zero_dte_paper_pipeline_preview")
+    st.caption("local fixture-backed testing")
+    st.caption("paper-only")
+    st.caption("readiness only")
+    st.caption("review-only pipeline")
+    st.caption("paper_pipeline_review_only")
+    st.caption("no broker execution")
+    st.caption("no real trade execution")
+    st.caption("no live connectors")
+    st.caption("no API calls")
+    st.caption("no database writes")
+
+    metrics = st.columns(4)
+    metrics[0].metric("rows_tested", pipeline_result.get("rows_tested", 0))
+    metrics[1].metric("rows_valid", pipeline_result.get("rows_valid", 0))
+    metrics[2].metric("rows_invalid", pipeline_result.get("rows_invalid", 0))
+    metrics[3].metric("rows_warning", pipeline_result.get("rows_warning", 0))
+
+    st.caption(f"backend_gate: {pipeline_result.get('backend_gate')}")
+    st.caption(f"threshold_mode: {pipeline_result.get('threshold_mode')}")
+    st.caption(f"quality_label: {pipeline_result.get('quality_label')}")
+    st.caption(f"pipeline_ready_for_review: {pipeline_result.get('pipeline_ready_for_review')}")
+    st.caption(
+        "total_paper_ev | total_paper_stake_units | total_paper_arbitrage_percentage | "
+        "average_paper_arbitrage_percentage"
+    )
+    st.caption("pipeline_steps")
+    st.caption("validation_row_statuses")
+    st.caption("evaluation_rows")
+    st.table(
+        [
+            {
+                "label": "pipeline_ready_for_review",
+                "value": pipeline_result.get("pipeline_ready_for_review"),
+            }
+        ]
+    )
+    st.table(list(pipeline_result.get("validation_row_statuses") or []))
+    st.table(list(pipeline_result.get("evaluation_rows") or []))
+    st.table(
+        [
+            {"label": "pipeline_steps", "value": str(pipeline_result.get("pipeline_steps"))},
+        ]
+    )
 
 
 def build_controlled_paper_test_field_groups(mode: str, sport_key: str | None = None) -> dict:
@@ -1992,6 +2054,23 @@ if menu == "Feature Ablation Lab":
                 "no live connectors | no API calls | no database writes"
             )
             show_zero_dte_paper_evaluation_preview()
+            st.caption("Full 0DTE paper pipeline UI")
+            st.caption(
+                "show_zero_dte_paper_pipeline_preview | build_zero_dte_paper_pipeline_result | "
+                "paper_pipeline_review_only | pipeline_ready_for_review | pipeline_steps | "
+                "validation_row_statuses | evaluation_rows"
+            )
+            st.caption(
+                "rows_tested | rows_valid | rows_invalid | rows_warning | rows_evaluated | rows_pending | "
+                "total_paper_ev | total_paper_stake_units | total_paper_arbitrage_percentage | "
+                "average_paper_arbitrage_percentage | backend_gate | threshold_mode | quality_label"
+            )
+            st.caption(
+                "local fixture-backed testing | paper-only | readiness only | review-only pipeline | "
+                "no broker execution | no real trade execution | no live connectors | no API calls | "
+                "no database writes"
+            )
+            show_zero_dte_paper_pipeline_preview()
         else:
             st.info("Sports field groups")
             st.info("Stock Market field groups")

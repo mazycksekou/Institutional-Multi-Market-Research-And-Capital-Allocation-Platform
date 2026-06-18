@@ -152,6 +152,20 @@ ZERO_DTE_PAPER_EVALUATION_GUARDRAILS = (
     "do not hide valid results because sample size is low",
 )
 
+ZERO_DTE_PAPER_PIPELINE_GUARDRAILS = (
+    "paper-only",
+    "local fixture-backed testing",
+    "review-only pipeline",
+    "no live connectors",
+    "no API calls",
+    "no database writes",
+    "no broker execution",
+    "no real trade execution",
+    "user threshold review-only",
+    "do not label quality automatically",
+    "do not hide valid results because sample size is low",
+)
+
 ZERO_DTE_PAPER_EVALUATION_STATUS_VALUES = (
     "paper_win",
     "paper_loss",
@@ -523,6 +537,72 @@ def evaluate_zero_dte_paper_fixture_rows(rows: object) -> dict[str, object]:
         "guardrails": list(ZERO_DTE_PAPER_EVALUATION_GUARDRAILS),
         "review_only": True,
         "paper_only": True,
+        "user_threshold_review_only": True,
+        "quality_not_automatically_labeled": True,
+        "low_sample_size_does_not_hide_valid_results": True,
+        "prediction_testing_started": False,
+        "live_connectors_enabled": False,
+        "api_calls_enabled": False,
+        "database_writes_enabled": False,
+        "broker_execution_enabled": False,
+        "real_trade_execution_enabled": False,
+    }
+
+
+def build_zero_dte_paper_pipeline_result(rows: object) -> dict[str, object]:
+    """Build the full local 0DTE paper-only pipeline result."""
+
+    row_items = _coerce_rows(rows)
+    validation_result = validate_zero_dte_fixture_rows(row_items)
+    evaluation_result = evaluate_zero_dte_paper_fixture_rows(row_items)
+
+    rows_tested = int(validation_result.get("rows_tested") or len(row_items))
+    rows_invalid = int(validation_result.get("rows_invalid") or 0)
+    rows_warning = int(validation_result.get("rows_warning") or 0)
+    rows_evaluated = int(evaluation_result.get("rows_evaluated") or 0)
+    rows_pending = int(evaluation_result.get("rows_pending") or 0)
+    pipeline_ready_for_review = rows_tested > 0 and rows_invalid == 0
+
+    return {
+        "mode_key": ZERO_DTE_MODE_KEY,
+        "source_type": "local_fixture",
+        "execution_mode": "paper_only",
+        "validation_result": validation_result,
+        "evaluation_result": evaluation_result,
+        "rows_tested": rows_tested,
+        "rows_valid": int(validation_result.get("rows_valid") or 0),
+        "rows_invalid": rows_invalid,
+        "rows_warning": rows_warning,
+        "rows_evaluated": rows_evaluated,
+        "rows_pending": rows_pending,
+        "paper_result_counts": dict(evaluation_result.get("paper_result_counts") or {}),
+        "total_paper_ev": float(evaluation_result.get("total_paper_ev") or 0.0),
+        "total_paper_stake_units": float(evaluation_result.get("total_paper_stake_units") or 0.0),
+        "total_paper_arbitrage_percentage": float(
+            evaluation_result.get("total_paper_arbitrage_percentage") or 0.0
+        ),
+        "average_paper_arbitrage_percentage": float(
+            evaluation_result.get("average_paper_arbitrage_percentage") or 0.0
+        ),
+        "validation_row_statuses": list(validation_result.get("row_statuses") or []),
+        "evaluation_rows": list(evaluation_result.get("evaluation_rows") or []),
+        "guardrails": list(ZERO_DTE_PAPER_PIPELINE_GUARDRAILS),
+        "pipeline_steps": [
+            "build_zero_dte_fixture_template_row",
+            "validate_zero_dte_fixture_rows",
+            "build_zero_dte_validation_readiness_payload",
+            "build_zero_dte_validation_readiness_rows",
+            "evaluate_zero_dte_paper_fixture_rows",
+            "build_zero_dte_evaluation_readiness_payload",
+            "build_zero_dte_evaluation_readiness_rows",
+        ],
+        "backend_gate": "paper_pipeline_review_only",
+        "threshold_mode": "user_threshold_review_only",
+        "quality_label": "not_automatically_labeled",
+        "pipeline_ready_for_review": pipeline_ready_for_review,
+        "review_only": True,
+        "paper_only": True,
+        "local_fixture_backed": True,
         "user_threshold_review_only": True,
         "quality_not_automatically_labeled": True,
         "low_sample_size_does_not_hide_valid_results": True,
