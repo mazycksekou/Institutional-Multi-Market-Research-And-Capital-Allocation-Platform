@@ -1053,6 +1053,118 @@ def build_readiness_display_rows(payload: Mapping[str, Any]) -> list[dict[str, A
     return rows
 
 
+def build_paper_only_fixture_readiness_payload(
+    validation_result: Mapping[str, Any],
+    *,
+    market_name: str = "Paper-Only Fixture",
+    data_source_name: str = "local_fixture",
+) -> dict[str, Any]:
+    """Adapt the 10K8C fixture validation result into readiness payload data.
+
+    no prediction testing started in 10K8D.
+    no live connectors.
+    no API calls.
+    no database writes.
+    do not label quality automatically.
+    do not hide valid results because sample size is low.
+    user threshold review-only.
+    validity check only.
+    """
+
+    rows_tested = int(validation_result.get("rows_tested") or 0)
+    rows_valid = int(validation_result.get("rows_valid") or 0)
+    rows_invalid = int(validation_result.get("rows_invalid") or 0)
+    missing_field_reasons = list(validation_result.get("missing_field_reasons") or [])
+    warning_reasons = list(validation_result.get("warning_reasons") or [])
+    validation_status = "valid" if rows_invalid == 0 else "needs_review"
+    source_type = str(validation_result.get("source_type") or data_source_name).strip().lower()
+    if "fixture" not in source_type:
+        source_type = data_source_name
+    execution_mode = str(validation_result.get("execution_mode") or "paper_only").strip().lower()
+    if execution_mode not in {"paper_only", "fixture_only"}:
+        execution_mode = "paper_only"
+
+    payload = build_readiness_display_payload(
+        market_name=market_name,
+        data_source_name=data_source_name,
+        validation_status=validation_status,
+        row_counts={
+            "rows_tested": rows_tested,
+            "rows_valid": rows_valid,
+            "rows_invalid": rows_invalid,
+        },
+        rows_tested=rows_tested,
+        rows_valid=rows_valid,
+        rows_invalid=rows_invalid,
+        missing_field_reasons=missing_field_reasons,
+        warning_reasons=warning_reasons,
+        user_threshold_value=rows_valid,
+        user_threshold_met=rows_invalid == 0,
+    )
+    payload.update(
+        {
+            "source_type": source_type,
+            "execution_mode": execution_mode,
+            "prediction_testing_started": False,
+            "live_connectors_enabled": False,
+            "api_calls_enabled": False,
+            "database_writes_enabled": False,
+        }
+    )
+    return payload
+
+
+def build_paper_only_fixture_readiness_rows(
+    validation_result: Mapping[str, Any],
+    *,
+    market_name: str = "Paper-Only Fixture",
+    data_source_name: str = "local_fixture",
+) -> list[dict[str, Any]]:
+    """Convert the paper-only fixture validation result into readiness rows."""
+
+    payload = build_paper_only_fixture_readiness_payload(
+        validation_result,
+        market_name=market_name,
+        data_source_name=data_source_name,
+    )
+    rows = build_readiness_display_rows(payload)
+    rows.extend(
+        [
+            {
+                "label": "Source type",
+                "value": payload.get("source_type", ""),
+                "policy_note": "local fixture-backed testing",
+            },
+            {
+                "label": "Execution mode",
+                "value": payload.get("execution_mode", ""),
+                "policy_note": "paper-only prediction testing",
+            },
+            {
+                "label": "Prediction testing started",
+                "value": "No" if not payload.get("prediction_testing_started") else "Yes",
+                "policy_note": "no prediction testing started in 10K8D",
+            },
+            {
+                "label": "Live connectors enabled",
+                "value": "No" if not payload.get("live_connectors_enabled") else "Yes",
+                "policy_note": "no live connectors",
+            },
+            {
+                "label": "API calls enabled",
+                "value": "No" if not payload.get("api_calls_enabled") else "Yes",
+                "policy_note": "no API calls",
+            },
+            {
+                "label": "Database writes enabled",
+                "value": "No" if not payload.get("database_writes_enabled") else "Yes",
+                "policy_note": "no database writes",
+            },
+        ]
+    )
+    return rows
+
+
 def run_model_test(
     *,
     profile_key: str | None,
