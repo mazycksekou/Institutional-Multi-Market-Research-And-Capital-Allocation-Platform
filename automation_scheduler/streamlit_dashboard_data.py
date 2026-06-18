@@ -1165,6 +1165,117 @@ def build_paper_only_fixture_readiness_rows(
     return rows
 
 
+def build_paper_only_evaluation_readiness_payload(
+    evaluation_result: Mapping[str, Any],
+    *,
+    market_name: str = "Paper-Only Evaluation",
+    data_source_name: str = "local_fixture",
+) -> dict[str, Any]:
+    """Adapt the 10K8F evaluation result into readiness payload data.
+
+    no prediction testing started in 10K8G.
+    no live connectors.
+    no API calls.
+    no database writes.
+    do not label quality automatically.
+    do not hide valid results because sample size is low.
+    user threshold review-only.
+    validity check only.
+    """
+
+    rows_tested = int(evaluation_result.get("rows_tested") or 0)
+    rows_valid = int(evaluation_result.get("rows_valid") or 0)
+    rows_invalid = int(evaluation_result.get("rows_invalid") or 0)
+    missing_field_reasons = list(evaluation_result.get("missing_field_reasons") or [])
+    warning_reasons = list(evaluation_result.get("warning_reasons") or [])
+    evaluations = list(evaluation_result.get("evaluations") or [])
+    validation_status = "valid" if rows_invalid == 0 else "needs_review"
+    source_type = str(evaluation_result.get("source_type") or data_source_name).strip().lower()
+    if "fixture" not in source_type:
+        source_type = data_source_name
+    execution_mode = str(evaluation_result.get("execution_mode") or "paper_only").strip().lower()
+    if execution_mode not in {"paper_only", "fixture_only"}:
+        execution_mode = "paper_only"
+
+    result_counts = Counter()
+    total_paper_ev = 0.0
+    total_paper_stake_units = 0.0
+    for evaluation in evaluations:
+        result_counts[str(evaluation.get("paper_result") or "paper_observed")] += 1
+        total_paper_ev += float(evaluation.get("paper_ev") or 0.0)
+        total_paper_stake_units += float(evaluation.get("paper_stake_units") or 0.0)
+
+    payload = build_paper_only_fixture_readiness_payload(
+        {
+            "rows_tested": rows_tested,
+            "rows_valid": rows_valid,
+            "rows_invalid": rows_invalid,
+            "missing_field_reasons": missing_field_reasons,
+            "warning_reasons": warning_reasons,
+            "source_type": source_type,
+            "execution_mode": execution_mode,
+        },
+        market_name=market_name,
+        data_source_name=data_source_name,
+    )
+    payload.update(
+        {
+            "validation_status": validation_status,
+            "evaluations": evaluations,
+            "evaluations_count": len(evaluations),
+            "paper_result_counts": dict(result_counts),
+            "total_paper_ev": total_paper_ev,
+            "total_paper_stake_units": total_paper_stake_units,
+        }
+    )
+    return payload
+
+
+def build_paper_only_evaluation_readiness_rows(
+    evaluation_result: Mapping[str, Any],
+    *,
+    market_name: str = "Paper-Only Evaluation",
+    data_source_name: str = "local_fixture",
+) -> list[dict[str, Any]]:
+    """Convert the paper-only evaluation result into readiness rows."""
+
+    payload = build_paper_only_evaluation_readiness_payload(
+        evaluation_result,
+        market_name=market_name,
+        data_source_name=data_source_name,
+    )
+    rows = build_paper_only_fixture_readiness_rows(
+        payload,
+        market_name=market_name,
+        data_source_name=data_source_name,
+    )
+    rows.extend(
+        [
+            {
+                "label": "Evaluations count",
+                "value": payload.get("evaluations_count", 0),
+                "policy_note": "read only evaluation summary",
+            },
+            {
+                "label": "Paper result counts",
+                "value": json.dumps(payload.get("paper_result_counts", {}), sort_keys=True),
+                "policy_note": "read only evaluation summary",
+            },
+            {
+                "label": "Total paper EV",
+                "value": payload.get("total_paper_ev", 0.0),
+                "policy_note": "read only evaluation summary",
+            },
+            {
+                "label": "Total paper stake units",
+                "value": payload.get("total_paper_stake_units", 0.0),
+                "policy_note": "read only evaluation summary",
+            },
+        ]
+    )
+    return rows
+
+
 def run_model_test(
     *,
     profile_key: str | None,
