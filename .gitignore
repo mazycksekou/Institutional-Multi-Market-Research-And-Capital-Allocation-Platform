@@ -1,7 +1,9 @@
 # Environment variables
 .env
+.env.*
 .env.local
 .env.*.local
+!.env.example
 
 # Virtual environments
 .venv/
@@ -59,6 +61,12 @@ data/
 data/*.jsonl
 data/*.csv
 data/*.db
+*.jsonl
+*.parquet
+*.feather
+*.sqlite
+*.sqlite3
+*.db
 *.csv
 *.xlsx
 *.json
@@ -68,6 +76,8 @@ data/*.db
 
 # Generated local reports
 reports/
+exports/
+artifacts/
 
 # Generated script backup files
 *.bak_*
