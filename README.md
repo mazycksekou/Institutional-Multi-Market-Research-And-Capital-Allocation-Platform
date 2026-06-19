@@ -54,6 +54,34 @@ Only tiny deterministic fixtures belong in tests/fixtures/.
 The `data/` tree is for local runtime state, generated outputs, and ignored artifacts.
 It is not a source-of-truth package layer.
 
+## R2 Object Storage Archive Policy
+R2 object storage is the archive layer for large local market data bundles.
+R2 is not the live application database.
+Do not upload thousands of tiny JSON files.
+Aggregate raw JSON into daily archive bundles before upload.
+Use one object per date/source/market bundle.
+Keep a manifest for every archive bundle.
+Verify upload before local deletion.
+Local deletion is off by default.
+Credentials must come from environment variables or ignored local config only.
+Do not commit R2 access keys, secret keys, tokens, endpoints, bucket names if sensitive, or local credential files.
+Do not paste real R2 credentials into source code, README examples, tests, or committed config.
+Core math, risk, signals, metrics, backtester, and dashboard code must not import R2 clients directly.
+Future R2 adapter code belongs behind src/storage/ or a storage-provider boundary.
+End-of-day archive scripts belong in scripts/.
+Only tiny deterministic fixtures belong in tests/fixtures/.
+
+Example environment variables with placeholder values only:
+- `R2_ACCOUNT_ID=example-account-id`
+- `R2_ACCESS_KEY_ID=example-access-key-id`
+- `R2_SECRET_ACCESS_KEY=example-secret-access-key`
+- `R2_BUCKET_NAME=example-bucket-name`
+- `R2_ENDPOINT_URL=https://example.invalid/r2`
+
+The real values belong only in local environment variables or ignored local config.
+The real R2 key is first used in 10K8ZF8/10K8ZF9, not 10K8ZF6.
+10K8ZF6 performs no upload.
+
 ## What Must Never Be Committed
 - Local data dumps
 - Raw JSON dumps

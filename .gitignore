@@ -71,6 +71,16 @@ data/*.db
 *.xlsx
 *.json
 *data
+# R2 / object storage local credentials
+.r2.env
+r2.env
+.r2/
+r2_credentials.json
+cloudflare_credentials.json
+credentials.json
+token.json
+*.pem
+*.key
 # Logs
 *.log
 
@@ -78,6 +88,12 @@ data/*.db
 reports/
 exports/
 artifacts/
+archive/
+archives/
+*.csv.gz
+*.json.gz
+*.tar.gz
+*.zip
 
 # Generated script backup files
 *.bak_*
