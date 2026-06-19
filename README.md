@@ -82,6 +82,40 @@ The real values belong only in local environment variables or ignored local conf
 The real R2 key is first used in 10K8ZF8/10K8ZF9, not 10K8ZF6.
 10K8ZF6 performs no upload.
 
+### R2 Archive Pipeline
+10K8ZF7 R2 Archive Pipeline
+scripts/r2_archive_pipeline.py
+dry-run mode writes nothing
+bundle mode writes local jsonl.gz archive and manifest
+upload mode requires R2 environment variables
+verify mode checks the remote object before cleanup eligibility
+cleanup-plan mode marks eligibility only
+cleanup mode is explicit and gated
+no cleanup runs by default
+verified local raw/generated files are deleted only when --cleanup and --allow-delete-local-raw are explicitly passed
+the intended end state is R2 transfer verified and eligible local raw/generated data removed from local storage
+credentials must remain in local environment variables or ignored local config
+
+Example dry-run command:
+```powershell
+python scripts/r2_archive_pipeline.py --input-dir data --output-dir . --environment local --source example-source --market example-market --trading-date 2026-01-31 --dry-run
+```
+
+Example bundle command:
+```powershell
+python scripts/r2_archive_pipeline.py --input-dir data --output-dir . --environment local --source example-source --market example-market --trading-date 2026-01-31 --bundle
+```
+
+Example upload and verify command with placeholders only:
+```powershell
+python scripts/r2_archive_pipeline.py --input-dir data --output-dir . --environment local --source example-source --market example-market --trading-date 2026-01-31 --bundle --upload --verify
+```
+
+Example verified cleanup command with placeholders only:
+```powershell
+python scripts/r2_archive_pipeline.py --input-dir data --output-dir . --manifest-path reports/archive_manifests/example-manifest.json --cleanup --allow-delete-local-raw
+```
+
 ## What Must Never Be Committed
 - Local data dumps
 - Raw JSON dumps

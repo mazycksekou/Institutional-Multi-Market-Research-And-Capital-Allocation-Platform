@@ -234,14 +234,11 @@ def test_phase10k8zf6_r2_object_storage_archive_contract() -> None:
         else:
             assert not matches, f"Unexpected secret-like token pattern: {pattern}"
 
-    implementation_paths = [
-        "src/storage/r2",
-        "src/providers/r2",
-        "scripts/r2",
-        "scripts/archive",
-    ]
-    for fragment in implementation_paths:
-        assert not list(ROOT.rglob(f"{fragment}*")), f"Unexpected implementation files matching {fragment}*"
+    # 10K8ZF6 was contract-only; R2 implementation files are allowed in later phases.
+    # 10K8ZF7 introduces the gated R2 archive pipeline, so this test must not ban
+    # src/storage/ or scripts/ implementation files that were intentionally added later.
+    assert "10K8ZF6 performs no upload" in combined_text
+    assert "10K8ZF6 performs no deletion" not in combined_text or "no local deletion in 10K8ZF6" in combined_text
 
     frontend_globs = [
         "pages/*.py",
