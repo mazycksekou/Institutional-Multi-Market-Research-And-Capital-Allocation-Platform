@@ -98,24 +98,31 @@ def test_phase10k8zf9_full_transfer_report_and_safety_text() -> None:
         "no guaranteed profit language",
         "no assured profit language",
         "implementation reviewed in 10K8ZF9",
-        "transfer_status: blocked_env_missing",
-        "cleanup_status: not_attempted",
-        "no local data deletion performed",
+        "transfer_status: partial_uploaded_and_verified",
+        "cleanup_status: partial_verified_local_deletion_performed",
+        "remaining_local_data_requires_next_batch",
+        "reason batching stopped",
     ]
     assert_contains_all(report, required_strings)
 
     assert "transfer_status: uploaded_and_verified" not in report
-    assert "transfer_status: partial_uploaded_and_verified" not in report
+    assert "transfer_status: blocked_env_missing" not in report
     assert "cleanup_status: verified_local_deletion_performed" not in report
-    assert "cleanup_status: partial_verified_local_deletion_performed" not in report
+    assert "cleanup_status: not_attempted" not in report
+
+    assert "deleted_source_file_count: 7171" in report
+    assert "deleted_source_byte_count: 1464220762" in report
+    assert "r2_object_keys" in report
+    assert "preserved_archive_count" in report
+    assert "preserved_manifest_count" in report
 
     forbidden_strings = [
         "automatic local deletion enabled",
         "delete real /data now",
-        "full local data deletion completed",
         "production live trading enabled",
         "broker orders enabled",
         "real trades enabled",
+        "full local data deletion completed",
     ]
     for forbidden in forbidden_strings:
         assert forbidden not in report
@@ -168,7 +175,7 @@ def test_phase10k8zf9_full_transfer_report_and_safety_text() -> None:
         r"AKIA[0-9A-Z]{16}",
         r"ASIA[0-9A-Z]{16}",
         r"your_real_secret",
-        r"secret_access_key\s*=\s*['\"](?!<placeholder>|\\s*os\\.environ)",
+        r"secret_access_key\s*=\s*['\"](?!<placeholder>|\s*os\.environ)",
     ]
     for text in (report, readme):
         for pattern in secret_patterns:
