@@ -28,10 +28,10 @@ def test_phase10k8v_full_0dte_paper_pipeline_adapter() -> None:
     app_text = read_text(APP)
     report_text = read_text(REPORT)
 
-    assert "Full 0DTE paper pipeline UI" in app_text
+    assert "Full 0DTE research backtest pipeline UI" in app_text
     assert "show_zero_dte_paper_pipeline_preview" in app_text
-    assert "build_zero_dte_paper_pipeline_result" in app_text
-    assert "paper_pipeline_review_only" in app_text
+    assert "build_zero_dte_research_backtest_pipeline_result" in app_text
+    assert "research_backtest_pipeline_review_only" in app_text
     assert "pipeline_ready_for_review" in app_text
     assert "pipeline_steps" in app_text
     assert "validation_row_statuses" in app_text
@@ -42,10 +42,10 @@ def test_phase10k8v_full_0dte_paper_pipeline_adapter() -> None:
     assert "rows_warning" in app_text
     assert "rows_evaluated" in app_text
     assert "rows_pending" in app_text
-    assert "total_paper_ev" in app_text
-    assert "total_paper_stake_units" in app_text
-    assert "total_paper_arbitrage_percentage" in app_text
-    assert "average_paper_arbitrage_percentage" in app_text
+    assert "total_research_backtest_ev" in app_text
+    assert "total_research_backtest_stake_units" in app_text
+    assert "total_research_backtest_arbitrage_percentage" in app_text
+    assert "average_research_backtest_arbitrage_percentage" in app_text
     assert "backend_gate" in app_text
     assert "threshold_mode" in app_text
     assert "quality_label" in app_text

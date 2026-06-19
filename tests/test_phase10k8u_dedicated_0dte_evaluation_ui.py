@@ -35,21 +35,21 @@ def test_phase10k8u_dedicated_0dte_evaluation_ui() -> None:
     app_text = read_text(APP)
     report_text = read_text(REPORT)
 
-    assert "Dedicated 0DTE paper evaluation UI" in app_text
+    assert "Dedicated 0DTE evaluation readiness UI" in app_text
     assert "show_zero_dte_paper_evaluation_preview" in app_text
-    assert "evaluate_zero_dte_paper_fixture_rows" in app_text
+    assert "build_zero_dte_research_backtest_evaluation_result" in app_text
     assert "build_zero_dte_evaluation_readiness_payload" in app_text
     assert "build_zero_dte_evaluation_readiness_rows" in app_text
-    assert "paper_edge" in app_text
-    assert "paper_ev" in app_text
-    assert "paper_stake_units" in app_text
-    assert "paper_result" in app_text
-    assert "paper_arbitrage_percentage" in app_text
-    assert "total_paper_ev" in app_text
-    assert "total_paper_stake_units" in app_text
-    assert "total_paper_arbitrage_percentage" in app_text
-    assert "average_paper_arbitrage_percentage" in app_text
-    assert "paper_evaluation_review_only" in app_text
+    assert "research_backtest_edge" in app_text
+    assert "research_backtest_ev" in app_text
+    assert "research_backtest_stake_units" in app_text
+    assert "research_backtest_result" in app_text
+    assert "research_backtest_arbitrage_percentage" in app_text
+    assert "total_research_backtest_ev" in app_text
+    assert "total_research_backtest_stake_units" in app_text
+    assert "total_research_backtest_arbitrage_percentage" in app_text
+    assert "average_research_backtest_arbitrage_percentage" in app_text
+    assert "research_backtest_evaluation_review_only" in app_text
     assert "local fixture-backed testing" in app_text
     assert "paper-only" in app_text
     assert "readiness only" in app_text

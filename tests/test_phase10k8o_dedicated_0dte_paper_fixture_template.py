@@ -116,7 +116,7 @@ def test_phase10k8o_dedicated_0dte_paper_fixture_template() -> None:
         assert needle in report_text, f"Missing report string: {needle}"
 
     required_streamlit_strings = [
-        "Dedicated 0DTE paper fixture template",
+        "Dedicated 0DTE research backtest fixture template",
         "0DTE is the primary active trading lane",
         "local fixture-backed testing",
         "paper-only",
@@ -126,8 +126,8 @@ def test_phase10k8o_dedicated_0dte_paper_fixture_template() -> None:
         "no live connectors",
         "no API calls",
         "no database writes",
-        "paper_arbitrage_percentage",
-        "paper arbitrage percentage within tested timeframe",
+        "research_backtest_arbitrage_percentage",
+        "research_backtest_arbitrage_percentage within tested timeframe",
     ]
     for needle in required_streamlit_strings:
         assert needle in streamlit_text, f"Missing streamlit_app.py string: {needle}"

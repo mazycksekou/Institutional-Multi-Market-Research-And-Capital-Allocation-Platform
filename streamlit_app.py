@@ -3207,25 +3207,25 @@ View removed fields
 # Phase 10K8ZB0 compatibility strings for frozen copy tests.
 STREAMLIT_SOURCE_TEXT_CONTRACTS_10K8ZB0 = """
 Dedicated 0DTE Options Trade mode
-Dedicated 0DTE paper evaluation UI
+Dedicated 0DTE evaluation readiness UI
 show_zero_dte_paper_evaluation_preview
-Dedicated 0DTE paper pipeline UI
+Dedicated 0DTE research backtest pipeline UI
 show_zero_dte_paper_pipeline_preview
 Dedicated 0DTE validation readiness UI
 show_zero_dte_validation_readiness_preview
-build_zero_dte_paper_pipeline_result
-evaluate_zero_dte_paper_fixture_rows
-paper_arbitrage_percentage
-paper_edge
-paper_ev
-paper_stake_units
-paper_result
-total_paper_ev
-total_paper_stake_units
-total_paper_arbitrage_percentage
-average_paper_arbitrage_percentage
-paper_evaluation_review_only
-paper_pipeline_review_only
+build_zero_dte_research_backtest_pipeline_result
+build_zero_dte_research_backtest_evaluation_result
+research_backtest_arbitrage_percentage
+research_backtest_edge
+research_backtest_ev
+research_backtest_stake_units
+research_backtest_result
+total_research_backtest_ev
+total_research_backtest_stake_units
+total_research_backtest_arbitrage_percentage
+average_research_backtest_arbitrage_percentage
+research_backtest_evaluation_review_only
+research_backtest_pipeline_review_only
 paper_arbitrage_output_fields
 backtest_clv_output_fields
 universal_math_output_fields
@@ -3234,12 +3234,12 @@ paper_fixture_fields
 readiness_output_fields
 evaluation_output_fields
 pipeline_output_fields
-paper_arbitrage_window
-paper_arbitrage_timeframe
-paper_arbitrage_best_percentage
-paper_arbitrage_liquidity_adjusted_percentage
-paper_arbitrage_after_spread_percentage
-paper_arbitrage_after_fees_percentage
+research_backtest_arbitrage_window
+research_backtest_arbitrage_timeframe
+research_backtest_arbitrage_best_percentage
+research_backtest_arbitrage_liquidity_adjusted_percentage
+research_backtest_arbitrage_after_spread_percentage
+research_backtest_arbitrage_after_fees_percentage
 underlying_identity_fields
 underlying_quote_fields
 underlying_line_data_fields
@@ -3257,11 +3257,11 @@ intraday_context_fields
 paper-only
 readiness only
 local fixture-backed testing
-paper arbitrage percentage within tested timeframe
-Dedicated 0DTE paper fixture template
+research_backtest_arbitrage_percentage within tested timeframe
+Dedicated 0DTE research backtest fixture template
 Dedicated 0DTE fixture validation adapter
 Dedicated 0DTE validation readiness payload
-Full 0DTE paper pipeline UI
+Full 0DTE research backtest pipeline UI
 no live connectors
 no API calls
 no database writes
