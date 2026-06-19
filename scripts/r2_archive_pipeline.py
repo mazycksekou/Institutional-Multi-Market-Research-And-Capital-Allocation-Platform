@@ -63,6 +63,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--allow-delete-local-raw", action="store_true")
     parser.add_argument("--batch-id")
     parser.add_argument("--manifest-path")
+    parser.add_argument("--csv-header-mode", choices=("strict", "generated"), default="strict")
     return parser.parse_args(argv)
 
 
@@ -161,6 +162,8 @@ def _augment_record(
     market: str,
     environment: str,
     input_format: str,
+    csv_header_mode: str | None = None,
+    generated_columns: bool | None = None,
     source_line: int | None = None,
     source_row: int | None = None,
 ) -> dict[str, Any]:
@@ -180,6 +183,10 @@ def _augment_record(
             "_input_format": input_format,
         }
     )
+    if csv_header_mode is not None:
+        output["_csv_header_mode"] = csv_header_mode
+    if generated_columns is not None:
+        output["_generated_columns"] = generated_columns
     if source_line is not None:
         output["_source_line"] = source_line
     if source_row is not None:
@@ -261,13 +268,21 @@ def _load_jsonl_records_from_path(path: Path, *, rel: str, archive_id: str, batc
     return records, skipped_count, skipped_files, had_valid and not had_invalid
 
 
-def _load_csv_records_from_path(path: Path, *, rel: str, archive_id: str, batch_id: str, trading_date: str, source: str, market: str, environment: str) -> tuple[list[dict[str, Any]], int, list[str], bool]:
+def _load_csv_records_from_header_path(
+    path: Path,
+    *,
+    rel: str,
+    archive_id: str,
+    batch_id: str,
+    trading_date: str,
+    source: str,
+    market: str,
+    environment: str,
+    csv_header_mode: str,
+) -> tuple[list[dict[str, Any]], int, list[str], bool]:
     records: list[dict[str, Any]] = []
     skipped_count = 0
     skipped_files: list[str] = []
-    if not _csv_has_header(path):
-        return records, skipped_count, [rel], False
-
     header_valid = False
     malformed_row = False
     with _open_text_source(path) as handle:
@@ -298,12 +313,111 @@ def _load_csv_records_from_path(path: Path, *, rel: str, archive_id: str, batch_
                     market=market,
                     environment=environment,
                     input_format="csv",
+                    csv_header_mode=csv_header_mode,
+                    generated_columns=False,
                     source_row=row_index,
                 )
             )
     if malformed_row:
         skipped_files.append(rel)
     return records, skipped_count, skipped_files, header_valid and not malformed_row
+
+
+def _load_csv_records_from_generated_columns_path(
+    path: Path,
+    *,
+    rel: str,
+    archive_id: str,
+    batch_id: str,
+    trading_date: str,
+    source: str,
+    market: str,
+    environment: str,
+    csv_header_mode: str,
+) -> tuple[list[dict[str, Any]], int, list[str], bool]:
+    records: list[dict[str, Any]] = []
+    skipped_count = 0
+    skipped_files: list[str] = []
+    rows: list[tuple[int, list[str]]] = []
+
+    with _open_text_source(path) as handle:
+        reader = csv.reader(handle)
+        for row_index, row in enumerate(reader, start=1):
+            if row is None:
+                continue
+            values = ["" if value is None else str(value) for value in row]
+            if not values or not any(value.strip() for value in values):
+                continue
+            rows.append((row_index, values))
+
+    if not rows:
+        return records, skipped_count, [rel], False
+
+    width = max(len(values) for _, values in rows)
+    columns = [f"column_{column_index}" for column_index in range(1, width + 1)]
+
+    for row_index, values in rows:
+        record = {
+            column_name: values[column_position] if column_position < len(values) else ""
+            for column_position, column_name in enumerate(columns)
+        }
+        records.append(
+            _augment_record(
+                record,
+                rel=rel,
+                archive_id=archive_id,
+                batch_id=batch_id,
+                trading_date=trading_date,
+                source=source,
+                market=market,
+                environment=environment,
+                input_format="csv",
+                csv_header_mode=csv_header_mode,
+                generated_columns=True,
+                source_row=row_index,
+            )
+        )
+
+    return records, skipped_count, skipped_files, True
+
+
+def _load_csv_records_from_path(
+    path: Path,
+    *,
+    rel: str,
+    archive_id: str,
+    batch_id: str,
+    trading_date: str,
+    source: str,
+    market: str,
+    environment: str,
+    csv_header_mode: str = "strict",
+) -> tuple[list[dict[str, Any]], int, list[str], bool]:
+    if csv_header_mode == "generated" and not _csv_has_header(path):
+        return _load_csv_records_from_generated_columns_path(
+            path,
+            rel=rel,
+            archive_id=archive_id,
+            batch_id=batch_id,
+            trading_date=trading_date,
+            source=source,
+            market=market,
+            environment=environment,
+            csv_header_mode=csv_header_mode,
+        )
+    if not _csv_has_header(path):
+        return [], 0, [rel], False
+    return _load_csv_records_from_header_path(
+        path,
+        rel=rel,
+        archive_id=archive_id,
+        batch_id=batch_id,
+        trading_date=trading_date,
+        source=source,
+        market=market,
+        environment=environment,
+        csv_header_mode=csv_header_mode,
+    )
 
 
 def load_json_records(
@@ -318,6 +432,7 @@ def load_json_records(
     include_pattern: str = "*.json",
     limit: int | None = None,
     batch_id: str | None = None,
+    csv_header_mode: str = "strict",
 ) -> ArchiveLoadResult:
     input_path = Path(input_dir)
     candidates = iter_candidate_json_files(input_path, output_dir=output_dir, include_pattern=include_pattern, limit=limit)
@@ -375,6 +490,7 @@ def load_json_records(
                 source=source,
                 market=market,
                 environment=environment,
+                csv_header_mode=csv_header_mode,
             )
             load_result.records.extend(records)
             load_result.skipped_invalid_json_count += skipped_count
@@ -462,6 +578,7 @@ def run_dry_run(args: argparse.Namespace) -> dict[str, Any]:
         include_pattern=args.include_pattern,
         limit=args.limit,
         batch_id=batch_id,
+        csv_header_mode=args.csv_header_mode,
     )
     return {
         "mode": "dry-run",
@@ -512,6 +629,7 @@ def run_bundle(args: argparse.Namespace) -> tuple[ArchiveManifest, Path]:
         include_pattern=args.include_pattern,
         limit=args.limit,
         batch_id=batch_id,
+        csv_header_mode=args.csv_header_mode,
     )
     archive_path, manifest_path, _ = _build_paths(args, archive_id, batch_id)
     if not args.manifest_only:
