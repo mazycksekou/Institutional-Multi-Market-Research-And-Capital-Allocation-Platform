@@ -27,6 +27,12 @@ There is no separate fake, paper, or testing-room product architecture.
 - `risk_engine.py` remains the current canonical owner for staking/risk/bankroll policy until migrated.
 - `automation_scheduler/` is the current legacy orchestration, catalog, and dashboard-data area and is a migration target for future cleanup.
 
+## Universal Ownership Rule
+There must be one canonical owner per concept.
+Do not create parallel implementations of math, metrics, signals, providers, backtesting, storage, or dashboard-data logic.
+automation_scheduler/ and live_market_intelligence/ are migration sources until mapped into canonical owners.
+Do not delete legacy code until duplicate status is proven and tests protect the canonical replacement.
+
 ## Two-Terminal Local Development
 Use two terminals during local development.
 
