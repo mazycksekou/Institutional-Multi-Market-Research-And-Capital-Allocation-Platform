@@ -31,6 +31,10 @@ class ArchiveManifest:
     trading_date: str
     archive_format: str
     local_archive_path: str
+    batch_id: str = ""
+    batch_object_key: str = ""
+    batch_archive_path: str = ""
+    batch_unique: bool = False
     r2_bucket_alias: str = "not_configured"
     r2_object_key: str = ""
     source_file_count: int = 0
@@ -62,6 +66,10 @@ class ArchiveManifest:
             "trading_date": self.trading_date,
             "archive_format": self.archive_format,
             "local_archive_path": self.local_archive_path,
+            "batch_id": self.batch_id,
+            "batch_object_key": self.batch_object_key,
+            "batch_archive_path": self.batch_archive_path,
+            "batch_unique": self.batch_unique,
             "r2_bucket_alias": self.r2_bucket_alias,
             "r2_object_key": self.r2_object_key,
             "source_file_count": self.source_file_count,
@@ -95,8 +103,12 @@ class ArchiveManifest:
             trading_date=str(payload.get("trading_date", "")),
             archive_format=str(payload.get("archive_format", "jsonl.gz")),
             local_archive_path=str(payload.get("local_archive_path", "")),
+            batch_id=str(payload.get("batch_id", "")),
+            batch_object_key=str(payload.get("batch_object_key", payload.get("r2_object_key", ""))),
+            batch_archive_path=str(payload.get("batch_archive_path", payload.get("local_archive_path", ""))),
+            batch_unique=bool(payload.get("batch_unique", False)),
             r2_bucket_alias=str(payload.get("r2_bucket_alias", "not_configured")),
-            r2_object_key=str(payload.get("r2_object_key", "")),
+            r2_object_key=str(payload.get("r2_object_key", payload.get("batch_object_key", ""))),
             source_file_count=int(payload.get("source_file_count", 0) or 0),
             source_byte_count=int(payload.get("source_byte_count", 0) or 0),
             archive_byte_count=int(payload.get("archive_byte_count", 0) or 0),
@@ -134,6 +146,11 @@ def sanitize_slug(value: str) -> str:
     return slug or "unknown"
 
 
+def sanitize_batch_id(value: str) -> str:
+    batch_id = sanitize_slug(value)
+    return batch_id or "batch-unknown"
+
+
 def parse_trading_date(value: str | date_cls | datetime) -> date_cls:
     if isinstance(value, datetime):
         return value.date()
@@ -147,9 +164,12 @@ def utc_now_iso() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def build_bundle_name(source: str, market: str, trading_date: str | date_cls | datetime) -> str:
+def build_bundle_name(source: str, market: str, trading_date: str | date_cls | datetime, batch_id: str | None = None) -> str:
     trading_day = parse_trading_date(trading_date)
-    return f"{sanitize_slug(source)}_{sanitize_slug(market)}_{trading_day:%Y-%m-%d}"
+    bundle_name = f"{sanitize_slug(source)}_{sanitize_slug(market)}_{trading_day:%Y-%m-%d}"
+    if batch_id:
+        bundle_name = f"{bundle_name}-{sanitize_batch_id(batch_id)}"
+    return bundle_name
 
 
 def build_r2_object_key(
@@ -159,11 +179,14 @@ def build_r2_object_key(
     trading_date: str | date_cls | datetime,
     bundle_name: str,
     ext: str = "jsonl.gz",
+    batch_id: str | None = None,
 ) -> str:
     trading_day = parse_trading_date(trading_date)
+    batch_segment = f"{sanitize_batch_id(batch_id)}/" if batch_id else ""
+    date_segment = f"{trading_day:%Y/%m/%d}/"
     return (
         f"market-data/{sanitize_slug(environment)}/{sanitize_slug(source)}/"
-        f"{sanitize_slug(market)}/{trading_day:%Y/%m/%d}/{bundle_name}.{ext}"
+        f"{sanitize_slug(market)}/{date_segment}{batch_segment}{bundle_name}.{ext}"
     )
 
 
@@ -176,9 +199,11 @@ def build_archive_paths(
     archive_id: str,
     bundle_name: str,
     archive_format: str = "jsonl.gz",
+    batch_id: str | None = None,
 ) -> ArchivePaths:
     output_path = Path(output_dir)
     trading_day = parse_trading_date(trading_date)
+    batch_segment = sanitize_batch_id(batch_id) if batch_id else ""
     local_archive_path = (
         output_path
         / "archives"
@@ -188,10 +213,12 @@ def build_archive_paths(
         / f"{trading_day:%Y}"
         / f"{trading_day:%m}"
         / f"{trading_day:%d}"
-        / f"{bundle_name}.{archive_format}"
     )
+    if batch_segment:
+        local_archive_path = local_archive_path / batch_segment
+    local_archive_path = local_archive_path / f"{bundle_name}.{archive_format}"
     manifest_path = output_path / "reports" / "archive_manifests" / f"{archive_id}.json"
-    object_key = build_r2_object_key(environment, source, market, trading_date, bundle_name, ext=archive_format)
+    object_key = build_r2_object_key(environment, source, market, trading_date, bundle_name, ext=archive_format, batch_id=batch_segment or None)
     return ArchivePaths(
         local_archive_path=str(local_archive_path),
         manifest_path=str(manifest_path),
@@ -227,6 +254,25 @@ def _archive_id(
     return uuid.uuid5(uuid.NAMESPACE_URL, seed).hex
 
 
+def _default_batch_id(
+    environment: str,
+    source: str,
+    market: str,
+    trading_date: str | date_cls | datetime,
+    source_files: Sequence[str],
+) -> str:
+    seed = "|".join(
+        [
+            sanitize_slug(environment),
+            sanitize_slug(source),
+            sanitize_slug(market),
+            parse_trading_date(trading_date).isoformat(),
+            *sorted(str(item) for item in source_files),
+        ]
+    )
+    return f"batch-{uuid.uuid5(uuid.NAMESPACE_URL, seed).hex[:6]}"
+
+
 def build_manifest(
     *,
     environment: str,
@@ -242,10 +288,24 @@ def build_manifest(
     archive_format: str = "jsonl.gz",
     r2_bucket_alias: str = "not_configured",
     archive_id: str | None = None,
+    batch_id: str | None = None,
 ) -> ArchiveManifest:
-    bundle_name = build_bundle_name(source, market, trading_date)
-    archive_id = archive_id or _archive_id(environment, source, market, trading_date, source_files)
-    paths = build_archive_paths(output_dir, environment, source, market, trading_date, archive_id, bundle_name, archive_format)
+    resolved_batch_id = sanitize_batch_id(batch_id) if batch_id else _default_batch_id(environment, source, market, trading_date, source_files)
+    bundle_name = build_bundle_name(source, market, trading_date, batch_id=resolved_batch_id)
+    archive_id = archive_id or uuid.uuid5(
+        uuid.NAMESPACE_URL,
+        "|".join(
+            [
+                sanitize_slug(environment),
+                sanitize_slug(source),
+                sanitize_slug(market),
+                parse_trading_date(trading_date).isoformat(),
+                *sorted(str(item) for item in source_files),
+                resolved_batch_id,
+            ]
+        ),
+    ).hex
+    paths = build_archive_paths(output_dir, environment, source, market, trading_date, archive_id, bundle_name, archive_format, batch_id=resolved_batch_id)
     archive_file = Path(archive_path or paths.local_archive_path)
     archive_byte_count = archive_file.stat().st_size if archive_file.is_file() else 0
     checksum = sha256_file(archive_file) if archive_file.is_file() else ""
@@ -257,6 +317,10 @@ def build_manifest(
         trading_date=parse_trading_date(trading_date).isoformat(),
         archive_format=archive_format,
         local_archive_path=str(archive_file),
+        batch_id=resolved_batch_id,
+        batch_object_key=paths.r2_object_key,
+        batch_archive_path=str(archive_file),
+        batch_unique=True,
         r2_bucket_alias=r2_bucket_alias or "not_configured",
         r2_object_key=paths.r2_object_key,
         source_file_count=len(source_files),
@@ -423,4 +487,3 @@ def validate_cleanup_gates(
                 reasons.append(f"source file is not local-only: {source_item}")
 
     return (not reasons), reasons
-

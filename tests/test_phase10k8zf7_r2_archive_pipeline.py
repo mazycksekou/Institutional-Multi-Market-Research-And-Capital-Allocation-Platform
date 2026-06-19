@@ -324,6 +324,10 @@ def test_phase10k8zf7_r2_archive_pipeline(monkeypatch, tmp_path) -> None:
     assert manifest["source_file_count"] == 3
     assert manifest["skipped_invalid_json_count"] == 1
     assert any("invalid.json" in item for item in manifest["skipped_files"])
+    assert manifest["batch_unique"] is True
+    assert manifest["batch_id"]
+    assert manifest["batch_object_key"] == manifest["r2_object_key"]
+    assert manifest["batch_archive_path"] == manifest["local_archive_path"]
     assert manifest["upload_status"] == "not_uploaded"
     assert manifest["verification_status"] == "not_verified"
     assert manifest["deletion_eligible"] is False
@@ -333,7 +337,9 @@ def test_phase10k8zf7_r2_archive_pipeline(monkeypatch, tmp_path) -> None:
     assert manifest["checksum_algorithm"] == "sha256"
     assert manifest["checksum"]
     assert manifest["archive_byte_count"] > 0
-    assert manifest["r2_object_key"] == "market-data/local/theoddsapi/nba/2026/01/31/theoddsapi_nba_2026-01-31.jsonl.gz"
+    expected_bundle = f"theoddsapi_nba_2026-01-31-{manifest['batch_id']}"
+    expected_object_key = f"market-data/local/theoddsapi/nba/2026/01/31/{manifest['batch_id']}/{expected_bundle}.jsonl.gz"
+    assert manifest["r2_object_key"] == expected_object_key
     assert object_file.exists()
     assert array_file.exists()
     assert invalid_file.exists()
@@ -512,17 +518,28 @@ def test_phase10k8zf7_r2_archive_pipeline(monkeypatch, tmp_path) -> None:
         )
         == 0
     )
-    assert not cleanup_object.exists()
-    assert not cleanup_array.exists()
-    assert not cleanup_invalid.exists()
-    assert cleanup_fixture.exists()
-    assert cleanup_output.joinpath("archives", "local", "theoddsapi", "nba", "2026", "01", "31", "theoddsapi_nba_2026-01-31.jsonl.gz").exists()
     assert cleanup_manifest_path.exists()
     final_manifest = json.loads(cleanup_manifest_path.read_text(encoding="utf-8"))
+    cleanup_expected_bundle = f"theoddsapi_nba_2026-01-31-{final_manifest['batch_id']}"
+    assert cleanup_output.joinpath(
+        "archives",
+        "local",
+        "theoddsapi",
+        "nba",
+        "2026",
+        "01",
+        "31",
+        final_manifest["batch_id"],
+        f"{cleanup_expected_bundle}.jsonl.gz",
+    ).exists()
     assert final_manifest["deletion_performed"] is True
     assert final_manifest["deletion_completed_at_utc"]
     assert final_manifest["deleted_source_file_count"] >= 3
     assert final_manifest["deleted_source_byte_count"] > 0
+    assert not cleanup_object.exists()
+    assert not cleanup_array.exists()
+    assert not cleanup_invalid.exists()
+    assert cleanup_fixture.exists()
 
     for forbidden in [
         "active R2 upload enabled",
