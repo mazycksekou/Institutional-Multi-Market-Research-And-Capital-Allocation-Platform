@@ -6,48 +6,11 @@ from typing import Any
 import requests
 
 from .base_provider import available, provider_error, unavailable
-
-
-def _prob(value: Any) -> float | None:
-    if value is None:
-        return None
-    try:
-        number = float(value)
-    except (TypeError, ValueError):
-        return None
-    if number > 1:
-        number = number / 100
-    return max(0.0, min(1.0, number))
+from src.providers.prediction_markets.adapters import normalize_prediction_market_quote as _normalize_prediction_market_quote
 
 
 def normalize_kalshi_probability_market(market: dict[str, Any]) -> dict[str, Any]:
-    yes_bid = _prob(market.get("yes_bid"))
-    yes_ask = _prob(market.get("yes_ask"))
-    no_bid = _prob(market.get("no_bid"))
-    no_ask = _prob(market.get("no_ask"))
-    mid_probability = None
-    if yes_bid is not None and yes_ask is not None:
-        mid_probability = (yes_bid + yes_ask) / 2
-    elif yes_ask is not None:
-        mid_probability = yes_ask
-    elif yes_bid is not None:
-        mid_probability = yes_bid
-    return {
-        "provider": "kalshi",
-        "provider_type": "prediction_market",
-        "market_type": "kalshi_prediction_market",
-        "ticker": market.get("ticker") or market.get("market_ticker"),
-        "event_ticker": market.get("event_ticker"),
-        "title": market.get("title"),
-        "yes_bid": yes_bid,
-        "yes_ask": yes_ask,
-        "no_bid": no_bid,
-        "no_ask": no_ask,
-        "mid_probability": mid_probability,
-        "liquidity": market.get("liquidity"),
-        "volume": market.get("volume"),
-        "raw": market,
-    }
+    return _normalize_prediction_market_quote(market, provider="kalshi", market_type="kalshi_prediction_market")
 
 
 def enrich_with_kalshi(ticket: dict[str, Any]) -> dict[str, Any]:
