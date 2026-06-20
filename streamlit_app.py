@@ -26,6 +26,7 @@ from automation_scheduler.streamlit_dashboard_data import (
     EASY_LABELS,
     REGRESSION_TACTICS,
     RISK_PRESETS,
+    SCENARIO_BACKTEST_MODES,
     SAFE_DEFAULTS,
     build_bankroll_curve_rows,
     build_market_readiness_report,
@@ -74,6 +75,7 @@ from automation_scheduler.streamlit_dashboard_data import (
     build_zero_dte_evaluation_readiness_rows,
     build_zero_dte_validation_readiness_payload,
     build_zero_dte_validation_readiness_rows,
+    normalize_risk_preset_label,
 )
 from automation_scheduler.source_event_link_resolver import (
     describe_source_event_link_resolver,
@@ -613,6 +615,7 @@ def sidebar_inputs():
 
     risk_preset_options = ["None - no risk preset adjustment"] + list(RISK_PRESETS.keys())
     risk_preset = st.sidebar.selectbox("Risk preset", risk_preset_options, index=0)
+    risk_preset = normalize_risk_preset_label(risk_preset)
     if risk_preset == "None - no risk preset adjustment":
         preset = None
         st.sidebar.caption("No risk preset adjustment. The model uses the base unit behavior.")
@@ -886,6 +889,8 @@ elif menu == "Bankroll Settings":
     st.header("Bankroll Settings")
 
     st.write("These settings are for paper testing. They do not place real bets.")
+    st.caption("Risk preset controls sizing. Scenario mode controls missing-data handling for backtests.")
+    st.caption("Scenario modes: " + " | ".join(SCENARIO_BACKTEST_MODES.keys()))
 
     preset_rows = [
         {
@@ -2256,7 +2261,7 @@ if menu == "Feature Ablation Lab":
             if st.button("Run True Code Baseline", type="primary", key="fal_baseline"):
                 with st.spinner("Running True Code Baseline..."):
                     # Enforce None for risk preset and regression tactic
-                    risk_preset_for_baseline = settings.get("risk_preset")
+                    risk_preset_for_baseline = normalize_risk_preset_label(settings.get("risk_preset"))
                     if risk_preset_for_baseline == "None - no risk preset adjustment":
                         risk_preset_val = None
                     else:

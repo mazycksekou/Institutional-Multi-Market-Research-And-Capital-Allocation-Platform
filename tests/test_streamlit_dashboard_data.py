@@ -1,7 +1,9 @@
 from automation_scheduler.streamlit_dashboard_data import (
     EASY_LABELS,
+    LEGACY_RISK_PRESET_ALIASES,
     REGRESSION_TACTICS,
     RISK_PRESETS,
+    SCENARIO_BACKTEST_MODES,
     SAFE_DEFAULTS,
     build_strategy_config,
     compact_counts,
@@ -37,6 +39,15 @@ def test_easy_labels_include_bankroll_language():
 def test_risk_presets_include_kid_safe_and_conservative():
     assert "Tiny Risk Demo" in RISK_PRESETS
     assert "Conservative" in RISK_PRESETS
+    assert "Aggressive" in RISK_PRESETS
+    assert LEGACY_RISK_PRESET_ALIASES["Aggressive paper only"] == "Aggressive"
+
+
+def test_scenario_backtest_modes_are_separate_from_risk_presets():
+    assert "Baseline / Imputed" in SCENARIO_BACKTEST_MODES
+    assert "Strict / Complete Cases Only" in SCENARIO_BACKTEST_MODES
+    assert "Stress / Adverse Missing-Data Fill" in SCENARIO_BACKTEST_MODES
+    assert "Aggressive" in RISK_PRESETS
 
 
 def test_regression_tactics_include_required_modes():

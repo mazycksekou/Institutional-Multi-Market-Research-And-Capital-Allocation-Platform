@@ -206,7 +206,7 @@ RISK_PRESETS: dict[str, dict[str, Any]] = {
         "max_drawdown_stop_percent": 15.0,
         "explanation": "Bigger swings. Only for stronger evidence.",
     },
-    "Aggressive paper only": {
+    "Aggressive": {
         "unit_size_percent": 5.0,
         "max_stake_percent": 8.0,
         "max_drawdown_stop_percent": 25.0,
@@ -217,6 +217,22 @@ RISK_PRESETS: dict[str, dict[str, Any]] = {
         "max_stake_percent": None,
         "max_drawdown_stop_percent": None,
         "explanation": "You choose the numbers.",
+    },
+}
+
+LEGACY_RISK_PRESET_ALIASES: dict[str, str] = {
+    "Aggressive paper only": "Aggressive",
+}
+
+SCENARIO_BACKTEST_MODES: dict[str, dict[str, str]] = {
+    "Baseline / Imputed": {
+        "description": "Default missing-data handling for comparison runs.",
+    },
+    "Strict / Complete Cases Only": {
+        "description": "Only rows with complete data are eligible.",
+    },
+    "Stress / Adverse Missing-Data Fill": {
+        "description": "Stress tests missing-data handling with adverse fill assumptions.",
     },
 }
 
@@ -690,6 +706,12 @@ def build_strategy_config(
             normalized_profile: dict(base_profile)
         } if normalized_profile and normalized_profile != "all_sports" else {},
     }
+
+
+def normalize_risk_preset_label(label: str | None) -> str | None:
+    if label is None:
+        return None
+    return LEGACY_RISK_PRESET_ALIASES.get(label, label)
 
 
 def ensure_canonical_dataset(
@@ -3444,9 +3466,9 @@ def get_dashboard_tab_instructions() -> list[dict[str, str]]:
         },
         {
             "tab": "Bankroll Settings",
-            "purpose": "Set risk presets and testing parameters.",
-            "how_to_use": "Choose preset or tweak numbers in sidebar.",
-            "why_it_matters": "Controls simulated money management.",
+            "purpose": "Set risk presets that control sizing and testing parameters.",
+            "how_to_use": "Choose a risk preset in the sidebar; scenario mode is documented separately.",
+            "why_it_matters": "Risk preset controls sizing; scenario mode controls missing-data handling.",
             "next_step": "Keep conservative during early testing.",
         },
         {
