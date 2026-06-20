@@ -3,9 +3,9 @@
 ## Executive Summary
 `src/providers/` now exists as the future canonical provider landing zone. This phase does not migrate runtime provider logic, does not delete legacy provider modules, and does not change production behavior.
 
-The package is intentionally scaffold-only. It provides import-safe contracts, registry, health, normalization, and error placeholders so future provider migration batches can land in a stable target without depending on `automation_scheduler` ownership.
+src/providers/ now exists as the future canonical provider landing zone.
 
-src/providers/ now exists as the future canonical provider landing zone. This phase does not migrate runtime provider logic, does not delete legacy provider modules, and does not change production behavior.
+The package is intentionally scaffold-only. It provides import-safe contracts, registry, health, normalization, and error placeholders so future provider migration batches can land in a stable target without depending on `automation_scheduler` ownership.
 
 The canonical taxonomy is vendor-neutral and product-category based:
 - `prediction_markets/`
