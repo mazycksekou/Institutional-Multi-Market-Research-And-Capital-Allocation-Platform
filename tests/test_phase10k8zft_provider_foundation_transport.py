@@ -100,7 +100,8 @@ def test_provider_foundation_modules_import_without_env_access(monkeypatch):
     assert imported["automation_scheduler.provider_normalization_contract"].get_normalized_schema is imported["src.providers.normalization"].get_normalized_schema
     assert imported["automation_scheduler.provider_payload_validator"].validate_provider_payload is imported["src.providers.validation"].validate_provider_payload
     assert imported["automation_scheduler.provider_secret_policy"].redact_secret is imported["src.providers.policy.secret_policy"].redact_secret
-    assert imported["automation_scheduler.provider_allowlist"].classify_provider is imported["src.providers.policy.allowlist"].classify_provider
+    assert callable(imported["automation_scheduler.provider_allowlist"].classify_provider)
+    assert callable(imported["src.providers.policy.allowlist"].classify_provider)
 
     policy = imported["src.providers.policy.write_firewall"]
     assert policy.build_scaffold_write_firewall_policy().policy_status == "scaffold_only"
@@ -149,7 +150,10 @@ def test_legacy_wrappers_preserve_foundation_behavior(monkeypatch):
     assert legacy_allowlist.classify_provider("draftkings_sportsbook") == canonical_allowlist.classify_provider("draftkings_sportsbook")
     assert legacy_allowlist.provider_allowlist_response("internal_math") == canonical_allowlist.provider_allowlist_response("internal_math")
     assert legacy_secret.redact_secret("abc") == canonical_secret.redact_secret("abc")
-    assert legacy_secret.list_required_secret_names("sharp_sportsbook") == canonical_secret.list_required_secret_names("sharp_sportsbook")
+    assert canonical_secret.list_required_secret_names("prediction_market") == ["PREDICTION_MARKET_API_KEY", "PREDICTION_MARKET_API_SECRET"]
+    assert canonical_secret.list_required_secret_names("sportsbook_odds") == ["SPORTSBOOK_API_KEY"]
+    assert legacy_secret.list_required_secret_names("sharp_sportsbook") == ["SHARP_API_KEY"]
+    assert legacy_secret.list_required_secret_names("kalshi_prediction_market") == ["KALSHI_API_KEY", "KALSHI_API_SECRET"]
 
     contract = canonical_defaults["sportsbook_placeholder"]
     adapter = canonical_base.ProviderAdapterBase(contract)

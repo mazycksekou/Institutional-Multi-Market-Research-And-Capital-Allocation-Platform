@@ -6,6 +6,18 @@ from typing import Any, Mapping
 
 _SECRET_KEYWORDS = ("api_key", "apikey", "token", "secret", "authorization", "password", "key")
 _REDACTED = "[redacted]"
+_GENERIC_REQUIRED_SECRET_NAMES: dict[str, list[str]] = {
+    "prediction_market": ["PREDICTION_MARKET_API_KEY", "PREDICTION_MARKET_API_SECRET"],
+    "sportsbook_odds": ["SPORTSBOOK_API_KEY"],
+    "stock_price": ["STOCK_DATA_API_KEY"],
+    "stock_fundamentals": ["STOCK_DATA_API_KEY"],
+    "news_events": ["NEWS_DATA_API_KEY"],
+    "injury_weather": ["WEATHER_DATA_API_KEY"],
+}
+
+
+def _normalize_key(value: str | None) -> str:
+    return str(value or "").strip().lower()
 
 
 def _is_secret_key(key: str) -> bool:
@@ -83,17 +95,13 @@ def assert_no_secret_leak(payload: Any) -> None:
         raise ValueError("secret_leak_detected")
 
 
-def list_required_secret_names(provider_id: str) -> list[str]:
-    provider = (provider_id or "").strip().lower()
-    if provider == "sharp_sportsbook":
-        return ["SHARP_API_KEY"]
-    if provider in {"kalshi_prediction_market", "kalshi"}:
-        return ["KALSHI_API_KEY", "KALSHI_API_SECRET"]
-    return []
+def list_required_secret_names(provider_id: str, *, provider_type: str | None = None) -> list[str]:
+    provider_key = _normalize_key(provider_type) or _normalize_key(provider_id)
+    return list(_GENERIC_REQUIRED_SECRET_NAMES.get(provider_key, []))
 
 
-def credential_status_from_env(provider_id: str) -> dict[str, Any]:
-    required = list_required_secret_names(provider_id)
+def credential_status_from_env(provider_id: str, *, provider_type: str | None = None) -> dict[str, Any]:
+    required = list_required_secret_names(provider_id, provider_type=provider_type)
     if not required:
         return {"status": "not_required", "required": [], "present": [], "missing": []}
     present = [name for name in required if os.getenv(name, "").strip()]

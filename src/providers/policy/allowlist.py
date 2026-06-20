@@ -10,9 +10,8 @@ FORBIDDEN_AI_PROVIDER_TYPES = {
     "broker",
     "stock_broker",
     "sportsbook",
-    "kalshi_order",
-    "kalshi_execution",
-    "prediction_market_order",
+    "market_order",
+    "market_execution",
     "crypto_exchange",
     "exchange",
     "execution_provider",
@@ -20,8 +19,8 @@ FORBIDDEN_AI_PROVIDER_TYPES = {
 }
 
 BROKER_PROVIDER_HINTS = ("broker", "alpaca", "interactive_brokers", "ibkr", "schwab", "tradier", "robinhood")
-SPORTSBOOK_PROVIDER_HINTS = ("sportsbook", "draftkings", "fanduel", "betmgm", "caesars", "espnbet", "bet365", "sharp")
-KALSHI_ORDER_HINTS = ("kalshi_order", "kalshi_execution", "kalshi_trading", "kalshi_write")
+SPORTSBOOK_PROVIDER_HINTS = ("sportsbook", "draftkings", "fanduel", "betmgm", "caesars", "espnbet", "bet365")
+MARKET_ORDER_PROVIDER_HINTS = ("order", "execution", "trading", "write")
 CRYPTO_EXCHANGE_HINTS = ("crypto_exchange", "coinbase", "binance", "kraken", "bybit", "okx")
 
 
@@ -40,7 +39,7 @@ def _locked_safety_flags() -> dict[str, Any]:
         "actual_bets_submitted": 0,
         "actual_trades_submitted": 0,
         "actual_crypto_swaps_submitted": 0,
-        "kalshi_order_execution_enabled": False,
+        "market_order_execution_enabled": False,
         "sportsbook_bet_execution_enabled": False,
         "broker_order_execution_enabled": False,
         "crypto_trade_execution_enabled": False,
@@ -72,10 +71,8 @@ def classify_provider(provider: str | None, *, provider_type: str | None = None)
         return "broker"
     if any(hint in name for hint in SPORTSBOOK_PROVIDER_HINTS):
         return "sportsbook"
-    if any(hint in name for hint in KALSHI_ORDER_HINTS):
-        return "kalshi_order"
-    if name == "kalshi":
-        return "kalshi_order"
+    if any(hint in name for hint in MARKET_ORDER_PROVIDER_HINTS):
+        return "market_order"
     if any(hint in name for hint in CRYPTO_EXCHANGE_HINTS):
         return "crypto_exchange"
     return "unknown" if name else "unknown"

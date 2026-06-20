@@ -93,3 +93,20 @@ def validate_provider_payload(
         "errors": errors,
         "validation_status": "accepted" if len(errors) == 0 else "rejected",
     }
+
+
+class ProviderPayloadValidator:
+    """Import-safe facade for validating provider payloads."""
+
+    @staticmethod
+    def validate(
+        provider_type: str,
+        payload: dict[str, Any],
+        *,
+        max_staleness_seconds: int = 3600 * 12,
+    ) -> dict[str, Any]:
+        return validate_provider_payload(
+            provider_type,
+            payload,
+            max_staleness_seconds=max_staleness_seconds,
+        )

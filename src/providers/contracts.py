@@ -8,6 +8,7 @@ from typing import Any, Mapping
 
 PROVIDER_SCHEMA_VERSION = "src.providers.skeleton.v1"
 PROVIDER_CONTRACT_SCHEMA_VERSION = "src.providers.contracts.v1"
+PROVIDER_DEFAULT_CONTRACT_CREATED_AT = "2026-06-20T00:00:00+00:00"
 
 PROVIDER_TYPES = (
     "sportsbook_odds",
@@ -126,6 +127,10 @@ class ProviderContract:
         }
 
 
+ProviderAdapterContract = ProviderContract
+ReadOnlyProviderContract = ProviderContract
+
+
 def build_scaffold_provider_contract(
     provider_id: str,
     provider_name: str = "",
@@ -197,7 +202,7 @@ def build_provider_contract(
 
 
 def get_default_provider_contracts() -> dict[str, dict[str, Any]]:
-    return {
+    contracts = {
         "sportsbook_placeholder": build_provider_contract(
             provider_id="sportsbook_placeholder",
             provider_name="Sportsbook Placeholder",
@@ -250,6 +255,9 @@ def get_default_provider_contracts() -> dict[str, dict[str, Any]]:
             supported_markets=["injuries", "lineups", "weather"],
         ),
     }
+    for contract in contracts.values():
+        contract["created_at"] = PROVIDER_DEFAULT_CONTRACT_CREATED_AT
+    return contracts
 
 
 def write_provider_contract_snapshot(base_data_dir: str = "data") -> str:

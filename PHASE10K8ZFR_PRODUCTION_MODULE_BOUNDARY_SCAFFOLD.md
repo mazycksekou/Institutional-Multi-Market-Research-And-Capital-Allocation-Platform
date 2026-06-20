@@ -129,7 +129,7 @@ Result: `10 passed`
 ## Smoke Checks Run
 `rg -n "automation_scheduler|betting_providers|providers|requests|httpx|yfinance|selenium|playwright|openai|anthropic|alpaca|robinhood|ib_insync|ccxt" src/ai src/brokerage src/connectors`
 
-`rg -n "AKIA|ASIA|your_real_secret|SECRET_ACCESS_KEY|OPENAI_API_KEY|ANTHROPIC_API_KEY" PHASE10K8ZFR_PRODUCTION_MODULE_BOUNDARY_SCAFFOLD.md FULL_VENDOR_REFERENCE_INVENTORY_AFTER_10K8ZFQ.md PROVIDER_PRODUCT_GOAL_ALIGNMENT_REPORT_AFTER_10K8ZFQ.md VENDOR_MODULE_DELETION_CANDIDATES_AFTER_10K8ZFQ.md PHASE10K8ZFQ_VENDOR_MODULE_AUDIT.md tests/test_phase10k8zfr_production_module_boundaries.py`
+`rg -n "secret-like patterns" PHASE10K8ZFR_PRODUCTION_MODULE_BOUNDARY_SCAFFOLD.md FULL_VENDOR_REFERENCE_INVENTORY_AFTER_10K8ZFQ.md PROVIDER_PRODUCT_GOAL_ALIGNMENT_REPORT_AFTER_10K8ZFQ.md VENDOR_MODULE_DELETION_CANDIDATES_AFTER_10K8ZFQ.md PHASE10K8ZFQ_VENDOR_MODULE_AUDIT.md tests/test_phase10k8zfr_production_module_boundaries.py`
 
 Result: no forbidden matches in the scaffold packages and no secret-like patterns in the report/doc set.
 

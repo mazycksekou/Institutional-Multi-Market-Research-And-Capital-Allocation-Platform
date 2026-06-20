@@ -8,7 +8,7 @@ WRITE_ALLOWLIST: dict[str, set[str]] = {}
 
 
 @dataclass(slots=True)
-class ProviderWriteFirewallPolicy:
+class ProviderWritePolicy:
     provider_name: str = ""
     action_name: str = ""
     policy_status: str = "scaffold_only"
@@ -26,5 +26,12 @@ class ProviderWriteFirewallPolicy:
         }
 
 
-def build_scaffold_write_firewall_policy(provider_name: str = "", action_name: str = "") -> ProviderWriteFirewallPolicy:
-    return ProviderWriteFirewallPolicy(provider_name=provider_name, action_name=action_name)
+ProviderWriteFirewallPolicy = ProviderWritePolicy
+
+
+def build_scaffold_provider_write_policy(provider_name: str = "", action_name: str = "") -> ProviderWritePolicy:
+    return ProviderWritePolicy(provider_name=provider_name, action_name=action_name)
+
+
+def build_scaffold_write_firewall_policy(provider_name: str = "", action_name: str = "") -> ProviderWritePolicy:
+    return build_scaffold_provider_write_policy(provider_name=provider_name, action_name=action_name)

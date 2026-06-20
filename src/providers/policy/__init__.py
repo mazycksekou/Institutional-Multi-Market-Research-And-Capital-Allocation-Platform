@@ -4,7 +4,7 @@ from .allowlist import (
     BROKER_PROVIDER_HINTS,
     CRYPTO_EXCHANGE_HINTS,
     FORBIDDEN_AI_PROVIDER_TYPES,
-    KALSHI_ORDER_HINTS,
+    MARKET_ORDER_PROVIDER_HINTS,
     SPORTSBOOK_PROVIDER_HINTS,
     classify_provider,
     is_allowed_ai_provider_name,
@@ -20,7 +20,7 @@ from .secret_policy import (
     redact_mapping,
     redact_secret,
 )
-from .write_firewall import ProviderWriteFirewallPolicy, build_scaffold_write_firewall_policy
+from .write_firewall import ProviderWriteFirewallPolicy, ProviderWritePolicy, build_scaffold_provider_write_policy, build_scaffold_write_firewall_policy
 
 __all__ = [
     "ALLOWED_AI_PROVIDERS",
@@ -28,10 +28,12 @@ __all__ = [
     "CRYPTO_EXCHANGE_HINTS",
     "DEFAULT_AI_PROVIDER",
     "FORBIDDEN_AI_PROVIDER_TYPES",
-    "KALSHI_ORDER_HINTS",
+    "MARKET_ORDER_PROVIDER_HINTS",
     "ProviderWriteFirewallPolicy",
+    "ProviderWritePolicy",
     "SPORTSBOOK_PROVIDER_HINTS",
     "assert_no_secret_leak",
+    "build_scaffold_provider_write_policy",
     "build_scaffold_write_firewall_policy",
     "classify_provider",
     "credential_status_from_env",
