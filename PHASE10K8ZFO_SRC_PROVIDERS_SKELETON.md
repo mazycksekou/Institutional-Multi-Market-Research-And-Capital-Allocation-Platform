@@ -7,6 +7,11 @@ The package is intentionally scaffold-only. It provides import-safe contracts, r
 
 src/providers/ now exists as the future canonical provider landing zone. This phase does not migrate runtime provider logic, does not delete legacy provider modules, and does not change production behavior.
 
+The canonical taxonomy is vendor-neutral and product-category based:
+- `prediction_markets/`
+- `zero_dte_stocks/`
+- `sportsbooks/`
+
 ## Files Created
 - `src/providers/__init__.py`
 - `src/providers/base.py`
@@ -16,9 +21,9 @@ src/providers/ now exists as the future canonical provider landing zone. This ph
 - `src/providers/health.py`
 - `src/providers/normalization.py`
 - `src/providers/adapters/__init__.py`
-- `src/providers/kalshi/__init__.py`
-- `src/providers/sportsbooks/__init__.py`
 - `src/providers/prediction_markets/__init__.py`
+- `src/providers/zero_dte_stocks/__init__.py`
+- `src/providers/sportsbooks/__init__.py`
 - `tests/test_phase10k8zfo_src_providers_skeleton.py`
 
 ## Why `src/providers/` Now Exists
@@ -40,6 +45,7 @@ src/providers/ now exists as the future canonical provider landing zone. This ph
 - `src.providers` does not import `automation_scheduler`.
 - `src.providers` does not import `betting_providers`.
 - `src.providers` does not import legacy top-level `providers`.
+- `src.providers` does not use vendor-specific canonical package names.
 - `src.providers` does not import live connector libraries at import time.
 
 ## No-Network Guarantee

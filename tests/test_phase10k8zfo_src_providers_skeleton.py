@@ -18,9 +18,9 @@ EXPECTED_MODULES = [
     "src.providers.health",
     "src.providers.normalization",
     "src.providers.adapters",
-    "src.providers.kalshi",
-    "src.providers.sportsbooks",
     "src.providers.prediction_markets",
+    "src.providers.zero_dte_stocks",
+    "src.providers.sportsbooks",
 ]
 
 FORBIDDEN_IMPORT_PREFIXES = (
@@ -45,12 +45,12 @@ def _module_file(module_name: str) -> Path:
         return PROVIDER_ROOT / "__init__.py"
     if module_name == "src.providers.adapters":
         return PROVIDER_ROOT / "adapters" / "__init__.py"
-    if module_name == "src.providers.kalshi":
-        return PROVIDER_ROOT / "kalshi" / "__init__.py"
-    if module_name == "src.providers.sportsbooks":
-        return PROVIDER_ROOT / "sportsbooks" / "__init__.py"
     if module_name == "src.providers.prediction_markets":
         return PROVIDER_ROOT / "prediction_markets" / "__init__.py"
+    if module_name == "src.providers.zero_dte_stocks":
+        return PROVIDER_ROOT / "zero_dte_stocks" / "__init__.py"
+    if module_name == "src.providers.sportsbooks":
+        return PROVIDER_ROOT / "sportsbooks" / "__init__.py"
     return PROVIDER_ROOT / f"{parts[-1]}.py"
 
 
@@ -128,6 +128,10 @@ def test_provider_registry_starts_empty_and_scaffold_only():
 def test_report_exists_and_contains_required_boundary_strings():
     text = REPORT_PATH.read_text(encoding="utf-8")
     assert "src/providers/ now exists as the future canonical provider landing zone." in text
+    assert "prediction_markets" in text
+    assert "zero_dte_stocks" in text
+    assert "sportsbooks" in text
+    assert "vendor-neutral" in text
     assert "does not migrate runtime provider logic" in text
     assert "does not delete legacy provider modules" in text
     assert "does not change production behavior" in text
@@ -136,6 +140,20 @@ def test_report_exists_and_contains_required_boundary_strings():
     assert "Credential Safety Guarantee" in text
     assert "automation_scheduler" in text
     assert "Next Recommended Phase" in text
+
+
+def test_canonical_provider_paths_are_vendor_neutral():
+    assert (PROVIDER_ROOT / "prediction_markets").is_dir()
+    assert (PROVIDER_ROOT / "zero_dte_stocks").is_dir()
+    assert (PROVIDER_ROOT / "sportsbooks").is_dir()
+    assert not (PROVIDER_ROOT / "kalshi").exists()
+
+    for path in PROVIDER_ROOT.rglob("*"):
+        if "__pycache__" in path.parts:
+            continue
+        lowered_parts = {part.lower() for part in path.parts}
+        assert "kalshi" not in lowered_parts
+        assert "sharp" not in lowered_parts
 
 
 def test_no_legacy_provider_dependencies_are_built_into_skeleton():
@@ -149,4 +167,5 @@ def test_no_legacy_provider_dependencies_are_built_into_skeleton():
         assert "requests" not in text
         assert "httpx" not in text
         assert "yfinance" not in text
-
+        assert "kalshi" not in text.lower()
+        assert "sharp" not in text.lower()
