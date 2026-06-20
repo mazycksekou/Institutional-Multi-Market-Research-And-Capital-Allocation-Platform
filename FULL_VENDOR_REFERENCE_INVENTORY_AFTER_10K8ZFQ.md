@@ -63,3 +63,6 @@ The repository contains vendor references across runtime modules, compatibility 
 - Transport useful sportsbook code to `src/providers/sportsbooks/`.
 - Replace vendor-specific canonical ownership with product-category ownership.
 - Mark crypto, AI, and other non-goal vendor references for separate delete or isolate decisions.
+
+## Boundary Clarification
+AI/LLM, brokerage/live-trading, and scraper/live-connector functionality are future production domains, not automatic deletion categories. References in this inventory are evidence of legacy or vendor-specific ownership, not a reason to erase the future production domains. Preserve the scaffold boundaries under `src/ai`, `src/brokerage`, and `src/connectors` so later phases can transport useful functionality without reintroducing vendor ownership.

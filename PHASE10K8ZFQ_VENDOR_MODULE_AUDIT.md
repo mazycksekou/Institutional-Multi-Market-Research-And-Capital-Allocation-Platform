@@ -57,3 +57,6 @@ Vendor-specific code is still distributed across `betting_providers/`, `provider
 
 ## Next Recommended Phase
 Proceed with the first safe transport batch that targets one product category at a time, preserves wrappers, and proves import safety with fake-client tests before any legacy vendor module removal.
+
+## Production Domain Clarification
+AI/LLM, brokerage/live-trading, and scraper/live-connector functionality are future production domains, not automatic deletion categories. Delete or isolate labels in this audit apply only to vendor-specific ownership or duplicate legacy implementations. Preserve scaffold boundaries under `src/ai`, `src/brokerage`, and `src/connectors` so later phases can transport useful functionality into the correct production domains without implementing live behavior yet.

@@ -110,3 +110,6 @@ These candidates should only be deleted after canonical provider transport, wrap
 2. Compatibility routers after all callers are repointed.
 3. Legacy tests after category-owned tests replace them.
 4. Vendor-specific env keys after generalized configuration lands.
+
+## Production Domain Clarification
+AI/LLM, brokerage/live-trading, and scraper/live-connector functionality are future production domains, not automatic deletion categories. Delete candidates in this file refer only to vendor-specific or duplicated legacy ownership. Preserve the future scaffold boundaries under `src/ai`, `src/brokerage`, and `src/connectors`; do not implement live behavior yet.

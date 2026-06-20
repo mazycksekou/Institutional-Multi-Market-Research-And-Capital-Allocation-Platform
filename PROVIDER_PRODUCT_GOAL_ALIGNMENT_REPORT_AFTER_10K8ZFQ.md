@@ -79,3 +79,6 @@ Vendor-specific modules are not canonical architecture owners. Useful functional
 
 ## Next Decision Need
 Choose a first transport batch that moves one product category at a time, preserves compatibility wrappers, and proves import safety with fake-client tests before any legacy module removal.
+
+## Boundary Clarification
+AI/LLM, brokerage/live-trading, and scraper/live-connector functionality are future production domains, not automatic deletion categories. The delete-or-isolate labels in this report apply only to vendor-specific or duplicate legacy ownership. Preserve the scaffold boundaries under `src/ai`, `src/brokerage`, and `src/connectors` for later controlled implementation.
