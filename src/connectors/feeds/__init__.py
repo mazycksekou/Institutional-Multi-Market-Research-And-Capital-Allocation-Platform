@@ -1,3 +1,9 @@
-"""Scaffold-only feed connector boundary package."""
+"""Scaffold-only feeds connector boundary."""
 
-__all__ = []
+from .contracts import FEEDS_CONNECTOR_CATEGORY, FeedsConnectorContract, build_feeds_connector_contract
+
+__all__ = [
+    "FEEDS_CONNECTOR_CATEGORY",
+    "FeedsConnectorContract",
+    "build_feeds_connector_contract",
+]
