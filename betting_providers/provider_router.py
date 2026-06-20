@@ -1,11 +1,32 @@
-import os
 from typing import Any, Optional
 
-from .base import PREDICTION_MARKET, SPORTSBOOK_ODDS, provider_disabled, unknown_provider
+import os
+
+from src.providers.compat import PREDICTION_MARKET, SPORTSBOOK_ODDS, provider_disabled, unknown_provider
+from src.providers.routing import default_provider_id_for_category, resolve_provider_category
 from .kalshi_api import KalshiApiAdapter
 from .sharp_api import SharpApiAdapter
 from .sportsgameodds import SportsGameOddsAdapter
 from .the_odds_api import TheOddsApiAdapter
+
+LEGACY_PROVIDER_ID_TO_CATEGORY = {
+    "kalshi": "prediction_markets",
+    "kalshi_prediction_market": "prediction_markets",
+    "kalshi_placeholder": "prediction_markets",
+    "sharp_api": "sportsbooks",
+    "sharp_sportsbook": "sportsbooks",
+    "the_odds_api": "sportsbooks",
+    "sportsgameodds": "sportsbooks",
+}
+
+
+def provider_category(provider_id: Optional[str], provider_type: Optional[str] = None) -> Optional[str]:
+    category = resolve_provider_category(None, provider_type)
+    if category is not None:
+        return category
+    if provider_id is None:
+        return None
+    return LEGACY_PROVIDER_ID_TO_CATEGORY.get(str(provider_id).strip().lower())
 
 
 class ProviderRouter:
@@ -28,13 +49,14 @@ class ProviderRouter:
         return [provider.capability() for provider in providers]
 
     def default_betting_provider(self) -> str:
-        return os.getenv("DEFAULT_BETTING_PROVIDER", "the_odds_api").strip() or "the_odds_api"
+        return os.getenv("DEFAULT_BETTING_PROVIDER", default_provider_id_for_category("sportsbooks", default_provider_id="the_odds_api")).strip() or "the_odds_api"
 
     def default_market_provider(self) -> str:
-        return os.getenv("DEFAULT_MARKET_PROVIDER", "kalshi").strip() or "kalshi"
+        return os.getenv("DEFAULT_MARKET_PROVIDER", default_provider_id_for_category("prediction_markets", default_provider_id="kalshi")).strip() or "kalshi"
 
     def get_provider(self, provider_id: Optional[str], provider_type: Optional[str] = None) -> tuple[Any, Optional[dict[str, Any]]]:
         selected_id = provider_id or (self.default_market_provider() if provider_type == PREDICTION_MARKET else self.default_betting_provider())
+        _selected_category = provider_category(selected_id, provider_type)
         provider = self.providers.get(selected_id)
         if provider is None:
             return None, unknown_provider(self.available_provider_ids)
