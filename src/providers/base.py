@@ -7,6 +7,7 @@ from .contracts import ProviderContract, build_scaffold_provider_contract
 from .errors import ProviderConfigurationError
 from .health import ProviderHealthStatus, build_scaffold_health_status
 from .normalization import normalize_provider_payload
+from .validation import validate_provider_payload
 
 
 @runtime_checkable
@@ -43,10 +44,19 @@ class ProviderAdapterBase:
         return self.contract.as_dict()
 
     def validate_config(self) -> dict[str, Any]:
+        blockers = []
+        if not self.contract.enabled:
+            blockers.append("disabled_provider")
+        if not self.contract.live_calls_enabled:
+            blockers.append("live_calls_disabled")
+        if self.contract.required_credentials and self.contract.credential_status != "ok":
+            blockers.append("missing_credentials")
+        if self.contract.dry_run:
+            blockers.append("dry_run_placeholder")
         return {
-            "ok": False,
-            "status": "scaffold_only",
-            "blockers": ["scaffold_only"],
+            "ok": len(blockers) == 0,
+            "blockers": blockers,
+            "status": "ready" if len(blockers) == 0 else "blocked",
         }
 
     def health_check(self) -> dict[str, Any]:
@@ -61,19 +71,18 @@ class ProviderAdapterBase:
         return {
             "provider_id": self.contract.provider_id,
             "provider_type": self.contract.provider_type,
-            "status": "scaffold_only",
+            "status": "dry_run_placeholder",
             "dry_run": True,
             "records": [],
-            "blockers": ["scaffold_only"],
+            "blockers": ["dry_run_placeholder"],
         }
 
     def normalize_payload(self, payload: Mapping[str, Any]) -> dict[str, Any]:
         return normalize_provider_payload(self.contract.provider_type, payload)
 
     def validate_payload(self, payload: Mapping[str, Any], max_staleness_seconds: int = 3600 * 12) -> dict[str, Any]:
-        _ = (payload, max_staleness_seconds)
-        return {
-            "ok": False,
-            "status": "scaffold_only",
-            "errors": ["not_implemented"],
-        }
+        return validate_provider_payload(
+            self.contract.provider_type,
+            payload,
+            max_staleness_seconds=max_staleness_seconds,
+        )

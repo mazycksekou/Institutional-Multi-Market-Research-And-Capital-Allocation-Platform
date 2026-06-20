@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import os
-from math import ceil
 from typing import Any
+
+from src.providers.registry import ProviderRegistry, create_provider_registry
 
 from .provider_contracts import get_default_provider_contracts
 from .provider_secret_policy import credential_status_from_env
@@ -78,10 +79,9 @@ def get_provider_registry() -> dict[str, dict[str, Any]]:
     }
     registry["stock_placeholder"] = dict(registry["stock_price_placeholder"])
     registry["news_placeholder"] = dict(registry["news_events_placeholder"])
-    # compatibility aliases
     registry["sportsbooks"] = dict(registry["sportsbook_placeholder"])
     registry["odds_api"] = dict(registry["player_props_placeholder"])
-    registry["kalshi"] = dict(registry["kalshi_prediction_market"])
+    registry["kalshi"] = dict(registry["prediction_market_placeholder"])
     registry["alpaca"] = dict(registry["stock_placeholder"])
     registry["news_provider"] = dict(registry["news_placeholder"])
     for key, value in registry.items():
@@ -107,3 +107,12 @@ def provider_min_interval_seconds(provider_name: str, config: dict[str, Any] | N
 
 def get_provider(provider_name: str) -> dict[str, Any]:
     return get_provider_registry()[provider_name]
+
+
+__all__ = [
+    "ProviderRegistry",
+    "create_provider_registry",
+    "get_provider",
+    "get_provider_registry",
+    "provider_min_interval_seconds",
+]
