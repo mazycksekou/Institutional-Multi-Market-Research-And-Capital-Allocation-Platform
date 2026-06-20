@@ -8,6 +8,7 @@ from .contracts import CONNECTOR_CATEGORIES, ConnectorContract, build_connector_
 from .errors import (
     ConnectorBoundaryError,
     ConnectorConfigurationError,
+    ConnectorDisabledError,
     ConnectorError,
     ConnectorResponseError,
     ConnectorUnavailableError,
@@ -20,6 +21,7 @@ __all__ = [
     "CONNECTOR_CATEGORIES",
     "ConnectorBoundaryError",
     "ConnectorConfigurationError",
+    "ConnectorDisabledError",
     "ConnectorContract",
     "ConnectorError",
     "ConnectorHealthStatus",

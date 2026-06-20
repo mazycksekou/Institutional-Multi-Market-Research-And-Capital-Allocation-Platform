@@ -17,5 +17,9 @@ class ConnectorUnavailableError(ConnectorError):
     """Raised when a connector is intentionally unavailable."""
 
 
+class ConnectorDisabledError(ConnectorUnavailableError):
+    """Raised when a connector boundary is present but inert by design."""
+
+
 class ConnectorResponseError(ConnectorError):
     """Raised when a connector response contract is invalid."""
