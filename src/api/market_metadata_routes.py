@@ -4,6 +4,8 @@ from typing import Any, Optional
 
 from fastapi import Depends
 
+from src.providers.compat import PREDICTION_MARKET
+
 
 def register_market_metadata_routes(
     app: Any,
@@ -33,7 +35,7 @@ def register_market_metadata_routes(
         series_ticker: Optional[str] = None,
         limit: int = 100,
     ):
-        return await PROVIDER_ROUTER.get_kalshi_events(status=status, series_ticker=series_ticker, limit=limit)
+        return await PROVIDER_ROUTER.get_prediction_market_events(status=status, series_ticker=series_ticker, limit=limit)
 
 
     @app.get("/api/markets/kalshi/markets", operation_id="getKalshiMarkets", dependencies=[Depends(require_action_key)])
@@ -45,7 +47,7 @@ def register_market_metadata_routes(
         limit: int = 100,
         cursor: Optional[str] = None,
     ):
-        return await PROVIDER_ROUTER.get_kalshi_markets(
+        return await PROVIDER_ROUTER.get_prediction_market_markets(
             query=query,
             event_ticker=event_ticker,
             series_ticker=series_ticker,
@@ -57,4 +59,4 @@ def register_market_metadata_routes(
 
     @app.get("/api/markets/kalshi/markets/{ticker}/orderbook", operation_id="getKalshiOrderbook", dependencies=[Depends(require_action_key)])
     async def get_kalshi_orderbook(ticker: str):
-        return await PROVIDER_ROUTER.get_kalshi_orderbook(ticker)
+        return await PROVIDER_ROUTER.get_prediction_market_orderbook(ticker)
