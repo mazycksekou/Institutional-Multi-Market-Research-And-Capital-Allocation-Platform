@@ -884,7 +884,7 @@ def check_provider_write_firewall(
     base_data_dir: str | None = None,
     persist_audit: bool = True,
 ):
-    from .provider_write_firewall import check_provider_write_attempt
+    from src.providers.policy.write_firewall import check_provider_write_attempt
 
     return check_provider_write_attempt(
         provider=provider,

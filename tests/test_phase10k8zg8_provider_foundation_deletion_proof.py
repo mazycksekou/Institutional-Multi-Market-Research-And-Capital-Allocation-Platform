@@ -158,9 +158,11 @@ def test_phase10k8zg8_provider_foundation_deletion_proof(monkeypatch):
         assert blocker_path.is_file(), blocker_path
         text = blocker_path.read_text(encoding="utf-8")
         if blocker_path.as_posix().endswith("provider_write_firewall.py"):
-            assert "append_security_event" in text
-            assert "evaluate_owner_approval" in text
-            assert "locked_safety_flags" in text
+            assert "from src.providers.policy.write_firewall import" in text
+            assert "check_provider_write_attempt" in text
+            assert "append_security_event" not in text
+            assert "evaluate_owner_approval" not in text
+            assert "locked_safety_flags" not in text
         else:
             assert "get_provider_registry" in text
         assert not ("requests" in text or "httpx" in text or "yfinance" in text)

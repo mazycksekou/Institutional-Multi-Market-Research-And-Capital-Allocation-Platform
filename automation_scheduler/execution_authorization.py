@@ -5,7 +5,7 @@ from typing import Any
 from .audit_ledger import append_security_event
 from .owner_approval_gate import evaluate_owner_approval
 from .provider_allowlist import classify_provider
-from .provider_write_firewall import check_provider_write_attempt
+from src.providers.policy.write_firewall import check_provider_write_attempt
 from .risk_limit_guard import evaluate_risk_limits
 from .secret_safety import secret_safety_fields
 from .security_event_types import EXECUTION_ATTEMPT_BLOCKED
