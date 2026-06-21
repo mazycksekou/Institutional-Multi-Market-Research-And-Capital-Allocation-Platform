@@ -1,6 +1,6 @@
 import os
 import unittest
-from automation_scheduler.provider_registry import get_provider_registry
+from src.providers.registry import get_provider_registry
 
 
 class TestProviderRegistry(unittest.TestCase):
@@ -9,6 +9,10 @@ class TestProviderRegistry(unittest.TestCase):
         os.environ.pop("SHARP_LIVE_READS_ENABLED", None)
         os.environ.pop("KALSHI_PROVIDER_ENABLED", None)
         os.environ.pop("KALSHI_LIVE_READS_ENABLED", None)
+        os.environ["LEGACY_PROVIDER_REGISTRY_COMPAT"] = "true"
+
+    def tearDown(self):
+        os.environ.pop("LEGACY_PROVIDER_REGISTRY_COMPAT", None)
 
     def test_placeholder_only(self):
         r = get_provider_registry()

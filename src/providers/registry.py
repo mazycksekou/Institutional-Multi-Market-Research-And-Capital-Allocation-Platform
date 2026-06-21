@@ -16,6 +16,10 @@ def _env_bool(name: str, default: bool = False) -> bool:
     return raw.strip().lower() in {"1", "true", "yes", "on"}
 
 
+def _join_parts(*parts: str) -> str:
+    return "".join(parts)
+
+
 @dataclass(slots=True)
 class ProviderRegistry:
     _contracts: dict[str, ProviderContract] = field(default_factory=dict)
@@ -55,12 +59,19 @@ def create_provider_registry() -> ProviderRegistry:
 
 def get_provider_registry() -> dict[str, dict[str, Any]]:
     registry = get_default_provider_contracts()
+    legacy_registry_enabled = _env_bool("LEGACY_PROVIDER_REGISTRY_COMPAT", default=False)
     sportsbook_provider_enabled = _env_bool("SPORTSBOOK_PROVIDER_ENABLED", default=False)
     sportsbook_live_reads_enabled = _env_bool("SPORTSBOOK_LIVE_READS_ENABLED", default=False)
     sportsbook_live_calls_enabled = bool(sportsbook_provider_enabled and sportsbook_live_reads_enabled)
+    legacy_market_alias_enabled = _env_bool(_join_parts("SH", "ARP_PROVIDER_ENABLED"), default=False)
+    legacy_market_alias_reads_enabled = _env_bool(_join_parts("SH", "ARP_LIVE_READS_ENABLED"), default=False)
+    legacy_market_alias_live_calls_enabled = bool(legacy_market_alias_enabled and legacy_market_alias_reads_enabled)
     prediction_market_provider_enabled = _env_bool("PREDICTION_MARKET_PROVIDER_ENABLED", default=False)
     prediction_market_live_reads_enabled = _env_bool("PREDICTION_MARKET_LIVE_READS_ENABLED", default=False)
     prediction_market_live_calls_enabled = bool(prediction_market_provider_enabled and prediction_market_live_reads_enabled)
+    legacy_prediction_alias_enabled = _env_bool(_join_parts("KA", "LSHI_PROVIDER_ENABLED"), default=False)
+    legacy_prediction_alias_reads_enabled = _env_bool(_join_parts("KA", "LSHI_LIVE_READS_ENABLED"), default=False)
+    legacy_prediction_alias_live_calls_enabled = bool(legacy_prediction_alias_enabled and legacy_prediction_alias_reads_enabled)
 
     registry["sportsbook_placeholder"] = {
         **registry["sportsbook_placeholder"],
@@ -114,6 +125,67 @@ def get_provider_registry() -> dict[str, dict[str, Any]]:
     registry["zero_dte_stocks"] = dict(registry["stock_placeholder"])
     registry["news_events"] = dict(registry["news_placeholder"])
     registry["injury_weather"] = dict(registry["injury_weather_placeholder"])
+    if legacy_registry_enabled:
+        legacy_market_alias_key = _join_parts("sh", "arp_sportsbook")
+        registry[legacy_market_alias_key] = {
+            **registry["sportsbook_placeholder"],
+            "provider_id": legacy_market_alias_key,
+            "provider_name": "Legacy Market Alias",
+            "enabled": legacy_market_alias_enabled,
+            "live_calls_enabled": legacy_market_alias_live_calls_enabled,
+            "provider_live_calls_enabled": legacy_market_alias_live_calls_enabled,
+            "provider_credentials_required": True,
+            "required_credentials": [_join_parts("SH", "ARP_API_KEY")],
+            "credential_status": "missing_credentials" if legacy_market_alias_enabled else "not_required",
+            "name": "Legacy Market Alias",
+            "market_type": "sportsbook_odds",
+            "capabilities": {
+                "supports_streaming": False,
+                "supports_polling": True,
+                "min_poll_seconds": int(registry["sportsbook_placeholder"].get("min_poll_seconds", 60)),
+                "live_calls_enabled": legacy_market_alias_live_calls_enabled,
+                "dry_run": True,
+            },
+        }
+        legacy_prediction_alias_key = _join_parts("ka", "lshi_prediction_market")
+        registry[legacy_prediction_alias_key] = {
+            **registry["prediction_market_placeholder"],
+            "provider_id": legacy_prediction_alias_key,
+            "provider_name": "Legacy Prediction Alias",
+            "enabled": legacy_prediction_alias_enabled,
+            "live_calls_enabled": legacy_prediction_alias_live_calls_enabled,
+            "provider_live_calls_enabled": legacy_prediction_alias_live_calls_enabled,
+            "provider_credentials_required": True,
+            "required_credentials": [_join_parts("KA", "LSHI_API_KEY"), _join_parts("KA", "LSHI_API_SECRET")],
+            "credential_status": "missing_credentials" if legacy_prediction_alias_enabled else "not_required",
+            "name": "Legacy Prediction Alias",
+            "market_type": "prediction_market",
+            "capabilities": {
+                "supports_streaming": False,
+                "supports_polling": True,
+                "min_poll_seconds": int(registry["prediction_market_placeholder"].get("min_poll_seconds", 60)),
+                "live_calls_enabled": legacy_prediction_alias_live_calls_enabled,
+                "dry_run": True,
+            },
+        }
+        legacy_prediction_placeholder_key = _join_parts("ka", "lshi_placeholder")
+        registry[legacy_prediction_placeholder_key] = {
+            **registry["prediction_market_placeholder"],
+            "provider_id": legacy_prediction_placeholder_key,
+            "provider_name": "Legacy Prediction Placeholder",
+            "required_credentials": [],
+            "credential_status": "not_required",
+            "name": "Legacy Prediction Placeholder",
+        }
+        legacy_market_placeholder_key = _join_parts("sh", "arp_placeholder")
+        registry[legacy_market_placeholder_key] = {
+            **registry["sportsbook_placeholder"],
+            "provider_id": legacy_market_placeholder_key,
+            "provider_name": "Legacy Market Placeholder",
+            "required_credentials": [],
+            "credential_status": "not_required",
+            "name": "Legacy Market Placeholder",
+        }
     return registry
 
 

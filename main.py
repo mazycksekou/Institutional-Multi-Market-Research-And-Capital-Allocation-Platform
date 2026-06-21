@@ -14,7 +14,7 @@ from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
 
 from betting_providers import aliases as betting_aliases
-from betting_providers.base import PREDICTION_MARKET
+from src.providers.compat import PREDICTION_MARKET
 from betting_providers.provider_router import ProviderRouter
 from src.api.model_card_service import ModelCardService
 from src.api.system_routes import register_system_routes

@@ -5,8 +5,10 @@ from typing import Any
 import multi_sport_model_registry
 from full_board_engine import build_full_board_preview
 from logbook_engine import build_logbook_ready_row
-from providers.odds_provider_router import enrich_ticket
+from src.services.enrichment_service import EnrichmentService
 from src.core.entity_resolver import normalize_ticket_fields
+
+enrich_ticket = EnrichmentService.enrich_ticket
 
 
 def _present(value: Any) -> bool:

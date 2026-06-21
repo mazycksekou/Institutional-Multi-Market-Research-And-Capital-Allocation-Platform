@@ -1,7 +1,7 @@
 import unittest
 from datetime import datetime, timedelta, timezone
 
-from automation_scheduler.provider_payload_validator import validate_provider_payload
+from src.providers.validation import validate_provider_payload
 
 
 class TestProviderPayloadValidator(unittest.TestCase):
@@ -33,4 +33,3 @@ class TestProviderPayloadValidator(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

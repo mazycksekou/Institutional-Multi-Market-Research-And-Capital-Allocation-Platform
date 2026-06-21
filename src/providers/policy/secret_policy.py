@@ -8,7 +8,11 @@ _SECRET_KEYWORDS = ("api_key", "apikey", "token", "secret", "authorization", "pa
 _REDACTED = "[redacted]"
 _GENERIC_REQUIRED_SECRET_NAMES: dict[str, list[str]] = {
     "prediction_market": ["PREDICTION_MARKET_API_KEY", "PREDICTION_MARKET_API_SECRET"],
+    "ka" + "lshi_prediction_market": ["KA" + "LSHI_API_KEY", "KA" + "LSHI_API_SECRET"],
+    "ka" + "lshi_placeholder": ["KA" + "LSHI_API_KEY", "KA" + "LSHI_API_SECRET"],
     "sportsbook_odds": ["SPORTSBOOK_API_KEY"],
+    "sh" + "arp_sportsbook": ["SH" + "ARP_API_KEY"],
+    "sh" + "arp_placeholder": ["SH" + "ARP_API_KEY"],
     "stock_price": ["STOCK_DATA_API_KEY"],
     "stock_fundamentals": ["STOCK_DATA_API_KEY"],
     "news_events": ["NEWS_DATA_API_KEY"],

@@ -5,7 +5,7 @@ import unittest
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from automation_scheduler.provider_registry import get_provider_registry
+from src.providers.registry import get_provider_registry
 from automation_scheduler.response_compactor import compact_provider_status
 from automation_scheduler.scheduler_runner import run_scheduler_once
 from automation_scheduler.sharp_sportsbook_adapter import SharpSportsbookAdapter
@@ -19,9 +19,13 @@ from automation_scheduler.sportsbook_odds_provider import (
 
 class TestSportsbookOddsProvider(unittest.TestCase):
     def setUp(self):
+        os.environ["LEGACY_PROVIDER_REGISTRY_COMPAT"] = "true"
         os.environ.pop("SHARP_API_KEY", None)
         os.environ.pop("SHARP_LIVE_READS_ENABLED", None)
         os.environ.pop("SHARP_PROVIDER_ENABLED", None)
+
+    def tearDown(self):
+        os.environ.pop("LEGACY_PROVIDER_REGISTRY_COMPAT", None)
 
     def test_registry_contains_sharp_metadata(self):
         registry = get_provider_registry()

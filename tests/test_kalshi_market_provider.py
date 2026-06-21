@@ -10,13 +10,14 @@ from automation_scheduler.kalshi_market_provider import (
     validate_kalshi_snapshot,
     write_kalshi_snapshot,
 )
-from automation_scheduler.provider_registry import get_provider_registry
+from src.providers.registry import get_provider_registry
 from automation_scheduler.response_compactor import compact_provider_status
 from automation_scheduler.scheduler_runner import run_scheduler_once
 
 
 class TestKalshiMarketProvider(unittest.TestCase):
     def setUp(self):
+        os.environ["LEGACY_PROVIDER_REGISTRY_COMPAT"] = "true"
         for key in (
             "KALSHI_PROVIDER_ENABLED",
             "KALSHI_LIVE_READS_ENABLED",
@@ -24,6 +25,9 @@ class TestKalshiMarketProvider(unittest.TestCase):
             "KALSHI_API_SECRET",
         ):
             os.environ.pop(key, None)
+
+    def tearDown(self):
+        os.environ.pop("LEGACY_PROVIDER_REGISTRY_COMPAT", None)
 
     def test_normalize_validate_and_summarize_snapshot(self):
         now_iso = datetime.now(timezone.utc).isoformat()

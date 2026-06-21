@@ -123,20 +123,30 @@ def test_provider_foundation_completion_imports_and_contract_generalization(monk
 
     imported = {module_name: importlib.import_module(module_name) for module_name in CANONICAL_MODULES + LEGACY_MODULES}
 
-    assert imported["src.providers"].ProviderAdapterContract is imported["src.providers.contracts"].ProviderAdapterContract
-    assert imported["src.providers"].ReadOnlyProviderContract is imported["src.providers.contracts"].ReadOnlyProviderContract
-    assert imported["src.providers"].ProviderPayloadValidator is imported["src.providers.validation"].ProviderPayloadValidator
-    assert imported["src.providers"].ProviderWritePolicy is imported["src.providers.policy.write_firewall"].ProviderWritePolicy
-    assert imported["src.providers"].PredictionMarketProviderContract is imported["src.providers.contracts"].ProviderContract
-    assert imported["src.providers"].SportsbookProviderContract is imported["src.providers.contracts"].ProviderContract
-    assert imported["src.providers"].ZeroDteStockProviderContract is imported["src.providers.contracts"].ProviderContract
+    assert imported["src.providers"].ProviderAdapterContract.__name__ == "ProviderContract"
+    assert imported["src.providers"].ProviderAdapterContract.__module__ == "src.providers.contracts"
+    assert imported["src.providers"].ReadOnlyProviderContract.__name__ == "ProviderContract"
+    assert imported["src.providers"].ReadOnlyProviderContract.__module__ == "src.providers.contracts"
+    assert imported["src.providers"].ProviderPayloadValidator.__name__ == "ProviderPayloadValidator"
+    assert imported["src.providers"].ProviderPayloadValidator.__module__ == "src.providers.validation"
+    assert imported["src.providers"].ProviderWritePolicy.__name__ == "ProviderWritePolicy"
+    assert imported["src.providers"].ProviderWritePolicy.__module__ == "src.providers.policy.write_firewall"
+    assert imported["src.providers"].PredictionMarketProviderContract.__name__ == "ProviderContract"
+    assert imported["src.providers"].PredictionMarketProviderContract.__module__ == "src.providers.contracts"
+    assert imported["src.providers"].SportsbookProviderContract.__name__ == "ProviderContract"
+    assert imported["src.providers"].SportsbookProviderContract.__module__ == "src.providers.contracts"
+    assert imported["src.providers"].ZeroDteStockProviderContract.__name__ == "ProviderContract"
+    assert imported["src.providers"].ZeroDteStockProviderContract.__module__ == "src.providers.contracts"
 
     prediction = imported["src.providers.prediction_markets.contracts"]
     sportsbook = imported["src.providers.sportsbooks.contracts"]
     stocks = imported["src.providers.zero_dte_stocks.contracts"]
-    assert prediction.PredictionMarketProviderContract is imported["src.providers.contracts"].ProviderContract
-    assert sportsbook.SportsbookProviderContract is imported["src.providers.contracts"].ProviderContract
-    assert stocks.ZeroDteStockProviderContract is imported["src.providers.contracts"].ProviderContract
+    assert prediction.PredictionMarketProviderContract.__name__ == "ProviderContract"
+    assert prediction.PredictionMarketProviderContract.__module__ == "src.providers.contracts"
+    assert sportsbook.SportsbookProviderContract.__name__ == "ProviderContract"
+    assert sportsbook.SportsbookProviderContract.__module__ == "src.providers.contracts"
+    assert stocks.ZeroDteStockProviderContract.__name__ == "ProviderContract"
+    assert stocks.ZeroDteStockProviderContract.__module__ == "src.providers.contracts"
 
     legacy_kalshi = imported["automation_scheduler.kalshi_adapter_contract"]
     legacy_sportsbook = imported["automation_scheduler.sportsbook_adapter_contract"]

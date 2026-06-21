@@ -124,6 +124,13 @@ class ProviderContract:
             "auto_trade_enabled": self.auto_trade_enabled,
             "metadata": dict(self.metadata),
             "schema_version": self.schema_version,
+            "capabilities": {
+                "supports_streaming": self.supports_streaming,
+                "supports_polling": self.supports_polling,
+                "min_poll_seconds": self.min_poll_seconds,
+                "live_calls_enabled": self.live_calls_enabled,
+                "dry_run": self.dry_run,
+            },
         }
 
 
@@ -198,6 +205,13 @@ def build_provider_contract(
         "auto_trade_enabled": False,
         "contract_status": "defined",
         "created_at": _utc_now_iso(),
+        "capabilities": {
+            "supports_streaming": bool(supports_streaming),
+            "supports_polling": bool(supports_polling),
+            "min_poll_seconds": max(1, int(min_poll_seconds)),
+            "live_calls_enabled": bool(live_calls_enabled),
+            "dry_run": True,
+        },
     }
 
 

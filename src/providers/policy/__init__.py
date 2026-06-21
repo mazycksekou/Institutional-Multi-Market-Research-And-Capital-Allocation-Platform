@@ -20,7 +20,13 @@ from .secret_policy import (
     redact_mapping,
     redact_secret,
 )
-from .write_firewall import ProviderWriteFirewallPolicy, ProviderWritePolicy, build_scaffold_provider_write_policy, build_scaffold_write_firewall_policy
+from .write_firewall import (
+    ProviderWriteFirewallPolicy,
+    ProviderWritePolicy,
+    build_scaffold_provider_write_policy,
+    build_scaffold_write_firewall_policy,
+    check_provider_write_attempt,
+)
 
 __all__ = [
     "ALLOWED_AI_PROVIDERS",
@@ -45,4 +51,5 @@ __all__ = [
     "redact_http_diagnostic",
     "redact_mapping",
     "redact_secret",
+    "check_provider_write_attempt",
 ]

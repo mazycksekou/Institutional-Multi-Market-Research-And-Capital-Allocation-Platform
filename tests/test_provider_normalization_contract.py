@@ -1,7 +1,7 @@
 import unittest
 
-from automation_scheduler.provider_normalization_contract import get_normalized_schema, normalize_provider_payload
-from automation_scheduler.sportsbook_adapter_contract import SAMPLE_DRY_RUN_PAYLOAD as SPORTSBOOK_SAMPLE
+from src.providers.normalization import get_normalized_schema, normalize_provider_payload
+from src.providers.sportsbooks import SAMPLE_DRY_RUN_PAYLOAD as SPORTSBOOK_SAMPLE
 
 
 class TestProviderNormalizationContract(unittest.TestCase):
@@ -14,4 +14,3 @@ class TestProviderNormalizationContract(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
