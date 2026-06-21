@@ -200,12 +200,11 @@ def test_phase10k8zg2_legacy_deletion_readiness_audit():
     for module_name in LEGACY_IMPORTS:
         importlib.import_module(module_name)
 
-    for relpath, required in (
-        ("automation_scheduler/provider_registry.py", "from src.providers.registry import"),
-        ("automation_scheduler/provider_write_firewall.py", "from src.providers.policy.write_firewall import"),
+    for relpath in (
+        "automation_scheduler/provider_registry.py",
+        "automation_scheduler/provider_write_firewall.py",
     ):
-        text = read(relpath)
-        assert required in text, relpath
+        assert not (ROOT / relpath).exists(), relpath
 
     # The canonical package trees must not directly import live network clients.
     for package in (ROOT / "src/providers", ROOT / "src/connectors"):

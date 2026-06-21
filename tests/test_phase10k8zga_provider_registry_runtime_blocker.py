@@ -5,6 +5,8 @@ import importlib
 import os
 from pathlib import Path
 
+import pytest
+
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -18,7 +20,6 @@ RUNTIME_FILES = [
     ROOT / "automation_scheduler" / "scheduler_config.py",
     ROOT / "automation_scheduler" / "cadence_controller.py",
     ROOT / "automation_scheduler" / "kalshi_readonly_readiness.py",
-    ROOT / "automation_scheduler" / "provider_registry.py",
 ]
 
 FORBIDDEN_NETWORK_ROOTS = {
@@ -129,10 +130,9 @@ def test_phase10k8zga_runtime_dependency_redirect(monkeypatch, tmp_path):
     canonical_default = canonical_registry.get_provider_registry()
     canonical_legacy = canonical_registry.get_provider_registry(include_legacy_aliases=True)
     scheduler_snapshot = scheduler_pkg.get_provider_registry_snapshot(base_data_dir=str(tmp_path))
-    wrapper_text = _read(ROOT / "automation_scheduler" / "provider_registry.py")
-
-    assert "from src.providers.registry import" in wrapper_text
-    assert "get_provider_registry" in wrapper_text
+    assert not (ROOT / "automation_scheduler" / "provider_registry.py").exists()
+    with pytest.raises(ModuleNotFoundError):
+        importlib.import_module("automation_scheduler.provider_registry")
 
     assert "sharp_sportsbook" not in canonical_default
     assert "kalshi_prediction_market" not in canonical_default

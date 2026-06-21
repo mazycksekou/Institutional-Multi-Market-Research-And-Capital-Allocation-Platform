@@ -5,6 +5,8 @@ import importlib
 import os
 from pathlib import Path
 
+import pytest
+
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -114,13 +116,6 @@ def test_phase10k8zgb_runtime_redirect_and_wrapper_compatibility(monkeypatch, tm
         roots = _import_roots(path)
         assert roots.isdisjoint(FORBIDDEN_NETWORK_ROOTS), (path, roots & FORBIDDEN_NETWORK_ROOTS)
 
-    wrapper_text = _read(ROOT / "automation_scheduler" / "provider_write_firewall.py")
-    assert "from src.providers.policy.write_firewall import" in wrapper_text
-    assert "check_provider_write_attempt" in wrapper_text
-    assert "append_security_event" not in wrapper_text
-    assert "evaluate_owner_approval" not in wrapper_text
-    assert "locked_safety_flags" not in wrapper_text
-
     sample = {
         "provider": "paper",
         "action": "review_only",
@@ -133,12 +128,9 @@ def test_phase10k8zgb_runtime_redirect_and_wrapper_compatibility(monkeypatch, tm
         request_payload=sample,
         persist_audit=False,
     )
-    wrapper_text = _read(ROOT / "automation_scheduler" / "provider_write_firewall.py")
-    assert "from src.providers.policy.write_firewall import" in wrapper_text
-    assert "check_provider_write_attempt" in wrapper_text
-    assert "append_security_event" not in wrapper_text
-    assert "evaluate_owner_approval" not in wrapper_text
-    assert "locked_safety_flags" not in wrapper_text
+    assert not (ROOT / "automation_scheduler" / "provider_write_firewall.py").exists()
+    with pytest.raises(ModuleNotFoundError):
+        importlib.import_module("automation_scheduler.provider_write_firewall")
 
     scheduler_result = scheduler_pkg.check_provider_write_firewall(
         provider="paper",

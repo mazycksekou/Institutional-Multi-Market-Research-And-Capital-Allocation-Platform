@@ -5,6 +5,8 @@ import importlib
 import os
 from pathlib import Path
 
+import pytest
+
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -23,6 +25,7 @@ ALLOWED_TEST_TEXT_REFERENCES = {
     "tests/test_phase10k8zgb_provider_write_firewall_runtime_blocker.py",
     "tests/test_phase10k8zgc_final_provider_foundation_blocker_proof.py",
     "tests/test_phase10k8zg8_provider_foundation_deletion_proof.py",
+    "tests/test_phase10k8zgd_final_provider_foundation_blocker_deletion.py",
 }
 
 ALL_PY_PATHS = [
@@ -140,16 +143,16 @@ def test_phase10k8zgc_runtime_and_test_redirect(monkeypatch, tmp_path):
     canonical_firewall = importlib.import_module("src.providers.policy.write_firewall")
     scheduler_pkg = importlib.import_module("automation_scheduler")
     execution_authorization = importlib.import_module("automation_scheduler.execution_authorization")
-    legacy_registry = importlib.import_module("automation_scheduler.provider_registry")
-    legacy_firewall = importlib.import_module("automation_scheduler.provider_write_firewall")
 
     monkeypatch.setattr(os, "getenv", original_getenv)
     monkeypatch.setattr(canonical_registry.os, "getenv", lambda *_args, **_kwargs: None)
 
-    registry_wrapper_text = _read(ROOT / "automation_scheduler" / "provider_registry.py")
-    firewall_wrapper_text = _read(ROOT / "automation_scheduler" / "provider_write_firewall.py")
-    assert "from src.providers.registry import" in registry_wrapper_text
-    assert "from src.providers.policy.write_firewall import" in firewall_wrapper_text
+    assert not (ROOT / "automation_scheduler" / "provider_registry.py").exists()
+    assert not (ROOT / "automation_scheduler" / "provider_write_firewall.py").exists()
+    with pytest.raises(ModuleNotFoundError):
+        importlib.import_module("automation_scheduler.provider_registry")
+    with pytest.raises(ModuleNotFoundError):
+        importlib.import_module("automation_scheduler.provider_write_firewall")
 
     canonical_registry_snapshot = canonical_registry.get_provider_registry(include_legacy_aliases=True)
     scheduler_snapshot = scheduler_pkg.get_provider_registry_snapshot(base_data_dir=str(tmp_path))
@@ -170,12 +173,6 @@ def test_phase10k8zgc_runtime_and_test_redirect(monkeypatch, tmp_path):
         request_payload=payload,
         persist_audit=False,
     )
-    legacy_result = legacy_firewall.check_provider_write_attempt(
-        provider="paper",
-        action="review_only",
-        request_payload=payload,
-        persist_audit=False,
-    )
     scheduler_result = scheduler_pkg.check_provider_write_firewall(
         provider="paper",
         action="review_only",
@@ -183,7 +180,6 @@ def test_phase10k8zgc_runtime_and_test_redirect(monkeypatch, tmp_path):
         base_data_dir=str(tmp_path),
         persist_audit=False,
     )
-    assert legacy_result == canonical_result
     assert scheduler_result == canonical_result
 
     monkeypatch.setattr(
@@ -217,7 +213,4 @@ def test_phase10k8zgc_runtime_and_test_redirect(monkeypatch, tmp_path):
             assert "automation_scheduler.provider_write_firewall" not in text
 
     assert not scan_hits["runtime"], scan_hits["runtime"]
-    assert scan_hits["tests"] == {"tests/test_phase10k8zgc_final_provider_foundation_blocker_proof.py"}
-
-    assert legacy_registry.get_provider_registry()["sharp_sportsbook"]["provider_id"] == "sharp_sportsbook"
-    assert legacy_firewall.check_provider_write_attempt(provider="paper", action="review_only", request_payload=payload, persist_audit=False)["status"] == "provider_write_blocked"
+    assert scan_hits["tests"] <= ALLOWED_TEST_TEXT_REFERENCES

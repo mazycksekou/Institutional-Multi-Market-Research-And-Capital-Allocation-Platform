@@ -155,22 +155,10 @@ def test_phase10k8zg8_provider_foundation_deletion_proof(monkeypatch):
     for wrapper_path in DELETED_WRAPPER_FILES:
         assert not wrapper_path.exists(), wrapper_path
     for blocker_path in REMAINING_BLOCKER_FILES:
-        assert blocker_path.is_file(), blocker_path
-        text = blocker_path.read_text(encoding="utf-8")
-        if blocker_path.as_posix().endswith("provider_write_firewall.py"):
-            assert "from src.providers.policy.write_firewall import" in text
-            assert "check_provider_write_attempt" in text
-            assert "append_security_event" not in text
-            assert "evaluate_owner_approval" not in text
-            assert "locked_safety_flags" not in text
-        else:
-            assert "get_provider_registry" in text
-        assert not ("requests" in text or "httpx" in text or "yfinance" in text)
+        assert not blocker_path.exists(), blocker_path
 
     for runtime_blocker in RUNTIME_BLOCKERS:
-        runtime_text = _read(runtime_blocker)
-        assert runtime_text
-        assert runtime_blocker in _read("PROVIDER_FOUNDATION_DELETE_READINESS_AFTER_10K8ZG8.md")
+        assert not (ROOT / runtime_blocker).exists(), runtime_blocker
 
     scan = _scan_for_targets()
     assert not scan["runtime"], scan["runtime"]

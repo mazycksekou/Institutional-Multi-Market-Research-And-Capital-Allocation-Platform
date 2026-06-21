@@ -44,7 +44,7 @@ LEGACY_WRAPPERS = [
     "automation_scheduler.sportsbook_adapter_contract",
 ]
 
-FINAL_COMPAT_WRAPPER_PATHS = [
+DELETED_COMPAT_WRAPPER_PATHS = [
     ROOT / "automation_scheduler" / "provider_registry.py",
     ROOT / "automation_scheduler" / "provider_write_firewall.py",
 ]
@@ -137,15 +137,8 @@ def test_provider_foundation_modules_import_without_env_access(monkeypatch):
     for module_name in DELETED_WRAPPERS:
         assert not (ROOT / f"{module_name.replace('.', '/')}.py").exists(), module_name
 
-    for path in FINAL_COMPAT_WRAPPER_PATHS:
-        assert path.is_file(), path
-        text = path.read_text(encoding="utf-8")
-        if path.name == "provider_registry.py":
-            assert "from src.providers.registry import" in text
-            assert "get_provider_registry" in text
-        else:
-            assert "from src.providers.policy.write_firewall import" in text
-            assert "check_provider_write_attempt" in text
+    for path in DELETED_COMPAT_WRAPPER_PATHS:
+        assert not path.exists(), path
 
     policy = imported["src.providers.policy.write_firewall"]
     assert policy.build_scaffold_write_firewall_policy().policy_status == "scaffold_only"
@@ -190,8 +183,8 @@ def test_legacy_wrappers_preserve_foundation_behavior(monkeypatch):
     normalized = canonical_normalization.normalize_provider_payload("sportsbook_odds", payload)
     assert normalized["provider_type"] == "sportsbook_odds"
 
-    for path in FINAL_COMPAT_WRAPPER_PATHS:
-        assert path.is_file(), path
+    for path in DELETED_COMPAT_WRAPPER_PATHS:
+        assert not path.exists(), path
 
 
 def test_canonical_foundation_files_do_not_import_legacy_or_network_modules():

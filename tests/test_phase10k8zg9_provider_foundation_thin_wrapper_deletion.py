@@ -109,7 +109,7 @@ def test_phase10k8zg9_provider_foundation_thin_wrapper_deletion(monkeypatch):
         assert not deleted_path.exists(), deleted_path
 
     for blocker_path in REMAINING_BLOCKERS:
-        assert blocker_path.is_file(), blocker_path
+        assert not blocker_path.exists(), blocker_path
 
     scan = _scan_import_targets()
     assert not scan["runtime"], scan["runtime"]

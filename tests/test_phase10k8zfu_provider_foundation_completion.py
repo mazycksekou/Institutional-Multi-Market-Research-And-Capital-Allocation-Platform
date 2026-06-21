@@ -147,11 +147,8 @@ def test_provider_foundation_completion_imports_and_contract_generalization(monk
     assert legacy_sportsbook.normalize_payload(legacy_sportsbook.SAMPLE_DRY_RUN_PAYLOAD)["provider_type"] == "sportsbook_odds"
     assert legacy_allowlist.classify_provider("kalshi_prediction_market") == "kalshi_order"
     assert legacy_allowlist.classify_provider("sharp_sportsbook") == "sportsbook"
-    provider_registry_text = (ROOT / "automation_scheduler" / "provider_registry.py").read_text(encoding="utf-8")
-    provider_write_firewall_text = (ROOT / "automation_scheduler" / "provider_write_firewall.py").read_text(encoding="utf-8")
-    assert "from src.providers.registry import" in provider_registry_text
-    assert "from src.providers.policy.write_firewall import" in provider_write_firewall_text
-    assert "check_provider_write_attempt" in provider_write_firewall_text
+    assert not (ROOT / "automation_scheduler" / "provider_registry.py").exists()
+    assert not (ROOT / "automation_scheduler" / "provider_write_firewall.py").exists()
 
     scaffold_policy = imported["src.providers.policy.write_firewall"].build_scaffold_provider_write_policy()
     assert scaffold_policy.policy_status == "scaffold_only"
@@ -224,7 +221,7 @@ def test_phase_documents_exist_and_cover_required_strings():
     assert "Wrapper Status" in wrapper_status
     assert "Importer / Reference Count" in wrapper_status or "Importer" in wrapper_status
     assert "automation_scheduler/provider_contracts.py" in wrapper_status
-    assert "automation_scheduler/provider_registry.py" in wrapper_status
+    assert "compatibility" in wrapper_status.lower()
     assert "automation_scheduler/provider_secret_policy.py" in wrapper_status
     assert "automation_scheduler/kalshi_adapter_contract.py" in wrapper_status
     assert "automation_scheduler/sportsbook_adapter_contract.py" in wrapper_status
