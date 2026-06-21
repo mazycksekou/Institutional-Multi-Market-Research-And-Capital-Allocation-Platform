@@ -43,3 +43,30 @@ class ZeroDteStockQuote:
             "raw": dict(self.raw),
         }
 
+
+@dataclass(slots=True)
+class ZeroDteStockSnapshot:
+    provider: str = "zero_dte_stocks"
+    provider_type: str = "stock_price"
+    quotes: tuple[ZeroDteStockQuote, ...] = ()
+    status: str = "read_only"
+    read_only: bool = True
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "provider": self.provider,
+            "provider_type": self.provider_type,
+            "quotes": [quote.as_dict() for quote in self.quotes],
+            "status": self.status,
+            "read_only": self.read_only,
+        }
+
+
+@dataclass(slots=True)
+class ZeroDteStockProviderStatus:
+    provider: str = "zero_dte_stocks"
+    provider_type: str = "stock_price"
+    status: str = "read_only"
+    read_only: bool = True
+    live_access_enabled: bool = False
+    message: str = "zero_dte_stocks provider is read-only and consumes supplied market-data payloads only"
