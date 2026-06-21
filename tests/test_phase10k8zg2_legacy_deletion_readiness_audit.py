@@ -125,22 +125,13 @@ CANONICAL_IMPORTS = [
 ]
 
 LEGACY_IMPORTS = [
-    "providers.base_provider",
     "providers.kalshi_provider",
     "providers.sharp_provider",
-    "betting_providers.base",
-    "betting_providers.normalization",
     "betting_providers.kalshi_api",
     "betting_providers.sharp_api",
     "betting_providers.the_odds_api",
     "betting_providers.sportsgameodds",
-    "automation_scheduler.provider_contracts",
     "automation_scheduler.provider_registry",
-    "automation_scheduler.provider_health",
-    "automation_scheduler.provider_adapter_base",
-    "automation_scheduler.provider_normalization_contract",
-    "automation_scheduler.provider_payload_validator",
-    "automation_scheduler.provider_secret_policy",
     "automation_scheduler.provider_write_firewall",
     "src.services.enrichment_service",
     "src.api.provider_status_routes",

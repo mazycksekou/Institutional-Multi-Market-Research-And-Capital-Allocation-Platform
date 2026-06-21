@@ -11,8 +11,8 @@ import httpx
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
 
-from .provider_payload_validator import validate_provider_payload
-from .provider_secret_policy import credential_status_from_env, redact_http_diagnostic, redact_mapping
+from src.providers.validation import validate_provider_payload
+from src.providers.policy.secret_policy import credential_status_from_env, redact_http_diagnostic, redact_mapping
 from .scheduler_config import utc_now_iso
 
 PROVIDER_ID = "kalshi_prediction_market"

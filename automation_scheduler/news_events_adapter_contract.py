@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from .provider_payload_validator import validate_provider_payload
+from src.providers.validation import validate_provider_payload
 from .scheduler_config import utc_now_iso
 
 REQUIRED_FIELDS = ["source", "title", "event_type", "affected_entities", "severity_score", "published_at", "timestamp"]
@@ -32,4 +32,3 @@ def normalize_payload(payload: dict[str, Any]) -> dict[str, Any]:
         "published_at": payload.get("published_at"),
         "timestamp": payload.get("timestamp"),
     }
-

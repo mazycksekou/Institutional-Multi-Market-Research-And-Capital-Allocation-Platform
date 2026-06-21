@@ -21,18 +21,21 @@ CANONICAL_MODULES = [
     "src.providers.compat",
 ]
 
-WRAPPER_FILES = [
+DELETED_WRAPPER_FILES = [
     ROOT / "automation_scheduler" / "provider_contracts.py",
-    ROOT / "automation_scheduler" / "provider_registry.py",
     ROOT / "automation_scheduler" / "provider_health.py",
     ROOT / "automation_scheduler" / "provider_adapter_base.py",
     ROOT / "automation_scheduler" / "provider_normalization_contract.py",
     ROOT / "automation_scheduler" / "provider_payload_validator.py",
     ROOT / "automation_scheduler" / "provider_secret_policy.py",
-    ROOT / "automation_scheduler" / "provider_write_firewall.py",
     ROOT / "providers" / "base_provider.py",
     ROOT / "betting_providers" / "base.py",
     ROOT / "betting_providers" / "normalization.py",
+]
+
+REMAINING_BLOCKER_FILES = [
+    ROOT / "automation_scheduler" / "provider_registry.py",
+    ROOT / "automation_scheduler" / "provider_write_firewall.py",
 ]
 
 DELETE_READY_WRAPPERS = [
@@ -97,7 +100,7 @@ def _import_roots(path: Path) -> set[str]:
 
 def _scan_for_targets() -> dict[str, set[str]]:
     hits: dict[str, set[str]] = {"runtime": set(), "tests": set(), "docs": set(), "wrappers": set()}
-    wrapper_paths = {path.as_posix() for path in WRAPPER_FILES}
+    wrapper_paths = {path.as_posix() for path in DELETED_WRAPPER_FILES + REMAINING_BLOCKER_FILES}
     for path in ROOT.rglob("*.py"):
         if "__pycache__" in path.parts:
             continue
@@ -149,15 +152,17 @@ def test_phase10k8zg8_provider_foundation_deletion_proof(monkeypatch):
     assert callable(imported["src.providers.policy.write_firewall"].check_provider_write_attempt)
     assert hasattr(imported["src.providers.compat"], "provider_error")
 
-    for wrapper_path in WRAPPER_FILES:
-        assert wrapper_path.is_file(), wrapper_path
-        text = wrapper_path.read_text(encoding="utf-8")
-        if wrapper_path.as_posix().endswith("provider_write_firewall.py"):
+    for wrapper_path in DELETED_WRAPPER_FILES:
+        assert not wrapper_path.exists(), wrapper_path
+    for blocker_path in REMAINING_BLOCKER_FILES:
+        assert blocker_path.is_file(), blocker_path
+        text = blocker_path.read_text(encoding="utf-8")
+        if blocker_path.as_posix().endswith("provider_write_firewall.py"):
             assert "append_security_event" in text
             assert "evaluate_owner_approval" in text
             assert "locked_safety_flags" in text
         else:
-            assert "src.providers" in text
+            assert "get_provider_registry" in text
         assert not ("requests" in text or "httpx" in text or "yfinance" in text)
 
     for runtime_blocker in RUNTIME_BLOCKERS:
@@ -167,7 +172,6 @@ def test_phase10k8zg8_provider_foundation_deletion_proof(monkeypatch):
 
     scan = _scan_for_targets()
     assert not scan["runtime"], scan["runtime"]
-    assert scan["tests"], "expected test-only compatibility references to remain documented"
 
     docs = [
         "PHASE10K8ZG8_PROVIDER_FOUNDATION_DELETION_PROOF.md",

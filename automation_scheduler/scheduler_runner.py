@@ -20,8 +20,8 @@ from .kalshi_monitor import monitor_kalshi_market
 from .middle_opportunity_detector import detect_middle_opportunity
 from .opportunity_scoring import calculate_opportunity_score, classify_opportunity
 from .paper_decision_ledger import load_paper_decisions, persist_paper_decisions_for_review_items
-from .provider_adapter_base import ProviderAdapterBase
-from .provider_health import summarize_provider_health, write_provider_health_snapshot
+from src.providers.base import ProviderAdapterBase
+from src.providers.health import summarize_provider_health, write_provider_health_snapshot
 from .market_structure import kalshi_market_structure_signals
 from .kalshi_scoring import KALSHI_LIQUIDITY_POLICY_VERSION, evaluate_kalshi_liquidity_policy, score_kalshi_candidate
 from .scheduler_config import get_default_scheduler_config, ensure_runtime_directories

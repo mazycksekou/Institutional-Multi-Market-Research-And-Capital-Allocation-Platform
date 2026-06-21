@@ -5,7 +5,7 @@ from typing import Any
 
 import requests
 
-from .base_provider import available, provider_error, unavailable
+from src.providers.compat import available, provider_error, unavailable
 from src.providers.prediction_markets.adapters import normalize_prediction_market_quote as _normalize_prediction_market_quote
 
 

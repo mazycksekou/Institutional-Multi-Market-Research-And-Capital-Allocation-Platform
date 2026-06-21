@@ -3,8 +3,9 @@ from typing import Any, Optional
 
 import requests
 
-from .base import ProviderAdapter, PREDICTION_MARKET, env_bool, method_not_implemented, provider_not_configured
-from .normalization import normalize_kalshi_event, normalize_kalshi_market
+from src.providers.compat import ProviderAdapter, PREDICTION_MARKET, env_bool, method_not_implemented, provider_not_configured
+from src.providers.prediction_markets.adapters import normalize_prediction_market_event as normalize_kalshi_event
+from src.providers.prediction_markets.adapters import normalize_prediction_market_quote as normalize_kalshi_market
 
 
 class KalshiApiAdapter(ProviderAdapter):

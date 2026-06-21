@@ -5,8 +5,8 @@ from typing import Any, Optional
 import httpx
 
 from .aliases import resolve_sport_key
-from .base import ProviderAdapter, SPORTSBOOK_ODDS, clean_error, env_bool, provider_not_configured
-from .normalization import normalize_sportsbook_event, normalize_sportsbook_odds
+from src.providers.compat import ProviderAdapter, SPORTSBOOK_ODDS, clean_error, env_bool, provider_not_configured
+from src.providers.sportsbooks.adapters import normalize_sportsbook_event, normalize_sportsbook_odds
 
 
 class TheOddsApiAdapter(ProviderAdapter):

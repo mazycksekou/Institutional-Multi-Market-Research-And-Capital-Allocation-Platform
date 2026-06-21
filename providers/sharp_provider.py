@@ -5,7 +5,7 @@ from typing import Any
 
 import requests
 
-from .base_provider import available, provider_error, unavailable
+from src.providers.compat import available, provider_error, unavailable
 
 
 def enrich_with_sharp(ticket: dict[str, Any]) -> dict[str, Any]:

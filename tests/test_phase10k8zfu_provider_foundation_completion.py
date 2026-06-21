@@ -35,19 +35,10 @@ CANONICAL_MODULES = [
 
 LEGACY_MODULES = [
     "automation_scheduler.provider_allowlist",
-    "automation_scheduler.provider_secret_policy",
     "automation_scheduler.kalshi_adapter_contract",
     "automation_scheduler.sportsbook_adapter_contract",
-    "automation_scheduler.provider_contracts",
     "automation_scheduler.provider_registry",
-    "automation_scheduler.provider_health",
-    "automation_scheduler.provider_adapter_base",
-    "automation_scheduler.provider_normalization_contract",
-    "automation_scheduler.provider_payload_validator",
     "automation_scheduler.provider_write_firewall",
-    "betting_providers.base",
-    "betting_providers.normalization",
-    "providers.base_provider",
 ]
 
 FORBIDDEN_IMPORT_PREFIXES = (
@@ -151,11 +142,7 @@ def test_provider_foundation_completion_imports_and_contract_generalization(monk
     legacy_kalshi = imported["automation_scheduler.kalshi_adapter_contract"]
     legacy_sportsbook = imported["automation_scheduler.sportsbook_adapter_contract"]
     legacy_allowlist = imported["automation_scheduler.provider_allowlist"]
-    legacy_secret = imported["automation_scheduler.provider_secret_policy"]
     legacy_write_firewall = imported["automation_scheduler.provider_write_firewall"]
-    legacy_base = imported["betting_providers.base"]
-    legacy_normalization = imported["betting_providers.normalization"]
-    legacy_base_provider = imported["providers.base_provider"]
 
     assert legacy_kalshi.validate_payload(legacy_kalshi.SAMPLE_DRY_RUN_PAYLOAD)["ok"] is True
     assert legacy_kalshi.normalize_payload(legacy_kalshi.SAMPLE_DRY_RUN_PAYLOAD)["provider_type"] == "prediction_market"
@@ -163,13 +150,7 @@ def test_provider_foundation_completion_imports_and_contract_generalization(monk
     assert legacy_sportsbook.normalize_payload(legacy_sportsbook.SAMPLE_DRY_RUN_PAYLOAD)["provider_type"] == "sportsbook_odds"
     assert legacy_allowlist.classify_provider("kalshi_prediction_market") == "kalshi_order"
     assert legacy_allowlist.classify_provider("sharp_sportsbook") == "sportsbook"
-    assert legacy_secret.list_required_secret_names("sharp_sportsbook") == ["SHARP_API_KEY"]
-    assert legacy_secret.list_required_secret_names("kalshi_prediction_market") == ["KALSHI_API_KEY", "KALSHI_API_SECRET"]
     assert hasattr(legacy_write_firewall, "check_provider_write_attempt")
-    assert legacy_base.PREDICTION_MARKET == "prediction_market"
-    assert hasattr(legacy_normalization, "normalize_kalshi_event")
-    assert hasattr(legacy_normalization, "normalize_sportsbook_odds")
-    assert hasattr(legacy_base_provider, "available")
 
     scaffold_policy = imported["src.providers.policy.write_firewall"].build_scaffold_provider_write_policy()
     assert scaffold_policy.policy_status == "scaffold_only"

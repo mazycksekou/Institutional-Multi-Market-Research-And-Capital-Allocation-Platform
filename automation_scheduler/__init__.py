@@ -14,7 +14,7 @@ from .outcome_store import ingest_outcome_records, load_outcome_records, load_ou
 from .outcome_migration import import_local_settlement_records
 from .settlement_discovery import build_outcome_completion_report, write_outcome_completion_candidates
 from .model_performance_report import build_compact_performance_report
-from .provider_health import summarize_provider_health
+from src.providers.health import summarize_provider_health
 from .provider_registry import get_provider_registry
 from .sharp_sportsbook_adapter import SharpSportsbookAdapter
 from .kalshi_readonly_adapter import KalshiReadonlyAdapter

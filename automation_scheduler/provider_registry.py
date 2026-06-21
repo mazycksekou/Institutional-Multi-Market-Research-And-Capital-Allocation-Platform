@@ -4,9 +4,8 @@ import os
 from typing import Any
 
 from src.providers.registry import ProviderRegistry, create_provider_registry
-
-from .provider_contracts import get_default_provider_contracts
-from .provider_secret_policy import credential_status_from_env
+from src.providers.contracts import get_default_provider_contracts
+from src.providers.policy.secret_policy import credential_status_from_env
 
 
 def _env_bool(name: str, default: bool = False) -> bool:

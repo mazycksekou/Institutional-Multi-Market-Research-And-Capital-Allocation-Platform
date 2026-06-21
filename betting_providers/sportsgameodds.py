@@ -3,7 +3,7 @@ from typing import Any, Optional
 
 import httpx
 
-from .base import ProviderAdapter, SPORTSBOOK_ODDS, clean_error, env_bool, provider_not_configured
+from src.providers.compat import ProviderAdapter, SPORTSBOOK_ODDS, clean_error, env_bool, provider_not_configured
 
 
 class SportsGameOddsAdapter(ProviderAdapter):

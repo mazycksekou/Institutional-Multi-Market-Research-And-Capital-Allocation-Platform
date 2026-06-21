@@ -3,6 +3,7 @@ from __future__ import annotations
 import ast
 import importlib
 import os
+from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -25,15 +26,24 @@ CANONICAL_MODULES = [
     "src.providers.validation",
 ]
 
-LEGACY_WRAPPERS = [
+DELETED_WRAPPERS = [
     "automation_scheduler.provider_contracts",
-    "automation_scheduler.provider_registry",
     "automation_scheduler.provider_health",
     "automation_scheduler.provider_adapter_base",
     "automation_scheduler.provider_normalization_contract",
     "automation_scheduler.provider_payload_validator",
     "automation_scheduler.provider_secret_policy",
+    "providers.base_provider",
+    "betting_providers.base",
+    "betting_providers.normalization",
+]
+
+LEGACY_WRAPPERS = [
+    "automation_scheduler.provider_registry",
     "automation_scheduler.provider_allowlist",
+    "automation_scheduler.provider_write_firewall",
+    "automation_scheduler.kalshi_adapter_contract",
+    "automation_scheduler.sportsbook_adapter_contract",
 ]
 
 FORBIDDEN_IMPORT_PREFIXES = (
@@ -105,37 +115,26 @@ def test_provider_foundation_modules_import_without_env_access(monkeypatch):
     assert imported["src.providers"].ProviderHealthStatus.__name__ == imported["src.providers.health"].ProviderHealthStatus.__name__ == "ProviderHealthStatus"
     assert imported["src.providers"].ProviderAdapterBase.__name__ == imported["src.providers.base"].ProviderAdapterBase.__name__ == "ProviderAdapterBase"
     assert imported["src.providers"].normalize_provider_payload("sportsbook_odds", {"event_id": "e1"})["provider_type"] == "sportsbook_odds"
-    legacy_build_provider_contract = imported["automation_scheduler.provider_contracts"].build_provider_contract
-    canonical_build_provider_contract = imported["src.providers.contracts"].build_provider_contract
-    assert callable(legacy_build_provider_contract)
-    assert legacy_build_provider_contract(
-        provider_id="demo_provider",
-        provider_name="Demo Provider",
-        provider_type="sportsbook_odds",
-    ) == canonical_build_provider_contract(
-        provider_id="demo_provider",
-        provider_name="Demo Provider",
-        provider_type="sportsbook_odds",
-    )
     assert callable(imported["automation_scheduler.provider_registry"].get_provider_registry)
-    legacy_health_summary = _normalize_health_summary(
-        imported["automation_scheduler.provider_health"].summarize_provider_health(
-            imported["src.providers.contracts"].get_default_provider_contracts()
-        )
-    )
-    canonical_health_summary = _normalize_health_summary(
-        imported["src.providers.health"].summarize_provider_health(
-            imported["src.providers.contracts"].get_default_provider_contracts()
-        )
-    )
-    assert legacy_health_summary == canonical_health_summary
-    assert imported["automation_scheduler.provider_adapter_base"].ProviderAdapterBase.__name__ == imported["src.providers.base"].ProviderAdapterBase.__name__ == "ProviderAdapterBase"
-    assert imported["automation_scheduler.provider_normalization_contract"].get_normalized_schema("sportsbook_odds") == imported["src.providers.normalization"].get_normalized_schema("sportsbook_odds")
-    sample_validation_payload = {"event_id": "e1", "market": "h2h", "selection": "A", "odds": -110, "timestamp": "2026-06-20T00:00:00+00:00"}
-    assert imported["automation_scheduler.provider_payload_validator"].validate_provider_payload("sportsbook_odds", sample_validation_payload) == imported["src.providers.validation"].validate_provider_payload("sportsbook_odds", sample_validation_payload)
-    assert imported["automation_scheduler.provider_secret_policy"].redact_secret("abc") == imported["src.providers.policy.secret_policy"].redact_secret("abc")
     assert callable(imported["automation_scheduler.provider_allowlist"].classify_provider)
     assert callable(imported["src.providers.policy.allowlist"].classify_provider)
+    assert callable(imported["automation_scheduler.provider_write_firewall"].check_provider_write_attempt)
+
+    assert imported["automation_scheduler.kalshi_adapter_contract"].validate_payload(
+        imported["automation_scheduler.kalshi_adapter_contract"].SAMPLE_DRY_RUN_PAYLOAD
+    )["ok"] is True
+    assert imported["automation_scheduler.kalshi_adapter_contract"].normalize_payload(
+        imported["automation_scheduler.kalshi_adapter_contract"].SAMPLE_DRY_RUN_PAYLOAD
+    )["provider_type"] == "prediction_market"
+    assert imported["automation_scheduler.sportsbook_adapter_contract"].validate_payload(
+        imported["automation_scheduler.sportsbook_adapter_contract"].SAMPLE_DRY_RUN_PAYLOAD
+    )["ok"] is True
+    assert imported["automation_scheduler.sportsbook_adapter_contract"].normalize_payload(
+        imported["automation_scheduler.sportsbook_adapter_contract"].SAMPLE_DRY_RUN_PAYLOAD
+    )["provider_type"] == "sportsbook_odds"
+
+    for module_name in DELETED_WRAPPERS:
+        assert not (ROOT / f"{module_name.replace('.', '/')}.py").exists(), module_name
 
     policy = imported["src.providers.policy.write_firewall"]
     assert policy.build_scaffold_write_firewall_policy().policy_status == "scaffold_only"
@@ -146,28 +145,19 @@ def test_legacy_wrappers_preserve_foundation_behavior(monkeypatch):
         monkeypatch.delenv(name, raising=False)
 
     canonical_contracts = importlib.import_module("src.providers.contracts")
-    legacy_contracts = importlib.import_module("automation_scheduler.provider_contracts")
     canonical_registry = importlib.import_module("src.providers.registry")
     legacy_registry = importlib.import_module("automation_scheduler.provider_registry")
-    canonical_health = importlib.import_module("src.providers.health")
-    legacy_health = importlib.import_module("automation_scheduler.provider_health")
     canonical_base = importlib.import_module("src.providers.base")
-    legacy_base = importlib.import_module("automation_scheduler.provider_adapter_base")
     canonical_normalization = importlib.import_module("src.providers.normalization")
-    legacy_normalization = importlib.import_module("automation_scheduler.provider_normalization_contract")
     canonical_validation = importlib.import_module("src.providers.validation")
-    legacy_validation = importlib.import_module("automation_scheduler.provider_payload_validator")
-    canonical_secret = importlib.import_module("src.providers.policy.secret_policy")
-    legacy_secret = importlib.import_module("automation_scheduler.provider_secret_policy")
     canonical_allowlist = importlib.import_module("src.providers.policy.allowlist")
     legacy_allowlist = importlib.import_module("automation_scheduler.provider_allowlist")
+    legacy_write_firewall = importlib.import_module("automation_scheduler.provider_write_firewall")
+    legacy_kalshi = importlib.import_module("automation_scheduler.kalshi_adapter_contract")
+    legacy_sportsbook = importlib.import_module("automation_scheduler.sportsbook_adapter_contract")
 
     canonical_defaults = canonical_contracts.get_default_provider_contracts()
-    legacy_defaults = legacy_contracts.get_default_provider_contracts()
     assert "prediction_market_placeholder" in canonical_defaults
-    assert "kalshi_placeholder" not in canonical_defaults
-    assert "kalshi_placeholder" in legacy_defaults
-    assert legacy_defaults["kalshi_placeholder"] == canonical_defaults["prediction_market_placeholder"]
 
     canonical_registry_snapshot = canonical_registry.get_provider_registry()
     legacy_registry_snapshot = legacy_registry.get_provider_registry()
@@ -177,36 +167,20 @@ def test_legacy_wrappers_preserve_foundation_behavior(monkeypatch):
     assert "sharp_sportsbook" in legacy_registry_snapshot
     assert "kalshi_prediction_market" in legacy_registry_snapshot
     assert canonical_registry_snapshot["sportsbook_placeholder"]["provider_type"] == legacy_registry_snapshot["sportsbooks"]["provider_type"]
-    legacy_health_summary = _normalize_health_summary(legacy_health.summarize_provider_health(canonical_contracts.get_default_provider_contracts()))
-    canonical_health_summary = _normalize_health_summary(canonical_health.summarize_provider_health(canonical_contracts.get_default_provider_contracts()))
-    assert legacy_health_summary == canonical_health_summary
-    assert legacy_base.ProviderAdapterBase.__name__ == canonical_base.ProviderAdapterBase.__name__ == "ProviderAdapterBase"
-    assert legacy_validation.validate_provider_payload("sportsbook_odds", {"event_id": "e1", "market": "h2h", "selection": "A", "odds": -110, "timestamp": "2026-06-20T00:00:00+00:00"}) == canonical_validation.validate_provider_payload("sportsbook_odds", {"event_id": "e1", "market": "h2h", "selection": "A", "odds": -110, "timestamp": "2026-06-20T00:00:00+00:00"})
-    assert legacy_normalization.get_normalized_schema("sportsbook_odds") == canonical_normalization.get_normalized_schema("sportsbook_odds")
     assert legacy_allowlist.classify_provider("draftkings_sportsbook") == canonical_allowlist.classify_provider("draftkings_sportsbook")
     assert legacy_allowlist.provider_allowlist_response("internal_math") == canonical_allowlist.provider_allowlist_response("internal_math")
-    assert legacy_secret.redact_secret("abc") == canonical_secret.redact_secret("abc")
-    assert canonical_secret.list_required_secret_names("prediction_market") == ["PREDICTION_MARKET_API_KEY", "PREDICTION_MARKET_API_SECRET"]
-    assert canonical_secret.list_required_secret_names("sportsbook_odds") == ["SPORTSBOOK_API_KEY"]
-    assert legacy_secret.list_required_secret_names("sharp_sportsbook") == ["SHARP_API_KEY"]
-    assert legacy_secret.list_required_secret_names("kalshi_prediction_market") == ["KALSHI_API_KEY", "KALSHI_API_SECRET"]
+    assert hasattr(legacy_write_firewall, "check_provider_write_attempt")
+    assert legacy_kalshi.validate_payload(legacy_kalshi.SAMPLE_DRY_RUN_PAYLOAD)["ok"] is True
+    assert legacy_sportsbook.validate_payload(legacy_sportsbook.SAMPLE_DRY_RUN_PAYLOAD)["ok"] is True
 
     contract = canonical_defaults["sportsbook_placeholder"]
     adapter = canonical_base.ProviderAdapterBase(contract)
-    assert adapter.get_capabilities() == legacy_base.ProviderAdapterBase(contract).get_capabilities()
-    assert adapter.validate_config() == legacy_base.ProviderAdapterBase(contract).validate_config()
-    assert adapter.health_check() == legacy_base.ProviderAdapterBase(contract).health_check()
-    assert adapter.fetch_snapshot() == legacy_base.ProviderAdapterBase(contract).fetch_snapshot()
-    payload = {"event_id": "evt1", "sport": "basketball", "league": "NBA", "event_name": "A vs B", "book": "demo", "market": "h2h", "selection": "A", "line": None, "odds": -110, "timestamp": "2026-06-20T00:00:00+00:00"}
-    assert adapter.normalize_payload(payload) == legacy_base.ProviderAdapterBase(contract).normalize_payload(payload)
-    assert adapter.validate_payload(payload) == legacy_base.ProviderAdapterBase(contract).validate_payload(payload)
+    payload = {"event_id": "evt1", "sport": "basketball", "league": "NBA", "event_name": "A vs B", "book": "demo", "market": "h2h", "selection": "A", "line": None, "odds": -110, "timestamp": datetime.now(timezone.utc).isoformat()}
+    assert adapter.normalize_payload(payload)["provider_type"] == "sportsbook_odds"
+    assert adapter.validate_payload(payload)["ok"] is True
 
     normalized = canonical_normalization.normalize_provider_payload("sportsbook_odds", payload)
-    assert normalized == legacy_normalization.normalize_provider_payload("sportsbook_odds", payload)
     assert normalized["provider_type"] == "sportsbook_odds"
-
-    redacted = canonical_secret.redact_mapping({"api_key": "secret_value", "nested": {"token": "abc"}})
-    assert redacted == legacy_secret.redact_mapping({"api_key": "secret_value", "nested": {"token": "abc"}})
 
 
 def test_canonical_foundation_files_do_not_import_legacy_or_network_modules():

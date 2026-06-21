@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from .provider_payload_validator import validate_provider_payload
+from src.providers.validation import validate_provider_payload
 from .scheduler_config import utc_now_iso
 
 REQUIRED_FIELDS = ["event_id", "player_name", "team", "market", "selection", "line", "odds", "timestamp"]
@@ -35,4 +35,3 @@ def normalize_payload(payload: dict[str, Any]) -> dict[str, Any]:
         "odds": payload.get("odds"),
         "timestamp": payload.get("timestamp"),
     }
-

@@ -3,7 +3,7 @@ from typing import Any, Optional
 
 import requests
 
-from .base import ProviderAdapter, SPORTSBOOK_ODDS, env_bool, method_not_implemented, provider_not_configured
+from src.providers.compat import ProviderAdapter, SPORTSBOOK_ODDS, env_bool, method_not_implemented, provider_not_configured
 
 
 class SharpApiAdapter(ProviderAdapter):

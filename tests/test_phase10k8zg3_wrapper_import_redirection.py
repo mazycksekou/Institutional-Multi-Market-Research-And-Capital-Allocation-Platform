@@ -9,18 +9,21 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
-WRAPPER_FILES = [
+DELETED_WRAPPER_FILES = [
     "automation_scheduler/provider_contracts.py",
-    "automation_scheduler/provider_registry.py",
     "automation_scheduler/provider_health.py",
     "automation_scheduler/provider_adapter_base.py",
     "automation_scheduler/provider_normalization_contract.py",
     "automation_scheduler/provider_payload_validator.py",
     "automation_scheduler/provider_secret_policy.py",
-    "automation_scheduler/provider_write_firewall.py",
     "providers/base_provider.py",
     "betting_providers/base.py",
     "betting_providers/normalization.py",
+]
+
+REMAINING_WRAPPER_FILES = [
+    "automation_scheduler/provider_registry.py",
+    "automation_scheduler/provider_write_firewall.py",
 ]
 
 UPDATED_FILES = {
@@ -117,8 +120,10 @@ def test_phase10k8zg3_wrapper_import_redirection():
         text = (ROOT / doc).read_text(encoding="utf-8")
         assert "Wrapper-only modules are not deleted in this phase. This phase redirects downstream imports and produces deletion proof only." in text
 
-    # Wrapper files are still present.
-    for relpath in WRAPPER_FILES:
+    # The thin wrappers have been deleted; the remaining bridge hooks stay on disk.
+    for relpath in DELETED_WRAPPER_FILES:
+        assert not (ROOT / relpath).exists(), relpath
+    for relpath in REMAINING_WRAPPER_FILES:
         assert (ROOT / relpath).exists(), relpath
 
     # Updated files now point to canonical paths.

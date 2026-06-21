@@ -29,10 +29,7 @@ CANONICAL_MODULES = [
     "src.providers.validation",
 ]
 
-LEGACY_MODULES = [
-    "betting_providers.base",
-    "providers.base_provider",
-]
+LEGACY_MODULES = []
 
 FORBIDDEN_IMPORT_PREFIXES = ("automation_scheduler",)
 FORBIDDEN_DIRECT_IMPORTS = {"requests", "httpx", "yfinance", "openai", "anthropic", "playwright", "selenium", "alpaca", "robinhood", "ib_insync", "ccxt"}
@@ -101,20 +98,17 @@ def test_runtime_helper_and_router_modules_import_safely(monkeypatch):
     assert callable(compat.unavailable)
     assert callable(compat.available)
 
-    legacy_base = imported["betting_providers.base"]
     canonical_compat = imported["src.providers.compat"]
-    assert legacy_base.ProviderAdapter.__name__ == canonical_compat.ProviderAdapter.__name__ == "ProviderAdapter"
-    assert legacy_base.provider_disabled("demo") == canonical_compat.provider_disabled("demo")
-    assert legacy_base.provider_not_configured("demo") == canonical_compat.provider_not_configured("demo")
-    assert legacy_base.method_not_implemented("demo", "boom") == canonical_compat.method_not_implemented("demo", "boom")
-    assert legacy_base.unknown_provider(["a", "b"]) == canonical_compat.unknown_provider(["a", "b"])
+    assert callable(canonical_compat.ProviderAdapter)
+    assert canonical_compat.provider_disabled("demo")["provider"] == "demo"
+    assert canonical_compat.provider_not_configured("demo")["provider"] == "demo"
+    assert canonical_compat.method_not_implemented("demo", "boom")["provider"] == "demo"
+    assert canonical_compat.unknown_provider(["a", "b"])["available_providers"] == ["a", "b"]
     monkeypatch.setattr(os, "getenv", lambda *_args, **_kwargs: None)
-    assert legacy_base.env_bool("MISSING_FLAG", default=True) is True
-
-    legacy_base_provider = imported["providers.base_provider"]
-    assert legacy_base_provider.available("demo", []) == canonical_compat.available("demo", [])
-    assert legacy_base_provider.unavailable("demo") == canonical_compat.unavailable("demo")
-    assert legacy_base_provider.provider_error("demo", "boom") == canonical_compat.provider_error("demo", "boom")
+    assert canonical_compat.env_bool("MISSING_FLAG", default=True) is True
+    assert canonical_compat.available("demo", [])["provider"] == "demo"
+    assert canonical_compat.unavailable("demo")["provider"] == "demo"
+    assert canonical_compat.provider_error("demo", "boom")["provider"] == "demo"
 
 
 def test_canonical_router_modules_do_not_import_legacy_packages_or_network_clients():

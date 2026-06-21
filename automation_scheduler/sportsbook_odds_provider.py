@@ -5,8 +5,8 @@ from pathlib import Path
 from typing import Any
 
 from .data_paths import resolve_base_data_dir
-from .provider_payload_validator import validate_provider_payload
-from .provider_secret_policy import assert_no_secret_leak
+from src.providers.validation import validate_provider_payload
+from src.providers.policy.secret_policy import assert_no_secret_leak
 from .scheduler_config import utc_now_iso
 from .sharp_sportsbook_adapter import SCHEMA_VERSION, SharpSportsbookAdapter
 
