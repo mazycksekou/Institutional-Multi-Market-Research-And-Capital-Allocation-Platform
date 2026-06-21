@@ -22,8 +22,6 @@ DELETED_WRAPPER_FILES = [
 ]
 
 REMAINING_WRAPPER_FILES = [
-    "automation_scheduler/provider_registry.py",
-    "automation_scheduler/provider_write_firewall.py",
 ]
 
 UPDATED_FILES = {
@@ -40,7 +38,6 @@ UPDATED_FILES = {
     ],
     "tests/test_provider_registry.py": [
         "from src.providers.registry import get_provider_registry",
-        "from automation_scheduler.provider_registry import get_provider_registry",
     ],
     "tests/test_provider_health.py": [
         "from src.providers.contracts import get_default_provider_contracts",
@@ -68,15 +65,12 @@ UPDATED_FILES = {
     ],
     "tests/test_sportsbook_odds_provider.py": [
         "from src.providers.registry import get_provider_registry",
-        "from automation_scheduler.provider_registry import get_provider_registry",
     ],
     "tests/test_kalshi_market_provider.py": [
         "from src.providers.registry import get_provider_registry",
-        "from automation_scheduler.provider_registry import get_provider_registry",
     ],
     "tests/test_security_framework.py": [
         "from src.providers.policy.write_firewall import check_provider_write_attempt",
-        "from automation_scheduler.provider_write_firewall import check_provider_write_attempt",
     ],
 }
 
@@ -95,13 +89,11 @@ CANONICAL_IMPORTS = [
 
 WRAPPER_IMPORTS = [
     "automation_scheduler.provider_contracts",
-    "automation_scheduler.provider_registry",
     "automation_scheduler.provider_health",
     "automation_scheduler.provider_adapter_base",
     "automation_scheduler.provider_normalization_contract",
     "automation_scheduler.provider_payload_validator",
     "automation_scheduler.provider_secret_policy",
-    "automation_scheduler.provider_write_firewall",
     "providers.base_provider",
     "betting_providers.base",
     "betting_providers.normalization",

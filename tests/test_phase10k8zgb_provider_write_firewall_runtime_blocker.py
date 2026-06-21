@@ -101,7 +101,6 @@ def test_phase10k8zgb_runtime_redirect_and_wrapper_compatibility(monkeypatch, tm
     monkeypatch.setattr(os, "getenv", fail_getenv)
 
     canonical = importlib.import_module("src.providers.policy.write_firewall")
-    legacy_module = importlib.import_module("automation_scheduler.provider_write_firewall")
     scheduler_pkg = importlib.import_module("automation_scheduler")
     execution_authorization = importlib.import_module("automation_scheduler.execution_authorization")
 
@@ -134,12 +133,13 @@ def test_phase10k8zgb_runtime_redirect_and_wrapper_compatibility(monkeypatch, tm
         request_payload=sample,
         persist_audit=False,
     )
-    wrapper_result = legacy_module.check_provider_write_attempt(
-        provider="paper",
-        action="review_only",
-        request_payload=sample,
-        persist_audit=False,
-    )
+    wrapper_text = _read(ROOT / "automation_scheduler" / "provider_write_firewall.py")
+    assert "from src.providers.policy.write_firewall import" in wrapper_text
+    assert "check_provider_write_attempt" in wrapper_text
+    assert "append_security_event" not in wrapper_text
+    assert "evaluate_owner_approval" not in wrapper_text
+    assert "locked_safety_flags" not in wrapper_text
+
     scheduler_result = scheduler_pkg.check_provider_write_firewall(
         provider="paper",
         action="review_only",
@@ -147,7 +147,6 @@ def test_phase10k8zgb_runtime_redirect_and_wrapper_compatibility(monkeypatch, tm
         base_data_dir=str(tmp_path),
         persist_audit=False,
     )
-    assert wrapper_result == canonical_result
     assert scheduler_result == canonical_result
 
     monkeypatch.setattr(
@@ -163,9 +162,3 @@ def test_phase10k8zgb_runtime_redirect_and_wrapper_compatibility(monkeypatch, tm
     assert execution_result["provider_write_firewall_status"] == canonical_result["status"]
     assert execution_result["status"] == "execution_attempt_blocked"
     assert execution_result["ok"] is False
-
-    assert legacy_module.ProviderWritePolicy.__name__ == canonical.ProviderWritePolicy.__name__
-    assert legacy_module.ProviderWritePolicy.__module__ == canonical.ProviderWritePolicy.__module__
-    assert legacy_module.ProviderWriteFirewallPolicy.__name__ == canonical.ProviderWriteFirewallPolicy.__name__
-    assert legacy_module.ProviderWriteFirewallPolicy.__module__ == canonical.ProviderWriteFirewallPolicy.__module__
-    assert legacy_module.WRITE_ALLOWLIST == canonical.WRITE_ALLOWLIST

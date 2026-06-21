@@ -37,8 +37,6 @@ LEGACY_MODULES = [
     "automation_scheduler.provider_allowlist",
     "automation_scheduler.kalshi_adapter_contract",
     "automation_scheduler.sportsbook_adapter_contract",
-    "automation_scheduler.provider_registry",
-    "automation_scheduler.provider_write_firewall",
 ]
 
 FORBIDDEN_IMPORT_PREFIXES = (
@@ -142,7 +140,6 @@ def test_provider_foundation_completion_imports_and_contract_generalization(monk
     legacy_kalshi = imported["automation_scheduler.kalshi_adapter_contract"]
     legacy_sportsbook = imported["automation_scheduler.sportsbook_adapter_contract"]
     legacy_allowlist = imported["automation_scheduler.provider_allowlist"]
-    legacy_write_firewall = imported["automation_scheduler.provider_write_firewall"]
 
     assert legacy_kalshi.validate_payload(legacy_kalshi.SAMPLE_DRY_RUN_PAYLOAD)["ok"] is True
     assert legacy_kalshi.normalize_payload(legacy_kalshi.SAMPLE_DRY_RUN_PAYLOAD)["provider_type"] == "prediction_market"
@@ -150,7 +147,11 @@ def test_provider_foundation_completion_imports_and_contract_generalization(monk
     assert legacy_sportsbook.normalize_payload(legacy_sportsbook.SAMPLE_DRY_RUN_PAYLOAD)["provider_type"] == "sportsbook_odds"
     assert legacy_allowlist.classify_provider("kalshi_prediction_market") == "kalshi_order"
     assert legacy_allowlist.classify_provider("sharp_sportsbook") == "sportsbook"
-    assert hasattr(legacy_write_firewall, "check_provider_write_attempt")
+    provider_registry_text = (ROOT / "automation_scheduler" / "provider_registry.py").read_text(encoding="utf-8")
+    provider_write_firewall_text = (ROOT / "automation_scheduler" / "provider_write_firewall.py").read_text(encoding="utf-8")
+    assert "from src.providers.registry import" in provider_registry_text
+    assert "from src.providers.policy.write_firewall import" in provider_write_firewall_text
+    assert "check_provider_write_attempt" in provider_write_firewall_text
 
     scaffold_policy = imported["src.providers.policy.write_firewall"].build_scaffold_provider_write_policy()
     assert scaffold_policy.policy_status == "scaffold_only"

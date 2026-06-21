@@ -131,8 +131,6 @@ LEGACY_IMPORTS = [
     "betting_providers.sharp_api",
     "betting_providers.the_odds_api",
     "betting_providers.sportsgameodds",
-    "automation_scheduler.provider_registry",
-    "automation_scheduler.provider_write_firewall",
     "src.services.enrichment_service",
     "src.api.provider_status_routes",
 ]
@@ -201,6 +199,13 @@ def test_phase10k8zg2_legacy_deletion_readiness_audit():
     # Legacy compatibility imports still resolve for the wrapper-only surface.
     for module_name in LEGACY_IMPORTS:
         importlib.import_module(module_name)
+
+    for relpath, required in (
+        ("automation_scheduler/provider_registry.py", "from src.providers.registry import"),
+        ("automation_scheduler/provider_write_firewall.py", "from src.providers.policy.write_firewall import"),
+    ):
+        text = read(relpath)
+        assert required in text, relpath
 
     # The canonical package trees must not directly import live network clients.
     for package in (ROOT / "src/providers", ROOT / "src/connectors"):

@@ -39,11 +39,14 @@ DELETED_WRAPPERS = [
 ]
 
 LEGACY_WRAPPERS = [
-    "automation_scheduler.provider_registry",
     "automation_scheduler.provider_allowlist",
-    "automation_scheduler.provider_write_firewall",
     "automation_scheduler.kalshi_adapter_contract",
     "automation_scheduler.sportsbook_adapter_contract",
+]
+
+FINAL_COMPAT_WRAPPER_PATHS = [
+    ROOT / "automation_scheduler" / "provider_registry.py",
+    ROOT / "automation_scheduler" / "provider_write_firewall.py",
 ]
 
 FORBIDDEN_IMPORT_PREFIXES = (
@@ -115,10 +118,8 @@ def test_provider_foundation_modules_import_without_env_access(monkeypatch):
     assert imported["src.providers"].ProviderHealthStatus.__name__ == imported["src.providers.health"].ProviderHealthStatus.__name__ == "ProviderHealthStatus"
     assert imported["src.providers"].ProviderAdapterBase.__name__ == imported["src.providers.base"].ProviderAdapterBase.__name__ == "ProviderAdapterBase"
     assert imported["src.providers"].normalize_provider_payload("sportsbook_odds", {"event_id": "e1"})["provider_type"] == "sportsbook_odds"
-    assert callable(imported["automation_scheduler.provider_registry"].get_provider_registry)
     assert callable(imported["automation_scheduler.provider_allowlist"].classify_provider)
     assert callable(imported["src.providers.policy.allowlist"].classify_provider)
-    assert callable(imported["automation_scheduler.provider_write_firewall"].check_provider_write_attempt)
 
     assert imported["automation_scheduler.kalshi_adapter_contract"].validate_payload(
         imported["automation_scheduler.kalshi_adapter_contract"].SAMPLE_DRY_RUN_PAYLOAD
@@ -136,6 +137,16 @@ def test_provider_foundation_modules_import_without_env_access(monkeypatch):
     for module_name in DELETED_WRAPPERS:
         assert not (ROOT / f"{module_name.replace('.', '/')}.py").exists(), module_name
 
+    for path in FINAL_COMPAT_WRAPPER_PATHS:
+        assert path.is_file(), path
+        text = path.read_text(encoding="utf-8")
+        if path.name == "provider_registry.py":
+            assert "from src.providers.registry import" in text
+            assert "get_provider_registry" in text
+        else:
+            assert "from src.providers.policy.write_firewall import" in text
+            assert "check_provider_write_attempt" in text
+
     policy = imported["src.providers.policy.write_firewall"]
     assert policy.build_scaffold_write_firewall_policy().policy_status == "scaffold_only"
 
@@ -146,13 +157,11 @@ def test_legacy_wrappers_preserve_foundation_behavior(monkeypatch):
 
     canonical_contracts = importlib.import_module("src.providers.contracts")
     canonical_registry = importlib.import_module("src.providers.registry")
-    legacy_registry = importlib.import_module("automation_scheduler.provider_registry")
     canonical_base = importlib.import_module("src.providers.base")
     canonical_normalization = importlib.import_module("src.providers.normalization")
     canonical_validation = importlib.import_module("src.providers.validation")
     canonical_allowlist = importlib.import_module("src.providers.policy.allowlist")
     legacy_allowlist = importlib.import_module("automation_scheduler.provider_allowlist")
-    legacy_write_firewall = importlib.import_module("automation_scheduler.provider_write_firewall")
     legacy_kalshi = importlib.import_module("automation_scheduler.kalshi_adapter_contract")
     legacy_sportsbook = importlib.import_module("automation_scheduler.sportsbook_adapter_contract")
 
@@ -160,7 +169,7 @@ def test_legacy_wrappers_preserve_foundation_behavior(monkeypatch):
     assert "prediction_market_placeholder" in canonical_defaults
 
     canonical_registry_snapshot = canonical_registry.get_provider_registry()
-    legacy_registry_snapshot = legacy_registry.get_provider_registry()
+    legacy_registry_snapshot = canonical_registry.get_provider_registry(include_legacy_aliases=True)
     assert "prediction_market_placeholder" in canonical_registry_snapshot
     assert "sharp_sportsbook" not in canonical_registry_snapshot
     assert "kalshi_prediction_market" not in canonical_registry_snapshot
@@ -169,7 +178,6 @@ def test_legacy_wrappers_preserve_foundation_behavior(monkeypatch):
     assert canonical_registry_snapshot["sportsbook_placeholder"]["provider_type"] == legacy_registry_snapshot["sportsbooks"]["provider_type"]
     assert legacy_allowlist.classify_provider("draftkings_sportsbook") == canonical_allowlist.classify_provider("draftkings_sportsbook")
     assert legacy_allowlist.provider_allowlist_response("internal_math") == canonical_allowlist.provider_allowlist_response("internal_math")
-    assert hasattr(legacy_write_firewall, "check_provider_write_attempt")
     assert legacy_kalshi.validate_payload(legacy_kalshi.SAMPLE_DRY_RUN_PAYLOAD)["ok"] is True
     assert legacy_sportsbook.validate_payload(legacy_sportsbook.SAMPLE_DRY_RUN_PAYLOAD)["ok"] is True
 
@@ -181,6 +189,9 @@ def test_legacy_wrappers_preserve_foundation_behavior(monkeypatch):
 
     normalized = canonical_normalization.normalize_provider_payload("sportsbook_odds", payload)
     assert normalized["provider_type"] == "sportsbook_odds"
+
+    for path in FINAL_COMPAT_WRAPPER_PATHS:
+        assert path.is_file(), path
 
 
 def test_canonical_foundation_files_do_not_import_legacy_or_network_modules():

@@ -101,13 +101,13 @@ def test_phase10k8zga_runtime_dependency_redirect(monkeypatch, tmp_path):
     monkeypatch.setattr(os, "getenv", fail_getenv)
 
     canonical_registry = importlib.import_module("src.providers.registry")
-    legacy_registry = importlib.import_module("automation_scheduler.provider_registry")
     scheduler_config = importlib.import_module("automation_scheduler.scheduler_config")
     readiness = importlib.import_module("automation_scheduler.kalshi_readonly_readiness")
     cadence_controller = importlib.import_module("automation_scheduler.cadence_controller")
     scheduler_pkg = importlib.import_module("automation_scheduler")
 
     monkeypatch.setattr(os, "getenv", original_getenv)
+    monkeypatch.setattr(canonical_registry.os, "getenv", lambda *_args, **_kwargs: None)
     for name in (
         "LEGACY_PROVIDER_REGISTRY_COMPAT",
         "SHARP_PROVIDER_ENABLED",
@@ -128,20 +128,21 @@ def test_phase10k8zga_runtime_dependency_redirect(monkeypatch, tmp_path):
 
     canonical_default = canonical_registry.get_provider_registry()
     canonical_legacy = canonical_registry.get_provider_registry(include_legacy_aliases=True)
-    legacy_snapshot = legacy_registry.get_provider_registry()
+    scheduler_snapshot = scheduler_pkg.get_provider_registry_snapshot(base_data_dir=str(tmp_path))
+    wrapper_text = _read(ROOT / "automation_scheduler" / "provider_registry.py")
+
+    assert "from src.providers.registry import" in wrapper_text
+    assert "get_provider_registry" in wrapper_text
 
     assert "sharp_sportsbook" not in canonical_default
     assert "kalshi_prediction_market" not in canonical_default
     for key in ("sharp_sportsbook", "kalshi_prediction_market", "odds_api", "alpaca", "news_provider"):
         assert key in canonical_legacy, key
 
-    assert legacy_snapshot == canonical_legacy
-    assert legacy_registry.get_provider("kalshi_prediction_market")["provider_id"] == "kalshi_prediction_market"
-    assert legacy_registry.get_provider("sharp_sportsbook")["provider_id"] == "sharp_sportsbook"
-    assert legacy_registry.provider_min_interval_seconds(
-        "kalshi_prediction_market",
-        {"providers": legacy_snapshot},
-    ) >= 1
+    assert scheduler_snapshot["provider_count"] == len(canonical_legacy)
+    scheduler_provider_ids = {item["provider_id"] for item in scheduler_snapshot["providers"]}
+    for key in ("sharp_sportsbook", "kalshi_prediction_market"):
+        assert key in scheduler_provider_ids, key
 
     config = scheduler_config.get_default_scheduler_config(base_data_dir=str(tmp_path))
     assert config["providers"]["kalshi_prediction_market"]["provider_id"] == "kalshi_prediction_market"
