@@ -91,7 +91,7 @@ class TestWomensCollegeBasketballModelActivation(unittest.TestCase):
         self.assertLess(results[-130]["edge_percent"], results[100]["edge_percent"])
         self.assertLess(results[100]["edge_percent"], results[120]["edge_percent"])
     def test_provider_failure_safety(self):
-        with patch("providers.odds_provider_router.enrich_ticket", side_effect=RuntimeError("boom")):
+        with patch("screenshot_intake.enrich_ticket", side_effect=RuntimeError("boom")):
             self.assertTrue(self._screenshot()["ok"])
     def test_officiating_only_safety_cannot_create_bets(self): self.assertEqual(self._sport(input_stats={"referee_name": "Ref"})["confirmed_bets"], [])
     def test_social_crowd_only_safety_cannot_create_bets(self): self.assertEqual(self._sport(input_stats={"social_sentiment": 90})["confirmed_bets"], [])

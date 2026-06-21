@@ -4,7 +4,7 @@ from typing import Any
 
 from fastapi.responses import JSONResponse
 
-from betting_providers.provider_router import ProviderRouter
+from src.providers.provider_router import ProviderRouter
 
 
 LIVE_CARD_STATUSES = {
