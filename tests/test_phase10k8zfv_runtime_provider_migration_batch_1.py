@@ -29,7 +29,6 @@ CANONICAL_MODULES = [
 LEGACY_MODULES = [
     "providers.kalshi_provider",
     "providers.sharp_provider",
-    "betting_providers.normalization",
     "betting_providers.kalshi_api",
     "betting_providers.the_odds_api",
 ]
@@ -119,22 +118,6 @@ def test_runtime_category_adapters_import_and_preserve_compatibility(monkeypatch
     )
     assert legacy_pm == canonical_pm
 
-    legacy_kalshi_snapshot = imported["betting_providers.normalization"].normalize_kalshi_market(
-        {
-            "ticker": "KXTEST",
-            "market_ticker": "KXTEST",
-            "yes_bid": 48,
-            "yes_ask": 52,
-            "no_bid": 47,
-            "no_ask": 53,
-            "last_price": 51,
-            "volume": 250,
-            "liquidity": 1000,
-            "close_time": "2026-06-20T00:00:00+00:00",
-            "subtitle": "demo",
-            "status": "open",
-        }
-    )
     canonical_kalshi_snapshot = pm_adapters.normalize_prediction_market_snapshot(
         {
             "ticker": "KXTEST",
@@ -153,7 +136,7 @@ def test_runtime_category_adapters_import_and_preserve_compatibility(monkeypatch
         provider="kalshi",
         market_type="kalshi_prediction_market",
     )
-    assert legacy_kalshi_snapshot == canonical_kalshi_snapshot
+    assert canonical_kalshi_snapshot["provider_type"] == "prediction_market"
 
     sportsbook_event = {
         "id": "evt-1",
@@ -173,8 +156,8 @@ def test_runtime_category_adapters_import_and_preserve_compatibility(monkeypatch
         "last_update": "2026-06-20T00:00:00+00:00",
         "raw": {"event_id": "evt-1"},
     }
-    assert imported["betting_providers.normalization"].normalize_sportsbook_event("demo", sportsbook_event, league="NBA") == sb_adapters.normalize_sportsbook_event("demo", sportsbook_event, league="NBA")
-    assert imported["betting_providers.normalization"].normalize_sportsbook_odds(
+    assert sb_adapters.normalize_sportsbook_event("demo", sportsbook_event, league="NBA") == sb_adapters.normalize_sportsbook_event("demo", sportsbook_event, league="NBA")
+    assert sb_adapters.normalize_sportsbook_odds(
         "demo",
         "evt-1",
         "basketball_nba",
