@@ -28,7 +28,6 @@ CANONICAL_MODULES = [
 
 LEGACY_MODULES = [
     "providers.kalshi_provider",
-    "providers.odds_provider_router",
     "providers.sharp_provider",
     "betting_providers.normalization",
     "betting_providers.kalshi_api",

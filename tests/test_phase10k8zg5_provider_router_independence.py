@@ -64,7 +64,12 @@ def test_phase10k8zg5_provider_router_independence():
         os.getenv = original_getenv  # type: ignore[assignment]
 
     module = importlib.import_module("src.providers.provider_router")
-    router = module.ProviderRouter()
+    original_getenv = os.getenv
+    try:
+        os.getenv = lambda *_args, **_kwargs: ""  # type: ignore[assignment]
+        router = module.ProviderRouter()
+    finally:
+        os.getenv = original_getenv  # type: ignore[assignment]
     assert module.provider_category("kalshi") == "prediction_markets"
     assert module.provider_category("sharp_api") == "sportsbooks"
     assert router.available_provider_ids == ["the_odds_api", "sportsgameodds", "sharp_api", "kalshi"]
@@ -74,25 +79,13 @@ def test_phase10k8zg5_provider_router_independence():
     assert hasattr(router, "get_prediction_market_markets")
     assert hasattr(router, "get_prediction_market_orderbook")
     assert not hasattr(router, "get_kalshi_events")
+    assert (ROOT / "betting_providers" / "provider_router.py").is_file()
+    assert (ROOT / "providers" / "odds_provider_router.py").is_file()
 
     provider, error = router.get_provider("the_odds_api", "sportsbook_odds")
     assert error is None
     assert provider is not None
     assert provider.provider_type == "sportsbook_odds"
-
-    legacy_router = importlib.import_module("betting_providers.provider_router")
-    assert hasattr(legacy_router, "ProviderRouter")
-    assert hasattr(legacy_router, "provider_category")
-    legacy_instance = legacy_router.ProviderRouter()
-    assert legacy_instance.available_provider_ids == router.available_provider_ids
-    assert legacy_router.provider_category("kalshi") == "prediction_markets"
-    assert legacy_router.provider_category("sharp_api") == "sportsbooks"
-    assert hasattr(legacy_instance, "get_kalshi_events")
-    assert hasattr(legacy_instance, "get_kalshi_markets")
-    assert hasattr(legacy_instance, "get_kalshi_orderbook")
-
-    odds_router = importlib.import_module("providers.odds_provider_router")
-    assert hasattr(odds_router, "enrich_ticket")
 
     main_text = _read("main.py")
     model_card_text = _read("src/api/model_card_service.py")

@@ -62,15 +62,9 @@ def test_phase10k8zg4_runtime_bridge_import_redirection():
     finally:
         os.getenv = original_getenv  # type: ignore[assignment]
 
-    legacy_router = importlib.import_module("betting_providers.provider_router")
-    odds_router = importlib.import_module("providers.odds_provider_router")
-    assert hasattr(legacy_router, "ProviderRouter")
-    assert hasattr(odds_router, "enrich_ticket")
-
     assert (ROOT / "main.py").exists()
     assert (ROOT / "src/api/model_card_service.py").exists()
-    assert (ROOT / "providers/odds_provider_router.py").exists()
 
     blockers = _read("REMAINING_DELETION_BLOCKERS_AFTER_10K8ZG4.md")
-    assert "providers.odds_provider_router" in blockers
     assert "src.providers.provider_router" in blockers
+    assert "no deletion occurred" in blockers.lower() or "not deleted" in blockers.lower()

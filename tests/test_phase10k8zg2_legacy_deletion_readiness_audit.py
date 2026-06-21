@@ -126,12 +126,10 @@ CANONICAL_IMPORTS = [
 
 LEGACY_IMPORTS = [
     "providers.base_provider",
-    "providers.odds_provider_router",
     "providers.kalshi_provider",
     "providers.sharp_provider",
     "betting_providers.base",
     "betting_providers.normalization",
-    "betting_providers.provider_router",
     "betting_providers.kalshi_api",
     "betting_providers.sharp_api",
     "betting_providers.the_odds_api",

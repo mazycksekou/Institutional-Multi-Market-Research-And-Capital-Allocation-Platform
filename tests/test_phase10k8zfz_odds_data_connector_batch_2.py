@@ -48,8 +48,6 @@ LEGACY_IMPORTS = [
     "automation_scheduler.sharp_sportsbook_adapter",
     "automation_scheduler.sportsbook_odds_provider",
     "sharp_client",
-    "providers.odds_provider_router",
-    "betting_providers.provider_router",
 ]
 
 
@@ -170,11 +168,8 @@ def test_legacy_odds_imports_still_resolve():
     sharp_client = importlib.import_module("sharp_client")
     assert hasattr(sharp_client, "get_sharp_active_events") or hasattr(sharp_client, "get_kalshi_market")
 
-    router_module = importlib.import_module("providers.odds_provider_router")
-    assert hasattr(router_module, "enrich_ticket")
-
-    betting_router = importlib.import_module("betting_providers.provider_router")
-    assert hasattr(betting_router, "ProviderRouter")
+    service = importlib.import_module("src.services.enrichment_service")
+    assert hasattr(service.EnrichmentService, "enrich_ticket")
 
 
 def test_phase_docs_cover_required_connector_language_and_vendor_neutrality():

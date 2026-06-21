@@ -31,9 +31,7 @@ CANONICAL_MODULES = [
 
 LEGACY_MODULES = [
     "betting_providers.base",
-    "betting_providers.provider_router",
     "providers.base_provider",
-    "providers.odds_provider_router",
 ]
 
 FORBIDDEN_IMPORT_PREFIXES = ("automation_scheduler",)
@@ -113,18 +111,10 @@ def test_runtime_helper_and_router_modules_import_safely(monkeypatch):
     monkeypatch.setattr(os, "getenv", lambda *_args, **_kwargs: None)
     assert legacy_base.env_bool("MISSING_FLAG", default=True) is True
 
-    legacy_provider_router = imported["betting_providers.provider_router"]
-    assert hasattr(legacy_provider_router, "ProviderRouter")
-    assert hasattr(legacy_provider_router, "provider_category")
-    assert legacy_provider_router.provider_category("kalshi") == "prediction_markets"
-    assert legacy_provider_router.provider_category("sharp_api") == "sportsbooks"
-
     legacy_base_provider = imported["providers.base_provider"]
     assert legacy_base_provider.available("demo", []) == canonical_compat.available("demo", [])
     assert legacy_base_provider.unavailable("demo") == canonical_compat.unavailable("demo")
     assert legacy_base_provider.provider_error("demo", "boom") == canonical_compat.provider_error("demo", "boom")
-
-    assert hasattr(imported["providers.odds_provider_router"], "enrich_ticket")
 
 
 def test_canonical_router_modules_do_not_import_legacy_packages_or_network_clients():

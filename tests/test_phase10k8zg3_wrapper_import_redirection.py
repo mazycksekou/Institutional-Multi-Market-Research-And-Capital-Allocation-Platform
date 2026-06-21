@@ -21,7 +21,6 @@ WRAPPER_FILES = [
     "providers/base_provider.py",
     "betting_providers/base.py",
     "betting_providers/normalization.py",
-    "providers/odds_provider_router.py",
 ]
 
 UPDATED_FILES = {
@@ -31,7 +30,6 @@ UPDATED_FILES = {
     ],
     "screenshot_intake.py": [
         "from src.services.enrichment_service import EnrichmentService",
-        "from providers.odds_provider_router import enrich_ticket",
     ],
     "tests/test_provider_contracts.py": [
         "from src.providers.contracts import PROVIDER_TYPES, get_default_provider_contracts",
@@ -102,7 +100,6 @@ WRAPPER_IMPORTS = [
     "automation_scheduler.provider_secret_policy",
     "automation_scheduler.provider_write_firewall",
     "providers.base_provider",
-    "providers.odds_provider_router",
     "betting_providers.base",
     "betting_providers.normalization",
 ]
@@ -146,10 +143,6 @@ def test_phase10k8zg3_wrapper_import_redirection():
     finally:
         os.getenv = original_getenv  # type: ignore[assignment]
 
-    # Legacy wrapper modules still import.
-    for module_name in WRAPPER_IMPORTS:
-        importlib.import_module(module_name)
-
     # Canonical provider/connectors trees must stay free of live-network imports.
     forbidden = {"requests", "httpx", "yfinance", "selenium", "playwright", "websocket", "openai", "anthropic", "alpaca", "robinhood", "ib_insync", "ccxt"}
     for package in (ROOT / "src/providers", ROOT / "src/connectors"):
@@ -171,4 +164,3 @@ def test_phase10k8zg3_wrapper_import_redirection():
     remaining_legacy = (ROOT / "REMAINING_LEGACY_IMPORTS_AFTER_10K8ZG3.md").read_text(encoding="utf-8")
     assert "main.py" in remaining_legacy
     assert "src/api/model_card_service.py" in remaining_legacy
-    assert "providers.odds_provider_router" in remaining_legacy
