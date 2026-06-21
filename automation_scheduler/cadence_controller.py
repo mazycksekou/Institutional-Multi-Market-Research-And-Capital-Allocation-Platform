@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from .provider_registry import provider_min_interval_seconds
+from src.providers.registry import provider_min_interval_seconds
 
 _PROFILE_BY_MARKET_TYPE = {
     "sports_pregame_main": "sports_pregame_main",

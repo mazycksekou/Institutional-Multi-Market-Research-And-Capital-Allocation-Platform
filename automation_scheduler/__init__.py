@@ -15,7 +15,7 @@ from .outcome_migration import import_local_settlement_records
 from .settlement_discovery import build_outcome_completion_report, write_outcome_completion_candidates
 from .model_performance_report import build_compact_performance_report
 from src.providers.health import summarize_provider_health
-from .provider_registry import get_provider_registry
+from src.providers.registry import get_provider_registry
 from .sharp_sportsbook_adapter import SharpSportsbookAdapter
 from .kalshi_readonly_adapter import KalshiReadonlyAdapter
 from .kalshi_market_provider import (
@@ -1326,7 +1326,7 @@ def get_provider_registry_snapshot(base_data_dir: str | None = None):
     base = _data_dir(base_data_dir)
     config = get_default_scheduler_config(base_data_dir=base)
     ensure_runtime_directories(config)
-    providers = list(get_provider_registry().values())
+    providers = list(get_provider_registry(include_legacy_aliases=True).values())
     blocked_count = sum(
         1
         for item in providers

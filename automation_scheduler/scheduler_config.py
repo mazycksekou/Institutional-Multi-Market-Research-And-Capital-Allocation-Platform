@@ -60,7 +60,7 @@ def ensure_runtime_directories(config: dict[str, Any]) -> dict[str, str]:
 
 def get_default_scheduler_config(base_data_dir: str | None = None) -> dict[str, Any]:
     from .data_paths import resolve_base_data_dir
-    from .provider_registry import get_provider_registry
+    from src.providers.registry import get_provider_registry
 
     root = resolve_base_data_dir(base_data_dir)
     cfg = {
@@ -106,7 +106,7 @@ def get_default_scheduler_config(base_data_dir: str | None = None) -> dict[str, 
             "low_liquidity": {"standard_watchlist_seconds": 900},
             "stocks_broad": {"slow_scan_seconds": 300},
         },
-        "providers": get_provider_registry(),
+        "providers": get_provider_registry(include_legacy_aliases=True),
     }
     ensure_runtime_directories(cfg)
     return cfg

@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from .kalshi_readonly_adapter import KalshiReadonlyAdapter
-from .provider_registry import get_provider_registry
+from src.providers.registry import get_provider_registry
 
 PROVIDER_ID = "kalshi_prediction_market"
 
@@ -76,7 +76,7 @@ def load_project_env(project_root: str | Path | None = None) -> dict[str, Any]:
 
 
 def build_kalshi_readonly_contract() -> dict[str, Any]:
-    return dict(get_provider_registry().get(PROVIDER_ID, {}))
+    return dict(get_provider_registry(include_legacy_aliases=True).get(PROVIDER_ID, {}))
 
 
 def build_kalshi_readonly_adapter() -> KalshiReadonlyAdapter:

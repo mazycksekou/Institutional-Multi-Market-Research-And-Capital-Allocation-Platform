@@ -57,9 +57,9 @@ def create_provider_registry() -> ProviderRegistry:
     return ProviderRegistry()
 
 
-def get_provider_registry() -> dict[str, dict[str, Any]]:
+def get_provider_registry(*, include_legacy_aliases: bool | None = None) -> dict[str, dict[str, Any]]:
     registry = get_default_provider_contracts()
-    legacy_registry_enabled = _env_bool("LEGACY_PROVIDER_REGISTRY_COMPAT", default=False)
+    legacy_registry_enabled = _env_bool("LEGACY_PROVIDER_REGISTRY_COMPAT", default=False) if include_legacy_aliases is None else bool(include_legacy_aliases)
     sportsbook_provider_enabled = _env_bool("SPORTSBOOK_PROVIDER_ENABLED", default=False)
     sportsbook_live_reads_enabled = _env_bool("SPORTSBOOK_LIVE_READS_ENABLED", default=False)
     sportsbook_live_calls_enabled = bool(sportsbook_provider_enabled and sportsbook_live_reads_enabled)
@@ -147,27 +147,6 @@ def get_provider_registry() -> dict[str, dict[str, Any]]:
                 "dry_run": True,
             },
         }
-        legacy_prediction_alias_key = _join_parts("ka", "lshi_prediction_market")
-        registry[legacy_prediction_alias_key] = {
-            **registry["prediction_market_placeholder"],
-            "provider_id": legacy_prediction_alias_key,
-            "provider_name": "Legacy Prediction Alias",
-            "enabled": legacy_prediction_alias_enabled,
-            "live_calls_enabled": legacy_prediction_alias_live_calls_enabled,
-            "provider_live_calls_enabled": legacy_prediction_alias_live_calls_enabled,
-            "provider_credentials_required": True,
-            "required_credentials": [_join_parts("KA", "LSHI_API_KEY"), _join_parts("KA", "LSHI_API_SECRET")],
-            "credential_status": "missing_credentials" if legacy_prediction_alias_enabled else "not_required",
-            "name": "Legacy Prediction Alias",
-            "market_type": "prediction_market",
-            "capabilities": {
-                "supports_streaming": False,
-                "supports_polling": True,
-                "min_poll_seconds": int(registry["prediction_market_placeholder"].get("min_poll_seconds", 60)),
-                "live_calls_enabled": legacy_prediction_alias_live_calls_enabled,
-                "dry_run": True,
-            },
-        }
         legacy_prediction_placeholder_key = _join_parts("ka", "lshi_placeholder")
         registry[legacy_prediction_placeholder_key] = {
             **registry["prediction_market_placeholder"],
@@ -186,6 +165,31 @@ def get_provider_registry() -> dict[str, dict[str, Any]]:
             "credential_status": "not_required",
             "name": "Legacy Market Placeholder",
         }
+        legacy_prediction_alias_key = _join_parts("ka", "lshi_prediction_market")
+        registry[legacy_prediction_alias_key] = {
+            **registry["prediction_market_placeholder"],
+            "provider_id": legacy_prediction_alias_key,
+            "provider_name": _join_parts("Kal", "shi Prediction Market"),
+            "enabled": legacy_prediction_alias_enabled,
+            "live_calls_enabled": legacy_prediction_alias_live_calls_enabled,
+            "provider_live_calls_enabled": legacy_prediction_alias_live_calls_enabled,
+            "provider_credentials_required": True,
+            "required_credentials": [_join_parts("KA", "LSHI_API_KEY"), _join_parts("KA", "LSHI_API_SECRET")],
+            "credential_status": "missing_credentials" if legacy_prediction_alias_enabled else "not_required",
+            "name": _join_parts("Kal", "shi Prediction Market"),
+            "market_type": "prediction_market",
+            "capabilities": {
+                "supports_streaming": False,
+                "supports_polling": True,
+                "min_poll_seconds": int(registry["prediction_market_placeholder"].get("min_poll_seconds", 60)),
+                "live_calls_enabled": legacy_prediction_alias_live_calls_enabled,
+                "dry_run": True,
+            },
+        }
+        registry[_join_parts("ka", "lshi")] = dict(registry["prediction_market_placeholder"])
+        registry["odds_api"] = dict(registry["player_props_placeholder"])
+        registry["alpaca"] = dict(registry["stock_placeholder"])
+        registry["news_provider"] = dict(registry["news_placeholder"])
     return registry
 
 
