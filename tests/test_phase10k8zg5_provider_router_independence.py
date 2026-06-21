@@ -79,8 +79,8 @@ def test_phase10k8zg5_provider_router_independence():
     assert hasattr(router, "get_prediction_market_markets")
     assert hasattr(router, "get_prediction_market_orderbook")
     assert not hasattr(router, "get_kalshi_events")
-    assert (ROOT / "betting_providers" / "provider_router.py").is_file()
-    assert (ROOT / "providers" / "odds_provider_router.py").is_file()
+    assert not (ROOT / "betting_providers" / "provider_router.py").exists()
+    assert not (ROOT / "providers" / "odds_provider_router.py").exists()
 
     provider, error = router.get_provider("the_odds_api", "sportsbook_odds")
     assert error is None

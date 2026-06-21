@@ -1,3 +1,4 @@
-from .provider_router import ProviderRouter
+"""Legacy betting provider package.
 
-__all__ = ["ProviderRouter"]
+Provider router ownership now lives in ``src.providers.provider_router``.
+"""

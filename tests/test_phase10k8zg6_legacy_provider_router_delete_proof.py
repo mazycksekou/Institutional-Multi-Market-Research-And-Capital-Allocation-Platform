@@ -67,8 +67,8 @@ def test_phase10k8zg6_legacy_provider_router_delete_proof(monkeypatch):
         assert "from betting_providers.provider_router import ProviderRouter" not in text
         assert "from providers.odds_provider_router import enrich_ticket" not in text
 
-    assert (ROOT / "betting_providers" / "provider_router.py").is_file()
-    assert (ROOT / "providers" / "odds_provider_router.py").is_file()
+    assert not (ROOT / "betting_providers" / "provider_router.py").exists()
+    assert not (ROOT / "providers" / "odds_provider_router.py").exists()
 
     original_getenv = os.getenv
     try:
