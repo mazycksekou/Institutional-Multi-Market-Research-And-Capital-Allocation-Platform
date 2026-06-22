@@ -1,51 +1,35 @@
 from __future__ import annotations
 
-import os
 from typing import Any
-
-import requests
 
 from src.connectors.odds_data import (
     build_odds_data_connector_configuration,
     describe_odds_data_connector_readiness,
 )
-from src.providers.compat import available, provider_error, unavailable
 
-# Canonical odds connector metadata for delete-proof redirection.
+
 ODDS_DATA_CONNECTOR_CONFIGURATION = build_odds_data_connector_configuration(
     metadata={"legacy_module": "providers.sharp_provider"},
 )
 ODDS_DATA_CONNECTOR_READINESS = describe_odds_data_connector_readiness()
 
 
-def enrich_with_sharp(ticket: dict[str, Any]) -> dict[str, Any]:
-    api_key = os.getenv("SHARP_API_KEY", "").strip()
-    base_url = os.getenv("SHARP_API_BASE_URL", "").strip().rstrip("/")
-    if not api_key or not base_url:
-        return unavailable("sharp")
-
-    params = {
-        "sport": ticket.get("sport"),
-        "league": ticket.get("league"),
-        "event": ticket.get("event"),
-        "market": ticket.get("market"),
-        "selection": ticket.get("selection"),
+def _disabled_sharp_enrichment() -> dict[str, Any]:
+    return {
+        "provider": "sharp",
+        "provider_status": "disabled",
+        "message": "Sharp enrichment is disabled; connector metadata only",
+        "provider_notes": [
+            "Sharp live odds access has been retired in favor of the connector boundary.",
+            "Legacy compatibility shell returns metadata only.",
+        ],
+        "data": [],
+        "connector_configuration": ODDS_DATA_CONNECTOR_CONFIGURATION.describe(),
+        "connector_readiness": dict(ODDS_DATA_CONNECTOR_READINESS),
     }
-    try:
-        response = requests.get(
-            f"{base_url}/odds",
-            headers={"X-API-Key": api_key},
-            params={k: v for k, v in params.items() if v not in (None, "")},
-            timeout=8,
-        )
-        response.raise_for_status()
-        raw = response.json()
-    except Exception as exc:
-        return provider_error(
-            "sharp",
-            f"Sharp API call failed: {type(exc).__name__}",
-            ["Sharp provider failed but analysis continued"],
-        )
 
-    data = raw.get("data") if isinstance(raw, dict) else raw
-    return available("sharp", data or [], source="sharp")
+
+def enrich_with_sharp(ticket: dict[str, Any]) -> dict[str, Any]:
+    payload = _disabled_sharp_enrichment()
+    payload["ticket_fields"] = sorted(str(key) for key in ticket.keys()) if isinstance(ticket, dict) else []
+    return payload

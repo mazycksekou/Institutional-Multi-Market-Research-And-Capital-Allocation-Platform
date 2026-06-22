@@ -1,19 +1,16 @@
 from __future__ import annotations
 
 import os
-from collections import Counter
-from datetime import datetime, timezone
 from urllib.parse import urlsplit, urlunsplit
 from typing import Any
 
-import httpx
-
+from src.connectors.errors import ConnectorDisabledError
 from src.connectors.odds_data import (
     build_odds_data_connector_configuration,
     describe_odds_data_connector_readiness,
 )
 from src.providers.validation import validate_provider_payload
-from src.providers.policy.secret_policy import credential_status_from_env, redact_http_diagnostic, redact_mapping
+from src.providers.policy.secret_policy import redact_mapping
 from .scheduler_config import utc_now_iso
 from src.core.math_utils import (
     american_to_decimal,
@@ -145,10 +142,6 @@ class SharpSportsbookAdapter:
         self.base_url = (os.getenv("SHARP_API_BASE_URL") or DEFAULT_BASE_URL).strip().rstrip("/")
         self.base_url_present = bool(os.getenv("SHARP_API_BASE_URL", "").strip())
         self.timeout_seconds = max(1.0, _safe_float(os.getenv("SHARP_API_TIMEOUT_SECONDS"), DEFAULT_TIMEOUT_SECONDS))
-        self.provider_enabled_env_set = os.getenv("SHARP_PROVIDER_ENABLED") is not None
-        self.live_reads_env_set = os.getenv("SHARP_LIVE_READS_ENABLED") is not None
-        self.provider_enabled_from_env = _env_bool("SHARP_PROVIDER_ENABLED", default=False) if self.provider_enabled_env_set else None
-        self.live_reads_enabled = _env_bool("SHARP_LIVE_READS_ENABLED", default=bool(self.contract.get("live_calls_enabled", False)))
         self.path_config = {
             "events_path": os.getenv("SHARP_EVENTS_PATH", DEFAULT_EVENTS_PATH),
             "odds_path": os.getenv("SHARP_ODDS_PATH", DEFAULT_ODDS_PATH),
@@ -191,44 +184,31 @@ class SharpSportsbookAdapter:
             "required_credentials": ["SHARP_API_KEY"],
             "supported_markets": ["moneyline", "spread", "total", "player_props"],
             "read_only_mode": True,
-            "enabled": bool(self.contract.get("enabled", False)),
-            "live_calls_enabled": bool(self.contract.get("live_calls_enabled", False)),
+            "enabled": False,
+            "live_calls_enabled": False,
             "provider_live_calls_enabled": False,
             "dry_run": True,
         }
 
     def validate_config(self) -> dict[str, Any]:
-        blockers: list[str] = []
-        credential = credential_status_from_env(self.provider_id)
-        provider_enabled = (
-            bool(self.provider_enabled_from_env)
-            if self.provider_enabled_from_env is not None
-            else bool(self.contract.get("enabled", False))
-        )
-        live_call_contract_enabled = bool(self.contract.get("live_calls_enabled", False))
-        dry_run = bool(self.contract.get("dry_run", True))
-
-        if not provider_enabled:
-            blockers.append("provider_disabled")
-        if not self.live_reads_enabled or not live_call_contract_enabled:
-            blockers.append("live_reads_disabled")
-        if credential["status"] != "ok":
-            blockers.append("blocked_missing_credentials")
-        if not self.read_only_mode:
-            blockers.append("read_only_required")
-
-        ready = len(blockers) == 0
         return {
-            "ok": ready,
-            "status": "read_only_ready" if ready else "blocked",
-            "blockers": blockers,
-            "credential_status": credential["status"],
-            "live_reads_enabled": self.live_reads_enabled,
-            "provider_enabled": provider_enabled,
-            "live_calls_enabled": bool(self.live_reads_enabled and live_call_contract_enabled),
-            "provider_live_calls_enabled": bool(ready),
-            "dry_run": dry_run,
-            "read_only_mode": self.read_only_mode,
+            "ok": False,
+            "status": "provider_disabled",
+            "blockers": [
+                "provider_disabled",
+                "live_reads_disabled",
+                "blocked_missing_credentials",
+                "read_only_required",
+            ],
+            "credential_status": "disabled",
+            "live_reads_enabled": False,
+            "provider_enabled": False,
+            "live_calls_enabled": False,
+            "provider_live_calls_enabled": False,
+            "dry_run": True,
+            "read_only_mode": True,
+            "connector_configuration": ODDS_DATA_CONNECTOR_CONFIGURATION.describe(),
+            "connector_readiness": ODDS_DATA_CONNECTOR_READINESS,
         }
 
     def health_check(self) -> dict[str, Any]:
@@ -250,82 +230,22 @@ class SharpSportsbookAdapter:
         }
 
     def _build_headers(self) -> dict[str, str]:
-        api_key = os.getenv("SHARP_API_KEY", "").strip()
-        return {"X-API-Key": api_key, "Accept": "application/json"}
+        return {"Accept": "application/json"}
 
     def _safe_get(self, path_name: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
-        cfg = self.validate_config()
-        if "blocked_missing_credentials" in cfg["blockers"]:
-            return {"ok": False, "status": "blocked_missing_credentials", "records": [], "errors": ["missing_credentials"]}
-        if "live_reads_disabled" in cfg["blockers"]:
-            return {"ok": True, "status": "live_reads_disabled", "records": [], "errors": []}
-        if "provider_disabled" in cfg["blockers"]:
-            return {"ok": True, "status": "provider_disabled", "records": [], "errors": []}
-        if not cfg["ok"]:
-            return {"ok": True, "status": "blocked", "records": [], "errors": cfg["blockers"]}
-
-        url, diagnostic = self._resolve_url_and_diag(path_name)
-        try:
-            with httpx.Client(timeout=self.timeout_seconds) as client:
-                response = client.get(url, headers=self._build_headers(), params=params or {})
-            if response.status_code >= 400:
-                blocker = _blocker_from_http_status(int(response.status_code))
-                return {
-                    "ok": False,
-                    "status": "provider_error",
-                    "http_status": int(response.status_code),
-                    "blocker": blocker,
-                    "diagnostic": redact_http_diagnostic({**diagnostic, "method": "GET"}),
-                    "records": [],
-                    "errors": [blocker],
-                }
-            try:
-                body = response.json()
-            except Exception:
-                return {
-                    "ok": False,
-                    "status": "provider_error",
-                    "http_status": int(response.status_code),
-                    "blocker": "malformed_provider_response",
-                    "diagnostic": redact_http_diagnostic({**diagnostic, "method": "GET"}),
-                    "records": [],
-                    "errors": ["malformed_provider_response"],
-                }
-        except httpx.TimeoutException:
-            return {
-                "ok": False,
-                "status": "provider_error",
-                "http_status": None,
-                "blocker": "provider_timeout",
-                "diagnostic": redact_http_diagnostic({**diagnostic, "method": "GET"}),
-                "records": [],
-                "errors": ["provider_timeout"],
-            }
-        except Exception:
-            return {
-                "ok": False,
-                "status": "provider_error",
-                "http_status": None,
-                "blocker": "provider_unreachable",
-                "diagnostic": redact_http_diagnostic({**diagnostic, "method": "GET"}),
-                "records": [],
-                "errors": ["provider_unreachable"],
-            }
-
-        records = self._extract_records(body)
-        return {"ok": True, "status": "ok", "records": records, "errors": []}
+        raise ConnectorDisabledError("Sharp sportsbook live reads are disabled; connector-owned metadata only")
 
     def fetch_events(self) -> dict[str, Any]:
-        return self._safe_get("events_path")
+        raise ConnectorDisabledError("Sharp sportsbook live reads are disabled; connector-owned metadata only")
 
     def fetch_odds(self) -> dict[str, Any]:
-        return self._safe_get("odds_path")
+        raise ConnectorDisabledError("Sharp sportsbook live reads are disabled; connector-owned metadata only")
 
     def fetch_player_props(self) -> dict[str, Any]:
-        return self._safe_get("player_props_path")
+        raise ConnectorDisabledError("Sharp sportsbook live reads are disabled; connector-owned metadata only")
 
     def fetch_sports(self) -> dict[str, Any]:
-        return self._safe_get("sports_path")
+        raise ConnectorDisabledError("Sharp sportsbook live reads are disabled; connector-owned metadata only")
 
     def normalize_payload(self, payload: dict[str, Any]) -> dict[str, Any]:
         odds = payload.get("odds")
@@ -620,118 +540,44 @@ class SharpSportsbookAdapter:
 
     def fetch_snapshot(self) -> dict[str, Any]:
         config_state = self.validate_config()
-        credential_status = config_state["credential_status"]
-        status = "blocked"
-        if "provider_disabled" in config_state["blockers"]:
-            status = "provider_disabled"
-        elif "live_reads_disabled" in config_state["blockers"]:
-            status = "live_reads_disabled"
-        elif "blocked_missing_credentials" in config_state["blockers"]:
-            status = "blocked_missing_credentials"
-        elif "read_only_required" in config_state["blockers"]:
-            status = "blocked"
-        if not config_state["ok"]:
-            return {
-                "ok": True,
-                "status": status,
-                "provider_id": self.provider_id,
-                "provider_enabled": bool(config_state["provider_enabled"]),
-                "live_calls_enabled": bool(config_state["live_calls_enabled"]),
-                "credential_status": credential_status,
-                "dry_run": True,
-                "records": [],
-                "records_received": 0,
-                "records_valid": 0,
-                "records_rejected": 0,
-                "blockers": config_state["blockers"][:10],
-                "timestamp": utc_now_iso(),
-            }
-
-        fetch = self.fetch_odds()
-        if (not fetch["ok"]) and fetch.get("blocker") == "http_404":
-            fetch = self.fetch_events()
-        if not fetch["ok"]:
-            return {
-                "ok": True,
-                "status": fetch["status"],
-                "provider_id": self.provider_id,
-                "provider_enabled": bool(config_state["provider_enabled"]),
-                "live_calls_enabled": bool(config_state["live_calls_enabled"]),
-                "credential_status": credential_status,
-                "dry_run": False,
-                "records": [],
-                "records_received": 0,
-                "records_valid": 0,
-                "records_rejected": 0,
-                "http_status": fetch.get("http_status"),
-                "diagnostic": fetch.get("diagnostic"),
-                "blockers": fetch["errors"][:10],
-                "timestamp": utc_now_iso(),
-            }
-
-        normalized: list[dict[str, Any]] = []
-        rejection_reason_counts: Counter[str] = Counter()
-        warning_reason_counts: Counter[str] = Counter()
-        shape_top_level_keys: set[str] = set()
-        first_level_nested_keys: set[str] = set()
-        candidate_counts: Counter[str] = Counter()
-        for row in fetch["records"]:
-            if not isinstance(row, dict):
-                rejection_reason_counts["malformed_record"] += 1
-                continue
-            shape_top_level_keys.update(str(k) for k in row.keys())
-            for value in row.values():
-                if isinstance(value, dict):
-                    first_level_nested_keys.update(str(k) for k in value.keys())
-                elif isinstance(value, list):
-                    for item in value:
-                        if isinstance(item, dict):
-                            first_level_nested_keys.update(str(k) for k in item.keys())
-                            break
-            flattened_rows, counts = self._extract_nested_rows(row)
-            candidate_counts.update(counts)
-            for flattened in flattened_rows:
-                norm, warnings, reject_reason = self._normalize_flattened_row(flattened)
-                for warning in warnings:
-                    warning_reason_counts[warning] += 1
-                if reject_reason:
-                    rejection_reason_counts[reject_reason] += 1
-                    continue
-                verdict = self.validate_payload(norm or {})
-                if verdict["ok"]:
-                    normalized.append(norm or {})
-                else:
-                    if verdict["errors"]:
-                        for reason in verdict["errors"]:
-                            rejection_reason_counts[str(reason)] += 1
-                    else:
-                        rejection_reason_counts["validation_rejected"] += 1
-        rejected = int(sum(rejection_reason_counts.values()))
-        debug_summary = {
-            "top_level_field_names_present": sorted(shape_top_level_keys)[:50],
-            "first_level_nested_field_names": sorted(first_level_nested_keys)[:100],
-            "candidate_event_count": int(candidate_counts.get("events", 0)),
-            "candidate_market_count": int(candidate_counts.get("markets", 0)),
-            "candidate_book_count": int(candidate_counts.get("books", 0)),
-            "candidate_outcome_count": int(candidate_counts.get("outcomes", 0)),
-            "rejection_reason_counts": dict(rejection_reason_counts),
-            "validation_warning_counts": dict(warning_reason_counts),
-            "secret_redacted": True,
-        }
         return {
             "ok": True,
-            "status": "live_snapshot_complete",
+            "status": config_state["status"],
             "provider_id": self.provider_id,
+            "provider_name": self.provider_name,
             "provider_enabled": bool(config_state["provider_enabled"]),
             "live_calls_enabled": bool(config_state["live_calls_enabled"]),
-            "credential_status": credential_status,
-            "dry_run": False,
-            "records": normalized,
-            "records_received": len(fetch["records"]),
-            "records_valid": len(normalized),
-            "records_rejected": rejected,
-            "rejection_reason_counts": dict(rejection_reason_counts),
-            "internal_debug_summary": debug_summary,
-            "blockers": [],
+            "credential_status": config_state["credential_status"],
+            "dry_run": bool(config_state["dry_run"]),
+            "records": [],
+            "records_received": 0,
+            "records_valid": 0,
+            "records_rejected": 0,
+            "rejection_reason_counts": {},
+            "internal_debug_summary": {
+                "schema_version": SCHEMA_VERSION,
+                "top_level_field_names_present": [],
+                "first_level_nested_field_names": [],
+                "candidate_event_count": 0,
+                "candidate_market_count": 0,
+                "candidate_book_count": 0,
+                "candidate_outcome_count": 0,
+                "rejection_reason_counts": {},
+                "validation_warning_counts": {},
+                "secret_redacted": True,
+            },
+            "blockers": config_state["blockers"][:10],
+            "diagnostic": {
+                "base_url_present": bool(self.base_url_present),
+                "path_name": "disabled",
+                "resolved_path": "/",
+                "url_host": "",
+                "url_path": "/",
+                "query_redacted": True,
+                "secret_redacted": True,
+                "method": "DISABLED",
+            },
+            "connector_configuration": ODDS_DATA_CONNECTOR_CONFIGURATION.describe(),
+            "connector_readiness": ODDS_DATA_CONNECTOR_READINESS,
             "timestamp": utc_now_iso(),
         }

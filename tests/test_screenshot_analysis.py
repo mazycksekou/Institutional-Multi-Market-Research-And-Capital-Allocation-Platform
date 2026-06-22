@@ -52,17 +52,18 @@ class TestScreenshotAnalysis(unittest.TestCase):
     @patch.dict(os.environ, {}, clear=True)
     def test_sharp_api_unavailable(self):
         response = self._run(_payload())
-        self.assertEqual(response["provider_enrichment"]["sharp"]["provider_status"], "unavailable")
+        self.assertEqual(response["provider_enrichment"]["sharp"]["provider_status"], "disabled")
 
     @patch.dict(os.environ, {"SHARP_API_KEY": "key", "SHARP_API_BASE_URL": "https://sharp.example"}, clear=True)
-    @patch("providers.sharp_provider.requests.get")
-    def test_sharp_api_error(self, mock_get):
-        mock_get.side_effect = RuntimeError("boom")
+    def test_sharp_api_error(self):
         response = self._run(_payload())
-        self.assertEqual(response["provider_enrichment"]["sharp"]["provider_status"], "error")
+        self.assertEqual(response["provider_enrichment"]["sharp"]["provider_status"], "disabled")
         self.assertEqual(
             response["provider_enrichment"]["sharp"]["provider_notes"],
-            ["Sharp provider failed but analysis continued"],
+            [
+                "Sharp live odds access has been retired in favor of the connector boundary.",
+                "Legacy compatibility shell returns metadata only.",
+            ],
         )
         self.assertEqual(response["confirmed_bets"], [])
 
@@ -167,17 +168,18 @@ class TestScreenshotAnalysis(unittest.TestCase):
         self.assertEqual(response["confirmed_bets"], [])
 
     @patch.dict(os.environ, {"SHARP_API_KEY": "key", "SHARP_API_BASE_URL": "https://sharp.example"}, clear=True)
-    @patch("providers.sharp_provider.requests.get")
-    def test_sharp_client_response_error_still_returns_ok_true(self, mock_get):
-        mock_get.side_effect = ClientResponseError("sharp failed")
+    def test_sharp_client_response_error_still_returns_ok_true(self):
         response = self._run(_payload())
         self.assertTrue(response["ok"])
         self.assertTrue(response["partial_model_mode"])
         self.assertNotIn("error", response)
-        self.assertEqual(response["provider_enrichment"]["sharp"]["provider_status"], "error")
+        self.assertEqual(response["provider_enrichment"]["sharp"]["provider_status"], "disabled")
         self.assertEqual(
             response["provider_enrichment"]["sharp"]["provider_notes"],
-            ["Sharp provider failed but analysis continued"],
+            [
+                "Sharp live odds access has been retired in favor of the connector boundary.",
+                "Legacy compatibility shell returns metadata only.",
+            ],
         )
         self.assertEqual(response["confirmed_bets"], [])
         self.assertEqual(response["suggested_stake"], 0)
@@ -216,16 +218,12 @@ class TestScreenshotAnalysis(unittest.TestCase):
         },
         clear=True,
     )
-    @patch("providers.kalshi_provider.requests.get")
-    @patch("providers.sharp_provider.requests.get")
-    def test_provider_error_does_not_stop_screenshot_analysis(self, mock_sharp_get, mock_kalshi_get):
-        mock_sharp_get.side_effect = ClientResponseError("sharp failed")
-        mock_kalshi_get.side_effect = ClientResponseError("kalshi failed")
+    def test_provider_error_does_not_stop_screenshot_analysis(self):
         response = self._run(_payload())
         self.assertTrue(response["ok"])
         self.assertTrue(response["partial_model_mode"])
         self.assertNotIn("error", response)
-        self.assertEqual(response["provider_enrichment"]["sharp"]["provider_status"], "error")
+        self.assertEqual(response["provider_enrichment"]["sharp"]["provider_status"], "disabled")
         self.assertEqual(response["provider_enrichment"]["kalshi"]["provider_status"], "error")
         self.assertEqual(response["confirmed_bets"], [])
         self.assertEqual(response["suggested_stake"], 0)
@@ -239,9 +237,7 @@ class TestScreenshotAnalysis(unittest.TestCase):
         self.assertEqual(response["suggested_stake"], 0)
 
     @patch.dict(os.environ, {"SHARP_API_KEY": "key", "SHARP_API_BASE_URL": "https://sharp.example"}, clear=True)
-    @patch("providers.sharp_provider.requests.get")
-    def test_no_confirmed_bet_from_provider_failure_or_missing_data(self, mock_get):
-        mock_get.side_effect = ClientResponseError("sharp failed")
+    def test_no_confirmed_bet_from_provider_failure_or_missing_data(self):
         response = self._run(_payload(selection=None, odds_american=None, event=None, teams=[]))
         self.assertTrue(response["ok"])
         self.assertEqual(response["confirmed_bets"], [])
