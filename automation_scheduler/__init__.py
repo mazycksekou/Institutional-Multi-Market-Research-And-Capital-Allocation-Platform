@@ -16,19 +16,20 @@ from .settlement_discovery import build_outcome_completion_report, write_outcome
 from .model_performance_report import build_compact_performance_report
 from src.providers.health import summarize_provider_health
 from src.providers.registry import get_provider_registry
-from .sharp_sportsbook_adapter import SharpSportsbookAdapter
+from src.services.odds_runtime_bridge import (
+    SharpSportsbookAdapter,
+    get_sportsbook_snapshot,
+    get_valid_normalized_records,
+    summarize_sportsbook_snapshot,
+    validate_sportsbook_snapshot,
+    write_sportsbook_snapshot,
+)
 from .kalshi_readonly_adapter import KalshiReadonlyAdapter
 from .kalshi_market_provider import (
     get_kalshi_snapshot,
     summarize_kalshi_snapshot,
     validate_kalshi_snapshot,
     write_kalshi_snapshot,
-)
-from .sportsbook_odds_provider import (
-    get_sportsbook_snapshot,
-    summarize_sportsbook_snapshot,
-    validate_sportsbook_snapshot,
-    write_sportsbook_snapshot,
 )
 from .broker_quality_scoring import build_broker_quality_report
 from .candlestick_pattern_detector import detect_candlestick_patterns

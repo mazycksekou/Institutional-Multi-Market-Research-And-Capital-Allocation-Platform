@@ -39,8 +39,7 @@ from .system_health import write_system_health
 from .run_context import create_run_context
 from .kalshi_market_provider import get_kalshi_snapshot, summarize_kalshi_snapshot
 from .kalshi_readonly_adapter import KalshiReadonlyAdapter
-from .sharp_sportsbook_adapter import SharpSportsbookAdapter
-from .sportsbook_odds_provider import get_valid_normalized_records, summarize_sportsbook_snapshot
+from src.services.odds_runtime_bridge import SharpSportsbookAdapter, get_valid_normalized_records, summarize_sportsbook_snapshot
 
 
 def _existing_artifact_response_path(path_value, *, base_data_dir=None):

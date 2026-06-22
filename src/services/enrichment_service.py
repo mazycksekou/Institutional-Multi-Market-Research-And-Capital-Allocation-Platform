@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from providers.kalshi_provider import enrich_with_kalshi
-from providers.sharp_provider import enrich_with_sharp
 from src.core.entity_resolver import normalize_ticket_fields
+from src.services.odds_runtime_bridge import enrich_with_sharp
+from providers.kalshi_provider import enrich_with_kalshi
 
 
 class EnrichmentService:
