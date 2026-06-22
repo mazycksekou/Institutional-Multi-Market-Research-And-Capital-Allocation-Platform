@@ -4,9 +4,19 @@ from typing import Any, Optional
 
 import httpx
 
+from src.connectors.odds_data import (
+    build_odds_data_connector_configuration,
+    describe_odds_data_connector_readiness,
+)
 from .aliases import resolve_sport_key
 from src.providers.compat import ProviderAdapter, SPORTSBOOK_ODDS, clean_error, env_bool, provider_not_configured
 from src.providers.sportsbooks.adapters import normalize_sportsbook_event, normalize_sportsbook_odds
+
+# Canonical odds connector metadata for delete-proof redirection.
+ODDS_DATA_CONNECTOR_CONFIGURATION = build_odds_data_connector_configuration(
+    metadata={"legacy_module": "betting_providers.the_odds_api"},
+)
+ODDS_DATA_CONNECTOR_READINESS = describe_odds_data_connector_readiness()
 
 
 class TheOddsApiAdapter(ProviderAdapter):

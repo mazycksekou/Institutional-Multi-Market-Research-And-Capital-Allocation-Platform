@@ -4,11 +4,21 @@ import json
 from pathlib import Path
 from typing import Any
 
+from src.connectors.odds_data import (
+    build_odds_data_connector_configuration,
+    describe_odds_data_connector_readiness,
+)
 from .data_paths import resolve_base_data_dir
 from src.providers.validation import validate_provider_payload
 from src.providers.policy.secret_policy import assert_no_secret_leak
 from .scheduler_config import utc_now_iso
 from .sharp_sportsbook_adapter import SCHEMA_VERSION, SharpSportsbookAdapter
+
+# Canonical odds connector metadata for delete-proof redirection.
+ODDS_DATA_CONNECTOR_CONFIGURATION = build_odds_data_connector_configuration(
+    metadata={"legacy_module": "automation_scheduler.sportsbook_odds_provider"},
+)
+ODDS_DATA_CONNECTOR_READINESS = describe_odds_data_connector_readiness()
 
 
 def get_sportsbook_snapshot(adapter: SharpSportsbookAdapter | None = None) -> dict[str, Any]:

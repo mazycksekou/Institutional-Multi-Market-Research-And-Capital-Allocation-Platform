@@ -4,6 +4,10 @@ import os
 from importlib import import_module
 from typing import Any, Optional
 
+from src.connectors.odds_data import (
+    build_odds_data_connector_configuration,
+    describe_odds_data_connector_readiness,
+)
 from .compat import PREDICTION_MARKET, SPORTSBOOK_ODDS, provider_disabled, unknown_provider
 from .routing import default_provider_id_for_category, resolve_provider_category
 
@@ -21,6 +25,12 @@ LEGACY_PROVIDER_ID_TO_CATEGORY = {
     "the_odds_api": "sportsbooks",
     "sportsgameodds": "sportsbooks",
 }
+
+# Canonical odds connector metadata for runtime bridge redirection proof.
+ODDS_DATA_CONNECTOR_CONFIGURATION = build_odds_data_connector_configuration(
+    metadata={"legacy_module": "src.providers.provider_router"},
+)
+ODDS_DATA_CONNECTOR_READINESS = describe_odds_data_connector_readiness()
 
 
 def provider_category(provider_id: Optional[str], provider_type: Optional[str] = None) -> Optional[str]:

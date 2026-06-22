@@ -8,6 +8,10 @@ from typing import Any
 
 import httpx
 
+from src.connectors.odds_data import (
+    build_odds_data_connector_configuration,
+    describe_odds_data_connector_readiness,
+)
 from src.providers.validation import validate_provider_payload
 from src.providers.policy.secret_policy import credential_status_from_env, redact_http_diagnostic, redact_mapping
 from .scheduler_config import utc_now_iso
@@ -26,6 +30,12 @@ DEFAULT_EVENTS_PATH = "v1/events"
 DEFAULT_ODDS_PATH = "v1/odds"
 DEFAULT_PLAYER_PROPS_PATH = "v1/player-props"
 DEFAULT_SPORTS_PATH = "v1/sports"
+
+# Canonical odds connector metadata for delete-proof redirection.
+ODDS_DATA_CONNECTOR_CONFIGURATION = build_odds_data_connector_configuration(
+    metadata={"legacy_module": "automation_scheduler.sharp_sportsbook_adapter"},
+)
+ODDS_DATA_CONNECTOR_READINESS = describe_odds_data_connector_readiness()
 
 
 def _env_bool(name: str, default: bool = False) -> bool:

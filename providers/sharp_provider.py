@@ -5,7 +5,17 @@ from typing import Any
 
 import requests
 
+from src.connectors.odds_data import (
+    build_odds_data_connector_configuration,
+    describe_odds_data_connector_readiness,
+)
 from src.providers.compat import available, provider_error, unavailable
+
+# Canonical odds connector metadata for delete-proof redirection.
+ODDS_DATA_CONNECTOR_CONFIGURATION = build_odds_data_connector_configuration(
+    metadata={"legacy_module": "providers.sharp_provider"},
+)
+ODDS_DATA_CONNECTOR_READINESS = describe_odds_data_connector_readiness()
 
 
 def enrich_with_sharp(ticket: dict[str, Any]) -> dict[str, Any]:

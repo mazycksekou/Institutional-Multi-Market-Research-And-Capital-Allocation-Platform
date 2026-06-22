@@ -3,7 +3,17 @@ from typing import Any, Optional
 
 import httpx
 
+from src.connectors.odds_data import (
+    build_odds_data_connector_configuration,
+    describe_odds_data_connector_readiness,
+)
 from src.providers.compat import ProviderAdapter, SPORTSBOOK_ODDS, clean_error, env_bool, provider_not_configured
+
+# Canonical odds connector metadata for delete-proof redirection.
+ODDS_DATA_CONNECTOR_CONFIGURATION = build_odds_data_connector_configuration(
+    metadata={"legacy_module": "betting_providers.sportsgameodds"},
+)
+ODDS_DATA_CONNECTOR_READINESS = describe_odds_data_connector_readiness()
 
 
 class SportsGameOddsAdapter(ProviderAdapter):

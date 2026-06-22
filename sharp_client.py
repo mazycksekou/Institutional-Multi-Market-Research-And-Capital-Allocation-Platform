@@ -2,8 +2,19 @@ from typing import Any
 
 import requests
 
+from src.connectors.odds_data import (
+    build_odds_data_connector_configuration,
+    describe_odds_data_connector_readiness,
+)
+
 SHARP_BASE_URL = "https://api.sharpapi.io/api/v1"
 REQUEST_TIMEOUT = 8
+
+# Canonical odds connector metadata for delete-proof redirection.
+ODDS_DATA_CONNECTOR_CONFIGURATION = build_odds_data_connector_configuration(
+    metadata={"legacy_module": "sharp_client"},
+)
+ODDS_DATA_CONNECTOR_READINESS = describe_odds_data_connector_readiness()
 
 
 def _safe_json(response: requests.Response) -> Any:
