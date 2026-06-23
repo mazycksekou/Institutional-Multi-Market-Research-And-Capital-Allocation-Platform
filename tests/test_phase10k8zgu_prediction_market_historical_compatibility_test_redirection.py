@@ -1,0 +1,120 @@
+from __future__ import annotations
+
+import importlib
+import os
+from pathlib import Path
+
+import pytest
+
+from src.connectors.errors import ConnectorDisabledError
+
+
+ROOT = Path(__file__).resolve().parents[1]
+
+DOCS = {
+    "PHASE10K8ZGU_PREDICTION_MARKET_HISTORICAL_COMPATIBILITY_TEST_REDIRECTION.md": [
+        "Historical compatibility tests must not preserve legacy prediction-market shells unnecessarily.",
+        "src.services.prediction_market_runtime_bridge",
+        "src.connectors.prediction_market_data",
+        "src.providers.prediction_markets",
+        "historical evidence only",
+        "reclassified as compatibility evidence",
+    ],
+    "PREDICTION_MARKET_HISTORICAL_TEST_REDIRECTION_MAP_AFTER_10K8ZGU.md": [
+        "tests/test_phase10k8zgs_prediction_market_compatibility_shell_delete_readiness.py",
+        "tests/test_phase10k8zgt_prediction_market_runtime_scheduler_redirection.py",
+        "tests/test_kalshi_readonly_adapter.py",
+        "historical evidence only",
+        "compatibility evidence",
+    ],
+    "PREDICTION_MARKET_COMPATIBILITY_REFERENCE_SCAN_AFTER_10K8ZGU.md": [
+        "Redirected Runtime References",
+        "Historical Evidence / Compatibility References",
+        "kalshi_client.py",
+        "automation_scheduler/kalshi_readonly_adapter.py",
+    ],
+    "PREDICTION_MARKET_DELETE_READINESS_RECHECK_AFTER_10K8ZGU.md": [
+        "kalshi_client.py",
+        "providers/kalshi_provider.py",
+        "betting_providers/kalshi_api.py",
+        "automation_scheduler/kalshi_readonly_adapter.py",
+        "automation_scheduler/kalshi_market_provider.py",
+        "test-blocked",
+        "compatibility-blocked",
+    ],
+}
+
+
+def _read(relative: str) -> str:
+    return (ROOT / relative).read_text(encoding="utf-8")
+
+
+def test_docs_exist_and_reclassify_historical_compatibility_tests() -> None:
+    for relative, fragments in DOCS.items():
+        text = _read(relative)
+        for fragment in fragments:
+            assert fragment in text, f"missing {fragment!r} in {relative}"
+
+
+def test_historical_prediction_market_redirection_uses_canonical_bridge_and_keeps_legacy_shells_importable(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        os,
+        "getenv",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("import-time credential access is forbidden")),
+    )
+
+    bridge = importlib.import_module("src.services.prediction_market_runtime_bridge")
+    connector = importlib.import_module("src.connectors.prediction_market_data")
+    provider = importlib.import_module("src.providers.prediction_markets")
+    odds_bridge = importlib.import_module("src.services.odds_runtime_bridge")
+    odds_connector = importlib.import_module("src.connectors.odds_data")
+    odds_provider = importlib.import_module("src.providers.sportsbooks")
+
+    assert bridge is not None
+    assert connector is not None
+    assert provider is not None
+    assert odds_bridge is not None
+    assert odds_connector is not None
+    assert odds_provider is not None
+
+    scheduler_runner = importlib.import_module("automation_scheduler.scheduler_runner")
+    settlement_discovery = importlib.import_module("automation_scheduler.settlement_discovery")
+    calibration_collector = importlib.import_module("automation_scheduler.calibration_collector")
+    outcome_candidates = importlib.import_module("automation_scheduler.prediction_market_outcome_candidates")
+    readiness = importlib.import_module("automation_scheduler.kalshi_readonly_readiness")
+
+    assert scheduler_runner.KalshiReadonlyAdapter.__module__ == "src.services.prediction_market_runtime_bridge"
+    assert settlement_discovery.KalshiReadonlyAdapter.__module__ == "src.services.prediction_market_runtime_bridge"
+    assert calibration_collector.KalshiReadonlyAdapter.__module__ == "src.services.prediction_market_runtime_bridge"
+    assert outcome_candidates.KalshiReadonlyAdapter.__module__ == "src.services.prediction_market_runtime_bridge"
+    assert readiness.KalshiReadonlyAdapter.__module__ == "src.services.prediction_market_runtime_bridge"
+
+    bridge_adapter = bridge.KalshiReadonlyAdapter()
+    assert bridge_adapter.validate_config()["ok"] is False
+    assert bridge_adapter.health_check()["live_calls_enabled"] is False
+    with pytest.raises(ConnectorDisabledError):
+        bridge_adapter.fetch_snapshot()
+    snapshot = bridge.get_kalshi_snapshot(bridge_adapter)
+    assert snapshot["ok"] is True
+    assert snapshot["dry_run"] is True
+    assert snapshot["provider_id"] == "kalshi_prediction_market"
+
+    legacy_client = importlib.import_module("kalshi_client")
+    legacy_provider = importlib.import_module("providers.kalshi_provider")
+    legacy_betting = importlib.import_module("betting_providers.kalshi_api")
+    legacy_adapter = importlib.import_module("automation_scheduler.kalshi_readonly_adapter")
+    legacy_market_provider = importlib.import_module("automation_scheduler.kalshi_market_provider")
+
+    assert hasattr(legacy_client, "describe_kalshi_client")
+    assert hasattr(legacy_provider, "describe_kalshi_provider")
+    assert hasattr(legacy_betting, "KalshiApiAdapter")
+    assert hasattr(legacy_adapter, "KalshiReadonlyAdapter")
+    assert hasattr(legacy_market_provider, "get_kalshi_snapshot")
+
+    assert legacy_client.describe_kalshi_client()["live_access_enabled"] is False
+    assert legacy_provider.describe_kalshi_provider()["canonical_provider"] == "prediction_market"
+    assert legacy_betting.KalshiApiAdapter().enabled is False
+    assert legacy_market_provider.get_kalshi_snapshot()["dry_run"] is True
+

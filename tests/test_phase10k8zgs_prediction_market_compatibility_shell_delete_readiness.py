@@ -76,14 +76,12 @@ def test_canonical_prediction_market_surfaces_import_and_legacy_shells_stay_disa
     client = importlib.import_module("kalshi_client")
     provider = importlib.import_module("providers.kalshi_provider")
     betting_api = importlib.import_module("betting_providers.kalshi_api")
-    readonly_adapter_module = importlib.import_module("automation_scheduler.kalshi_readonly_adapter")
-    market_provider = importlib.import_module("automation_scheduler.kalshi_market_provider")
 
     assert hasattr(client, "describe_kalshi_client")
     assert hasattr(provider, "describe_kalshi_provider")
     assert hasattr(betting_api, "KalshiApiAdapter")
-    assert hasattr(readonly_adapter_module, "KalshiReadonlyAdapter")
-    assert hasattr(market_provider, "get_kalshi_snapshot")
+    assert hasattr(bridge, "KalshiReadonlyAdapter")
+    assert hasattr(bridge, "get_kalshi_snapshot")
 
     client_description = client.describe_kalshi_client()
     provider_description = provider.describe_kalshi_provider()
@@ -103,7 +101,7 @@ def test_canonical_prediction_market_surfaces_import_and_legacy_shells_stay_disa
     with pytest.raises(ConnectorDisabledError):
         asyncio.run(adapter.get_market_events())
 
-    readonly_adapter = readonly_adapter_module.KalshiReadonlyAdapter()
+    readonly_adapter = bridge.KalshiReadonlyAdapter()
     config = readonly_adapter.validate_config()
     health = readonly_adapter.health_check()
     assert config["ok"] is False
@@ -120,7 +118,7 @@ def test_canonical_prediction_market_surfaces_import_and_legacy_shells_stay_disa
     with pytest.raises(ConnectorDisabledError):
         readonly_adapter.fetch_snapshot()
 
-    snapshot = market_provider.get_kalshi_snapshot()
+    snapshot = bridge.get_kalshi_snapshot(readonly_adapter)
     assert snapshot["ok"] is True
     assert snapshot["dry_run"] is True
     assert snapshot["provider_id"] == "kalshi_prediction_market"
