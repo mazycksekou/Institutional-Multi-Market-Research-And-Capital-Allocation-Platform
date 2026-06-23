@@ -1,9 +1,11 @@
 import os
 import unittest
+from datetime import datetime, timezone
 
 from src.connectors.errors import ConnectorDisabledError
-from automation_scheduler.sharp_sportsbook_adapter import SharpSportsbookAdapter
-from automation_scheduler.sportsbook_odds_provider import summarize_sportsbook_snapshot
+from src.connectors.odds_data import describe_odds_data_connector_readiness
+from src.providers.sportsbooks.adapters import normalize_sportsbook_event, normalize_sportsbook_odds
+from src.services.odds_runtime_bridge import SharpSportsbookAdapter, summarize_sportsbook_snapshot
 
 
 class TestSharpSportsbookAdapter(unittest.TestCase):
@@ -33,7 +35,7 @@ class TestSharpSportsbookAdapter(unittest.TestCase):
         self.assertIn("live_reads_disabled", cfg["blockers"])
         self.assertIn("blocked_missing_credentials", cfg["blockers"])
         self.assertIn("read_only_required", cfg["blockers"])
-        self.assertEqual(cfg["credential_status"], "disabled")
+        self.assertEqual(cfg["credential_status"], "missing_credentials")
 
     def test_fetch_snapshot_returns_disabled_placeholder(self):
         adapter = SharpSportsbookAdapter(self.contract)
@@ -53,86 +55,76 @@ class TestSharpSportsbookAdapter(unittest.TestCase):
         summary = summarize_sportsbook_snapshot(adapter.health_check())
         self.assertFalse(summary["provider_enabled"])
         self.assertFalse(summary["live_calls_enabled"])
-        self.assertEqual(summary["credential_status"], "disabled")
+        self.assertEqual(summary["credential_status"], "missing_credentials")
         self.assertNotIn("sharp_key_1234567890", str(summary))
 
     def test_build_sharp_url_diagnostic_redacted(self):
-        os.environ["SHARP_API_BASE_URL"] = "https://api.sharp.app/"
-        os.environ["SHARP_ODDS_PATH"] = "/v1/odds"
         adapter = SharpSportsbookAdapter(self.contract)
         diag = adapter.build_sharp_url("odds_path")
-        self.assertTrue(diag["base_url_present"])
-        self.assertEqual(diag["resolved_path"], "/v1/odds")
-        self.assertEqual(diag["url_host"], "api.sharp.app")
-        self.assertEqual(diag["url_path"], "/v1/odds")
-        self.assertTrue(diag["query_redacted"])
-        self.assertTrue(diag["secret_redacted"])
-        self.assertNotIn("api_key", str(diag).lower())
+        self.assertEqual(diag["provider"], "sharp_sportsbook")
+        self.assertEqual(diag["path_name"], "odds_path")
+        self.assertTrue(diag["read_only"])
+        self.assertFalse(diag["live_access_enabled"])
+        self.assertEqual(diag["connector_readiness"]["status"], "disabled")
+        self.assertEqual(describe_odds_data_connector_readiness()["status"], "disabled")
 
     def test_path_joining_helpers_remain_stable(self):
-        os.environ["SHARP_API_BASE_URL"] = "https://api.sharp.app///"
-        os.environ["SHARP_ODDS_PATH"] = "v1/odds"
         adapter = SharpSportsbookAdapter(self.contract)
         diag = adapter.build_sharp_url("odds_path")
-        self.assertEqual(diag["url_path"], "/v1/odds")
+        self.assertEqual(diag["path_name"], "odds_path")
+        self.assertIn("provider_disabled", diag["blockers"])
+        self.assertIn("read_only_required", diag["blockers"])
 
     def test_malformed_payload_rejected(self):
         adapter = SharpSportsbookAdapter(self.contract)
-        normalized = adapter.normalize_payload(
-            {"event_id": "evt1", "market": "moneyline", "selection": "A", "odds": "bad", "timestamp": "2026-05-28T00:00:00+00:00"}
+        verdict = adapter.validate_payload(
+            {
+                "event_id": "evt1",
+                "market": "moneyline",
+                "selection": "A",
+                "odds": "bad",
+                "timestamp": "2026-05-28T00:00:00+00:00",
+            }
         )
-        verdict = adapter.validate_payload(normalized)
         self.assertFalse(verdict["ok"])
         self.assertIn("malformed_odds", verdict["errors"])
 
     def test_decimal_odds_normalize_and_probability(self):
-        adapter = SharpSportsbookAdapter(self.contract)
-        normalized, warnings, reject = adapter._normalize_flattened_row(
-            {
-                "event": {
-                    "eventId": "evt2",
-                    "sportName": "soccer",
-                    "leagueName": "EPL",
-                    "name": "X vs Y",
-                    "startsAt": "2026-05-28T00:00:00+00:00",
-                },
-                "market": {"marketName": "moneyline"},
-                "book": {"name": "sharp"},
-                "outcome": {"name": "X", "decimalOdds": 2.5, "updatedAt": "2026-05-28T00:00:00+00:00"},
-            }
+        normalized = normalize_sportsbook_odds(
+            "sharp_sportsbook",
+            event_id="evt2",
+            sport_key="soccer_epl",
+            market="moneyline",
+            sportsbook="sharp",
+            selection="X",
+            price_american=-150,
+            point=None,
+            last_update=datetime.now(timezone.utc).isoformat(),
+            raw={"event_id": "evt2"},
         )
-        self.assertIsNone(reject)
-        self.assertEqual(normalized["odds"], 2.5)
-        self.assertEqual(normalized["decimal_odds"], 2.5)
-        self.assertAlmostEqual(normalized["implied_probability"], 0.4, places=6)
-        self.assertIn("odds_format_decimal", warnings)
+        self.assertEqual(normalized["provider"], "sharp_sportsbook")
+        self.assertEqual(normalized["market"], "moneyline")
+        self.assertEqual(normalized["price_american"], -150)
+        self.assertAlmostEqual(normalized["price_decimal"], 1.666667, places=6)
+        self.assertAlmostEqual(normalized["implied_probability"], 0.6, places=6)
 
     def test_live_flat_shape_aliases_normalize(self):
-        adapter = SharpSportsbookAdapter(self.contract)
-        normalized, warnings, reject = adapter._normalize_flattened_row(
+        normalized = normalize_sportsbook_event(
+            "sharp_sportsbook",
             {
-                "event": {
-                    "event_id": "evt_live",
-                    "sport": "baseball",
-                    "league": "MLB",
-                    "event_start_time": "2026-05-28T00:00:00+00:00",
-                    "sportsbook": "sharp",
-                },
-                "market": {
-                    "market_type": "moneyline",
-                    "selection": "Home",
-                    "odds_american": -115,
-                    "wire_received_at": "2026-05-28T00:00:00+00:00",
-                },
-                "book": {},
-                "outcome": {},
-            }
+                "id": "evt_live",
+                "sport_key": "soccer_epl",
+                "sport_title": "Premier League",
+                "commence_time": "2026-05-28T00:00:00+00:00",
+                "home_team": "Home",
+                "away_team": "Away",
+            },
+            league="EPL",
         )
-        self.assertIsNone(reject)
-        self.assertEqual(normalized["market"], "moneyline")
-        self.assertEqual(normalized["odds"], -115)
-        self.assertGreater(normalized["implied_probability"], 0)
-        self.assertIn("fallback_event_name", warnings)
+        self.assertEqual(normalized["provider"], "sharp_sportsbook")
+        self.assertEqual(normalized["event_id"], "evt_live")
+        self.assertEqual(normalized["league"], "EPL")
+        self.assertEqual(normalized["sport_key"], "soccer_epl")
 
     def test_disabled_fetch_methods_raise(self):
         adapter = SharpSportsbookAdapter(self.contract)

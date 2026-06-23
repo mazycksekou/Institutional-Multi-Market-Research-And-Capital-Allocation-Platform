@@ -5,14 +5,15 @@ import unittest
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from src.providers.registry import get_provider_registry
 from automation_scheduler.response_compactor import compact_provider_status
 from automation_scheduler.scheduler_runner import run_scheduler_once
-from automation_scheduler.sharp_sportsbook_adapter import SharpSportsbookAdapter
-from automation_scheduler.sportsbook_odds_provider import (
+from src.connectors.odds_data import build_odds_data_connector_configuration, describe_odds_data_connector_readiness
+from src.providers.registry import get_provider_registry
+from src.providers.sportsbooks.contracts import validate_sportsbook_payload
+from src.services.odds_runtime_bridge import (
+    SharpSportsbookAdapter,
     normalize_sportsbook_snapshot,
     summarize_sportsbook_snapshot,
-    validate_sportsbook_snapshot,
     write_sportsbook_snapshot,
 )
 
@@ -36,6 +37,8 @@ class TestSportsbookOddsProvider(unittest.TestCase):
         self.assertTrue(sharp["supports_polling"])
         self.assertFalse(sharp["supports_streaming"])
         self.assertEqual(sharp["required_credentials"], ["SHARP_API_KEY"])
+        self.assertEqual(build_odds_data_connector_configuration().provider, "odds_data")
+        self.assertEqual(describe_odds_data_connector_readiness()["status"], "disabled")
 
     def test_dry_run_placeholder_snapshot(self):
         adapter = SharpSportsbookAdapter(get_provider_registry()["sharp_sportsbook"])
@@ -84,22 +87,15 @@ class TestSportsbookOddsProvider(unittest.TestCase):
 
     def test_validate_snapshot_stale_payload_flagged(self):
         stale = (datetime.now(timezone.utc) - timedelta(days=3)).isoformat()
-        snapshot = {
-            "ok": True,
-            "status": "ok",
-            "provider_id": "sharp_sportsbook",
-            "dry_run": False,
-            "records": [
-                {
-                    "event_id": "evt1",
-                    "market": "moneyline",
-                    "selection": "A",
-                    "odds": -110,
-                    "timestamp": stale,
-                }
-            ],
-        }
-        verdict = validate_sportsbook_snapshot(snapshot)
+        verdict = validate_sportsbook_payload(
+            {
+                "event_id": "evt1",
+                "market": "moneyline",
+                "selection": "A",
+                "odds": -110,
+                "timestamp": stale,
+            }
+        )
         self.assertFalse(verdict["ok"])
         self.assertIn("stale_timestamp", verdict["errors"])
 
@@ -134,7 +130,7 @@ class TestSportsbookOddsProvider(unittest.TestCase):
             self.assertIn(reasons[0], {"provider_disabled", "live_reads_disabled", "missing_credentials", "dry_run_placeholder"})
 
     def test_read_only_get_only_no_write_methods(self):
-        source = Path("automation_scheduler/sharp_sportsbook_adapter.py").read_text(encoding="utf-8").lower()
+        source = Path("src/services/odds_runtime_bridge.py").read_text(encoding="utf-8").lower()
         self.assertNotIn(".post(", source)
         self.assertNotIn(".put(", source)
         self.assertNotIn(".patch(", source)
