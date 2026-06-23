@@ -3,6 +3,7 @@ from __future__ import annotations
 import ast
 import importlib
 import os
+import re
 from pathlib import Path
 
 import pytest
@@ -81,6 +82,18 @@ def _import_names(path: Path) -> set[str]:
     return names
 
 
+def _has_deleted_module_import_statements(path: Path, deleted_modules: list[str]) -> bool:
+    text = path.read_text(encoding="utf-8")
+    for module in deleted_modules:
+        pattern = re.compile(
+            rf"^\s*(?:from|import)\s+{re.escape(module)}\b|importlib\.import_module\(\s*[\"']{re.escape(module)}[\"']\s*\)",
+            re.MULTILINE,
+        )
+        if re.search(pattern, text):
+            return True
+    return False
+
+
 def test_odds_data_connector_wrapper_imports_are_safe_and_disabled(monkeypatch):
     monkeypatch.setattr(os, "getenv", lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("credential access at import time is forbidden")))
 
@@ -142,31 +155,21 @@ def test_odds_data_connector_wrapper_imports_are_safe_and_disabled(monkeypatch):
         adapter.fetch_snapshot()
 
 
-def test_legacy_odds_imports_still_resolve():
-    for module_name in LEGACY_IMPORTS:
-        imported = importlib.import_module(module_name)
-        assert imported.__name__ == module_name
+def test_legacy_odds_imports_are_no_longer_active_dependencies():
+    deleted_modules = [
+        "sharp_client",
+        "providers.sharp_provider",
+        "betting_providers.sharp_api",
+        "betting_providers.the_odds_api",
+        "betting_providers.sportsgameodds",
+        "automation_scheduler.sharp_sportsbook_adapter",
+        "automation_scheduler.sportsbook_odds_provider",
+    ]
 
-    provider_module = importlib.import_module("providers.sharp_provider")
-    assert hasattr(provider_module, "enrich_with_sharp")
-
-    sharp_api = importlib.import_module("betting_providers.sharp_api")
-    assert hasattr(sharp_api, "SharpApiAdapter")
-
-    odds_api = importlib.import_module("betting_providers.the_odds_api")
-    assert hasattr(odds_api, "TheOddsApiAdapter")
-
-    sports_game = importlib.import_module("betting_providers.sportsgameodds")
-    assert hasattr(sports_game, "SportsGameOddsAdapter")
-
-    sharp_scheduler = importlib.import_module("automation_scheduler.sharp_sportsbook_adapter")
-    assert hasattr(sharp_scheduler, "SharpSportsbookAdapter")
-
-    sportsbook_provider = importlib.import_module("automation_scheduler.sportsbook_odds_provider")
-    assert hasattr(sportsbook_provider, "get_sportsbook_snapshot")
-
-    sharp_client = importlib.import_module("sharp_client")
-    assert hasattr(sharp_client, "get_sharp_active_events") or hasattr(sharp_client, "get_kalshi_market")
+    for path in ROOT.rglob("*.py"):
+        if path == Path(__file__):
+            continue
+        assert not _has_deleted_module_import_statements(path, deleted_modules), path
 
     service = importlib.import_module("src.services.enrichment_service")
     assert hasattr(service.EnrichmentService, "enrich_ticket")

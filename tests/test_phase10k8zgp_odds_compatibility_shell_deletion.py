@@ -9,6 +9,8 @@ from pathlib import Path
 
 import pytest
 
+from src.connectors.errors import ConnectorDisabledError
+
 
 ROOT = Path(__file__).resolve().parents[1]
 DOCS = [
@@ -35,6 +37,13 @@ DELETED_MODULES = [
     "automation_scheduler.sharp_sportsbook_adapter",
     "automation_scheduler.sportsbook_odds_provider",
 ]
+CANONICAL_MODULES = [
+    "src.services.odds_runtime_bridge",
+    "src.connectors.odds_data",
+    "src.connectors.errors",
+    "src.providers.sportsbooks",
+    "src.providers.sportsbooks.adapters",
+]
 
 
 def _read(path: Path) -> str:
@@ -58,21 +67,6 @@ def _run_import_safety_check(module_names: list[str]) -> None:
         check=True,
     )
     assert completed.stdout.strip() == "ok"
-
-
-def _assert_no_import_statements_reference_deleted_modules() -> None:
-    import_pattern = re.compile(
-        r"^\s*(?:from|import)\s+{module}\b|importlib\.import_module\(\s*[\"']{module}[\"']\s*\)",
-        re.MULTILINE,
-    )
-
-    for path in ROOT.rglob("*.py"):
-        if path == Path(__file__):
-            continue
-        text = path.read_text(encoding="utf-8")
-        for module in DELETED_MODULES:
-            pattern = import_pattern.pattern.format(module=re.escape(module))
-            assert not re.search(pattern, text), f"active import found in {path}: {module}"
 
 
 def test_docs_exist_and_contain_required_statement() -> None:
@@ -113,25 +107,29 @@ def test_docs_exist_and_contain_required_statement() -> None:
         assert phrase in combined.lower()
 
 
-def test_deleted_files_are_gone_and_canonical_flow_remains_safe(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_deleted_files_are_gone_and_only_approved_paths_were_removed() -> None:
+    for path in DELETED_FILES:
+        assert not path.exists(), f"deleted file still exists: {path}"
+
+    completed = subprocess.run(
+        ["git", "diff", "--name-only", "--diff-filter=D"],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    deleted = {line.strip().replace("/", "\\") for line in completed.stdout.splitlines() if line.strip()}
+    expected = {str(path.relative_to(ROOT)).replace("/", "\\") for path in DELETED_FILES}
+    assert deleted == expected
+
+
+def test_canonical_odds_flow_remains_safe_and_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         os,
         "getenv",
         lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("import-time credential access is forbidden")),
     )
 
-    for path in DELETED_FILES:
-        assert not path.exists(), f"deleted file still exists: {path}"
-
-    _run_import_safety_check(
-        [
-            "src.services.odds_runtime_bridge",
-            "src.connectors.odds_data",
-            "src.connectors.errors",
-            "src.providers.sportsbooks",
-            "src.providers.sportsbooks.adapters",
-        ]
-    )
+    _run_import_safety_check(CANONICAL_MODULES)
 
     connector = importlib.import_module("src.connectors.odds_data")
     errors = importlib.import_module("src.connectors.errors")
@@ -186,4 +184,16 @@ def test_deleted_files_are_gone_and_canonical_flow_remains_safe(monkeypatch: pyt
 
 
 def test_no_active_py_file_imports_deleted_odds_modules() -> None:
-    _assert_no_import_statements_reference_deleted_modules()
+    import_pattern = re.compile(
+        r"^\s*(?:from|import)\s+{module}\b|importlib\.import_module\(\s*[\"']{module}[\"']\s*\)",
+        re.MULTILINE,
+    )
+
+    for path in ROOT.rglob("*.py"):
+        if path == Path(__file__):
+            continue
+        text = path.read_text(encoding="utf-8")
+        for module in DELETED_MODULES:
+            pattern = import_pattern.pattern.format(module=re.escape(module))
+            assert not re.search(pattern, text), f"active import found in {path}: {module}"
+
