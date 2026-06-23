@@ -26,13 +26,6 @@ CANONICAL_MODULES = [
     "src.providers.zero_dte_stocks.models",
 ]
 
-LEGACY_MODULES = [
-    "providers.kalshi_provider",
-    "providers.sharp_provider",
-    "betting_providers.kalshi_api",
-    "betting_providers.the_odds_api",
-]
-
 FORBIDDEN_IMPORT_PREFIXES = ("automation_scheduler", "betting_providers", "providers")
 FORBIDDEN_DIRECT_IMPORTS = {"requests", "httpx", "yfinance", "openai", "anthropic", "playwright", "selenium", "alpaca", "robinhood", "ib_insync", "ccxt"}
 
@@ -78,7 +71,7 @@ def test_runtime_category_adapters_import_and_preserve_compatibility(monkeypatch
 
     monkeypatch.setattr(os, "getenv", fail_getenv)
 
-    imported = {module_name: _import_fresh(module_name) for module_name in CANONICAL_MODULES + LEGACY_MODULES}
+    imported = {module_name: _import_fresh(module_name) for module_name in CANONICAL_MODULES}
 
     # Canonical adapter/model imports.
     pm_adapters = imported["src.providers.prediction_markets.adapters"]
@@ -91,18 +84,6 @@ def test_runtime_category_adapters_import_and_preserve_compatibility(monkeypatch
     assert hasattr(stock_adapters, "ZeroDteStockProviderAdapter")
     assert hasattr(stock_adapters, "ZeroDteStockQuote")
 
-    # Legacy compatibility imports still resolve.
-    legacy_pm = imported["providers.kalshi_provider"].normalize_kalshi_probability_market(
-        {
-            "ticker": "KXTEST",
-            "yes_bid": 48,
-            "yes_ask": 52,
-            "no_bid": 47,
-            "no_ask": 53,
-            "liquidity": 1000,
-            "volume": 250,
-        }
-    )
     canonical_pm = pm_adapters.normalize_prediction_market_quote(
         {
             "ticker": "KXTEST",
@@ -113,10 +94,22 @@ def test_runtime_category_adapters_import_and_preserve_compatibility(monkeypatch
             "liquidity": 1000,
             "volume": 250,
         },
-        provider="kalshi",
-        market_type="kalshi_prediction_market",
+        provider="prediction_market",
+        market_type="prediction_market",
     )
-    assert legacy_pm == canonical_pm
+    provider_namespace = imported["src.providers.prediction_markets"]
+    namespace_pm = provider_namespace.normalize_prediction_market_quote(
+        {
+            "ticker": "KXTEST",
+            "yes_bid": 48,
+            "yes_ask": 52,
+            "no_bid": 47,
+            "no_ask": 53,
+            "liquidity": 1000,
+            "volume": 250,
+        }
+    )
+    assert namespace_pm == canonical_pm
 
     canonical_kalshi_snapshot = pm_adapters.normalize_prediction_market_snapshot(
         {

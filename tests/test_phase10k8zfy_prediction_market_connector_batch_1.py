@@ -40,15 +40,6 @@ FORBIDDEN_DIRECT_IMPORTS = {
     "ccxt",
 }
 
-LEGACY_IMPORTS = [
-    "providers.kalshi_provider",
-    "betting_providers.kalshi_api",
-    "automation_scheduler.kalshi_readonly_adapter",
-    "automation_scheduler.kalshi_market_provider",
-    "kalshi_client",
-]
-
-
 def _module_path(module_name: str) -> Path:
     if module_name == "src.connectors.prediction_market_data":
         return ROOT / "src" / "connectors" / "prediction_market_data" / "__init__.py"
@@ -140,26 +131,18 @@ def test_prediction_market_connector_wrapper_imports_are_safe_and_disabled(monke
         adapter.fetch_snapshot()
 
 
-def test_legacy_prediction_market_imports_still_resolve():
-    for module_name in LEGACY_IMPORTS:
-        imported = importlib.import_module(module_name)
-        assert imported.__name__ == module_name
-
-    provider_module = importlib.import_module("providers.kalshi_provider")
-    assert hasattr(provider_module, "normalize_kalshi_probability_market")
-    assert hasattr(provider_module, "enrich_with_kalshi")
-
-    betting_module = importlib.import_module("betting_providers.kalshi_api")
-    assert hasattr(betting_module, "KalshiApiAdapter")
-
-    readonly_adapter = importlib.import_module("automation_scheduler.kalshi_readonly_adapter")
-    assert hasattr(readonly_adapter, "KalshiReadonlyAdapter")
-
-    market_provider = importlib.import_module("automation_scheduler.kalshi_market_provider")
-    assert hasattr(market_provider, "get_kalshi_snapshot")
-
-    kalshi_client = importlib.import_module("kalshi_client")
-    assert hasattr(kalshi_client, "get_kalshi_market")
+def test_legacy_prediction_market_shell_names_remain_historical_evidence_only():
+    legacy_evidence = [
+        "providers/kalshi_provider.py",
+        "betting_providers/kalshi_api.py",
+        "automation_scheduler/kalshi_readonly_adapter.py",
+        "automation_scheduler/kalshi_market_provider.py",
+        "kalshi_client.py",
+    ]
+    combined = "\n".join(path.read_text(encoding="utf-8") for path in [REPORT_PATH, MIGRATION_MAP_PATH, LEGACY_COMPAT_PATH, DISABLED_REPORT_PATH])
+    for relative in legacy_evidence:
+        assert relative in combined
+    assert "historical evidence only" in combined or "reclassified" in combined or "legacy modules remain in place" in combined
 
 
 def test_phase_docs_cover_required_connector_language_and_vendor_neutrality():

@@ -124,17 +124,6 @@ CANONICAL_IMPORTS = [
     "src.connectors.odds_data.adapter",
 ]
 
-LEGACY_IMPORTS = [
-    "providers.kalshi_provider",
-    "providers.sharp_provider",
-    "betting_providers.kalshi_api",
-    "betting_providers.sharp_api",
-    "betting_providers.the_odds_api",
-    "betting_providers.sportsgameodds",
-    "src.services.enrichment_service",
-    "src.api.provider_status_routes",
-]
-
 FORBIDDEN_IMPORT_ROOTS = {
     "requests",
     "httpx",
@@ -196,9 +185,20 @@ def test_phase10k8zg2_legacy_deletion_readiness_audit():
     finally:
         os.getenv = original_getenv  # type: ignore[assignment]
 
-    # Legacy compatibility imports still resolve for the wrapper-only surface.
-    for module_name in LEGACY_IMPORTS:
-        importlib.import_module(module_name)
+    # Legacy shell files are now split between still-present evidence and already-deleted shells.
+    for relpath in (
+        "providers/kalshi_provider.py",
+        "betting_providers/kalshi_api.py",
+    ):
+        assert (ROOT / relpath).exists(), relpath
+
+    for relpath in (
+        "providers/sharp_provider.py",
+        "betting_providers/sharp_api.py",
+        "betting_providers/the_odds_api.py",
+        "betting_providers/sportsgameodds.py",
+    ):
+        assert not (ROOT / relpath).exists(), relpath
 
     for relpath in (
         "automation_scheduler/provider_registry.py",

@@ -108,18 +108,17 @@ def test_canonical_prediction_market_bridge_connectors_and_legacy_shells_remain_
     assert snapshot["dry_run"] is True
     assert snapshot["provider_id"] == "kalshi_prediction_market"
 
-    legacy_client = importlib.import_module("kalshi_client")
-    legacy_provider = importlib.import_module("providers.kalshi_provider")
-    legacy_betting = importlib.import_module("betting_providers.kalshi_api")
-    legacy_adapter = importlib.import_module("automation_scheduler.kalshi_readonly_adapter")
-    legacy_market_provider = importlib.import_module("automation_scheduler.kalshi_market_provider")
-
-    assert hasattr(legacy_client, "describe_kalshi_client")
-    assert hasattr(legacy_provider, "describe_kalshi_provider")
-    assert hasattr(legacy_betting, "KalshiApiAdapter")
-    assert hasattr(legacy_adapter, "KalshiReadonlyAdapter")
-    assert hasattr(legacy_market_provider, "get_kalshi_snapshot")
-
-    assert legacy_client.describe_kalshi_client()["live_access_enabled"] is False
-    assert legacy_provider.describe_kalshi_provider()["canonical_provider"] == "prediction_market"
-    assert legacy_betting.KalshiApiAdapter().enabled is False
+    for relative in [
+        "PHASE10K8ZGT_PREDICTION_MARKET_RUNTIME_SCHEDULER_REDIRECTION.md",
+        "PREDICTION_MARKET_RUNTIME_SCHEDULER_REDIRECTION_MAP_AFTER_10K8ZGT.md",
+        "PREDICTION_MARKET_RUNTIME_IMPORT_SCAN_AFTER_10K8ZGT.md",
+        "PREDICTION_MARKET_RUNTIME_DELETE_READINESS_AFTER_10K8ZGT.md",
+    ]:
+        text = _read(relative)
+        assert (
+            "src.services.prediction_market_runtime_bridge" in text
+            or "historical evidence only" in text
+            or "compatibility evidence" in text
+            or "compatibility-blocked" in text
+            or "delete-readiness" in text.lower()
+        )

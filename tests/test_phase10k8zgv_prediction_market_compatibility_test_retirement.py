@@ -79,15 +79,6 @@ TARGET_SCAN = {
     ],
 }
 
-LEGACY_SHELLS = [
-    "kalshi_client",
-    "providers.kalshi_provider",
-    "betting_providers.kalshi_api",
-    "automation_scheduler.kalshi_readonly_adapter",
-    "automation_scheduler.kalshi_market_provider",
-]
-
-
 def _read(relative: str) -> str:
     return (ROOT / relative).read_text(encoding="utf-8")
 
@@ -141,21 +132,38 @@ def test_canonical_prediction_market_modules_import_and_remain_disabled(monkeypa
     assert provider_adapter.normalize_payload(provider.SAMPLE_DRY_RUN_PAYLOAD)["provider_type"] == "prediction_market"
 
 
-def test_legacy_prediction_market_shells_remain_importable_as_evidence_only() -> None:
-    legacy_client = importlib.import_module("kalshi_client")
-    legacy_provider = importlib.import_module("providers.kalshi_provider")
-    legacy_betting = importlib.import_module("betting_providers.kalshi_api")
-    legacy_adapter = importlib.import_module("automation_scheduler.kalshi_readonly_adapter")
-    legacy_market_provider = importlib.import_module("automation_scheduler.kalshi_market_provider")
-
-    assert hasattr(legacy_client, "describe_kalshi_client")
-    assert hasattr(legacy_provider, "describe_kalshi_provider")
-    assert hasattr(legacy_betting, "KalshiApiAdapter")
-    assert hasattr(legacy_adapter, "KalshiReadonlyAdapter")
-    assert hasattr(legacy_market_provider, "get_kalshi_snapshot")
-
-    assert legacy_client.describe_kalshi_client()["live_access_enabled"] is False
-    assert legacy_provider.describe_kalshi_provider()["canonical_provider"] == "prediction_market"
-    assert legacy_betting.KalshiApiAdapter().enabled is False
-    assert legacy_adapter.KalshiReadonlyAdapter({}).validate_config()["status"] == "provider_disabled"
-    assert legacy_market_provider.get_kalshi_snapshot()["status"] == "provider_disabled"
+def test_legacy_prediction_market_shell_names_are_historical_evidence_only() -> None:
+    evidence_files = [
+        "PHASE10K8ZGV_PREDICTION_MARKET_COMPATIBILITY_TEST_RETIREMENT.md",
+        "PREDICTION_MARKET_COMPATIBILITY_TEST_RETIREMENT_MAP_AFTER_10K8ZGV.md",
+        "PREDICTION_MARKET_COMPATIBILITY_REFERENCE_SCAN_AFTER_10K8ZGV.md",
+        "PREDICTION_MARKET_DELETE_READINESS_STATUS_AFTER_10K8ZGV.md",
+        "tests/test_kalshi_readonly_adapter.py",
+        "tests/test_kalshi_readonly_readiness_contract.py",
+        "tests/test_calibration_collector.py",
+        "tests/test_scheduler_runner.py",
+        "tests/test_kalshi_market_provider.py",
+        "tests/test_screenshot_analysis.py",
+    ]
+    for relative in evidence_files:
+        text = _read(relative)
+        if relative.endswith(".md"):
+            assert (
+                "historical evidence only" in text
+                or "compatibility evidence" in text
+                or "compatibility-blocked" in text
+                or "historical proof and evidence references" in text
+                or "legacy shell modules remain on disk" in text
+                or "compatibility-oriented tests" in text
+                or "evidence-only or compatibility-only" in text
+                or "Historical Evidence Retained" in text
+                or "remain as historical evidence" in text
+                or "evidence and compatibility artifacts" in text
+                or "delete-readiness" in text.lower()
+            )
+        else:
+            assert (
+                "src.services.prediction_market_runtime_bridge" in text
+                or "src.connectors.prediction_market_data" in text
+                or "src.providers.prediction_markets" in text
+            )

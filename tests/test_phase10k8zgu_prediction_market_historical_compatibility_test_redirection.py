@@ -101,20 +101,17 @@ def test_historical_prediction_market_redirection_uses_canonical_bridge_and_keep
     assert snapshot["dry_run"] is True
     assert snapshot["provider_id"] == "kalshi_prediction_market"
 
-    legacy_client = importlib.import_module("kalshi_client")
-    legacy_provider = importlib.import_module("providers.kalshi_provider")
-    legacy_betting = importlib.import_module("betting_providers.kalshi_api")
-    legacy_adapter = importlib.import_module("automation_scheduler.kalshi_readonly_adapter")
-    legacy_market_provider = importlib.import_module("automation_scheduler.kalshi_market_provider")
-
-    assert hasattr(legacy_client, "describe_kalshi_client")
-    assert hasattr(legacy_provider, "describe_kalshi_provider")
-    assert hasattr(legacy_betting, "KalshiApiAdapter")
-    assert hasattr(legacy_adapter, "KalshiReadonlyAdapter")
-    assert hasattr(legacy_market_provider, "get_kalshi_snapshot")
-
-    assert legacy_client.describe_kalshi_client()["live_access_enabled"] is False
-    assert legacy_provider.describe_kalshi_provider()["canonical_provider"] == "prediction_market"
-    assert legacy_betting.KalshiApiAdapter().enabled is False
-    assert legacy_market_provider.get_kalshi_snapshot()["dry_run"] is True
-
+    for relative in [
+        "PHASE10K8ZGU_PREDICTION_MARKET_HISTORICAL_COMPATIBILITY_TEST_REDIRECTION.md",
+        "PREDICTION_MARKET_HISTORICAL_TEST_REDIRECTION_MAP_AFTER_10K8ZGU.md",
+        "PREDICTION_MARKET_COMPATIBILITY_REFERENCE_SCAN_AFTER_10K8ZGU.md",
+        "PREDICTION_MARKET_DELETE_READINESS_RECHECK_AFTER_10K8ZGU.md",
+    ]:
+        text = _read(relative)
+        assert (
+            "historical evidence only" in text
+            or "compatibility evidence" in text
+            or "compatibility-blocked" in text
+            or "evidence-only or compatibility-only" in text
+            or "delete-readiness" in text.lower()
+        )

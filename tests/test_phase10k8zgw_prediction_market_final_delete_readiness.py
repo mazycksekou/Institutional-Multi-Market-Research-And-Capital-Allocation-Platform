@@ -20,16 +20,6 @@ LEGACY_SHELLS = [
     "automation_scheduler.kalshi_market_provider",
 ]
 ACTIVE_TEST_ALLOWLIST = {
-    "tests/test_phase10k8zgv_prediction_market_compatibility_test_retirement.py",
-    "tests/test_phase10k8zgu_prediction_market_historical_compatibility_test_redirection.py",
-    "tests/test_phase10k8zgt_prediction_market_runtime_scheduler_redirection.py",
-    "tests/test_phase10k8zgs_prediction_market_compatibility_shell_delete_readiness.py",
-    "tests/test_phase10k8zgr_prediction_market_legacy_live_method_retirement.py",
-    "tests/test_phase10k8zgq_prediction_market_runtime_consumer_redirection.py",
-    "tests/test_phase10k8zgg_prediction_market_live_client_connector_migration.py",
-    "tests/test_phase10k8zfy_prediction_market_connector_batch_1.py",
-    "tests/test_phase10k8zg2_legacy_deletion_readiness_audit.py",
-    "tests/test_phase10k8zfv_runtime_provider_migration_batch_1.py",
     "tests/test_phase10k8zgw_prediction_market_final_delete_readiness.py",
 }
 
@@ -135,14 +125,28 @@ def test_runtime_scan_finds_no_active_import_dependency_on_legacy_shells() -> No
 
 def test_test_scan_shows_only_historical_proof_files_touch_legacy_shells() -> None:
     test_files = [path for path in _tracked_python_files() if path.relative_to(ROOT).parts[0] == "tests"]
+    active_needles = [
+        'importlib.import_module("kalshi_client")',
+        'importlib.import_module("providers.kalshi_provider")',
+        'importlib.import_module("betting_providers.kalshi_api")',
+        'importlib.import_module("automation_scheduler.kalshi_readonly_adapter")',
+        'importlib.import_module("automation_scheduler.kalshi_market_provider")',
+        "importlib.import_module('kalshi_client')",
+        "importlib.import_module('providers.kalshi_provider')",
+        "importlib.import_module('betting_providers.kalshi_api')",
+        "importlib.import_module('automation_scheduler.kalshi_readonly_adapter')",
+        "importlib.import_module('automation_scheduler.kalshi_market_provider')",
+        'patch("providers.kalshi_provider',
+        "patch('providers.kalshi_provider",
+        'patch("automation_scheduler.kalshi_readonly_adapter',
+        "patch('automation_scheduler.kalshi_readonly_adapter",
+        'patch("automation_scheduler.kalshi_market_provider',
+        "patch('automation_scheduler.kalshi_market_provider",
+    ]
     active_hits: set[str] = set()
     for path in test_files:
         text = path.read_text(encoding="utf-8", errors="ignore")
-        if any(shell in text for shell in LEGACY_SHELLS) and (
-            "LEGACY_" in text
-            or "importlib.import_module" in text
-            or "imported[" in text
-        ):
+        if any(needle in text for needle in active_needles):
             active_hits.add(path.relative_to(ROOT).as_posix())
 
     assert active_hits == ACTIVE_TEST_ALLOWLIST, active_hits

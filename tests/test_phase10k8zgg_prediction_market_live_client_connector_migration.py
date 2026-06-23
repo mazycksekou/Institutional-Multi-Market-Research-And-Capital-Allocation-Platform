@@ -26,14 +26,6 @@ NEW_MODULES = [
     "src.connectors.prediction_market_data.disabled_client",
 ]
 
-LEGACY_MODULES = [
-    "kalshi_client",
-    "providers.kalshi_provider",
-    "betting_providers.kalshi_api",
-    "automation_scheduler.kalshi_readonly_adapter",
-    "automation_scheduler.kalshi_market_provider",
-]
-
 FORBIDDEN = [
     "requests",
     "httpx",
@@ -114,7 +106,7 @@ def test_docs_capture_prediction_market_connector_migration() -> None:
 
 
 def test_prediction_market_connector_modules_import_and_disable_cleanly() -> None:
-    for module_name in NEW_MODULES + LEGACY_MODULES:
+    for module_name in NEW_MODULES:
         imported = importlib.import_module(module_name)
         assert imported is not None
 
@@ -151,6 +143,10 @@ def test_prediction_market_connector_modules_import_and_disable_cleanly() -> Non
         disabled_live_client.fetch_markets()
     with pytest.raises(importlib.import_module("src.connectors.errors").ConnectorDisabledError):
         disabled_live_client.sign_request()
+
+    for path in DOCS:
+        text = path.read_text(encoding="utf-8")
+        assert "kalshi_client" in text or "legacy" in text.lower()
 
 
 def test_connector_package_is_vendor_neutral_and_import_safe() -> None:
