@@ -37,8 +37,11 @@ from .review_queue import (
 )
 from .system_health import write_system_health
 from .run_context import create_run_context
-from .kalshi_market_provider import get_kalshi_snapshot, summarize_kalshi_snapshot
-from .kalshi_readonly_adapter import KalshiReadonlyAdapter
+from src.services.prediction_market_runtime_bridge import (
+    KalshiReadonlyAdapter,
+    get_kalshi_snapshot,
+    summarize_kalshi_snapshot,
+)
 from src.services.odds_runtime_bridge import SharpSportsbookAdapter, get_valid_normalized_records, summarize_sportsbook_snapshot
 
 

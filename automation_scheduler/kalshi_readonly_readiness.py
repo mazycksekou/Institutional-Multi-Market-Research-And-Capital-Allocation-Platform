@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from .kalshi_readonly_adapter import KalshiReadonlyAdapter
+from src.services.prediction_market_runtime_bridge import KalshiReadonlyAdapter
 from src.providers.registry import get_provider_registry
 
 PROVIDER_ID = "kalshi_prediction_market"

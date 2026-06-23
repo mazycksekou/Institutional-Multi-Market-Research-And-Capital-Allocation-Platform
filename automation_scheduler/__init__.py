@@ -24,8 +24,8 @@ from src.services.odds_runtime_bridge import (
     validate_sportsbook_snapshot,
     write_sportsbook_snapshot,
 )
-from .kalshi_readonly_adapter import KalshiReadonlyAdapter
-from .kalshi_market_provider import (
+from src.services.prediction_market_runtime_bridge import (
+    KalshiReadonlyAdapter,
     get_kalshi_snapshot,
     summarize_kalshi_snapshot,
     validate_kalshi_snapshot,

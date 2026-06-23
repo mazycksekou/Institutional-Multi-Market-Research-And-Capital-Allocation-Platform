@@ -7,7 +7,7 @@ from typing import Any
 from uuid import uuid4
 
 from .data_paths import get_runtime_data_path, get_storage_health, resolve_base_data_dir
-from .kalshi_readonly_adapter import KalshiReadonlyAdapter
+from src.services.prediction_market_runtime_bridge import KalshiReadonlyAdapter
 from .kalshi_readonly_readiness import build_kalshi_readonly_adapter
 from .paper_decision_ledger import load_paper_decisions
 from .review_queue import load_review_queue_state

@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from .data_paths import resolve_base_data_dir
-from .kalshi_readonly_adapter import KalshiReadonlyAdapter
+from src.services.prediction_market_runtime_bridge import KalshiReadonlyAdapter
 from .outcome_store import PERSISTABLE_SOURCES, validate_outcome_record
 from .scheduler_config import sanitize_filename, utc_now_iso
 

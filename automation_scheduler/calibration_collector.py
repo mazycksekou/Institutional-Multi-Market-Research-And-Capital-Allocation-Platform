@@ -13,7 +13,7 @@ import httpx
 from .calibration import build_calibration_report
 from .data_paths import get_storage_health, resolve_base_data_dir
 from .deepseek_reviewer import run_deepseek_review
-from .kalshi_readonly_adapter import KalshiReadonlyAdapter
+from src.services.prediction_market_runtime_bridge import KalshiReadonlyAdapter
 from .outcome_store import ingest_outcome_records, load_outcome_records
 from .paper_decision_ledger import LEDGER_SCHEMA_VERSION, create_paper_decision_record, load_paper_decisions
 from .review_queue import build_review_item, load_review_queue_state, persist_review_queue_snapshot, summarize_review_items
