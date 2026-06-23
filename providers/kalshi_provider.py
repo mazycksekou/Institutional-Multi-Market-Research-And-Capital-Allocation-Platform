@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from types import SimpleNamespace
 from typing import Any
 
 from src.providers.prediction_markets.adapters import normalize_prediction_market_quote as _normalize_prediction_market_quote
@@ -10,6 +11,8 @@ from src.services.prediction_market_runtime_bridge import (
     PREDICTION_MARKET_PROVIDER_ADAPTER,
     enrich_with_kalshi as _bridge_enrich_with_kalshi,
 )
+
+requests = SimpleNamespace(get=None)
 
 
 def normalize_kalshi_probability_market(market: dict[str, Any]) -> dict[str, Any]:

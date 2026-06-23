@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from types import SimpleNamespace
 from typing import Any
 
 from src.connectors.errors import ConnectorDisabledError
@@ -9,6 +10,8 @@ from src.connectors.prediction_market_data import (
 )
 from src.providers.prediction_markets.adapters import normalize_prediction_market_quote
 from src.providers.validation import validate_provider_payload
+
+httpx = SimpleNamespace(Client=object)
 
 PROVIDER_ID = "kalshi_prediction_market"
 PROVIDER_TYPE = "prediction_market"
