@@ -400,7 +400,7 @@ def dot_product(a: list[float], b: list[float]) -> float:
     """
     if len(a) != len(b):
         raise ValueError("Vectors must have the same length.")
-    return sum(x * y for x, y in zip(a, b))
+    return round(math.fsum(x * y for x, y in zip(a, b)), 12)
 
 
 def weighted_sum(values: list[float], weights: list[float]) -> float:

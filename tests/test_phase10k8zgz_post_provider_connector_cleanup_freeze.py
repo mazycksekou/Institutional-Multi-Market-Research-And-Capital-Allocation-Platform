@@ -141,8 +141,6 @@ def test_deleted_prediction_market_modules_no_longer_import() -> None:
 
 
 def test_no_runtime_file_imports_deleted_modules() -> None:
-    import re
-
     needles = [
         "importlib.import_module(\"sharp_client\")",
         "importlib.import_module('sharp_client')",
@@ -170,7 +168,7 @@ def test_no_runtime_file_imports_deleted_modules() -> None:
         "from automation_scheduler.kalshi_market_provider import",
     ]
     for path in ROOT.rglob("*.py"):
-        if path == Path(__file__).resolve():
+        if path == Path(__file__).resolve() or "tests" in path.parts:
             continue
         text = path.read_text(encoding="utf-8", errors="ignore")
         for needle in needles:

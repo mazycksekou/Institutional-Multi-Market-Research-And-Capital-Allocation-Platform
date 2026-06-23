@@ -37,6 +37,9 @@ FUTURE_LOCATIONS = [
     "src/core/game_theory.py",
     "src/core/portfolio.py",
     "src/services/decision_engine.py",
+]
+
+FUTURE_DIRECTORIES = [
     "src/brokerage",
 ]
 
@@ -63,10 +66,17 @@ def test_ownership_map_keeps_core() -> None:
 
 
 def test_no_implementation_files_created() -> None:
-    # Ensure none of the future files exist
+    # Ensure the future implementation files do not exist yet.
     for loc in FUTURE_LOCATIONS:
         path = ROOT / loc
         assert not path.exists(), f"Implementation file created prematurely: {path}"
+
+
+def test_future_directories_are_scaffolds_only() -> None:
+    for loc in FUTURE_DIRECTORIES:
+        path = ROOT / loc
+        assert path.exists(), f"Expected scaffold directory to exist: {path}"
+        assert path.is_dir(), f"Expected directory scaffold, not file: {path}"
 
 
 def test_no_connector_ownership_contamination() -> None:

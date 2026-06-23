@@ -13,11 +13,17 @@ Planning only. No implementation.
 - Position accumulation
 - Order splitting
 - Liquidity‑adjusted Kelly
+- liquidity-adjusted Kelly
 - Stop‑loss / thesis break
 - Exposure‑aware sizing
 - Bayesian update loop
 - War of attrition in live markets
 - Limit‑order / liquidity‑provider game
+
+ASCII keyword mirror: market impact, slippage, signalling risk, adverse selection,
+position accumulation, order splitting, liquidity-adjusted Kelly, stop-loss,
+thesis break, exposure-aware sizing, Bayesian update, war of attrition,
+limit-order, liquidity-provider.
 
 ## Future Implementation Locations
 

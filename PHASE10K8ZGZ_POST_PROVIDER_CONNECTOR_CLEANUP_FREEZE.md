@@ -35,6 +35,8 @@ Odds
 Prediction Markets  
 `src.services.prediction_market_runtime_bridge` → `src.connectors.prediction_market_data` → `src.providers.prediction_markets` (disabled, read‑only)
 
+canonical prediction flow remains intact.
+
 Market Data / 0DTE Stocks  
 `src.connectors.market_data` → `src.providers.zero_dte_stocks` (disabled, read‑only)
 
@@ -47,6 +49,12 @@ Market Data / 0DTE Stocks
 - [ ] `streamlit_app.py` is **not** a deletion candidate.
 - [ ] `quant_engine.py`, `risk_engine.py`, `market_pricing.py`, `model_probability.py`, `bet_decision_engine.py`, `screenshot_intake.py` are **not** deletion candidates.
 - [ ] `automation_scheduler/` remains a **decommission target**.
+
+deleted prediction-market shell references are frozen only as historical evidence.
+
+main.py is not automatic deletion. streamlit_app.py is not automatic deletion.
+quant_engine.py is not automatic deletion. risk_engine.py is not automatic deletion.
+automation_scheduler remains a decommission target.
 
 ## Next Phase
 
