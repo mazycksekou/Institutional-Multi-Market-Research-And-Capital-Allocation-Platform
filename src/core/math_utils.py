@@ -5,6 +5,7 @@ pricing helpers, risk code, and backtests can share one implementation.
 """
 from __future__ import annotations
 
+import math
 from typing import Any
 
 
@@ -341,3 +342,169 @@ def profit_units(odds: int | float, stake: float = 1.0) -> float:
     """Profit, excluding returned stake, if the wager wins."""
     stake_value = max(0.0, _as_float(stake, "Stake"))
     return stake_value * (american_to_decimal(odds) - 1.0)
+
+
+# ---------------------------------------------------------------------------
+# Pure math foundation helpers (Stage 2B)
+# ---------------------------------------------------------------------------
+
+def mean(values: list[float]) -> float:
+    """Arithmetic mean.
+
+    Raises ValueError if `values` is empty.
+    """
+    if not values:
+        raise ValueError("values must not be empty.")
+    return sum(values) / len(values)
+
+
+def median(values: list[float]) -> float:
+    """Median value.
+
+    Raises ValueError if `values` is empty.
+    """
+    if not values:
+        raise ValueError("values must not be empty.")
+    sorted_vals = sorted(values)
+    n = len(sorted_vals)
+    mid = n // 2
+    if n % 2 == 1:
+        return sorted_vals[mid]
+    return (sorted_vals[mid - 1] + sorted_vals[mid]) / 2.0
+
+
+def variance(values: list[float], *, ddof: int = 1) -> float:
+    """Sample variance (default ddof=1).
+
+    Raises ValueError if `values` has fewer than 2 elements when ddof=1,
+    or if empty.
+    """
+    if len(values) < ddof + 1:
+        raise ValueError("Not enough data points for the requested degrees of freedom.")
+    mu = mean(values)
+    return sum((x - mu) ** 2 for x in values) / (len(values) - ddof)
+
+
+def std_dev(values: list[float], *, ddof: int = 1) -> float:
+    """Sample standard deviation.
+
+    Raises ValueError under same conditions as variance.
+    """
+    return math.sqrt(variance(values, ddof=ddof))
+
+
+def dot_product(a: list[float], b: list[float]) -> float:
+    """Dot product of two vectors.
+
+    Raises ValueError if lengths differ.
+    """
+    if len(a) != len(b):
+        raise ValueError("Vectors must have the same length.")
+    return sum(x * y for x, y in zip(a, b))
+
+
+def weighted_sum(values: list[float], weights: list[float]) -> float:
+    """Weighted sum of values.
+
+    Raises ValueError if weights do not sum to 1 (within 1e-12 tolerance).
+    """
+    if not math.isclose(sum(weights), 1.0, rel_tol=0, abs_tol=1e-12):
+        raise ValueError("Weights must sum to 1.")
+    if len(values) != len(weights):
+        raise ValueError("Values and weights must have the same length.")
+    return dot_product(values, weights)
+
+
+def covariance(x: list[float], y: list[float], *, ddof: int = 1) -> float:
+    """Sample covariance between two data series.
+
+    Raises ValueError if lengths differ or not enough points.
+    """
+    if len(x) != len(y):
+        raise ValueError("Series must have the same length.")
+    if len(x) < ddof + 1:
+        raise ValueError("Not enough data points.")
+    mu_x = mean(x)
+    mu_y = mean(y)
+    return sum((xi - mu_x) * (yi - mu_y) for xi, yi in zip(x, y)) / (len(x) - ddof)
+
+
+def correlation(x: list[float], y: list[float]) -> float:
+    """Pearson correlation coefficient.
+
+    Raises ValueError if series lengths differ, only one point,
+    or either series has zero variance.
+    """
+    if len(x) != len(y):
+        raise ValueError("Series must have the same length.")
+    if len(x) < 2:
+        raise ValueError("Need at least two data points.")
+    cov = covariance(x, y, ddof=1)
+    sx = std_dev(x, ddof=1)
+    sy = std_dev(y, ddof=1)
+    if sx == 0 or sy == 0:
+        raise ValueError("Zero variance in one of the series.")
+    return cov / (sx * sy)
+
+
+def correlation_matrix(data: list[list[float]]) -> list[list[float]]:
+    """Pairwise Pearson correlation matrix.
+
+    Parameters
+    ----------
+    data : list[list[float]]
+        Each inner list is a variable (row), containing observations.
+
+    Returns
+    -------
+    list[list[float]]
+        Symmetric correlation matrix.
+    """
+    n = len(data)
+    if n == 0:
+        return []
+    mat: list[list[float]] = [[0.0] * n for _ in range(n)]
+    for i in range(n):
+        for j in range(i, n):
+            if i == j:
+                mat[i][j] = 1.0
+            else:
+                cor = correlation(data[i], data[j])
+                mat[i][j] = cor
+                mat[j][i] = cor
+    return mat
+
+
+def portfolio_return(
+    asset_returns: list[float],
+    weights: list[float],
+) -> float:
+    """Expected portfolio return given asset returns and weights.
+
+    Raises ValueError if lengths differ.
+    """
+    if len(asset_returns) != len(weights):
+        raise ValueError("asset_returns and weights must have same length.")
+    return dot_product(asset_returns, weights)
+
+
+def portfolio_variance(
+    weights: list[float],
+    covariance_matrix: list[list[float]],
+) -> float:
+    """Portfolio variance given weights and covariance matrix.
+
+    Raises ValueError if dimension mismatch or weights do not sum to 1.
+    """
+    n = len(weights)
+    if n == 0:
+        raise ValueError("weights must not be empty.")
+    if len(covariance_matrix) != n:
+        raise ValueError("covariance_matrix must be n x n.")
+    if not math.isclose(sum(weights), 1.0, rel_tol=0, abs_tol=1e-12):
+        raise ValueError("weights must sum to 1.")
+    var = 0.0
+    for i in range(n):
+        for j in range(n):
+            var += weights[i] * weights[j] * covariance_matrix[i][j]
+    return var
