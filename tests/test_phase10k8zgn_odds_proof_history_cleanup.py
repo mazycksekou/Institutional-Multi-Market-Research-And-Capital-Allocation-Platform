@@ -24,29 +24,9 @@ CLEANED_TESTS = [
     ROOT / "tests" / "test_phase10k8zgm_odds_historical_test_redirection.py",
 ]
 
-COMPATIBILITY_TESTS = [
+RETIRED_COMPATIBILITY_TESTS = [
     ROOT / "tests" / "test_phase10k8zgj_odds_legacy_live_method_retirement.py",
     ROOT / "tests" / "test_phase10k8zgk_odds_compatibility_shell_delete_readiness.py",
-]
-
-LEGACY_SHELL_MODULE_NAMES = [
-    "sharp_client",
-    "providers.sharp_provider",
-    "betting_providers.sharp_api",
-    "betting_providers.the_odds_api",
-    "betting_providers.sportsgameodds",
-    "automation_scheduler.sharp_sportsbook_adapter",
-    "automation_scheduler.sportsbook_odds_provider",
-]
-
-LEGACY_SHELL_PATHS = [
-    "sharp_client.py",
-    "providers/sharp_provider.py",
-    "betting_providers/sharp_api.py",
-    "betting_providers/the_odds_api.py",
-    "betting_providers/sportsgameodds.py",
-    "automation_scheduler/sharp_sportsbook_adapter.py",
-    "automation_scheduler/sportsbook_odds_provider.py",
 ]
 
 
@@ -121,14 +101,22 @@ def test_cleaned_history_files_no_longer_require_legacy_shell_importability() ->
             "src.connectors.odds_data",
         ]:
             assert canonical in text, f"{path} is missing canonical reference: {canonical}"
-        if path.name != "test_phase10k8zgm_odds_historical_test_redirection.py":
-            assert "legacy odds modules remain importable" not in text
+        assert "legacy odds modules remain importable" not in text
 
 
-def test_only_explicit_compatibility_tests_still_reference_legacy_shells() -> None:
-    for path in COMPATIBILITY_TESTS:
+def test_retired_compatibility_tests_no_longer_reference_legacy_shells() -> None:
+    for path in RETIRED_COMPATIBILITY_TESTS:
         text = _read(path)
-        assert any(legacy in text for legacy in LEGACY_SHELL_MODULE_NAMES), path
+        for legacy in [
+            "sharp_client",
+            "providers.sharp_provider",
+            "betting_providers.sharp_api",
+            "betting_providers.the_odds_api",
+            "betting_providers.sportsgameodds",
+            "automation_scheduler.sharp_sportsbook_adapter",
+            "automation_scheduler.sportsbook_odds_provider",
+        ]:
+            assert legacy not in text, f"{path} still references {legacy}"
 
 
 def test_canonical_bridge_and_connector_imports_are_safe_and_disabled() -> None:
@@ -175,25 +163,36 @@ def test_canonical_bridge_and_connector_imports_are_safe_and_disabled() -> None:
 
 
 def test_delete_readiness_documentation_only_blocks_explicit_compatibility_tests() -> None:
-    delete_readiness = _read(ROOT / "FINAL_ODDS_DELETE_READINESS_AFTER_10K8ZGN.md")
-    import_scan = _read(ROOT / "ODDS_PROOF_HISTORY_REFERENCE_SCAN_AFTER_10K8ZGN.md")
+    delete_readiness = _read(ROOT / "FINAL_ODDS_SHELL_DELETE_PROOF_AFTER_10K8ZGO.md")
+    import_scan = _read(ROOT / "ODDS_FINAL_IMPORT_SCAN_AFTER_10K8ZGO.md")
 
     for blocker in [
         "tests/test_phase10k8zgj_odds_legacy_live_method_retirement.py",
         "tests/test_phase10k8zgk_odds_compatibility_shell_delete_readiness.py",
     ]:
         assert blocker in import_scan
+        assert "historical evidence only" in import_scan.lower()
 
-    for target in LEGACY_SHELL_PATHS:
+    for target in [
+        "sharp_client.py",
+        "providers/sharp_provider.py",
+        "betting_providers/sharp_api.py",
+        "betting_providers/the_odds_api.py",
+        "betting_providers/sportsgameodds.py",
+        "automation_scheduler/sharp_sportsbook_adapter.py",
+        "automation_scheduler/sportsbook_odds_provider.py",
+    ]:
         assert target in delete_readiness
-        assert "explicit compatibility-proof tests" in delete_readiness
-        assert "proof-history tests" not in delete_readiness.lower()
+        assert "delete-ready now" in delete_readiness.lower()
+        assert "blocked" not in delete_readiness.lower()
 
 
-def test_runtime_and_history_files_have_no_forbidden_live_imports() -> None:
+def test_runtime_files_have_no_forbidden_live_imports() -> None:
     for path in [
         ROOT / "src" / "services" / "odds_runtime_bridge.py",
         ROOT / "src" / "connectors" / "odds_data" / "__init__.py",
+        ROOT / "src" / "providers" / "sportsbooks" / "contracts.py",
+        ROOT / "src" / "providers" / "sportsbooks" / "adapters.py",
     ]:
         text = _read(path).lower()
         for forbidden in [
