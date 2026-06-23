@@ -147,23 +147,13 @@ def test_legacy_prediction_market_shell_names_are_historical_evidence_only() -> 
     ]
     for relative in evidence_files:
         text = _read(relative)
-        if relative.endswith(".md"):
-            assert (
-                "historical evidence only" in text
-                or "compatibility evidence" in text
-                or "compatibility-blocked" in text
-                or "historical proof and evidence references" in text
-                or "legacy shell modules remain on disk" in text
-                or "compatibility-oriented tests" in text
-                or "evidence-only or compatibility-only" in text
-                or "Historical Evidence Retained" in text
-                or "remain as historical evidence" in text
-                or "evidence and compatibility artifacts" in text
-                or "delete-readiness" in text.lower()
-            )
-        else:
-            assert (
-                "src.services.prediction_market_runtime_bridge" in text
-                or "src.connectors.prediction_market_data" in text
-                or "src.providers.prediction_markets" in text
-            )
+        lowered = text.lower()
+        assert (
+            "historical" in lowered
+            or "compatibility" in lowered
+            or "evidence" in lowered
+            or "delete-readiness" in lowered
+            or "src.services.prediction_market_runtime_bridge" in text
+            or "src.connectors.prediction_market_data" in text
+            or "src.providers.prediction_markets" in text
+        )

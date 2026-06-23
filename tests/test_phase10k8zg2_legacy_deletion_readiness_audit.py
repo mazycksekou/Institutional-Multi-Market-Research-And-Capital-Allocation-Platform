@@ -185,14 +185,10 @@ def test_phase10k8zg2_legacy_deletion_readiness_audit():
     finally:
         os.getenv = original_getenv  # type: ignore[assignment]
 
-    # Legacy shell files are now split between still-present evidence and already-deleted shells.
+    # Legacy shell files are split between already-deleted and still-present legacy evidence.
     for relpath in (
         "providers/kalshi_provider.py",
         "betting_providers/kalshi_api.py",
-    ):
-        assert (ROOT / relpath).exists(), relpath
-
-    for relpath in (
         "providers/sharp_provider.py",
         "betting_providers/sharp_api.py",
         "betting_providers/the_odds_api.py",

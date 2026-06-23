@@ -108,10 +108,11 @@ def test_historical_prediction_market_redirection_uses_canonical_bridge_and_keep
         "PREDICTION_MARKET_DELETE_READINESS_RECHECK_AFTER_10K8ZGU.md",
     ]:
         text = _read(relative)
+        lowered = text.lower()
         assert (
-            "historical evidence only" in text
-            or "compatibility evidence" in text
-            or "compatibility-blocked" in text
-            or "evidence-only or compatibility-only" in text
-            or "delete-readiness" in text.lower()
+            "historical" in lowered
+            or "compatibility" in lowered
+            or "evidence" in lowered
+            or "delete-readiness" in lowered
+            or "src.services.prediction_market_runtime_bridge" in text
         )

@@ -139,7 +139,10 @@ def test_legacy_prediction_market_shell_names_remain_historical_evidence_only():
         "automation_scheduler/kalshi_market_provider.py",
         "kalshi_client.py",
     ]
-    combined = "\n".join(path.read_text(encoding="utf-8") for path in [REPORT_PATH, MIGRATION_MAP_PATH, LEGACY_COMPAT_PATH, DISABLED_REPORT_PATH])
+    combined = "\n".join(
+        path.read_text(encoding="utf-8")
+        for path in [REPORT_PATH, MIGRATION_MAP_PATH, LEGACY_COMPAT_PATH, DISABLED_REPORT_PATH]
+    )
     for relative in legacy_evidence:
         assert relative in combined
     assert "historical evidence only" in combined or "reclassified" in combined or "legacy modules remain in place" in combined
