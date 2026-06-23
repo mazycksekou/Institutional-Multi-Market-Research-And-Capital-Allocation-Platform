@@ -24,7 +24,7 @@ The sportsbook historical tests now reference canonical bridge and connector sur
 - `tests/test_phase10k8zgl_odds_runtime_consumer_redirection_batch_2.py`
 
 ## Remaining Legacy References
-The proof-history tests still mention the legacy odds shell files so the historical deletion trail remains intact.
+The proof-history tests now treat the old legacy odds shell references as historical evidence only; they are no longer retention requirements.
 
 ## No-Deletion Confirmation
 No files were deleted in this phase.

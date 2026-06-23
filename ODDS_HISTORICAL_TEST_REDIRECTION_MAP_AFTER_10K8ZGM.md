@@ -19,20 +19,18 @@ The updated historical tests now depend on:
 - `src.providers.registry`
 
 ## Remaining References
-The deletion-proof phase files still mention the legacy shell names because they are the proof trail:
+The deletion-proof phase files still exist as historical evidence, but the legacy shell names are no longer retained as runtime requirements:
 - `tests/test_phase10k8zgj_odds_legacy_live_method_retirement.py`
 - `tests/test_phase10k8zgk_odds_compatibility_shell_delete_readiness.py`
-- `tests/test_phase10k8zgi_odds_runtime_consumer_redirection.py`
-- `tests/test_phase10k8zgl_odds_runtime_consumer_redirection_batch_2.py`
 
 ## Delete-Readiness Summary
 - Runtime consumer redirection is complete
 - Historical test redirection is complete
-- Legacy shell deletion remains blocked by proof-history files
+- Legacy shell deletion is now blocked only by the explicit compatibility-proof files
 
 ## Why No Deletion Occurred
 This phase only redirects the historical tests.
-The legacy odds shells remain on disk until compatibility-proof cleanup is finished and the local gate stays green.
+The legacy odds shells remain on disk until the remaining compatibility-proof files are re-evaluated and the local gate stays green.
 
 ## Next Recommended Deletion Phase
 Re-run the odds shell delete-readiness proof with the redirected historical tests, then determine whether any of the legacy odds shells are finally eligible for removal.

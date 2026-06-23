@@ -4,7 +4,7 @@
 This phase redirects the remaining runtime odds consumers away from legacy odds shells and into canonical boundary surfaces.
 The canonical odds connector boundary lives under `src.connectors.odds_data`, the canonical sportsbook/provider normalization boundary lives under `src.providers.sportsbooks`, and the runtime orchestration bridge now lives under `src.services.odds_runtime_bridge`.
 
-The legacy odds shells remain on disk for compatibility and proof history, but they are no longer the preferred runtime dependency for the redirected service and scheduler paths.
+The legacy odds shells remain on disk for explicit compatibility tests, but they are no longer the preferred runtime dependency for the redirected service and scheduler paths.
 
 ## Current HEAD
 `308112593407b0feaeee74670c4de58f990e8918`
@@ -70,8 +70,8 @@ Before redirection, runtime consumers still depended on legacy odds shells such 
 After redirection, runtime consumer imports now point to:
 - `src.services.odds_runtime_bridge`
 
-## Remaining Legacy Odds Shells
-The legacy odds shells remain importable:
+## Remaining Compatibility References
+The remaining legacy odds shell references are historical evidence only:
 - `sharp_client.py`
 - `providers/sharp_provider.py`
 - `betting_providers/sharp_api.py`
@@ -84,7 +84,7 @@ They are preserved for compatibility and deletion-proof history, but they are no
 
 ## Delete-Readiness
 This phase does not delete legacy odds shells.
-The runtime consumers were redirected first so later deletion-proof phases can focus on remaining shell usage and test references.
+The runtime consumers were redirected first so later deletion-proof phases can focus on the explicit compatibility-proof tests.
 
 Current status:
 - runtime consumers redirected: yes
@@ -105,7 +105,7 @@ That keeps the old runtime shape importable without restoring live odds access.
 - No connector activation occurred
 
 ## Next Recommended Phase
-Move the remaining odds-shell tests and historical compatibility references onto the canonical bridge surfaces, then prove whether the legacy odds shells themselves can be retired safely.
+Move the remaining explicit compatibility-proof tests onto the canonical bridge surfaces or retire them safely after proof.
 
 ## Required Statement
 Odds runtime consumers are redirected away from legacy odds shells in this phase. This phase does not authorize live API calls, credential reads, bet execution, connector activation, or deletion.

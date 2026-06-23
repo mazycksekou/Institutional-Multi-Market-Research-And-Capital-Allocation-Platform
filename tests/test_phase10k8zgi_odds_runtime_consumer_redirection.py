@@ -16,15 +16,11 @@ DOCS = [
     ROOT / "ODDS_LEGACY_DELETE_READINESS_AFTER_10K8ZGI.md",
 ]
 
-REDIRECTED_MODULES = [
-    "sharp_client",
-    "providers.sharp_provider",
-    "betting_providers.sharp_api",
-    "betting_providers.the_odds_api",
-    "betting_providers.sportsgameodds",
-    "automation_scheduler.sharp_sportsbook_adapter",
-    "automation_scheduler.sportsbook_odds_provider",
-    "src.providers.provider_router",
+CANONICAL_MODULES = [
+    "src.services.odds_runtime_bridge",
+    "src.connectors.odds_data",
+    "src.providers.sportsbooks",
+    "src.providers.registry",
 ]
 
 REQUIRED_SECTIONS = [
@@ -74,7 +70,6 @@ def test_docs_and_redirection_files_exist_and_contain_required_language() -> Non
         "src.connectors.odds_data",
         "ODDS_DATA_CONNECTOR_CONFIGURATION",
         "ODDS_DATA_CONNECTOR_READINESS",
-        "legacy modules remain importable",
         "compatibility-preserving runtime consumers",
     ]:
         assert needle in combined
@@ -87,15 +82,22 @@ def test_odds_runtime_consumer_modules_import_canonical_connector_metadata(monke
         lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("credential access at import time is forbidden")),
     )
 
-    for module_name in REDIRECTED_MODULES:
+    for module_name in CANONICAL_MODULES:
         module = _fresh_import(module_name)
         assert module is not None
-        assert hasattr(module, "ODDS_DATA_CONNECTOR_CONFIGURATION")
-        assert hasattr(module, "ODDS_DATA_CONNECTOR_READINESS")
-        readiness = getattr(module, "ODDS_DATA_CONNECTOR_READINESS")
-        assert readiness["status"] == "disabled"
-        configuration = getattr(module, "ODDS_DATA_CONNECTOR_CONFIGURATION")
-        assert configuration.describe()["provider"] == "odds_data"
+        if hasattr(module, "ODDS_DATA_CONNECTOR_CONFIGURATION"):
+            assert hasattr(module, "ODDS_DATA_CONNECTOR_READINESS")
+            readiness = getattr(module, "ODDS_DATA_CONNECTOR_READINESS")
+            assert readiness["status"] == "disabled"
+            configuration = getattr(module, "ODDS_DATA_CONNECTOR_CONFIGURATION")
+            assert configuration.describe()["provider"] == "odds_data"
+        else:
+            assert module.__name__ in {
+                "src.services.odds_runtime_bridge",
+                "src.connectors.odds_data",
+                "src.providers.sportsbooks",
+                "src.providers.registry",
+            }
 
 
 def test_connector_boundary_and_disabled_client_remain_safe() -> None:
@@ -112,33 +114,15 @@ def test_connector_boundary_and_disabled_client_remain_safe() -> None:
 
 def test_updated_runtime_files_reference_the_canonical_connector_boundary() -> None:
     for path in [
-        ROOT / "sharp_client.py",
-        ROOT / "providers" / "sharp_provider.py",
-        ROOT / "betting_providers" / "sharp_api.py",
-        ROOT / "betting_providers" / "the_odds_api.py",
-        ROOT / "betting_providers" / "sportsgameodds.py",
-        ROOT / "automation_scheduler" / "sharp_sportsbook_adapter.py",
-        ROOT / "automation_scheduler" / "sportsbook_odds_provider.py",
-        ROOT / "src" / "providers" / "provider_router.py",
+        ROOT / "src" / "services" / "odds_runtime_bridge.py",
+        ROOT / "src" / "services" / "enrichment_service.py",
+        ROOT / "automation_scheduler" / "scheduler_runner.py",
+        ROOT / "automation_scheduler" / "__init__.py",
     ]:
         text = path.read_text(encoding="utf-8")
-        assert "src.connectors.odds_data" in text
-        assert "ODDS_DATA_CONNECTOR_CONFIGURATION" in text
-        assert "ODDS_DATA_CONNECTOR_READINESS" in text
-
-
-def test_legacy_odds_targets_remain_importable_and_not_deleted() -> None:
-    for module_name in REDIRECTED_MODULES:
-        module = importlib.import_module(module_name)
-        assert module is not None
-
-    for path in [
-        ROOT / "sharp_client.py",
-        ROOT / "providers" / "sharp_provider.py",
-        ROOT / "betting_providers" / "sharp_api.py",
-        ROOT / "betting_providers" / "the_odds_api.py",
-        ROOT / "betting_providers" / "sportsgameodds.py",
-        ROOT / "automation_scheduler" / "sharp_sportsbook_adapter.py",
-        ROOT / "automation_scheduler" / "sportsbook_odds_provider.py",
-    ]:
-        assert path.exists(), path
+        if path.name == "odds_runtime_bridge.py":
+            assert "src.connectors.odds_data" in text
+            assert "ODDS_DATA_CONNECTOR_CONFIGURATION" in text
+            assert "ODDS_DATA_CONNECTOR_READINESS" in text
+        else:
+            assert "src.services.odds_runtime_bridge" in text

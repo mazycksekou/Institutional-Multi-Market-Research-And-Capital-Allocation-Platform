@@ -8,7 +8,7 @@ The runtime flow remains:
 - `src.services.odds_runtime_bridge`
 - `src.connectors.odds_data`
 
-Legacy odds modules remain on disk for compatibility and proof history, but the historical sportsbook tests are now centered on canonical bridge/connector behavior.
+Legacy odds modules remain on disk for explicit compatibility proofs, but the historical sportsbook tests are now centered on canonical bridge/connector behavior. The prior legacy-shell references in the proof trail are now historical evidence only.
 
 ## Current HEAD
 `b185a75b652543ca80387bc5bdf667c31711165a`
@@ -82,8 +82,8 @@ The remaining historical sportsbook tests now verify:
 - scheduler integration through the canonical bridge
 
 ## Remaining References After Redirection
-Legacy odds shell files still exist and remain importable for compatibility proofs.
-The remaining phase-proof files still mention them as blockers because they are the historical record of the deletion-proof trail.
+Legacy odds shell files still exist for explicit compatibility proofs.
+The remaining phase-proof files now treat the old shell references as historical evidence only rather than retention requirements.
 
 ## Delete-Readiness
 Current status for the legacy odds shells:
@@ -101,9 +101,8 @@ The test redirection is a prerequisite for later deletion proof, not deletion it
 ## Compatibility Policy
 Compatibility shells remain importable.
 Historical tests now exercise canonical bridge/connector behavior first.
-Legacy shell importability is still checked only as a compatibility proof, not as the main runtime behavior assertion.
-Legacy odds modules remain importable while the proof-history trail is preserved.
-legacy odds modules remain importable
+Legacy shell importability is checked only in the dedicated compatibility-proof tests.
+Historical proof documents no longer use legacy-shell importability as a blocker.
 
 ## No-Deletion / No-Call Guarantees
 - No deletion occurred
@@ -113,7 +112,7 @@ legacy odds modules remain importable
 - No connector activation occurred
 
 ## Next Recommended Phase
-Re-run the legacy shell delete-readiness proof after the historical tests have been redirected and the remaining proof-only references are re-evaluated.
+Re-run the legacy shell delete-readiness proof after the historical references have been reclassified and the remaining compatibility-proof files have been evaluated.
 
 ## Required Statement
 Odds shell deletion is authorized only after runtime imports, historical test imports, compatibility proof, and full local gate proof are clean. This phase proves readiness only and does not delete legacy odds modules.

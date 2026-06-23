@@ -26,16 +26,6 @@ RUNTIME_FILES = [
     ROOT / "src" / "services" / "odds_runtime_bridge.py",
 ]
 
-LEGACY_MODULES = [
-    "sharp_client",
-    "providers.sharp_provider",
-    "betting_providers.sharp_api",
-    "betting_providers.the_odds_api",
-    "betting_providers.sportsgameodds",
-    "automation_scheduler.sharp_sportsbook_adapter",
-    "automation_scheduler.sportsbook_odds_provider",
-]
-
 FORBIDDEN_IMPORTS = (
     "requests",
     "httpx",
@@ -88,7 +78,7 @@ def test_docs_exist_and_contain_required_redirection_language() -> None:
         "Runtime Consumer Redirection",
         "Canonical Disabled Surfaces",
         "Runtime Import Scan",
-        "Remaining Legacy Odds Shells",
+        "Remaining Compatibility References",
         "Delete-Readiness",
         "Compatibility Policy",
         "No-Deletion / No-Call Guarantees",
@@ -105,11 +95,11 @@ def test_docs_exist_and_contain_required_redirection_language() -> None:
     for phrase in [
         "src.services.odds_runtime_bridge",
         "src.connectors.odds_data",
-        "legacy odds shells remain importable",
         "No deletion occurred",
         "No live API calls were made",
         "No credentials were read at import time",
         "compatibility-preserving runtime bridge",
+        "historical evidence only",
         "delete-proof only",
     ]:
         assert phrase in combined
@@ -175,12 +165,6 @@ def test_canonical_bridge_and_connector_imports_are_safe_and_disabled() -> None:
         adapter.fetch_sports()
 
 
-def test_legacy_odds_modules_still_import() -> None:
-    for module_name in LEGACY_MODULES:
-        module = importlib.import_module(module_name)
-        assert module is not None
-
-
 def test_runtime_files_do_not_import_forbidden_live_network_libraries() -> None:
     for path in RUNTIME_FILES:
         text = _read(path).lower()
@@ -188,25 +172,20 @@ def test_runtime_files_do_not_import_forbidden_live_network_libraries() -> None:
             assert forbidden not in text, f"{path} still references {forbidden}"
 
 
-def test_legacy_delete_readiness_is_documented() -> None:
-    delete_readiness = _read(ROOT / "ODDS_RUNTIME_DELETE_READINESS_AFTER_10K8ZGL.md")
-    import_scan = _read(ROOT / "ODDS_RUNTIME_IMPORT_SCAN_AFTER_10K8ZGL.md")
+def test_final_delete_readiness_is_documented() -> None:
+    delete_readiness = _read(ROOT / "FINAL_ODDS_DELETE_READINESS_AFTER_10K8ZGN.md")
+    import_scan = _read(ROOT / "ODDS_PROOF_HISTORY_REFERENCE_SCAN_AFTER_10K8ZGN.md")
 
-    for target in [
-        "sharp_client.py",
-        "providers/sharp_provider.py",
-        "betting_providers/sharp_api.py",
-        "betting_providers/the_odds_api.py",
-        "betting_providers/sportsgameodds.py",
-        "automation_scheduler/sharp_sportsbook_adapter.py",
-        "automation_scheduler/sportsbook_odds_provider.py",
+    for blocker in [
+        "tests/test_phase10k8zgj_odds_legacy_live_method_retirement.py",
+        "tests/test_phase10k8zgk_odds_compatibility_shell_delete_readiness.py",
     ]:
-        assert target in delete_readiness
-        assert target in import_scan
+        assert blocker in import_scan
 
     for phrase in [
         "Delete-Readiness Matrix",
         "Delete-Ready Outcome",
         "Next Recommended Phase",
+        "explicit compatibility-proof tests",
     ]:
         assert phrase.lower() in delete_readiness.lower() or phrase.lower() in import_scan.lower()
