@@ -4,20 +4,21 @@ import unittest
 from datetime import datetime, timedelta, timezone
 from tempfile import TemporaryDirectory
 
-from automation_scheduler.kalshi_market_provider import (
-    normalize_kalshi_snapshot,
-    summarize_kalshi_snapshot,
-    validate_kalshi_snapshot,
-    write_kalshi_snapshot,
-)
 from src.providers.registry import get_provider_registry
+from src.providers.prediction_markets import PredictionMarketProviderAdapter
+from src.services.prediction_market_runtime_bridge import (
+    KalshiReadonlyAdapter,
+    normalize_prediction_market_snapshot as normalize_kalshi_snapshot,
+    summarize_prediction_market_snapshot as summarize_kalshi_snapshot,
+    validate_prediction_market_snapshot as validate_kalshi_snapshot,
+    write_prediction_market_snapshot as write_kalshi_snapshot,
+)
 from automation_scheduler.response_compactor import compact_provider_status
 from automation_scheduler.scheduler_runner import run_scheduler_once
 
 
 class TestKalshiMarketProvider(unittest.TestCase):
     def setUp(self):
-        os.environ["LEGACY_PROVIDER_REGISTRY_COMPAT"] = "true"
         for key in (
             "KALSHI_PROVIDER_ENABLED",
             "KALSHI_LIVE_READS_ENABLED",
@@ -26,11 +27,9 @@ class TestKalshiMarketProvider(unittest.TestCase):
         ):
             os.environ.pop(key, None)
 
-    def tearDown(self):
-        os.environ.pop("LEGACY_PROVIDER_REGISTRY_COMPAT", None)
-
     def test_normalize_validate_and_summarize_snapshot(self):
         now_iso = datetime.now(timezone.utc).isoformat()
+        provider_adapter = PredictionMarketProviderAdapter()
         snapshot = {
             "ok": True,
             "status": "live_snapshot_complete",
@@ -80,6 +79,8 @@ class TestKalshiMarketProvider(unittest.TestCase):
         self.assertEqual(verdict["status"], "accepted")
         summary = summarize_kalshi_snapshot(snapshot)
         self.assertEqual(summary["records_valid"], 1)
+        self.assertEqual(provider_adapter.normalize_payload(snapshot["records"][0])["provider_type"], "prediction_market")
+        self.assertTrue(provider_adapter.validate_payload(snapshot["records"][0])["ok"])
         compact = compact_provider_status(summary)
         self.assertNotIn("source_payload_redacted", str(compact))
         self.assertNotIn("authorization", str(compact).lower())
@@ -137,12 +138,12 @@ class TestKalshiMarketProvider(unittest.TestCase):
 
     def test_provider_registry_includes_kalshi_metadata(self):
         registry = get_provider_registry()
-        self.assertIn("kalshi_prediction_market", registry)
-        item = registry["kalshi_prediction_market"]
+        self.assertIn("prediction_markets", registry)
+        item = registry["prediction_markets"]
         self.assertFalse(item["enabled"])
         self.assertFalse(item["live_calls_enabled"])
         self.assertEqual(item["provider_type"], "prediction_market")
-        self.assertEqual(item["required_credentials"], ["KALSHI_API_KEY", "KALSHI_API_SECRET"])
+        self.assertEqual(item["name"], "Prediction Market Placeholder")
 
     def test_scheduler_skips_kalshi_when_disabled_or_live_reads_disabled(self):
         with TemporaryDirectory() as tmp:

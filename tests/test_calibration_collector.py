@@ -7,9 +7,9 @@ from unittest.mock import patch
 
 from automation_scheduler.calibration import build_calibration_report
 from automation_scheduler.calibration_collector import _normalize_records, _select_candidates, collector_policy_from_env, run_collector_cycle, write_daily_report
-from automation_scheduler.kalshi_readonly_adapter import KalshiReadonlyAdapter
 from automation_scheduler.outcome_store import ingest_outcome_records, load_outcome_records
 from automation_scheduler.paper_decision_ledger import persist_paper_decisions_for_review_items
+from src.services.prediction_market_runtime_bridge import KalshiReadonlyAdapter
 
 
 def _market(ticker, close_time, *, price="0.5000", status="active"):

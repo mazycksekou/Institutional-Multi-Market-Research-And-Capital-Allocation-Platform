@@ -140,7 +140,7 @@ class PredictionMarketReadonlyAdapter:
         self._disabled("prediction market runtime bridge is disabled; use src.connectors.prediction_market_data")
 
     def normalize_payload(self, payload: dict[str, Any], *, event_lookup: dict[str, dict[str, Any]] | None = None) -> dict[str, Any]:
-        return normalize_prediction_market_quote(payload, provider="kalshi", market_type="kalshi_prediction_market")
+        return normalize_prediction_market_quote(payload, provider="kalshi", market_type="prediction_market")
 
     def validate_payload(self, payload: dict[str, Any]) -> dict[str, Any]:
         return validate_provider_payload("prediction_market", payload, max_staleness_seconds=3600 * 12)

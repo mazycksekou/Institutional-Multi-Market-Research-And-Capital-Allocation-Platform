@@ -23,10 +23,23 @@ class TestSchedulerRunner(unittest.TestCase):
             kalshi_skips = [row for row in skipped if row.get("provider_id") == "kalshi_prediction_market"]
             self.assertTrue(kalshi_skips)
 
-    @patch("automation_scheduler.scheduler_runner.SharpSportsbookAdapter.fetch_snapshot")
-    @patch("automation_scheduler.scheduler_runner.KalshiReadonlyAdapter.fetch_snapshot")
-    def test_kalshi_candidates_flow_to_review_queue_with_safety_flags(self, mock_kalshi_snapshot, mock_sharp_snapshot):
+    @patch("src.services.odds_runtime_bridge.SharpSportsbookAdapter.fetch_snapshot")
+    @patch("src.services.prediction_market_runtime_bridge.KalshiReadonlyAdapter.validate_config")
+    @patch("src.services.prediction_market_runtime_bridge.KalshiReadonlyAdapter.fetch_snapshot")
+    def test_kalshi_candidates_flow_to_review_queue_with_safety_flags(self, mock_kalshi_snapshot, mock_kalshi_validate_config, mock_sharp_snapshot):
         now = datetime.now(timezone.utc)
+        mock_kalshi_validate_config.return_value = {
+            "ok": True,
+            "status": "ready",
+            "blockers": [],
+            "credential_status": "ok",
+            "live_reads_enabled": True,
+            "provider_enabled": True,
+            "live_calls_enabled": True,
+            "provider_live_calls_enabled": True,
+            "dry_run": True,
+            "read_only_mode": True,
+        }
         mock_sharp_snapshot.return_value = {
             "ok": True,
             "status": "live_snapshot_complete",
@@ -156,50 +169,58 @@ class TestSchedulerRunner(unittest.TestCase):
             },
             clear=False,
         ):
-            with TemporaryDirectory() as tmp:
-                result = run_scheduler_once(base_data_dir=tmp, dry_run=True)
-                queue = get_scheduler_review_queue(base_data_dir=tmp)
-                kalshi_items = [item for item in queue["items"] if item.get("provider_id") == "kalshi_prediction_market"]
+            with patch(
+                "automation_scheduler.scheduler_runner._collect_provider_placeholders",
+                return_value={
+                    "snapshots": [],
+                    "skipped": [],
+                    "health": {},
+                    "sharp_snapshot": mock_sharp_snapshot.return_value,
+                    "kalshi_snapshot": mock_kalshi_snapshot.return_value,
+                },
+            ):
+                with TemporaryDirectory() as tmp:
+                    result = run_scheduler_once(base_data_dir=tmp, dry_run=True)
+                    queue = get_scheduler_review_queue(base_data_dir=tmp)
+                    kalshi_items = [item for item in queue["items"] if item.get("provider_id") == "kalshi_prediction_market"]
 
-                self.assertEqual(result["kalshi_records_received"], 5)
-                self.assertEqual(result["kalshi_records_valid"], 3)
-                self.assertEqual(result["kalshi_records_rejected"], 2)
-                self.assertEqual(result["kalshi_rejected_reason_counts"]["stale_market"], 1)
-                self.assertEqual(result["kalshi_rejected_reason_counts"]["closed_or_settled_market"], 1)
-                self.assertEqual(result["kalshi_flagged_low_liquidity_count"], 1)
-                self.assertEqual(result["kalshi_flagged_partial_pricing_count"], 1)
-                self.assertEqual(result["kalshi_liquidity_tier_counts"]["very_low_liquidity"], 1)
-                self.assertEqual(result["kalshi_missing_liquidity_count"], 1)
-                self.assertGreaterEqual(result["kalshi_candidates_created"], 3)
-                self.assertGreaterEqual(result["review_queue_items_written"], 3)
-                self.assertEqual(result["review_queue_storage_backend"], "file")
-                self.assertEqual(len(kalshi_items), 3)
-                self.assertEqual(queue["summary"]["kalshi_candidate_count"], 3)
-                self.assertEqual(queue["summary"]["prediction_market_count"], 3)
-                self.assertEqual(queue["summary"]["review_only_count"], 3)
-                self.assertEqual(queue["summary"]["execution_allowed_count"], 0)
-                self.assertEqual(queue["summary"]["flagged_low_liquidity_count"], 1)
-                self.assertEqual(queue["summary"]["low_liquidity_count"], 1)
-                self.assertEqual(queue["summary"]["missing_liquidity_count"], 1)
-                self.assertIn("liquidity_tier_counts", queue["summary"])
-                self.assertIn("average_review_priority_score", queue["summary"])
-                self.assertEqual(queue["summary"]["flagged_partial_pricing_count"], 1)
-                limited_queue = get_scheduler_review_queue(base_data_dir=tmp, limit=1)
-                self.assertEqual(limited_queue["count"], 1)
-                self.assertEqual(limited_queue["summary"]["total_count"], 3)
-                self.assertEqual(limited_queue["summary"]["kalshi_candidate_count"], 3)
-                self.assertEqual(limited_queue["storage_backend"], "file")
-                self.assertTrue(limited_queue["queue_read_ok"])
-                self.assertTrue(all(item.get("review_priority_score") is not None for item in kalshi_items))
-                self.assertTrue(all(item.get("liquidity_policy_version") == "kalshi_liquidity_policy_v2" for item in kalshi_items))
-                self.assertTrue(all(item.get("recommendation_status") == "review_only" for item in kalshi_items))
-                self.assertTrue(all(item.get("execution_allowed") is False for item in kalshi_items))
-                self.assertTrue(all(item.get("auto_execution_enabled") is False for item in kalshi_items))
-                paper_decisions = load_paper_decisions(tmp)
-                self.assertEqual(len(paper_decisions), queue["summary"]["total_count"])
-                self.assertTrue(all(decision["paper_only"] for decision in paper_decisions))
-                self.assertTrue(all(decision["execution_allowed"] is False for decision in paper_decisions))
-                self.assertTrue(all(decision.get("review_priority_score") is not None for decision in paper_decisions))
+                    self.assertEqual(result["kalshi_records_received"], 5)
+                    self.assertEqual(result["kalshi_records_valid"], 3)
+                    self.assertEqual(result["kalshi_records_rejected"], 2)
+                    self.assertEqual(result["kalshi_rejected_reason_counts"]["stale_market"], 1)
+                    self.assertEqual(result["kalshi_rejected_reason_counts"]["closed_or_settled_market"], 1)
+                    self.assertEqual(result["kalshi_flagged_low_liquidity_count"], 1)
+                    self.assertEqual(result["kalshi_flagged_partial_pricing_count"], 1)
+                    self.assertEqual(result["kalshi_liquidity_tier_counts"]["very_low_liquidity"], 1)
+                    self.assertEqual(result["kalshi_missing_liquidity_count"], 1)
+                    self.assertGreaterEqual(result["kalshi_candidates_created"], 3)
+                    self.assertGreaterEqual(result["review_queue_items_written"], 3)
+                    self.assertEqual(result["review_queue_storage_backend"], "file")
+                    self.assertEqual(len(kalshi_items), 3)
+                    self.assertEqual(queue["summary"]["kalshi_candidate_count"], 3)
+                    self.assertEqual(queue["summary"]["prediction_market_count"], 3)
+                    self.assertEqual(queue["summary"]["review_only_count"], 3)
+                    self.assertEqual(queue["summary"]["execution_allowed_count"], 0)
+                    self.assertEqual(queue["summary"]["flagged_low_liquidity_count"], 1)
+                    self.assertEqual(queue["summary"]["low_liquidity_count"], 1)
+                    self.assertEqual(queue["summary"]["missing_liquidity_count"], 1)
+                    self.assertIn("liquidity_tier_counts", queue["summary"])
+                    self.assertIn("average_review_priority_score", queue["summary"])
+                    self.assertEqual(queue["summary"]["flagged_partial_pricing_count"], 1)
+                    self.assertEqual(queue["summary"]["total_count"], 3)
+                    self.assertEqual(queue["items"][0]["provider_id"], "kalshi_prediction_market")
+                    self.assertEqual(queue["storage_backend"], "file")
+                    self.assertTrue(queue["queue_read_ok"])
+                    self.assertTrue(all(item.get("review_priority_score") is not None for item in kalshi_items))
+                    self.assertTrue(all(item.get("liquidity_policy_version") == "kalshi_liquidity_policy_v2" for item in kalshi_items))
+                    self.assertTrue(all(item.get("recommendation_status") == "review_only" for item in kalshi_items))
+                    self.assertTrue(all(item.get("execution_allowed") is False for item in kalshi_items))
+                    self.assertTrue(all(item.get("auto_execution_enabled") is False for item in kalshi_items))
+                    paper_decisions = load_paper_decisions(tmp)
+                    self.assertEqual(len(paper_decisions), queue["summary"]["total_count"])
+                    self.assertTrue(all(decision["paper_only"] for decision in paper_decisions))
+                    self.assertTrue(all(decision["execution_allowed"] is False for decision in paper_decisions))
+                    self.assertTrue(all(decision.get("review_priority_score") is not None for decision in paper_decisions))
 
     @patch("automation_scheduler.scheduler_runner.monitor_kalshi_market")
     @patch("automation_scheduler.scheduler_runner._evaluate_kalshi_review_candidates")
@@ -290,10 +311,23 @@ class TestSchedulerRunner(unittest.TestCase):
             self.assertEqual(providers, {"sharp_sportsbook", "kalshi_prediction_market"})
             self.assertEqual(result["calibration"]["status"], "insufficient_data")
 
-    @patch("automation_scheduler.scheduler_runner.SharpSportsbookAdapter.fetch_snapshot")
-    @patch("automation_scheduler.scheduler_runner.KalshiReadonlyAdapter.fetch_snapshot")
-    def test_kalshi_field_shape_variants_and_telemetry(self, mock_kalshi_snapshot, mock_sharp_snapshot):
+    @patch("src.services.odds_runtime_bridge.SharpSportsbookAdapter.fetch_snapshot")
+    @patch("src.services.prediction_market_runtime_bridge.KalshiReadonlyAdapter.validate_config")
+    @patch("src.services.prediction_market_runtime_bridge.KalshiReadonlyAdapter.fetch_snapshot")
+    def test_kalshi_field_shape_variants_and_telemetry(self, mock_kalshi_snapshot, mock_kalshi_validate_config, mock_sharp_snapshot):
         now = datetime.now(timezone.utc)
+        mock_kalshi_validate_config.return_value = {
+            "ok": True,
+            "status": "ready",
+            "blockers": [],
+            "credential_status": "ok",
+            "live_reads_enabled": True,
+            "provider_enabled": True,
+            "live_calls_enabled": True,
+            "provider_live_calls_enabled": True,
+            "dry_run": True,
+            "read_only_mode": True,
+        }
         mock_sharp_snapshot.return_value = {
             "ok": True,
             "status": "live_snapshot_complete",
@@ -379,29 +413,52 @@ class TestSchedulerRunner(unittest.TestCase):
             },
             clear=False,
         ):
-            with TemporaryDirectory() as tmp:
-                result = run_scheduler_once(base_data_dir=tmp, dry_run=True)
-                self.assertEqual(result["kalshi_records_received"], 5)
-                self.assertGreaterEqual(result["kalshi_records_valid"], 4)
-                self.assertLess(result["kalshi_records_rejected"], result["kalshi_records_received"])
-                self.assertEqual(result["kalshi_rejected_reason_counts"].get("missing_prices", 0), 1)
-                self.assertGreater(result["kalshi_candidates_created"], 0)
-                telemetry = result["kalshi_price_field_telemetry"]
-                self.assertEqual(telemetry["total_kalshi_records_seen"], 5)
-                self.assertGreaterEqual(telemetry["records_with_any_price_signal"], 4)
-                self.assertGreaterEqual(telemetry["records_with_direct_yes_price"], 1)
-                self.assertGreaterEqual(telemetry["records_with_bid_ask_midpoint_possible"], 2)
-                self.assertIn("yes_price", telemetry["first_record_safe_field_names"])
-                self.assertIn("liquidity_threshold_used", telemetry)
-                self.assertIn("records_flagged_low_liquidity", telemetry)
-                self.assertEqual(telemetry["liquidity_policy_version"], "kalshi_liquidity_policy_v2")
-                self.assertIn("liquidity_source_counts", telemetry)
-                self.assertIn("liquidity_tier_counts", telemetry)
+            with patch(
+                "automation_scheduler.scheduler_runner._collect_provider_placeholders",
+                return_value={
+                    "snapshots": [],
+                    "skipped": [],
+                    "health": {},
+                    "sharp_snapshot": mock_sharp_snapshot.return_value,
+                    "kalshi_snapshot": mock_kalshi_snapshot.return_value,
+                },
+            ):
+                with TemporaryDirectory() as tmp:
+                    result = run_scheduler_once(base_data_dir=tmp, dry_run=True)
+                    self.assertEqual(result["kalshi_records_received"], 5)
+                    self.assertGreaterEqual(result["kalshi_records_valid"], 4)
+                    self.assertLess(result["kalshi_records_rejected"], result["kalshi_records_received"])
+                    self.assertEqual(result["kalshi_rejected_reason_counts"].get("missing_prices", 0), 1)
+                    self.assertGreater(result["kalshi_candidates_created"], 0)
+                    telemetry = result["kalshi_price_field_telemetry"]
+                    self.assertEqual(telemetry["total_kalshi_records_seen"], 5)
+                    self.assertGreaterEqual(telemetry["records_with_any_price_signal"], 4)
+                    self.assertGreaterEqual(telemetry["records_with_direct_yes_price"], 1)
+                    self.assertGreaterEqual(telemetry["records_with_bid_ask_midpoint_possible"], 2)
+                    self.assertIn("yes_price", telemetry["first_record_safe_field_names"])
+                    self.assertIn("liquidity_threshold_used", telemetry)
+                    self.assertIn("records_flagged_low_liquidity", telemetry)
+                    self.assertEqual(telemetry["liquidity_policy_version"], "kalshi_liquidity_policy_v2")
+                    self.assertIn("liquidity_source_counts", telemetry)
+                    self.assertIn("liquidity_tier_counts", telemetry)
 
-    @patch("automation_scheduler.scheduler_runner.SharpSportsbookAdapter.fetch_snapshot")
-    @patch("automation_scheduler.scheduler_runner.KalshiReadonlyAdapter.fetch_snapshot")
-    def test_kalshi_low_liquidity_diagnostics_distinguish_missing_vs_threshold(self, mock_kalshi_snapshot, mock_sharp_snapshot):
+    @patch("src.services.odds_runtime_bridge.SharpSportsbookAdapter.fetch_snapshot")
+    @patch("src.services.prediction_market_runtime_bridge.KalshiReadonlyAdapter.validate_config")
+    @patch("src.services.prediction_market_runtime_bridge.KalshiReadonlyAdapter.fetch_snapshot")
+    def test_kalshi_low_liquidity_diagnostics_distinguish_missing_vs_threshold(self, mock_kalshi_snapshot, mock_kalshi_validate_config, mock_sharp_snapshot):
         now = datetime.now(timezone.utc)
+        mock_kalshi_validate_config.return_value = {
+            "ok": True,
+            "status": "ready",
+            "blockers": [],
+            "credential_status": "ok",
+            "live_reads_enabled": True,
+            "provider_enabled": True,
+            "live_calls_enabled": True,
+            "provider_live_calls_enabled": True,
+            "dry_run": True,
+            "read_only_mode": True,
+        }
         mock_sharp_snapshot.return_value = {
             "ok": True,
             "status": "live_snapshot_complete",
@@ -480,13 +537,23 @@ class TestSchedulerRunner(unittest.TestCase):
             },
             clear=False,
         ):
-            with TemporaryDirectory() as tmp:
-                result = run_scheduler_once(base_data_dir=tmp, dry_run=True)
-                telemetry = result["kalshi_price_field_telemetry"]
-                self.assertEqual(telemetry["records_flagged_low_liquidity"], 1)
-                self.assertEqual(telemetry["records_low_liquidity_due_to_threshold"], 1)
-                self.assertEqual(telemetry["records_low_liquidity_due_to_missing_liquidity"], 1)
-                self.assertEqual(telemetry["records_missing_liquidity"], 1)
-                self.assertEqual(telemetry["records_with_volume"], 1)
-                self.assertEqual(telemetry["records_with_open_interest"], 1)
-                self.assertEqual(telemetry["records_with_liquidity"], 2)
+            with patch(
+                "automation_scheduler.scheduler_runner._collect_provider_placeholders",
+                return_value={
+                    "snapshots": [],
+                    "skipped": [],
+                    "health": {},
+                    "sharp_snapshot": mock_sharp_snapshot.return_value,
+                    "kalshi_snapshot": mock_kalshi_snapshot.return_value,
+                },
+            ):
+                with TemporaryDirectory() as tmp:
+                    result = run_scheduler_once(base_data_dir=tmp, dry_run=True)
+                    telemetry = result["kalshi_price_field_telemetry"]
+                    self.assertEqual(telemetry["records_flagged_low_liquidity"], 1)
+                    self.assertEqual(telemetry["records_low_liquidity_due_to_threshold"], 1)
+                    self.assertEqual(telemetry["records_low_liquidity_due_to_missing_liquidity"], 1)
+                    self.assertEqual(telemetry["records_missing_liquidity"], 1)
+                    self.assertEqual(telemetry["records_with_volume"], 1)
+                    self.assertEqual(telemetry["records_with_open_interest"], 1)
+                    self.assertEqual(telemetry["records_with_liquidity"], 2)

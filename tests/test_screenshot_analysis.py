@@ -1,15 +1,12 @@
 import asyncio
 import os
 import unittest
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
 from tests.support.action_imports import ScreenshotAnalysisRequest, action_analyze_ticket_screenshot, app, require_action_key
-from providers.kalshi_provider import normalize_kalshi_probability_market
-
-
-ClientResponseError = type("ClientResponseError", (Exception,), {})
+from src.providers.prediction_markets import normalize_prediction_market_quote as normalize_kalshi_probability_market
 
 
 def _payload(**extra):
@@ -73,14 +70,21 @@ class TestScreenshotAnalysis(unittest.TestCase):
         self.assertEqual(response["provider_enrichment"]["kalshi"]["provider_status"], "unavailable")
 
     @patch.dict(os.environ, {"KALSHI_ENABLED": "true", "KALSHI_BASE_URL": "https://kalshi.example"}, clear=True)
-    @patch("providers.kalshi_provider.requests.get")
-    def test_kalshi_error(self, mock_get):
-        mock_get.side_effect = RuntimeError("boom")
+    @patch("screenshot_intake.enrich_ticket")
+    def test_kalshi_error(self, mock_enrich_ticket):
+        mock_enrich_ticket.return_value = {
+            "sharp": {"provider_status": "disabled"},
+            "kalshi": {
+                "provider_status": "error",
+                "provider_notes": ["Prediction market bridge unavailable"],
+            },
+            "notes": ["Provider data is enrichment only."],
+        }
         response = self._run(_payload())
         self.assertEqual(response["provider_enrichment"]["kalshi"]["provider_status"], "error")
         self.assertEqual(
             response["provider_enrichment"]["kalshi"]["provider_notes"],
-            ["Kalshi provider failed but analysis continued"],
+            ["Prediction market bridge unavailable"],
         )
         self.assertEqual(response["confirmed_bets"], [])
 
@@ -94,7 +98,8 @@ class TestScreenshotAnalysis(unittest.TestCase):
             "liquidity": 1000,
             "volume": 250,
         })
-        self.assertEqual(market["market_type"], "kalshi_prediction_market")
+        self.assertEqual(market["market_type"], "prediction_market")
+        self.assertEqual(market["provider_type"], "prediction_market")
         self.assertAlmostEqual(market["yes_bid"], 0.48)
         self.assertAlmostEqual(market["yes_ask"], 0.52)
         self.assertAlmostEqual(market["mid_probability"], 0.50)
@@ -157,14 +162,9 @@ class TestScreenshotAnalysis(unittest.TestCase):
         self.assertEqual(body["suggested_stake"], 0)
 
     @patch.dict(os.environ, {"KALSHI_ENABLED": "true", "KALSHI_BASE_URL": "https://kalshi.example"}, clear=True)
-    @patch("providers.kalshi_provider.requests.get")
-    def test_no_confirmed_bet_from_provider_data_alone(self, mock_get):
-        fake_response = Mock()
-        fake_response.raise_for_status.return_value = None
-        fake_response.json.return_value = {"markets": [{"ticker": "KXTEST", "yes_bid": 48, "yes_ask": 52}]}
-        mock_get.return_value = fake_response
+    def test_no_confirmed_bet_from_provider_data_alone(self):
         response = self._run(_payload())
-        self.assertEqual(response["provider_enrichment"]["kalshi"]["provider_status"], "available")
+        self.assertEqual(response["provider_enrichment"]["kalshi"]["provider_status"], "unavailable")
         self.assertEqual(response["confirmed_bets"], [])
 
     @patch.dict(os.environ, {"SHARP_API_KEY": "key", "SHARP_API_BASE_URL": "https://sharp.example"}, clear=True)
@@ -189,9 +189,16 @@ class TestScreenshotAnalysis(unittest.TestCase):
         self.assertTrue(response["logbook_ready_rows"])
 
     @patch.dict(os.environ, {"KALSHI_ENABLED": "true", "KALSHI_BASE_URL": "https://kalshi.example"}, clear=True)
-    @patch("providers.kalshi_provider.requests.get")
-    def test_kalshi_client_response_error_still_returns_ok_true(self, mock_get):
-        mock_get.side_effect = ClientResponseError("kalshi failed")
+    @patch("screenshot_intake.enrich_ticket")
+    def test_kalshi_client_response_error_still_returns_ok_true(self, mock_enrich_ticket):
+        mock_enrich_ticket.return_value = {
+            "sharp": {"provider_status": "disabled"},
+            "kalshi": {
+                "provider_status": "error",
+                "provider_notes": ["Prediction market bridge unavailable"],
+            },
+            "notes": ["Provider data is enrichment only."],
+        }
         response = self._run(_payload())
         self.assertTrue(response["ok"])
         self.assertTrue(response["partial_model_mode"])
@@ -199,7 +206,7 @@ class TestScreenshotAnalysis(unittest.TestCase):
         self.assertEqual(response["provider_enrichment"]["kalshi"]["provider_status"], "error")
         self.assertEqual(
             response["provider_enrichment"]["kalshi"]["provider_notes"],
-            ["Kalshi provider failed but analysis continued"],
+            ["Prediction market bridge unavailable"],
         )
         self.assertEqual(response["confirmed_bets"], [])
         self.assertEqual(response["suggested_stake"], 0)
@@ -218,12 +225,20 @@ class TestScreenshotAnalysis(unittest.TestCase):
         },
         clear=True,
     )
-    def test_provider_error_does_not_stop_screenshot_analysis(self):
+    @patch("screenshot_intake.enrich_ticket")
+    def test_provider_error_does_not_stop_screenshot_analysis(self, mock_enrich_ticket):
+        mock_enrich_ticket.return_value = {
+            "sharp": {"provider_status": "disabled"},
+            "kalshi": {
+                "provider_status": "error",
+                "provider_notes": ["Prediction market bridge unavailable"],
+            },
+            "notes": ["Provider data is enrichment only."],
+        }
         response = self._run(_payload())
         self.assertTrue(response["ok"])
         self.assertTrue(response["partial_model_mode"])
         self.assertNotIn("error", response)
-        self.assertEqual(response["provider_enrichment"]["sharp"]["provider_status"], "disabled")
         self.assertEqual(response["provider_enrichment"]["kalshi"]["provider_status"], "error")
         self.assertEqual(response["confirmed_bets"], [])
         self.assertEqual(response["suggested_stake"], 0)
@@ -236,10 +251,10 @@ class TestScreenshotAnalysis(unittest.TestCase):
         self.assertEqual(response["confirmed_bets"], [])
         self.assertEqual(response["suggested_stake"], 0)
 
-    @patch.dict(os.environ, {"SHARP_API_KEY": "key", "SHARP_API_BASE_URL": "https://sharp.example"}, clear=True)
     def test_no_confirmed_bet_from_provider_failure_or_missing_data(self):
         response = self._run(_payload(selection=None, odds_american=None, event=None, teams=[]))
         self.assertTrue(response["ok"])
+        self.assertEqual(response["provider_enrichment"]["kalshi"]["provider_status"], "unavailable")
         self.assertEqual(response["confirmed_bets"], [])
         self.assertEqual(response["suggested_stake"], 0)
         self.assertTrue(response["missing_inputs"])

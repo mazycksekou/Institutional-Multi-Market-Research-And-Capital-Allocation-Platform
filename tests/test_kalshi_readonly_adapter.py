@@ -1,428 +1,171 @@
-import base64
-import os
+from __future__ import annotations
+
+import importlib
+import tempfile
 import unittest
 from datetime import datetime, timezone
-from unittest.mock import patch
+from pathlib import Path
 
-import httpx
-from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.asymmetric import padding, rsa
-
-from automation_scheduler.kalshi_readonly_adapter import KalshiReadonlyAdapter
-
-
-class _MockResponse:
-    def __init__(self, status_code, payload):
-        self.status_code = status_code
-        self._payload = payload
-
-    def json(self):
-        return self._payload
-
-
-class _MockClient:
-    response_status = 200
-    markets_payload = {"markets": []}
-    events_payload = {"events": []}
-    should_timeout = False
-    raise_exception = None
-    calls = []
-
-    def __init__(self, *args, **kwargs):
-        return None
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc, tb):
-        return None
-
-    def get(self, url, headers=None, params=None):
-        if self.raise_exception is not None:
-            raise self.raise_exception
-        if self.should_timeout:
-            raise httpx.TimeoutException("timeout")
-        _MockClient.calls.append(("GET", url, headers or {}, params or {}))
-        if "events" in url:
-            return _MockResponse(self.response_status, self.events_payload)
-        return _MockResponse(self.response_status, self.markets_payload)
-
-    def post(self, *args, **kwargs):
-        _MockClient.calls.append(("POST", args, kwargs))
-        return _MockResponse(405, {"error": "not_allowed"})
-
-    def put(self, *args, **kwargs):
-        _MockClient.calls.append(("PUT", args, kwargs))
-        return _MockResponse(405, {"error": "not_allowed"})
-
-    def patch(self, *args, **kwargs):
-        _MockClient.calls.append(("PATCH", args, kwargs))
-        return _MockResponse(405, {"error": "not_allowed"})
-
-    def delete(self, *args, **kwargs):
-        _MockClient.calls.append(("DELETE", args, kwargs))
-        return _MockResponse(405, {"error": "not_allowed"})
-
-
-_TEST_PRIVATE_KEY = rsa.generate_private_key(public_exponent=65537, key_size=2048)
-_TEST_PRIVATE_KEY_PEM = _TEST_PRIVATE_KEY.private_bytes(
-    encoding=serialization.Encoding.PEM,
-    format=serialization.PrivateFormat.PKCS8,
-    encryption_algorithm=serialization.NoEncryption(),
-).decode("utf-8")
+from src.connectors.errors import ConnectorDisabledError
+from src.connectors.prediction_market_data import (
+    build_prediction_market_auth_requirement,
+    build_prediction_market_connector_configuration,
+    build_prediction_market_disabled_live_client,
+    describe_prediction_market_connector_readiness,
+)
+from src.providers.prediction_markets import (
+    PredictionMarketProviderAdapter,
+    normalize_prediction_market_quote,
+    normalize_prediction_market_snapshot,
+    validate_prediction_market_payload,
+)
 
 
 class TestKalshiReadonlyAdapter(unittest.TestCase):
-    def setUp(self):
-        for key in (
-            "KALSHI_PROVIDER_ENABLED",
-            "KALSHI_LIVE_READS_ENABLED",
-            "KALSHI_API_BASE_URL",
-            "KALSHI_API_KEY",
-            "KALSHI_API_SECRET",
-            "KALSHI_API_TIMEOUT_SECONDS",
-            "KALSHI_MARKETS_PATH",
-            "KALSHI_EVENTS_PATH",
-        ):
-            os.environ.pop(key, None)
-        self.contract = {
-            "provider_id": "kalshi_prediction_market",
-            "provider_type": "prediction_market",
-            "enabled": False,
-            "dry_run": True,
-            "live_calls_enabled": False,
-            "required_credentials": ["KALSHI_API_KEY", "KALSHI_API_SECRET"],
-            "auto_execution_enabled": False,
-            "kalshi_order_execution_enabled": False,
-        }
-        _MockClient.response_status = 200
-        _MockClient.markets_payload = {"markets": []}
-        _MockClient.events_payload = {"events": []}
-        _MockClient.should_timeout = False
-        _MockClient.raise_exception = None
-        _MockClient.calls = []
+    def setUp(self) -> None:
+        self.bridge = importlib.import_module("src.services.prediction_market_runtime_bridge")
+        self.connector = importlib.import_module("src.connectors.prediction_market_data")
+        self.provider = importlib.import_module("src.providers.prediction_markets")
+        self.adapter = self.bridge.KalshiReadonlyAdapter({"enabled": False, "dry_run": True, "live_calls_enabled": False})
 
-    def test_defaults_disabled(self):
-        adapter = KalshiReadonlyAdapter(self.contract)
-        cfg = adapter.validate_config()
+    def test_bridge_aliases_and_disabled_contract_are_local_only(self) -> None:
+        self.assertIs(self.bridge.KalshiReadonlyAdapter, self.bridge.PredictionMarketReadonlyAdapter)
+        cfg = self.adapter.validate_config()
+        self.assertEqual(cfg["status"], "provider_disabled")
         self.assertIn("provider_disabled", cfg["blockers"])
         self.assertIn("live_reads_disabled", cfg["blockers"])
         self.assertIn("blocked_missing_credentials", cfg["blockers"])
         self.assertFalse(cfg["provider_enabled"])
         self.assertFalse(cfg["live_calls_enabled"])
 
-    def test_missing_credentials_produces_blocked_missing_credentials(self):
-        os.environ["KALSHI_PROVIDER_ENABLED"] = "true"
-        os.environ["KALSHI_LIVE_READS_ENABLED"] = "true"
-        contract = dict(self.contract)
-        contract["enabled"] = True
-        contract["live_calls_enabled"] = True
-        adapter = KalshiReadonlyAdapter(contract)
-        snapshot = adapter.fetch_snapshot()
-        self.assertEqual(snapshot["status"], "blocked_missing_credentials")
-        self.assertEqual(snapshot["records"], [])
-
-    @patch("automation_scheduler.kalshi_readonly_adapter.httpx.Client", new=_MockClient)
-    def test_live_reads_disabled_does_not_call_external_network(self):
-        os.environ["KALSHI_PROVIDER_ENABLED"] = "true"
-        contract = dict(self.contract)
-        contract["enabled"] = True
-        contract["live_calls_enabled"] = False
-        adapter = KalshiReadonlyAdapter(contract)
-        snapshot = adapter.fetch_snapshot()
-        self.assertEqual(snapshot["status"], "live_reads_disabled")
-        self.assertEqual(_MockClient.calls, [])
-
-    @patch("automation_scheduler.kalshi_readonly_adapter.httpx.Client", new=_MockClient)
-    def test_live_get_only_path_normalizes_prediction_market_fields(self):
-        now_iso = datetime.now(timezone.utc).isoformat()
-        os.environ["KALSHI_PROVIDER_ENABLED"] = "true"
-        os.environ["KALSHI_LIVE_READS_ENABLED"] = "true"
-        os.environ["KALSHI_API_KEY"] = "kalshi_key_1234567890"
-        os.environ["KALSHI_API_SECRET"] = _TEST_PRIVATE_KEY_PEM
-        contract = dict(self.contract)
-        contract["enabled"] = True
-        contract["live_calls_enabled"] = True
-        contract["dry_run"] = True
-        _MockClient.events_payload = {
-            "events": [
-                {
-                    "event_ticker": "EVT-1",
-                    "title": "Fed funds event",
-                    "close_time": "2026-06-01T00:00:00+00:00",
-                    "updated_at": now_iso,
-                }
-            ]
-        }
-        _MockClient.markets_payload = {
-            "markets": [
-                {
-                    "market_id": "MKT-1",
-                    "event_ticker": "EVT-1",
-                    "contract_id": "CTR-1",
-                    "contract_title": "Rate above threshold",
-                    "ticker": "FED-ABOVE",
-                    "yes_bid": 47,
-                    "yes_ask": 49,
-                    "volume": 2500,
-                    "open_interest": 1200,
-                    "close_time": "2026-06-01T00:00:00+00:00",
-                    "settlement_rule": "Resolved by official release",
-                    "timestamp": now_iso,
-                    "api_key": "must_redact",
-                }
-            ]
-        }
-        adapter = KalshiReadonlyAdapter(contract)
-        snapshot = adapter.fetch_snapshot()
-        self.assertEqual(snapshot["status"], "live_snapshot_complete")
-        self.assertEqual(snapshot["records_received"], 1)
-        self.assertEqual(snapshot["records_valid"], 1)
-        self.assertEqual(snapshot["records_rejected"], 0)
-        row = snapshot["records"][0]
-        self.assertAlmostEqual(row["yes_price"], 0.48, places=6)
-        self.assertAlmostEqual(row["implied_probability"], 0.48, places=6)
-        self.assertAlmostEqual(row["no_price"], 0.52, places=6)
-        self.assertEqual(row["volume"], 2500.0)
-        self.assertEqual(row["open_interest"], 1200.0)
-        self.assertEqual(row["close_time"], "2026-06-01T00:00:00+00:00")
-        self.assertEqual(row["timestamp"], now_iso)
-        self.assertEqual(row["settlement_rule"], "Resolved by official release")
-        self.assertIn("source_payload_redacted", row)
-        self.assertNotIn("kalshi_key_1234567890", str(snapshot))
-        self.assertNotIn("BEGIN PRIVATE KEY", str(snapshot))
-        methods = [call[0] for call in _MockClient.calls]
-        self.assertTrue(all(method == "GET" for method in methods))
-        self.assertNotIn("POST", methods)
-        self.assertNotIn("PUT", methods)
-        self.assertNotIn("PATCH", methods)
-        self.assertNotIn("DELETE", methods)
-        _, _, sent_headers, sent_params = _MockClient.calls[0]
-        self.assertIn("KALSHI-ACCESS-KEY", sent_headers)
-        self.assertIn("KALSHI-ACCESS-TIMESTAMP", sent_headers)
-        self.assertIn("KALSHI-ACCESS-SIGNATURE", sent_headers)
-        self.assertNotIn("KALSHI-ACCESS-SECRET", sent_headers)
-        self.assertIsInstance(sent_params, dict)
-
-    @patch("automation_scheduler.kalshi_readonly_adapter.httpx.Client", new=_MockClient)
-    def test_live_normalizes_dollars_based_price_fields(self):
-        now_iso = datetime.now(timezone.utc).isoformat()
-        os.environ["KALSHI_PROVIDER_ENABLED"] = "true"
-        os.environ["KALSHI_LIVE_READS_ENABLED"] = "true"
-        os.environ["KALSHI_API_KEY"] = "kalshi_key_1234567890"
-        os.environ["KALSHI_API_SECRET"] = _TEST_PRIVATE_KEY_PEM
-        contract = dict(self.contract)
-        contract["enabled"] = True
-        contract["live_calls_enabled"] = True
-        contract["dry_run"] = True
-        _MockClient.events_payload = {"events": [{"event_ticker": "EVT-1", "title": "Event 1", "updated_at": now_iso}]}
-        _MockClient.markets_payload = {
-            "markets": [
-                {
-                    "event_ticker": "EVT-1",
-                    "ticker": "KX-1",
-                    "yes_bid_dollars": 0.44,
-                    "yes_ask_dollars": 0.46,
-                    "no_bid_dollars": 0.54,
-                    "no_ask_dollars": 0.56,
-                    "last_price_dollars": 0.45,
-                    "volume_fp": 1200,
-                    "open_interest_fp": 900,
-                    "rules_primary": "official_result",
-                    "close_time": "2026-06-01T00:00:00+00:00",
-                    "updated_time": now_iso,
-                }
-            ]
-        }
-        adapter = KalshiReadonlyAdapter(contract)
-        snapshot = adapter.fetch_snapshot()
-        self.assertEqual(snapshot["records_valid"], 1)
-        row = snapshot["records"][0]
-        self.assertAlmostEqual(row["yes_bid"], 0.44, places=6)
-        self.assertAlmostEqual(row["yes_ask"], 0.46, places=6)
-        self.assertAlmostEqual(row["yes_price"], 0.45, places=6)
-        self.assertEqual(row["volume"], 1200.0)
-        self.assertEqual(row["open_interest"], 900.0)
-        self.assertEqual(row["settlement_rule"], "official_result")
-        self.assertEqual(row["timestamp"], now_iso)
-
-    @patch("automation_scheduler.kalshi_readonly_adapter.httpx.Client", new=_MockClient)
-    def test_dollars_bid_ask_can_derive_midpoint_when_last_price_missing(self):
-        now_iso = datetime.now(timezone.utc).isoformat()
-        os.environ["KALSHI_PROVIDER_ENABLED"] = "true"
-        os.environ["KALSHI_LIVE_READS_ENABLED"] = "true"
-        os.environ["KALSHI_API_KEY"] = "kalshi_key_1234567890"
-        os.environ["KALSHI_API_SECRET"] = _TEST_PRIVATE_KEY_PEM
-        contract = dict(self.contract)
-        contract["enabled"] = True
-        contract["live_calls_enabled"] = True
-        contract["dry_run"] = True
-        _MockClient.events_payload = {"events": [{"event_ticker": "EVT-1", "title": "Event 1", "updated_at": now_iso}]}
-        _MockClient.markets_payload = {
-            "markets": [
-                {
-                    "event_ticker": "EVT-1",
-                    "ticker": "KX-2",
-                    "yes_bid_dollars": 0.30,
-                    "yes_ask_dollars": 0.34,
-                    "no_bid_dollars": 0.66,
-                    "no_ask_dollars": 0.70,
-                    "close_time": "2026-06-01T00:00:00+00:00",
-                    "updated_time": now_iso,
-                }
-            ]
-        }
-        adapter = KalshiReadonlyAdapter(contract)
-        snapshot = adapter.fetch_snapshot()
-        self.assertEqual(snapshot["records_valid"], 1)
-        row = snapshot["records"][0]
-        self.assertAlmostEqual(row["yes_price"], 0.32, places=6)
-        self.assertAlmostEqual(row["no_price"], 0.68, places=6)
-
-    @patch("automation_scheduler.kalshi_readonly_adapter.httpx.Client", new=_MockClient)
-    def test_malformed_prices_are_rejected(self):
-        now_iso = datetime.now(timezone.utc).isoformat()
-        os.environ["KALSHI_PROVIDER_ENABLED"] = "true"
-        os.environ["KALSHI_LIVE_READS_ENABLED"] = "true"
-        os.environ["KALSHI_API_KEY"] = "kalshi_key_1234567890"
-        os.environ["KALSHI_API_SECRET"] = _TEST_PRIVATE_KEY_PEM
-        contract = dict(self.contract)
-        contract["enabled"] = True
-        contract["live_calls_enabled"] = True
-        contract["dry_run"] = True
-        _MockClient.events_payload = {"events": [{"event_ticker": "EVT-1", "title": "Event 1"}]}
-        _MockClient.markets_payload = {
-            "markets": [
-                {
-                    "market_id": "MKT-1",
-                    "event_ticker": "EVT-1",
-                    "contract_id": "CTR-1",
-                    "contract_title": "Bad price",
-                    "yes_price": "not_a_number",
-                    "timestamp": now_iso,
-                }
-            ]
-        }
-        adapter = KalshiReadonlyAdapter(contract)
-        snapshot = adapter.fetch_snapshot()
-        self.assertEqual(snapshot["records_valid"], 0)
-        self.assertGreaterEqual(snapshot["records_rejected"], 1)
-        self.assertIn("malformed_price", snapshot["rejection_reason_counts"])
-
-    def test_build_kalshi_url_diagnostic_redacted(self):
-        os.environ["KALSHI_API_BASE_URL"] = "https://external-api.kalshi.com/trade-api/v2/"
-        os.environ["KALSHI_MARKETS_PATH"] = "/markets"
-        adapter = KalshiReadonlyAdapter(self.contract)
-        diag = adapter.build_kalshi_url("markets_path")
-        self.assertEqual(diag["url_host"], "external-api.kalshi.com")
-        self.assertTrue(diag["secret_redacted"])
-        self.assertTrue(diag["query_redacted"])
-        self.assertNotIn("authorization", str(diag).lower())
-
-    def test_default_base_url_uses_documented_external_host(self):
-        adapter = KalshiReadonlyAdapter(self.contract)
-        diag = adapter.build_kalshi_url("markets_path")
-        self.assertEqual(diag["url_host"], "external-api.kalshi.com")
-        self.assertEqual(diag["url_path"], "/trade-api/v2/markets")
-
-    def test_health_read_only_ready_with_credentials_and_flags(self):
-        os.environ["KALSHI_PROVIDER_ENABLED"] = "true"
-        os.environ["KALSHI_LIVE_READS_ENABLED"] = "true"
-        os.environ["KALSHI_API_KEY"] = "kalshi_key_1234567890"
-        os.environ["KALSHI_API_SECRET"] = _TEST_PRIVATE_KEY_PEM
-        contract = dict(self.contract)
-        contract["enabled"] = True
-        contract["live_calls_enabled"] = True
-        contract["dry_run"] = True
-        adapter = KalshiReadonlyAdapter(contract)
-        health = adapter.health_check()
-        self.assertEqual(health["status"], "read_only_ready")
-        self.assertEqual(health["credential_status"], "ok")
-        self.assertTrue(health["provider_enabled"])
-        self.assertTrue(health["live_calls_enabled"])
+        health = self.adapter.health_check()
+        self.assertEqual(health["status"], "provider_disabled")
+        self.assertFalse(health["provider_enabled"])
+        self.assertFalse(health["live_calls_enabled"])
         self.assertTrue(health["dry_run"])
-        self.assertNotIn("order", str(health).lower())
-        self.assertNotIn("trade", str(health).lower())
-        self.assertNotIn("execution_enabled\": true", str(health).lower())
 
-    @patch("automation_scheduler.kalshi_readonly_adapter.httpx.Client", new=_MockClient)
-    def test_provider_unreachable_is_classified_and_redacted(self):
-        os.environ["KALSHI_PROVIDER_ENABLED"] = "true"
-        os.environ["KALSHI_LIVE_READS_ENABLED"] = "true"
-        os.environ["KALSHI_API_KEY"] = "kalshi_key_1234567890"
-        os.environ["KALSHI_API_SECRET"] = _TEST_PRIVATE_KEY_PEM
-        contract = dict(self.contract)
-        contract["enabled"] = True
-        contract["live_calls_enabled"] = True
-        contract["dry_run"] = True
-        _MockClient.raise_exception = httpx.ConnectError(
-            "Name or service not known",
-            request=httpx.Request("GET", "https://external-api.kalshi.com/trade-api/v2/markets"),
-        )
-        adapter = KalshiReadonlyAdapter(contract)
-        snapshot = adapter.fetch_snapshot()
-        self.assertEqual(snapshot["status"], "provider_error")
-        self.assertIn("dns_error", snapshot["blockers"])
-        self.assertEqual(snapshot["http_status"], None)
-        diag = snapshot.get("diagnostic") or {}
-        self.assertEqual(diag.get("error_category"), "dns_error")
-        self.assertEqual(diag.get("method"), "GET")
-        self.assertTrue(diag.get("secret_redacted"))
-        self.assertIn("url_host", diag)
-        self.assertIn("url_path", diag)
-        self.assertIn("timeout_seconds", diag)
-        self.assertIn("retry_count", diag)
-        self.assertNotIn("kalshi_key_1234567890", str(snapshot))
-        self.assertNotIn("BEGIN PRIVATE KEY", str(snapshot))
+        url_diag = self.adapter.build_kalshi_url("markets_path")
+        self.assertEqual(url_diag["provider_id"], "kalshi_prediction_market")
+        self.assertFalse(url_diag["live_access_enabled"])
+        self.assertIn("provider_disabled", url_diag["blockers"])
 
-    def test_signature_payload_uses_timestamp_method_and_path_only(self):
-        adapter = KalshiReadonlyAdapter(self.contract)
-        payload = adapter._build_signature_payload(
-            method="GET",
-            url="https://external-api.kalshi.com/trade-api/v2/markets?limit=10",
-            timestamp_ms="1710000000000",
-        )
-        self.assertEqual(payload, b"1710000000000GET/trade-api/v2/markets")
+        for method_name in ("fetch_markets", "fetch_events", "fetch_snapshot"):
+            with self.subTest(method_name=method_name):
+                with self.assertRaises(ConnectorDisabledError):
+                    getattr(self.adapter, method_name)()
 
-    def test_built_headers_are_http_safe_and_verifiable(self):
-        os.environ["KALSHI_API_KEY"] = "kalshi_key_1234567890"
-        os.environ["KALSHI_API_SECRET"] = _TEST_PRIVATE_KEY_PEM.replace("\n", "\\n")
-        adapter = KalshiReadonlyAdapter(self.contract)
-        headers = adapter._build_headers(method="GET", url="https://external-api.kalshi.com/trade-api/v2/markets")
-        self.assertNotIn("KALSHI-ACCESS-SECRET", headers)
-        for value in headers.values():
-            self.assertIsInstance(value, str)
-            self.assertNotIn("\n", value)
-            self.assertNotIn("\r", value)
-        timestamp = headers["KALSHI-ACCESS-TIMESTAMP"]
-        signature = headers["KALSHI-ACCESS-SIGNATURE"]
-        payload = adapter._build_signature_payload(
-            method="GET",
-            url="https://external-api.kalshi.com/trade-api/v2/markets",
-            timestamp_ms=timestamp,
-        )
-        _TEST_PRIVATE_KEY.public_key().verify(
-            base64.b64decode(signature),
-            payload,
-            padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.DIGEST_LENGTH),
-            hashes.SHA256(),
-        )
+        disabled_snapshot = self.bridge.get_kalshi_snapshot(self.adapter)
+        self.assertTrue(disabled_snapshot["ok"])
+        self.assertTrue(disabled_snapshot["dry_run"])
+        self.assertEqual(disabled_snapshot["provider_id"], "kalshi_prediction_market")
+        self.assertEqual(disabled_snapshot["status"], "provider_disabled")
+        self.assertEqual(disabled_snapshot["records"], [])
 
-    @patch("automation_scheduler.kalshi_readonly_adapter.httpx.Client", new=_MockClient)
-    def test_malformed_credential_shape_returns_blocked_invalid_credentials(self):
-        os.environ["KALSHI_PROVIDER_ENABLED"] = "true"
-        os.environ["KALSHI_LIVE_READS_ENABLED"] = "true"
-        os.environ["KALSHI_API_KEY"] = "kalshi_key_1234567890"
-        os.environ["KALSHI_API_SECRET"] = "not_a_private_key"
-        contract = dict(self.contract)
-        contract["enabled"] = True
-        contract["live_calls_enabled"] = True
-        snapshot = KalshiReadonlyAdapter(contract).fetch_snapshot()
-        self.assertEqual(snapshot["status"], "provider_error")
-        self.assertIn("blocked_invalid_credentials", snapshot["blockers"])
-        self.assertEqual(snapshot.get("http_status"), None)
-        self.assertEqual(snapshot.get("diagnostic", {}).get("error_category"), "request_build_error")
-        self.assertNotIn("not_a_private_key", str(snapshot))
+    def test_connector_scaffolds_are_inert_and_no_live_client_methods_exist(self) -> None:
+        configuration = build_prediction_market_connector_configuration(metadata={"bridge_module": "test"})
+        auth = build_prediction_market_auth_requirement()
+        readiness = describe_prediction_market_connector_readiness()
+        disabled_client = build_prediction_market_disabled_live_client()
+
+        self.assertEqual(configuration.provider, "prediction_market_data")
+        self.assertTrue(configuration.read_only)
+        self.assertFalse(configuration.live_access_enabled)
+        self.assertEqual(auth.credential_names, ("PREDICTION_MARKET_API_KEY", "PREDICTION_MARKET_PRIVATE_KEY"))
+        self.assertFalse(auth.live_access_enabled)
+        self.assertEqual(readiness["provider"], "prediction_market_data")
+        self.assertEqual(readiness["status"], "disabled")
+        self.assertTrue(readiness["read_only"])
+        self.assertFalse(readiness["live_access_enabled"])
+        self.assertEqual(disabled_client.describe()["provider"], "prediction_market_data")
+
+        for method_name in ("request", "fetch_markets", "fetch_events", "fetch_snapshot", "sign_request"):
+            with self.subTest(method_name=method_name):
+                with self.assertRaises(ConnectorDisabledError):
+                    getattr(disabled_client, method_name)()
+
+        connector_client = self.connector.build_prediction_market_read_only_client()
+        self.assertEqual(connector_client.describe()["provider"], "prediction_market_data")
+        with self.assertRaises(ConnectorDisabledError):
+            connector_client.fetch_snapshot()
+
+        self.assertTrue(self.connector.PredictionMarketConnectorClient is self.connector.PredictionMarketReadOnlyClient)
+
+    def test_provider_adapter_normalizes_prediction_market_payloads_locally(self) -> None:
+        provider_adapter = PredictionMarketProviderAdapter()
+        now_iso = datetime.now(timezone.utc).isoformat()
+        payload = {
+            "market_id": "KXTEST",
+            "event_id": "KX-EVT",
+            "contract_id": "KX-CONTRACT",
+            "ticker": "KXTEST",
+            "event_ticker": "KX-EVT",
+            "title": "Prediction Market Demo",
+            "yes_bid": 48,
+            "yes_ask": 52,
+            "no_bid": 47,
+            "no_ask": 53,
+            "liquidity": 1000,
+            "volume": 250,
+            "close_time": "2026-06-01T00:00:00+00:00",
+            "timestamp": now_iso,
+        }
+
+        normalized_quote = normalize_prediction_market_quote(payload, provider="prediction_market", market_type="prediction_market")
+        normalized_snapshot = normalize_prediction_market_snapshot(payload, provider="prediction_market", market_type="prediction_market")
+        validated = validate_prediction_market_payload(normalized_quote)
+        adapter_quote = provider_adapter.normalize_payload(payload)
+
+        self.assertEqual(normalized_quote["provider_type"], "prediction_market")
+        self.assertEqual(normalized_snapshot["provider_type"], "prediction_market")
+        self.assertAlmostEqual(normalized_quote["yes_bid"], 0.48)
+        self.assertAlmostEqual(normalized_quote["yes_ask"], 0.52)
+        self.assertAlmostEqual(normalized_quote["mid_probability"], 0.5)
+        self.assertTrue(validated["ok"])
+        self.assertEqual(adapter_quote["provider_type"], "prediction_market")
+        adapter_health = provider_adapter.health_check()
+        self.assertEqual(adapter_health["status"], "scaffold_only")
+        self.assertIn("read_only_category_adapter", adapter_health["blockers"])
+
+    def test_snapshot_helpers_write_and_round_trip_without_leaking_secrets(self) -> None:
+        now_iso = datetime.now(timezone.utc).isoformat()
+        snapshot = {
+            "ok": True,
+            "status": "provider_disabled",
+            "provider_id": "kalshi_prediction_market",
+            "provider_name": "Kalshi Prediction Market",
+            "dry_run": True,
+            "records_received": 1,
+            "records_valid": 1,
+            "records_rejected": 0,
+            "records": [
+                {
+                    "market_id": "KX-1",
+                    "event_id": "KX-EVT-1",
+                    "ticker": "KX-1",
+                    "contract_id": "KX-1",
+                    "yes_price": 0.48,
+                    "no_price": 0.52,
+                    "timestamp": now_iso,
+                    "source_payload_redacted": {"api_key": "[redacted]", "api_secret": "[redacted]"},
+                }
+            ],
+        }
+
+        normalized = self.bridge.normalize_prediction_market_snapshot(snapshot)
+        verdict = self.bridge.validate_prediction_market_snapshot(snapshot)
+        summary = self.bridge.summarize_prediction_market_snapshot(snapshot)
+
+        self.assertEqual(normalized["provider_id"], "kalshi_prediction_market")
+        self.assertEqual(verdict["status"], "accepted")
+        self.assertEqual(summary["status"], "provider_disabled")
+        self.assertEqual(summary["records_valid"], 1)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self.bridge.write_prediction_market_snapshot(snapshot, base_data_dir=tmp)
+            text = Path(path).read_text(encoding="utf-8")
+            self.assertIn("[redacted]", text)
+            self.assertNotIn("api_key\": \"live", text)
+            self.assertNotIn("api_secret\": \"live", text)
 
 
 if __name__ == "__main__":
