@@ -4,16 +4,49 @@ import json
 from pathlib import Path
 from typing import Any
 
+from src.connectors.errors import ConnectorDisabledError
+from src.providers.policy.secret_policy import assert_no_secret_leak
+from src.providers.validation import validate_provider_payload
+
 from .data_paths import resolve_base_data_dir
 from .kalshi_readonly_adapter import SCHEMA_VERSION, KalshiReadonlyAdapter
-from src.providers.validation import validate_provider_payload
-from src.providers.policy.secret_policy import assert_no_secret_leak
 from .scheduler_config import utc_now_iso
+
+
+def _disabled_snapshot(adapter: KalshiReadonlyAdapter | None = None) -> dict[str, Any]:
+    instance = adapter or KalshiReadonlyAdapter()
+    cfg = instance.validate_config()
+    return {
+        "ok": True,
+        "status": cfg["status"],
+        "provider_id": instance.provider_id,
+        "provider_name": instance.provider_name,
+        "received_at": utc_now_iso(),
+        "dry_run": True,
+        "records_received": 0,
+        "records_valid": 0,
+        "records_rejected": 0,
+        "rejection_reason_counts": {},
+        "http_status": None,
+        "diagnostic": {
+            "bridge_module": "src.services.prediction_market_runtime_bridge",
+            "connector_configuration": instance.connector_configuration,
+            "connector_readiness": instance.connector_readiness,
+        },
+        "blockers": list(cfg["blockers"])[:10],
+        "records": [],
+        "schema_version": SCHEMA_VERSION,
+        "connector_configuration": instance.connector_configuration,
+        "connector_readiness": instance.connector_readiness,
+    }
 
 
 def get_kalshi_snapshot(adapter: KalshiReadonlyAdapter | None = None) -> dict[str, Any]:
     instance = adapter or KalshiReadonlyAdapter()
-    return instance.fetch_snapshot()
+    try:
+        return instance.fetch_snapshot()
+    except ConnectorDisabledError:
+        return _disabled_snapshot(instance)
 
 
 def normalize_kalshi_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
