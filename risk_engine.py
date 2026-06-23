@@ -301,3 +301,6 @@ def profit_factor(gross_wins: float, gross_losses: float) -> Optional[float]:
 
 def average_clv(clv_values: list[Optional[float]]) -> Optional[float]:
     return _core_average_clv(clv_values)
+
+# Canonical compatibility imports
+from src.core.risk import *  # noqa: F401,F403

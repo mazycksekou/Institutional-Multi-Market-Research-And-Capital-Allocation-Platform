@@ -368,3 +368,6 @@ def create_market_summary(evaluation_lines: list[dict[str, Any]]) -> list[dict[s
             })
 
     return list(market_summary.values())
+
+# Canonical compatibility imports
+from src.core.pricing import *  # noqa: F401,F403

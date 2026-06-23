@@ -65,11 +65,12 @@ def test_ownership_map_keeps_core() -> None:
         assert loc in map_text, f"{loc} not in ownership map"
 
 
-def test_no_implementation_files_created() -> None:
-    # Ensure the future implementation files do not exist yet.
+def test_expected_core_implementation_files_created() -> None:
+    # The core execution/game-theory bundle intentionally creates these
+    # implementation files as the canonical ownership landing zone.
     for loc in FUTURE_LOCATIONS:
         path = ROOT / loc
-        assert not path.exists(), f"Implementation file created prematurely: {path}"
+        assert path.exists(), f"Expected core implementation file to exist: {path}"
 
 
 def test_future_directories_are_scaffolds_only() -> None:

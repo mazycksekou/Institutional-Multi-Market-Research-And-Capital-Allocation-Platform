@@ -9,6 +9,28 @@ import math
 from typing import Sequence
 
 
+RISK_PROFILE_SETTINGS = {
+    "conservative": {
+        "risk_profile": "conservative",
+        "kelly_fraction": 0.125,
+        "max_bankroll_pct": 0.01,
+        "confidence_multiplier": 0.75,
+    },
+    "standard": {
+        "risk_profile": "standard",
+        "kelly_fraction": 0.25,
+        "max_bankroll_pct": 0.02,
+        "confidence_multiplier": 1.0,
+    },
+    "aggressive": {
+        "risk_profile": "aggressive",
+        "kelly_fraction": 0.5,
+        "max_bankroll_pct": 0.03,
+        "confidence_multiplier": 1.15,
+    },
+}
+
+
 def _ensure_positive(value: float, name: str) -> float:
     if value <= 0:
         raise ValueError(f"{name} must be positive.")
@@ -132,3 +154,17 @@ def exposure_summary(
         "total_exposure": total,
         "positions": positions,
     }
+
+
+def risk_profile_settings(risk_profile: str | None = "standard") -> dict[str, float | str]:
+    key = (risk_profile or "standard").strip().lower()
+    return RISK_PROFILE_SETTINGS.get(key, RISK_PROFILE_SETTINGS["standard"]).copy()
+
+
+__all__ = [
+    "exposure_summary",
+    "max_drawdown",
+    "portfolio_risk",
+    "risk_profile_settings",
+    "sharpe_ratio",
+]

@@ -540,3 +540,12 @@ def quant_engine_component_foundation() -> dict[str, Any]:
             "This component is math-only and does not create confirmed bets.",
         ],
     }
+
+# Canonical compatibility imports
+from src.core.pricing import *  # noqa: F401,F403
+from src.core.probability import *  # noqa: F401,F403
+from src.core.portfolio import *  # noqa: F401,F403
+from src.core.execution import *  # noqa: F401,F403
+from src.core.market_impact import *  # noqa: F401,F403
+from src.core.game_theory import *  # noqa: F401,F403
+from src.core.risk import *  # noqa: F401,F403

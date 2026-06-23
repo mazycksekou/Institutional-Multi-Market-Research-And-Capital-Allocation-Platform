@@ -355,3 +355,6 @@ def create_probability_response(
         "confidence_grade": result.confidence_grade,
         "provider_status": result.provider_status
     }
+
+# Canonical compatibility imports
+from src.core.probability import *  # noqa: F401,F403
