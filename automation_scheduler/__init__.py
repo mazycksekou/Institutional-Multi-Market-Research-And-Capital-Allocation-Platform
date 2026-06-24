@@ -205,7 +205,7 @@ def build_causal_effect_scaffold(records: list[dict] | None = None, hypotheses: 
 
 
 def get_tabular_ml_research_lanes(base_data_dir: str | None = None):
-    from .tabular_ml_research import build_tabular_ml_research_lanes
+    from src.research import build_tabular_ml_research_lanes
 
     base = _data_dir(base_data_dir)
     records = load_outcome_records(base)
@@ -214,7 +214,7 @@ def get_tabular_ml_research_lanes(base_data_dir: str | None = None):
 
 
 def get_deep_learning_research_lanes():
-    from .deep_learning_research_lanes import build_deep_learning_research_lanes
+    from src.research import build_deep_learning_research_lanes
 
     return build_deep_learning_research_lanes()
 

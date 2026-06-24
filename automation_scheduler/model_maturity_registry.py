@@ -394,8 +394,7 @@ def build_model_maturity_registry(
     total_labeled_outcomes: int = 0,
     outcome_coverage_by_asset_type: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
-    from .deep_learning_research_lanes import build_deep_learning_maturity_records
-    from .tabular_ml_research import build_tabular_maturity_records
+    from src.research import build_deep_learning_maturity_records, build_tabular_maturity_records
 
     records = build_core_model_maturity_records(
         total_labeled_outcomes=total_labeled_outcomes,

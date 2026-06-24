@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import json
 from collections.abc import Iterable, Mapping
+from pathlib import Path
 from typing import Any
 
 from .contracts import CalibrationSummaryContract, GovernanceSummaryContract, ModelEvaluationSummaryContract
@@ -96,3 +98,52 @@ def build_model_evaluation_summary(
         metadata=dict(metadata or {}),
     )
 
+
+def build_governance_health(
+    counts: Mapping[str, Any],
+    report: Mapping[str, Any],
+    *,
+    config: Mapping[str, Any] | None = None,
+    reports_dir: str | Path = Path("data/performance_reports"),
+    audit_dir: str | Path = Path("data/governance_audit"),
+    last_governance_report_id: str = "governance_report_v1",
+) -> dict[str, Any]:
+    count_map = dict(counts)
+    report_map = dict(report)
+    config_map = dict(config or {})
+    reports_path = Path(reports_dir)
+    backtest_ready_count = 0
+    blocked_by_performance_count = 0
+    blocked_by_calibration_count = 0
+    if reports_path.exists():
+        for report_path in reports_path.glob("*.json"):
+            try:
+                payload = json.loads(report_path.read_text(encoding="utf-8"))
+            except (json.JSONDecodeError, OSError):
+                continue
+            if str(payload.get("performance_status")) == "backtest_complete":
+                backtest_ready_count += 1
+            blocked_reasons = set(payload.get("blocked_reasons", []))
+            if "blocked_by_performance" in blocked_reasons:
+                blocked_by_performance_count += 1
+            if "blocked_by_calibration" in blocked_reasons:
+                blocked_by_calibration_count += 1
+    return {
+        "governance_status": "ok",
+        "inventory_count": int(count_map.get("model_inventory_count", 0)),
+        "tier_counts": count_map,
+        "audit_log_writable": Path(audit_dir).exists() or Path("data").exists(),
+        "blocked_models_count": int(report_map.get("blocked_model_count", 0)),
+        "active_scoring_ready_count": int(count_map.get("active_scoring_ready_count", 0)),
+        "production_candidate_count": int(count_map.get("production_candidate_count", 0)),
+        "human_approval_required": bool(config_map.get("human_approval_required", True)),
+        "auto_execution_enabled": bool(config_map.get("auto_execution_enabled", False)),
+        "kelly_risk_status_counts": {
+            "full_kelly_auto_execution_allowed": 0,
+            "review_only": int(count_map.get("model_inventory_count", 0)),
+        },
+        "last_governance_report_id": str(last_governance_report_id).strip() or "governance_report_v1",
+        "backtest_ready_count": backtest_ready_count,
+        "blocked_by_performance_count": blocked_by_performance_count,
+        "blocked_by_calibration_count": blocked_by_calibration_count,
+    }
