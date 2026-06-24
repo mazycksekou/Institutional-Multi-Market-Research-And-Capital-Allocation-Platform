@@ -20,6 +20,7 @@ from .ledger import clear_ledger_events, get_ledger_events, record_ledger_event
 from .orders import build_execution_request, build_order_request
 from .positions import build_position_snapshot
 from .readiness import get_execution_readiness
+from .settlement import compare_settlement_rules
 
 __all__ = [
     "DisabledBrokerageError",
@@ -39,6 +40,7 @@ __all__ = [
     "build_execution_request",
     "build_order_request",
     "build_position_snapshot",
+    "compare_settlement_rules",
     "clear_ledger_events",
     "get_execution_readiness",
     "get_ledger_events",

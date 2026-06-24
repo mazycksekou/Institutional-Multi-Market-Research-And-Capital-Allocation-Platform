@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from ..liquidity_risk import block_low_liquidity_arbitrage, estimate_execution_feasibility, estimate_stale_odds_risk
-from ..settlement_rule_checker import compare_settlement_rules
+from src.brokerage.settlement import compare_settlement_rules
 
 
 def stale_price_arbitrage_filter(timestamps: list[int | float], *, max_timestamp_skew_seconds: int = 120) -> dict[str, Any]:
