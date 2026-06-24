@@ -40,8 +40,8 @@ def test_execution_blocker_modules_import_safely_and_remain_disabled(monkeypatch
     execution = importlib.import_module("src.brokerage.execution")
     ledger = importlib.import_module("src.brokerage.ledger")
     readiness = importlib.import_module("src.brokerage.readiness")
-    gatekeeper = importlib.import_module("automation_scheduler.execution_gatekeeper")
-    authorization = importlib.import_module("automation_scheduler.execution_authorization")
+    gatekeeper = importlib.import_module("src.brokerage.readiness")
+    authorization = importlib.import_module("src.brokerage.readiness")
     paper_trade_ledger = importlib.import_module("automation_scheduler.paper_trade_ledger")
     paper_decision_ledger = importlib.import_module("automation_scheduler.paper_decision_ledger")
     settlement_rule_checker = importlib.import_module("src.brokerage.settlement")
@@ -60,7 +60,6 @@ def test_execution_blocker_modules_import_safely_and_remain_disabled(monkeypatch
     assert eligibility["future_execution_eligible"] is False
     auth = authorization.evaluate_execution_authorization({"provider": "demo", "action": "submit_order"}, persist_audit=False)
     assert auth["status"] == "execution_attempt_blocked"
-    assert authorization.kill_switch_state()["kill_switches_active"] is True
 
     with TemporaryDirectory() as tmp:
         paper_entry = paper_trade_ledger.create_paper_entry(
@@ -102,12 +101,10 @@ def test_execution_blocker_modules_import_safely_and_remain_disabled(monkeypatch
     assert callable(bet_decision_engine.evaluate_lines_payload)
 
     for relpath in [
-        "automation_scheduler/execution_gatekeeper.py",
-        "automation_scheduler/execution_authorization.py",
         "automation_scheduler/paper_trade_ledger.py",
         "automation_scheduler/paper_decision_ledger.py",
         "bet_decision_engine.py",
         "bet_log.py",
+        "src/brokerage/readiness.py",
     ]:
         assert (ROOT / relpath).exists()
-

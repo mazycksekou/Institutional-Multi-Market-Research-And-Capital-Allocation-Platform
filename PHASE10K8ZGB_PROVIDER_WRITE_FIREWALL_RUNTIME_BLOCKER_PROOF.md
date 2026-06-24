@@ -12,6 +12,7 @@
 - `automation_scheduler.__init__` imported the legacy wrapper.
 - `automation_scheduler.execution_authorization` imported the legacy wrapper.
 - Historical tests and phase documents referenced `automation_scheduler/provider_write_firewall.py`.
+- The canonical execution blocker path now also uses `src.brokerage.readiness` for live-shaped authorization checks.
 
 ## Imports Redirected
 - `automation_scheduler.__init__` now imports `check_provider_write_attempt` from `src.providers.policy.write_firewall`.

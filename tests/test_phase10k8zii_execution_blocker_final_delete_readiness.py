@@ -42,12 +42,9 @@ def test_execution_blocker_final_delete_readiness_modules_import_safe() -> None:
         "src.services.settlement_service",
         "src.services.ledger_service",
         "src.services.execution_service",
-        "automation_scheduler.execution_gatekeeper",
-        "automation_scheduler.execution_authorization",
         "automation_scheduler.paper_trade_ledger",
         "automation_scheduler.paper_decision_ledger",
         "bet_decision_engine",
         "bet_log",
     ]:
         assert importlib.import_module(module_name)
-

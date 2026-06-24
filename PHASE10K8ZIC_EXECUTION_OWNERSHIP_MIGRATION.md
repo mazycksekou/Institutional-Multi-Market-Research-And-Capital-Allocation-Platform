@@ -10,6 +10,8 @@
   brokerage ledger events while preserving file-backed compatibility.
 - `src.services.decision_engine` can build a live-shaped execution plan with
   brokerage order/execution/readiness contracts.
+- `src/brokerage/readiness.py` is the canonical execution-authorization and
+  future-eligibility owner.
 
 ## Canonical ownership
 - `src.brokerage.orders`
@@ -23,4 +25,3 @@
 - Public symbols remain available.
 - No live trading is enabled.
 - No separate paper-only canonical path exists.
-

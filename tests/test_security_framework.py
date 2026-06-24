@@ -8,7 +8,6 @@ from fastapi.testclient import TestClient
 
 import automation_scheduler
 from automation_scheduler.ai_provider_security import evaluate_ai_provider
-from automation_scheduler.execution_authorization import evaluate_execution_authorization
 from automation_scheduler.owner_approval_gate import evaluate_owner_approval, sign_owner_approval
 from automation_scheduler.response_compactor import redact_and_limit_payload
 from automation_scheduler.risk_limit_guard import evaluate_risk_limits
@@ -20,6 +19,7 @@ from automation_scheduler.security_event_types import (
     PROVIDER_WRITE_BLOCKED,
 )
 from automation_scheduler.security_policy import enforce_ai_capability_boundary, kill_switch_state
+from src.brokerage.readiness import evaluate_execution_authorization
 from src.providers.policy.write_firewall import check_provider_write_attempt
 from src.services.ledger_service import load_security_audit_records
 from tests.support.action_imports import app

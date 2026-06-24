@@ -142,7 +142,7 @@ def test_phase10k8zgc_runtime_and_test_redirect(monkeypatch, tmp_path):
     canonical_registry = importlib.import_module("src.providers.registry")
     canonical_firewall = importlib.import_module("src.providers.policy.write_firewall")
     scheduler_pkg = importlib.import_module("automation_scheduler")
-    execution_authorization = importlib.import_module("automation_scheduler.execution_authorization")
+    execution_authorization = importlib.import_module("src.brokerage.readiness")
 
     monkeypatch.setattr(os, "getenv", original_getenv)
     monkeypatch.setattr(canonical_registry.os, "getenv", lambda *_args, **_kwargs: None)
@@ -182,11 +182,6 @@ def test_phase10k8zgc_runtime_and_test_redirect(monkeypatch, tmp_path):
     )
     assert scheduler_result == canonical_result
 
-    monkeypatch.setattr(
-        execution_authorization,
-        "kill_switch_state",
-        lambda: {"kill_switches_active": True, "switches": {"GLOBAL_EXECUTION_KILL_SWITCH": True}},
-    )
     execution_result = execution_authorization.evaluate_execution_authorization(
         payload,
         base_data_dir=str(tmp_path),

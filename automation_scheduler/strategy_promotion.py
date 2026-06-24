@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Mapping
 
-from .execution_gatekeeper import evaluate_future_execution_eligibility
+from src.brokerage.readiness import evaluate_future_execution_eligibility
 from .secret_safety import redact_sensitive
 from .security_policy import locked_safety_flags
 from .strategy_context_buckets import build_context_bucket

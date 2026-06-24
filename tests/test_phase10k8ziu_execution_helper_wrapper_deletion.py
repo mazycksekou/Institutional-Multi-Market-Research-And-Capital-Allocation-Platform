@@ -18,14 +18,13 @@ DELETED = [
 ]
 
 PRESERVED = [
-    ROOT / "automation_scheduler" / "execution_gatekeeper.py",
-    ROOT / "automation_scheduler" / "execution_authorization.py",
     ROOT / "automation_scheduler" / "paper_trade_ledger.py",
     ROOT / "automation_scheduler" / "paper_decision_ledger.py",
     ROOT / "src" / "brokerage" / "settlement.py",
     ROOT / "src" / "services" / "settlement_service.py",
     ROOT / "src" / "services" / "ledger_service.py",
     ROOT / "src" / "services" / "execution_service.py",
+    ROOT / "src" / "brokerage" / "readiness.py",
 ]
 
 
@@ -34,6 +33,11 @@ def test_wrapper_deletion_only_approved_files() -> None:
         assert not path.exists()
     for path in PRESERVED:
         assert path.exists()
+    for path in [
+        ROOT / "automation_scheduler" / "execution_gatekeeper.py",
+        ROOT / "automation_scheduler" / "execution_authorization.py",
+    ]:
+        assert not path.exists()
 
 
 def test_canonical_execution_path_still_imports_and_stays_disabled() -> None:

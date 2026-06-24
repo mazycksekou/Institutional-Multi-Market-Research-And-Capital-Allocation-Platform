@@ -20,10 +20,9 @@ DOCS = [
 def test_execution_migration_docs_state_wrapper_only_ownership() -> None:
     text = "\n".join(path.read_text(encoding="utf-8") for path in DOCS)
     for phrase in [
-        "automation_scheduler/execution_gatekeeper.py",
-        "automation_scheduler/execution_authorization.py",
         "automation_scheduler/paper_trade_ledger.py",
         "automation_scheduler/paper_decision_ledger.py",
+        "src/brokerage/readiness.py",
         "src.brokerage.orders",
         "src.brokerage.execution",
         "src.brokerage.ledger",
@@ -39,8 +38,8 @@ def test_execution_migration_modules_use_canonical_brokerage_surfaces(monkeypatc
     monkeypatch.setattr(os, "getenv", lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("no env reads")))
     readiness = importlib.import_module("src.brokerage.readiness")
     decision_engine = importlib.import_module("src.services.decision_engine")
-    gatekeeper = importlib.import_module("automation_scheduler.execution_gatekeeper")
-    authorization = importlib.import_module("automation_scheduler.execution_authorization")
+    gatekeeper = importlib.import_module("src.brokerage.readiness")
+    authorization = importlib.import_module("src.brokerage.readiness")
     paper_trade_ledger = importlib.import_module("automation_scheduler.paper_trade_ledger")
     paper_decision_ledger = importlib.import_module("automation_scheduler.paper_decision_ledger")
 
@@ -91,10 +90,8 @@ def test_execution_migration_modules_use_canonical_brokerage_surfaces(monkeypatc
 
 def test_no_legacy_deletion_in_migration() -> None:
     for relpath in [
-        "automation_scheduler/execution_gatekeeper.py",
-        "automation_scheduler/execution_authorization.py",
         "automation_scheduler/paper_trade_ledger.py",
         "automation_scheduler/paper_decision_ledger.py",
+        "src/brokerage/readiness.py",
     ]:
         assert (ROOT / relpath).exists()
-

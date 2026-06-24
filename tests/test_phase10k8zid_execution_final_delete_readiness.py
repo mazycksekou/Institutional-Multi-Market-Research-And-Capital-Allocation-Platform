@@ -28,8 +28,6 @@ DOC_REFERENCES = [
 ]
 
 CANONICAL_FILES = [
-    "automation_scheduler/execution_gatekeeper.py",
-    "automation_scheduler/execution_authorization.py",
     "automation_scheduler/paper_trade_ledger.py",
     "automation_scheduler/paper_decision_ledger.py",
     "src/brokerage/settlement.py",
@@ -39,6 +37,11 @@ CANONICAL_FILES = [
     "src/brokerage/readiness.py",
     "bet_decision_engine.py",
     "bet_log.py",
+]
+
+REMOVED_FILES = [
+    "automation_scheduler/execution_gatekeeper.py",
+    "automation_scheduler/execution_authorization.py",
 ]
 
 
@@ -70,8 +73,8 @@ def test_final_delete_readiness_modules_import_and_remain_disabled(monkeypatch: 
     ledger = importlib.import_module("src.brokerage.ledger")
     readiness = importlib.import_module("src.brokerage.readiness")
     decision_engine = importlib.import_module("src.services.decision_engine")
-    gatekeeper = importlib.import_module("automation_scheduler.execution_gatekeeper")
-    authorization = importlib.import_module("automation_scheduler.execution_authorization")
+    gatekeeper = importlib.import_module("src.brokerage.readiness")
+    authorization = importlib.import_module("src.brokerage.readiness")
     paper_trade_ledger = importlib.import_module("automation_scheduler.paper_trade_ledger")
     paper_decision_ledger = importlib.import_module("automation_scheduler.paper_decision_ledger")
 
@@ -102,6 +105,8 @@ def test_final_delete_readiness_modules_import_and_remain_disabled(monkeypatch: 
 
     for relpath in CANONICAL_FILES:
         assert (ROOT / relpath).exists()
+    for relpath in REMOVED_FILES:
+        assert not (ROOT / relpath).exists()
 
     with importlib.import_module("tempfile").TemporaryDirectory() as tmp:
         paper_entry = paper_trade_ledger.create_paper_entry(

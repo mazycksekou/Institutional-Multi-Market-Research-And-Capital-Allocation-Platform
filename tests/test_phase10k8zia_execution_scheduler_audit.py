@@ -34,8 +34,7 @@ def test_execution_audit_docs_exist_and_classify_candidates() -> None:
 
 def test_execution_audit_modules_import_safely() -> None:
     for module_name in [
-        "automation_scheduler.execution_gatekeeper",
-        "automation_scheduler.execution_authorization",
+        "src.brokerage.readiness",
         "src.brokerage.settlement",
         "src.services.settlement_service",
         "automation_scheduler.paper_trade_ledger",

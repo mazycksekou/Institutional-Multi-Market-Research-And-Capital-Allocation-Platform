@@ -897,7 +897,7 @@ def evaluate_execution_security_authorization(
     base_data_dir: str | None = None,
     persist_audit: bool = True,
 ):
-    from .execution_authorization import evaluate_execution_authorization
+    from src.brokerage.readiness import evaluate_execution_authorization
 
     return evaluate_execution_authorization(
         request,

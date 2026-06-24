@@ -17,7 +17,7 @@ DELETE_READINESS_PATH = ROOT / "PROVIDER_WRITE_FIREWALL_DELETE_READINESS_AFTER_1
 
 RUNTIME_FILES = [
     ROOT / "automation_scheduler" / "__init__.py",
-    ROOT / "automation_scheduler" / "execution_authorization.py",
+    ROOT / "src" / "brokerage" / "readiness.py",
 ]
 
 FORBIDDEN_NETWORK_ROOTS = {
@@ -88,7 +88,7 @@ def test_phase10k8zgb_docs_exist_and_cover_required_strings():
         assert required in report
 
     assert "automation_scheduler.__init__" in import_scan
-    assert "automation_scheduler.execution_authorization" in import_scan
+    assert "src.brokerage.readiness" in import_scan
     assert "legacy file remains only as a compatibility wrapper" in import_scan.lower()
     assert "compatibility-only" in migration_map.lower()
     assert "not yet delete-ready" in migration_map
@@ -104,7 +104,7 @@ def test_phase10k8zgb_runtime_redirect_and_wrapper_compatibility(monkeypatch, tm
 
     canonical = importlib.import_module("src.providers.policy.write_firewall")
     scheduler_pkg = importlib.import_module("automation_scheduler")
-    execution_authorization = importlib.import_module("automation_scheduler.execution_authorization")
+    execution_authorization = importlib.import_module("src.brokerage.readiness")
 
     for path in RUNTIME_FILES:
         text = _read(path)
@@ -141,11 +141,6 @@ def test_phase10k8zgb_runtime_redirect_and_wrapper_compatibility(monkeypatch, tm
     )
     assert scheduler_result == canonical_result
 
-    monkeypatch.setattr(
-        execution_authorization,
-        "kill_switch_state",
-        lambda: {"kill_switches_active": True, "switches": {"GLOBAL_EXECUTION_KILL_SWITCH": True}},
-    )
     execution_result = execution_authorization.evaluate_execution_authorization(
         sample,
         base_data_dir=str(tmp_path),

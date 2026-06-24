@@ -34,8 +34,8 @@ def test_execution_blocker_canonicalization_modules_import_and_delegate() -> Non
     execution = importlib.import_module("src.brokerage.execution")
     paper_trade_ledger = importlib.import_module("automation_scheduler.paper_trade_ledger")
     paper_decision_ledger = importlib.import_module("automation_scheduler.paper_decision_ledger")
-    gatekeeper = importlib.import_module("automation_scheduler.execution_gatekeeper")
-    authorization = importlib.import_module("automation_scheduler.execution_authorization")
+    gatekeeper = importlib.import_module("src.brokerage.readiness")
+    authorization = importlib.import_module("src.brokerage.readiness")
 
     plan = decision_engine.build_brokerage_execution_plan(
         {"ticker": "ABC", "stake": 15, "american_odds": -120, "decision_id": "plan-1", "provider": "demo"}
@@ -58,5 +58,4 @@ def test_execution_blocker_canonicalization_modules_import_and_delegate() -> Non
         decision = paper_decision_ledger.create_paper_decision_record({"id": "compat-2", "provider_id": "demo", "market_type": "equity", "ticker": "ABC", "execution_allowed": False}, base_data_dir=tmp)
         assert entry["brokerage_ledger_event"]["event_type"] == "paper_trade_entry_created"
         assert decision["brokerage_ledger_event"]["event_type"] == "paper_decision_record_created"
-
 
