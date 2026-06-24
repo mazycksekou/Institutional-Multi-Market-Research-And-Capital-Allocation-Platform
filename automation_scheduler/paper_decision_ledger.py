@@ -4,6 +4,8 @@ import json
 from pathlib import Path
 from typing import Any
 
+from src.brokerage.ledger import record_ledger_event
+
 from .data_paths import resolve_base_data_dir
 from .scheduler_config import SCHEMA_VERSION, safe_run_id, sanitize_filename, utc_now_iso
 
@@ -213,6 +215,13 @@ def create_paper_decision_record(
         by_id = {str(row.get("decision_id")): row for row in existing if isinstance(row, dict)}
         by_id[str(decision["decision_id"])] = decision
         _save_legacy_decisions(list(by_id.values()), base_data_dir)
+    decision_snapshot = {key: value for key, value in decision.items() if key != "brokerage_ledger_event"}
+    decision["brokerage_ledger_event"] = record_ledger_event(
+        event_type="paper_decision_record_created",
+        subject_id=str(decision["decision_id"]),
+        payload={"paper_decision_record": decision_snapshot},
+        metadata={"source_module": "automation_scheduler.paper_decision_ledger"},
+    )
     return decision
 
 
@@ -307,6 +316,12 @@ def persist_paper_decisions_for_review_items(
     _atomic_write_json(latest_path, wrapper)
     _atomic_write_json(run_path, wrapper)
     _save_legacy_decisions(decisions, base_data_dir)
+    record_ledger_event(
+        event_type="paper_decision_records_persisted",
+        subject_id=str(run_id),
+        payload={"paper_decisions_written": len(decisions)},
+        metadata={"source_module": "automation_scheduler.paper_decision_ledger"},
+    )
     return {
         "storage_backend": "file",
         "latest_run_id": str(run_id),

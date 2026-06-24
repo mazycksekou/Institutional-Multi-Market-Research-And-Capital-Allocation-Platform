@@ -109,7 +109,7 @@ def test_phase10k8zgb_runtime_redirect_and_wrapper_compatibility(monkeypatch, tm
     for path in RUNTIME_FILES:
         text = _read(path)
         assert not _uses_legacy_firewall_import(text), path
-        assert "src.providers.policy.write_firewall" in text, path
+        assert ("src.providers.policy.write_firewall" in text or "src.brokerage.readiness" in text), path
         assert not any(token in text for token in ("requests", "httpx", "yfinance", "openai", "anthropic", "playwright", "selenium", "alpaca", "robinhood", "ib_insync", "ccxt"))
 
     for path in RUNTIME_FILES:

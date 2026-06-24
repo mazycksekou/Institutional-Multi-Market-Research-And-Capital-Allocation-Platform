@@ -10,6 +10,8 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
+from src.brokerage.orders import build_execution_request, build_order_request
+from src.brokerage.readiness import get_execution_readiness
 from src.core.execution import liquidity_adjusted_size, split_order
 from src.core.game_theory import position_accumulation_plan, thesis_break_triggered
 from src.core.market_impact import adverse_selection_score, estimate_market_impact, signaling_risk_score
@@ -141,7 +143,25 @@ def build_decision_summary(candidate: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
+def build_brokerage_execution_plan(candidate: Mapping[str, Any]) -> dict[str, Any]:
+    """Build a live-shaped execution plan while keeping the broker boundary disabled."""
+
+    order_request = build_order_request(candidate)
+    execution_request = build_execution_request(order_request, candidate=candidate)
+    readiness = get_execution_readiness(
+        order_request,
+        execution_request=execution_request,
+        execution_mode=execution_request.execution_mode,
+    )
+    return {
+        "order_request": order_request.as_dict(),
+        "execution_request": execution_request.as_dict(),
+        "readiness": readiness.as_dict(),
+    }
+
+
 __all__ = [
+    "build_brokerage_execution_plan",
     "build_decision_context",
     "build_decision_summary",
     "evaluate_decision",

@@ -5,6 +5,8 @@ import uuid
 from pathlib import Path
 from typing import Any
 
+from src.brokerage.ledger import record_ledger_event
+
 from .data_paths import get_paper_ledger_dir
 from .scheduler_config import SCHEMA_VERSION, redact_secrets as _redact_secrets, utc_now_iso
 
@@ -97,6 +99,13 @@ def create_paper_entry(payload: dict[str, Any], base_dir: str = "data/paper_ledg
     ledger = load_paper_ledger(base_dir)
     ledger.append(entry)
     _save_paper_ledger(ledger, base_dir)
+    ledger_entry_snapshot = {key: value for key, value in entry.items() if key != "brokerage_ledger_event"}
+    entry["brokerage_ledger_event"] = record_ledger_event(
+        event_type="paper_trade_entry_created",
+        subject_id=str(entry["ledger_id"]),
+        payload={"paper_ledger_entry": ledger_entry_snapshot},
+        metadata={"source_module": "automation_scheduler.paper_trade_ledger"},
+    )
     return entry
 
 
@@ -110,6 +119,13 @@ def update_closing_line(recommendation_id: str, closing_odds: float, base_dir: s
             break
     if target is not None:
         _save_paper_ledger(ledger, base_dir)
+        ledger_entry_snapshot = {key: value for key, value in target.items() if key != "brokerage_ledger_event"}
+        target["brokerage_ledger_event"] = record_ledger_event(
+            event_type="paper_trade_entry_updated",
+            subject_id=str(target["ledger_id"]),
+            payload={"paper_ledger_entry": ledger_entry_snapshot, "closing_odds": _to_float(closing_odds)},
+            metadata={"source_module": "automation_scheduler.paper_trade_ledger"},
+        )
     return target
 
 

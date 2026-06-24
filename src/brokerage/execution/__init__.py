@@ -1,3 +1,3 @@
-"""Scaffold-only execution boundary package."""
+"""Execution package exposing the disabled brokerage execution boundary."""
 
-__all__ = []
+from .._execution_core import *  # noqa: F401,F403
