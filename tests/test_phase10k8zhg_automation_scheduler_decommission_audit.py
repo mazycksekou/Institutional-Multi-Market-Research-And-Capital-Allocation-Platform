@@ -38,7 +38,7 @@ def test_scheduler_canonical_bridge_modules_import_safely() -> None:
         "automation_scheduler",
         "automation_scheduler.scheduler_runner",
         "automation_scheduler.calibration_collector",
-        "automation_scheduler.settlement_discovery",
+        "src.services.settlement_service",
         "automation_scheduler.prediction_market_outcome_candidates",
         "automation_scheduler.streamlit_dashboard_data",
     ]
@@ -56,8 +56,8 @@ def test_scheduler_source_scan_shows_canonical_bridge_dependencies() -> None:
     for relpath in [
         "automation_scheduler/scheduler_runner.py",
         "automation_scheduler/calibration_collector.py",
-        "automation_scheduler/settlement_discovery.py",
+        "src/services/settlement_service.py",
         "automation_scheduler/prediction_market_outcome_candidates.py",
     ]:
         text = (ROOT / relpath).read_text(encoding="utf-8")
-        assert "src.services.prediction_market_runtime_bridge" in text or "src.services.odds_runtime_bridge" in text
+        assert "src.services.prediction_market_runtime_bridge" in text or "src.services.odds_runtime_bridge" in text or "src.services.settlement_service" in text

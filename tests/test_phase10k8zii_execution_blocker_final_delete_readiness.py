@@ -38,15 +38,16 @@ def test_execution_blocker_final_delete_readiness_modules_import_safe() -> None:
         "src.brokerage.ledger",
         "src.brokerage.readiness",
         "src.services.decision_engine",
+        "src.brokerage.settlement",
+        "src.services.settlement_service",
+        "src.services.ledger_service",
+        "src.services.execution_service",
         "automation_scheduler.execution_gatekeeper",
         "automation_scheduler.execution_authorization",
         "automation_scheduler.paper_trade_ledger",
         "automation_scheduler.paper_decision_ledger",
-        "automation_scheduler.settlement_rule_checker",
-        "automation_scheduler.settlement_discovery",
         "bet_decision_engine",
         "bet_log",
     ]:
         assert importlib.import_module(module_name)
-
 

@@ -8,22 +8,18 @@ import pytest
 
 def test_strategy_execution_canonical_modules_import_and_delegate(tmp_path: Path) -> None:
     service = importlib.import_module("src.services.execution_service")
-    broker_quality = importlib.import_module("automation_scheduler.broker_quality_scoring")
-    small_account = importlib.import_module("automation_scheduler.small_account_strategy")
-    manifold = importlib.import_module("automation_scheduler.manifold_no_bet_detector")
-    desk = importlib.import_module("automation_scheduler.institutional_execution_desk")
 
-    assert broker_quality.score_broker_provider.__module__ == "src.services.execution_service"
-    assert small_account.score_price_band.__module__ == "src.services.execution_service"
-    assert manifold.detect_manifold_trap.__module__ == "src.services.execution_service"
-    assert desk.simulate_execution.__module__ == "src.services.execution_service"
-    assert desk.ExecutionDeskRejected.__module__ == "src.services.execution_service"
+    assert service.score_broker_provider.__module__ == "src.services.execution_service"
+    assert service.score_price_band.__module__ == "src.services.execution_service"
+    assert service.detect_manifold_trap.__module__ == "src.services.execution_service"
+    assert service.simulate_execution.__module__ == "src.services.execution_service"
+    assert service.ExecutionDeskRejected.__module__ == "src.services.execution_service"
 
-    assert broker_quality.build_broker_quality_report()["status"] == "ok"
-    assert small_account.score_price_band(6)["price_band"] == "preferred_3_to_12"
-    assert small_account.calculate_risk_reward(10, 9, 12)["risk_reward_permission_status"] == "VALID"
+    assert service.build_broker_quality_report()["status"] == "ok"
+    assert service.score_price_band(6)["price_band"] == "preferred_3_to_12"
+    assert service.calculate_risk_reward(10, 9, 12)["risk_reward_permission_status"] == "VALID"
     assert (
-        small_account.score_a_quality_setup(
+        service.score_a_quality_setup(
             catalyst_quality_score=90,
             liquidity_quality_score=90,
             setup_quality_score=90,
@@ -35,7 +31,7 @@ def test_strategy_execution_canonical_modules_import_and_delegate(tmp_path: Path
         is True
     )
 
-    review = small_account.run_small_account_review(
+    review = service.run_small_account_review(
         [
             {
                 "asset_symbol": "ABC",
@@ -56,7 +52,7 @@ def test_strategy_execution_canonical_modules_import_and_delegate(tmp_path: Path
     assert review["provider_write"] is False
     assert review["review_queue_count"] >= 0
 
-    trap = manifold.detect_manifold_trap(
+    trap = service.detect_manifold_trap(
         asset_type="stock",
         cluster_id="c1",
         cluster_name="demo",
@@ -66,7 +62,7 @@ def test_strategy_execution_canonical_modules_import_and_delegate(tmp_path: Path
     assert trap["provider_write"] is False
     assert trap["execution_allowed"] is False
 
-    sim = desk.simulate_execution(
+    sim = service.simulate_execution(
         {"simulation_only": True, "candidate_id": "missing", "asset_class": "prediction_market"},
         records=[],
         persist=False,
@@ -77,18 +73,14 @@ def test_strategy_execution_canonical_modules_import_and_delegate(tmp_path: Path
     assert sim["live_execution_enabled"] is False
     assert sim["simulation_only"] is True
 
-    with pytest.raises(desk.ExecutionDeskRejected):
-        desk.validate_simulation_request({"simulation_only": False})
+    with pytest.raises(service.ExecutionDeskRejected):
+        service.validate_simulation_request({"simulation_only": False})
 
     assert service.SAFETY_FLAGS["review_only"] is True
 
 
-def test_strategy_execution_wrapper_files_still_exist() -> None:
+def test_strategy_execution_canonical_files_still_exist() -> None:
     for relpath in [
-        "automation_scheduler/broker_quality_scoring.py",
-        "automation_scheduler/small_account_strategy.py",
-        "automation_scheduler/manifold_no_bet_detector.py",
-        "automation_scheduler/institutional_execution_desk.py",
         "src/services/execution_service.py",
     ]:
         assert Path(relpath).exists(), relpath

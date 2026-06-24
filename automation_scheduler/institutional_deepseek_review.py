@@ -7,7 +7,7 @@ from typing import Any
 import httpx
 
 from .data_paths import resolve_base_data_dir
-from .institutional_audit_ledger import append_audit_record
+from src.services.ledger_service import append_audit_record
 from .institutional_cross_asset_adapters import compact_redact
 
 

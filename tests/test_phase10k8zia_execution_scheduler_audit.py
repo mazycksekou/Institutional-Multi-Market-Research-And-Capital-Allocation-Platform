@@ -36,17 +36,12 @@ def test_execution_audit_modules_import_safely() -> None:
     for module_name in [
         "automation_scheduler.execution_gatekeeper",
         "automation_scheduler.execution_authorization",
-        "automation_scheduler.settlement_rule_checker",
-        "automation_scheduler.settlement_discovery",
+        "src.brokerage.settlement",
+        "src.services.settlement_service",
         "automation_scheduler.paper_trade_ledger",
         "automation_scheduler.paper_decision_ledger",
-        "automation_scheduler.audit_ledger",
-        "automation_scheduler.broker_quality_scoring",
-        "automation_scheduler.small_account_strategy",
-        "automation_scheduler.manifold_no_bet_detector",
-        "automation_scheduler.institutional_execution_desk",
-        "automation_scheduler.institutional_audit_ledger",
-        "automation_scheduler.strategy_performance_ledger",
+        "src.services.ledger_service",
+        "src.services.execution_service",
         "bet_decision_engine",
         "bet_log",
         "src.services.action_betting_service",
@@ -70,4 +65,3 @@ def test_decision_engine_exposes_brokerage_execution_plan() -> None:
     assert plan["order_request"]["instrument_id"] == "TEST"
     assert plan["execution_request"]["execution_mode"] == "disabled"
     assert plan["readiness"]["ready"] is False
-

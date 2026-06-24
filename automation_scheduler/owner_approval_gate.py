@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from .audit_ledger import append_security_event
+from src.services.ledger_service import append_security_event
 from .data_paths import resolve_base_data_dir
 from .scheduler_config import hash_payload, sanitize_filename
 from .security_event_types import OWNER_APPROVAL_EXPIRED, OWNER_APPROVAL_INVALID, OWNER_APPROVAL_MISSING, NONCE_REPLAY_DETECTED

@@ -12,7 +12,7 @@ from .kalshi_readonly_readiness import build_kalshi_readonly_adapter
 from .paper_decision_ledger import load_paper_decisions
 from .review_queue import load_review_queue_state
 from .scheduler_config import SCHEMA_VERSION, safe_run_id, sanitize_filename, utc_now_iso
-from .settlement_discovery import discover_kalshi_settlements_for_pending_rows
+from src.services.settlement_service import discover_kalshi_settlements_for_pending_rows
 
 
 PREDICTION_MARKET_OUTCOME_CANDIDATE_SCHEMA_VERSION = f"{SCHEMA_VERSION}.prediction_market_outcome_candidates.v1"

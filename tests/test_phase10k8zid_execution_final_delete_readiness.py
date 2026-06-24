@@ -15,11 +15,7 @@ DOCS = [
     ROOT / "FINAL_EXECUTION_DELETE_DECISION_AFTER_10K8ZID.md",
 ]
 
-PRESERVED_FILES = [
-    "automation_scheduler/execution_gatekeeper.py",
-    "automation_scheduler/execution_authorization.py",
-    "automation_scheduler/paper_trade_ledger.py",
-    "automation_scheduler/paper_decision_ledger.py",
+DOC_REFERENCES = [
     "automation_scheduler/settlement_rule_checker.py",
     "automation_scheduler/settlement_discovery.py",
     "automation_scheduler/audit_ledger.py",
@@ -29,6 +25,18 @@ PRESERVED_FILES = [
     "automation_scheduler/small_account_strategy.py",
     "automation_scheduler/manifold_no_bet_detector.py",
     "automation_scheduler/institutional_execution_desk.py",
+]
+
+CANONICAL_FILES = [
+    "automation_scheduler/execution_gatekeeper.py",
+    "automation_scheduler/execution_authorization.py",
+    "automation_scheduler/paper_trade_ledger.py",
+    "automation_scheduler/paper_decision_ledger.py",
+    "src/brokerage/settlement.py",
+    "src/services/settlement_service.py",
+    "src/services/ledger_service.py",
+    "src/services/execution_service.py",
+    "src/brokerage/readiness.py",
     "bet_decision_engine.py",
     "bet_log.py",
 ]
@@ -44,7 +52,7 @@ def test_final_delete_readiness_docs_state_no_delete_ready_targets() -> None:
         "streamlit_app.py is not a deletion candidate.",
     ]:
         assert phrase in text
-    for relpath in PRESERVED_FILES:
+    for relpath in DOC_REFERENCES:
         assert relpath in text
     for classification in [
         "COMPATIBILITY_WRAPPER_ONLY",
@@ -92,7 +100,7 @@ def test_final_delete_readiness_modules_import_and_remain_disabled(monkeypatch: 
     with pytest.raises(Exception):
         brokerage.submit_order_disabled(plan["execution_request"])
 
-    for relpath in PRESERVED_FILES:
+    for relpath in CANONICAL_FILES:
         assert (ROOT / relpath).exists()
 
     with importlib.import_module("tempfile").TemporaryDirectory() as tmp:
@@ -130,4 +138,3 @@ def test_final_delete_readiness_no_delete_ready_queue() -> None:
     text = (ROOT / "FINAL_EXECUTION_DELETE_DECISION_AFTER_10K8ZID.md").read_text(encoding="utf-8")
     assert "DELETE_READY_AFTER_PROOF: none" in text
     assert "No execution/trade/bet/settlement wrapper was proven safe to delete" in (ROOT / "PHASE10K8ZID_EXECUTION_FINAL_DELETE_READINESS.md").read_text(encoding="utf-8")
-

@@ -10,7 +10,7 @@ from automation_scheduler.outcome_store import (
     load_outcome_state,
     validate_outcome_record,
 )
-from automation_scheduler.settlement_discovery import (
+from src.services.settlement_service import (
     build_outcome_completion_report,
     classify_kalshi_settlement,
     discover_kalshi_settlements_for_pending_rows,

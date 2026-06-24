@@ -1,7 +1,7 @@
 import tempfile
 import unittest
 
-from automation_scheduler.institutional_audit_ledger import append_audit_record, load_audit_records
+from src.services.ledger_service import append_audit_record, load_audit_records
 
 
 class TestInstitutionalAuditLedger(unittest.TestCase):

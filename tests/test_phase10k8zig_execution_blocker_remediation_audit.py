@@ -44,8 +44,8 @@ def test_execution_blocker_modules_import_safely_and_remain_disabled(monkeypatch
     authorization = importlib.import_module("automation_scheduler.execution_authorization")
     paper_trade_ledger = importlib.import_module("automation_scheduler.paper_trade_ledger")
     paper_decision_ledger = importlib.import_module("automation_scheduler.paper_decision_ledger")
-    settlement_rule_checker = importlib.import_module("automation_scheduler.settlement_rule_checker")
-    settlement_discovery = importlib.import_module("automation_scheduler.settlement_discovery")
+    settlement_rule_checker = importlib.import_module("src.brokerage.settlement")
+    settlement_discovery = importlib.import_module("src.services.settlement_service")
     bet_log = importlib.import_module("bet_log")
     bet_decision_engine = importlib.import_module("bet_decision_engine")
 
@@ -110,5 +110,4 @@ def test_execution_blocker_modules_import_safely_and_remain_disabled(monkeypatch
         "bet_log.py",
     ]:
         assert (ROOT / relpath).exists()
-
 

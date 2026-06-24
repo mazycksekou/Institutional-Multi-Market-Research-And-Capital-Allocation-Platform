@@ -1,6 +1,6 @@
 import unittest
 
-from automation_scheduler.settlement_rule_checker import compare_settlement_rules
+from src.brokerage.settlement import compare_settlement_rules
 
 
 class TestSettlementRuleChecker(unittest.TestCase):

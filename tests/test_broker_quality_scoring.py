@@ -1,6 +1,6 @@
 import unittest
 
-from automation_scheduler.broker_quality_scoring import build_broker_quality_report, score_broker_provider
+from src.services.execution_service import build_broker_quality_report, score_broker_provider
 
 
 class TestBrokerQualityScoring(unittest.TestCase):

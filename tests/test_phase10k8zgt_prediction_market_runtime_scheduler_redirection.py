@@ -57,14 +57,14 @@ def test_runtime_scheduler_files_import_the_canonical_bridge_and_not_legacy_shel
     runtime_files = [
         "automation_scheduler/__init__.py",
         "automation_scheduler/scheduler_runner.py",
-        "automation_scheduler/settlement_discovery.py",
+        "src/services/settlement_service.py",
         "automation_scheduler/calibration_collector.py",
         "automation_scheduler/prediction_market_outcome_candidates.py",
         "automation_scheduler/kalshi_readonly_readiness.py",
     ]
     for relative in runtime_files:
         text = _read(relative)
-        assert "src.services.prediction_market_runtime_bridge" in text
+        assert "src.services.prediction_market_runtime_bridge" in text or "src.services.settlement_service" in text
         assert "from .kalshi_readonly_adapter import" not in text
         assert "from .kalshi_market_provider import" not in text
 
@@ -78,7 +78,7 @@ def test_canonical_prediction_market_bridge_connectors_and_legacy_shells_remain_
     odds_provider = importlib.import_module("src.providers.sportsbooks")
     automation_scheduler_pkg = importlib.import_module("automation_scheduler")
     scheduler_runner = importlib.import_module("automation_scheduler.scheduler_runner")
-    settlement_discovery = importlib.import_module("automation_scheduler.settlement_discovery")
+    settlement_service = importlib.import_module("src.services.settlement_service")
     calibration_collector = importlib.import_module("automation_scheduler.calibration_collector")
     outcome_candidates = importlib.import_module("automation_scheduler.prediction_market_outcome_candidates")
     readiness = importlib.import_module("automation_scheduler.kalshi_readonly_readiness")
@@ -91,7 +91,7 @@ def test_canonical_prediction_market_bridge_connectors_and_legacy_shells_remain_
     assert odds_provider is not None
     assert automation_scheduler_pkg is not None
     assert scheduler_runner.KalshiReadonlyAdapter.__module__ == "src.services.prediction_market_runtime_bridge"
-    assert settlement_discovery.KalshiReadonlyAdapter.__module__ == "src.services.prediction_market_runtime_bridge"
+    assert settlement_service.KalshiReadonlyAdapter.__module__ == "src.services.prediction_market_runtime_bridge"
     assert calibration_collector.KalshiReadonlyAdapter.__module__ == "src.services.prediction_market_runtime_bridge"
     assert outcome_candidates.KalshiReadonlyAdapter.__module__ == "src.services.prediction_market_runtime_bridge"
     assert readiness.KalshiReadonlyAdapter.__module__ == "src.services.prediction_market_runtime_bridge"

@@ -94,7 +94,7 @@ def register_automation_institutional_lab_routes(
         try:
             result = automation_scheduler.simulate_institutional_execution(request_payload)
         except ValueError as exc:
-            from automation_scheduler.institutional_execution_desk import rejection_response
+            from src.services.execution_service import rejection_response
 
             result = rejection_response(str(exc))
             raise HTTPException(status_code=400, detail=compact_institutional_execution_response(result)) from exc

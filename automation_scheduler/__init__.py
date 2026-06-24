@@ -12,31 +12,11 @@ from .backtesting_engine import generate_backtest_report, run_backtest, run_pape
 from .calibration import build_calibration_report
 from .outcome_store import ingest_outcome_records, load_outcome_records, load_outcome_state, summarize_outcomes
 from .outcome_migration import import_local_settlement_records
-from .settlement_discovery import build_outcome_completion_report, write_outcome_completion_candidates
 from .model_performance_report import build_compact_performance_report
-from src.providers.health import summarize_provider_health
-from src.providers.registry import get_provider_registry
-from src.services.odds_runtime_bridge import (
-    SharpSportsbookAdapter,
-    get_sportsbook_snapshot,
-    get_valid_normalized_records,
-    summarize_sportsbook_snapshot,
-    validate_sportsbook_snapshot,
-    write_sportsbook_snapshot,
-)
-from src.services.prediction_market_runtime_bridge import (
-    KalshiReadonlyAdapter,
-    get_kalshi_snapshot,
-    summarize_kalshi_snapshot,
-    validate_kalshi_snapshot,
-    write_kalshi_snapshot,
-)
-from .broker_quality_scoring import build_broker_quality_report
 from .candlestick_pattern_detector import detect_candlestick_patterns
 from .micro_outcome_calibration import build_micro_calibration_report
 from .pattern_calibration import build_pattern_calibration_report
 from .pattern_review_queue import load_pattern_review_queue
-from .small_account_strategy import SAFETY_FLAGS, run_small_account_review
 from .cross_asset_manifold_router import (
     get_manifold_calibration_snapshot,
     get_manifold_cluster_snapshot,
@@ -56,6 +36,8 @@ def run_small_account_pattern_detection(
     *,
     base_data_dir: str | None = None,
 ):
+    from src.services.execution_service import SAFETY_FLAGS
+
     rows = [row for row in (items or []) if isinstance(row, dict)]
     detections = []
     for row in rows:
@@ -89,6 +71,8 @@ def run_small_account_review_cycle(
     persist_queue: bool = False,
     base_data_dir: str | None = None,
 ):
+    from src.services.execution_service import run_small_account_review
+
     return run_small_account_review(
         items,
         session_state=session_state,
@@ -110,11 +94,14 @@ def get_small_account_micro_outcome_calibration(records: list[dict] | None = Non
 
 
 def get_broker_quality(base_data_dir: str | None = None):
+    from src.services.execution_service import build_broker_quality_report
+
     return build_broker_quality_report()
 
 
 def get_balance_sheet_risk(symbol: str, base_data_dir: str | None = None):
     from .balance_sheet_risk import evaluate_balance_sheet
+    from src.services.execution_service import SAFETY_FLAGS
 
     base = resolve_base_data_dir(base_data_dir)
     sample_path = base / "small_account_review" / "balance_sheet_samples.json"
@@ -924,7 +911,7 @@ def evaluate_execution_security_authorization(
 
 
 def get_security_audit_records(base_data_dir: str | None = None, limit: int = 100):
-    from .audit_ledger import load_security_audit_records
+    from src.services.ledger_service import load_security_audit_records
 
     return load_security_audit_records(base_data_dir=_data_dir(base_data_dir), limit=limit)
 
@@ -1167,6 +1154,9 @@ def discover_automation_outcome_completions(
     base = _data_dir(base_data_dir)
     config = get_default_scheduler_config(base_data_dir=base)
     ensure_runtime_directories(config)
+    from src.services.prediction_market_runtime_bridge import KalshiReadonlyAdapter
+    from src.services.settlement_service import build_outcome_completion_report, write_outcome_completion_candidates
+
     contract = dict(config["providers"].get("kalshi_prediction_market", {}))
     adapter = KalshiReadonlyAdapter(contract) if use_kalshi_snapshot else None
     report = build_outcome_completion_report(
@@ -1320,6 +1310,8 @@ def get_provider_health(base_data_dir: str | None = None):
     base = _data_dir(base_data_dir)
     config = get_default_scheduler_config(base_data_dir=base)
     ensure_runtime_directories(config)
+    from src.providers.health import summarize_provider_health
+
     return summarize_provider_health(config["providers"])
 
 
@@ -1327,6 +1319,8 @@ def get_provider_registry_snapshot(base_data_dir: str | None = None):
     base = _data_dir(base_data_dir)
     config = get_default_scheduler_config(base_data_dir=base)
     ensure_runtime_directories(config)
+    from src.providers.registry import get_provider_registry
+
     providers = list(get_provider_registry(include_legacy_aliases=True).values())
     blocked_count = sum(
         1
@@ -1352,6 +1346,8 @@ def get_sharp_provider_health(base_data_dir: str | None = None):
     config = get_default_scheduler_config(base_data_dir=base)
     ensure_runtime_directories(config)
     contract = dict(config["providers"].get("sharp_sportsbook", {}))
+    from src.services.odds_runtime_bridge import SharpSportsbookAdapter, summarize_sportsbook_snapshot
+
     adapter = SharpSportsbookAdapter(contract)
     payload = adapter.health_check()
     return summarize_sportsbook_snapshot(payload)
@@ -1362,6 +1358,14 @@ def run_sharp_provider_snapshot(base_data_dir: str | None = None, write_snapshot
     config = get_default_scheduler_config(base_data_dir=base)
     ensure_runtime_directories(config)
     contract = dict(config["providers"].get("sharp_sportsbook", {}))
+    from src.services.odds_runtime_bridge import (
+        SharpSportsbookAdapter,
+        get_sportsbook_snapshot,
+        summarize_sportsbook_snapshot,
+        validate_sportsbook_snapshot,
+        write_sportsbook_snapshot,
+    )
+
     adapter = SharpSportsbookAdapter(contract)
     snapshot = get_sportsbook_snapshot(adapter)
     validation = validate_sportsbook_snapshot(snapshot)
@@ -1379,6 +1383,8 @@ def get_kalshi_provider_health(base_data_dir: str | None = None):
     config = get_default_scheduler_config(base_data_dir=base)
     ensure_runtime_directories(config)
     contract = dict(config["providers"].get("kalshi_prediction_market", {}))
+    from src.services.prediction_market_runtime_bridge import KalshiReadonlyAdapter, summarize_kalshi_snapshot
+
     adapter = KalshiReadonlyAdapter(contract)
     payload = adapter.health_check()
     return summarize_kalshi_snapshot(payload)
@@ -1389,6 +1395,14 @@ def run_kalshi_provider_snapshot(base_data_dir: str | None = None, write_snapsho
     config = get_default_scheduler_config(base_data_dir=base)
     ensure_runtime_directories(config)
     contract = dict(config["providers"].get("kalshi_prediction_market", {}))
+    from src.services.prediction_market_runtime_bridge import (
+        KalshiReadonlyAdapter,
+        get_kalshi_snapshot,
+        summarize_kalshi_snapshot,
+        validate_kalshi_snapshot,
+        write_kalshi_snapshot,
+    )
+
     adapter = KalshiReadonlyAdapter(contract)
     snapshot = get_kalshi_snapshot(adapter)
     validation = validate_kalshi_snapshot(snapshot)
@@ -1451,7 +1465,7 @@ def run_institutional_deepseek_review(*, report: dict | None = None, enabled: bo
 
 
 def simulate_institutional_execution(payload: dict, *, base_data_dir: str | None = None):
-    from .institutional_execution_desk import simulate_execution
+    from src.services.execution_service import simulate_execution
 
     return simulate_execution(payload, base_data_dir=_data_dir(base_data_dir))
 

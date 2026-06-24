@@ -19,7 +19,7 @@ from .paper_decision_ledger import LEDGER_SCHEMA_VERSION, create_paper_decision_
 from .review_queue import build_review_item, load_review_queue_state, persist_review_queue_snapshot, summarize_review_items
 from .scheduler_config import SCHEMA_VERSION, ensure_runtime_directories, get_default_scheduler_config, safe_run_id, sanitize_filename, utc_now_iso
 from .scheduler_runner import _evaluate_kalshi_review_candidates
-from .settlement_discovery import classify_kalshi_settlement, discover_kalshi_settlements_for_pending_rows
+from src.services.settlement_service import classify_kalshi_settlement, discover_kalshi_settlements_for_pending_rows
 
 COLLECTOR_SCHEMA_VERSION = f"{SCHEMA_VERSION}.kalshi_calibration_collector.v1"
 DEFAULT_PUBLIC_BASE_URL = "https://api.elections.kalshi.com/trade-api/v2"

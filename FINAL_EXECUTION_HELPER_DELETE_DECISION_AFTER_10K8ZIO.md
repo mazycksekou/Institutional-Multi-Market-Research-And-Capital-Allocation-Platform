@@ -4,6 +4,8 @@
 
 No file in the execution-helper batch is approved for deletion in this phase.
 
+Canonical execution helpers remain anchored in `src.brokerage.settlement` and `src.services.execution_service`.
+
 ## Blocked files
 
 - `automation_scheduler/settlement_rule_checker.py`

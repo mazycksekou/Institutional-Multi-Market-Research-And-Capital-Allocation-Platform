@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from .audit_ledger import append_security_event
+from src.services.ledger_service import append_security_event
 from .security_event_types import RISK_LIMIT_BLOCKED
 from .security_policy import locked_safety_flags
 

@@ -6,7 +6,7 @@ from typing import Any
 from .manifold_calibration import MIN_CLUSTER_SAMPLE, calibration_status_for_sample
 from .manifold_cluster_registry import find_clusters, load_cluster_registry
 from .manifold_feature_builder import COMMON_NUMERIC_FEATURES, FEATURE_NAMES, FEATURE_VECTOR_VERSION, build_manifold_feature_vector
-from .manifold_no_bet_detector import detect_manifold_trap
+from src.services.execution_service import detect_manifold_trap
 
 
 MIN_NEIGHBOR_SAMPLE = 10

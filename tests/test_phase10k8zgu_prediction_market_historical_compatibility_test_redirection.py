@@ -80,13 +80,13 @@ def test_historical_prediction_market_redirection_uses_canonical_bridge_and_keep
     assert odds_provider is not None
 
     scheduler_runner = importlib.import_module("automation_scheduler.scheduler_runner")
-    settlement_discovery = importlib.import_module("automation_scheduler.settlement_discovery")
+    settlement_service = importlib.import_module("src.services.settlement_service")
     calibration_collector = importlib.import_module("automation_scheduler.calibration_collector")
     outcome_candidates = importlib.import_module("automation_scheduler.prediction_market_outcome_candidates")
     readiness = importlib.import_module("automation_scheduler.kalshi_readonly_readiness")
 
     assert scheduler_runner.KalshiReadonlyAdapter.__module__ == "src.services.prediction_market_runtime_bridge"
-    assert settlement_discovery.KalshiReadonlyAdapter.__module__ == "src.services.prediction_market_runtime_bridge"
+    assert settlement_service.KalshiReadonlyAdapter.__module__ == "src.services.prediction_market_runtime_bridge"
     assert calibration_collector.KalshiReadonlyAdapter.__module__ == "src.services.prediction_market_runtime_bridge"
     assert outcome_candidates.KalshiReadonlyAdapter.__module__ == "src.services.prediction_market_runtime_bridge"
     assert readiness.KalshiReadonlyAdapter.__module__ == "src.services.prediction_market_runtime_bridge"

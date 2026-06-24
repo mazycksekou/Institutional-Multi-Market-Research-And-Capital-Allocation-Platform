@@ -1,8 +1,9 @@
 import unittest
 
 from automation_scheduler.session_risk_rules import evaluate_session_risk, score_time_of_day
-from automation_scheduler.small_account_strategy import (
+from src.services.execution_service import (
     calculate_risk_reward,
+    run_small_account_review,
     score_low_float_high_demand,
     score_price_band,
 )

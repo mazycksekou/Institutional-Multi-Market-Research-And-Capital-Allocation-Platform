@@ -1,6 +1,6 @@
 import unittest
 
-from automation_scheduler.settlement_discovery import classify_kalshi_settlement, discover_kalshi_settlements_for_pending_rows
+from src.services.settlement_service import classify_kalshi_settlement, discover_kalshi_settlements_for_pending_rows
 
 
 class TestSettlementDiscoveryExplicitOnly(unittest.TestCase):

@@ -5,7 +5,7 @@ from typing import Any
 from .candlestick_manifold_detector import map_candlestick_context
 from .manifold_calibration import build_manifold_calibration_report, load_manifold_calibration_report
 from .manifold_cluster_registry import compact_cluster_registry, load_cluster_registry
-from .manifold_no_bet_detector import compact_trap_report, load_trap_report, write_trap_report
+from src.services.execution_service import compact_trap_report, load_trap_report, write_trap_report
 from .manifold_review_queue import build_manifold_review_queue, compact_manifold_review_response
 from .market_state_manifold import map_market_state
 from .prediction_market_manifold_mapper import map_prediction_market

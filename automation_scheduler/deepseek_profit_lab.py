@@ -26,7 +26,7 @@ from .deepseek_response_validator import (
     validate_candidate_review,
     validate_daily_report,
 )
-from .manifold_no_bet_detector import compact_trap_report, load_trap_report
+from src.services.execution_service import compact_trap_report, load_trap_report
 from .outcome_store import load_outcome_state, summarize_outcomes
 from src.providers.health import summarize_provider_health
 from .review_queue import load_review_queue_state, summarize_review_items
