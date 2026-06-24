@@ -86,12 +86,10 @@ def test_research_batch_sources_remain_local_only() -> None:
             assert token not in source, f"{token} found in {name}"
 
 
-def test_legacy_research_files_remain_preserved() -> None:
+def test_canonical_research_packages_exist() -> None:
     for relpath in [
-        "research/market_research_schema.py",
-        "research/market_research_store.py",
-        "automation_scheduler/feature_ablation_lab.py",
-        "automation_scheduler/deep_learning_research_lanes.py",
-        "automation_scheduler/tabular_ml_research.py",
+        "src/research/__init__.py",
+        "src/research/lanes.py",
+        "src/research/storage.py",
     ]:
         assert (ROOT / relpath).exists()

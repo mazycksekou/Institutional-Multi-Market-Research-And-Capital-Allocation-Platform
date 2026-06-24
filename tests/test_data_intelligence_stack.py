@@ -8,13 +8,17 @@ from fastapi.testclient import TestClient
 from automation_scheduler.causal_scaffold import build_causal_scaffold_report, evaluate_causal_hypothesis
 from automation_scheduler.cross_asset_intelligence_router import route_cross_asset_intelligence
 from automation_scheduler.data_intelligence_registry import build_data_intelligence_registry
-from automation_scheduler.deep_learning_research_lanes import build_deep_learning_research_lanes
 from automation_scheduler.graph_relationship_mapper import map_graph_relationships
-from automation_scheduler.model_maturity_registry import build_mdp_review_policy_scaffold, build_model_maturity_registry, validate_mdp_action_space
 from automation_scheduler.representation_feature_builder import build_representation_vector
 from automation_scheduler.response_compactor import compact_intelligence_readiness_response
-from automation_scheduler.tabular_ml_research import build_tabular_ml_research_lanes
 from automation_scheduler.intelligence_readiness_report import build_intelligence_readiness_report
+from src.research import (
+    build_deep_learning_research_lanes,
+    build_mdp_review_policy_scaffold,
+    build_model_maturity_registry,
+    build_tabular_ml_research_lanes,
+    validate_mdp_action_space,
+)
 from tests.support.action_imports import app
 
 

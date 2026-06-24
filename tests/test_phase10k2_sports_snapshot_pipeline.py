@@ -128,8 +128,8 @@ def test_existing_asof_owner_excludes_future_snapshots() -> None:
 
 def test_backend_snapshot_modules_have_no_streamlit_or_live_connector_imports() -> None:
     module_paths = [
-        REPO_ROOT / "research" / "market_research_schema.py",
-        REPO_ROOT / "research" / "market_research_store.py",
+        REPO_ROOT / "src" / "research" / "storage.py",
+        REPO_ROOT / "src" / "research" / "__init__.py",
         REPO_ROOT / "automation_scheduler" / "historical_line_movement.py",
         REPO_ROOT / "automation_scheduler" / "line_movement_import_contract.py",
         REPO_ROOT / "automation_scheduler" / "asof_line_movement_query.py",
@@ -151,7 +151,7 @@ def test_backend_snapshot_modules_have_no_streamlit_or_live_connector_imports() 
 
 
 def test_raw_sports_odds_schema_alignment_gap_is_documented(tmp_path: Path) -> None:
-    from research.market_research_store import initialize_market_research_db
+    from src.research.storage import initialize_market_research_db
 
     db_path = tmp_path / "market_research.db"
     initialize_market_research_db(db_path)

@@ -57,11 +57,12 @@ def test_governance_health_redirects_to_canonical_helper(monkeypatch: pytest.Mon
     )
     (audits_dir / "audit.json").write_text(json.dumps({"ok": True}), encoding="utf-8")
 
-    import model_governance.governance_health as legacy_health
+    import model_governance as legacy_governance
     from src.analytics.governance import build_governance_health
+    from src.analytics.reports import generate_governance_report
 
     monkeypatch.setattr(
-        legacy_health,
+        legacy_governance,
         "inventory_counts",
         lambda: {
             "model_inventory_count": 2,
@@ -70,24 +71,29 @@ def test_governance_health_redirects_to_canonical_helper(monkeypatch: pytest.Mon
         },
     )
     monkeypatch.setattr(
-        legacy_health,
+        legacy_governance,
         "get_model_inventory",
         lambda: [{"model_id": "m1", "activation_tier": "research_only"}],
     )
     monkeypatch.setattr(
-        legacy_health,
+        legacy_governance,
         "default_governance_config",
         lambda: {"human_approval_required": True, "auto_execution_enabled": False},
     )
 
-    wrapper_health = legacy_health.get_governance_health()
+    wrapper_health = legacy_governance.get_governance_health()
+    report = generate_governance_report(
+        [{"model_id": "m1", "activation_tier": "research_only"}],
+        {"model_inventory_count": 2, "active_scoring_ready_count": 1, "production_candidate_count": 1},
+        audit_records=[{"ok": True}],
+    )
     canonical_health = build_governance_health(
         {
             "model_inventory_count": 2,
             "active_scoring_ready_count": 1,
             "production_candidate_count": 1,
         },
-        {"blocked_model_count": 1},
+        report,
         config={"human_approval_required": True, "auto_execution_enabled": False},
         reports_dir=reports_dir,
         audit_dir=audits_dir,
@@ -105,7 +111,7 @@ def test_analytics_sources_remain_local_only() -> None:
     for name in [
         "src.analytics.governance",
         "src.analytics.reports",
-        "model_governance.governance_health",
+        "model_governance",
     ]:
         module = importlib.import_module(name)
         source = inspect.getsource(module).lower()
@@ -121,4 +127,4 @@ def test_legacy_analytics_files_remain_preserved() -> None:
         "model_governance/governance_report.py",
         "model_governance/model_validation_report.py",
     ]:
-        assert (ROOT / relpath).exists()
+        assert not (ROOT / relpath).exists()

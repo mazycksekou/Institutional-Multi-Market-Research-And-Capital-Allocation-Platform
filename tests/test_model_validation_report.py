@@ -1,5 +1,5 @@
 import unittest
-from model_governance.model_validation_report import build_model_validation_report
+from src.analytics.reports import build_model_validation_report
 
 
 class TestModelValidationReport(unittest.TestCase):

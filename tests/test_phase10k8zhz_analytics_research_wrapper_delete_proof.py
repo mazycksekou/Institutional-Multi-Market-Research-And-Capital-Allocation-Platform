@@ -15,16 +15,6 @@ DOCS = [
     ROOT / "ANALYTICS_RESEARCH_WRAPPER_TEST_SCAN_AFTER_10K8ZHZ.md",
     ROOT / "ANALYTICS_RESEARCH_WRAPPER_DELETE_READINESS_AFTER_10K8ZHZ.md",
 ]
-WRAPPERS = [
-    "model_governance/governance_health.py",
-    "model_governance/governance_report.py",
-    "model_governance/model_validation_report.py",
-    "research/market_research_schema.py",
-    "research/market_research_store.py",
-    "automation_scheduler/deep_learning_research_lanes.py",
-    "automation_scheduler/tabular_ml_research.py",
-    "automation_scheduler/model_maturity_registry.py",
-]
 
 
 def _read(path: Path) -> str:
@@ -43,7 +33,6 @@ def test_wrapper_delete_proof_docs_capture_classifications() -> None:
         "model_governance/governance_health.py",
         "research/market_research_store.py",
         "automation_scheduler/model_maturity_registry.py",
-        "No wrapper in this phase is delete-ready",
     ]:
         assert fragment.lower() in text.lower()
 
@@ -80,10 +69,12 @@ def test_canonical_analytics_and_research_import_safely(monkeypatch: pytest.Monk
     assert schema.local_only is True
 
 
-def test_wrapper_files_still_exist_and_canonical_packages_remain() -> None:
-    for relpath in WRAPPERS + [
+def test_canonical_packages_remain_and_wrappers_are_not_required() -> None:
+    for relpath in [
         "src/analytics/__init__.py",
         "src/research/__init__.py",
+        "src/analytics/governance.py",
+        "src/research/maturity.py",
         "model_governance/__init__.py",
         "automation_scheduler/__init__.py",
     ]:
@@ -92,14 +83,11 @@ def test_wrapper_files_still_exist_and_canonical_packages_remain() -> None:
 
 def test_wrapper_sources_are_local_only() -> None:
     for name in [
-        "model_governance.governance_health",
-        "model_governance.governance_report",
-        "model_governance.model_validation_report",
-        "research.market_research_schema",
-        "research.market_research_store",
-        "automation_scheduler.deep_learning_research_lanes",
-        "automation_scheduler.tabular_ml_research",
-        "automation_scheduler.model_maturity_registry",
+        "src.analytics.governance",
+        "src.analytics.reports",
+        "src.research.maturity",
+        "src.research.storage",
+        "model_governance",
     ]:
         module = importlib.import_module(name)
         source = inspect.getsource(module).lower()

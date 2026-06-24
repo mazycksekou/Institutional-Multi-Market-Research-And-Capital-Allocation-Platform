@@ -97,8 +97,8 @@ def test_runtime_and_bets_csv_owners_are_source_backed_and_documented() -> None:
 
 
 def test_market_research_db_targets_are_existing_schema_tables(tmp_path: Path) -> None:
-    from research.market_research_schema import get_all_table_names
-    from research.market_research_store import (
+    from src.research.storage import get_all_table_names
+    from src.research.storage import (
         initialize_market_research_db,
         list_market_research_tables,
     )

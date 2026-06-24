@@ -170,7 +170,7 @@ def get_data_intelligence_registry_snapshot(base_data_dir: str | None = None):
 
 def get_model_maturity_registry_snapshot(base_data_dir: str | None = None):
     from .intelligence_readiness_report import _outcome_coverage
-    from .model_maturity_registry import build_model_maturity_registry
+    from src.research import build_model_maturity_registry
 
     base = _data_dir(base_data_dir)
     records = load_outcome_records(base)
@@ -220,7 +220,7 @@ def get_deep_learning_research_lanes():
 
 
 def get_mdp_review_policy_scaffold(base_data_dir: str | None = None):
-    from .model_maturity_registry import build_mdp_review_policy_scaffold
+    from src.research import build_mdp_review_policy_scaffold
 
     base = _data_dir(base_data_dir)
     records = load_outcome_records(base)

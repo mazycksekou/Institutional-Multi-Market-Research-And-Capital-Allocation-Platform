@@ -258,7 +258,7 @@ class TestPhase10K5CoreArbitrageEngine(unittest.TestCase):
     # 9. arbitrage_opportunities table exists in research schema
     # ------------------------------------------------------------------
     def test_arbitrage_opportunities_table_exists(self) -> None:
-        from research.market_research_schema import get_create_sql
+        from src.research.storage import get_create_sql
         try:
             sql = get_create_sql("arbitrage_opportunities")
         except Exception:
@@ -286,7 +286,7 @@ class TestPhase10K5CoreArbitrageEngine(unittest.TestCase):
             from automation_scheduler import odds_math  # noqa
             from automation_scheduler.arbitrage import two_way_arbitrage  # noqa
             from automation_scheduler.arbitrage import three_way_arbitrage  # noqa
-            from research import market_research_schema  # noqa
+            from src import research as market_research_schema  # noqa
         except ImportError:
             # Some owners may not exist yet – that's acceptable for now.
             pass

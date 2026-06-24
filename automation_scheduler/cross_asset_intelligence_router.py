@@ -5,8 +5,8 @@ from typing import Any
 from .causal_scaffold import build_causal_scaffold_report
 from .cross_asset_embedding_router import route_cross_asset_embedding
 from .graph_relationship_mapper import map_graph_relationships
-from .model_maturity_registry import build_model_maturity_registry
 from .security_policy import detect_execution_authority_violations, locked_safety_flags
+from src.research import build_model_maturity_registry
 
 
 def _fatal_safety_blockers(item: dict[str, Any]) -> list[str]:

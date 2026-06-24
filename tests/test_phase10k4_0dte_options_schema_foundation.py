@@ -111,23 +111,23 @@ class TestWarehouseSchemaHas0DTETables:
     """Checks the schema module directly (no database needed)."""
 
     def test_raw_option_chains_table_exists(self) -> None:
-        from research.market_research_schema import SCHEMA_TABLES
+        from src.research.storage import SCHEMA_TABLES
         assert "raw_option_chains" in SCHEMA_TABLES
 
     def test_raw_option_quotes_table_exists(self) -> None:
-        from research.market_research_schema import SCHEMA_TABLES
+        from src.research.storage import SCHEMA_TABLES
         assert "raw_option_quotes" in SCHEMA_TABLES
 
     def test_features_0dte_options_table_exists(self) -> None:
-        from research.market_research_schema import SCHEMA_TABLES
+        from src.research.storage import SCHEMA_TABLES
         assert "features_0dte_options" in SCHEMA_TABLES
 
     def test_option_backtest_trades_table_exists(self) -> None:
-        from research.market_research_schema import SCHEMA_TABLES
+        from src.research.storage import SCHEMA_TABLES
         assert "option_backtest_trades" in SCHEMA_TABLES
 
     def test_no_table_named_stocks_as_primary_options_table(self) -> None:
-        from research.market_research_schema import get_all_table_names
+        from src.research.storage import get_all_table_names
         names = get_all_table_names()
         assert "stocks" not in names, (
             "Table 'stocks' is not allowed as the primary options storage. "
@@ -135,7 +135,7 @@ class TestWarehouseSchemaHas0DTETables:
         )
 
     def test_raw_option_chains_contains_identity_fields(self) -> None:
-        from research.market_research_schema import SCHEMA_TABLES
+        from src.research.storage import SCHEMA_TABLES
         sql = SCHEMA_TABLES["raw_option_chains"]
         for field in [
             "underlying_symbol",
@@ -150,19 +150,19 @@ class TestWarehouseSchemaHas0DTETables:
             assert field in sql, f"Missing identity field {field!r}"
 
     def test_raw_option_chains_contains_quote_fields(self) -> None:
-        from research.market_research_schema import SCHEMA_TABLES
+        from src.research.storage import SCHEMA_TABLES
         sql = SCHEMA_TABLES["raw_option_chains"]
         for field in ["bid", "ask", "mid", "implied_volatility"]:
             assert field in sql, f"Missing quote field {field!r}"
 
     def test_raw_option_chains_contains_greeks(self) -> None:
-        from research.market_research_schema import SCHEMA_TABLES
+        from src.research.storage import SCHEMA_TABLES
         sql = SCHEMA_TABLES["raw_option_chains"]
         for field in ["delta", "gamma", "theta", "vega"]:
             assert field in sql, f"Missing Greek field {field!r}"
 
     def test_raw_option_quotes_contains_extra_fields(self) -> None:
-        from research.market_research_schema import SCHEMA_TABLES
+        from src.research.storage import SCHEMA_TABLES
         sql = SCHEMA_TABLES["raw_option_quotes"]
         for field in [
             "spread_pct",
@@ -174,7 +174,7 @@ class TestWarehouseSchemaHas0DTETables:
             assert field in sql, f"Missing quote/liquidity field {field!r}"
 
     def test_option_backtest_trades_contains_backtest_fields(self) -> None:
-        from research.market_research_schema import SCHEMA_TABLES
+        from src.research.storage import SCHEMA_TABLES
         sql = SCHEMA_TABLES["option_backtest_trades"]
         required = [
             "run_id",
@@ -211,7 +211,7 @@ class TestWarehouseSchemaHas0DTETables:
 
 class TestNoForbiddenImports:
     def test_market_research_schema_no_forbidden_imports(self) -> None:
-        import research.market_research_schema as mod
+        import src.research.storage as mod
         src = mod.__file__ or ""
         content = Path(src).read_text(encoding="utf-8")
         forbidden = [
@@ -230,7 +230,7 @@ class TestNoForbiddenImports:
             )
 
     def test_market_research_store_no_forbidden_imports(self) -> None:
-        import research.market_research_store as mod
+        import src.research.storage as mod
         src = mod.__file__ or ""
         content = Path(src).read_text(encoding="utf-8")
         forbidden = [

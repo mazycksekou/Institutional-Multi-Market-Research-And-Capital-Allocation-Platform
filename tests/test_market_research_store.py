@@ -13,11 +13,9 @@ import pytest
 # ------------------------------------------------------------------
 # Import the module(s) under test
 # ------------------------------------------------------------------
-from research.market_research_schema import (
+from src.research.storage import (
     MARKET_RESEARCH_SCHEMA_VERSION,
     get_all_table_names,
-)
-from research.market_research_store import (
     get_default_market_research_db_path,
     initialize_market_research_db,
     list_market_research_tables,
@@ -71,6 +69,7 @@ class TestImportDoesNotCreateDb:
         path = get_default_market_research_db_path()
         assert path.name == "market_research.db"
         assert path.parts[-2] == "research"
+        assert path.parts[-3] == "src"
 
     def test_import_does_not_create_database(self) -> None:
         path = get_default_market_research_db_path()
@@ -123,7 +122,7 @@ class TestInitialize:
 
     def test_insert_schema_metadata(self, tmp_db_path: Path) -> None:
         initialize_market_research_db(tmp_db_path)
-        from research.market_research_store import insert_schema_metadata
+        from src.research.storage import insert_schema_metadata
         insert_schema_metadata("test_key", "test_value", tmp_db_path)
         # verify through raw SQL
         conn = sqlite3.connect(str(tmp_db_path))
@@ -180,7 +179,7 @@ class TestNoForbiddenDependencies:
     """Check that the research modules do not import vendor/API/scraper modules."""
 
     def test_market_research_schema_no_forbidden_imports(self) -> None:
-        import research.market_research_schema as mod
+        import src.research.storage as mod
         src = mod.__file__ or ""
         content = Path(src).read_text(encoding="utf-8")
         forbidden = [
@@ -194,10 +193,10 @@ class TestNoForbiddenDependencies:
             "pandas",
         ]
         for token in forbidden:
-            assert token not in content, f"Forbidden import/token {token!r} found in market_research_schema.py"
+            assert token not in content, f"Forbidden import/token {token!r} found in src/research/storage.py"
 
     def test_market_research_store_no_forbidden_imports(self) -> None:
-        import research.market_research_store as mod
+        import src.research.storage as mod
         src = mod.__file__ or ""
         content = Path(src).read_text(encoding="utf-8")
         forbidden = [
@@ -211,4 +210,4 @@ class TestNoForbiddenDependencies:
             "pandas",
         ]
         for token in forbidden:
-            assert token not in content, f"Forbidden import/token {token!r} found in market_research_store.py"
+            assert token not in content, f"Forbidden import/token {token!r} found in src/research/storage.py"

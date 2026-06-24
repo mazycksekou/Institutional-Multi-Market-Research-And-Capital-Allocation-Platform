@@ -42,12 +42,10 @@ def test_research_lane_helpers_redirect_to_canonical_package(monkeypatch: pytest
     )
 
     import automation_scheduler as scheduler_pkg
-    import automation_scheduler.deep_learning_research_lanes as legacy_dl
-    import automation_scheduler.model_maturity_registry as maturity_registry
-    import automation_scheduler.tabular_ml_research as legacy_tabular
     from src.research import (
         build_deep_learning_maturity_records,
         build_deep_learning_research_lanes,
+        build_model_maturity_registry,
         build_tabular_maturity_records,
         build_tabular_ml_research_lanes,
     )
@@ -60,14 +58,10 @@ def test_research_lane_helpers_redirect_to_canonical_package(monkeypatch: pytest
     canonical_tabular_records = build_tabular_maturity_records(total_labeled_outcomes=25)
     canonical_deep_records = build_deep_learning_maturity_records()
 
-    legacy_tabular_payload = legacy_tabular.build_tabular_ml_research_lanes(total_labeled_outcomes=25, label_coverage=0.025)
-    legacy_deep_payload = legacy_dl.build_deep_learning_research_lanes()
     scheduler_tabular_payload = scheduler_pkg.get_tabular_ml_research_lanes()
     scheduler_deep_payload = scheduler_pkg.get_deep_learning_research_lanes()
-    registry_payload = maturity_registry.build_model_maturity_registry(total_labeled_outcomes=25)
+    registry_payload = build_model_maturity_registry(total_labeled_outcomes=25)
 
-    assert legacy_tabular_payload == canonical_tabular
-    assert legacy_deep_payload == canonical_deep
     assert scheduler_tabular_payload["status"] == canonical_tabular["status"]
     assert scheduler_tabular_payload["total_lanes"] == canonical_tabular["total_lanes"]
     assert scheduler_deep_payload == canonical_deep
@@ -78,10 +72,8 @@ def test_research_lane_helpers_redirect_to_canonical_package(monkeypatch: pytest
 def test_research_sources_remain_local_only() -> None:
     for name in [
         "src.research.lanes",
+        "src.research.maturity",
         "src.research.storage",
-        "automation_scheduler.deep_learning_research_lanes",
-        "automation_scheduler.tabular_ml_research",
-        "automation_scheduler.model_maturity_registry",
         "automation_scheduler.__init__",
     ]:
         module = importlib.import_module(name)
@@ -94,10 +86,8 @@ def test_research_sources_remain_local_only() -> None:
 
 def test_legacy_research_files_remain_preserved() -> None:
     for relpath in [
-        "automation_scheduler/deep_learning_research_lanes.py",
-        "automation_scheduler/tabular_ml_research.py",
         "automation_scheduler/feature_ablation_lab.py",
-        "research/market_research_schema.py",
-        "research/market_research_store.py",
+        "src/research/lanes.py",
+        "src/research/maturity.py",
     ]:
         assert (ROOT / relpath).exists()

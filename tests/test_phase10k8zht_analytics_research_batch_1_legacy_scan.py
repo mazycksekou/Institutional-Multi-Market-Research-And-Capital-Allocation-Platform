@@ -30,13 +30,9 @@ def test_legacy_scan_docs_include_expected_blocker_categories() -> None:
 
 def test_legacy_files_are_not_deleted_and_canonical_packages_exist() -> None:
     for relpath in [
-        "model_governance/model_validation_report.py",
-        "model_governance/governance_report.py",
-        "model_governance/governance_health.py",
-        "research/market_research_schema.py",
-        "research/market_research_store.py",
         "src/analytics/__init__.py",
         "src/research/__init__.py",
+        "src/analytics/governance.py",
+        "src/research/storage.py",
     ]:
         assert (ROOT / relpath).exists()
-

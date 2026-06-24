@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import Any, Mapping
 
-from .model_maturity_registry import build_model_maturity_registry, build_mdp_review_policy_scaffold
 from .security_policy import locked_safety_flags
+from src.research import build_mdp_review_policy_scaffold, build_model_maturity_registry
 
 
 DATA_INTELLIGENCE_SCHEMA_VERSION = "cross_asset_data_intelligence_registry_v1"

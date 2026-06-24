@@ -137,10 +137,12 @@ from automation_scheduler.response_compactor import (
     compact_validation_response,
     redact_and_limit_payload,
 )
-from model_governance.governance_health import get_governance_health
+from model_governance import (
+    build_model_validation_report,
+    generate_governance_report,
+    get_governance_health,
+)
 from model_governance.model_inventory import get_model_inventory
-from model_governance.governance_report import generate_governance_report
-from model_governance.model_validation_report import build_model_validation_report
 from quant_engine import (
     american_to_implied_probability,
     capm_required_return,

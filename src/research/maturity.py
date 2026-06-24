@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections import Counter
 from typing import Any, Mapping
 
-from .security_policy import locked_safety_flags
+from .lanes import build_deep_learning_maturity_records, build_tabular_maturity_records
 
 
 MODEL_MATURITY_STATUSES = {
@@ -54,6 +54,33 @@ FORBIDDEN_MDP_ACTIONS = (
     "SEND_TO_EXCHANGE",
     "SEND_TO_KALSHI",
 )
+
+
+def locked_safety_flags() -> dict[str, Any]:
+    return {
+        "provider_write": False,
+        "execution_allowed": False,
+        "live_execution_enabled": False,
+        "auto_execution": False,
+        "auto_execution_enabled": False,
+        "human_approval_required": True,
+        "owner_approval_required": True,
+        "dry_run": True,
+        "simulation_only": True,
+        "actual_orders_submitted": 0,
+        "actual_bets_submitted": 0,
+        "actual_trades_submitted": 0,
+        "actual_crypto_swaps_submitted": 0,
+        "kalshi_order_execution_enabled": False,
+        "sportsbook_bet_execution_enabled": False,
+        "broker_order_execution_enabled": False,
+        "crypto_trade_execution_enabled": False,
+        "stock_trade_execution_enabled": False,
+        "raw_payload_included": False,
+        "raw_payload_exposed": False,
+        "secrets_included": False,
+        "secrets_detected": False,
+    }
 
 
 def _coverage_for(asset_type: str, outcome_coverage_by_asset_type: Mapping[str, Any] | None) -> float:
@@ -394,8 +421,6 @@ def build_model_maturity_registry(
     total_labeled_outcomes: int = 0,
     outcome_coverage_by_asset_type: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
-    from src.research import build_deep_learning_maturity_records, build_tabular_maturity_records
-
     records = build_core_model_maturity_records(
         total_labeled_outcomes=total_labeled_outcomes,
         outcome_coverage_by_asset_type=outcome_coverage_by_asset_type,

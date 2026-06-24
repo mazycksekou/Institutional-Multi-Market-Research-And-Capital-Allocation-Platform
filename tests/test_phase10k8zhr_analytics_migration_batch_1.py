@@ -86,10 +86,10 @@ def test_analytics_batch_sources_remain_local_only() -> None:
             assert token not in source, f"{token} found in {name}"
 
 
-def test_legacy_analytics_files_remain_preserved() -> None:
+def test_canonical_analytics_packages_exist() -> None:
     for relpath in [
-        "model_governance/model_validation_report.py",
-        "model_governance/governance_report.py",
-        "model_governance/governance_health.py",
+        "src/analytics/__init__.py",
+        "src/analytics/governance.py",
+        "src/analytics/reports.py",
     ]:
         assert (ROOT / relpath).exists()
