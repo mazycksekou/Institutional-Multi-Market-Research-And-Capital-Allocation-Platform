@@ -118,13 +118,15 @@ def test_canonical_prediction_market_modules_import_and_remain_disabled(monkeypa
     bridge_adapter = bridge.KalshiReadonlyAdapter({})
     assert bridge_adapter.validate_config()["status"] == "provider_disabled"
     assert bridge_adapter.health_check()["status"] == "provider_disabled"
-    with pytest.raises(ConnectorDisabledError):
+    with pytest.raises(RuntimeError) as exc_info:
         bridge_adapter.fetch_snapshot()
+    assert exc_info.value.__class__.__name__ == "ConnectorDisabledError"
 
     connector_client = connector.build_prediction_market_read_only_client()
     assert connector_client.describe()["provider"] == "prediction_market_data"
-    with pytest.raises(ConnectorDisabledError):
+    with pytest.raises(RuntimeError) as exc_info:
         connector_client.fetch_events()
+    assert exc_info.value.__class__.__name__ == "ConnectorDisabledError"
 
     provider_adapter = provider.PredictionMarketProviderAdapter()
     assert provider_adapter.health_check()["status"] == "scaffold_only"

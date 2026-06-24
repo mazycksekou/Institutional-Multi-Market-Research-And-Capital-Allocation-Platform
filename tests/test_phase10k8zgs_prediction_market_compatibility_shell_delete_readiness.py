@@ -84,14 +84,14 @@ def test_canonical_prediction_market_surfaces_import_and_legacy_shells_stay_disa
     assert health["ok"] is True
     assert health["live_calls_enabled"] is False
 
-    with pytest.raises(ConnectorDisabledError):
-        readonly_adapter.fetch_markets()
-
-    with pytest.raises(ConnectorDisabledError):
-        readonly_adapter.fetch_events()
-
-    with pytest.raises(ConnectorDisabledError):
-        readonly_adapter.fetch_snapshot()
+    for action in [
+        readonly_adapter.fetch_markets,
+        readonly_adapter.fetch_events,
+        readonly_adapter.fetch_snapshot,
+    ]:
+        with pytest.raises(RuntimeError) as exc_info:
+            action()
+        assert exc_info.value.__class__.__name__ == "ConnectorDisabledError"
 
     snapshot = bridge.get_kalshi_snapshot(readonly_adapter)
     assert snapshot["ok"] is True
@@ -105,5 +105,14 @@ def test_canonical_prediction_market_surfaces_import_and_legacy_shells_stay_disa
         "automation_scheduler/kalshi_readonly_adapter.py",
         "automation_scheduler/kalshi_market_provider.py",
     ]:
+        path = ROOT / relative
+        assert not path.exists(), f"legacy shell should already be deleted: {path}"
+
+    for relative in [
+        "PHASE10K8ZGS_PREDICTION_MARKET_COMPATIBILITY_SHELL_DELETE_READINESS.md",
+        "PREDICTION_MARKET_COMPATIBILITY_IMPORT_SCAN_AFTER_10K8ZGS.md",
+        "PREDICTION_MARKET_COMPATIBILITY_TEST_REDIRECTION_AFTER_10K8ZGS.md",
+        "PREDICTION_MARKET_COMPATIBILITY_DELETE_READINESS_AFTER_10K8ZGS.md",
+    ]:
         text = _read(ROOT / relative)
-        assert "ConnectorDisabledError" in text or "disabled" in text
+        assert "delete-readiness" in text.lower() or "compatibility" in text.lower()

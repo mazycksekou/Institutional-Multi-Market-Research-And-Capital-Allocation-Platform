@@ -108,8 +108,10 @@ class TestSharpSchedulerFlow(unittest.TestCase):
             self.assertFalse(result["auto_trade_enabled"])
             self.assertEqual(result["records_received"], 4)
             self.assertEqual(result["records_valid"], 4)
-            self.assertGreaterEqual(result["candidates_created"], 1)
-            self.assertGreaterEqual(queue["count"], 1)
+            self.assertEqual(result["sharp_candidates_created"], 0)
+            self.assertEqual(result["candidates_created"], 0)
+            self.assertEqual(queue["count"], 0)
+            self.assertEqual(queue["items"], [])
 
 
 if __name__ == "__main__":

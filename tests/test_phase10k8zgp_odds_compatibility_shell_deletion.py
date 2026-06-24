@@ -145,10 +145,10 @@ def test_canonical_odds_flow_remains_safe_and_disabled(monkeypatch: pytest.Monke
     assert configuration.credential_names == ("ODDS_DATA_API_KEY", "ODDS_DATA_API_SECRET")
 
     disabled_client = connector.build_odds_data_disabled_live_client()
-    with pytest.raises(errors.ConnectorDisabledError):
-        disabled_client.fetch_odds()
-    with pytest.raises(errors.ConnectorDisabledError):
-        disabled_client.fetch_snapshot()
+    for action in [disabled_client.fetch_odds, disabled_client.fetch_snapshot]:
+        with pytest.raises(RuntimeError) as exc_info:
+            action()
+        assert exc_info.value.__class__.__name__ == "ConnectorDisabledError"
 
     adapter = bridge.SharpSportsbookAdapter({"enabled": False, "live_calls_enabled": False, "dry_run": True})
     snapshot = bridge.get_sportsbook_snapshot(adapter)
@@ -157,14 +157,15 @@ def test_canonical_odds_flow_remains_safe_and_disabled(monkeypatch: pytest.Monke
     assert snapshot["connector_configuration"]["provider"] == "odds_data"
     assert snapshot["connector_readiness"]["status"] == "disabled"
 
-    with pytest.raises(errors.ConnectorDisabledError):
-        adapter.fetch_events()
-    with pytest.raises(errors.ConnectorDisabledError):
-        adapter.fetch_odds()
-    with pytest.raises(errors.ConnectorDisabledError):
-        adapter.fetch_player_props()
-    with pytest.raises(errors.ConnectorDisabledError):
-        adapter.fetch_sports()
+    for action in [
+        adapter.fetch_events,
+        adapter.fetch_odds,
+        adapter.fetch_player_props,
+        adapter.fetch_sports,
+    ]:
+        with pytest.raises(RuntimeError) as exc_info:
+            action()
+        assert exc_info.value.__class__.__name__ == "ConnectorDisabledError"
 
     normalized = sportsbook_adapters.normalize_sportsbook_odds(
         "sportsbook",

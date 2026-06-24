@@ -100,8 +100,9 @@ def test_canonical_prediction_market_bridge_connectors_and_legacy_shells_remain_
     assert adapter.validate_config()["ok"] is False
     assert adapter.health_check()["live_calls_enabled"] is False
 
-    with pytest.raises(ConnectorDisabledError):
+    with pytest.raises(RuntimeError) as exc_info:
         adapter.fetch_snapshot()
+    assert exc_info.value.__class__.__name__ == "ConnectorDisabledError"
 
     snapshot = bridge.get_kalshi_snapshot(adapter)
     assert snapshot["ok"] is True

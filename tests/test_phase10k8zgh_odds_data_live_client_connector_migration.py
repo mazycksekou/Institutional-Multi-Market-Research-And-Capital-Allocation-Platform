@@ -28,13 +28,8 @@ NEW_MODULES = [
 ]
 
 LEGACY_MODULES = [
-    "sharp_client",
-    "providers.sharp_provider",
-    "betting_providers.sharp_api",
-    "betting_providers.the_odds_api",
-    "betting_providers.sportsgameodds",
-    "automation_scheduler.sharp_sportsbook_adapter",
-    "automation_scheduler.sportsbook_odds_provider",
+    # These legacy shells were deleted in later phases and are kept here only
+    # as historical deletion evidence for the connector migration narrative.
 ]
 
 FORBIDDEN = [
@@ -116,7 +111,7 @@ def test_docs_capture_odds_data_connector_migration() -> None:
 
 
 def test_odds_data_connector_modules_import_and_disable_cleanly() -> None:
-    for module_name in NEW_MODULES + LEGACY_MODULES:
+    for module_name in NEW_MODULES:
         imported = importlib.import_module(module_name)
         assert imported is not None
 
@@ -193,3 +188,19 @@ def test_odds_data_connector_paths_are_vendor_neutral_and_import_safe() -> None:
     assert "odds_data" in combined
     assert (ROOT / "main.py").exists()
     assert (ROOT / "streamlit_app.py").exists()
+
+
+def test_deleted_legacy_odds_modules_stay_deleted() -> None:
+    deleted_modules = [
+        "sharp_client",
+        "providers.sharp_provider",
+        "betting_providers.sharp_api",
+        "betting_providers.the_odds_api",
+        "betting_providers.sportsgameodds",
+        "automation_scheduler.sharp_sportsbook_adapter",
+        "automation_scheduler.sportsbook_odds_provider",
+    ]
+
+    for module_name in deleted_modules:
+        with pytest.raises(ModuleNotFoundError):
+            importlib.import_module(module_name)

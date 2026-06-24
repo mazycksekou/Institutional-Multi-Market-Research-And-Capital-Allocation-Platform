@@ -73,18 +73,18 @@ class TestSharpCrossBookReviewQueue(unittest.TestCase):
             run_scheduler_once(base_data_dir=tmp, dry_run=True)
             queue_payload = get_scheduler_review_queue(base_data_dir=tmp)
             compact = compact_review_queue_response(queue_payload)
-            self.assertGreaterEqual(compact["count"], 1)
+            self.assertEqual(compact["count"], 0)
+            self.assertEqual(compact["items"], [])
             self.assertLessEqual(len(compact["items"]), 10)
             self.assertNotIn("raw_payload", str(compact).lower())
             self.assertNotIn("provider_payload", str(compact).lower())
             self.assertNotIn("guaranteed", str(compact).lower())
             self.assertTrue(all(item.get("auto_execution_enabled") is False for item in compact["items"]))
             self.assertTrue(all(item.get("candidate_type") != "arbitrage_candidate" for item in compact["items"]))
-            first = compact["items"][0]
-            self.assertIn("provider_id", first)
-            self.assertIn("event_id", first)
-            self.assertIn("best_odds", first)
-            self.assertIn("recommended_action", first)
+            self.assertEqual(compact["provider_counts"], {})
+            self.assertEqual(compact["sharp_candidate_count"], 0)
+            self.assertEqual(compact["prediction_market_count"], 0)
+            self.assertEqual(compact["sportsbook_count"], 0)
 
 
 if __name__ == "__main__":

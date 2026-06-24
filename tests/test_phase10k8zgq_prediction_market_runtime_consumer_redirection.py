@@ -6,6 +6,8 @@ import os
 import sys
 from pathlib import Path
 
+import pytest
+
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -24,11 +26,7 @@ CANONICAL_MODULES = [
 ]
 
 LEGACY_MODULES = [
-    "providers.kalshi_provider",
-    "betting_providers.kalshi_api",
-    "automation_scheduler.kalshi_readonly_adapter",
-    "automation_scheduler.kalshi_market_provider",
-    "kalshi_client",
+    # Deleted in later phases; retained only as historical evidence in docs.
 ]
 
 FORBIDDEN_DIRECT_IMPORTS = {
@@ -121,10 +119,6 @@ def test_prediction_market_runtime_consumer_redirection_is_canonical_and_disable
 
     monkeypatch.setattr(os, "getenv", lambda *_args, **_kwargs: "")
 
-    legacy_imports = [importlib.import_module(module_name) for module_name in LEGACY_MODULES]
-    for module in legacy_imports:
-        assert module.__name__ in LEGACY_MODULES
-
     enrichment_service = importlib.import_module("src.services.enrichment_service")
     result = enrichment_service.EnrichmentService.enrich_ticket(
         {
@@ -159,3 +153,17 @@ def test_prediction_market_runtime_consumer_redirection_is_canonical_and_disable
             roots = _import_roots(py_file)
             assert not (roots & FORBIDDEN_DIRECT_IMPORTS), f"forbidden import in {py_file}: {roots & FORBIDDEN_DIRECT_IMPORTS}"
             assert "providers.kalshi_provider" not in py_file.read_text(encoding="utf-8")
+
+
+def test_deleted_prediction_market_legacy_modules_stay_deleted() -> None:
+    deleted_modules = [
+        "providers.kalshi_provider",
+        "betting_providers.kalshi_api",
+        "automation_scheduler.kalshi_readonly_adapter",
+        "automation_scheduler.kalshi_market_provider",
+        "kalshi_client",
+    ]
+
+    for module_name in deleted_modules:
+        with pytest.raises(ModuleNotFoundError):
+            importlib.import_module(module_name)

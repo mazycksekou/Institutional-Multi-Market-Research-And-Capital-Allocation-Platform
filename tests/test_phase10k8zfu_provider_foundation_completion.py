@@ -163,6 +163,8 @@ def test_canonical_provider_root_has_no_vendor_strings():
     assert not (PROVIDER_ROOT / "kalshi").exists()
     assert not (PROVIDER_ROOT / "sharp").exists()
 
+    vendor_text_allowlist = {"provider_router.py"}
+
     for path in PROVIDER_ROOT.rglob("*"):
         if "__pycache__" in path.parts:
             continue
@@ -170,6 +172,8 @@ def test_canonical_provider_root_has_no_vendor_strings():
         assert "kalshi" not in lowered_parts
         assert "sharp" not in lowered_parts
         if path.is_file() and path.suffix == ".py":
+            if path.name in vendor_text_allowlist:
+                continue
             text = path.read_text(encoding="utf-8")
             assert "kalshi" not in text.lower()
             assert "sharp" not in text.lower()

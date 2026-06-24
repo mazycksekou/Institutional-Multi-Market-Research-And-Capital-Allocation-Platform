@@ -94,8 +94,9 @@ def test_historical_prediction_market_redirection_uses_canonical_bridge_and_keep
     bridge_adapter = bridge.KalshiReadonlyAdapter()
     assert bridge_adapter.validate_config()["ok"] is False
     assert bridge_adapter.health_check()["live_calls_enabled"] is False
-    with pytest.raises(ConnectorDisabledError):
+    with pytest.raises(RuntimeError) as exc_info:
         bridge_adapter.fetch_snapshot()
+    assert exc_info.value.__class__.__name__ == "ConnectorDisabledError"
     snapshot = bridge.get_kalshi_snapshot(bridge_adapter)
     assert snapshot["ok"] is True
     assert snapshot["dry_run"] is True

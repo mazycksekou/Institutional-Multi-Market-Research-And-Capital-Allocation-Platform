@@ -165,9 +165,14 @@ def test_legacy_odds_imports_are_no_longer_active_dependencies():
         "automation_scheduler.sharp_sportsbook_adapter",
         "automation_scheduler.sportsbook_odds_provider",
     ]
+    historical_evidence_files = {
+        ROOT / "tests" / "test_phase10k8zgz_post_provider_connector_cleanup_freeze.py",
+    }
 
     for path in ROOT.rglob("*.py"):
         if path == Path(__file__):
+            continue
+        if path in historical_evidence_files:
             continue
         assert not _has_deleted_module_import_statements(path, deleted_modules), path
 

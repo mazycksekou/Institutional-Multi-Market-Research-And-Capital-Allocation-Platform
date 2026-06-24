@@ -67,14 +67,16 @@ def test_canonical_prediction_market_stack_imports_and_stays_disabled(monkeypatc
     assert bridge.KalshiReadonlyAdapter is bridge.PredictionMarketReadonlyAdapter
     adapter = bridge.PredictionMarketReadonlyAdapter({})
     assert adapter.validate_config()["status"] == "provider_disabled"
-    with pytest.raises(ConnectorDisabledError):
+    with pytest.raises(RuntimeError) as exc_info:
         adapter.fetch_snapshot()
+    assert exc_info.value.__class__.__name__ == "ConnectorDisabledError"
 
     client = connector.build_prediction_market_read_only_client()
     assert client.describe()["provider"] == "prediction_market_data"
     assert connector.describe_prediction_market_connector_readiness()["status"] == "disabled"
-    with pytest.raises(ConnectorDisabledError):
+    with pytest.raises(RuntimeError) as exc_info:
         client.fetch_events()
+    assert exc_info.value.__class__.__name__ == "ConnectorDisabledError"
 
     provider_adapter = provider.PredictionMarketProviderAdapter()
     assert provider_adapter.health_check()["status"] == "scaffold_only"

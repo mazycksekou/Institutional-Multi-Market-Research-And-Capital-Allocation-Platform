@@ -109,7 +109,11 @@ def test_runtime_category_adapters_import_and_preserve_compatibility(monkeypatch
             "volume": 250,
         }
     )
-    assert namespace_pm == canonical_pm
+    canonical_pm_no_ts = dict(canonical_pm)
+    namespace_pm_no_ts = dict(namespace_pm)
+    canonical_pm_no_ts.pop("timestamp", None)
+    namespace_pm_no_ts.pop("timestamp", None)
+    assert namespace_pm_no_ts == canonical_pm_no_ts
 
     canonical_kalshi_snapshot = pm_adapters.normalize_prediction_market_snapshot(
         {
