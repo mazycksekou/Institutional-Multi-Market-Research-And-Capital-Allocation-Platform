@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from .market_state_manifold import map_market_state
+from src.market_intelligence.manifold import map_prediction_market as _map_prediction_market
 
 
 def map_prediction_market(
@@ -16,7 +16,7 @@ def map_prediction_market(
     row = dict(item or {})
     row.setdefault("asset_type", "prediction_market")
     row.setdefault("market_type", "prediction_market")
-    return map_market_state(
+    return _map_prediction_market(
         row,
         registry=registry,
         calibration_report=calibration_report,

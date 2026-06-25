@@ -5,8 +5,9 @@ from pathlib import Path
 from typing import Any
 
 from .data_paths import get_storage_health, resolve_base_data_dir
-from .market_state_manifold import map_market_state
 from .scheduler_config import SCHEMA_VERSION, sanitize_filename, utc_now_iso
+from src.market_intelligence.manifold import build_manifold_review_queue as _build_manifold_review_queue
+from src.market_intelligence.manifold import compact_manifold_review_response as _compact_manifold_review_response
 
 
 MANIFOLD_REVIEW_QUEUE_SCHEMA_VERSION = f"{SCHEMA_VERSION}.market_state_manifold.review_queue.v1"
@@ -111,39 +112,23 @@ def build_manifold_review_queue(
     persist: bool = False,
     max_items: int = 250,
 ) -> dict[str, Any]:
-    rows = [row for row in (items or []) if isinstance(row, dict)][: max(1, min(int(max_items or 250), 1000))]
-    mapped = [
-        map_market_state(
-            row,
-            registry=registry,
-            calibration_report=calibration_report,
-            historical_records=historical_records,
-            base_data_dir=base_data_dir,
-        )
-        for row in rows
-    ]
-    summary = summarize_mapped_items(mapped)
+    payload = _build_manifold_review_queue(
+        items,
+        registry=registry,
+        calibration_report=calibration_report,
+        historical_records=historical_records,
+        base_data_dir=base_data_dir,
+        persist=False,
+        max_items=max_items,
+    )
     payload = {
-        "ok": True,
-        "status": "manifold_review_complete",
         "schema_version": MANIFOLD_REVIEW_QUEUE_SCHEMA_VERSION,
         "created_at": utc_now_iso(),
-        **summary,
-        "items": mapped,
-        "sample_items": [compact_manifold_item(item) for item in mapped[:10]],
-        "provider_write": False,
-        "execution_allowed": False,
-        "live_execution_enabled": False,
-        "auto_execution": False,
-        "auto_execution_enabled": False,
-        "human_approval_required": True,
-        "actual_orders_submitted": 0,
-        "actual_bets_submitted": 0,
-        "actual_trades_submitted": 0,
-        "raw_payload_included": False,
-        "secrets_included": False,
+        **payload,
+        "sample_items": [compact_manifold_item(item) for item in payload.get("items", [])[:10]],
         "storage_backend": "file",
         "storage_health": get_storage_health(),
+        "execution_allowed_count": 0,
     }
     if persist:
         payload.update(write_manifold_review_queue(payload, base_data_dir=base_data_dir))
@@ -187,6 +172,7 @@ def load_manifold_review_queue(*, base_data_dir: str = "data") -> dict[str, Any]
         "status": "empty",
         "items_scanned": 0,
         "items_mapped": 0,
+        "execution_allowed_count": 0,
         "active_review_count": 0,
         "watchlist_review_count": 0,
         "no_bet_trap_count": 0,
@@ -210,36 +196,4 @@ def load_manifold_review_queue(*, base_data_dir: str = "data") -> dict[str, Any]
 
 
 def compact_manifold_review_response(payload: dict[str, Any], *, limit: int = 10) -> dict[str, Any]:
-    cap = max(1, min(int(limit or 10), 100))
-    sample = payload.get("sample_items")
-    if not isinstance(sample, list):
-        sample = [compact_manifold_item(item) for item in payload.get("items", []) if isinstance(item, dict)]
-    return {
-        "ok": bool(payload.get("ok", True)),
-        "status": payload.get("status", "manifold_review_complete"),
-        "provider_write": False,
-        "execution_allowed": False,
-        "live_execution_enabled": False,
-        "auto_execution": False,
-        "auto_execution_enabled": False,
-        "human_approval_required": True,
-        "actual_orders_submitted": 0,
-        "actual_bets_submitted": 0,
-        "actual_trades_submitted": 0,
-        "items_scanned": int(payload.get("items_scanned", 0) or 0),
-        "items_mapped": int(payload.get("items_mapped", 0) or 0),
-        "active_review_count": int(payload.get("active_review_count", 0) or 0),
-        "watchlist_review_count": int(payload.get("watchlist_review_count", 0) or 0),
-        "low_priority_review_count": int(payload.get("low_priority_review_count", 0) or 0),
-        "no_review_count": int(payload.get("no_review_count", 0) or 0),
-        "data_insufficient_count": int(payload.get("data_insufficient_count", 0) or 0),
-        "no_bet_trap_count": int(payload.get("no_bet_trap_count", 0) or 0),
-        "no_trade_trap_count": int(payload.get("no_trade_trap_count", 0) or 0),
-        "out_of_distribution_count": int(payload.get("out_of_distribution_count", 0) or 0),
-        "execution_allowed_count": 0,
-        "sample_items": sample[:cap],
-        "storage_backend": payload.get("storage_backend", "file"),
-        "storage": payload.get("storage_health"),
-        "raw_payload_included": False,
-        "secrets_included": False,
-    }
+    return _compact_manifold_review_response(payload, limit=limit)

@@ -2,9 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from .manifold_feature_builder import build_manifold_feature_vector
-from .market_state_manifold import nearest_historical_neighbors
-from .cross_asset_manifold_router import map_cross_asset_item
+from src.market_intelligence.manifold import build_manifold_feature_vector, map_cross_asset_item, route_cross_asset_embedding as _route_cross_asset_embedding
 from .representation_feature_builder import build_representation_vector
 from .security_policy import locked_safety_flags
 
@@ -16,42 +14,15 @@ def route_cross_asset_embedding(
     base_data_dir: str = "data",
 ) -> dict[str, Any]:
     source = dict(item or {})
-    representation = build_representation_vector(source)
-    manifold_features = build_manifold_feature_vector(source)
-    neighbors = nearest_historical_neighbors(manifold_features, historical_records or [])
-    manifold_state = map_cross_asset_item(
+    payload = _route_cross_asset_embedding(
         source,
         historical_records=historical_records,
         base_data_dir=base_data_dir,
     )
-    payload = {
-        "ok": True,
-        "status": "cross_asset_embedding_routed",
-        "asset_type": representation.get("asset_type"),
-        "market_type": representation.get("market_type"),
-        "representation": representation,
-        "nearest_neighbor_summary": {
-            "nearest_historical_neighbors": int(neighbors.get("nearest_historical_neighbors", 0) or 0),
-            "nearest_neighbor_distance": neighbors.get("nearest_neighbor_distance"),
-            "neighbor_sample_size": len(neighbors.get("neighbors") or []),
-        },
-        "manifold_state": {
-            "manifold_cluster_id": manifold_state.get("manifold_cluster_id"),
-            "manifold_cluster_name": manifold_state.get("manifold_cluster_name"),
-            "manifold_family": manifold_state.get("manifold_family"),
-            "out_of_distribution_score": manifold_state.get("out_of_distribution_score"),
-            "out_of_distribution_risk": manifold_state.get("out_of_distribution_risk"),
-            "calibration_status": manifold_state.get("calibration_status"),
-            "insufficient_sample": bool(manifold_state.get("insufficient_sample", True)),
-            "recommended_action": manifold_state.get("recommended_action"),
-            "review_priority_adjustment": manifold_state.get("review_priority_adjustment"),
-            "no_bet_trap_score": manifold_state.get("no_bet_trap_score"),
-            "no_trade_trap_score": manifold_state.get("no_trade_trap_score"),
-            "fatal_safety_blockers": list(manifold_state.get("fatal_safety_blockers") or [])[:10],
-        },
-        "raw_payload_included": False,
-        "secrets_included": False,
-    }
+    payload["representation"] = build_representation_vector(source)
+    payload["asset_type"] = payload.get("asset_type") or payload["representation"].get("asset_type")
+    payload["market_type"] = payload.get("market_type") or payload["representation"].get("market_type")
+    payload["manifold_state"] = dict(payload.get("manifold_state") or {})
     payload.update(locked_safety_flags())
     payload["provider_write"] = False
     payload["execution_allowed"] = False
