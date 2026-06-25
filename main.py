@@ -65,15 +65,15 @@ from src.api.schemas.quant import BetAnalysisRequest, MarketPricingRequest, Stoc
 from src.api.schemas.performance import PerformanceBacktestRequest
 from src.services.action_betting_service import ActionBettingService
 from src.services.bet_csv_service import BETS_FILE, append_bet, summarize_bets
-import automation_scheduler
+import src.services.automation_scheduler_facade as automation_scheduler
 import bet_log
 import bet_decision_engine
 import market_pricing
 import multi_sport_model_registry
 import model_probability
 import screenshot_intake
-from automation_scheduler.data_paths import get_runtime_data_path, get_automation_data_dir
-from automation_scheduler.response_compactor import (
+from src.services.automation_scheduler_facade import get_runtime_data_path, get_automation_data_dir
+from src.services.automation_scheduler_facade import (
     compact_advanced_red_team_response,
     compact_calibration_response,
     compact_calibration_collector_response,

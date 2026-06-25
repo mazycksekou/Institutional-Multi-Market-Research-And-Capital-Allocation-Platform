@@ -5,14 +5,17 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from typing import Any
 
-from automation_scheduler.owner_approval_gate import evaluate_owner_approval
-from automation_scheduler.provider_allowlist import classify_provider
-from automation_scheduler.risk_limit_guard import evaluate_risk_limits
-from automation_scheduler.secret_safety import redact_sensitive, secret_safety_fields
-from automation_scheduler.security_event_types import EXECUTION_ATTEMPT_BLOCKED
-from automation_scheduler.security_policy import locked_safety_flags
+from src.brokerage.readiness_support import (
+    EXECUTION_ATTEMPT_BLOCKED,
+    classify_provider,
+    evaluate_owner_approval,
+    evaluate_risk_limits,
+    redact_sensitive,
+    secret_safety_fields,
+)
 from src.services.ledger_service import append_security_event
 from src.providers.policy.write_firewall import check_provider_write_attempt
+from src.research.maturity import locked_safety_flags
 
 from .contracts import ExecutionMode, ExecutionReadiness, ExecutionRequest, OrderRequest, PositionSnapshot
 from .orders import build_execution_request, build_order_request

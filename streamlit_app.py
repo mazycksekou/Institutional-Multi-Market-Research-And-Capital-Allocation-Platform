@@ -21,7 +21,7 @@ except ModuleNotFoundError as exc:  # pragma: no cover
     ) from exc
 
 
-from automation_scheduler.streamlit_dashboard_data import (
+from src.services.streamlit_dashboard_facade import (
     DATA_LIBRARY_PATHS,
     EASY_LABELS,
     REGRESSION_TACTICS,
@@ -77,12 +77,12 @@ from automation_scheduler.streamlit_dashboard_data import (
     build_zero_dte_validation_readiness_rows,
     normalize_risk_preset_label,
 )
-from automation_scheduler.source_event_link_resolver import (
+from src.services.streamlit_dashboard_facade import (
     describe_source_event_link_resolver,
 )
-from automation_scheduler.feature_ablation_lab import get_ablation_field_groups_for_sport
-from automation_scheduler.feature_ablation_lab import run_feature_ablation_lab
-from automation_scheduler.zero_dte_fixture_template import (
+from src.services.streamlit_dashboard_facade import get_ablation_field_groups_for_sport
+from src.services.streamlit_dashboard_facade import run_feature_ablation_lab
+from src.services.streamlit_dashboard_facade import (
     build_zero_dte_fixture_template_row,
     build_zero_dte_research_backtest_fixture_template_row,
     build_zero_dte_research_backtest_pipeline_result,
@@ -90,14 +90,14 @@ from automation_scheduler.zero_dte_fixture_template import (
     validate_zero_dte_fixture_rows,
     validate_zero_dte_research_backtest_fixture_rows,
 )
-from automation_scheduler.model_data_field_catalog import (
+from src.services.streamlit_dashboard_facade import (
     MODEL_DATA_FIELD_GROUPS_BY_MODE,
     SPORTS_MODEL_INPUT_FIELD_GROUPS_BY_SPORT,
     field_groups_for_model_mode,
     fields_for_model_mode,
     fields_for_sport,
 )
-from automation_scheduler.historical_data_sources import (
+from src.services.streamlit_dashboard_facade import (
     get_historical_data_source_rows,
     get_priority_import_sources,
     get_source_status_counts,
@@ -1131,7 +1131,7 @@ elif menu == "Data Explorer":
                 )
 
             st.subheader("Line Movement Readiness")
-            from automation_scheduler.streamlit_dashboard_data import (
+            from src.services.streamlit_dashboard_facade import (
                 get_line_movement_snapshot_for_dashboard,
             )
             lm = get_line_movement_snapshot_for_dashboard(
@@ -1214,7 +1214,7 @@ elif menu == "Data Explorer":
 
             # ── Line Volatility (Phase 10H12A) ────────────────────────
             st.subheader("Line Volatility")
-            from automation_scheduler.streamlit_dashboard_data import (
+            from src.services.streamlit_dashboard_facade import (
                 get_line_volatility_snapshot_for_dashboard,
             )
 
@@ -1263,7 +1263,7 @@ elif menu == "Data Explorer":
                     except Exception:
                         pass
 
-                from automation_scheduler.streamlit_dashboard_data import (
+                from src.services.streamlit_dashboard_facade import (
                     get_source_event_link_resolver_snapshot_for_dashboard,
                 )
 
@@ -1298,7 +1298,7 @@ elif menu == "Data Explorer":
 
             # ── As‑Of Line Movement Query Engine (Phase 10H22) ─────────────
             st.subheader("As‑Of Line Movement Query Engine")
-            from automation_scheduler.streamlit_dashboard_data import (
+            from src.services.streamlit_dashboard_facade import (
                 get_asof_line_movement_query_snapshot_for_dashboard,
             )
             # Constant used to satisfy a source‑text test for the exact string.
@@ -1397,7 +1397,7 @@ elif menu == "Data Explorer":
                 "STOP: Review this dashboard before adding any vendor, API, "
                 "scraper, or paid data connector."
             )
-            from automation_scheduler.streamlit_dashboard_data import (
+            from src.services.streamlit_dashboard_facade import (
                 get_line_movement_data_quality_snapshot_for_dashboard,
             )
 
@@ -1550,7 +1550,7 @@ elif menu == "Data Explorer":
                     "**Preview Data Quality** to see the checkpoint dashboard."
                 )
 
-            from automation_scheduler.streamlit_dashboard_data import (
+            from src.services.streamlit_dashboard_facade import (
                 get_line_volatility_snapshot_for_dashboard,
             )
             # ── Historical Line Movement Readiness (Phase 10H19) ─────────
@@ -1650,7 +1650,7 @@ elif menu == "Data Explorer":
             else:
                 st.warning("Line volatility snapshot could not be retrieved.")
 
-            from automation_scheduler.streamlit_dashboard_data import (
+            from src.services.streamlit_dashboard_facade import (
                 get_feature_control_profiles,
                 get_feature_group_definitions,
                 build_feature_control_config,
@@ -1893,7 +1893,7 @@ if False:
 
     # Feature Control Section -------------------------------------------------
     st.subheader("Feature Profile")
-    from automation_scheduler.streamlit_dashboard_data import (
+    from src.services.streamlit_dashboard_facade import (
         get_feature_control_profiles,
         get_feature_group_definitions,
         build_feature_control_config,
@@ -2702,7 +2702,7 @@ if False:
             key="cal_min_mkt",
         )
     with col3:
-        from automation_scheduler.feature_ablation_lab import (
+        from src.services.streamlit_dashboard_facade import (
             get_ablation_field_groups_for_sport,
         )
         initial_groups = get_ablation_field_groups_for_sport(sport_val, market_val)
@@ -2731,7 +2731,7 @@ if False:
 
     if st.button("Run Calibration Filter", type="primary", key="cal_run"):
         with st.spinner("Running calibration filter..."):
-            from automation_scheduler.streamlit_dashboard_data import (
+            from src.services.streamlit_dashboard_facade import (
                 get_calibration_strategy_filter_snapshot_for_dashboard,
                 get_experiment_history_snapshot_for_dashboard,
                 save_experiment_history_run_for_dashboard,
@@ -3003,7 +3003,7 @@ if False:
             key="exp_detail",
         )
         if st.button("Show Run Detail", key="exp_detail_btn"):
-            from automation_scheduler.streamlit_dashboard_data import (
+            from src.services.streamlit_dashboard_facade import (
                 get_experiment_history_run,
             )
 
@@ -3140,12 +3140,12 @@ elif menu == "Instructions":
     )
 
     st.subheader("Dashboard Tab Instructions")
-    from automation_scheduler.streamlit_dashboard_data import get_dashboard_tab_instructions
+    from src.services.streamlit_dashboard_facade import get_dashboard_tab_instructions
     instructions = get_dashboard_tab_instructions()
     st.dataframe(df(instructions), use_container_width=True, hide_index=True)
 
     st.subheader("Overall Operator Workflow")
-    from automation_scheduler.streamlit_dashboard_data import (
+    from src.services.streamlit_dashboard_facade import (
         get_overall_operator_workflow_steps,
     )
 

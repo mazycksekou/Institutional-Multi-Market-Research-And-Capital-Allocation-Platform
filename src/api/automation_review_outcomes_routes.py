@@ -96,8 +96,6 @@ def register_automation_review_outcomes_routes(
         limit: int = Query(default=10),
     ):
         if payload.persist and not payload.dry_run:
-            from automation_scheduler.collector_scheduled_runner import validate_cron_token
-
             ok, status_code, rejection = validate_cron_token(x_collector_token)
             if not ok:
                 raise HTTPException(status_code=status_code, detail=compact_outcome_import_response(rejection or {}))
@@ -175,8 +173,6 @@ def register_automation_review_outcomes_routes(
         include_debug: bool = Query(default=False),
         limit: int = Query(default=10),
     ):
-        from automation_scheduler.collector_scheduled_runner import validate_cron_token
-
         ok, status_code, rejection = validate_cron_token(x_collector_token)
         if not ok:
             raise HTTPException(status_code=status_code, detail=compact_calibration_collector_response(rejection or {}, limit=limit))

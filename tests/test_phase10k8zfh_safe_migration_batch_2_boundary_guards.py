@@ -149,7 +149,7 @@ def test_phase10k8zfh_safe_migration_batch_2_boundary_guards() -> None:
     assert "--execute" in hygiene_text
     assert "allow-delete-local-raw" in hygiene_text
 
-    assert "from automation_scheduler.streamlit_dashboard_data import" in streamlit_text
+    assert "from src.services.streamlit_dashboard_facade import" in streamlit_text
 
     assert re.search(r"AKIA[0-9A-Z]{16}", report) is None
     assert re.search(r"ASIA[0-9A-Z]{16}", report) is None
@@ -168,4 +168,3 @@ def test_phase10k8zfh_safe_migration_batch_2_boundary_guards() -> None:
     assert not any(ROOT.glob("app/pages/*.py"))
     assert not any(ROOT.glob("frontend/*.py"))
     assert not any(ROOT.glob("frontend/pages/*.py"))
-

@@ -6,16 +6,27 @@ import json
 from pathlib import Path
 from typing import Any
 
-from automation_scheduler.balance_sheet_risk import evaluate_balance_sheet
-from automation_scheduler.candlestick_pattern_detector import detect_candlestick_patterns
-from automation_scheduler.data_paths import get_storage_health, resolve_base_data_dir
-from automation_scheduler.liquidity_context_scoring import calculate_float_rotation, score_liquidity_context
-from automation_scheduler.scheduler_config import safe_run_id, sanitize_filename, utc_now_iso
-from automation_scheduler.session_risk_rules import evaluate_session_risk, score_time_of_day
-from automation_scheduler.institutional_cross_asset_adapters import compact_redact, read_existing_outputs
-from automation_scheduler.institutional_cross_asset_calibration import build_calibration_by_asset_class
-from automation_scheduler.institutional_risk_engine import assess_institutional_risk
-from automation_scheduler.strategy_context_buckets import build_context_bucket
+from src.services.execution_support import (
+    build_calibration_by_asset_class,
+    build_context_bucket,
+    calculate_float_rotation,
+    compact_redact,
+    detect_candlestick_patterns,
+    evaluate_balance_sheet,
+    evaluate_session_risk,
+    get_storage_health,
+    read_existing_outputs,
+    resolve_base_data_dir,
+    safe_run_id,
+    sanitize_filename,
+    score_liquidity_context,
+    score_time_of_day,
+    assess_institutional_risk,
+    utc_now_iso,
+    build_pattern_review_item,
+    persist_pattern_review_queue,
+    summarize_pattern_review_queue,
+)
 from src.services.ledger_service import append_audit_record
 
 
@@ -518,8 +529,6 @@ def build_detection_context(row: dict[str, Any]) -> dict[str, Any]:
 
 
 def candidate_from_row(row: dict[str, Any], *, session_state: dict[str, Any] | None = None) -> dict[str, Any]:
-    from automation_scheduler.pattern_review_queue import build_pattern_review_item
-
     asset_symbol = str(row.get("asset_symbol") or row.get("symbol") or row.get("ticker") or "UNKNOWN").upper()
     asset_type = str(row.get("asset_type") or "stock").lower()
     context = build_detection_context(row)
@@ -619,8 +628,6 @@ def run_small_account_review(
     persist_queue: bool = False,
     base_data_dir: str | None = None,
 ) -> dict[str, Any]:
-    from automation_scheduler.pattern_review_queue import persist_pattern_review_queue, summarize_pattern_review_queue
-
     rows = [row for row in (items or []) if isinstance(row, dict)]
     candidate_results = [candidate_from_row(row, session_state=session_state) for row in rows]
     review_items = [item for result in candidate_results for item in result.get("review_items", [])]

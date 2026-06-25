@@ -4,11 +4,12 @@ from typing import Any
 
 from fastapi import Query
 
-import automation_scheduler
-from automation_scheduler.response_compactor import (
+import src.services.automation_scheduler_facade as automation_scheduler
+from src.services.automation_scheduler_facade import (
     compact_provider_health_response,
     compact_provider_registry_response,
     compact_provider_status,
+    redact_and_limit_payload,
 )
 
 
