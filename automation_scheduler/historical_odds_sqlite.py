@@ -20,7 +20,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from automation_scheduler.historical_odds_importers import (
+from src.data.historical_odds import (
     CANONICAL_HISTORICAL_ODDS_OPTIONAL_FIELDS,
     CANONICAL_HISTORICAL_ODDS_REQUIRED_FIELDS,
     SUPPORTED_IMPORTER_KEYS,

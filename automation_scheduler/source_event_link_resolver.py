@@ -581,10 +581,7 @@ def load_canonical_events_from_sqlite(
 ) -> dict[str, Any]:
     """Read canonical events from historical_events table."""
     try:
-        from automation_scheduler.historical_odds_sqlite import (
-            connect_historical_odds_db,
-            initialize_historical_odds_db,
-        )
+        from src.data.historical_odds import connect_historical_odds_db, initialize_historical_odds_db
     except ImportError:
         return {
             "ok": False,

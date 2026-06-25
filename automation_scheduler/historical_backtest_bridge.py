@@ -18,14 +18,14 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from automation_scheduler.backtesting_engine import run_backtest
-from automation_scheduler.historical_odds_importers import (
+from src.backtesting.engine import run_backtest
+from src.data.historical_odds import (
     CANONICAL_HISTORICAL_ODDS_REQUIRED_FIELDS,
     normalize_team_name,
     normalize_market_name,
     normalize_selection_name,
 )
-from automation_scheduler.historical_odds_sqlite import (
+from src.data.historical_odds import (
     connect_historical_odds_db,
     query_historical_odds_rows,
 )
@@ -408,7 +408,7 @@ def get_sqlite_backtest_filter_options(
     """
     # query_historical_odds_rows can expose a `limit` argument; we pass a high
     # number to get all distinct values via the summary helper.
-    from automation_scheduler.historical_odds_sqlite import summarize_historical_odds_db
+    from src.data.historical_odds import summarize_historical_odds_db
 
     summary = summarize_historical_odds_db(conn)
 

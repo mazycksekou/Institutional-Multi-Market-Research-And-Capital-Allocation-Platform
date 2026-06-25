@@ -266,7 +266,7 @@ def canonical_row_to_line_snapshots(row: dict[str, Any]) -> list[dict[str, Any]]
     if opening_odds is not None:
         opening_prob = None
         try:
-            from automation_scheduler.historical_odds_importers import odds_to_implied_probability
+            from src.data.historical_odds import odds_to_implied_probability
             opening_prob = odds_to_implied_probability(float(opening_odds))
         except Exception:
             pass
@@ -278,7 +278,7 @@ def canonical_row_to_line_snapshots(row: dict[str, Any]) -> list[dict[str, Any]]
     if closing_odds is not None:
         closing_prob = None
         try:
-            from automation_scheduler.historical_odds_importers import odds_to_implied_probability
+            from src.data.historical_odds import odds_to_implied_probability
             closing_prob = odds_to_implied_probability(float(closing_odds))
         except Exception:
             pass
@@ -290,7 +290,7 @@ def canonical_row_to_line_snapshots(row: dict[str, Any]) -> list[dict[str, Any]]
     if current_odds is not None:
         current_prob = None
         try:
-            from automation_scheduler.historical_odds_importers import odds_to_implied_probability
+            from src.data.historical_odds import odds_to_implied_probability
             current_prob = odds_to_implied_probability(float(current_odds))
         except Exception:
             pass
@@ -638,9 +638,7 @@ def backfill_line_snapshots_from_historical_odds(
     Returns a summary dict with ``rows_read``, ``snapshots_created``,
     ``warnings``.
     """
-    from automation_scheduler.historical_odds_sqlite import (
-        query_historical_odds_rows,
-    )
+    from src.data.historical_odds import query_historical_odds_rows
     rows = query_historical_odds_rows(conn, limit=limit)
     if not rows:
         return {"rows_read": 0, "snapshots_created": 0, "warnings": []}

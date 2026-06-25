@@ -379,16 +379,16 @@ def run_synthetic_line_movement_sandbox(
     warnings: list[str] = []
 
     try:
-        from automation_scheduler.line_movement_import_contract import (
+        from src.data.line_movement import (
             build_line_movement_import_preview,
         )
-        from automation_scheduler.source_event_link_resolver import (
+        from src.data.source_event_links import (
             resolve_source_event_links,
         )
-        from automation_scheduler.asof_line_movement_query import (
+        from src.data.line_movement import (
             build_asof_line_movement_query_snapshot,
         )
-        from automation_scheduler.line_movement_data_quality_dashboard import (
+        from src.data.line_movement import (
             build_line_movement_data_quality_snapshot,
         )
     except ImportError as exc:

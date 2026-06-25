@@ -16,9 +16,7 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
-from automation_scheduler.feature_ablation_lab import (
-    ABLATION_NEVER_FEATURE_FIELDS,
-)
+from src.research.feature_control import ABLATION_NEVER_FEATURE_FIELDS
 
 EXPERIMENT_HISTORY_STORE_VERSION: str = "10H17"
 

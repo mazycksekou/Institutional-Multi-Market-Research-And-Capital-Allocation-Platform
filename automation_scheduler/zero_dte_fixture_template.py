@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections import Counter
 from collections.abc import Iterable, Mapping
 
-from automation_scheduler.model_data_field_catalog import (
+from src.data.field_catalog import (
     PAPER_ARBITRAGE_OUTPUT_FIELDS,
     REVIEW_OUTPUT_FIELD_GROUPS,
     ZERO_DTE_MODEL_INPUT_FIELD_GROUPS,

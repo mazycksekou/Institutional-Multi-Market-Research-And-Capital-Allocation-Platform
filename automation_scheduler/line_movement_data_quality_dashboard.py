@@ -523,7 +523,7 @@ def build_line_movement_data_quality_snapshot(
         "warnings": [],
     }
     if hypothetical_bet_time is not None:
-        from automation_scheduler.asof_line_movement_query import (
+        from src.data.line_movement import (
             filter_line_movement_snapshots_as_of,
         )
         asof_snap = filter_line_movement_snapshots_as_of(
@@ -581,7 +581,7 @@ def build_line_movement_data_quality_snapshot_from_sqlite(
 
     No SQL writes, no schema changes, no vendor connector.
     """
-    from automation_scheduler.asof_line_movement_query import (
+    from src.data.line_movement import (
         load_line_movement_snapshots_from_sqlite,
     )
 

@@ -20,89 +20,74 @@ import json
 import math
 import subprocess
 
-from .historical_data_sources import get_historical_data_source_rows
-from .historical_line_movement import (
-    initialize_line_movement_schema,
-    upsert_line_snapshots_for_canonical_rows,
-    summarize_line_movement_store,
-)
-from .line_movement_readiness import (
-    build_line_movement_readiness_snapshot,
-    describe_line_movement_readiness,
-)
-from .line_movement_import_contract import (
-    build_vendor_neutral_line_movement_contract,
-    build_line_movement_import_preview,
-    describe_line_movement_import_contract,
-)
-from .experiment_history_store import (
-    initialize_experiment_history_store,
-    save_experiment_history_run,
-    list_experiment_history_runs,
-    get_experiment_history_run,
-    compare_experiment_history_runs,
-)
-from .experiment_report_exporter import (
-    build_experiment_report_export,
-)
-from .experiment_report_exporter import (
-    build_experiment_report_export,
-)
-from .sport_feature_packs import (
-    normalize_sport_key,
-    get_sport_feature_pack,
-    evaluate_sport_feature_readiness,
-    summarize_sport_feature_readiness,
-    SPORT_FEATURE_PACKS_VERSION,
-)
-from .market_feature_packs import (
-    normalize_market_family,
-    get_market_feature_pack,
-    evaluate_market_feature_readiness,
-    summarize_market_feature_readiness,
-    MARKET_FEATURE_PACKS_VERSION,
-)
-from .source_event_link_resolver import (
-    build_source_event_link_resolver_snapshot,
-    describe_source_event_link_resolver,
-)
-from .asof_line_movement_query import (
+from src.data.field_catalog import READINESS_DISPLAY_FIELDS
+from src.data.historical_sources import get_historical_data_source_rows
+from src.data.line_movement import (
     build_asof_line_movement_query_snapshot,
     build_asof_line_movement_query_snapshot_from_sqlite,
-    describe_asof_line_movement_query_engine,
-)
-from .line_movement_data_quality_dashboard import (
     build_line_movement_data_quality_snapshot,
     build_line_movement_data_quality_snapshot_from_sqlite,
+    build_line_movement_import_preview,
+    build_line_movement_readiness_snapshot,
+    build_vendor_neutral_line_movement_contract,
+    describe_asof_line_movement_query_engine,
     describe_line_movement_data_quality_dashboard,
+    describe_line_movement_import_contract,
+    describe_line_movement_readiness,
+    initialize_line_movement_schema,
+    summarize_line_movement_store,
+    upsert_line_snapshots_for_canonical_rows,
 )
-from .historical_odds_sqlite import (
+from src.data.historical_odds import (
     connect_historical_odds_db,
-    initialize_historical_odds_db,
     import_historical_odds_file_to_sqlite,
+    initialize_historical_odds_db,
     query_historical_odds_rows,
     summarize_historical_odds_db,
     validate_sqlite_store,
 )
-from .historical_backtest_bridge import (
+from src.backtesting.historical_bridge import (
+    get_sqlite_backtest_filter_options,
     run_sqlite_historical_backtest,
     summarize_sqlite_historical_backtest,
-    get_sqlite_backtest_filter_options,
 )
-
-from .backtest_dataset_builder import (
+from src.data.source_event_links import (
+    build_source_event_link_resolver_snapshot,
+    describe_source_event_link_resolver,
+)
+from src.market_intelligence.feature_packs import (
+    MARKET_FEATURE_PACKS_VERSION,
+    SPORT_FEATURE_PACKS_VERSION,
+    evaluate_market_feature_readiness,
+    evaluate_sport_feature_readiness,
+    get_market_feature_pack,
+    get_sport_feature_pack,
+    normalize_market_family,
+    normalize_sport_key,
+    summarize_market_feature_readiness,
+    summarize_sport_feature_readiness,
+)
+from src.backtesting.dataset_builder import (
     build_canonical_backtest_dataset,
     load_canonical_backtest_dataset,
     summarize_canonical_dataset_report,
     validate_paper_only_fixture_rows,
 )
-from .backtest_strategy_profiles import (
+from src.backtesting.engine import run_backtest
+from src.backtesting.strategy_profiles import (
     describe_regression_profiles,
     infer_strategy_profile_key_from_row,
     normalize_strategy_profile_key,
 )
-from .backtesting_engine import run_backtest
-from .calibration_strategy_filter import run_calibration_strategy_filter
+from src.research.feature_control import run_calibration_strategy_filter
+from src.research.history import (
+    build_experiment_report_export,
+    compare_experiment_history_runs,
+    get_experiment_history_run,
+    initialize_experiment_history_store,
+    list_experiment_history_runs,
+    save_experiment_history_run,
+)
 from quant_engine import evaluate_paper_only_fixture_rows
 
 
@@ -2709,16 +2694,16 @@ def get_volatility_result_breakdown_for_dashboard(
 
     Opens and closes the SQLite connection internally.
     """
-    from automation_scheduler.historical_line_movement import (
+    from src.data.line_movement import (
         get_line_volatility_summary_from_sqlite,
         attach_volatility_to_backtest_rows,
         summarize_results_by_volatility,
     )
-    from automation_scheduler.historical_odds_sqlite import (
+    from src.data.historical_odds import (
         connect_historical_odds_db,
         initialize_historical_odds_db,
     )
-    from automation_scheduler.historical_line_movement import initialize_line_movement_schema
+    from src.data.line_movement import initialize_line_movement_schema
 
     result: dict[str, Any] = {
         "ok": False,
@@ -2938,15 +2923,15 @@ def get_feature_ablation_lab_snapshot_for_dashboard(
 
     Returns a stable dict suitable for the Streamlit dashboard.
     """
-    from automation_scheduler.historical_odds_sqlite import (
+    from src.data.historical_odds import (
         connect_historical_odds_db,
         initialize_historical_odds_db,
         query_historical_odds_rows,
     )
-    from automation_scheduler.feature_ablation_lab import (
+    from src.research.feature_control import (
         run_feature_ablation_lab,
     )
-    from automation_scheduler.calibration_strategy_filter import (
+    from src.research.feature_control import (
         run_calibration_strategy_filter,
     )
 

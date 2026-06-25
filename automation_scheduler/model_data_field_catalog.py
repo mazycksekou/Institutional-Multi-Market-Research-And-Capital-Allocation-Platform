@@ -3,12 +3,12 @@ from __future__ import annotations
 from collections.abc import Iterable
 import os
 
-from automation_scheduler.backtest_dataset_builder import (
+from src.backtesting.dataset_builder import (
     PAPER_ONLY_FIXTURE_OPTIONAL_FIELDS,
     PAPER_ONLY_FIXTURE_REQUIRED_FIELDS,
 )
-from automation_scheduler.streamlit_dashboard_data import READINESS_DISPLAY_FIELDS
-from automation_scheduler.technical_signal_fields import (
+from src.data.field_catalog import READINESS_DISPLAY_FIELDS
+from src.data.field_catalog import (
     TECHNICAL_SIGNAL_FIELDS,
     TECHNICAL_SIGNAL_FIELDS_BY_MARKET,
     technical_fields_for_market,

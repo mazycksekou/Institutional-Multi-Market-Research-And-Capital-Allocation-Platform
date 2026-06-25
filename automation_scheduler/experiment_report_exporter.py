@@ -13,9 +13,7 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
-from automation_scheduler.experiment_history_store import (
-    get_experiment_history_run,
-)
+from src.research.history import get_experiment_history_run
 
 EXPERIMENT_REPORT_EXPORT_VERSION: str = "10H18"
 

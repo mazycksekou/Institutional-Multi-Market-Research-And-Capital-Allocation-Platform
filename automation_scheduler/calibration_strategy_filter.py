@@ -21,17 +21,15 @@ from collections import Counter, defaultdict
 from collections.abc import Mapping, Sequence
 from typing import Any
 
-from automation_scheduler.sport_feature_packs import (
-    normalize_sport_key,
-    get_sport_feature_pack,
-    evaluate_sport_feature_readiness,
-)
-from automation_scheduler.market_feature_packs import (
-    normalize_market_family,
-    get_market_feature_pack,
+from src.market_intelligence.feature_packs import (
     evaluate_market_feature_readiness,
+    evaluate_sport_feature_readiness,
+    get_market_feature_pack,
+    get_sport_feature_pack,
+    normalize_market_family,
+    normalize_sport_key,
 )
-from automation_scheduler.feature_ablation_lab import (
+from src.research.feature_control import (
     FEATURE_ABLATION_LAB_VERSION,
     ABLATION_NEVER_FEATURE_FIELDS,
     BASE_FIELD_GROUPS,
