@@ -4,9 +4,30 @@ from importlib import import_module
 from pathlib import Path
 from typing import Any, Iterable, Mapping
 
-from automation_scheduler.backtest_dataset_builder import (
-    PAPER_ONLY_FIXTURE_OPTIONAL_FIELDS,
-    PAPER_ONLY_FIXTURE_REQUIRED_FIELDS,
+PAPER_ONLY_FIXTURE_REQUIRED_FIELDS: tuple[str, ...] = (
+    "fixture_id",
+    "sport_or_market",
+    "event_id",
+    "prediction_target",
+    "selection",
+    "model_probability",
+    "market_odds_american",
+    "implied_probability",
+    "expected_value",
+    "stake_units",
+    "bankroll_snapshot",
+    "result_label",
+    "outcome_known",
+    "source_type",
+    "execution_mode",
+)
+
+PAPER_ONLY_FIXTURE_OPTIONAL_FIELDS: tuple[str, ...] = (
+    "rows_tested",
+    "rows_valid",
+    "rows_invalid",
+    "missing_field_reasons",
+    "warning_reasons",
 )
 
 
@@ -38,4 +59,3 @@ __all__ = [
     "summarize_canonical_dataset_report",
     "validate_paper_only_fixture_rows",
 ]
-
