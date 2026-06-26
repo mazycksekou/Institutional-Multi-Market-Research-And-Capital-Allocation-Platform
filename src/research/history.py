@@ -324,16 +324,144 @@ def build_experiment_report_export(
     }
 
 
+def get_experiment_history_snapshot_for_dashboard(
+    db_path: str | Path,
+    limit: int = 50,
+    run_type: str | None = None,
+    mode: str | None = None,
+    sport: str | None = None,
+    market: str | None = None,
+) -> dict[str, Any]:
+    try:
+        listing = list_experiment_history_runs(
+            db_path,
+            limit=limit,
+            run_type=run_type,
+            mode=mode,
+            sport=sport,
+            market=market,
+        )
+    except Exception as exc:
+        return {
+            "ok": False,
+            "version": "10H17",
+            "runs": [],
+            "total": 0,
+            "warnings": [f"Could not retrieve history: {exc}"],
+        }
+    return {
+        "ok": listing.get("ok", True),
+        "version": listing.get("version", "10H17"),
+        "runs": listing.get("runs", []),
+        "total": listing.get("total", 0),
+        "warnings": listing.get("warnings", []),
+    }
+
+
+def save_experiment_history_run_for_dashboard(
+    db_path: str | Path,
+    result: Mapping[str, Any],
+    run_type: str = "feature_ablation",
+    run_label: str | None = None,
+    notes: str | None = None,
+) -> dict[str, Any]:
+    try:
+        saved = save_experiment_history_run(
+            db_path,
+            result,
+            run_type=run_type,
+            run_label=run_label,
+            notes=notes,
+        )
+    except Exception as exc:
+        return {
+            "ok": False,
+            "version": "10H17",
+            "run_id": "",
+            "saved": False,
+            "warnings": [f"Could not save experiment: {exc}"],
+        }
+    return {
+        "ok": saved.get("ok", True),
+        "version": saved.get("version", "10H17"),
+        "run_id": saved.get("run_id", ""),
+        "run_type": saved.get("run_type", run_type),
+        "run_label": saved.get("run_label"),
+        "saved": saved.get("saved", False),
+        "warnings": saved.get("warnings", []),
+    }
+
+
+def compare_experiment_history_runs_for_dashboard(
+    db_path: str | Path,
+    run_ids: Sequence[str],
+) -> dict[str, Any]:
+    try:
+        comp = compare_experiment_history_runs(db_path, run_ids)
+    except Exception as exc:
+        return {
+            "ok": False,
+            "version": "10H17",
+            "baseline_run_id": None,
+            "runs": [],
+            "comparison_rows": [],
+            "warnings": [f"Could not compare runs: {exc}"],
+        }
+    return {
+        "ok": comp.get("ok", True),
+        "version": comp.get("version", "10H17"),
+        "baseline_run_id": comp.get("baseline_run_id"),
+        "runs": comp.get("runs", []),
+        "comparison_rows": comp.get("comparison_rows", []),
+        "warnings": comp.get("warnings", []),
+    }
+
+
+def get_experiment_report_export_for_dashboard(
+    db_path: str | Path,
+    run_id: str,
+    export_format: str = "markdown",
+) -> dict[str, Any]:
+    try:
+        export = build_experiment_report_export(
+            str(db_path), run_id, export_format=export_format
+        )
+    except Exception as exc:
+        return {
+            "ok": False,
+            "version": "10H18",
+            "run_id": run_id,
+            "export_format": export_format,
+            "filename": "",
+            "content": "",
+            "markdown": "",
+            "warnings": [f"export error: {exc}"],
+        }
+    return {
+        "ok": export.get("ok", False),
+        "version": export.get("version", "10H18"),
+        "run_id": export.get("run_id", run_id),
+        "export_format": export.get("export_format", export_format),
+        "filename": export.get("filename", ""),
+        "content": export.get("content", ""),
+        "markdown": export.get("markdown", ""),
+        "warnings": export.get("warnings", []),
+    }
+
+
 __all__ = [
     "ABLATION_NEVER_FEATURE_FIELDS",
     "EXPERIMENT_HISTORY_STORE_VERSION",
     "build_experiment_report_export",
+    "compare_experiment_history_runs_for_dashboard",
     "build_experiment_report_sections",
     "compare_experiment_history_runs",
     "extract_experiment_history_metrics",
     "format_report_money",
     "format_report_percent",
+    "get_experiment_history_snapshot_for_dashboard",
     "get_experiment_history_run",
+    "get_experiment_report_export_for_dashboard",
     "initialize_experiment_history_store",
     "list_experiment_history_runs",
     "make_experiment_run_id",
@@ -341,5 +469,6 @@ __all__ = [
     "normalize_report_value",
     "render_experiment_report_markdown",
     "sanitize_experiment_history_result",
+    "save_experiment_history_run_for_dashboard",
     "save_experiment_history_run",
 ]

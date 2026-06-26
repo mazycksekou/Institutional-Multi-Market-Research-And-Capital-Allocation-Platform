@@ -3,7 +3,7 @@
 `automation_scheduler/` was **not** deleted.
 
 Why:
-- `524` active test import statements still target legacy `automation_scheduler` modules.
+- `482` active test import statements still target legacy `automation_scheduler` modules.
 - `745` internal scheduler import statements still connect the package.
 - Runtime import statements are already `0`, so the remaining blocker is the test surface plus package-internal coupling.
 

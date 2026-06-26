@@ -8,6 +8,35 @@ from statistics import mean, pstdev
 from typing import Any, Mapping, Sequence
 
 
+REQUIRED_LINE_MOVEMENT_COLUMNS: list[str] = [
+    "snapshot_id",
+    "event_id",
+    "odds_id",
+    "source_key",
+    "source_file",
+    "sport",
+    "league",
+    "event_date",
+    "home_team",
+    "away_team",
+    "bookmaker",
+    "market",
+    "market_family",
+    "selection",
+    "player_name",
+    "team_name",
+    "line_value",
+    "odds_value",
+    "implied_probability",
+    "snapshot_label",
+    "snapshot_time",
+    "raw_market_name",
+    "raw_selection_name",
+    "created_at",
+    "updated_at",
+]
+
+
 def _parse_dt(value: Any) -> datetime | None:
     if value in (None, ""):
         return None
@@ -684,6 +713,241 @@ def get_line_volatility_summary_from_sqlite(conn: sqlite3.Connection | str | Pat
     }
 
 
+def get_line_movement_snapshot_for_dashboard(db_path: str | Path) -> dict[str, Any]:
+    from src.data.historical_odds import connect_historical_odds_db, initialize_historical_odds_db
+
+    conn = connect_historical_odds_db(str(db_path))
+    initialize_historical_odds_db(conn)
+    initialize_line_movement_schema(conn)
+    result = summarize_line_movement_store(conn)
+    conn.close()
+    return {
+        "ok": result.get("ok"),
+        "total_snapshots": result.get("total_snapshots", 0),
+        "opening_snapshots": result.get("opening_snapshots", 0),
+        "decision_snapshots": result.get("decision_snapshots", 0),
+        "current_snapshots": result.get("current_snapshots", 0),
+        "closing_snapshots": result.get("closing_snapshots", 0),
+        "line_movement_ready": result.get("line_movement_ready", False),
+        "clv_ready": result.get("clv_ready", False),
+        "warnings": result.get("warnings", []),
+    }
+
+
+def get_line_movement_readiness_snapshot_for_dashboard(db_path: str | Path) -> dict[str, Any]:
+    snapshot = build_line_movement_readiness_snapshot(db_path)
+    snapshot["messages"] = describe_line_movement_readiness(snapshot)
+    return snapshot
+
+
+def get_line_movement_data_quality_snapshot_for_dashboard(
+    snapshot_rows: Any = None,
+    db_path: Any = None,
+    hypothetical_bet_time: Any = None,
+    event_id: str | None = None,
+    bookmaker: str | None = None,
+    market_family: str | None = None,
+    market: str | None = None,
+    selection: str | None = None,
+    limit: int = 100,
+) -> dict[str, Any]:
+    try:
+        if db_path is not None:
+            snap = build_line_movement_data_quality_snapshot_from_sqlite(
+                db_path,
+                hypothetical_bet_time=hypothetical_bet_time,
+                event_id=event_id,
+                bookmaker=bookmaker,
+                market_family=market_family,
+                market=market,
+                selection=selection,
+                limit=limit,
+            )
+        else:
+            snap = build_line_movement_data_quality_snapshot(
+                snapshot_rows=snapshot_rows,
+                hypothetical_bet_time=hypothetical_bet_time,
+                event_id=event_id,
+                bookmaker=bookmaker,
+                market_family=market_family,
+                market=market,
+                selection=selection,
+                limit=limit,
+            )
+    except Exception as exc:
+        return {
+            "ok": False,
+            "version": "10H23_bridge",
+            "data_quality": None,
+            "messages": describe_line_movement_data_quality_dashboard(),
+            "warnings": [f"data_quality_error: {exc}"],
+        }
+    raw_warnings = snap.get("warnings", [])
+    top_warnings = [w for w in raw_warnings if w != "missing_hypothetical_bet_time"]
+    return {
+        "ok": snap.get("ok", False),
+        "version": snap.get("version", "10H23_bridge"),
+        "data_quality": snap,
+        "messages": describe_line_movement_data_quality_dashboard(),
+        "warnings": top_warnings,
+    }
+
+
+def get_line_movement_import_contract_snapshot_for_dashboard(
+    rows: list[dict[str, Any]] | None = None,
+    limit: int = 100,
+) -> dict[str, Any]:
+    contract = build_vendor_neutral_line_movement_contract()
+    messages = describe_line_movement_import_contract()
+    preview: dict[str, Any] | None = None
+    if rows is not None:
+        preview = build_line_movement_import_preview(rows, limit=limit)
+    return {
+        "ok": True,
+        "version": "10H20_bridge",
+        "contract": contract,
+        "messages": messages,
+        "preview": preview,
+    }
+
+
+def get_asof_line_movement_query_snapshot_for_dashboard(
+    snapshots: Sequence[Mapping[str, Any]] | None = None,
+    db_path: str | Path | None = None,
+    event_id: str | None = None,
+    hypothetical_bet_time: Any = None,
+    bookmaker: str | None = None,
+    market_family: str | None = None,
+    market: str | None = None,
+    selection: str | None = None,
+    limit: int = 100,
+) -> dict[str, Any]:
+    try:
+        if db_path is not None:
+            result = build_asof_line_movement_query_snapshot_from_sqlite(
+                db_path=db_path,
+                event_id=event_id,
+                hypothetical_bet_time=hypothetical_bet_time,
+                bookmaker=bookmaker,
+                market_family=market_family,
+                market=market,
+                selection=selection,
+                limit=limit,
+            )
+        else:
+            result = build_asof_line_movement_query_snapshot(
+                snapshots=snapshots,
+                event_id=event_id,
+                hypothetical_bet_time=hypothetical_bet_time,
+                bookmaker=bookmaker,
+                market_family=market_family,
+                market=market,
+                selection=selection,
+                limit=limit,
+            )
+    except Exception as exc:
+        return {
+            "ok": False,
+            "version": "10H22",
+            "query_snapshot": None,
+            "messages": describe_asof_line_movement_query_engine(),
+            "warnings": [f"asof_query_error: {exc}"],
+        }
+
+    raw_warnings = result.get("warnings", [])
+    top_warnings = [w for w in raw_warnings if w != "missing_hypothetical_bet_time"]
+    return {
+        "ok": result.get("ok", False),
+        "version": result.get("version", "10H22"),
+        "query_snapshot": result.get("query_snapshot", result),
+        "messages": describe_asof_line_movement_query_engine(),
+        "warnings": top_warnings,
+    }
+
+
+def get_line_volatility_snapshot_for_dashboard(db_path: str | Path) -> dict[str, Any]:
+    from src.data.historical_odds import connect_historical_odds_db, initialize_historical_odds_db
+
+    conn = connect_historical_odds_db(str(db_path))
+    initialize_historical_odds_db(conn)
+    initialize_line_movement_schema(conn)
+    result = get_line_volatility_summary_from_sqlite(conn)
+    conn.close()
+    return {
+        "ok": result.get("ok"),
+        "groups_seen": result.get("groups_seen", 0),
+        "volatility_rows": result.get("volatility_rows", []),
+        "high_volatility_count": result.get("high_volatility_count", 0),
+        "medium_volatility_count": result.get("medium_volatility_count", 0),
+        "low_volatility_count": result.get("low_volatility_count", 0),
+        "unknown_volatility_count": result.get("unknown_volatility_count", 0),
+        "operator_interpretation": result.get("operator_interpretation", ""),
+        "warnings": result.get("warnings", []),
+    }
+
+
+def get_volatility_result_breakdown_for_dashboard(
+    db_path: str | Path,
+    projection_result: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    from src.data.historical_odds import connect_historical_odds_db, initialize_historical_odds_db
+
+    result: dict[str, Any] = {
+        "ok": False,
+        "db_path": str(db_path),
+        "availability_summary": {},
+        "breakdown": {},
+        "operator_interpretation": "",
+        "warnings": [],
+    }
+
+    try:
+        conn = connect_historical_odds_db(str(db_path))
+        initialize_historical_odds_db(conn)
+        initialize_line_movement_schema(conn)
+        vol_summary = get_line_volatility_summary_from_sqlite(conn)
+        result["availability_summary"] = {
+            "groups_seen": vol_summary.get("groups_seen", 0),
+            "high_volatility_count": vol_summary.get("high_volatility_count", 0),
+            "medium_volatility_count": vol_summary.get("medium_volatility_count", 0),
+            "low_volatility_count": vol_summary.get("low_volatility_count", 0),
+            "unknown_volatility_count": vol_summary.get("unknown_volatility_count", 0),
+        }
+        conn.close()
+    except Exception as exc:
+        result["warnings"].append(f"Could not read SQLite store: {exc}")
+        return result
+
+    decisions: list[dict[str, Any]] = []
+    if projection_result is not None:
+        try:
+            bt = projection_result.get("backtest_result", {}) or {}
+            report = bt.get("strategy_bankroll_report", {}) or {}
+            decisions = list(report.get("decisions") or [])
+        except Exception:
+            decisions = []
+
+    if not decisions:
+        result["ok"] = True
+        result["operator_interpretation"] = (
+            "Row\u2011level projection results are not available for performance breakdown. "
+            "Volatility availability only is shown above."
+        )
+        result["warnings"].append(
+            "Volatility availability exists, but row\u2011level projection results are not available for breakdown yet."
+        )
+        return result
+
+    result["ok"] = True
+    result["breakdown"] = {
+        "volatility_rows": vol_summary.get("volatility_rows", []),
+        "decision_count": len(decisions),
+    }
+    result["operator_interpretation"] = "local_only_volatility_breakdown"
+    result["warnings"] = []
+    return result
+
+
 __all__ = [
     "attach_volatility_to_backtest_rows",
     "backfill_line_snapshots_from_historical_odds",
@@ -704,7 +968,15 @@ __all__ = [
     "describe_line_movement_readiness",
     "filter_line_movement_snapshots_as_of",
     "get_line_volatility_summary_from_sqlite",
+    "get_asof_line_movement_query_snapshot_for_dashboard",
+    "get_line_movement_data_quality_snapshot_for_dashboard",
+    "get_line_movement_import_contract_snapshot_for_dashboard",
+    "get_line_movement_readiness_snapshot_for_dashboard",
+    "get_line_movement_snapshot_for_dashboard",
+    "get_line_volatility_snapshot_for_dashboard",
+    "get_volatility_result_breakdown_for_dashboard",
     "group_line_snapshots_for_volatility",
+    "REQUIRED_LINE_MOVEMENT_COLUMNS",
     "initialize_line_movement_schema",
     "load_line_movement_snapshots_from_sqlite",
     "query_line_snapshots",

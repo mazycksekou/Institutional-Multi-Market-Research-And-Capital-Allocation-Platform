@@ -115,20 +115,20 @@ def test_phase10k8zmh_automation_scheduler_final_removal_attempt() -> None:
     summary = _scan_imports()
     assert summary["runtime"]["count"] == 0
     assert len(summary["runtime"]["files"]) == 0
-    assert summary["test"]["count"] == 524
-    assert len(summary["test"]["files"]) == 198
+    assert summary["test"]["count"] == 482
+    assert len(summary["test"]["files"]) == 197
     assert summary["scripts"]["count"] == 0
     assert summary["internal"]["count"] == 745
     assert len(summary["internal"]["files"]) == 262
 
     blocker_ledger = (ROOT / "AUTOMATION_SCHEDULER_EXACT_BLOCKER_LEDGER_AFTER_10K8ZMH.md").read_text(encoding="utf-8")
     assert "ACTIVE_RUNTIME_IMPORT`: `0`" in blocker_ledger
-    assert "ACTIVE_TEST_IMPORT`: `524`" in blocker_ledger
+    assert "ACTIVE_TEST_IMPORT`: `482`" in blocker_ledger
     assert "INTERNAL_SCHEDULER_IMPORT`: `745`" in blocker_ledger
 
     delete_decision = (ROOT / "AUTOMATION_SCHEDULER_FINAL_DELETE_DECISION_AFTER_10K8ZMH.md").read_text(encoding="utf-8")
     assert "was **not** deleted" in delete_decision
-    assert "524" in delete_decision
+    assert "482" in delete_decision
     assert "745" in delete_decision
 
     for path in RUNTIME_PROOF_FILES:

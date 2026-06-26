@@ -320,6 +320,164 @@ def run_ops_check(
     return report
 
 
+def get_dashboard_tab_instructions() -> list[dict[str, str]]:
+    return [
+        {
+            "tab": "Instructions",
+            "purpose": "Explains how to use the dashboard",
+            "how_to_use": "Start here to understand each tab and the overall testing workflow",
+            "why_it_matters": "Prevents confusion and helps the operator know what to do next",
+            "next_step": "Review Data Source Library, then Import Historical Data, then Data Explorer",
+        },
+        {
+            "tab": "Operator Summary",
+            "purpose": "Quick health snapshot of the latest model run.",
+            "how_to_use": "Generate the dashboard or check recent metrics.",
+            "why_it_matters": "Shows the most recent outcome and readiness.",
+            "next_step": "Explore deeper in Data Explorer if data seems sparse.",
+        },
+        {
+            "tab": "Data Source Library",
+            "purpose": "View all registered historical data sources.",
+            "how_to_use": "Check status column; only 'Ready' sources have working importers.",
+            "why_it_matters": "Confirms which sources can be imported.",
+            "next_step": "Pick one and import a local file.",
+        },
+        {
+            "tab": "Import Historical Data",
+            "purpose": "Upload a CSV or JSON file for a selected source.",
+            "how_to_use": "Choose source, provide file path or upload, click import.",
+            "why_it_matters": "Populates the SQLite store used by projections.",
+            "next_step": "Visit Data Quality Check to see the new rows.",
+        },
+        {
+            "tab": "Data Quality Check",
+            "purpose": "View file inventory, schema, and SQLite snapshot.",
+            "how_to_use": "Refresh the snapshot to see table counts.",
+            "why_it_matters": "Validates that imported data looks correct.",
+            "next_step": "Open Data Explorer to inspect field coverage.",
+        },
+        {
+            "tab": "Data Explorer",
+            "purpose": "Explore available fields, missing fields, and market families.",
+            "how_to_use": "Apply filters and refresh; use the Feature Control Lab to experiment.",
+            "why_it_matters": "Shows which fields are present and which groups are missing.",
+            "next_step": "Choose a feature profile and run Model Projection.",
+        },
+        {
+            "tab": "Model Projection",
+            "purpose": "Run a historical backtest using SQLite rows and a feature profile.",
+            "how_to_use": "Optional filters, choose feature profile, click run.",
+            "why_it_matters": "Produces ROI, drawdown, and skipped decision metrics.",
+            "next_step": "Review the output and compare profiles.",
+        },
+        {
+            "tab": "Paper Bets",
+            "purpose": "Browse paper-ledger and review-queue rows.",
+            "how_to_use": "Select source and optional sport/market filters.",
+            "why_it_matters": "Inspect the raw decisions and outcomes.",
+            "next_step": "Use filters to isolate specific sport or market.",
+        },
+        {
+            "tab": "Backtest Dashboard",
+            "purpose": "Full dashboard of the latest generated backtest.",
+            "how_to_use": "Generate or view existing dashboard JSON.",
+            "why_it_matters": "Comprehensive view of the last run.",
+            "next_step": "Compare with other tactics by generating again.",
+        },
+        {
+            "tab": "Test One Sport",
+            "purpose": "Run a paper backtest for a single sport/profile.",
+            "how_to_use": "Pick sport, click run.",
+            "why_it_matters": "Isolate performance of a specific sport.",
+            "next_step": "Adjust tactic or intercept and re-run.",
+        },
+        {
+            "tab": "Test All Sports",
+            "purpose": "Run a paper backtest across all sports.",
+            "how_to_use": "Select mode, click run.",
+            "why_it_matters": "See overall model performance.",
+            "next_step": "Compare all-sports vs sport-specific results.",
+        },
+        {
+            "tab": "Bankroll Settings",
+            "purpose": "Set risk presets that control sizing and testing parameters.",
+            "how_to_use": "Choose a risk preset in the sidebar; scenario mode is documented separately.",
+            "why_it_matters": "Risk preset controls sizing; scenario mode controls missing-data handling.",
+            "next_step": "Keep conservative during early testing.",
+        },
+        {
+            "tab": "Regression Tactics",
+            "purpose": "View and adjust regression tactic and feature weights.",
+            "how_to_use": "Select tactic in sidebar, see explanation here.",
+            "why_it_matters": "Defines how model chance is derived.",
+            "next_step": "Try All-sports vs Sport-specific for comparison.",
+        },
+        {
+            "tab": "System Health",
+            "purpose": "Check file inventory and git status.",
+            "how_to_use": "Read the table; red status means missing file.",
+            "why_it_matters": "Ensures all expected artifacts exist.",
+            "next_step": "Generate missing dashboard files from Operator Summary.",
+        },
+    ]
+
+
+def get_overall_operator_workflow_steps() -> list[dict[str, str]]:
+    return [
+        {
+            "step": 1,
+            "action": "Pick approved data source",
+            "detail": "Use Data Source Library to see which sources are ready.",
+        },
+        {
+            "step": 2,
+            "action": "Import local CSV/JSON",
+            "detail": "Upload file in Import Historical Data tab.",
+        },
+        {
+            "step": 3,
+            "action": "Check data quality",
+            "detail": "Open Data Quality Check to verify table counts.",
+        },
+        {
+            "step": 4,
+            "action": "Explore available fields and missing fields",
+            "detail": "Use Data Explorer and the Feature Control Lab.",
+        },
+        {
+            "step": 5,
+            "action": "Choose feature profile",
+            "detail": "Select a profile that matches what you want to test.",
+        },
+        {
+            "step": 6,
+            "action": "Run projection",
+            "detail": "Click run in Model Projection.",
+        },
+        {
+            "step": 7,
+            "action": "Review settled count, ROI, drawdown, skipped decisions",
+            "detail": "Examine the result metrics.",
+        },
+        {
+            "step": 8,
+            "action": "Adjust / remove data points",
+            "detail": "Return to Feature Control Lab and refine.",
+        },
+        {
+            "step": 9,
+            "action": "Compare consistency",
+            "detail": "Run the same projection with different profiles.",
+        },
+        {
+            "step": 10,
+            "action": "Add richer data later",
+            "detail": "When new sources are available, re-import and repeat.",
+        },
+    ]
+
+
 __all__ = [
     "DEFAULT_APP_BASE_URL",
     "_base_safety_payload",
@@ -327,7 +485,9 @@ __all__ = [
     "check_outcome_reconciliation",
     "check_safety_flags",
     "classify_cron_state",
+    "get_dashboard_tab_instructions",
     "get_ops_config",
+    "get_overall_operator_workflow_steps",
     "get_storage_health",
     "run_ops_check",
     "safe_get_json",

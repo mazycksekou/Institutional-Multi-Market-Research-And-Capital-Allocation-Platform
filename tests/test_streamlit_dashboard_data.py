@@ -1,4 +1,4 @@
-from automation_scheduler.streamlit_dashboard_data import (
+from src.services.streamlit_dashboard_facade import (
     EASY_LABELS,
     LEGACY_RISK_PRESET_ALIASES,
     REGRESSION_TACTICS,
@@ -163,7 +163,7 @@ def test_get_available_profile_options_has_all_sports():
     assert len(values) >= 2
 
 
-# ── Historical SQLite / Projection helpers ──────────────────────────────
+# â”€â”€ Historical SQLite / Projection helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def test_get_historical_import_source_options_includes_football_and_mlb():
     opts = get_historical_import_source_options()
@@ -316,7 +316,7 @@ def test_make_arrow_safe_table_rows_does_not_mutate():
     assert isinstance(safe[0]["value"], str)
 
 
-# ── Phase 10H10 – Data Explorer helpers ──────────────────────────────────
+# â”€â”€ Phase 10H10 â€“ Data Explorer helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 def test_classify_market_family_identifies_1x2():
@@ -395,11 +395,11 @@ def test_build_market_readiness_report_football_data_rows():
 
 
 def test_get_sqlite_data_explorer_snapshot_for_dashboard_works(tmp_path):
-    from automation_scheduler.historical_odds_sqlite import (
+    from src.data.historical_odds import (
         connect_historical_odds_db, initialize_historical_odds_db,
         import_historical_odds_file_to_sqlite,
     )
-    # Create a tiny Football‑Data CSV
+    # Create a tiny Footballâ€‘Data CSV
     csv_content = (
         "Div,Date,HomeTeam,AwayTeam,FTHG,FTAG,FTR,B365H,B365D,B365A\n"
         "E0,2023-08-12,Arsenal,Chelsea,3,1,H,1.50,4.00,6.50\n"
@@ -422,7 +422,7 @@ def test_get_sqlite_data_explorer_snapshot_for_dashboard_works(tmp_path):
     assert snapshot["readiness"]["settlement_ready"] is True
     assert snapshot["readiness"]["line_movement_ready"] is False
     assert snapshot["readiness"]["player_prop_ready"] is False
-    # Check sample rows are Arrow‑safe (all values are strings)
+    # Check sample rows are Arrowâ€‘safe (all values are strings)
     for sample in snapshot.get("sample_rows", []):
         for val in sample.values():
             assert isinstance(val, str)
@@ -452,7 +452,7 @@ def test_line_movement_baseline_testing_note_in_streamlit_app():
 
 
 def test_get_line_movement_readiness_snapshot_for_dashboard_handles_missing_db(tmp_path):
-    from automation_scheduler.streamlit_dashboard_data import (
+    from src.services.streamlit_dashboard_facade import (
         get_line_movement_readiness_snapshot_for_dashboard,
     )
     missing_path = tmp_path / "does_not_exist.db"
@@ -464,7 +464,7 @@ def test_get_line_movement_readiness_snapshot_for_dashboard_handles_missing_db(t
 
 
 def test_get_line_movement_import_contract_snapshot_for_dashboard_handles_empty_rows():
-    from automation_scheduler.streamlit_dashboard_data import (
+    from src.services.streamlit_dashboard_facade import (
         get_line_movement_import_contract_snapshot_for_dashboard,
     )
     snap = get_line_movement_import_contract_snapshot_for_dashboard(rows=None)
@@ -475,7 +475,7 @@ def test_get_line_movement_import_contract_snapshot_for_dashboard_handles_empty_
 
 
 def test_get_line_movement_import_contract_snapshot_for_dashboard_returns_preview():
-    from automation_scheduler.streamlit_dashboard_data import (
+    from src.services.streamlit_dashboard_facade import (
         get_line_movement_import_contract_snapshot_for_dashboard,
     )
     rows = [
@@ -501,14 +501,14 @@ def test_get_line_movement_import_contract_snapshot_for_dashboard_returns_previe
 def test_streamlit_app_contains_vendor_neutral_line_movement_contract_title():
     with open("streamlit_app.py", encoding="utf-8") as f:
         content = f.read()
-    assert 'subheader("Vendor‑Neutral Line Movement Import Contract")' in content
+    assert 'subheader("Vendor\u2011Neutral Line Movement Import Contract")' in content
 
 
 def test_streamlit_app_contains_exact_contract_explanation():
     with open("streamlit_app.py", encoding="utf-8") as f:
         content = f.read()
     expected = (
-        "Vendor‑Neutral Line Movement Import Contract defines the standard row shape "
+        "Vendor\u2011Neutral Line Movement Import Contract defines the standard row shape "
         "future line movement sources must provide before any real connector is added."
     )
     assert expected in content
@@ -521,11 +521,11 @@ def test_streamlit_app_does_not_contain_vendor_api_text():
     assert "Run Line Movement Scraper" not in content
 
 
-# ── Phase 10H22 – As‑Of Line Movement Query Engine tests ─────────────────
+# â”€â”€ Phase 10H22 â€“ Asâ€‘Of Line Movement Query Engine tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 def test_get_asof_line_movement_query_snapshot_for_dashboard_handles_empty_rows():
-    from automation_scheduler.streamlit_dashboard_data import (
+    from src.services.streamlit_dashboard_facade import (
         get_asof_line_movement_query_snapshot_for_dashboard,
     )
     snap = get_asof_line_movement_query_snapshot_for_dashboard()
@@ -536,7 +536,7 @@ def test_get_asof_line_movement_query_snapshot_for_dashboard_handles_empty_rows(
 
 
 def test_get_asof_line_movement_query_snapshot_for_dashboard_returns_query():
-    from automation_scheduler.streamlit_dashboard_data import (
+    from src.services.streamlit_dashboard_facade import (
         get_asof_line_movement_query_snapshot_for_dashboard,
     )
     rows = [
@@ -562,7 +562,7 @@ def test_get_asof_line_movement_query_snapshot_for_dashboard_returns_query():
 
 
 def test_get_line_movement_data_quality_snapshot_for_dashboard_handles_empty_rows():
-    from automation_scheduler.streamlit_dashboard_data import (
+    from src.services.streamlit_dashboard_facade import (
         get_line_movement_data_quality_snapshot_for_dashboard,
     )
     snap = get_line_movement_data_quality_snapshot_for_dashboard()
@@ -574,7 +574,7 @@ def test_get_line_movement_data_quality_snapshot_for_dashboard_handles_empty_row
 
 
 def test_get_line_movement_data_quality_snapshot_for_dashboard_returns_quality_snapshot():
-    from automation_scheduler.streamlit_dashboard_data import (
+    from src.services.streamlit_dashboard_facade import (
         get_line_movement_data_quality_snapshot_for_dashboard,
     )
     rows = [
@@ -631,14 +631,14 @@ def test_streamlit_app_does_not_contain_run_real_scraper():
 def test_streamlit_app_contains_asof_query_title():
     with open("streamlit_app.py", encoding="utf-8") as f:
         content = f.read()
-    assert 'subheader("As‑Of Line Movement Query Engine")' in content
+    assert 'subheader("As\u2011Of Line Movement Query Engine")' in content
 
 
 def test_streamlit_app_contains_asof_query_exact_text():
     with open("streamlit_app.py", encoding="utf-8") as f:
         content = f.read()
     expected = (
-        "As‑Of Line Movement Query Engine filters historical snapshots to only "
+        "As\u2011Of Line Movement Query Engine filters historical snapshots to only "
         "those available at or before a hypothetical bet time."
     )
     assert expected in content
@@ -657,10 +657,10 @@ def test_streamlit_app_does_not_contain_run_scraper_text():
 
 
 def test_get_line_movement_readiness_snapshot_for_dashboard_returns_messages(tmp_path):
-    from automation_scheduler.streamlit_dashboard_data import (
+    from src.services.streamlit_dashboard_facade import (
         get_line_movement_readiness_snapshot_for_dashboard,
     )
-    from automation_scheduler.line_movement_readiness import (
+    from src.data.line_movement import (
         REQUIRED_LINE_MOVEMENT_COLUMNS,
     )
     import sqlite3
@@ -683,7 +683,7 @@ def test_get_line_movement_readiness_snapshot_for_dashboard_returns_messages(tmp
     assert "does not connect to vendors" in combined
 
 
-# ── Source‑text tests for streamlit_app.py ────────────────────────────────
+# â”€â”€ Sourceâ€‘text tests for streamlit_app.py â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 def test_streamlit_app_contains_historical_line_movement_readiness_title():
@@ -711,7 +711,7 @@ def test_streamlit_app_does_not_contain_vendor_api_text():
 
 
 def test_get_line_volatility_snapshot_for_dashboard(tmp_path):
-    from automation_scheduler.streamlit_dashboard_data import (
+    from src.services.streamlit_dashboard_facade import (
         get_line_volatility_snapshot_for_dashboard,
         import_historical_file_to_sqlite_for_dashboard,
     )
@@ -736,7 +736,7 @@ def test_get_line_volatility_snapshot_for_dashboard(tmp_path):
 
 
 def test_get_calibration_strategy_filter_snapshot_for_dashboard_handles_empty_db(tmp_path):
-    from automation_scheduler.streamlit_dashboard_data import (
+    from src.services.streamlit_dashboard_facade import (
         get_calibration_strategy_filter_snapshot_for_dashboard,
     )
     db_path = tmp_path / "nonexistent_empty_cal.db"
@@ -750,14 +750,14 @@ def test_get_calibration_strategy_filter_snapshot_for_dashboard_handles_empty_db
 def test_streamlit_app_contains_calibration_ready_strategy_filter_title():
     with open("streamlit_app.py", encoding="utf-8") as f:
         content = f.read()
-    assert 'header("Calibration‑Ready Strategy Filter")' in content
+    assert 'header("Calibration\u2011Ready Strategy Filter")' in content
 
 
 def test_streamlit_app_contains_calibration_exact_explanation():
     with open("streamlit_app.py", encoding="utf-8") as f:
         content = f.read()
     expected = (
-        "Calibration‑Ready Strategy Filter excludes sports and markets "
+        "Calibration\u2011Ready Strategy Filter excludes sports and markets "
         "without enough data before calculating ROI."
     )
     assert expected in content
@@ -785,7 +785,7 @@ def test_streamlit_app_contains_volatility_explanation():
 
 
 def test_get_line_movement_snapshot_for_dashboard(tmp_path):
-    from automation_scheduler.streamlit_dashboard_data import (
+    from src.services.streamlit_dashboard_facade import (
         get_line_movement_snapshot_for_dashboard,
         import_historical_file_to_sqlite_for_dashboard,
     )
@@ -806,7 +806,7 @@ def test_get_line_movement_snapshot_for_dashboard(tmp_path):
     assert snap.get("ok") is True
     assert snap["total_snapshots"] >= 3
     assert snap["decision_snapshots"] >= 3
-    # Football‑Data has no opening/closing, so these should be 0
+    # Footballâ€‘Data has no opening/closing, so these should be 0
     assert snap["opening_snapshots"] == 0
     assert snap["closing_snapshots"] == 0
     assert snap["line_movement_ready"] is False
@@ -832,7 +832,7 @@ def test_calculate_field_coverage_serializable():
     json.dumps(cov)  # must not raise
 
 
-# ── Phase 10H10 – Dashboard wording / layout cleanup ─────────────────────
+# â”€â”€ Phase 10H10 â€“ Dashboard wording / layout cleanup â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 def test_portfolio_performance_curve_text_exists():
@@ -878,30 +878,30 @@ def test_operator_summary_has_what_this_means():
 
 
 def test_easy_labels_bankroll_label_updated():
-    from automation_scheduler.streamlit_dashboard_data import EASY_LABELS
+    from src.services.streamlit_dashboard_facade import EASY_LABELS
     assert EASY_LABELS["bankroll"] == "Portfolio Value"
 
 
 def test_easy_labels_profit_loss_label_updated():
-    from automation_scheduler.streamlit_dashboard_data import EASY_LABELS
+    from src.services.streamlit_dashboard_facade import EASY_LABELS
     assert EASY_LABELS["profit_loss"] == "Net Result"
 
 
 def test_easy_labels_bets_label_updated():
-    from automation_scheduler.streamlit_dashboard_data import EASY_LABELS
+    from src.services.streamlit_dashboard_facade import EASY_LABELS
     assert EASY_LABELS["bets"] == "Decisions"
 
 
 def test_easy_labels_no_bets_label_updated():
-    from automation_scheduler.streamlit_dashboard_data import EASY_LABELS
+    from src.services.streamlit_dashboard_facade import EASY_LABELS
     assert EASY_LABELS["no_bets"] == "Skipped Decisions"
 
 
-# ── Phase 10H11 – Feature Control Lab ──────────────────────────────────
+# â”€â”€ Phase 10H11 â€“ Feature Control Lab â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 def test_get_feature_control_profiles_includes_baseline_odds_custom():
-    from automation_scheduler.streamlit_dashboard_data import (
+    from src.services.streamlit_dashboard_facade import (
         get_feature_control_profiles,
     )
     profiles = get_feature_control_profiles()
@@ -912,7 +912,7 @@ def test_get_feature_control_profiles_includes_baseline_odds_custom():
 
 
 def test_get_never_feature_fields_includes_leakage():
-    from automation_scheduler.streamlit_dashboard_data import (
+    from src.services.streamlit_dashboard_facade import (
         get_never_feature_fields,
     )
     fields = get_never_feature_fields()
@@ -924,7 +924,7 @@ def test_get_never_feature_fields_includes_leakage():
 
 
 def test_apply_feature_control_to_row_removes_leakage():
-    from automation_scheduler.streamlit_dashboard_data import (
+    from src.services.streamlit_dashboard_facade import (
         build_feature_control_config,
         apply_feature_control_to_row,
         get_never_feature_fields,
@@ -948,7 +948,7 @@ def test_apply_feature_control_to_row_removes_leakage():
 
 
 def test_apply_feature_control_to_row_does_not_mutate_input():
-    from automation_scheduler.streamlit_dashboard_data import (
+    from src.services.streamlit_dashboard_facade import (
         build_feature_control_config,
         apply_feature_control_to_row,
     )
@@ -965,7 +965,7 @@ def test_apply_feature_control_to_row_does_not_mutate_input():
 
 
 def test_summarize_feature_control_impact_returns_stable_keys():
-    from automation_scheduler.streamlit_dashboard_data import (
+    from src.services.streamlit_dashboard_facade import (
         build_feature_control_config,
         summarize_feature_control_impact,
     )
@@ -985,7 +985,7 @@ def test_summarize_feature_control_impact_returns_stable_keys():
 
 
 def test_summarize_feature_control_impact_operator_interpretation():
-    from automation_scheduler.streamlit_dashboard_data import (
+    from src.services.streamlit_dashboard_facade import (
         build_feature_control_config,
         summarize_feature_control_impact,
     )
@@ -996,7 +996,7 @@ def test_summarize_feature_control_impact_operator_interpretation():
 
 
 def test_get_dashboard_tab_instructions_contains_all_tabs():
-    from automation_scheduler.streamlit_dashboard_data import (
+    from src.services.streamlit_dashboard_facade import (
         get_dashboard_tab_instructions,
     )
     instructions = get_dashboard_tab_instructions()
@@ -1008,7 +1008,7 @@ def test_get_dashboard_tab_instructions_contains_all_tabs():
 
 
 def test_get_overall_operator_workflow_steps_returns_ordered():
-    from automation_scheduler.streamlit_dashboard_data import (
+    from src.services.streamlit_dashboard_facade import (
         get_overall_operator_workflow_steps,
     )
     steps = get_overall_operator_workflow_steps()
@@ -1017,7 +1017,7 @@ def test_get_overall_operator_workflow_steps_returns_ordered():
     assert steps[-1]["step"] == len(steps)
 
 
-# ── Phase 10H23H – Current Data Source Read‑Only Panel ────────────
+# â”€â”€ Phase 10H23H â€“ Current Data Source Readâ€‘Only Panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 def test_streamlit_app_contains_current_data_source_panel_header():
@@ -1108,7 +1108,7 @@ def test_main_menu_still_only_three_items():
 def test_no_nested_plain_english_helper_expander():
     with open("streamlit_app.py", encoding="utf-8") as f:
         lines = f.readlines()
-    # check that there is no "show_easy_dictionary()" inside a "with st.expander("Plain‑English Helper""
+    # check that there is no "show_easy_dictionary()" inside a "with st.expander("Plainâ€‘English Helper""
     helper_line = None
     for i, line in enumerate(lines):
         if 'with st.expander("Plain-English Helper"' in line:
@@ -1126,7 +1126,7 @@ def test_no_nested_plain_english_helper_expander():
     assert any("show_easy_dictionary" in line for line in lines)
 
 
-# ── Phase 10H23I – Row Count Threshold UI checks ────────────────────
+# â”€â”€ Phase 10H23I â€“ Row Count Threshold UI checks â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 def test_streamlit_app_contains_data_validity_check():
@@ -1181,7 +1181,7 @@ def test_streamlit_app_does_not_contain_named_readiness_modes():
         assert name not in content
 
 
-# ── Phase 10H23E – True Baseline + Neutral Presets ──────────────────
+# â”€â”€ Phase 10H23E â€“ True Baseline + Neutral Presets â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 def test_streamlit_app_contains_true_code_baseline():
@@ -1388,7 +1388,7 @@ def test_forbidden_connector_texts_not_present_10H23E():
         assert text not in content
 
 
-# ── Phase 10H23C – Feature Ablation Lab Results UX Cleanup ──────────
+# â”€â”€ Phase 10H23C â€“ Feature Ablation Lab Results UX Cleanup â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 def test_feature_ablation_lab_kpi_text_present():
@@ -1435,7 +1435,7 @@ def test_streamlit_app_imports_get_experiment_history_snapshot_for_dashboard():
     assert "get_experiment_history_snapshot_for_dashboard" in content
 
 
-# ── Phase 10H23F – new result UX strings ─────────────────────────────
+# â”€â”€ Phase 10H23F â€“ new result UX strings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 def test_streamlit_app_contains_sports_tested():
@@ -1501,11 +1501,11 @@ def test_no_more_than_four_kpi_columns_in_source():
     assert "col_kp1, col_kp2, col_kp3, col_kp4 = st.columns(4)" in content
 
 
-# ── Phase 10H21 – Source Event Link Resolver tests ─────────────────────
+# â”€â”€ Phase 10H21 â€“ Source Event Link Resolver tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 def test_get_source_event_link_resolver_snapshot_for_dashboard_handles_empty_rows():
-    from automation_scheduler.streamlit_dashboard_data import (
+    from src.services.streamlit_dashboard_facade import (
         get_source_event_link_resolver_snapshot_for_dashboard,
     )
     snap = get_source_event_link_resolver_snapshot_for_dashboard()
@@ -1515,7 +1515,7 @@ def test_get_source_event_link_resolver_snapshot_for_dashboard_handles_empty_row
 
 
 def test_get_source_event_link_resolver_snapshot_for_dashboard_returns_resolution():
-    from automation_scheduler.streamlit_dashboard_data import (
+    from src.services.streamlit_dashboard_facade import (
         get_source_event_link_resolver_snapshot_for_dashboard,
     )
     source_rows = [
@@ -1545,7 +1545,7 @@ def test_get_source_event_link_resolver_snapshot_for_dashboard_returns_resolutio
     assert snap["resolution"]["resolved_rows"] == 1
 
 
-# ── Phase 10H23E1 – Feature Ablation Lab session_state guard ─────────
+# â”€â”€ Phase 10H23E1 â€“ Feature Ablation Lab session_state guard â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 def test_feature_ablation_lab_uses_session_state_in_streamlit_app():
@@ -1583,11 +1583,11 @@ def test_streamlit_app_does_not_contain_runner_text():
     assert "Run Event Link Scraper" not in content
 
 
-# ── Phase 10H17 – Experiment History bridge tests ────────────────────────
+# â”€â”€ Phase 10H17 â€“ Experiment History bridge tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 def test_get_experiment_history_snapshot_for_dashboard_handles_empty_db(tmp_path):
-    from automation_scheduler.streamlit_dashboard_data import (
+    from src.services.streamlit_dashboard_facade import (
         get_experiment_history_snapshot_for_dashboard,
     )
     db_path = tmp_path / "empty_history.db"
@@ -1598,7 +1598,7 @@ def test_get_experiment_history_snapshot_for_dashboard_handles_empty_db(tmp_path
 
 
 def test_save_experiment_history_run_for_dashboard_handles_basic_result(tmp_path):
-    from automation_scheduler.streamlit_dashboard_data import (
+    from src.services.streamlit_dashboard_facade import (
         save_experiment_history_run_for_dashboard,
         get_experiment_history_snapshot_for_dashboard,
     )
@@ -1626,7 +1626,7 @@ def test_save_experiment_history_run_for_dashboard_handles_basic_result(tmp_path
 
 
 def test_compare_experiment_history_runs_for_dashboard_handles_empty_ids(tmp_path):
-    from automation_scheduler.streamlit_dashboard_data import (
+    from src.services.streamlit_dashboard_facade import (
         compare_experiment_history_runs_for_dashboard,
     )
     db_path = tmp_path / "empty_compare.db"
@@ -1635,11 +1635,11 @@ def test_compare_experiment_history_runs_for_dashboard_handles_empty_ids(tmp_pat
     assert "no run ids" in " ".join(result.get("warnings", [])).lower()
 
 
-# ── Phase 10H18 – Experiment Report Export tests ────────────────────
+# â”€â”€ Phase 10H18 â€“ Experiment Report Export tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 def test_get_experiment_report_export_for_dashboard_handles_missing_run_id(tmp_path):
-    from automation_scheduler.streamlit_dashboard_data import (
+    from src.services.streamlit_dashboard_facade import (
         get_experiment_report_export_for_dashboard,
     )
     db_path = tmp_path / "missing_run_export.db"
@@ -1651,10 +1651,10 @@ def test_get_experiment_report_export_for_dashboard_handles_missing_run_id(tmp_p
 def test_get_experiment_report_export_for_dashboard_returns_markdown_for_saved_run(
     tmp_path,
 ):
-    from automation_scheduler.streamlit_dashboard_data import (
+    from src.services.streamlit_dashboard_facade import (
         get_experiment_report_export_for_dashboard,
     )
-    from automation_scheduler.experiment_history_store import (
+    from src.research.history import (
         save_experiment_history_run,
         initialize_experiment_history_store,
     )
@@ -1683,11 +1683,11 @@ def test_streamlit_app_contains_export_texts():
     assert "Download Calibration Report Markdown" in content
 
 
-# ── Phase 10H18 – Experiment Report Export tests ────────────────────
+# â”€â”€ Phase 10H18 â€“ Experiment Report Export tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 def test_get_experiment_report_export_for_dashboard_handles_missing_run_id(tmp_path):
-    from automation_scheduler.streamlit_dashboard_data import (
+    from src.services.streamlit_dashboard_facade import (
         get_experiment_report_export_for_dashboard,
     )
     db_path = tmp_path / "missing_run_export.db"
@@ -1699,10 +1699,10 @@ def test_get_experiment_report_export_for_dashboard_handles_missing_run_id(tmp_p
 def test_get_experiment_report_export_for_dashboard_returns_markdown_for_saved_run(
     tmp_path,
 ):
-    from automation_scheduler.streamlit_dashboard_data import (
+    from src.services.streamlit_dashboard_facade import (
         get_experiment_report_export_for_dashboard,
     )
-    from automation_scheduler.experiment_history_store import (
+    from src.research.history import (
         save_experiment_history_run,
         initialize_experiment_history_store,
     )
@@ -1758,11 +1758,11 @@ def test_streamlit_app_contains_save_calibration_run_button():
     assert 'button("Save Calibration Run to History"' in content
 
 
-# ── Phase 10H15A – Feature Ablation Lab wiring tests ──────────────────────
+# â”€â”€ Phase 10H15A â€“ Feature Ablation Lab wiring tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 def test_get_feature_ablation_lab_snapshot_for_dashboard_handles_empty_db(tmp_path):
-    from automation_scheduler.streamlit_dashboard_data import (
+    from src.services.streamlit_dashboard_facade import (
         get_feature_ablation_lab_snapshot_for_dashboard,
     )
     db_path = tmp_path / "nonexistent_empty.db"
@@ -1939,7 +1939,7 @@ def test_streamlit_app_does_not_prefer_moneyline_or_1x2_wording():
     assert True
 
 
-# ── Phase 10H14 – Market Feature Packs (dashboard helper) ──────────────────
+# â”€â”€ Phase 10H14 â€“ Market Feature Packs (dashboard helper) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 def test_get_market_feature_pack_snapshot_for_dashboard_handles_empty_db(tmp_path):
@@ -1973,7 +1973,7 @@ def test_streamlit_app_contains_winner_market_clear_naming():
     assert "2-Way / 3-Way Moneyline" in content
 
 
-# ── Phase 10H13 – Sport Feature Packs (dashboard helper) ──────────────────
+# â”€â”€ Phase 10H13 â€“ Sport Feature Packs (dashboard helper) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 def test_get_sport_feature_pack_snapshot_for_dashboard_handles_empty_db(tmp_path):
@@ -2001,18 +2001,18 @@ def test_streamlit_app_contains_exact_explanation_text():
     ) in content
 
 
-# ── Phase 10H12B – Dashboard helper tests ──────────────────────
+# â”€â”€ Phase 10H12B â€“ Dashboard helper tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 def test_get_volatility_result_breakdown_for_dashboard_without_projection_rows_returns_warning(tmp_path):
-    from automation_scheduler.streamlit_dashboard_data import (
+    from src.services.streamlit_dashboard_facade import (
         get_volatility_result_breakdown_for_dashboard,
     )
-    from automation_scheduler.historical_odds_sqlite import (
+    from src.data.historical_odds import (
         connect_historical_odds_db,
         initialize_historical_odds_db,
     )
-    from automation_scheduler.historical_line_movement import (
+    from src.data.line_movement import (
         initialize_line_movement_schema,
     )
 
@@ -2025,7 +2025,7 @@ def test_get_volatility_result_breakdown_for_dashboard_without_projection_rows_r
     result = get_volatility_result_breakdown_for_dashboard(db_path)
     assert result["ok"] is True
     assert len(result["warnings"]) > 0
-    assert "Row‑level projection results are not available" in result.get("operator_interpretation", "")
+    assert "Row\u2011level projection results are not available" in result.get("operator_interpretation", "")
 
 
 def test_volatility_result_breakdown_text_in_streamlit_app():
@@ -2041,10 +2041,12 @@ def test_volatility_result_breakdown_explanation_in_streamlit_app():
         "This shows whether low, medium, high, or unknown volatility "
         "produced better results."
     ) in content
-    from automation_scheduler.streamlit_dashboard_data import (
+    from src.services.streamlit_dashboard_facade import (
         get_overall_operator_workflow_steps,
     )
     steps = get_overall_operator_workflow_steps()
     assert len(steps) >= 8
     assert steps[0]["step"] == 1
     assert steps[-1]["step"] == len(steps)
+
+

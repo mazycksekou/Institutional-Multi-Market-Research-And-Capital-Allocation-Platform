@@ -290,6 +290,40 @@ def describe_source_event_link_resolver() -> list[str]:
     ]
 
 
+def get_source_event_link_resolver_snapshot_for_dashboard(
+    source_rows: Sequence[Mapping[str, Any]] | None = None,
+    canonical_event_rows: Sequence[Mapping[str, Any]] | None = None,
+    db_path: str | Path | None = None,
+    min_score: int = 95,
+    limit: int = 100,
+) -> dict[str, Any]:
+    try:
+        snap = build_source_event_link_resolver_snapshot(
+            source_rows=source_rows,
+            canonical_event_rows=canonical_event_rows,
+            db_path=db_path,
+            min_score=min_score,
+            limit=limit,
+        )
+    except Exception as exc:
+        return {
+            "ok": False,
+            "version": "10H21",
+            "event_index": {},
+            "resolution": None,
+            "messages": describe_source_event_link_resolver(),
+            "warnings": [f"resolver error: {exc}"],
+        }
+    return {
+        "ok": snap.get("ok", False),
+        "version": snap.get("version", "10H21"),
+        "event_index": snap.get("event_index", {}),
+        "resolution": snap.get("resolution"),
+        "messages": snap.get("messages", []),
+        "warnings": snap.get("warnings", []),
+    }
+
+
 __all__ = [
     "apply_resolved_event_id_to_snapshot_row",
     "build_event_link_index",
@@ -304,4 +338,5 @@ __all__ = [
     "resolve_source_event_link",
     "resolve_source_event_links",
     "score_event_link_candidate",
+    "get_source_event_link_resolver_snapshot_for_dashboard",
 ]

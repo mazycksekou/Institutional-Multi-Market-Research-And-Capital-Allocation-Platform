@@ -771,6 +771,299 @@ def import_historical_odds_file_to_sqlite_alias(*args: Any, **kwargs: Any) -> di
     return import_historical_odds_file_to_sqlite(*args, **kwargs)
 
 
+def make_arrow_safe_value(value: Any) -> Any:
+    if isinstance(value, str):
+        return value
+    if isinstance(value, Path):
+        return str(value)
+    if isinstance(value, (list, tuple, set, dict)):
+        return json.dumps(value, ensure_ascii=False, sort_keys=True, default=str)
+    return str(value)
+
+
+def make_arrow_safe_table_rows(rows: list[dict]) -> list[dict]:
+    result: list[dict] = []
+    for row in rows:
+        new_row: dict[str, Any] = {}
+        for key, value in row.items():
+            new_row[key] = make_arrow_safe_value(value)
+        result.append(new_row)
+    return result
+
+
+def make_historical_projection_metric_rows(summary: dict) -> list[dict]:
+    return [
+        {
+            "rows_loaded": summary.get("rows_loaded", 0),
+            "rows_converted": summary.get("rows_converted", 0),
+            "bets": summary.get("bets", 0),
+            "no_bets": summary.get("no_bets", 0),
+            "profit_loss": summary.get("profit_loss", 0.0),
+            "roi_percent": summary.get("roi_percent", 0.0),
+            "max_drawdown_percent": summary.get("max_drawdown_percent", 0.0),
+            "projection_ready": summary.get("projection_ready", False),
+            "reason": summary.get("reason", ""),
+        }
+    ]
+
+
+def get_historical_import_source_options() -> list[dict[str, Any]]:
+    from src.data.historical_sources import get_historical_data_source_rows
+
+    all_sources = get_historical_data_source_rows(include_rejected=False)
+    options: list[dict[str, Any]] = []
+    for src in all_sources:
+        if src["status"] in ("remove",):
+            continue
+        options.append(
+            {
+                "source_key": src["source_key"],
+                "source": src["name"],
+                "decision": src["status"],
+                "sports": src["sport"] if src["sport"] != "*" else "any",
+                "formats": src["format"],
+                "next_action": (
+                    "Ready" if src["projection_ready"] else "Importer not built yet"
+                ),
+            }
+        )
+    return options
+
+
+def save_historical_upload_for_import(
+    source_key: str,
+    filename: str,
+    content: bytes | str,
+    upload_dir: Path = Path("data/historical/uploads"),
+) -> dict[str, Any]:
+    safe_name = "".join(c for c in filename if c.isalnum() or c in (".", "_", "-"))
+    if not safe_name:
+        safe_name = "upload"
+    file_path = upload_dir / source_key / safe_name
+    file_path.parent.mkdir(parents=True, exist_ok=True)
+
+    if isinstance(content, str):
+        file_path.write_text(content, encoding="utf-8")
+    else:
+        file_path.write_bytes(content)
+
+    return {
+        "ok": True,
+        "path": str(file_path),
+        "source_key": source_key,
+        "filename": safe_name,
+        "size_bytes": file_path.stat().st_size,
+    }
+
+
+def import_historical_file_to_sqlite_for_dashboard(
+    db_path: str | Path,
+    source_key: str,
+    file_path: str | Path,
+    source_file: str | None = None,
+) -> dict[str, Any]:
+    from src.data.line_movement import initialize_line_movement_schema, upsert_line_snapshots_for_canonical_rows
+
+    conn = connect_historical_odds_db(str(db_path))
+    initialize_historical_odds_db(conn)
+    result = import_historical_odds_file_to_sqlite(conn, source_key, file_path, source_file=source_file)
+    initialize_line_movement_schema(conn)
+    lm_warnings: list[str] = []
+    try:
+        inserted_rows = result.get("rows_inserted", 0)
+        if inserted_rows > 0:
+            snap_rows = query_historical_odds_rows(conn, limit=inserted_rows + 100)
+            if snap_rows:
+                lm_result = upsert_line_snapshots_for_canonical_rows(conn, snap_rows)
+                if lm_result.get("warnings"):
+                    lm_warnings = list(lm_result["warnings"])
+    except Exception as exc:
+        lm_warnings.append(str(exc))
+
+    conn.close()
+    return {
+        "ok": bool(result.get("ok")),
+        "rows_seen": result.get("rows_seen", 0),
+        "rows_inserted": result.get("rows_inserted", 0),
+        "rows_rejected": result.get("rows_rejected", 0),
+        "warning_total": result.get("warning_total", 0),
+        "import_id": result.get("import_id", ""),
+        "line_movement_warnings": lm_warnings,
+    }
+
+
+def get_historical_sqlite_snapshot_for_dashboard(db_path: str | Path) -> dict[str, Any]:
+    from src.backtesting.historical_bridge import get_sqlite_backtest_filter_options
+
+    conn = connect_historical_odds_db(str(db_path))
+    initialize_historical_odds_db(conn)
+    counts: dict[str, int] = {}
+    for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'"):
+        name = row["name"]
+        cnt = conn.execute(f"SELECT COUNT(*) AS c FROM [{name}]").fetchone()["c"]
+        counts[name] = cnt
+
+    db_summary = summarize_historical_odds_db(conn)
+    filter_options = get_sqlite_backtest_filter_options(conn)
+    validation = validate_sqlite_store(conn)
+    conn.close()
+
+    return {
+        "ok": True,
+        "db_path": str(db_path),
+        "table_counts": counts,
+        "db_summary": db_summary,
+        "filter_options": filter_options,
+        "validation": validation,
+    }
+
+
+def run_sqlite_projection_for_dashboard(
+    db_path: str | Path,
+    *,
+    sport: str | None = None,
+    league: str | None = None,
+    market: str | None = None,
+    source_key: str | None = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
+    limit: int = 1000,
+    model_probability: float | None = None,
+    strategy_config: dict | None = None,
+) -> dict[str, Any]:
+    from src.backtesting.historical_bridge import run_sqlite_historical_backtest, summarize_sqlite_historical_backtest, get_sqlite_backtest_filter_options
+
+    conn = connect_historical_odds_db(str(db_path))
+    initialize_historical_odds_db(conn)
+
+    bridge_result = run_sqlite_historical_backtest(
+        conn,
+        sport=sport,
+        league=league,
+        market=market,
+        source_key=source_key,
+        start_date=start_date,
+        end_date=end_date,
+        limit=limit,
+        model_probability=model_probability,
+        strategy_config=strategy_config,
+    )
+    summary = summarize_sqlite_historical_backtest(bridge_result)
+    filter_opts = get_sqlite_backtest_filter_options(conn)
+    conn.close()
+
+    return {
+        "ok": bool(bridge_result.get("ok")),
+        "summary": summary,
+        "result": bridge_result,
+        "filter_options": filter_opts,
+    }
+
+
+def get_sqlite_data_explorer_snapshot_for_dashboard(
+    db_path: str | Path,
+    *,
+    sport: str | None = None,
+    league: str | None = None,
+    market: str | None = None,
+    source_key: str | None = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
+    limit: int = 500,
+) -> dict[str, Any]:
+    from src.data.field_catalog import build_market_readiness_report, calculate_field_coverage, classify_market_family, get_required_field_groups_for_market, REQUIRED_FIELD_GROUPS
+
+    result: dict[str, Any] = {
+        "ok": False,
+        "db_path": str(db_path),
+        "filters": {
+            "sport": sport,
+            "league": league,
+            "market": market,
+            "source_key": source_key,
+            "start_date": start_date,
+            "end_date": end_date,
+            "limit": limit,
+        },
+        "total_rows": 0,
+        "filter_options": {},
+        "sports": [],
+        "leagues": [],
+        "markets": [],
+        "source_keys": [],
+        "market_families": {},
+        "sample_rows": [],
+        "field_coverage": {},
+        "missing_field_groups": [],
+        "readiness": {},
+        "warnings": [],
+    }
+    try:
+        conn = connect_historical_odds_db(str(db_path))
+        initialize_historical_odds_db(conn)
+        raw_rows = query_historical_odds_rows(
+            conn,
+            sport=sport,
+            league=league,
+            market=market,
+            source_key=source_key,
+            start_date=start_date,
+            end_date=end_date,
+            limit=limit,
+        )
+        result["total_rows"] = len(raw_rows)
+    except Exception as exc:
+        result["warnings"].append(f"Could not open database: {exc}")
+        return result
+
+    rows = raw_rows
+    sports = sorted({r.get("sport") for r in rows if r.get("sport")})
+    leagues = sorted({r.get("league") for r in rows if r.get("league")})
+    markets = sorted({r.get("market") for r in rows if r.get("market")})
+    source_keys = sorted({r.get("source_key") for r in rows if r.get("source_key")})
+    result["sports"] = sports
+    result["leagues"] = leagues
+    result["markets"] = markets
+    result["source_keys"] = source_keys
+
+    families: dict[str, int] = {}
+    for row in rows:
+        family = classify_market_family(row.get("market"), row.get("selection"))
+        families[family] = families.get(family, 0) + 1
+    result["market_families"] = {k: v for k, v in sorted(families.items(), key=lambda x: -x[1])}
+
+    result["sample_rows"] = make_arrow_safe_table_rows(rows[: min(limit, 20)])
+    all_groups = dict(REQUIRED_FIELD_GROUPS)
+    coverage = calculate_field_coverage(rows, all_groups)
+    result["field_coverage"] = coverage
+
+    missing_groups: list[str] = []
+    for group_name, fields in all_groups.items():
+        for field in fields:
+            entry = coverage.get(field)
+            if entry and entry["status"] == "missing":
+                missing_groups.append(f"{group_name} / {field}")
+    result["missing_field_groups"] = missing_groups
+    readiness = build_market_readiness_report(rows)
+    result["readiness"] = readiness
+    result["filter_options"] = {
+        "sports": sports,
+        "leagues": leagues,
+        "markets": markets,
+        "source_keys": source_keys,
+    }
+    result["ok"] = True
+    if readiness.get("warnings"):
+        result["warnings"].extend(readiness["warnings"])
+    if missing_groups:
+        result["warnings"].append(
+            f"Missing field groups: {missing_groups[0]}"
+            + (f" (+{len(missing_groups)-1} more)" if len(missing_groups) > 1 else "")
+        )
+    conn.close()
+    return result
+
+
 __all__ = [
     "CANONICAL_HISTORICAL_ODDS_OPTIONAL_FIELDS",
     "CANONICAL_HISTORICAL_ODDS_REQUIRED_FIELDS",
@@ -784,9 +1077,18 @@ __all__ = [
     "normalize_selection_name",
     "normalize_team_name",
     "odds_to_implied_probability",
+    "get_historical_import_source_options",
+    "get_historical_sqlite_snapshot_for_dashboard",
+    "get_sqlite_data_explorer_snapshot_for_dashboard",
     "query_historical_odds_rows",
+    "make_arrow_safe_table_rows",
+    "make_arrow_safe_value",
+    "make_historical_projection_metric_rows",
     "summarize_historical_odds_db",
     "validate_canonical_historical_odds_row",
     "validate_sqlite_store",
     "get_sqlite_table_counts",
+    "import_historical_file_to_sqlite_for_dashboard",
+    "run_sqlite_projection_for_dashboard",
+    "save_historical_upload_for_import",
 ]

@@ -31,6 +31,7 @@ _CANONICAL_MODULES: tuple[str, ...] = (
     "src.providers",
     "src.research.feature_control",
     "src.research.history",
+    "src.services.ops_workflow",
     "src.services.runtime_shared",
 )
 

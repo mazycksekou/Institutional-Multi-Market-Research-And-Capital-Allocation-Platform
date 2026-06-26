@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping, Sequence
+from pathlib import Path
 from typing import Any
 
 from .sports import normalize_market, normalize_sport
@@ -665,6 +666,128 @@ def summarize_market_feature_readiness(rows: Sequence[Mapping[str, Any]]) -> dic
     }
 
 
+def get_sport_feature_pack_snapshot_for_dashboard(
+    db_path: str | Path,
+    *,
+    sport: str | None = None,
+    league: str | None = None,
+    market: str | None = None,
+    source_key: str | None = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
+    limit: int = 1000,
+) -> dict[str, Any]:
+    from src.data.historical_odds import connect_historical_odds_db, initialize_historical_odds_db, query_historical_odds_rows
+
+    result: dict[str, Any] = {
+        "ok": False,
+        "version": SPORT_FEATURE_PACKS_VERSION,
+        "db_path": str(db_path),
+        "filters": {
+            "sport": sport,
+            "league": league,
+            "market": market,
+            "source_key": source_key,
+            "start_date": start_date,
+            "end_date": end_date,
+            "limit": limit,
+        },
+        "summary": {},
+        "warnings": [],
+    }
+    try:
+        conn = connect_historical_odds_db(str(db_path))
+        initialize_historical_odds_db(conn)
+        raw_rows = query_historical_odds_rows(
+            conn,
+            sport=sport,
+            league=league,
+            market=market,
+            source_key=source_key,
+            start_date=start_date,
+            end_date=end_date,
+            limit=limit,
+        )
+        conn.close()
+    except Exception as exc:
+        result["warnings"].append(f"Cannot open database: {exc}")
+        return result
+
+    if not raw_rows:
+        result["ok"] = True
+        result["warnings"].append("No rows in filtered query.")
+        return result
+
+    try:
+        summary = summarize_sport_feature_readiness(raw_rows)
+        result["summary"] = summary
+        result["ok"] = True
+    except Exception as exc:
+        result["warnings"].append(f"Readiness error: {exc}")
+    return result
+
+
+def get_market_feature_pack_snapshot_for_dashboard(
+    db_path: str | Path,
+    *,
+    sport: str | None = None,
+    league: str | None = None,
+    market: str | None = None,
+    source_key: str | None = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
+    limit: int = 1000,
+) -> dict[str, Any]:
+    from src.data.historical_odds import connect_historical_odds_db, initialize_historical_odds_db, query_historical_odds_rows
+
+    result: dict[str, Any] = {
+        "ok": False,
+        "version": MARKET_FEATURE_PACKS_VERSION,
+        "db_path": str(db_path),
+        "filters": {
+            "sport": sport,
+            "league": league,
+            "market": market,
+            "source_key": source_key,
+            "start_date": start_date,
+            "end_date": end_date,
+            "limit": limit,
+        },
+        "summary": {},
+        "warnings": [],
+    }
+    try:
+        conn = connect_historical_odds_db(str(db_path))
+        initialize_historical_odds_db(conn)
+        raw_rows = query_historical_odds_rows(
+            conn,
+            sport=sport,
+            league=league,
+            market=market,
+            source_key=source_key,
+            start_date=start_date,
+            end_date=end_date,
+            limit=limit,
+        )
+        conn.close()
+    except Exception as exc:
+        result["warnings"].append(f"Cannot open database: {exc}")
+        return result
+
+    if not raw_rows:
+        result["ok"] = True
+        result["warnings"].append("No rows in filtered query.")
+        return result
+
+    try:
+        summary = summarize_market_feature_readiness(raw_rows)
+        result["summary"] = summary
+        result["ok"] = True
+    except Exception as exc:
+        result["warnings"].append(f"Readiness error: {exc}")
+    return result
+
+
 __all__ = [
     "MARKET_FEATURE_NEVER_FEATURE_FIELDS",
     "MARKET_FEATURE_PACKS_VERSION",
@@ -675,7 +798,9 @@ __all__ = [
     "evaluate_market_feature_readiness",
     "evaluate_sport_feature_readiness",
     "get_market_feature_pack",
+    "get_market_feature_pack_snapshot_for_dashboard",
     "get_sport_feature_pack",
+    "get_sport_feature_pack_snapshot_for_dashboard",
     "get_supported_market_feature_packs",
     "get_supported_sport_feature_packs",
     "normalize_market_family",
