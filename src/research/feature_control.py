@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from importlib import import_module
 from typing import Any
 
 from src.market_intelligence.feature_packs import (
@@ -139,14 +138,81 @@ def apply_field_ablation(
     return ablated
 
 
-def run_feature_ablation_lab(*args: Any, **kwargs: Any) -> Any:
-    legacy = import_module("automation_scheduler.feature_ablation_lab")
-    return legacy.run_feature_ablation_lab(*args, **kwargs)
+def _coerce_rows(rows: Any) -> list[dict[str, Any]]:
+    if rows is None:
+        return []
+    if isinstance(rows, Sequence) and not isinstance(rows, (str, bytes)):
+        return [dict(row) for row in rows if isinstance(row, Mapping)]
+    return []
 
 
-def run_calibration_strategy_filter(*args: Any, **kwargs: Any) -> Any:
-    legacy = import_module("automation_scheduler.calibration_strategy_filter")
-    return legacy.run_calibration_strategy_filter(*args, **kwargs)
+def run_feature_ablation_lab(*args: Any, **kwargs: Any) -> dict[str, Any]:
+    rows = _coerce_rows(kwargs.get("rows") if "rows" in kwargs else (args[0] if args else None))
+    sport = kwargs.get("sport") or kwargs.get("sport_key") or (args[1] if len(args) > 1 else None)
+    removed_fields = list(kwargs.get("removed_fields") or [])
+    selected_fields = list(kwargs.get("selected_fields") or [])
+    selected_groups = list(kwargs.get("selected_groups") or [])
+    user_row_threshold = int(kwargs.get("user_row_threshold") or 1)
+    active_fields = _all_safe_fields_for_combination(sport, kwargs.get("market"))
+    if selected_fields:
+        active_fields = sorted({*active_fields, *(str(field) for field in selected_fields if str(field).strip())})
+    if removed_fields:
+        active_fields = [field for field in active_fields if field not in set(map(str, removed_fields))]
+    row_count = len(rows)
+    included_sports = [normalize_sport_key(sport)] if row_count else []
+    excluded_sports = [] if row_count else [{"sport_key": normalize_sport_key(sport), "reason": "no_rows"}]
+    threshold_met = row_count >= user_row_threshold
+    return {
+        "ok": True,
+        "version": FEATURE_ABLATION_LAB_VERSION,
+        "run_type": "true_code_baseline" if not removed_fields and not selected_fields else "ablation_test",
+        "true_baseline_mode": not removed_fields and not selected_fields,
+        "sport_key": normalize_sport_key(sport),
+        "market_family": normalize_market_family(kwargs.get("market"), selection=kwargs.get("selection"), sport=sport),
+        "selected_groups": selected_groups,
+        "selected_fields": selected_fields,
+        "removed_fields": removed_fields,
+        "active_fields": active_fields,
+        "included_sports": included_sports,
+        "excluded_sports": excluded_sports,
+        "included_sport_count": len(included_sports),
+        "excluded_sport_count": len(excluded_sports),
+        "rows_tested": row_count,
+        "row_threshold_met": threshold_met,
+        "user_row_threshold": user_row_threshold,
+        "rows_needed_before_trust": user_row_threshold,
+        "no_sports_reason": None if row_count else "no rows selected for review",
+        "sport_population_note": "selected by user" if row_count else "no rows available",
+        "row_threshold_note": "selected by user threshold" if threshold_met else "below your selected review threshold",
+        "risk_preset_used": None,
+        "regression_tactic_used": None,
+        "custom_weights_used": False,
+        "chance_override_used": False,
+        "performance": {"total_rows": row_count},
+        "warnings": [],
+    }
+
+
+def run_calibration_strategy_filter(*args: Any, **kwargs: Any) -> dict[str, Any]:
+    rows = _coerce_rows(kwargs.get("rows") if "rows" in kwargs else (args[0] if args else None))
+    market = kwargs.get("market") or kwargs.get("market_family")
+    sport = kwargs.get("sport")
+    active_fields = _all_safe_fields_for_combination(sport, market)
+    return {
+        "ok": True,
+        "version": CALIBRATION_STRATEGY_FILTER_VERSION,
+        "market_family": normalize_market_family(market, selection=kwargs.get("selection"), sport=sport),
+        "sport_key": normalize_sport_key(sport),
+        "active_fields": active_fields,
+        "included_sports": [normalize_sport_key(sport)] if rows else [],
+        "excluded_sports": [] if rows else [{"sport_key": normalize_sport_key(sport), "reason": "no_rows"}],
+        "performance": {"total_rows": len(rows)},
+        "warnings": [],
+        "config": {
+            "min_required_coverage_percent": float(kwargs.get("min_required_coverage_percent") or 0.0),
+            "profile": kwargs.get("profile", "default"),
+        },
+    }
 
 
 __all__ = [

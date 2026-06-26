@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from automation_scheduler.ops_workflow import DEFAULT_APP_BASE_URL, run_ops_check  # noqa: E402
+from src.services.ops_workflow import DEFAULT_APP_BASE_URL, run_ops_check  # noqa: E402
 
 
 def _line(label: str, value: Any) -> str:

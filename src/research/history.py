@@ -1,78 +1,332 @@
 from __future__ import annotations
 
-from importlib import import_module
-from typing import Any
+import json
+import sqlite3
+import uuid
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Mapping, Sequence
+
+from .feature_control import ABLATION_NEVER_FEATURE_FIELDS
 
 
-def _legacy_history():
-    return import_module("automation_scheduler.experiment_history_store")
+EXPERIMENT_HISTORY_STORE_VERSION = "src.research.v1.experiment_history_store.v1"
 
 
-def _legacy_report():
-    return import_module("automation_scheduler.experiment_report_exporter")
+def _utc_now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
 
 
-def initialize_experiment_history_store(*args: Any, **kwargs: Any) -> Any:
-    return _legacy_history().initialize_experiment_history_store(*args, **kwargs)
+def _connect(db_path: str | Path) -> sqlite3.Connection:
+    conn = sqlite3.connect(str(db_path))
+    conn.row_factory = sqlite3.Row
+    return conn
 
 
-def normalize_experiment_history_run_type(*args: Any, **kwargs: Any) -> Any:
-    return _legacy_history().normalize_experiment_history_run_type(*args, **kwargs)
+def initialize_experiment_history_store(db_path: str | Path) -> dict[str, Any]:
+    conn = _connect(db_path)
+    try:
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS experiment_history_runs (
+                run_id TEXT PRIMARY KEY,
+                run_type TEXT NOT NULL,
+                run_label TEXT,
+                notes TEXT,
+                created_at TEXT NOT NULL,
+                result_json TEXT NOT NULL,
+                active_fields_json TEXT,
+                performance_json TEXT,
+                metrics_json TEXT
+            )
+            """
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return {"ok": True, "status": "created_or_exists", "table": "experiment_history_runs"}
 
 
-def make_experiment_run_id(*args: Any, **kwargs: Any) -> Any:
-    return _legacy_history().make_experiment_run_id(*args, **kwargs)
+def normalize_experiment_history_run_type(value: Any) -> str:
+    text = str(value or "").strip().lower()
+    if text in {"feature_ablation", "calibration_strategy_filter"}:
+        return text
+    return "feature_ablation"
 
 
-def extract_experiment_history_metrics(*args: Any, **kwargs: Any) -> Any:
-    return _legacy_history().extract_experiment_history_metrics(*args, **kwargs)
+def make_experiment_run_id(prefix: str | None = None) -> str:
+    return f"{prefix or 'exp'}_{uuid.uuid4().hex[:12]}"
 
 
-def sanitize_experiment_history_result(*args: Any, **kwargs: Any) -> Any:
-    return _legacy_history().sanitize_experiment_history_result(*args, **kwargs)
+def extract_experiment_history_metrics(result: Mapping[str, Any]) -> dict[str, Any]:
+    payload = dict(result)
+    performance = dict(payload.get("performance") or {})
+    metrics = {
+        "total_rows": int(performance.get("total_rows", payload.get("total_rows", 0)) or 0),
+        "included_row_count": int(performance.get("included_row_count", payload.get("included_row_count", 0)) or 0),
+        "excluded_row_count": int(performance.get("excluded_row_count", payload.get("excluded_row_count", 0)) or 0),
+        "eligible_rows": int(performance.get("eligible_rows", payload.get("eligible_rows", 0)) or 0),
+        "skipped_rows": int(performance.get("skipped_rows", payload.get("skipped_rows", 0)) or 0),
+        "settled_count": int(performance.get("settled_count", payload.get("settled_count", 0)) or 0),
+        "wins": int(performance.get("wins", payload.get("wins", 0)) or 0),
+        "losses": int(performance.get("losses", payload.get("losses", 0)) or 0),
+        "pushes": int(performance.get("pushes", payload.get("pushes", 0)) or 0),
+        "net_result": float(performance.get("net_result", payload.get("net_result", 0.0)) or 0.0),
+        "roi_percent": float(performance.get("roi_percent", payload.get("roi_percent", 0.0)) or 0.0),
+        "win_rate_percent": float(performance.get("win_rate_percent", payload.get("win_rate_percent", 0.0)) or 0.0),
+        "roi_by_sport": dict(performance.get("roi_by_sport") or {}),
+        "roi_by_market_family": dict(performance.get("roi_by_market_family") or {}),
+        "warnings": list(payload.get("warnings") or performance.get("warnings") or []),
+    }
+    return metrics
 
 
-def save_experiment_history_run(*args: Any, **kwargs: Any) -> Any:
-    return _legacy_history().save_experiment_history_run(*args, **kwargs)
+def sanitize_experiment_history_result(result: Mapping[str, Any]) -> dict[str, Any]:
+    payload = dict(result)
+    active_fields = [field for field in payload.get("active_fields", []) if field not in ABLATION_NEVER_FEATURE_FIELDS]
+    warnings = list(payload.get("warnings") or [])
+    if len(active_fields) != len(list(payload.get("active_fields", []))):
+        warnings.append("leakage_fields_removed")
+    payload["active_fields"] = active_fields
+    payload["warnings"] = warnings
+    return payload
 
 
-def list_experiment_history_runs(*args: Any, **kwargs: Any) -> Any:
-    return _legacy_history().list_experiment_history_runs(*args, **kwargs)
+def save_experiment_history_run(
+    db_path: str | Path,
+    result: Mapping[str, Any],
+    *,
+    run_type: str | None = None,
+    run_label: str | None = None,
+    notes: str | None = None,
+) -> dict[str, Any]:
+    initialize_experiment_history_store(db_path)
+    payload = sanitize_experiment_history_result(result)
+    run_type = normalize_experiment_history_run_type(run_type or payload.get("run_type"))
+    run_id = make_experiment_run_id()
+    conn = _connect(db_path)
+    try:
+        conn.execute(
+            """
+            INSERT INTO experiment_history_runs (
+                run_id, run_type, run_label, notes, created_at, result_json,
+                active_fields_json, performance_json, metrics_json
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            [
+                run_id,
+                run_type,
+                run_label,
+                notes,
+                _utc_now_iso(),
+                json.dumps(payload, sort_keys=True),
+                json.dumps(payload.get("active_fields", []), sort_keys=True),
+                json.dumps(payload.get("performance", {}), sort_keys=True),
+                json.dumps(extract_experiment_history_metrics(payload), sort_keys=True),
+            ],
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return {
+        "ok": True,
+        "saved": True,
+        "run_id": run_id,
+        "run_type": run_type,
+        "run_label": run_label,
+        "notes": notes,
+    }
 
 
-def get_experiment_history_run(*args: Any, **kwargs: Any) -> Any:
-    return _legacy_history().get_experiment_history_run(*args, **kwargs)
+def list_experiment_history_runs(
+    db_path: str | Path,
+    *,
+    limit: int = 10,
+    run_type: str | None = None,
+    mode: str | None = None,
+    sport: str | None = None,
+    market: str | None = None,
+) -> dict[str, Any]:
+    conn = _connect(db_path)
+    try:
+        rows = conn.execute(
+            "SELECT * FROM experiment_history_runs ORDER BY created_at DESC, run_id DESC LIMIT ?",
+            [max(0, int(limit))],
+        ).fetchall()
+    except sqlite3.DatabaseError:
+        rows = []
+    finally:
+        conn.close()
+    runs = [dict(row) for row in rows]
+    if run_type is not None:
+        runs = [run for run in runs if str(run.get("run_type") or "").lower() == str(run_type).lower()]
+    return {"ok": True, "runs": runs, "total": len(runs)}
 
 
-def compare_experiment_history_runs(*args: Any, **kwargs: Any) -> Any:
-    return _legacy_history().compare_experiment_history_runs(*args, **kwargs)
+def get_experiment_history_run(db_path: str | Path, run_id: str) -> dict[str, Any]:
+    conn = _connect(db_path)
+    try:
+        row = conn.execute("SELECT * FROM experiment_history_runs WHERE run_id = ?", [run_id]).fetchone()
+    except sqlite3.DatabaseError:
+        row = None
+    finally:
+        conn.close()
+    if row is None:
+        return {"ok": True, "found": False, "warnings": ["run not found"], "run": None}
+    payload = dict(row)
+    if payload.get("active_fields_json"):
+        try:
+            payload["active_fields_json"] = json.loads(payload["active_fields_json"])
+        except json.JSONDecodeError:
+            pass
+    if payload.get("performance_json"):
+        try:
+            payload["performance_json"] = json.loads(payload["performance_json"])
+        except json.JSONDecodeError:
+            pass
+    if payload.get("metrics_json"):
+        try:
+            payload["metrics_json"] = json.loads(payload["metrics_json"])
+        except json.JSONDecodeError:
+            pass
+    return {"ok": True, "found": True, "warnings": [], "run": payload}
 
 
-def build_experiment_report_export(*args: Any, **kwargs: Any) -> Any:
-    return _legacy_report().build_experiment_report_export(*args, **kwargs)
+def compare_experiment_history_runs(db_path: str | Path, run_ids: Sequence[str]) -> dict[str, Any]:
+    run_ids = [str(run_id) for run_id in run_ids if str(run_id).strip()]
+    if not run_ids:
+        return {"ok": False, "warnings": ["no run ids provided"], "comparison_rows": []}
+    runs = [get_experiment_history_run(db_path, run_id)["run"] for run_id in run_ids]
+    runs = [run for run in runs if run]
+    if not runs:
+        return {"ok": False, "warnings": ["no runs found"], "comparison_rows": []}
+    baseline = dict(runs[0])
+    base_metrics = dict(baseline.get("metrics_json") or baseline.get("performance_json") or {})
+    comparison_rows: list[dict[str, Any]] = []
+    for run in runs:
+        metrics = dict(run.get("metrics_json") or run.get("performance_json") or {})
+        roi_delta = float(metrics.get("roi_percent", 0.0)) - float(base_metrics.get("roi_percent", 0.0))
+        win_rate_delta = float(metrics.get("win_rate_percent", 0.0)) - float(base_metrics.get("win_rate_percent", 0.0))
+        included_delta = int(metrics.get("included_row_count", 0)) - int(base_metrics.get("included_row_count", 0))
+        comparison_rows.append(
+            {
+                "run_id": run.get("run_id"),
+                "run_label": run.get("run_label"),
+                "roi_delta_vs_baseline": round(roi_delta, 2),
+                "win_rate_delta_vs_baseline": round(win_rate_delta, 2),
+                "included_row_delta_vs_baseline": included_delta,
+            }
+        )
+    return {"ok": True, "comparison_rows": comparison_rows, "warnings": []}
 
 
-def normalize_report_value(*args: Any, **kwargs: Any) -> Any:
-    return _legacy_report().normalize_report_value(*args, **kwargs)
+def normalize_report_value(value: Any) -> str:
+    if value in (None, ""):
+        return ""
+    if value is True:
+        return "Yes"
+    if value is False:
+        return "No"
+    if isinstance(value, (int, float)):
+        return str(value)
+    if isinstance(value, (list, tuple, dict)):
+        return json.dumps(value, sort_keys=True)
+    return str(value)
 
 
-def format_report_percent(*args: Any, **kwargs: Any) -> Any:
-    return _legacy_report().format_report_percent(*args, **kwargs)
+def format_report_percent(value: Any) -> str:
+    if value in (None, ""):
+        return ""
+    text = str(value).strip().replace("%", "")
+    try:
+        return f"{float(text):.2f}%"
+    except ValueError:
+        return str(value)
 
 
-def format_report_money(*args: Any, **kwargs: Any) -> Any:
-    return _legacy_report().format_report_money(*args, **kwargs)
+def format_report_money(value: Any) -> str:
+    if value in (None, ""):
+        return ""
+    text = str(value).strip().replace("$", "").replace(",", "")
+    try:
+        return f"{float(text):.2f}"
+    except ValueError:
+        return str(value)
 
 
-def build_experiment_report_sections(*args: Any, **kwargs: Any) -> Any:
-    return _legacy_report().build_experiment_report_sections(*args, **kwargs)
+def build_experiment_report_sections(run: Mapping[str, Any]) -> dict[str, Any]:
+    payload = dict(run)
+    performance = dict(payload.get("performance") or {})
+    metrics = extract_experiment_history_metrics(payload)
+    return {
+        "summary": {
+            "run_id": payload.get("run_id"),
+            "run_type": payload.get("run_type"),
+            "run_label": payload.get("run_label"),
+        },
+        "performance": performance,
+        "metrics": metrics,
+        "safety": {
+            "warnings": list(payload.get("warnings") or []),
+            "leakage_fields_removed": [field for field in payload.get("active_fields", []) if field in ABLATION_NEVER_FEATURE_FIELDS],
+        },
+    }
 
 
-def render_experiment_report_markdown(*args: Any, **kwargs: Any) -> Any:
-    return _legacy_report().render_experiment_report_markdown(*args, **kwargs)
+def render_experiment_report_markdown(run: Mapping[str, Any]) -> dict[str, Any]:
+    sections = build_experiment_report_sections(run)
+    summary = sections["summary"]
+    performance = sections["performance"]
+    metrics = sections["metrics"]
+    markdown = "\n".join(
+        [
+            f"# Calibration Report: {summary.get('run_id') or 'unknown'}",
+            "",
+            f"- Run type: {summary.get('run_type') or 'unknown'}",
+            f"- Run label: {summary.get('run_label') or ''}",
+            f"- Rows: {performance.get('total_rows', 0)}",
+            f"- ROI: {format_report_percent(metrics.get('roi_percent'))}",
+            f"- Win rate: {format_report_percent(metrics.get('win_rate_percent'))}",
+            "",
+            "## Safety",
+            "- Local-only history store",
+            "- No live execution",
+            "- Leakage features removed before persistence",
+        ]
+    )
+    return {"ok": True, "markdown": markdown, "sections": sections}
+
+
+def build_experiment_report_export(
+    db_path: str | Path,
+    run_id: str,
+    *,
+    export_format: str = "markdown",
+) -> dict[str, Any]:
+    if not str(run_id or "").strip():
+        return {"ok": False, "status": "missing_run_id", "warnings": ["missing_run_id"], "filename": "", "content": "", "markdown": ""}
+    retrieved = get_experiment_history_run(db_path, run_id)
+    if not retrieved.get("found"):
+        return {"ok": False, "status": "not_found", "warnings": ["run not found"], "filename": "", "content": "", "markdown": ""}
+    run = retrieved["run"]
+    if export_format != "markdown":
+        return {"ok": False, "status": "unsupported_format", "warnings": ["unsupported format"], "filename": "", "content": "", "markdown": "", "export": None}
+    rendered = render_experiment_report_markdown(run)
+    return {
+        "ok": True,
+        "status": "exported",
+        "format": "markdown",
+        "filename": f"{run_id}.md",
+        "content": rendered["markdown"],
+        "markdown": rendered["markdown"],
+        "sections": rendered["sections"],
+        "warnings": [],
+    }
 
 
 __all__ = [
+    "ABLATION_NEVER_FEATURE_FIELDS",
+    "EXPERIMENT_HISTORY_STORE_VERSION",
     "build_experiment_report_export",
     "build_experiment_report_sections",
     "compare_experiment_history_runs",
@@ -89,4 +343,3 @@ __all__ = [
     "sanitize_experiment_history_result",
     "save_experiment_history_run",
 ]
-
