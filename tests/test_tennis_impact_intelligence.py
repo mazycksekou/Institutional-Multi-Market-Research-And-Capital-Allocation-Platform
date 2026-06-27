@@ -2,21 +2,23 @@ import unittest
 
 from fastapi.testclient import TestClient
 
-from automation_scheduler.response_compactor import compact_tennis_impact_diagnostics_response, redact_and_limit_payload
-from automation_scheduler.tennis_availability_context import evaluate_tennis_availability_context
-from automation_scheduler.tennis_data_availability import evaluate_tennis_data_availability
-from automation_scheduler.tennis_format_markov_context import evaluate_tennis_format_markov_context
-from automation_scheduler.tennis_impact_calibration import evaluate_tennis_impact_calibration
-from automation_scheduler.tennis_impact_readiness import build_tennis_impact_readiness
-from automation_scheduler.tennis_impact_red_team import evaluate_tennis_impact_red_team
-from automation_scheduler.tennis_impact_report import build_tennis_impact_diagnostics
-from automation_scheduler.tennis_incentive_context import evaluate_tennis_incentive_context
-from automation_scheduler.tennis_market_relevance import evaluate_tennis_market_relevance
-from automation_scheduler.tennis_matchup_context import evaluate_tennis_matchup_context
-from automation_scheduler.tennis_pressure_tiebreak_context import evaluate_tennis_pressure_tiebreak_context
-from automation_scheduler.tennis_return_impact import evaluate_tennis_return_impact
-from automation_scheduler.tennis_serve_impact import evaluate_tennis_serve_impact
-from automation_scheduler.tennis_surface_context import evaluate_tennis_surface_context
+from src.market_intelligence.response_compactor import compact_tennis_impact_diagnostics_response, redact_and_limit_payload
+from src.market_intelligence.sports import (
+    build_tennis_impact_diagnostics,
+    build_tennis_impact_readiness,
+    evaluate_tennis_availability_context,
+    evaluate_tennis_data_availability,
+    evaluate_tennis_format_markov_context,
+    evaluate_tennis_impact_calibration,
+    evaluate_tennis_impact_red_team,
+    evaluate_tennis_incentive_context,
+    evaluate_tennis_market_relevance,
+    evaluate_tennis_matchup_context,
+    evaluate_tennis_pressure_tiebreak_context,
+    evaluate_tennis_return_impact,
+    evaluate_tennis_serve_impact,
+    evaluate_tennis_surface_context,
+)
 from tests.support.action_imports import app
 
 

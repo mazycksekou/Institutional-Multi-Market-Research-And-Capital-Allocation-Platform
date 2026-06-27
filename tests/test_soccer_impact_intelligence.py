@@ -2,22 +2,24 @@ import unittest
 
 from fastapi.testclient import TestClient
 
-from automation_scheduler.response_compactor import compact_soccer_impact_diagnostics_response, redact_and_limit_payload
-from automation_scheduler.soccer_data_availability import evaluate_soccer_data_availability
-from automation_scheduler.soccer_goalkeeper_context import evaluate_soccer_goalkeeper_context
-from automation_scheduler.soccer_impact_calibration import evaluate_soccer_impact_calibration
-from automation_scheduler.soccer_impact_red_team import evaluate_soccer_impact_red_team
-from automation_scheduler.soccer_impact_report import build_soccer_impact_diagnostics
-from automation_scheduler.soccer_incentive_context import evaluate_soccer_incentive_context
-from automation_scheduler.soccer_lineup_availability_context import evaluate_soccer_lineup_availability_context
-from automation_scheduler.soccer_market_relevance import evaluate_soccer_market_relevance
-from automation_scheduler.soccer_matchup_context import evaluate_soccer_matchup_context
-from automation_scheduler.soccer_player_role_impact import evaluate_soccer_player_role_impact
-from automation_scheduler.soccer_possession_value_impact import evaluate_soccer_possession_value_impact
-from automation_scheduler.soccer_pressing_transition_context import evaluate_soccer_pressing_transition_context
-from automation_scheduler.soccer_referee_context import evaluate_soccer_referee_context
-from automation_scheduler.soccer_set_piece_context import evaluate_soccer_set_piece_context
-from automation_scheduler.soccer_tactical_context import evaluate_soccer_tactical_context
+from src.market_intelligence.response_compactor import compact_soccer_impact_diagnostics_response, redact_and_limit_payload
+from src.market_intelligence.sports import (
+    build_soccer_impact_diagnostics,
+    evaluate_soccer_data_availability,
+    evaluate_soccer_goalkeeper_context,
+    evaluate_soccer_impact_calibration,
+    evaluate_soccer_impact_red_team,
+    evaluate_soccer_incentive_context,
+    evaluate_soccer_lineup_availability_context,
+    evaluate_soccer_market_relevance,
+    evaluate_soccer_matchup_context,
+    evaluate_soccer_player_role_impact,
+    evaluate_soccer_possession_value_impact,
+    evaluate_soccer_pressing_transition_context,
+    evaluate_soccer_referee_context,
+    evaluate_soccer_set_piece_context,
+    evaluate_soccer_tactical_context,
+)
 from tests.support.action_imports import app
 
 

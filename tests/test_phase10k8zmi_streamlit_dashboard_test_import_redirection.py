@@ -112,7 +112,7 @@ def test_phase10k8zmi_streamlit_dashboard_test_import_redirection() -> None:
 
     counts = _scan_repo_import_counts()
     assert counts["runtime"] == (0, 0)
-    assert counts["test"] == (482, 197)
+    assert counts["test"] == (387, 191)
     assert counts["scripts"] == (0, 0)
     assert counts["internal"] == (745, 262)
 

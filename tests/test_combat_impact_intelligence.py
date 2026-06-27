@@ -2,21 +2,23 @@ import unittest
 
 from fastapi.testclient import TestClient
 
-from automation_scheduler.combat_availability_context import evaluate_combat_availability_context
-from automation_scheduler.combat_damage_durability_context import evaluate_combat_damage_durability_context
-from automation_scheduler.combat_data_availability import evaluate_combat_data_availability
-from automation_scheduler.combat_grappling_control_impact import evaluate_combat_grappling_control_impact
-from automation_scheduler.combat_impact_calibration import evaluate_combat_impact_calibration
-from automation_scheduler.combat_impact_red_team import evaluate_combat_impact_red_team
-from automation_scheduler.combat_incentive_context import evaluate_combat_incentive_context
-from automation_scheduler.combat_market_relevance import evaluate_combat_market_relevance
-from automation_scheduler.combat_matchup_context import evaluate_combat_matchup_context
-from automation_scheduler.combat_pace_cardio_context import evaluate_combat_pace_cardio_context
-from automation_scheduler.combat_phase_control_context import evaluate_combat_phase_control_context
-from automation_scheduler.combat_ruleset_referee_judging_context import evaluate_combat_ruleset_referee_judging_context
-from automation_scheduler.combat_striking_impact import evaluate_combat_striking_impact
-from automation_scheduler.combat_impact_report import build_combat_impact_diagnostics
-from automation_scheduler.response_compactor import compact_combat_impact_diagnostics_response, redact_and_limit_payload
+from src.market_intelligence.response_compactor import compact_combat_impact_diagnostics_response, redact_and_limit_payload
+from src.market_intelligence.sports import (
+    build_combat_impact_diagnostics,
+    evaluate_combat_availability_context,
+    evaluate_combat_damage_durability_context,
+    evaluate_combat_data_availability,
+    evaluate_combat_grappling_control_impact,
+    evaluate_combat_impact_calibration,
+    evaluate_combat_impact_red_team,
+    evaluate_combat_incentive_context,
+    evaluate_combat_market_relevance,
+    evaluate_combat_matchup_context,
+    evaluate_combat_pace_cardio_context,
+    evaluate_combat_phase_control_context,
+    evaluate_combat_ruleset_referee_judging_context,
+    evaluate_combat_striking_impact,
+)
 from tests.support.action_imports import app
 
 

@@ -2,22 +2,24 @@ import unittest
 
 from fastapi.testclient import TestClient
 
-from automation_scheduler.golf_approach_impact import evaluate_golf_approach_impact
-from automation_scheduler.golf_availability_context import evaluate_golf_availability_context
-from automation_scheduler.golf_course_fit_context import evaluate_golf_course_fit_context
-from automation_scheduler.golf_data_availability import evaluate_golf_data_availability
-from automation_scheduler.golf_field_tournament_context import evaluate_golf_field_tournament_context
-from automation_scheduler.golf_impact_calibration import evaluate_golf_impact_calibration
-from automation_scheduler.golf_impact_readiness import build_golf_impact_readiness
-from automation_scheduler.golf_impact_red_team import evaluate_golf_impact_red_team
-from automation_scheduler.golf_impact_report import build_golf_impact_diagnostics
-from automation_scheduler.golf_incentive_context import evaluate_golf_incentive_context
-from automation_scheduler.golf_market_relevance import evaluate_golf_market_relevance
-from automation_scheduler.golf_off_tee_impact import evaluate_golf_off_tee_impact
-from automation_scheduler.golf_short_game_putting_context import evaluate_golf_short_game_putting_context
-from automation_scheduler.golf_strokes_gained_impact import evaluate_golf_strokes_gained_impact
-from automation_scheduler.golf_weather_wave_context import evaluate_golf_weather_wave_context
-from automation_scheduler.response_compactor import compact_golf_impact_diagnostics_response, redact_and_limit_payload
+from src.market_intelligence.response_compactor import compact_golf_impact_diagnostics_response, redact_and_limit_payload
+from src.market_intelligence.sports import (
+    build_golf_impact_diagnostics,
+    build_golf_impact_readiness,
+    evaluate_golf_approach_impact,
+    evaluate_golf_availability_context,
+    evaluate_golf_course_fit_context,
+    evaluate_golf_data_availability,
+    evaluate_golf_field_tournament_context,
+    evaluate_golf_impact_calibration,
+    evaluate_golf_impact_red_team,
+    evaluate_golf_incentive_context,
+    evaluate_golf_market_relevance,
+    evaluate_golf_off_tee_impact,
+    evaluate_golf_short_game_putting_context,
+    evaluate_golf_strokes_gained_impact,
+    evaluate_golf_weather_wave_context,
+)
 from tests.support.action_imports import app
 
 

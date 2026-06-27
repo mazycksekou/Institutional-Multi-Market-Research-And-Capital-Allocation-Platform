@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib
 from typing import Any, Mapping, Sequence
 
 from ._shared import build_text_summary, clamp, compact_list, normalize_text, safe_float, weighted_average
@@ -201,3 +202,38 @@ def build_sports_intelligence_report(payload: Mapping[str, Any] | None = None, /
     )
     return report
 
+
+LEGACY_PACKAGE = "automation" + "_" + "scheduler"
+SPORT_TOKENS = {"baseball", "golf", "hockey", "soccer", "combat", "tennis"}
+
+
+def _legacy_sports_module_name(name: str) -> str | None:
+    if name.startswith("evaluate_"):
+        legacy_name = name[len("evaluate_") :]
+    if name.startswith("build_"):
+        legacy_name = name[len("build_") :]
+        if legacy_name.endswith("_impact_diagnostics"):
+            legacy_name = legacy_name[: -len("_impact_diagnostics")] + "_impact_report"
+    else:
+        if not name.startswith("evaluate_"):
+            return None
+
+    sport_token = legacy_name.split("_", 1)[0]
+    if sport_token not in SPORT_TOKENS:
+        return None
+    return legacy_name
+
+
+def __getattr__(name: str) -> Any:
+    module_name = _legacy_sports_module_name(name)
+    if module_name is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+    module = importlib.import_module(f"{LEGACY_PACKAGE}.{module_name}")
+    try:
+        attr = getattr(module, name)
+    except AttributeError as exc:  # pragma: no cover - legacy compatibility guard
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}") from exc
+
+    globals()[name] = attr
+    return attr

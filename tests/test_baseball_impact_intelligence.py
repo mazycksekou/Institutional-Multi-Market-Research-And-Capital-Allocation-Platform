@@ -2,23 +2,25 @@ import unittest
 
 from fastapi.testclient import TestClient
 
-from automation_scheduler.baseball_availability_context import evaluate_baseball_availability_context
-from automation_scheduler.baseball_batter_impact import evaluate_baseball_batter_impact
-from automation_scheduler.baseball_bullpen_context import evaluate_baseball_bullpen_context
-from automation_scheduler.baseball_data_availability import evaluate_baseball_data_availability
-from automation_scheduler.baseball_defense_baserunning_context import evaluate_baseball_defense_baserunning_context
-from automation_scheduler.baseball_impact_calibration import evaluate_baseball_impact_calibration
-from automation_scheduler.baseball_impact_readiness import build_baseball_impact_readiness
-from automation_scheduler.baseball_impact_red_team import evaluate_baseball_impact_red_team
-from automation_scheduler.baseball_impact_report import build_baseball_impact_diagnostics
-from automation_scheduler.baseball_incentive_context import evaluate_baseball_incentive_context
-from automation_scheduler.baseball_lineup_context import evaluate_baseball_lineup_context
-from automation_scheduler.baseball_market_relevance import evaluate_baseball_market_relevance
-from automation_scheduler.baseball_matchup_context import evaluate_baseball_matchup_context
-from automation_scheduler.baseball_park_weather_umpire_context import evaluate_baseball_park_weather_umpire_context
-from automation_scheduler.baseball_pitcher_impact import evaluate_baseball_pitcher_impact
-from automation_scheduler.baseball_run_value_impact import evaluate_baseball_run_value_impact
-from automation_scheduler.response_compactor import compact_baseball_impact_diagnostics_response
+from src.market_intelligence.response_compactor import compact_baseball_impact_diagnostics_response
+from src.market_intelligence.sports import (
+    build_baseball_impact_diagnostics,
+    build_baseball_impact_readiness,
+    evaluate_baseball_availability_context,
+    evaluate_baseball_batter_impact,
+    evaluate_baseball_bullpen_context,
+    evaluate_baseball_data_availability,
+    evaluate_baseball_defense_baserunning_context,
+    evaluate_baseball_impact_calibration,
+    evaluate_baseball_impact_red_team,
+    evaluate_baseball_incentive_context,
+    evaluate_baseball_lineup_context,
+    evaluate_baseball_market_relevance,
+    evaluate_baseball_matchup_context,
+    evaluate_baseball_park_weather_umpire_context,
+    evaluate_baseball_pitcher_impact,
+    evaluate_baseball_run_value_impact,
+)
 from tests.support.action_imports import app
 
 

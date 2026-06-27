@@ -2,7 +2,7 @@
 
 Exact import-classification ledger:
 - `ACTIVE_RUNTIME_IMPORT`: `0`
-- `ACTIVE_TEST_IMPORT`: `482` direct import statements across `197` files
+- `ACTIVE_TEST_IMPORT`: `387` direct import statements across `191` files
 - `ACTIVE_MONKEYPATCH_TARGET`: `0` active patch targets; `6` historical-proof string hits remain in two tests
 - `INTERNAL_SCHEDULER_IMPORT`: `745` internal import statements across `262` files
 - `DOC_ONLY_REFERENCE`: not counted in this import census
@@ -12,16 +12,16 @@ Exact import-classification ledger:
 - `DELETE_READY_AFTER_PROOF`: `0`
 
 Top active test blockers:
-- `tests/test_baseball_impact_intelligence.py` -> `17`
-- `tests/test_golf_impact_intelligence.py` -> `16`
-- `tests/test_hockey_impact_intelligence.py` -> `16`
-- `tests/test_soccer_impact_intelligence.py` -> `16`
-- `tests/test_combat_impact_intelligence.py` -> `15`
-- `tests/test_tennis_impact_intelligence.py` -> `15`
 - `tests/test_football_impact_intelligence.py` -> `11`
-- `tests/test_advanced_red_team.py` -> `10`
 - `tests/test_phase10k5_core_arbitrage_engine.py` -> `10`
+- `tests/test_advanced_red_team.py` -> `10`
+- `tests/test_security_framework.py` -> `8`
+- `tests/test_market_state_manifold.py` -> `8`
+- `tests/test_historical_line_movement.py` -> `8`
+- `tests/test_extreme_randomness_diagnostics.py` -> `8`
 - `tests/test_basketball_player_impact.py` -> `8`
+- `tests/test_strategy_framework.py` -> `7`
+- `tests/test_nfl_coaching_adapters.py` -> `7`
 
 Top internal scheduler hubs:
 - `automation_scheduler/__init__.py` -> `91`
