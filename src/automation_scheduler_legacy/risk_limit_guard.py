@@ -4,7 +4,7 @@ from typing import Any
 
 from src.services.ledger_service import append_security_event
 from .security_event_types import RISK_LIMIT_BLOCKED
-from .security_policy import locked_safety_flags
+from src.security.policy import locked_safety_flags
 
 
 DEFAULT_RISK_LIMITS = {

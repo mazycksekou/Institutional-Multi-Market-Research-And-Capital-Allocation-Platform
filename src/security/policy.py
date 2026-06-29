@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 from typing import Any
 
-
 ALLOWED_AI_PROVIDERS = ["deepseek", "openai"]
 DEFAULT_AI_PROVIDER = "deepseek"
 
@@ -104,6 +103,21 @@ FORBIDDEN_ACTION_VALUES = {
     "disable_kill_switch",
 }
 
+__all__ = [
+    "ALLOWED_AI_PROVIDERS",
+    "DEFAULT_AI_PROVIDER",
+    "AI_ALLOWED_CAPABILITIES",
+    "AI_FORBIDDEN_CAPABILITIES",
+    "EXECUTION_TRUE_FIELDS",
+    "EXECUTABLE_PAYLOAD_KEYS",
+    "FORBIDDEN_ACTION_VALUES",
+    "env_bool",
+    "locked_safety_flags",
+    "kill_switch_state",
+    "detect_execution_authority_violations",
+    "enforce_ai_capability_boundary",
+]
+
 
 def env_bool(name: str, default: bool = False) -> bool:
     raw = os.getenv(name)
@@ -201,3 +215,4 @@ def enforce_ai_capability_boundary(payload: Any, *, actor_provider: str | None =
         "ai_can_only_flag_downgrade_disagree_or_request_more_data": True,
         **locked_safety_flags(),
     }
+

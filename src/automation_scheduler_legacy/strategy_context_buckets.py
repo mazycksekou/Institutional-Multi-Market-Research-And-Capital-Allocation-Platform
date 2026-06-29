@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import Any, Mapping
 
-from .secret_safety import redact_sensitive
-from .security_policy import locked_safety_flags
+from src.security.secret_safety import redact_sensitive
+from src.security.policy import locked_safety_flags
 
 
 CONTEXT_BUCKET_FIELDS = (

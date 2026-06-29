@@ -37,6 +37,7 @@ _CANONICAL_MODULES: tuple[str, ...] = (
     "src.market_intelligence.sports",
     "src.providers",
     "src.providers.health",
+    "src.security",
     "src.providers.policy",
     "src.research.feature_control",
     "src.research.history",
@@ -68,7 +69,6 @@ _LEGACY_MODULES: tuple[str, ...] = (
     "src.automation_scheduler_legacy.owner_approval_gate",
     "src.automation_scheduler_legacy.representation_feature_builder",
     "src.automation_scheduler_legacy.response_compactor",
-    "src.automation_scheduler_legacy.secret_safety",
     "src.automation_scheduler_legacy.security_readiness_report",
     "src.automation_scheduler_legacy.strategy_readiness_report",
     "src.automation_scheduler_legacy.strategy_router",
@@ -76,7 +76,6 @@ _LEGACY_MODULES: tuple[str, ...] = (
     "src.automation_scheduler_legacy.source_event_link_resolver",
     "src.services.scheduler_config",
     "src.automation_scheduler_legacy.security_event_types",
-    "src.automation_scheduler_legacy.security_policy",
     "src.automation_scheduler_legacy.streamlit_dashboard_data",
     "src.automation_scheduler_legacy.zero_dte_fixture_template",
 )

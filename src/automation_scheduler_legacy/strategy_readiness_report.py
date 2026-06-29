@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import Any, Mapping
 
 from .hard_gate_policy import evaluate_hard_gates
-from .secret_safety import redact_sensitive
-from .security_policy import locked_safety_flags
+from src.security.secret_safety import redact_sensitive
+from src.security.policy import locked_safety_flags
 from .strategy_registry import get_strategy_registry, normalize_strategy_record
 
 

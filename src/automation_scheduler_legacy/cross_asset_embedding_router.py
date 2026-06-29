@@ -4,7 +4,7 @@ from typing import Any
 
 from src.market_intelligence.manifold import build_manifold_feature_vector, map_cross_asset_item, route_cross_asset_embedding as _route_cross_asset_embedding
 from .representation_feature_builder import build_representation_vector
-from .security_policy import locked_safety_flags
+from src.security.policy import locked_safety_flags
 
 
 def route_cross_asset_embedding(

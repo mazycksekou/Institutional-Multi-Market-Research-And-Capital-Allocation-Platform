@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from .random_matrix_risk import evaluate_random_matrix_risk
-from .security_policy import locked_safety_flags
+from src.security.policy import locked_safety_flags
 
 
 def diagnose_correlation_structure(payload: dict[str, Any] | None = None) -> dict[str, Any]:

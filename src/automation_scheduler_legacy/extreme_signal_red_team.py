@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from .extreme_randomness_diagnostics import diagnose_extreme_randomness
-from .security_policy import locked_safety_flags
+from src.security.policy import locked_safety_flags
 
 
 def run_extreme_signal_red_team(

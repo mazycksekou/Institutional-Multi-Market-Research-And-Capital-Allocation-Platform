@@ -3,8 +3,8 @@ from __future__ import annotations
 import math
 from typing import Any, Iterable
 
-from .secret_safety import redact_sensitive, secret_safety_fields
-from .security_policy import detect_execution_authority_violations, locked_safety_flags
+from src.security.secret_safety import redact_sensitive, secret_safety_fields
+from src.security.policy import detect_execution_authority_violations, locked_safety_flags
 
 
 SUPPORTED_FOOTBALL_SPORTS = (

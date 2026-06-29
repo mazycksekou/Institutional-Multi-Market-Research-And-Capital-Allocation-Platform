@@ -4,7 +4,7 @@ from typing import Any
 
 from .ai_provider_security import get_ai_provider_config
 from src.data.data_paths import get_storage_health
-from .security_policy import ALLOWED_AI_PROVIDERS, DEFAULT_AI_PROVIDER, kill_switch_state, locked_safety_flags
+from src.security.policy import ALLOWED_AI_PROVIDERS, DEFAULT_AI_PROVIDER, kill_switch_state, locked_safety_flags
 
 
 def build_security_readiness_report(*, base_data_dir: str | None = None) -> dict[str, Any]:

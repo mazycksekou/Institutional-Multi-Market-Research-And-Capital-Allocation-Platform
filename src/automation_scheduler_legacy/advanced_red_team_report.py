@@ -7,8 +7,8 @@ from typing import Any, Mapping
 from .advanced_shape_diagnostics import run_advanced_shape_diagnostics
 from src.data.data_paths import resolve_base_data_dir
 from src.services.scheduler_config import safe_run_id, sanitize_filename, utc_now_iso
-from .secret_safety import redact_sensitive, secret_safety_fields
-from .security_policy import locked_safety_flags
+from src.security.secret_safety import redact_sensitive, secret_safety_fields
+from src.security.policy import locked_safety_flags
 
 
 SCHEMA_VERSION = "automation_scheduler.v1.advanced_red_team.v1"

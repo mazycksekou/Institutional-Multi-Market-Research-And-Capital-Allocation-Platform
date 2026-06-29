@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Mapping
 
-from .security_policy import locked_safety_flags
+from src.security.policy import locked_safety_flags
 from .strategy_context_buckets import candidate_available_inputs
 from .strategy_registry import normalize_strategy_record
 

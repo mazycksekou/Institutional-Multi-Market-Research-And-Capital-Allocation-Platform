@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from .security_policy import locked_safety_flags
+from src.security.policy import locked_safety_flags
 
 
 TAIL_EVENT_TYPES = {

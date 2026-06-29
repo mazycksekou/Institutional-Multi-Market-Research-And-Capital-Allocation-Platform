@@ -4,7 +4,7 @@ import os
 from typing import Any
 
 from .provider_allowlist import normalize_provider_name
-from .security_policy import locked_safety_flags
+from src.security.policy import locked_safety_flags
 
 
 ALLOWED_ADVANCED_RED_TEAM_AI_PROVIDERS = ["deepseek", "openai"]

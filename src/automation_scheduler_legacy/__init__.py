@@ -895,7 +895,7 @@ def get_strategy_disagreements(*, base_data_dir: str | None = None, limit: int =
 
 def get_advanced_diagnostic_registry_snapshot(base_data_dir: str | None = None):
     from .advanced_shape_diagnostics import get_advanced_diagnostic_registry
-    from .security_policy import locked_safety_flags
+    from src.security.policy import locked_safety_flags
 
     registry = get_advanced_diagnostic_registry()
     return {
@@ -983,7 +983,7 @@ def evaluate_ai_analyst_provider(
 
 
 def enforce_ai_analysis_boundaries(payload: dict | list | None = None, *, actor_provider: str | None = None):
-    from .security_policy import enforce_ai_capability_boundary
+    from src.security.policy import enforce_ai_capability_boundary
 
     return enforce_ai_capability_boundary(payload or {}, actor_provider=actor_provider)
 

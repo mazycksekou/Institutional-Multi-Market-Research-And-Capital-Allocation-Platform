@@ -3,7 +3,6 @@ from __future__ import annotations
 import re
 from typing import Any, Mapping
 
-
 REDACTED = "[redacted]"
 OMITTED = "[omitted]"
 
@@ -56,6 +55,21 @@ SECRET_VALUE_PATTERNS = (
     re.compile(r"\btoken\s+[A-Za-z0-9._\-]{12,}\b", re.IGNORECASE),
     re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----.*?-----END [A-Z ]*PRIVATE KEY-----", re.DOTALL),
 )
+
+__all__ = [
+    "REDACTED",
+    "OMITTED",
+    "SECRET_KEY_PARTS",
+    "RAW_PAYLOAD_KEYS",
+    "SECRET_VALUE_PATTERNS",
+    "is_secret_key",
+    "looks_like_secret_value",
+    "redact_string",
+    "contains_secret_like_content",
+    "redact_sensitive",
+    "secret_safety_fields",
+    "assert_no_secret_leak",
+]
 
 
 def is_secret_key(key: str) -> bool:

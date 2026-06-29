@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import Any, Mapping
 
 from src.brokerage.readiness import evaluate_future_execution_eligibility
-from .secret_safety import redact_sensitive
-from .security_policy import locked_safety_flags
+from src.security.secret_safety import redact_sensitive
+from src.security.policy import locked_safety_flags
 from .strategy_context_buckets import build_context_bucket
 from .strategy_registry import normalize_strategy_record
 

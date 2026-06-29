@@ -3,8 +3,8 @@ from __future__ import annotations
 import importlib.util
 from typing import Any, Mapping
 
-from .secret_safety import redact_sensitive
-from .security_policy import locked_safety_flags
+from src.security.secret_safety import redact_sensitive
+from src.security.policy import locked_safety_flags
 
 
 def _dependency_available() -> bool:

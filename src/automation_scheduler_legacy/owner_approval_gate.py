@@ -11,7 +11,7 @@ from src.services.ledger_service import append_security_event
 from src.data.data_paths import resolve_base_data_dir
 from src.services.scheduler_config import hash_payload, sanitize_filename
 from .security_event_types import OWNER_APPROVAL_EXPIRED, OWNER_APPROVAL_INVALID, OWNER_APPROVAL_MISSING, NONCE_REPLAY_DETECTED
-from .security_policy import locked_safety_flags
+from src.security.policy import locked_safety_flags
 
 
 SCOPE_FIELDS = ("action", "asset_type", "market_type", "provider", "max_size", "max_notional", "time_window", "approval_expires_at")

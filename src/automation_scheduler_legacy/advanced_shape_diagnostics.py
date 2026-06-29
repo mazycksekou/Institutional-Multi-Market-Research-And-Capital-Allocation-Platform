@@ -10,8 +10,8 @@ from .conformal_uncertainty import run_conformal_uncertainty
 from .contrastive_embedding_diagnostics import run_contrastive_embedding_diagnostics, run_nonlinear_embedding_diagnostics
 from .dynamical_systems_diagnostics import run_dynamical_systems_diagnostics, run_sliding_window_topology
 from .information_theory_diagnostics import run_information_theory_diagnostics
-from .secret_safety import redact_sensitive, secret_safety_fields
-from .security_policy import detect_execution_authority_violations, locked_safety_flags
+from src.security.secret_safety import redact_sensitive, secret_safety_fields
+from src.security.policy import detect_execution_authority_violations, locked_safety_flags
 from .topological_red_team import run_topological_red_team
 
 

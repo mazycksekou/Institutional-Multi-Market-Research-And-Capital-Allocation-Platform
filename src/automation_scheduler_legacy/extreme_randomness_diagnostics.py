@@ -4,7 +4,7 @@ from typing import Any
 
 from .random_baseline_comparison import compare_to_random_baseline
 from .random_matrix_risk import evaluate_random_matrix_risk
-from .security_policy import locked_safety_flags
+from src.security.policy import locked_safety_flags
 from .tail_event_classifier import classify_tail_event
 from .tracy_widom_research import evaluate_tracy_widom_research
 

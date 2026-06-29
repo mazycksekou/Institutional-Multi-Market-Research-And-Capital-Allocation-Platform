@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from .security_policy import locked_safety_flags
+from src.security.policy import locked_safety_flags
 
 
 MINIMUM_CAUSAL_SAMPLE_SIZE = 200

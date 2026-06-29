@@ -3,7 +3,7 @@ from __future__ import annotations
 import math
 from typing import Any
 
-from .security_policy import locked_safety_flags
+from src.security.policy import locked_safety_flags
 
 
 MIN_BASELINE_SAMPLE_SIZE = 30

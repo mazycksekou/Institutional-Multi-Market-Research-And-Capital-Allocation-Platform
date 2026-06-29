@@ -21,7 +21,7 @@ from .basketball_player_impact_red_team import review_basketball_player_impact
 from .basketball_possession_impact import evaluate_possession_impact
 from .basketball_role_context import evaluate_role_context
 from .basketball_tracking_opportunity import evaluate_tracking_opportunity
-from .security_policy import detect_execution_authority_violations
+from src.security.policy import detect_execution_authority_violations
 
 
 AVAILABILITY_INPUTS = (

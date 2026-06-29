@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Mapping
 
-from .security_policy import locked_safety_flags
+from src.security.policy import locked_safety_flags
 
 
 def _outcome_label(row: Mapping[str, Any]) -> str | None:

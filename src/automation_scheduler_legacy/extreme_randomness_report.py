@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from src.data.data_paths import get_storage_health, resolve_base_data_dir
-from .security_policy import locked_safety_flags
+from src.security.policy import locked_safety_flags
 from .universality_research_lanes import build_universality_research_lane
 
 

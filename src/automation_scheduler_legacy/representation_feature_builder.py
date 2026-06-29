@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from .manifold_feature_builder import FEATURE_VECTOR_VERSION, build_manifold_feature_vector
-from .security_policy import locked_safety_flags
+from src.security.policy import locked_safety_flags
 
 
 REPRESENTATION_VECTOR_VERSION = "cross_asset_representation_vector_v1"

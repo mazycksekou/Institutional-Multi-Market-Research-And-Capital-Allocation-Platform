@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from .secret_safety import looks_like_secret_value, redact_string
+from src.security.secret_safety import looks_like_secret_value, redact_string
 
 _SECRET_KEYS = (
     "key",
