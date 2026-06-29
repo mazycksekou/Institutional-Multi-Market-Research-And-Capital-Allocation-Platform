@@ -159,8 +159,8 @@ def test_deleted_prediction_market_legacy_modules_stay_deleted() -> None:
     deleted_modules = [
         "providers.kalshi_provider",
         "betting_providers.kalshi_api",
-        "automation_scheduler.kalshi_readonly_adapter",
-        "automation_scheduler.kalshi_market_provider",
+        'src.automation_scheduler_legacy.kalshi_readonly_adapter',
+        'src.automation_scheduler_legacy.kalshi_market_provider',
         "kalshi_client",
     ]
 

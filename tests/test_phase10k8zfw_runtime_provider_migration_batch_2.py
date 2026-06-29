@@ -31,7 +31,7 @@ CANONICAL_MODULES = [
 
 LEGACY_MODULES = []
 
-FORBIDDEN_IMPORT_PREFIXES = ("automation_scheduler",)
+FORBIDDEN_IMPORT_PREFIXES = ('src.automation_scheduler_legacy',)
 FORBIDDEN_DIRECT_IMPORTS = {"requests", "httpx", "yfinance", "openai", "anthropic", "playwright", "selenium", "alpaca", "robinhood", "ib_insync", "ccxt"}
 
 

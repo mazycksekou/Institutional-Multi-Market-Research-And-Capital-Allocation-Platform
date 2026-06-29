@@ -18,27 +18,9 @@ import sqlite3
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from automation_scheduler.historical_odds_importers import (
-    build_canonical_historical_odds_row,
-    CANONICAL_HISTORICAL_ODDS_REQUIRED_FIELDS,
-)
-from automation_scheduler.historical_odds_sqlite import (
-    connect_historical_odds_db,
-    initialize_historical_odds_db,
-    query_historical_odds_rows,
-    upsert_canonical_historical_odds_rows,
-)
-from automation_scheduler.historical_backtest_bridge import (
-    DEFAULT_HISTORICAL_MODEL_ID,
-    DEFAULT_SQLITE_BACKTEST_LIMIT,
-    HISTORICAL_BACKTEST_BRIDGE_VERSION,
-    query_sqlite_backtest_rows,
-    run_sqlite_historical_backtest,
-    sqlite_odds_row_to_backtest_row,
-    sqlite_odds_rows_to_backtest_rows,
-    summarize_sqlite_historical_backtest,
-    get_sqlite_backtest_filter_options,
-)
+from src.services.streamlit_dashboard_facade import build_canonical_historical_odds_row, CANONICAL_HISTORICAL_ODDS_REQUIRED_FIELDS
+from src.services.streamlit_dashboard_facade import connect_historical_odds_db, initialize_historical_odds_db, query_historical_odds_rows, upsert_canonical_historical_odds_rows
+from src.services.streamlit_dashboard_facade import DEFAULT_HISTORICAL_MODEL_ID, DEFAULT_SQLITE_BACKTEST_LIMIT, HISTORICAL_BACKTEST_BRIDGE_VERSION, query_sqlite_backtest_rows, run_sqlite_historical_backtest, sqlite_odds_row_to_backtest_row, sqlite_odds_rows_to_backtest_rows, summarize_sqlite_historical_backtest, get_sqlite_backtest_filter_options
 
 # ---------------------------------------------------------------------------
 # Helpers

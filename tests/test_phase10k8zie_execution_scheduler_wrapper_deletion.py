@@ -17,13 +17,13 @@ def test_execution_scheduler_wrapper_deletion_docs_state_no_deletion() -> None:
 
 def test_execution_scheduler_wrappers_still_exist() -> None:
     for relpath in [
-        "automation_scheduler/paper_trade_ledger.py",
-        "automation_scheduler/paper_decision_ledger.py",
+        'src/automation_scheduler_legacy/paper_trade_ledger.py',
+        'src/automation_scheduler_legacy/paper_decision_ledger.py',
     ]:
         assert (ROOT / relpath).exists()
     for relpath in [
-        "automation_scheduler/execution_gatekeeper.py",
-        "automation_scheduler/execution_authorization.py",
+        'src/automation_scheduler_legacy/execution_gatekeeper.py',
+        'src/automation_scheduler_legacy/execution_authorization.py',
     ]:
         assert not (ROOT / relpath).exists()
 

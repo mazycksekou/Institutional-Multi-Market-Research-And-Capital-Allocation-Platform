@@ -12,7 +12,7 @@ DOCS = [
 ]
 
 RUNTIME_FILES = [
-    ROOT / "automation_scheduler" / "__init__.py",
+    ROOT / "src" / "automation_scheduler_legacy" / "__init__.py",
     ROOT / "src" / "brokerage" / "readiness.py",
     ROOT / "src" / "api" / "automation_institutional_lab_routes.py",
 ]
@@ -55,3 +55,4 @@ def test_runtime_files_import_canonical_services_only() -> None:
         "automation_scheduler.institutional_execution_desk",
     ]:
         assert wrapper_name not in text
+

@@ -16,8 +16,8 @@ TEST_REDIRECTION_PATH = ROOT / "FINAL_PROVIDER_FOUNDATION_TEST_REDIRECTION_AFTER
 DELETE_READINESS_PATH = ROOT / "FINAL_PROVIDER_FOUNDATION_DELETE_READINESS_AFTER_10K8ZGC.md"
 
 TARGET_MODULES = {
-    "automation_scheduler.provider_registry",
-    "automation_scheduler.provider_write_firewall",
+    'src.automation_scheduler_legacy.provider_registry',
+    'src.automation_scheduler_legacy.provider_write_firewall',
 }
 
 ALLOWED_TEST_TEXT_REFERENCES = {
@@ -141,7 +141,7 @@ def test_phase10k8zgc_runtime_and_test_redirect(monkeypatch, tmp_path):
 
     canonical_registry = importlib.import_module("src.providers.registry")
     canonical_firewall = importlib.import_module("src.providers.policy.write_firewall")
-    scheduler_pkg = importlib.import_module("automation_scheduler")
+    scheduler_pkg = importlib.import_module('src.automation_scheduler_legacy')
     execution_authorization = importlib.import_module("src.brokerage.readiness")
 
     monkeypatch.setattr(os, "getenv", original_getenv)
@@ -150,9 +150,9 @@ def test_phase10k8zgc_runtime_and_test_redirect(monkeypatch, tmp_path):
     assert not (ROOT / "automation_scheduler" / "provider_registry.py").exists()
     assert not (ROOT / "automation_scheduler" / "provider_write_firewall.py").exists()
     with pytest.raises(ModuleNotFoundError):
-        importlib.import_module("automation_scheduler.provider_registry")
+        importlib.import_module('src.automation_scheduler_legacy.provider_registry')
     with pytest.raises(ModuleNotFoundError):
-        importlib.import_module("automation_scheduler.provider_write_firewall")
+        importlib.import_module('src.automation_scheduler_legacy.provider_write_firewall')
 
     canonical_registry_snapshot = canonical_registry.get_provider_registry(include_legacy_aliases=True)
     scheduler_snapshot = scheduler_pkg.get_provider_registry_snapshot(base_data_dir=str(tmp_path))

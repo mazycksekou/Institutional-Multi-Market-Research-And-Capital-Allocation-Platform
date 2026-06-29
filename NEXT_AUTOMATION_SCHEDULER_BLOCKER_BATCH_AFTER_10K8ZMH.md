@@ -1,12 +1,11 @@
 # Next Automation Scheduler Blocker Batch After 10K8ZMH
 
 Next batch focus:
-- Start with `tests/test_streamlit_dashboard_data.py`, because it is the largest remaining test blocker.
-- Then migrate the sport-specific intelligence suites: baseball, golf, hockey, soccer, combat, tennis, and football.
-- Then sweep the next high-volume families: advanced red-team, arbitrage, backtesting, calibration, historical line movement, market state manifold, security, and strategy tests.
-- Leave the internal package graph for last; the test surface is still the gate to deletion.
+- Start with `tests/test_nfl_coaching_adapters.py`, `tests/test_nfl_open_data_backfill.py`, `tests/test_basketball_player_impact.py`, `tests/test_data_intelligence_stack.py`, `tests/test_market_state_manifold.py`, and `tests/test_strategy_framework.py`.
+- Then sweep the remaining 2-hit test files.
+- Leave `src/automation_scheduler_legacy/__init__.py` and `src/automation_scheduler_legacy/scheduler_runner.py` for last; they are the largest internal hubs.
 
 Recommended order:
-1. Redirect the largest test import clusters to canonical `src.*` modules.
-2. Re-run the import census and confirm the test count drops from `524`.
-3. When test imports reach `0`, re-check whether `automation_scheduler/` can be deleted cleanly.
+1. Redirect the highest-count legacy test imports to canonical `src.*` modules.
+2. Re-run the import census and confirm the test count drops from `105`.
+3. Re-check whether the relocated legacy namespace can be collapsed further.

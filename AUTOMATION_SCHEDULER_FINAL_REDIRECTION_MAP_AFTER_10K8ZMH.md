@@ -12,6 +12,8 @@ Canonical destination families already in place:
 - `disabled AI-only surfaces` -> `src.ai`
 
 Canonical modules verified as safe to import in this phase:
+- `src.services.streamlit_dashboard_facade`
+- `src.services.automation_scheduler_facade`
 - `src.market_intelligence.manifold`
 - `src.data.historical_odds`
 - `src.backtesting.engine`
@@ -22,4 +24,5 @@ Canonical modules verified as safe to import in this phase:
 - `src.ai.readiness`
 
 Result:
-- The redirection map is complete enough for the remaining blocker batch, but the actual test migration was deferred because the package is still blocked.
+- The runtime bridge is canonical.
+- The remaining migration work is the relocated legacy namespace, not the deleted top-level package.

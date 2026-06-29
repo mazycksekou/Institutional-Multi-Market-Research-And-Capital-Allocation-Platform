@@ -1,6 +1,6 @@
 import unittest
 
-from automation_scheduler.risk_of_ruin import evaluate_risk_of_ruin
+from src.automation_scheduler_legacy.risk_of_ruin import evaluate_risk_of_ruin
 
 
 class RiskOfRuinTests(unittest.TestCase):

@@ -3,19 +3,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from automation_scheduler.model_data_field_catalog import (
-    MODEL_DATA_FIELD_GROUPS_BY_MODE,
-    PAPER_ARBITRAGE_OUTPUT_FIELDS,
-    SPORTS_MODEL_INPUT_FIELD_GROUPS_BY_SPORT,
-    field_groups_for_model_mode,
-    fields_for_model_mode,
-    fields_for_sport,
-)
-from automation_scheduler.technical_signal_fields import (
-    TECHNICAL_SIGNAL_FIELDS,
-    TECHNICAL_SIGNAL_FIELDS_BY_MARKET,
-    technical_fields_for_market,
-)
+from src.services.streamlit_dashboard_facade import MODEL_DATA_FIELD_GROUPS_BY_MODE, PAPER_ARBITRAGE_OUTPUT_FIELDS, SPORTS_MODEL_INPUT_FIELD_GROUPS_BY_SPORT, field_groups_for_model_mode, fields_for_model_mode, fields_for_sport
+from src.services.streamlit_dashboard_facade import TECHNICAL_SIGNAL_FIELDS, TECHNICAL_SIGNAL_FIELDS_BY_MARKET, technical_fields_for_market
 
 
 ROOT = Path(__file__).resolve().parents[1]

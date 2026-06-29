@@ -1,6 +1,6 @@
 import unittest
 
-from automation_scheduler.institutional_risk_engine import RISK_CATEGORIES, assess_institutional_risk, sample_risk_output
+from src.services.streamlit_dashboard_facade import RISK_CATEGORIES, assess_institutional_risk, sample_risk_output
 
 
 class TestInstitutionalRiskEngine(unittest.TestCase):

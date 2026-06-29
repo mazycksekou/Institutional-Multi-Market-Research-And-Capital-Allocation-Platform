@@ -1,6 +1,6 @@
 import unittest
 
-from automation_scheduler.middles.total_middle import detect_total_middle
+from src.services.streamlit_dashboard_facade import detect_total_middle
 
 
 class TestMiddleTotal(unittest.TestCase):

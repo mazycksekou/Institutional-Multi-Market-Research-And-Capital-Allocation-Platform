@@ -102,8 +102,8 @@ def test_canonical_prediction_market_surfaces_import_and_legacy_shells_stay_disa
         "kalshi_client.py",
         "providers/kalshi_provider.py",
         "betting_providers/kalshi_api.py",
-        "automation_scheduler/kalshi_readonly_adapter.py",
-        "automation_scheduler/kalshi_market_provider.py",
+        'src/automation_scheduler_legacy/kalshi_readonly_adapter.py',
+        'src/automation_scheduler_legacy/kalshi_market_provider.py',
     ]:
         path = ROOT / relative
         assert not path.exists(), f"legacy shell should already be deleted: {path}"

@@ -30,8 +30,8 @@ def test_final_execution_blocker_canonical_path_imports_and_wrappers_are_removed
     brokerage = importlib.import_module("src.brokerage")
     readiness = importlib.import_module("src.brokerage.readiness")
     decision_engine = importlib.import_module("src.services.decision_engine")
-    paper_trade_ledger = importlib.import_module("automation_scheduler.paper_trade_ledger")
-    paper_decision_ledger = importlib.import_module("automation_scheduler.paper_decision_ledger")
+    paper_trade_ledger = importlib.import_module('src.automation_scheduler_legacy.paper_trade_ledger')
+    paper_decision_ledger = importlib.import_module('src.automation_scheduler_legacy.paper_decision_ledger')
 
     plan = decision_engine.build_brokerage_execution_plan(
         {"ticker": "TEST", "stake": 10, "american_odds": -110, "decision_id": "d1", "provider": "demo"}

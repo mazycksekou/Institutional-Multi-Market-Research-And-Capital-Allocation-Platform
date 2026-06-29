@@ -7,18 +7,8 @@ import urllib.error
 from pathlib import Path
 from unittest.mock import patch
 
-import automation_scheduler.open_sports_history_import as open_sports_history_import
-from automation_scheduler.open_sports_history_import import (
-    HARD_MAX_RECORDS,
-    NFLVERSE_RAW_GAMES_CSV_FALLBACK_URL,
-    build_nflverse_schedule_availability,
-    classify_open_data_source_url,
-    build_open_sports_history_import_report,
-    normalize_open_sports_history_row,
-    resolve_nflverse_schedules_source,
-    validate_nflverse_schedule_columns,
-    write_open_sports_history_import_report,
-)
+import src.automation_scheduler_legacy.open_sports_history_import as open_sports_history_import
+from src.services.streamlit_dashboard_facade import HARD_MAX_RECORDS, NFLVERSE_RAW_GAMES_CSV_FALLBACK_URL, build_nflverse_schedule_availability, classify_open_data_source_url, build_open_sports_history_import_report, normalize_open_sports_history_row, resolve_nflverse_schedules_source, validate_nflverse_schedule_columns, write_open_sports_history_import_report
 
 
 class FakeHttpResponse:
@@ -47,7 +37,7 @@ class TestOpenSportsHistoryImport(unittest.TestCase):
         return report["preview_rows"][index]
 
     def test_no_download_occurs_unless_allow_download_is_set(self):
-        with patch("automation_scheduler.open_sports_history_import.urllib.request.urlopen") as urlopen:
+        with patch('src.automation_scheduler_legacy.open_sports_history_import.urllib.request.urlopen') as urlopen:
             report = build_open_sports_history_import_report(source_id="nflverse_nfl", season=2024)
         self.assertEqual(report["blocked_reason"], "download_not_allowed")
         self.assertEqual(report["downloads_attempted"], 0)
@@ -70,7 +60,7 @@ class TestOpenSportsHistoryImport(unittest.TestCase):
                 },
             ],
         }
-        with patch("automation_scheduler.open_sports_history_import._urlopen_json", return_value=release):
+        with patch('src.automation_scheduler_legacy.open_sports_history_import._urlopen_json', return_value=release):
             resolved = resolve_nflverse_schedules_source()
 
         self.assertTrue(resolved["source_url_verified"])
@@ -84,7 +74,7 @@ class TestOpenSportsHistoryImport(unittest.TestCase):
         self.assertEqual(resolved["provider_calls_succeeded"], 1)
 
     def test_nflverse_resolver_falls_back_to_official_raw_games_csv_when_release_asset_missing(self):
-        with patch("automation_scheduler.open_sports_history_import._urlopen_json", return_value={"assets": []}):
+        with patch('src.automation_scheduler_legacy.open_sports_history_import._urlopen_json', return_value={"assets": []}):
             resolved = resolve_nflverse_schedules_source()
 
         self.assertTrue(resolved["source_url_verified"])
@@ -96,7 +86,7 @@ class TestOpenSportsHistoryImport(unittest.TestCase):
         self.assertEqual(resolved["_download_url"], NFLVERSE_RAW_GAMES_CSV_FALLBACK_URL)
 
     def test_nflverse_resolver_can_report_unresolved_without_fallback(self):
-        with patch("automation_scheduler.open_sports_history_import._urlopen_json", return_value={"assets": []}):
+        with patch('src.automation_scheduler_legacy.open_sports_history_import._urlopen_json', return_value={"assets": []}):
             resolved = resolve_nflverse_schedules_source(allow_fallback=False)
 
         self.assertFalse(resolved["source_url_verified"])
@@ -105,7 +95,7 @@ class TestOpenSportsHistoryImport(unittest.TestCase):
         self.assertIsNone(resolved["_download_url"])
 
     def test_nflverse_resolver_falls_back_after_provider_error(self):
-        with patch("automation_scheduler.open_sports_history_import._urlopen_json", side_effect=urllib.error.URLError("boom")):
+        with patch('src.automation_scheduler_legacy.open_sports_history_import._urlopen_json', side_effect=urllib.error.URLError("boom")):
             resolved = resolve_nflverse_schedules_source()
 
         self.assertTrue(resolved["fallback_used"])
@@ -166,7 +156,7 @@ class TestOpenSportsHistoryImport(unittest.TestCase):
                 return FakeHttpResponse(csv_text)
             raise AssertionError(f"unexpected url {url}")
 
-        with patch("automation_scheduler.open_sports_history_import.urllib.request.urlopen", side_effect=fake_urlopen):
+        with patch('src.automation_scheduler_legacy.open_sports_history_import.urllib.request.urlopen', side_effect=fake_urlopen):
             report = build_open_sports_history_import_report(
                 source_id="nflverse_nfl",
                 season=2024,
@@ -245,7 +235,7 @@ class TestOpenSportsHistoryImport(unittest.TestCase):
             "requires_budget_approval": True,
             "supports_direct_download": False,
         }
-        with patch("automation_scheduler.open_sports_history_import.source_by_id", return_value=paid_source):
+        with patch('src.automation_scheduler_legacy.open_sports_history_import.source_by_id', return_value=paid_source):
             paid = build_open_sports_history_import_report(source_id="paid_fixture", input_path="sample.csv")
         self.assertFalse(paid["ok"])
         self.assertEqual(paid["blocked_reason"], "paid_source_not_approved")

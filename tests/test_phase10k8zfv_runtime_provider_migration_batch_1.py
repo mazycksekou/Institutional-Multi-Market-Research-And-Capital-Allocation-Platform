@@ -26,7 +26,7 @@ CANONICAL_MODULES = [
     "src.providers.zero_dte_stocks.models",
 ]
 
-FORBIDDEN_IMPORT_PREFIXES = ("automation_scheduler", "betting_providers", "providers")
+FORBIDDEN_IMPORT_PREFIXES = ('src.automation_scheduler_legacy', "betting_providers", "providers")
 FORBIDDEN_DIRECT_IMPORTS = {"requests", "httpx", "yfinance", "openai", "anthropic", "playwright", "selenium", "alpaca", "robinhood", "ib_insync", "ccxt"}
 
 

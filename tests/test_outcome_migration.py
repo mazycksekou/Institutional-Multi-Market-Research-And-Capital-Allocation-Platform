@@ -4,22 +4,12 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
-from automation_scheduler.outcome_migration import (
-    build_import_plan,
-    build_outcome_identity,
-    build_kalshi_outcome_migration_package,
-    compare_migration_package_to_render,
-    dedupe_migration_outcomes,
-    discover_local_outcome_records,
-    import_local_settlement_records,
-    validate_migration_outcome,
-    write_migration_package,
-)
-from automation_scheduler import outcome_migration as migration_module
-from automation_scheduler.calibration import build_calibration_report
-from automation_scheduler.outcome_store import ingest_outcome_records, load_outcome_records
-from automation_scheduler.paper_decision_ledger import load_paper_decisions
-from automation_scheduler.paper_decision_ledger import persist_paper_decisions_for_review_items
+from src.services.streamlit_dashboard_facade import build_import_plan, build_outcome_identity, build_kalshi_outcome_migration_package, compare_migration_package_to_render, dedupe_migration_outcomes, discover_local_outcome_records, import_local_settlement_records, validate_migration_outcome, write_migration_package
+from src.services.streamlit_dashboard_facade import outcome_migration as migration_module
+from src.services.streamlit_dashboard_facade import build_calibration_report
+from src.services.streamlit_dashboard_facade import ingest_outcome_records, load_outcome_records
+from src.services.streamlit_dashboard_facade import load_paper_decisions
+from src.services.streamlit_dashboard_facade import persist_paper_decisions_for_review_items
 
 
 class TestOutcomeMigration(unittest.TestCase):

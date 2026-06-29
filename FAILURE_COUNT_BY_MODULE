@@ -1,0 +1,10 @@
+# FAILURE_COUNT_BY_MODULE
+
+- Backtesting: 29 targeted tests recovered.
+- Market intelligence and source-event links: 61 targeted tests recovered.
+- Data/risk/calibration/candlestick: 21 targeted tests recovered.
+- Reporting/historical odds/feature ablation: 64 targeted tests recovered.
+- Replay/institutional/NFL/pattern/field catalog/fixture helpers: 84 targeted tests recovered.
+- Phase checkpoint tests: 44 targeted tests recovered.
+
+The final full-gate count is recorded in validation output after the full run.

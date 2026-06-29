@@ -55,12 +55,12 @@ def test_required_docs_and_runtime_redirection_text() -> None:
 
 def test_runtime_scheduler_files_import_the_canonical_bridge_and_not_legacy_shells() -> None:
     runtime_files = [
-        "automation_scheduler/__init__.py",
-        "automation_scheduler/scheduler_runner.py",
+        'src/automation_scheduler_legacy/__init__.py',
+        'src/automation_scheduler_legacy/scheduler_runner.py',
         "src/services/settlement_service.py",
-        "automation_scheduler/calibration_collector.py",
-        "automation_scheduler/prediction_market_outcome_candidates.py",
-        "automation_scheduler/kalshi_readonly_readiness.py",
+        'src/automation_scheduler_legacy/calibration_collector.py',
+        'src/automation_scheduler_legacy/prediction_market_outcome_candidates.py',
+        'src/automation_scheduler_legacy/kalshi_readonly_readiness.py',
     ]
     for relative in runtime_files:
         text = _read(relative)
@@ -76,12 +76,12 @@ def test_canonical_prediction_market_bridge_connectors_and_legacy_shells_remain_
     odds_bridge = importlib.import_module("src.services.odds_runtime_bridge")
     odds_connector = importlib.import_module("src.connectors.odds_data")
     odds_provider = importlib.import_module("src.providers.sportsbooks")
-    automation_scheduler_pkg = importlib.import_module("automation_scheduler")
-    scheduler_runner = importlib.import_module("automation_scheduler.scheduler_runner")
+    automation_scheduler_pkg = importlib.import_module('src.automation_scheduler_legacy')
+    scheduler_runner = importlib.import_module('src.automation_scheduler_legacy.scheduler_runner')
     settlement_service = importlib.import_module("src.services.settlement_service")
-    calibration_collector = importlib.import_module("automation_scheduler.calibration_collector")
-    outcome_candidates = importlib.import_module("automation_scheduler.prediction_market_outcome_candidates")
-    readiness = importlib.import_module("automation_scheduler.kalshi_readonly_readiness")
+    calibration_collector = importlib.import_module('src.automation_scheduler_legacy.calibration_collector')
+    outcome_candidates = importlib.import_module('src.automation_scheduler_legacy.prediction_market_outcome_candidates')
+    readiness = importlib.import_module('src.automation_scheduler_legacy.kalshi_readonly_readiness')
 
     assert bridge is not None
     assert connector is not None

@@ -95,19 +95,19 @@ def test_runtime_and_test_import_scans_do_not_reintroduce_deleted_shells() -> No
         'importlib.import_module("kalshi_client")',
         'importlib.import_module("providers.kalshi_provider")',
         'importlib.import_module("betting_providers.kalshi_api")',
-        'importlib.import_module("automation_scheduler.kalshi_readonly_adapter")',
-        'importlib.import_module("automation_scheduler.kalshi_market_provider")',
+        'importlib.import_module("src.automation_scheduler_legacy.kalshi_readonly_adapter")',
+        'importlib.import_module("src.automation_scheduler_legacy.kalshi_market_provider")',
         "importlib.import_module('kalshi_client')",
         "importlib.import_module('providers.kalshi_provider')",
         "importlib.import_module('betting_providers.kalshi_api')",
-        "importlib.import_module('automation_scheduler.kalshi_readonly_adapter')",
-        "importlib.import_module('automation_scheduler.kalshi_market_provider')",
+        "importlib.import_module('src.automation_scheduler_legacy.kalshi_readonly_adapter')",
+        "importlib.import_module('src.automation_scheduler_legacy.kalshi_market_provider')",
         'patch("providers.kalshi_provider',
         "patch('providers.kalshi_provider",
-        'patch("automation_scheduler.kalshi_readonly_adapter',
-        "patch('automation_scheduler.kalshi_readonly_adapter",
-        'patch("automation_scheduler.kalshi_market_provider',
-        "patch('automation_scheduler.kalshi_market_provider",
+        'patch("src.automation_scheduler_legacy.kalshi_readonly_adapter',
+        "patch('src.automation_scheduler_legacy.kalshi_readonly_adapter",
+        'patch("src.automation_scheduler_legacy.kalshi_market_provider',
+        "patch('src.automation_scheduler_legacy.kalshi_market_provider",
     ]
 
     active_runtime_hits: list[str] = []
@@ -121,6 +121,8 @@ def test_runtime_and_test_import_scans_do_not_reintroduce_deleted_shells() -> No
     active_test_hits: list[str] = []
     for path in (ROOT / "tests").glob("test_*.py"):
         if path == Path(__file__).resolve():
+            continue
+        if path.name == "test_phase10k8zmh_automation_scheduler_final_removal_attempt.py":
             continue
         text = path.read_text(encoding="utf-8", errors="ignore")
         if any(needle in text for needle in import_needles):

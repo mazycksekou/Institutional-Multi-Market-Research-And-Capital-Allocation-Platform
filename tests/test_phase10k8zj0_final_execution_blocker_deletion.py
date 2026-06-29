@@ -17,14 +17,14 @@ def test_final_execution_blocker_deletion_docs_and_file_state() -> None:
         assert path.is_file(), path
 
     for path in [
-        ROOT / "automation_scheduler" / "execution_gatekeeper.py",
-        ROOT / "automation_scheduler" / "execution_authorization.py",
+        ROOT / "src" / "automation_scheduler_legacy" / "execution_gatekeeper.py",
+        ROOT / "src" / "automation_scheduler_legacy" / "execution_authorization.py",
     ]:
         assert not path.exists()
 
     for path in [
-        ROOT / "automation_scheduler" / "paper_trade_ledger.py",
-        ROOT / "automation_scheduler" / "paper_decision_ledger.py",
+        ROOT / "src" / "automation_scheduler_legacy" / "paper_trade_ledger.py",
+        ROOT / "src" / "automation_scheduler_legacy" / "paper_decision_ledger.py",
     ]:
         assert path.exists()
 

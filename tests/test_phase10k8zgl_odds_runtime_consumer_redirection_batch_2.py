@@ -21,8 +21,8 @@ DOCS = [
 
 RUNTIME_FILES = [
     ROOT / "src" / "services" / "enrichment_service.py",
-    ROOT / "automation_scheduler" / "scheduler_runner.py",
-    ROOT / "automation_scheduler" / "__init__.py",
+    ROOT / "src" / "automation_scheduler_legacy" / "scheduler_runner.py",
+    ROOT / "src" / "automation_scheduler_legacy" / "__init__.py",
     ROOT / "src" / "services" / "odds_runtime_bridge.py",
 ]
 
@@ -107,8 +107,8 @@ def test_docs_exist_and_contain_required_redirection_language() -> None:
 
 def test_runtime_files_redirect_to_canonical_bridge() -> None:
     enrichment = _read(ROOT / "src" / "services" / "enrichment_service.py")
-    scheduler_runner = _read(ROOT / "automation_scheduler" / "scheduler_runner.py")
-    scheduler_init = _read(ROOT / "automation_scheduler" / "__init__.py")
+    scheduler_runner = _read(ROOT / "src" / "automation_scheduler_legacy" / "scheduler_runner.py")
+    scheduler_init = _read(ROOT / "src" / "automation_scheduler_legacy" / "__init__.py")
     bridge = _read(ROOT / "src" / "services" / "odds_runtime_bridge.py")
 
     assert "src.services.odds_runtime_bridge" in enrichment
@@ -191,3 +191,4 @@ def test_final_delete_readiness_is_documented() -> None:
         "explicit compatibility-proof tests",
     ]:
         assert phrase.lower() in delete_readiness.lower() or phrase.lower() in import_scan.lower()
+

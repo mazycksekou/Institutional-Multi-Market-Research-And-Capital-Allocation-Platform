@@ -1,11 +1,6 @@
 import unittest
 
-from automation_scheduler.clv_tracker import (
-    calculate_clv_for_american_odds,
-    calculate_positive_clv_rate,
-    detect_clv_decay,
-    summarize_clv_by_model,
-)
+from src.services.streamlit_dashboard_facade import calculate_clv_for_american_odds, calculate_positive_clv_rate, detect_clv_decay, summarize_clv_by_model
 
 
 class TestClvTracker(unittest.TestCase):

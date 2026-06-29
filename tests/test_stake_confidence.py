@@ -1,6 +1,6 @@
 import unittest
 
-from automation_scheduler.stake_confidence import evaluate_stake_confidence
+from src.automation_scheduler_legacy.stake_confidence import evaluate_stake_confidence
 
 
 class StakeConfidenceTests(unittest.TestCase):

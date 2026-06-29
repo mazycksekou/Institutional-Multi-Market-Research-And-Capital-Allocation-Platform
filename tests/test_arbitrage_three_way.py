@@ -1,6 +1,6 @@
 import unittest
 
-from automation_scheduler.arbitrage.three_way_arbitrage import detect_three_way_arbitrage
+from src.services.streamlit_dashboard_facade import detect_three_way_arbitrage
 
 
 class TestArbitrageThreeWay(unittest.TestCase):

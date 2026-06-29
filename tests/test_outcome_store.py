@@ -4,12 +4,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from automation_scheduler.outcome_store import (
-    ingest_outcome_records,
-    load_outcome_records,
-    load_outcome_state,
-    validate_outcome_record,
-)
+from src.services.streamlit_dashboard_facade import ingest_outcome_records, load_outcome_records, load_outcome_state, validate_outcome_record
 from src.services.settlement_service import (
     build_outcome_completion_report,
     classify_kalshi_settlement,

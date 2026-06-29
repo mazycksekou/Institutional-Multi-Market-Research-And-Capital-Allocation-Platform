@@ -6,15 +6,7 @@ from typing import Any
 
 import pytest
 
-from automation_scheduler.feature_ablation_lab import (
-    FEATURE_ABLATION_LAB_VERSION,
-    ABLATION_NEVER_FEATURE_FIELDS,
-    BASE_FIELD_GROUPS,
-    _all_safe_fields_for_combination,
-    get_ablation_field_groups_for_sport,
-    apply_field_ablation,
-    run_feature_ablation_lab,
-)
+from src.services.streamlit_dashboard_facade import FEATURE_ABLATION_LAB_VERSION, ABLATION_NEVER_FEATURE_FIELDS, BASE_FIELD_GROUPS, _all_safe_fields_for_combination, get_ablation_field_groups_for_sport, apply_field_ablation, run_feature_ablation_lab
 
 
 # ---------------------------------------------------------------------------

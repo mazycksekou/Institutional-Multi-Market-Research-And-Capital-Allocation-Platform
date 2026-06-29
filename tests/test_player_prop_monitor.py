@@ -1,7 +1,7 @@
 import unittest
 
-from automation_scheduler.player_prop_monitor import monitor_player_props
-from automation_scheduler.scheduler_config import get_default_scheduler_config
+from src.automation_scheduler_legacy.player_prop_monitor import monitor_player_props
+from src.services.streamlit_dashboard_facade import get_default_scheduler_config
 
 
 class TestPlayerPropMonitor(unittest.TestCase):

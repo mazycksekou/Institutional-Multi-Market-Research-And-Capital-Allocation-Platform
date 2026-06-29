@@ -23,16 +23,16 @@ DELETED_ODDS_MODULES = [
     "betting_providers.sharp_api",
     "betting_providers.the_odds_api",
     "betting_providers.sportsgameodds",
-    "automation_scheduler.sharp_sportsbook_adapter",
-    "automation_scheduler.sportsbook_odds_provider",
+    'src.automation_scheduler_legacy.sharp_sportsbook_adapter',
+    'src.automation_scheduler_legacy.sportsbook_odds_provider',
 ]
 
 DELETED_PM_MODULES = [
     "kalshi_client",
     "providers.kalshi_provider",
     "betting_providers.kalshi_api",
-    "automation_scheduler.kalshi_readonly_adapter",
-    "automation_scheduler.kalshi_market_provider",
+    'src.automation_scheduler_legacy.kalshi_readonly_adapter',
+    'src.automation_scheduler_legacy.kalshi_market_provider',
 ]
 
 CANONICAL_ODDS_MODULES = [

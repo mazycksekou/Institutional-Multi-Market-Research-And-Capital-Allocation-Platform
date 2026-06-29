@@ -24,7 +24,7 @@ EXPECTED_MODULES = [
 ]
 
 FORBIDDEN_IMPORT_PREFIXES = (
-    "automation_scheduler",
+    'src.automation_scheduler_legacy',
     "betting_providers",
     "providers",
 )

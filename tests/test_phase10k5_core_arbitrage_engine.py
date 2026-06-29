@@ -78,14 +78,14 @@ class TestPhase10K5CoreArbitrageEngine(unittest.TestCase):
     # ------------------------------------------------------------------
     def test_odds_math_american_implied(self) -> None:
         """Same checks on odds_math.american_to_implied_probability."""
-        from automation_scheduler.odds_math import american_to_implied_probability
+        from src.services.streamlit_dashboard_facade import american_to_implied_probability
         self.assertAlmostEqual(american_to_implied_probability(100), 0.5, places=6)
         self.assertAlmostEqual(american_to_implied_probability(-100), 0.5, places=6)
         self.assertAlmostEqual(american_to_implied_probability(150), 0.4, places=6)
         self.assertAlmostEqual(american_to_implied_probability(-200), 2/3, places=6)
 
     def test_odds_math_american_to_decimal(self) -> None:
-        from automation_scheduler.odds_math import american_to_decimal
+        from src.services.streamlit_dashboard_facade import american_to_decimal
         self.assertAlmostEqual(american_to_decimal(150), 2.5, places=6)
         self.assertAlmostEqual(american_to_decimal(-200), 1.5, places=6)
 
@@ -103,7 +103,7 @@ class TestPhase10K5CoreArbitrageEngine(unittest.TestCase):
     # ------------------------------------------------------------------
     def test_two_way_arbitrage_positive(self) -> None:
         """+120/+120 -> arbitrage exists using the existing one-argument owner."""
-        from automation_scheduler.arbitrage.two_way_arbitrage import detect_two_way_arbitrage
+        from src.services.streamlit_dashboard_facade import detect_two_way_arbitrage
 
         offers = [
             {
@@ -140,7 +140,7 @@ class TestPhase10K5CoreArbitrageEngine(unittest.TestCase):
 
     def test_two_way_arbitrage_negative(self) -> None:
         """-110/-110 -> no arbitrage using the existing one-argument owner."""
-        from automation_scheduler.arbitrage.two_way_arbitrage import detect_two_way_arbitrage
+        from src.services.streamlit_dashboard_facade import detect_two_way_arbitrage
 
         offers = [
             {
@@ -177,7 +177,7 @@ class TestPhase10K5CoreArbitrageEngine(unittest.TestCase):
 
     def test_three_way_arbitrage_positive(self) -> None:
         """+250/+250/+250 -> three-way arbitrage using the existing one-argument owner."""
-        from automation_scheduler.arbitrage.three_way_arbitrage import detect_three_way_arbitrage
+        from src.services.streamlit_dashboard_facade import detect_three_way_arbitrage
 
         offers = [
             {
@@ -222,13 +222,13 @@ class TestPhase10K5CoreArbitrageEngine(unittest.TestCase):
 
     def test_prediction_market_yes_no_positive(self) -> None:
         """yes=0.47, no=0.47 -> prediction-market yes/no arbitrage."""
-        from automation_scheduler.arbitrage.two_way_arbitrage import detect_prediction_arbitrage
+        from src.automation_scheduler_legacy.arbitrage.two_way_arbitrage import detect_prediction_arbitrage
 
         self.assertTrue(detect_prediction_arbitrage(0.47, 0.47))
 
     def test_prediction_market_yes_no_negative(self) -> None:
         """yes=0.53, no=0.51 -> no prediction-market yes/no arbitrage."""
-        from automation_scheduler.arbitrage.two_way_arbitrage import detect_prediction_arbitrage
+        from src.automation_scheduler_legacy.arbitrage.two_way_arbitrage import detect_prediction_arbitrage
 
         self.assertFalse(detect_prediction_arbitrage(0.53, 0.51))
 
@@ -283,9 +283,9 @@ class TestPhase10K5CoreArbitrageEngine(unittest.TestCase):
         # Trigger the imports that the phase relies on.
         try:
             from src.core import math_utils  # noqa
-            from automation_scheduler import odds_math  # noqa
-            from automation_scheduler.arbitrage import two_way_arbitrage  # noqa
-            from automation_scheduler.arbitrage import three_way_arbitrage  # noqa
+            from src.services.streamlit_dashboard_facade import odds_math  # noqa
+            from src.services.streamlit_dashboard_facade import two_way_arbitrage  # noqa
+            from src.services.streamlit_dashboard_facade import three_way_arbitrage  # noqa
             from src import research as market_research_schema  # noqa
         except ImportError:
             # Some owners may not exist yet – that's acceptable for now.

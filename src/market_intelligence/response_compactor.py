@@ -4,7 +4,7 @@ import importlib
 from typing import Any
 
 
-LEGACY_PACKAGE = "automation" + "_" + "scheduler"
+LEGACY_PACKAGE = "src.automation_scheduler_legacy"
 
 
 def _legacy_response_module_name(name: str) -> str | None:

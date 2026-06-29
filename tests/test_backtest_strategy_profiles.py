@@ -1,16 +1,8 @@
 import json
 
-from automation_scheduler.backtest_dataset_builder import (
-    build_canonical_backtest_dataset,
-    summarize_canonical_dataset_report,
-)
-from automation_scheduler.backtest_strategy_profiles import (
-    build_strategy_config_for_row,
-    describe_regression_profiles,
-    get_regression_profile,
-    normalize_strategy_profile_key,
-)
-from automation_scheduler.backtesting_engine import run_backtest
+from src.services.streamlit_dashboard_facade import build_canonical_backtest_dataset, summarize_canonical_dataset_report
+from src.services.streamlit_dashboard_facade import build_strategy_config_for_row, describe_regression_profiles, get_regression_profile, normalize_strategy_profile_key
+from src.services.streamlit_dashboard_facade import run_backtest
 
 
 def test_normalize_strategy_profile_key_uses_existing_readiness_aliases():

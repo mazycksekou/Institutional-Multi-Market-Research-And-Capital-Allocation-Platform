@@ -6,16 +6,7 @@ from typing import Any
 
 import pytest
 
-from automation_scheduler.calibration_strategy_filter import (
-    CALIBRATION_FILTER_NEVER_FEATURE_FIELDS,
-    CALIBRATION_STRATEGY_FILTER_VERSION,
-    apply_calibration_strategy_filter,
-    build_calibration_readiness_snapshot,
-    build_default_calibration_filter_config,
-    diagnose_calibration_row,
-    run_calibration_strategy_filter,
-    summarize_calibration_strategy_performance,
-)
+from src.services.streamlit_dashboard_facade import CALIBRATION_FILTER_NEVER_FEATURE_FIELDS, CALIBRATION_STRATEGY_FILTER_VERSION, apply_calibration_strategy_filter, build_calibration_readiness_snapshot, build_default_calibration_filter_config, diagnose_calibration_row, run_calibration_strategy_filter, summarize_calibration_strategy_performance
 
 
 def test_calibration_filter_never_feature_fields_include_leakage_fields():
@@ -191,7 +182,7 @@ def test_apply_calibration_strategy_filter_single_sport_filters_selected_sport()
 
 
 # small helper
-from automation_scheduler.sport_feature_packs import normalize_sport_key
+from src.services.streamlit_dashboard_facade import normalize_sport_key
 
 
 def test_apply_calibration_strategy_filter_all_sports_excludes_not_ready_sports():

@@ -40,7 +40,7 @@ def test_scheduler_registry_consumers_use_canonical_research(monkeypatch: pytest
         lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("import-time credential access is forbidden")),
     )
 
-    scheduler_pkg = importlib.import_module("automation_scheduler")
+    scheduler_pkg = importlib.import_module('src.automation_scheduler_legacy')
     research = importlib.import_module("src.research")
 
     monkeypatch.setattr(scheduler_pkg, "load_outcome_records", lambda _base: [{} for _ in range(25)])
@@ -59,9 +59,9 @@ def test_scheduler_registry_consumers_use_canonical_research(monkeypatch: pytest
 def test_scheduler_maturity_sources_are_safe() -> None:
     for name in [
         "src.research.maturity",
-        "automation_scheduler.data_intelligence_registry",
-        "automation_scheduler.cross_asset_intelligence_router",
-        "automation_scheduler.__init__",
+        "src.market_intelligence.feature_packs",
+        "src.market_intelligence.manifold",
+        "src.research.feature_control",
     ]:
         module = importlib.import_module(name)
         source = inspect.getsource(module).lower()

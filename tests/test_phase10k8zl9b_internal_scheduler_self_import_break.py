@@ -7,19 +7,19 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SCANNED_FILES = [
-    "automation_scheduler/calibration_strategy_filter.py",
-    "automation_scheduler/experiment_history_store.py",
-    "automation_scheduler/experiment_report_exporter.py",
-    "automation_scheduler/feature_ablation_lab.py",
-    "automation_scheduler/historical_backtest_bridge.py",
-    "automation_scheduler/historical_line_movement.py",
-    "automation_scheduler/historical_odds_sqlite.py",
-    "automation_scheduler/line_movement_data_quality_dashboard.py",
-    "automation_scheduler/model_data_field_catalog.py",
-    "automation_scheduler/source_event_link_resolver.py",
-    "automation_scheduler/streamlit_dashboard_data.py",
-    "automation_scheduler/synthetic_line_movement_sandbox.py",
-    "automation_scheduler/zero_dte_fixture_template.py",
+    'src/automation_scheduler_legacy/calibration_strategy_filter.py',
+    'src/automation_scheduler_legacy/experiment_history_store.py',
+    'src/automation_scheduler_legacy/experiment_report_exporter.py',
+    'src/automation_scheduler_legacy/feature_ablation_lab.py',
+    'src/automation_scheduler_legacy/historical_backtest_bridge.py',
+    'src/automation_scheduler_legacy/historical_line_movement.py',
+    'src/automation_scheduler_legacy/historical_odds_sqlite.py',
+    'src/automation_scheduler_legacy/line_movement_data_quality_dashboard.py',
+    'src/automation_scheduler_legacy/model_data_field_catalog.py',
+    'src/automation_scheduler_legacy/source_event_link_resolver.py',
+    'src/automation_scheduler_legacy/streamlit_dashboard_data.py',
+    'src/automation_scheduler_legacy/synthetic_line_movement_sandbox.py',
+    'src/automation_scheduler_legacy/zero_dte_fixture_template.py',
 ]
 
 DOCS = [
@@ -46,19 +46,19 @@ CANONICAL_MODULES = [
 ]
 
 EXPECTED_REDIRECTS = {
-    "automation_scheduler/calibration_strategy_filter.py": "src.market_intelligence.feature_packs",
-    "automation_scheduler/experiment_history_store.py": "src.research.feature_control",
-    "automation_scheduler/experiment_report_exporter.py": "src.research.history",
-    "automation_scheduler/feature_ablation_lab.py": "src.market_intelligence.feature_packs",
-    "automation_scheduler/historical_backtest_bridge.py": "src.backtesting.engine",
-    "automation_scheduler/historical_line_movement.py": "src.data.historical_odds",
-    "automation_scheduler/historical_odds_sqlite.py": "src.data.historical_odds",
-    "automation_scheduler/line_movement_data_quality_dashboard.py": "src.data.line_movement",
-    "automation_scheduler/model_data_field_catalog.py": "src.data.field_catalog",
-    "automation_scheduler/source_event_link_resolver.py": "src.data.historical_odds",
-    "automation_scheduler/streamlit_dashboard_data.py": "src.data.historical_sources",
-    "automation_scheduler/synthetic_line_movement_sandbox.py": "src.data.line_movement",
-    "automation_scheduler/zero_dte_fixture_template.py": "src.data.field_catalog",
+    "src/automation_scheduler_legacy/calibration_strategy_filter.py": "src.market_intelligence.feature_packs",
+    "src/automation_scheduler_legacy/experiment_history_store.py": "src.research.feature_control",
+    "src/automation_scheduler_legacy/experiment_report_exporter.py": "src.research.history",
+    "src/automation_scheduler_legacy/feature_ablation_lab.py": "src.market_intelligence.feature_packs",
+    "src/automation_scheduler_legacy/historical_backtest_bridge.py": "src.backtesting.engine",
+    "src/automation_scheduler_legacy/historical_line_movement.py": "src.data.historical_odds",
+    "src/automation_scheduler_legacy/historical_odds_sqlite.py": "src.data.historical_odds",
+    "src/automation_scheduler_legacy/line_movement_data_quality_dashboard.py": "src.data.line_movement",
+    "src/automation_scheduler_legacy/model_data_field_catalog.py": "src.data.field_catalog",
+    "src/automation_scheduler_legacy/source_event_link_resolver.py": "src.data.historical_odds",
+    "src/automation_scheduler_legacy/streamlit_dashboard_data.py": "src.data.historical_sources",
+    "src/automation_scheduler_legacy/synthetic_line_movement_sandbox.py": "src.data.line_movement",
+    "src/automation_scheduler_legacy/zero_dte_fixture_template.py": "src.data.field_catalog",
 }
 
 FORBIDDEN_MARKERS = [
@@ -102,7 +102,7 @@ def test_phase10k8zl9b_internal_scheduler_self_import_break() -> None:
         for marker in FORBIDDEN_MARKERS:
             assert marker not in lowered, (rel_path, marker)
 
-    assert (ROOT / "automation_scheduler").exists()
+    assert (ROOT / "src" / "automation_scheduler_legacy").exists()
 
     for module_name in CANONICAL_MODULES:
         importlib.import_module(module_name)

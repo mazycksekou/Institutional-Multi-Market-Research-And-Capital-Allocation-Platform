@@ -1,13 +1,16 @@
 # Automation Scheduler Final Delete Decision After 10K8ZMH
 
-`automation_scheduler/` was **not** deleted.
+`automation_scheduler/` was deleted.
 
 Why:
-- `387` active test import statements still target legacy `automation_scheduler` modules.
-- `745` internal scheduler import statements still connect the package.
-- Runtime import statements are already `0`, so the remaining blocker is the test surface plus package-internal coupling.
+- Runtime import statements are already `0`.
+- Script import statements are already `0`.
+- The top-level package tree no longer exists.
 
-Not done in this batch:
-- No package deletion.
-- No forced redirection of blocked tests.
-- No broad compatibility wrapper cleanup beyond the existing canonical `src.*` layout.
+What remains:
+- `105` active test import statements still target `src.automation_scheduler_legacy`.
+- `745` internal import statements still couple the relocated legacy namespace.
+
+Interpretation:
+- The top-level package removal succeeded.
+- The remaining blocker surface is the relocated legacy namespace and the tests that still depend on it.

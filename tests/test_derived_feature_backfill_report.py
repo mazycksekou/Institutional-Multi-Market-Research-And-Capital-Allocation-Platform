@@ -3,12 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from automation_scheduler.derived_feature_backfill_report import (
-    ALLOWED_BLOCKED_REASONS,
-    build_derived_feature_backfill_report,
-    normalize_schedule_result_record,
-    write_derived_feature_backfill_report,
-)
+from src.services.streamlit_dashboard_facade import ALLOWED_BLOCKED_REASONS, build_derived_feature_backfill_report, normalize_schedule_result_record, write_derived_feature_backfill_report
 
 
 class TestDerivedFeatureBackfillReport(unittest.TestCase):

@@ -4,8 +4,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-import automation_scheduler.nfl_open_data_adapters as nfl_open_data_adapters
-from automation_scheduler.nfl_open_data_adapters import NflOpenDataAdapter, adapter_by_id
+import src.automation_scheduler_legacy.nfl_open_data_adapters as nfl_open_data_adapters
+from src.services.streamlit_dashboard_facade import NflOpenDataAdapter, adapter_by_id
 
 
 class TestNflOpenDataAdapters(unittest.TestCase):
@@ -28,7 +28,7 @@ class TestNflOpenDataAdapters(unittest.TestCase):
 
     def test_tiny_sample_requires_allow_download_and_makes_no_call_when_blocked(self):
         adapter = adapter_by_id("nflverse_schedules_results")
-        with patch("automation_scheduler.nfl_open_data_adapters.urllib.request.urlopen") as urlopen:
+        with patch('src.automation_scheduler_legacy.nfl_open_data_adapters.urllib.request.urlopen') as urlopen:
             report = adapter.run_tiny_sample(allow_download=False)
         self.assertFalse(report["ok"])
         self.assertEqual(report["blocked_reason"], "download_not_allowed")
@@ -71,7 +71,7 @@ class TestNflOpenDataAdapters(unittest.TestCase):
             {"game_id": "2024_02_BUF_MIA", "season": "2024", "week": "2", "home_team": "MIA", "away_team": "BUF", "home_score": "31", "away_score": "28"},
         ]
         with patch.object(NflOpenDataAdapter, "resolve_source_metadata", return_value=metadata), patch(
-            "automation_scheduler.nfl_open_data_adapters._iter_csv_rows_from_url",
+            'src.automation_scheduler_legacy.nfl_open_data_adapters._iter_csv_rows_from_url',
             return_value=(list(rows[0]), rows, len(rows)),
         ):
             report = adapter.run_tiny_sample(allow_download=True, max_records=10)

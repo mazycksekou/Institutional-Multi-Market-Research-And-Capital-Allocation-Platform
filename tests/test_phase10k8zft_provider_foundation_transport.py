@@ -27,30 +27,30 @@ CANONICAL_MODULES = [
 ]
 
 DELETED_WRAPPERS = [
-    "automation_scheduler.provider_contracts",
-    "automation_scheduler.provider_health",
-    "automation_scheduler.provider_adapter_base",
-    "automation_scheduler.provider_normalization_contract",
-    "automation_scheduler.provider_payload_validator",
-    "automation_scheduler.provider_secret_policy",
+    'src.automation_scheduler_legacy.provider_contracts',
+    'src.automation_scheduler_legacy.provider_health',
+    'src.automation_scheduler_legacy.provider_adapter_base',
+    'src.automation_scheduler_legacy.provider_normalization_contract',
+    'src.automation_scheduler_legacy.provider_payload_validator',
+    'src.automation_scheduler_legacy.provider_secret_policy',
     "providers.base_provider",
     "betting_providers.base",
     "betting_providers.normalization",
 ]
 
 LEGACY_WRAPPERS = [
-    "automation_scheduler.provider_allowlist",
-    "automation_scheduler.kalshi_adapter_contract",
-    "automation_scheduler.sportsbook_adapter_contract",
+    'src.automation_scheduler_legacy.provider_allowlist',
+    'src.automation_scheduler_legacy.kalshi_adapter_contract',
+    'src.automation_scheduler_legacy.sportsbook_adapter_contract',
 ]
 
 DELETED_COMPAT_WRAPPER_PATHS = [
-    ROOT / "automation_scheduler" / "provider_registry.py",
-    ROOT / "automation_scheduler" / "provider_write_firewall.py",
+    ROOT / "src" / "automation_scheduler_legacy" / "provider_registry.py",
+    ROOT / "src" / "automation_scheduler_legacy" / "provider_write_firewall.py",
 ]
 
 FORBIDDEN_IMPORT_PREFIXES = (
-    "automation_scheduler",
+    'src.automation_scheduler_legacy',
     "betting_providers",
     "providers",
 )
@@ -118,20 +118,20 @@ def test_provider_foundation_modules_import_without_env_access(monkeypatch):
     assert imported["src.providers"].ProviderHealthStatus.__name__ == imported["src.providers.health"].ProviderHealthStatus.__name__ == "ProviderHealthStatus"
     assert imported["src.providers"].ProviderAdapterBase.__name__ == imported["src.providers.base"].ProviderAdapterBase.__name__ == "ProviderAdapterBase"
     assert imported["src.providers"].normalize_provider_payload("sportsbook_odds", {"event_id": "e1"})["provider_type"] == "sportsbook_odds"
-    assert callable(imported["automation_scheduler.provider_allowlist"].classify_provider)
+    assert callable(imported["src.automation_scheduler_legacy.provider_allowlist"].classify_provider)
     assert callable(imported["src.providers.policy.allowlist"].classify_provider)
 
-    assert imported["automation_scheduler.kalshi_adapter_contract"].validate_payload(
-        imported["automation_scheduler.kalshi_adapter_contract"].SAMPLE_DRY_RUN_PAYLOAD
+    assert imported["src.automation_scheduler_legacy.kalshi_adapter_contract"].validate_payload(
+        imported["src.automation_scheduler_legacy.kalshi_adapter_contract"].SAMPLE_DRY_RUN_PAYLOAD
     )["ok"] is True
-    assert imported["automation_scheduler.kalshi_adapter_contract"].normalize_payload(
-        imported["automation_scheduler.kalshi_adapter_contract"].SAMPLE_DRY_RUN_PAYLOAD
+    assert imported["src.automation_scheduler_legacy.kalshi_adapter_contract"].normalize_payload(
+        imported["src.automation_scheduler_legacy.kalshi_adapter_contract"].SAMPLE_DRY_RUN_PAYLOAD
     )["provider_type"] == "prediction_market"
-    assert imported["automation_scheduler.sportsbook_adapter_contract"].validate_payload(
-        imported["automation_scheduler.sportsbook_adapter_contract"].SAMPLE_DRY_RUN_PAYLOAD
+    assert imported["src.automation_scheduler_legacy.sportsbook_adapter_contract"].validate_payload(
+        imported["src.automation_scheduler_legacy.sportsbook_adapter_contract"].SAMPLE_DRY_RUN_PAYLOAD
     )["ok"] is True
-    assert imported["automation_scheduler.sportsbook_adapter_contract"].normalize_payload(
-        imported["automation_scheduler.sportsbook_adapter_contract"].SAMPLE_DRY_RUN_PAYLOAD
+    assert imported["src.automation_scheduler_legacy.sportsbook_adapter_contract"].normalize_payload(
+        imported["src.automation_scheduler_legacy.sportsbook_adapter_contract"].SAMPLE_DRY_RUN_PAYLOAD
     )["provider_type"] == "sportsbook_odds"
 
     for module_name in DELETED_WRAPPERS:
@@ -154,9 +154,9 @@ def test_legacy_wrappers_preserve_foundation_behavior(monkeypatch):
     canonical_normalization = importlib.import_module("src.providers.normalization")
     canonical_validation = importlib.import_module("src.providers.validation")
     canonical_allowlist = importlib.import_module("src.providers.policy.allowlist")
-    legacy_allowlist = importlib.import_module("automation_scheduler.provider_allowlist")
-    legacy_kalshi = importlib.import_module("automation_scheduler.kalshi_adapter_contract")
-    legacy_sportsbook = importlib.import_module("automation_scheduler.sportsbook_adapter_contract")
+    legacy_allowlist = importlib.import_module('src.automation_scheduler_legacy.provider_allowlist')
+    legacy_kalshi = importlib.import_module('src.automation_scheduler_legacy.kalshi_adapter_contract')
+    legacy_sportsbook = importlib.import_module('src.automation_scheduler_legacy.sportsbook_adapter_contract')
 
     canonical_defaults = canonical_contracts.get_default_provider_contracts()
     assert "prediction_market_placeholder" in canonical_defaults
@@ -189,7 +189,7 @@ def test_legacy_wrappers_preserve_foundation_behavior(monkeypatch):
 
 def test_canonical_foundation_files_do_not_import_legacy_or_network_modules():
     all_paths = [_module_path(name) for name in CANONICAL_MODULES]
-    all_paths.extend(ROOT / "automation_scheduler" / f"{name.split('.')[-1]}.py" for name in LEGACY_WRAPPERS)
+    all_paths.extend(ROOT / "src" / "automation_scheduler_legacy" / f"{name.split('.')[-1]}.py" for name in LEGACY_WRAPPERS)
 
     for path in all_paths:
         names = _import_names(path)
@@ -234,3 +234,4 @@ def test_phase_report_and_ownership_docs_exist_and_cover_required_strings():
     assert "src/providers/registry.py" in wrappers
     assert "src/providers/policy/allowlist.py" in wrappers
     assert "provider_write_firewall.py" in wrappers
+

@@ -22,37 +22,37 @@ CANONICAL_MODULES = [
 ]
 
 DELETED_WRAPPER_FILES = [
-    ROOT / "automation_scheduler" / "provider_contracts.py",
-    ROOT / "automation_scheduler" / "provider_health.py",
-    ROOT / "automation_scheduler" / "provider_adapter_base.py",
-    ROOT / "automation_scheduler" / "provider_normalization_contract.py",
-    ROOT / "automation_scheduler" / "provider_payload_validator.py",
-    ROOT / "automation_scheduler" / "provider_secret_policy.py",
+    ROOT / "src" / "automation_scheduler_legacy" / "provider_contracts.py",
+    ROOT / "src" / "automation_scheduler_legacy" / "provider_health.py",
+    ROOT / "src" / "automation_scheduler_legacy" / "provider_adapter_base.py",
+    ROOT / "src" / "automation_scheduler_legacy" / "provider_normalization_contract.py",
+    ROOT / "src" / "automation_scheduler_legacy" / "provider_payload_validator.py",
+    ROOT / "src" / "automation_scheduler_legacy" / "provider_secret_policy.py",
     ROOT / "providers" / "base_provider.py",
     ROOT / "betting_providers" / "base.py",
     ROOT / "betting_providers" / "normalization.py",
 ]
 
 REMAINING_BLOCKER_FILES = [
-    ROOT / "automation_scheduler" / "provider_registry.py",
-    ROOT / "automation_scheduler" / "provider_write_firewall.py",
+    ROOT / "src" / "automation_scheduler_legacy" / "provider_registry.py",
+    ROOT / "src" / "automation_scheduler_legacy" / "provider_write_firewall.py",
 ]
 
 DELETE_READY_WRAPPERS = [
-    "automation_scheduler/provider_contracts.py",
-    "automation_scheduler/provider_health.py",
-    "automation_scheduler/provider_adapter_base.py",
-    "automation_scheduler/provider_normalization_contract.py",
-    "automation_scheduler/provider_payload_validator.py",
-    "automation_scheduler/provider_secret_policy.py",
+    'src/automation_scheduler_legacy/provider_contracts.py',
+    'src/automation_scheduler_legacy/provider_health.py',
+    'src/automation_scheduler_legacy/provider_adapter_base.py',
+    'src/automation_scheduler_legacy/provider_normalization_contract.py',
+    'src/automation_scheduler_legacy/provider_payload_validator.py',
+    'src/automation_scheduler_legacy/provider_secret_policy.py',
     "providers/base_provider.py",
     "betting_providers/base.py",
     "betting_providers/normalization.py",
 ]
 
 RUNTIME_BLOCKERS = {
-    "automation_scheduler/provider_registry.py",
-    "automation_scheduler/provider_write_firewall.py",
+    'src/automation_scheduler_legacy/provider_registry.py',
+    'src/automation_scheduler_legacy/provider_write_firewall.py',
 }
 FORBIDDEN_NETWORK_ROOTS = {
     "requests",
@@ -68,14 +68,14 @@ FORBIDDEN_NETWORK_ROOTS = {
     "ccxt",
 }
 TARGET_IMPORTS = {
-    "automation_scheduler.provider_contracts",
-    "automation_scheduler.provider_registry",
-    "automation_scheduler.provider_health",
-    "automation_scheduler.provider_adapter_base",
-    "automation_scheduler.provider_normalization_contract",
-    "automation_scheduler.provider_payload_validator",
-    "automation_scheduler.provider_secret_policy",
-    "automation_scheduler.provider_write_firewall",
+    'src.automation_scheduler_legacy.provider_contracts',
+    'src.automation_scheduler_legacy.provider_registry',
+    'src.automation_scheduler_legacy.provider_health',
+    'src.automation_scheduler_legacy.provider_adapter_base',
+    'src.automation_scheduler_legacy.provider_normalization_contract',
+    'src.automation_scheduler_legacy.provider_payload_validator',
+    'src.automation_scheduler_legacy.provider_secret_policy',
+    'src.automation_scheduler_legacy.provider_write_firewall',
     "providers.base_provider",
     "betting_providers.base",
     "betting_providers.normalization",
@@ -202,3 +202,4 @@ def test_phase10k8zg8_provider_foundation_deletion_proof(monkeypatch):
     assert "Delete the thin compatibility wrappers" in next_batch
     assert "automation_scheduler/provider_registry.py" in next_batch
     assert "automation_scheduler/provider_write_firewall.py" in next_batch
+

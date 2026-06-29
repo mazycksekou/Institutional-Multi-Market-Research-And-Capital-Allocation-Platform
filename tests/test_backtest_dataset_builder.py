@@ -1,12 +1,6 @@
 import json
 
-from automation_scheduler.backtest_dataset_builder import (
-    build_canonical_backtest_dataset,
-    discover_backtest_artifacts,
-    extract_backtest_rows_from_artifact,
-    load_canonical_backtest_dataset,
-    summarize_canonical_dataset_report,
-)
+from src.services.streamlit_dashboard_facade import build_canonical_backtest_dataset, discover_backtest_artifacts, extract_backtest_rows_from_artifact, load_canonical_backtest_dataset, summarize_canonical_dataset_report
 
 
 def test_extract_backtest_rows_from_artifact_normalizes_nested_rows(tmp_path):

@@ -74,7 +74,7 @@ def test_streamlit_main_menu_remains_exactly_protected() -> None:
 
 def test_runtime_and_bets_csv_owners_are_source_backed_and_documented() -> None:
     report = _read_report()
-    data_paths = (REPO_ROOT / "automation_scheduler" / "data_paths.py").read_text(encoding="utf-8")
+    data_paths = (REPO_ROOT / "src" / "automation_scheduler_legacy" / "data_paths.py").read_text(encoding="utf-8")
     csv_service = (REPO_ROOT / "src" / "services" / "bet_csv_service.py").read_text(encoding="utf-8")
     csv_routes = (REPO_ROOT / "src" / "api" / "bet_csv_routes.py").read_text(encoding="utf-8")
     bet_log = (REPO_ROOT / "bet_log.py").read_text(encoding="utf-8")
@@ -136,9 +136,9 @@ def test_market_research_db_targets_are_existing_schema_tables(tmp_path: Path) -
 
 def test_existing_sports_sqlite_flow_is_preserved_by_source_and_report() -> None:
     report = _read_report()
-    sqlite_owner = (REPO_ROOT / "automation_scheduler" / "historical_odds_sqlite.py").read_text(encoding="utf-8")
-    line_owner = (REPO_ROOT / "automation_scheduler" / "historical_line_movement.py").read_text(encoding="utf-8")
-    dashboard_data = (REPO_ROOT / "automation_scheduler" / "streamlit_dashboard_data.py").read_text(encoding="utf-8")
+    sqlite_owner = (REPO_ROOT / "src" / "automation_scheduler_legacy" / "historical_odds_sqlite.py").read_text(encoding="utf-8")
+    line_owner = (REPO_ROOT / "src" / "automation_scheduler_legacy" / "historical_line_movement.py").read_text(encoding="utf-8")
+    dashboard_data = (REPO_ROOT / "src" / "automation_scheduler_legacy" / "streamlit_dashboard_data.py").read_text(encoding="utf-8")
 
     for token in ("source_imports", "historical_events", "historical_odds", "historical_results"):
         assert token in sqlite_owner
@@ -190,3 +190,4 @@ def test_phase10k3_report_does_not_claim_forbidden_overreach() -> None:
     ]
     for required in required_negative_guardrails:
         assert required in text
+

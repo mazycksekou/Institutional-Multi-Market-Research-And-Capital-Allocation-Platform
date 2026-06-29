@@ -35,29 +35,29 @@ def test_scheduler_canonical_bridge_modules_import_safely() -> None:
         "src.services.odds_runtime_bridge",
         "src.providers.registry",
         "src.providers.health",
-        "automation_scheduler",
-        "automation_scheduler.scheduler_runner",
-        "automation_scheduler.calibration_collector",
+        'src.automation_scheduler_legacy',
+        'src.automation_scheduler_legacy.scheduler_runner',
+        'src.automation_scheduler_legacy.calibration_collector',
         "src.services.settlement_service",
-        "automation_scheduler.prediction_market_outcome_candidates",
-        "automation_scheduler.streamlit_dashboard_data",
+        'src.automation_scheduler_legacy.prediction_market_outcome_candidates',
+        'src.automation_scheduler_legacy.streamlit_dashboard_data',
     ]
     imported = [importlib.import_module(name) for name in modules]
     assert [module.__name__ for module in imported] == modules
 
 
 def test_scheduler_package_still_points_to_canonical_bridges() -> None:
-    text = (ROOT / "automation_scheduler/__init__.py").read_text(encoding="utf-8")
+    text = (ROOT / 'src/automation_scheduler_legacy/__init__.py').read_text(encoding="utf-8")
     assert "from src.services.odds_runtime_bridge import" in text
     assert "from src.services.prediction_market_runtime_bridge import" in text
 
 
 def test_scheduler_source_scan_shows_canonical_bridge_dependencies() -> None:
     for relpath in [
-        "automation_scheduler/scheduler_runner.py",
-        "automation_scheduler/calibration_collector.py",
+        'src/automation_scheduler_legacy/scheduler_runner.py',
+        'src/automation_scheduler_legacy/calibration_collector.py',
         "src/services/settlement_service.py",
-        "automation_scheduler/prediction_market_outcome_candidates.py",
+        'src/automation_scheduler_legacy/prediction_market_outcome_candidates.py',
     ]:
         text = (ROOT / relpath).read_text(encoding="utf-8")
         assert "src.services.prediction_market_runtime_bridge" in text or "src.services.odds_runtime_bridge" in text or "src.services.settlement_service" in text

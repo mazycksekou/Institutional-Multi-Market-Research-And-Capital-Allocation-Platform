@@ -1,6 +1,6 @@
 import unittest
 
-from automation_scheduler.cross_book_line_comparator import compare_cross_book_lines
+from src.services.streamlit_dashboard_facade import compare_cross_book_lines
 
 
 class TestCrossBookLineComparator(unittest.TestCase):

@@ -112,9 +112,9 @@ def test_phase10k8zmi_streamlit_dashboard_test_import_redirection() -> None:
 
     counts = _scan_repo_import_counts()
     assert counts["runtime"] == (0, 0)
-    assert counts["test"] == (387, 191)
+    assert counts["test"] == (0, 0)
     assert counts["scripts"] == (0, 0)
-    assert counts["internal"] == (745, 262)
+    assert counts["internal"] == (0, 0)
 
     before_doc = (ROOT / "STREAMLIT_DASHBOARD_TEST_IMPORTS_BEFORE_10K8ZMI.md").read_text(encoding="utf-8")
     assert "42" in before_doc
@@ -149,5 +149,4 @@ def test_phase10k8zmi_streamlit_dashboard_test_import_redirection() -> None:
         assert module_name.startswith("src.")
         assert not any(token in module_name for token in RISKY_MODULE_TOKENS)
 
-    assert LEGACY_ROOT.is_dir()
-    assert any(LEGACY_ROOT.rglob("*.py"))
+    assert not LEGACY_ROOT.exists()

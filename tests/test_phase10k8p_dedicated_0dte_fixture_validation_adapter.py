@@ -2,21 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from automation_scheduler.technical_signal_fields import (
-    TECHNICAL_SIGNAL_FIELDS,
-    TECHNICAL_SIGNAL_FIELDS_BY_MARKET,
-)
-from automation_scheduler.zero_dte_fixture_template import (
-    ZERO_DTE_FIXTURE_VALIDATION_GUARDRAILS,
-    ZERO_DTE_FIXTURE_VALIDATION_STATUS_VALUES,
-    ZERO_DTE_MODE_KEY,
-    ZERO_DTE_PAPER_FIXTURE_OPTIONAL_FIELDS,
-    ZERO_DTE_PAPER_FIXTURE_REQUIRED_FIELDS,
-    ZERO_DTE_PAPER_REVIEW_OUTPUT_FIELDS,
-    ZERO_DTE_PAPER_TEMPLATE_GUARDRAILS,
-    build_zero_dte_fixture_template_row,
-    validate_zero_dte_fixture_rows,
-)
+from src.services.streamlit_dashboard_facade import TECHNICAL_SIGNAL_FIELDS, TECHNICAL_SIGNAL_FIELDS_BY_MARKET
+from src.automation_scheduler_legacy.zero_dte_fixture_template import ZERO_DTE_FIXTURE_VALIDATION_GUARDRAILS, ZERO_DTE_FIXTURE_VALIDATION_STATUS_VALUES, ZERO_DTE_MODE_KEY, ZERO_DTE_PAPER_FIXTURE_OPTIONAL_FIELDS, ZERO_DTE_PAPER_FIXTURE_REQUIRED_FIELDS, ZERO_DTE_PAPER_REVIEW_OUTPUT_FIELDS, ZERO_DTE_PAPER_TEMPLATE_GUARDRAILS, build_zero_dte_fixture_template_row, validate_zero_dte_fixture_rows
 
 
 ROOT = Path(__file__).resolve().parents[1]

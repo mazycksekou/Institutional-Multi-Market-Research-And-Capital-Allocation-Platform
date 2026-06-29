@@ -34,13 +34,13 @@ CANONICAL_MODULES = [
 ]
 
 LEGACY_MODULES = [
-    "automation_scheduler.provider_allowlist",
-    "automation_scheduler.kalshi_adapter_contract",
-    "automation_scheduler.sportsbook_adapter_contract",
+    'src.automation_scheduler_legacy.provider_allowlist',
+    'src.automation_scheduler_legacy.kalshi_adapter_contract',
+    'src.automation_scheduler_legacy.sportsbook_adapter_contract',
 ]
 
 FORBIDDEN_IMPORT_PREFIXES = (
-    "automation_scheduler",
+    'src.automation_scheduler_legacy',
     "betting_providers",
     "providers",
 )
@@ -137,9 +137,9 @@ def test_provider_foundation_completion_imports_and_contract_generalization(monk
     assert stocks.ZeroDteStockProviderContract.__name__ == "ProviderContract"
     assert stocks.ZeroDteStockProviderContract.__module__ == "src.providers.contracts"
 
-    legacy_kalshi = imported["automation_scheduler.kalshi_adapter_contract"]
-    legacy_sportsbook = imported["automation_scheduler.sportsbook_adapter_contract"]
-    legacy_allowlist = imported["automation_scheduler.provider_allowlist"]
+    legacy_kalshi = imported["src.automation_scheduler_legacy.kalshi_adapter_contract"]
+    legacy_sportsbook = imported["src.automation_scheduler_legacy.sportsbook_adapter_contract"]
+    legacy_allowlist = imported["src.automation_scheduler_legacy.provider_allowlist"]
 
     assert legacy_kalshi.validate_payload(legacy_kalshi.SAMPLE_DRY_RUN_PAYLOAD)["ok"] is True
     assert legacy_kalshi.normalize_payload(legacy_kalshi.SAMPLE_DRY_RUN_PAYLOAD)["provider_type"] == "prediction_market"

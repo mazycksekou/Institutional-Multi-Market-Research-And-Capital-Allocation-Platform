@@ -1,19 +1,4 @@
-from automation_scheduler.source_event_link_resolver import (
-    normalize_event_link_value,
-    normalize_event_link_token,
-    normalize_event_link_date,
-    build_event_link_key,
-    build_reversed_event_link_key,
-    score_event_link_candidate,
-    build_event_link_index,
-    resolve_source_event_link,
-    resolve_source_event_links,
-    apply_resolved_event_id_to_snapshot_row,
-    load_canonical_events_from_sqlite,
-    build_source_event_link_resolver_snapshot,
-    describe_source_event_link_resolver,
-    SOURCE_EVENT_LINK_RESOLVER_VERSION,
-)
+from src.services.streamlit_dashboard_facade import normalize_event_link_value, normalize_event_link_token, normalize_event_link_date, build_event_link_key, build_reversed_event_link_key, score_event_link_candidate, build_event_link_index, resolve_source_event_link, resolve_source_event_links, apply_resolved_event_id_to_snapshot_row, load_canonical_events_from_sqlite, build_source_event_link_resolver_snapshot, describe_source_event_link_resolver, SOURCE_EVENT_LINK_RESOLVER_VERSION
 
 
 # ── normalize_event_link_value ─────────────────────────────────────────
@@ -261,10 +246,7 @@ def test_load_canonical_events_from_sqlite_missing_db():
 
 
 def test_load_canonical_events_from_sqlite_reads_historical_events(tmp_path):
-    from automation_scheduler.historical_odds_sqlite import (
-        connect_historical_odds_db,
-        initialize_historical_odds_db,
-    )
+    from src.services.streamlit_dashboard_facade import connect_historical_odds_db, initialize_historical_odds_db
 
     db_path = tmp_path / "test_events.db"
     conn = connect_historical_odds_db(db_path)

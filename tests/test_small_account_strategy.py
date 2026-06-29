@@ -1,6 +1,6 @@
 import unittest
 
-from automation_scheduler.session_risk_rules import evaluate_session_risk, score_time_of_day
+from src.services.streamlit_dashboard_facade import evaluate_session_risk, score_time_of_day
 from src.services.execution_service import (
     calculate_risk_reward,
     run_small_account_review,

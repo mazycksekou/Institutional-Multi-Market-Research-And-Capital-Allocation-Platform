@@ -2,15 +2,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from automation_scheduler.data_availability_tiers import (
-    SPORT_PROFILES,
-    build_data_availability_report,
-    build_prediction_calibration_metadata,
-    evaluate_data_availability,
-    get_tier_profile,
-    write_data_availability_report,
-)
-from automation_scheduler.data_source_registry import build_registry
+from src.services.streamlit_dashboard_facade import SPORT_PROFILES, build_data_availability_report, build_prediction_calibration_metadata, evaluate_data_availability, get_tier_profile, write_data_availability_report
+from src.services.streamlit_dashboard_facade import build_registry
 
 
 NCAAF_T0 = ["teams", "game_id", "season", "week", "home_away", "final_score", "final_result"]

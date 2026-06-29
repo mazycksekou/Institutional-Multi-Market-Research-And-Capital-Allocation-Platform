@@ -1,8 +1,8 @@
 import unittest
 from tempfile import TemporaryDirectory
 
-from automation_scheduler.audit_log import append_audit_record, read_audit_records
-from automation_scheduler.scheduler_config import get_default_scheduler_config
+from src.services.streamlit_dashboard_facade import append_audit_record, read_audit_records
+from src.services.streamlit_dashboard_facade import get_default_scheduler_config
 
 
 class TestAuditLog(unittest.TestCase):

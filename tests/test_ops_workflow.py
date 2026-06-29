@@ -6,8 +6,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from automation_scheduler import ops_workflow
-from automation_scheduler.data_paths import AUTOMATION_DATA_DIR_ENV
+from src.services.streamlit_dashboard_facade import ops_workflow
+from src.services.streamlit_dashboard_facade import AUTOMATION_DATA_DIR_ENV
 
 
 class _FakeResponse:
@@ -159,7 +159,7 @@ class TestOpsWorkflow(unittest.TestCase):
 
     def test_outcome_reconcile_mode_reports_mismatch_warning(self):
         with patch(
-            "automation_scheduler.ops_workflow.check_outcome_reconciliation",
+            'src.automation_scheduler_legacy.ops_workflow.check_outcome_reconciliation',
             return_value={
                 "ok": True,
                 "status": "local_render_state_mismatch",

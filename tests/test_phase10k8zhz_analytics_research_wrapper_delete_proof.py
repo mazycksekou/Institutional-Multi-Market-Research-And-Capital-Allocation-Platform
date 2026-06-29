@@ -76,7 +76,7 @@ def test_canonical_packages_remain_and_wrappers_are_not_required() -> None:
         "src/analytics/governance.py",
         "src/research/maturity.py",
         "model_governance/__init__.py",
-        "automation_scheduler/__init__.py",
+        'src/automation_scheduler_legacy/__init__.py',
     ]:
         assert (ROOT / relpath).exists()
 
@@ -116,14 +116,14 @@ def test_no_deleted_odds_or_prediction_shells_reintroduced() -> None:
         "kalshi_client.py",
         "providers/kalshi_provider.py",
         "betting_providers/kalshi_api.py",
-        "automation_scheduler/kalshi_readonly_adapter.py",
-        "automation_scheduler/kalshi_market_provider.py",
+        'src/automation_scheduler_legacy/kalshi_readonly_adapter.py',
+        'src/automation_scheduler_legacy/kalshi_market_provider.py',
         "sharp_client.py",
         "providers/sharp_provider.py",
         "betting_providers/sharp_api.py",
         "betting_providers/the_odds_api.py",
         "betting_providers/sportsgameodds.py",
-        "automation_scheduler/sharp_sportsbook_adapter.py",
-        "automation_scheduler/sportsbook_odds_provider.py",
+        'src/automation_scheduler_legacy/sharp_sportsbook_adapter.py',
+        'src/automation_scheduler_legacy/sportsbook_odds_provider.py',
     ]:
         assert not (ROOT / relpath).exists()

@@ -30,8 +30,8 @@ def test_final_execution_blocker_canonicalization_imports_safe() -> None:
     decision_engine = importlib.import_module("src.services.decision_engine")
     execution_service = importlib.import_module("src.services.execution_service")
     ledger_service = importlib.import_module("src.services.ledger_service")
-    paper_trade_ledger = importlib.import_module("automation_scheduler.paper_trade_ledger")
-    paper_decision_ledger = importlib.import_module("automation_scheduler.paper_decision_ledger")
+    paper_trade_ledger = importlib.import_module('src.automation_scheduler_legacy.paper_trade_ledger')
+    paper_decision_ledger = importlib.import_module('src.automation_scheduler_legacy.paper_decision_ledger')
 
     plan = decision_engine.build_brokerage_execution_plan(
         {"ticker": "AAPL", "stake": 12, "american_odds": -120, "decision_id": "d2", "provider": "demo"}

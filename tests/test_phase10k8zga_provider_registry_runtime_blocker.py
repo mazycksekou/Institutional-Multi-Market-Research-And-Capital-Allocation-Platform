@@ -16,10 +16,10 @@ MIGRATION_MAP_PATH = ROOT / "PROVIDER_REGISTRY_MIGRATION_MAP_AFTER_10K8ZGA.md"
 DELETE_READINESS_PATH = ROOT / "PROVIDER_REGISTRY_DELETE_READINESS_AFTER_10K8ZGA.md"
 
 RUNTIME_FILES = [
-    ROOT / "automation_scheduler" / "__init__.py",
-    ROOT / "automation_scheduler" / "scheduler_config.py",
-    ROOT / "automation_scheduler" / "cadence_controller.py",
-    ROOT / "automation_scheduler" / "kalshi_readonly_readiness.py",
+    ROOT / "src" / "automation_scheduler_legacy" / "__init__.py",
+    ROOT / "src" / "automation_scheduler_legacy" / "scheduler_config.py",
+    ROOT / "src" / "automation_scheduler_legacy" / "cadence_controller.py",
+    ROOT / "src" / "automation_scheduler_legacy" / "kalshi_readonly_readiness.py",
 ]
 
 FORBIDDEN_NETWORK_ROOTS = {
@@ -102,10 +102,10 @@ def test_phase10k8zga_runtime_dependency_redirect(monkeypatch, tmp_path):
     monkeypatch.setattr(os, "getenv", fail_getenv)
 
     canonical_registry = importlib.import_module("src.providers.registry")
-    scheduler_config = importlib.import_module("automation_scheduler.scheduler_config")
-    readiness = importlib.import_module("automation_scheduler.kalshi_readonly_readiness")
-    cadence_controller = importlib.import_module("automation_scheduler.cadence_controller")
-    scheduler_pkg = importlib.import_module("automation_scheduler")
+    scheduler_config = importlib.import_module('src.automation_scheduler_legacy.scheduler_config')
+    readiness = importlib.import_module('src.automation_scheduler_legacy.kalshi_readonly_readiness')
+    cadence_controller = importlib.import_module('src.automation_scheduler_legacy.cadence_controller')
+    scheduler_pkg = importlib.import_module('src.automation_scheduler_legacy')
 
     monkeypatch.setattr(os, "getenv", original_getenv)
     monkeypatch.setattr(canonical_registry.os, "getenv", lambda *_args, **_kwargs: None)
@@ -132,7 +132,7 @@ def test_phase10k8zga_runtime_dependency_redirect(monkeypatch, tmp_path):
     scheduler_snapshot = scheduler_pkg.get_provider_registry_snapshot(base_data_dir=str(tmp_path))
     assert not (ROOT / "automation_scheduler" / "provider_registry.py").exists()
     with pytest.raises(ModuleNotFoundError):
-        importlib.import_module("automation_scheduler.provider_registry")
+        importlib.import_module('src.automation_scheduler_legacy.provider_registry')
 
     assert "sharp_sportsbook" not in canonical_default
     assert "kalshi_prediction_market" not in canonical_default
@@ -154,3 +154,4 @@ def test_phase10k8zga_runtime_dependency_redirect(monkeypatch, tmp_path):
 
     assert callable(cadence_controller.choose_next_check_seconds)
     assert callable(scheduler_pkg.get_provider_registry_snapshot)
+

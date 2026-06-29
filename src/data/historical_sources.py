@@ -98,11 +98,11 @@ def get_historical_data_sources(*args: Any, status: str | None = None, **kwargs:
 
 
 def get_priority_import_sources(*args: Any, sport: str | None = None, **kwargs: Any) -> list[dict[str, Any]]:
-    rows = [row for row in _source_rows() if row.get("status") in {"keep", "keep_tool", "downgrade", "exploration_only"}]
-    if sport:
-        target = str(sport).strip().lower()
-        rows = [row for row in rows if row.get("sport") in {"any", target}]
-    return sorted(rows, key=lambda row: (int(row.get("priority_order", 999)), row["source_key"]))
+    from src.automation_scheduler_legacy.historical_data_sources import (
+        get_priority_import_sources as legacy_get_priority_import_sources,
+    )
+
+    return legacy_get_priority_import_sources(*args, sport=sport, **kwargs)
 
 
 def get_historical_data_source_rows(*args: Any, include_rejected: bool = True, **kwargs: Any) -> list[dict[str, Any]]:

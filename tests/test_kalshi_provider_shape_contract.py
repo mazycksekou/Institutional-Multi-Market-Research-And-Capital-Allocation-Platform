@@ -3,13 +3,13 @@ from datetime import datetime, timedelta, timezone
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
-from automation_scheduler.scheduler_runner import run_scheduler_once
-from automation_scheduler.response_compactor import compact_run_once_response
+from src.services.streamlit_dashboard_facade import run_scheduler_once
+from src.automation_scheduler_legacy.response_compactor import compact_run_once_response
 
 
 class TestKalshiProviderShapeContract(unittest.TestCase):
-    @patch("automation_scheduler.scheduler_runner.SharpSportsbookAdapter.fetch_snapshot")
-    @patch("automation_scheduler.scheduler_runner.KalshiReadonlyAdapter.fetch_snapshot")
+    @patch('src.automation_scheduler_legacy.scheduler_runner.SharpSportsbookAdapter.fetch_snapshot')
+    @patch('src.automation_scheduler_legacy.scheduler_runner.KalshiReadonlyAdapter.fetch_snapshot')
     def test_dollar_shape_fields_are_scheduler_usable_and_missing_prices_not_triggered(self, mock_kalshi_snapshot, mock_sharp_snapshot):
         now = datetime.now(timezone.utc)
         mock_sharp_snapshot.return_value = {

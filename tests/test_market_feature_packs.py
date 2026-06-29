@@ -1,15 +1,6 @@
 """Tests for market feature packs (Phase 10H14)."""
 
-from automation_scheduler.market_feature_packs import (
-    MARKET_FEATURE_PACKS_VERSION,
-    MARKET_FEATURE_NEVER_FEATURE_FIELDS,
-    normalize_market_family,
-    get_market_feature_pack,
-    get_supported_market_feature_packs,
-    calculate_market_field_presence,
-    evaluate_market_feature_readiness,
-    summarize_market_feature_readiness,
-)
+from src.services.streamlit_dashboard_facade import MARKET_FEATURE_PACKS_VERSION, MARKET_FEATURE_NEVER_FEATURE_FIELDS, normalize_market_family, get_market_feature_pack, get_supported_market_feature_packs, calculate_market_field_presence, evaluate_market_feature_readiness, summarize_market_feature_readiness
 
 
 def test_normalize_market_family_two_way_moneyline_aliases():

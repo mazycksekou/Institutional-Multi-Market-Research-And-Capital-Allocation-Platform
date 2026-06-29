@@ -1,13 +1,5 @@
-from automation_scheduler.backtest_schema import (
-    BACKTEST_FIELD_ALIASES,
-    LEAKAGE_FIELD_ALIASES,
-    REQUIRED_BACKTEST_FIELDS,
-    describe_backtest_schema,
-    missing_required_backtest_fields,
-    normalize_backtest_row,
-    validate_no_leakage_features,
-)
-from automation_scheduler.backtesting_engine import replay_rows, run_backtest
+from src.services.streamlit_dashboard_facade import BACKTEST_FIELD_ALIASES, LEAKAGE_FIELD_ALIASES, REQUIRED_BACKTEST_FIELDS, describe_backtest_schema, missing_required_backtest_fields, normalize_backtest_row, validate_no_leakage_features
+from src.services.streamlit_dashboard_facade import replay_rows, run_backtest
 
 
 def test_backtest_schema_has_required_fields_and_aliases():

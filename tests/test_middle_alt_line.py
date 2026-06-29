@@ -1,6 +1,6 @@
 import unittest
 
-from automation_scheduler.middles.alt_line_middle import detect_alt_line_middle
+from src.services.streamlit_dashboard_facade import detect_alt_line_middle
 
 
 class TestMiddleAltLine(unittest.TestCase):

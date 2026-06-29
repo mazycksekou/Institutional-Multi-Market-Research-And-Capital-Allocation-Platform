@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 REPORT = ROOT / "PHASE10K8ZFE1_UNIVERSAL_PRODUCT_LANGUAGE_ALIGNMENT.md"
 README = ROOT / "README.md"
 APP = ROOT / "streamlit_app.py"
-DATA_HELPERS = ROOT / "automation_scheduler" / "streamlit_dashboard_data.py"
+DATA_HELPERS = ROOT / "src" / "automation_scheduler_legacy" / "streamlit_dashboard_data.py"
 
 
 def read_text(path: Path) -> str:

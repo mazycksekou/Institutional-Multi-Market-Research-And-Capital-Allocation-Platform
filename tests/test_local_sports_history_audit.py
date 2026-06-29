@@ -3,11 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from automation_scheduler.local_sports_history_audit import (
-    ALLOWED_BLOCKED_REASONS,
-    build_local_sports_history_audit_report,
-    write_local_sports_history_audit_report,
-)
+from src.services.streamlit_dashboard_facade import ALLOWED_BLOCKED_REASONS, build_local_sports_history_audit_report, write_local_sports_history_audit_report
 
 
 class TestLocalSportsHistoryAudit(unittest.TestCase):

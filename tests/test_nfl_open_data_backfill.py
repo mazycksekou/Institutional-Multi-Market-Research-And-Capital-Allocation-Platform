@@ -5,20 +5,11 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-import automation_scheduler.nfl_open_data_adapters as nfl_open_data_adapters
-import automation_scheduler.nfl_open_data_backfill as nfl_open_data_backfill
-from automation_scheduler.nfl_open_data_adapters import (
-    _load_resume_ledger,
-    _merge_asset_reports,
-    _merge_validated_report,
-    _save_resume_ledger,
-)
-from automation_scheduler.nfl_open_data_backfill import (
-    build_nfl_open_data_backfill_report,
-    build_nfl_open_data_coverage_matrix,
-    write_nfl_open_data_backfill_report,
-)
-from automation_scheduler.nfl_open_data_sources import BLOCKED_FEATURE_FAMILIES, REQUIRED_DATA_CATEGORIES
+import src.automation_scheduler_legacy.nfl_open_data_adapters as nfl_open_data_adapters
+import src.automation_scheduler_legacy.nfl_open_data_backfill as nfl_open_data_backfill
+from src.automation_scheduler_legacy.nfl_open_data_adapters import _load_resume_ledger, _merge_asset_reports, _merge_validated_report, _save_resume_ledger
+from src.automation_scheduler_legacy.nfl_open_data_backfill import build_nfl_open_data_backfill_report, build_nfl_open_data_coverage_matrix, write_nfl_open_data_backfill_report
+from src.services.streamlit_dashboard_facade import BLOCKED_FEATURE_FAMILIES, REQUIRED_DATA_CATEGORIES
 
 PARTIAL_LANE_SOURCE_IDS = [
     "nflverse_play_by_play",
@@ -76,8 +67,8 @@ class TestNflOpenDataBackfill(unittest.TestCase):
         self.assertNotIn("pace_or_advanced_efficiency", report["feature_families_still_blocked"])
 
     def test_metadata_only_check_does_not_download(self):
-        with patch("automation_scheduler.nfl_open_data_adapters._urlopen_json", return_value={"assets": []}), patch(
-            "automation_scheduler.nfl_open_data_adapters.urllib.request.urlopen"
+        with patch('src.automation_scheduler_legacy.nfl_open_data_adapters._urlopen_json', return_value={"assets": []}), patch(
+            'src.automation_scheduler_legacy.nfl_open_data_adapters.urllib.request.urlopen'
         ) as urlopen:
             report = build_nfl_open_data_backfill_report(
                 source_id="nflverse_schedules_results",

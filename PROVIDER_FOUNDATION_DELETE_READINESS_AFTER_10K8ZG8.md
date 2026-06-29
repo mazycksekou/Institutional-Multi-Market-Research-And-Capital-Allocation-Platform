@@ -7,6 +7,8 @@
 ## Remaining Blockers
 - Runtime blocker: `automation_scheduler/provider_registry.py`
 - Runtime blocker: `automation_scheduler/provider_write_firewall.py`
+- Runtime blocker: `src/automation_scheduler_legacy/provider_registry.py`
+- Runtime blocker: `src/automation_scheduler_legacy/provider_write_firewall.py`
 - Test blockers: `tests/test_phase10k8zft_provider_foundation_transport.py`, `tests/test_phase10k8zfu_provider_foundation_completion.py`, `tests/test_phase10k8zg2_legacy_deletion_readiness_audit.py`
 
 ## Next Recommended Batch

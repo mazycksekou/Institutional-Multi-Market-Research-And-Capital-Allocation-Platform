@@ -1,15 +1,6 @@
 """Tests for sport feature packs (Phase 10H13)."""
 
-from automation_scheduler.sport_feature_packs import (
-    SPORT_FEATURE_PACKS_VERSION,
-    SPORT_FEATURE_NEVER_FEATURE_FIELDS,
-    normalize_sport_key,
-    get_sport_feature_pack,
-    get_supported_sport_feature_packs,
-    calculate_field_presence,
-    evaluate_sport_feature_readiness,
-    summarize_sport_feature_readiness,
-)
+from src.services.streamlit_dashboard_facade import SPORT_FEATURE_PACKS_VERSION, SPORT_FEATURE_NEVER_FEATURE_FIELDS, normalize_sport_key, get_sport_feature_pack, get_supported_sport_feature_packs, calculate_field_presence, evaluate_sport_feature_readiness, summarize_sport_feature_readiness
 
 
 def test_normalize_sport_key_aliases_for_core_repo_sports():

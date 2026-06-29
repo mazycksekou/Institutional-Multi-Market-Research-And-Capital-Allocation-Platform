@@ -1,14 +1,6 @@
 import unittest
 
-from automation_scheduler.bookmaker_normalizer import (
-    normalize_bookmaker_name,
-    normalize_entity_name,
-    normalize_event_name,
-    normalize_market_name,
-    normalize_offer,
-    normalize_selection_name,
-    normalize_timestamp,
-)
+from src.services.streamlit_dashboard_facade import normalize_bookmaker_name, normalize_entity_name, normalize_event_name, normalize_market_name, normalize_offer, normalize_selection_name, normalize_timestamp
 
 
 class TestBookmakerNormalizer(unittest.TestCase):

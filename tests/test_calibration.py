@@ -1,14 +1,8 @@
 import unittest
 from tempfile import TemporaryDirectory
 
-from automation_scheduler.calibration import (
-    build_calibration_report,
-    load_outcome_records,
-    match_outcomes_to_paper_decisions,
-    run_calibration_scaffold,
-    summarize_outcome_coverage,
-)
-from automation_scheduler.paper_decision_ledger import persist_paper_decisions_for_review_items
+from src.services.streamlit_dashboard_facade import build_calibration_report, load_outcome_records, match_outcomes_to_paper_decisions, run_calibration_scaffold, summarize_outcome_coverage
+from src.services.streamlit_dashboard_facade import persist_paper_decisions_for_review_items
 
 
 class TestCalibration(unittest.TestCase):
@@ -131,7 +125,7 @@ class TestCalibration(unittest.TestCase):
                 run_id="run-cal",
                 base_data_dir=tmp,
             )
-            from automation_scheduler.outcome_store import ingest_outcome_records
+            from src.services.streamlit_dashboard_facade import ingest_outcome_records
 
             ingest_outcome_records(
                 [
@@ -176,7 +170,7 @@ class TestCalibration(unittest.TestCase):
                 run_id="close_soon_original",
                 base_data_dir=tmp,
             )
-            from automation_scheduler.outcome_store import ingest_outcome_records
+            from src.services.streamlit_dashboard_facade import ingest_outcome_records
 
             ingest_outcome_records(
                 [

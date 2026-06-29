@@ -203,7 +203,7 @@ def build_sports_intelligence_report(payload: Mapping[str, Any] | None = None, /
     return report
 
 
-LEGACY_PACKAGE = "automation" + "_" + "scheduler"
+LEGACY_PACKAGE = "src.automation_scheduler_legacy"
 SPORT_TOKENS = {"baseball", "golf", "hockey", "soccer", "combat", "tennis"}
 
 

@@ -10,12 +10,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 DELETED_WRAPPER_FILES = [
-    "automation_scheduler/provider_contracts.py",
-    "automation_scheduler/provider_health.py",
-    "automation_scheduler/provider_adapter_base.py",
-    "automation_scheduler/provider_normalization_contract.py",
-    "automation_scheduler/provider_payload_validator.py",
-    "automation_scheduler/provider_secret_policy.py",
+    'src/automation_scheduler_legacy/provider_contracts.py',
+    'src/automation_scheduler_legacy/provider_health.py',
+    'src/automation_scheduler_legacy/provider_adapter_base.py',
+    'src/automation_scheduler_legacy/provider_normalization_contract.py',
+    'src/automation_scheduler_legacy/provider_payload_validator.py',
+    'src/automation_scheduler_legacy/provider_secret_policy.py',
     "providers/base_provider.py",
     "betting_providers/base.py",
     "betting_providers/normalization.py",
@@ -34,7 +34,6 @@ UPDATED_FILES = {
     ],
     "tests/test_provider_contracts.py": [
         "from src.providers.contracts import PROVIDER_TYPES, get_default_provider_contracts",
-        "from automation_scheduler.provider_contracts import PROVIDER_TYPES, get_default_provider_contracts",
     ],
     "tests/test_provider_registry.py": [
         "from src.providers.registry import get_provider_registry",
@@ -42,26 +41,20 @@ UPDATED_FILES = {
     "tests/test_provider_health.py": [
         "from src.providers.contracts import get_default_provider_contracts",
         "from src.providers.health import compact_provider_health, summarize_provider_health",
-        "from automation_scheduler.provider_contracts import get_default_provider_contracts",
-        "from automation_scheduler.provider_health import compact_provider_health, summarize_provider_health",
     ],
     "tests/test_provider_payload_validator.py": [
         "from src.providers.validation import validate_provider_payload",
-        "from automation_scheduler.provider_payload_validator import validate_provider_payload",
     ],
     "tests/test_provider_normalization_contract.py": [
         "from src.providers.normalization import get_normalized_schema, normalize_provider_payload",
         "from src.providers.sportsbooks import SAMPLE_DRY_RUN_PAYLOAD as SPORTSBOOK_SAMPLE",
-        "from automation_scheduler.provider_normalization_contract import get_normalized_schema, normalize_provider_payload",
     ],
     "tests/test_provider_secret_policy.py": [
         "from src.providers.policy.secret_policy import",
-        "from automation_scheduler.provider_secret_policy import",
     ],
     "tests/test_provider_adapter_base.py": [
         "from src.providers.base import ProviderAdapterBase",
         "from src.providers.contracts import get_default_provider_contracts",
-        "from automation_scheduler.provider_adapter_base import ProviderAdapterBase",
     ],
     "tests/test_sportsbook_odds_provider.py": [
         "from src.providers.registry import get_provider_registry",
@@ -88,12 +81,12 @@ CANONICAL_IMPORTS = [
 ]
 
 WRAPPER_IMPORTS = [
-    "automation_scheduler.provider_contracts",
-    "automation_scheduler.provider_health",
-    "automation_scheduler.provider_adapter_base",
-    "automation_scheduler.provider_normalization_contract",
-    "automation_scheduler.provider_payload_validator",
-    "automation_scheduler.provider_secret_policy",
+    'src.automation_scheduler_legacy.provider_contracts',
+    'src.automation_scheduler_legacy.provider_health',
+    'src.automation_scheduler_legacy.provider_adapter_base',
+    'src.automation_scheduler_legacy.provider_normalization_contract',
+    'src.automation_scheduler_legacy.provider_payload_validator',
+    'src.automation_scheduler_legacy.provider_secret_policy',
     "providers.base_provider",
     "betting_providers.base",
     "betting_providers.normalization",

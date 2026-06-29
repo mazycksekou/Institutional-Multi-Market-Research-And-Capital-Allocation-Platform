@@ -1,12 +1,6 @@
 import unittest
 
-from automation_scheduler.exposure_limits import (
-    apply_all_exposure_caps,
-    cap_daily_exposure,
-    cap_market_group_exposure,
-    cap_single_bet_exposure,
-    cap_weekly_exposure,
-)
+from src.automation_scheduler_legacy.exposure_limits import apply_all_exposure_caps, cap_daily_exposure, cap_market_group_exposure, cap_single_bet_exposure, cap_weekly_exposure
 
 
 class ExposureLimitsTests(unittest.TestCase):

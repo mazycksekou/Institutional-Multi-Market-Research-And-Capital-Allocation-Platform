@@ -1,9 +1,5 @@
-from automation_scheduler.backtest_strategy_bankroll import (
-    decide_backtest_bet,
-    simulate_backtest_bankroll,
-    summarize_strategy_bankroll_report,
-)
-from automation_scheduler.backtesting_engine import run_backtest
+from src.services.streamlit_dashboard_facade import decide_backtest_bet, simulate_backtest_bankroll, summarize_strategy_bankroll_report
+from src.services.streamlit_dashboard_facade import run_backtest
 
 
 def test_decide_backtest_bet_uses_edge_and_probability_thresholds():

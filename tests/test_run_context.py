@@ -1,6 +1,6 @@
 import unittest
-from automation_scheduler.run_context import create_run_context
-from automation_scheduler.scheduler_config import get_default_scheduler_config
+from src.services.streamlit_dashboard_facade import create_run_context
+from src.services.streamlit_dashboard_facade import get_default_scheduler_config
 
 
 class TestRunContext(unittest.TestCase):

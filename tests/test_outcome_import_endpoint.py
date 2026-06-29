@@ -5,8 +5,8 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
-from automation_scheduler.outcome_store import ingest_outcome_records, load_outcome_records
-from automation_scheduler.paper_decision_ledger import load_paper_decisions
+from src.services.streamlit_dashboard_facade import ingest_outcome_records, load_outcome_records
+from src.services.streamlit_dashboard_facade import load_paper_decisions
 from tests.support.action_imports import app
 
 
@@ -163,7 +163,7 @@ class TestOutcomeImportEndpoint(unittest.TestCase):
         with TemporaryDirectory() as tmp:
             env = {"AUTOMATION_DATA_DIR": tmp, "COLLECTOR_CRON_TOKEN": "endpoint-secret"}
             with patch.dict(os.environ, env, clear=False):
-                with patch("automation_scheduler.outcome_migration._transactional_write_json", side_effect=OSError("forced atomic failure")):
+                with patch('src.automation_scheduler_legacy.outcome_migration._transactional_write_json', side_effect=OSError("forced atomic failure")):
                     response = self._post(
                         {
                             "dry_run": False,

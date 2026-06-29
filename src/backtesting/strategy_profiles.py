@@ -17,10 +17,9 @@ _PROFILE_ALIASES = {
 
 
 def normalize_strategy_profile_key(value: Any) -> str | None:
-    if value in (None, ""):
-        return None
-    key = str(value).strip().lower()
-    return _PROFILE_ALIASES.get(key, key)
+    from src.automation_scheduler_legacy.backtest_strategy_profiles import normalize_strategy_profile_key as _legacy_normalize_strategy_profile_key
+
+    return _legacy_normalize_strategy_profile_key(value)
 
 
 def infer_strategy_profile_key_from_row(row: Mapping[str, Any]) -> str | None:
@@ -52,52 +51,19 @@ def build_strategy_config_for_row(
     all_sports_profile: Mapping[str, Any] | None = None,
     sport_profiles: Mapping[str, Mapping[str, Any]] | None = None,
 ) -> dict[str, Any]:
-    sport_key = infer_strategy_profile_key_from_row(row) or "all_sports"
-    sport_profiles = dict(sport_profiles or {})
-    if sport_key in sport_profiles:
-        profile = dict(sport_profiles[sport_key])
-        return _profile_payload(
-            profile_name=sport_key,
-            profile_scope="sport_specific",
-            selection_reason="sport_specific_match",
-            intercept=float(profile.get("intercept", 0.5) or 0.5),
-            feature_weights=profile.get("feature_weights") or {},
-        )
-    if all_sports_profile:
-        profile = dict(all_sports_profile)
-        return _profile_payload(
-            profile_name="all_sports",
-            profile_scope="all_sports",
-            selection_reason="forced_all_sports",
-            intercept=float(profile.get("intercept", 0.5) or 0.5),
-            feature_weights=profile.get("feature_weights") or {},
-        )
-    return _profile_payload(
-        profile_name=sport_key,
-        profile_scope="auto",
-        selection_reason="auto_selected",
+    from src.automation_scheduler_legacy.backtest_strategy_profiles import build_strategy_config_for_row as _legacy_build_strategy_config_for_row
+
+    return _legacy_build_strategy_config_for_row(
+        row,
+        all_sports_profile=all_sports_profile,
+        sport_profiles=sport_profiles,
     )
 
 
 def describe_regression_profiles() -> dict[str, Any]:
-    return {
-        "data_readiness_owner": "src.data.historical_sources",
-        "strategy_profile_owner": "src.backtesting.strategy_profiles",
-        "public_runner": "src.backtesting.engine.run_backtest",
-        "sport_profiles": {
-            "basketball_nba": {"display_name": "NBA", "profile_name": "basketball_nba"},
-            "baseball_mlb": {"display_name": "MLB", "profile_name": "baseball_mlb"},
-            "americanfootball_nfl": {"display_name": "NFL", "profile_name": "americanfootball_nfl"},
-            "icehockey_nhl": {"display_name": "NHL", "profile_name": "icehockey_nhl"},
-            "association_football": {"display_name": "Soccer", "profile_name": "association_football"},
-            "prediction_market": {"display_name": "Prediction Market", "profile_name": "prediction_market"},
-        },
-        "notes": [
-            "local_only",
-            "no_live_execution",
-            "no_scheduler_dependency",
-        ],
-    }
+    from src.automation_scheduler_legacy.backtest_strategy_profiles import describe_regression_profiles as _legacy_describe_regression_profiles
+
+    return _legacy_describe_regression_profiles()
 
 
 def get_regression_profile(
@@ -107,14 +73,14 @@ def get_regression_profile(
     all_sports_profile: Mapping[str, Any] | None = None,
     sport_profiles: Mapping[str, Mapping[str, Any]] | None = None,
 ) -> dict[str, Any]:
-    row = {"sport": sport}
-    profile = build_strategy_config_for_row(
-        row,
+    from src.automation_scheduler_legacy.backtest_strategy_profiles import get_regression_profile as _legacy_get_regression_profile
+
+    return _legacy_get_regression_profile(
+        sport=sport,
+        profile_scope=profile_scope,
         all_sports_profile=all_sports_profile,
         sport_profiles=sport_profiles,
     )
-    profile["profile_scope"] = profile_scope if profile_scope != "auto" else profile["profile_scope"]
-    return profile
 
 
 SAFE_DEFAULTS: dict[str, Any] = {

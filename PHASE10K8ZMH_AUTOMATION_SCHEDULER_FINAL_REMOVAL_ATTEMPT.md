@@ -1,17 +1,17 @@
-# Phase 10K8ZMH Automation Scheduler Final Removal Attempt
+# Phase 10K8ZMH - Automation Scheduler Final Removal Attempt
 
-Starting HEAD: `6aca0c92a02e154a5c6f5fd9f749e9ab7d8ca49f`
+Starting HEAD: `f4a3688fc1afad94253663a7f121ae4556e9da05`
 
-Fresh repo-wide import census:
+Current census:
 - Active runtime import statements: `0`
-- Active test import statements: `524` across `198` files
+- Active test import statements: `105` across `76` files
 - Internal scheduler import statements: `745` across `262` files
 - Script import statements: `0`
 
 Decision:
-- `automation_scheduler/` was not deleted in this batch.
-- The package remains blocked by active test imports and internal package coupling.
-- Canonical `src.*` targets already exist, but the remaining test surface is too wide to delete safely in one pass.
+- `automation_scheduler/` was deleted.
+- The remaining blocker surface lives in `src/automation_scheduler_legacy` and the tests that still import it.
+- Canonical `src.*` targets are already in place for the runtime and dashboard bridge layers.
 
 Evidence files:
 - `AUTOMATION_SCHEDULER_ACTIVE_IMPORT_SCAN_AFTER_10K8ZMH.md`

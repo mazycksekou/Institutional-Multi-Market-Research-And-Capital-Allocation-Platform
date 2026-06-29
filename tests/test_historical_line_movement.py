@@ -9,27 +9,8 @@ from pathlib import Path
 
 import pytest
 
-from automation_scheduler.historical_line_movement import (
-    LINE_MOVEMENT_SCHEMA_VERSION,
-    attach_volatility_to_backtest_rows,
-    backfill_line_snapshots_from_historical_odds,
-    calculate_line_movement_readiness,
-    canonical_row_to_line_snapshots,
-    initialize_line_movement_schema,
-    make_line_snapshot_id,
-    normalize_snapshot_label,
-    query_line_snapshots,
-    summarize_line_movement_store,
-    summarize_results_by_volatility,
-    upsert_line_snapshots,
-    upsert_line_snapshots_for_canonical_rows,
-)
-from automation_scheduler.historical_odds_sqlite import (
-    connect_historical_odds_db,
-    initialize_historical_odds_db,
-    import_historical_odds_file_to_sqlite,
-    query_historical_odds_rows,
-)
+from src.services.streamlit_dashboard_facade import LINE_MOVEMENT_SCHEMA_VERSION, attach_volatility_to_backtest_rows, backfill_line_snapshots_from_historical_odds, calculate_line_movement_readiness, canonical_row_to_line_snapshots, initialize_line_movement_schema, make_line_snapshot_id, normalize_snapshot_label, query_line_snapshots, summarize_line_movement_store, summarize_results_by_volatility, upsert_line_snapshots, upsert_line_snapshots_for_canonical_rows
+from src.services.streamlit_dashboard_facade import connect_historical_odds_db, initialize_historical_odds_db, import_historical_odds_file_to_sqlite, query_historical_odds_rows
 
 
 def _make_conn(tmp_path: Path) -> sqlite3.Connection:
@@ -202,10 +183,7 @@ def test_calculate_line_movement_readiness(tmp_path: Path) -> None:
 
 
 def test_backfill_line_snapshots_from_historical_odds(tmp_path: Path) -> None:
-    from automation_scheduler.historical_odds_sqlite import (
-        connect_historical_odds_db,
-        initialize_historical_odds_db,
-    )
+    from src.services.streamlit_dashboard_facade import connect_historical_odds_db, initialize_historical_odds_db
     db_path = tmp_path / "backfill.db"
     conn = connect_historical_odds_db(db_path)
     initialize_historical_odds_db(conn)
@@ -233,9 +211,7 @@ def test_backfill_line_snapshots_from_historical_odds(tmp_path: Path) -> None:
 
 
 def test_calculate_line_volatility_for_group_with_line_values():
-    from automation_scheduler.historical_line_movement import (
-        calculate_line_volatility_for_group,
-    )
+    from src.services.streamlit_dashboard_facade import calculate_line_volatility_for_group
     rows = [
         {
             "event_id": "e1",
@@ -286,9 +262,7 @@ def test_calculate_line_volatility_for_group_with_line_values():
 
 
 def test_calculate_line_volatility_for_group_odds_only():
-    from automation_scheduler.historical_line_movement import (
-        calculate_line_volatility_for_group,
-    )
+    from src.services.streamlit_dashboard_facade import calculate_line_volatility_for_group
     rows = [
         {
             "event_id": "e2",
@@ -330,9 +304,7 @@ def test_calculate_line_volatility_for_group_odds_only():
 
 
 def test_calculate_line_volatility_summary_stable_keys():
-    from automation_scheduler.historical_line_movement import (
-        calculate_line_volatility_summary,
-    )
+    from src.services.streamlit_dashboard_facade import calculate_line_volatility_summary
     rows = [
         {
             "event_id": "e1",
@@ -362,15 +334,8 @@ def test_calculate_line_volatility_summary_stable_keys():
 
 
 def test_get_line_volatility_summary_from_sqlite(tmp_path):
-    from automation_scheduler.historical_line_movement import (
-        initialize_line_movement_schema,
-        upsert_line_snapshots_for_canonical_rows,
-        get_line_volatility_summary_from_sqlite,
-    )
-    from automation_scheduler.historical_odds_sqlite import (
-        connect_historical_odds_db,
-        initialize_historical_odds_db,
-    )
+    from src.services.streamlit_dashboard_facade import initialize_line_movement_schema, upsert_line_snapshots_for_canonical_rows, get_line_volatility_summary_from_sqlite
+    from src.services.streamlit_dashboard_facade import connect_historical_odds_db, initialize_historical_odds_db
     db_path = tmp_path / "vol_test.db"
     conn = connect_historical_odds_db(db_path)
     initialize_historical_odds_db(conn)

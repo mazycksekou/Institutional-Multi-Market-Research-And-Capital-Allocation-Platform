@@ -46,8 +46,8 @@ LEGACY_IMPORTS = [
     "betting_providers.sharp_api",
     "betting_providers.the_odds_api",
     "betting_providers.sportsgameodds",
-    "automation_scheduler.sharp_sportsbook_adapter",
-    "automation_scheduler.sportsbook_odds_provider",
+    'src.automation_scheduler_legacy.sharp_sportsbook_adapter',
+    'src.automation_scheduler_legacy.sportsbook_odds_provider',
     "sharp_client",
 ]
 
@@ -162,8 +162,8 @@ def test_legacy_odds_imports_are_no_longer_active_dependencies():
         "betting_providers.sharp_api",
         "betting_providers.the_odds_api",
         "betting_providers.sportsgameodds",
-        "automation_scheduler.sharp_sportsbook_adapter",
-        "automation_scheduler.sportsbook_odds_provider",
+        'src.automation_scheduler_legacy.sharp_sportsbook_adapter',
+        'src.automation_scheduler_legacy.sportsbook_odds_provider',
     ]
     historical_evidence_files = {
         ROOT / "tests" / "test_phase10k8zgz_post_provider_connector_cleanup_freeze.py",

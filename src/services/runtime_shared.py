@@ -245,31 +245,17 @@ def evaluate_owner_approval(
     used_nonces: Sequence[str] | None = None,
     actor_type: str = "system",
 ) -> dict[str, Any]:
-    approval = dict(owner_approval or {})
-    present = bool(approval.get("owner_approval_present") or approval.get("approved") or approval.get("approval_status") in {"approved", "approved_for_execution"})
-    signature_valid = approval.get("owner_approval_signature_valid") is not False and bool(approval.get("signature", approval.get("signed")) or approval.get("approval_signature") or signing_secret is None)
-    expired = bool(approval.get("owner_approval_expired") or approval.get("expired"))
-    nonce = str(approval.get("approval_nonce") or approval.get("nonce") or "")
-    replay = bool(nonce and used_nonces and nonce in set(str(item) for item in used_nonces))
-    actor_blocked = actor_type == "ai_provider"
-    ok = present and signature_valid and not expired and not replay and not actor_blocked
-    status = "owner_approval_valid" if ok else (
-        "owner_approval_expired" if expired else "owner_approval_replay_detected" if replay else "owner_approval_invalid" if present else "owner_approval_missing"
+    from src.automation_scheduler_legacy.owner_approval_gate import evaluate_owner_approval as _legacy_evaluate_owner_approval
+
+    return _legacy_evaluate_owner_approval(
+        dict(owner_approval or {}),
+        requested_scope=dict(requested_scope or {}),
+        persist_audit=persist_audit,
+        base_data_dir=base_data_dir,
+        signing_secret=signing_secret,
+        used_nonces=used_nonces,
+        actor_type=actor_type,
     )
-    return {
-        "ok": ok,
-        "approval_status": status,
-        "owner_approval_present": present,
-        "owner_approval_required": True,
-        "owner_approval_signature_valid": signature_valid,
-        "owner_approval_expired": expired,
-        "owner_approval_replay_detected": replay,
-        "requested_scope": dict(requested_scope or {}),
-        "actor_type": actor_type,
-        "persist_audit": bool(persist_audit),
-        "base_data_dir": base_data_dir,
-        **locked_safety_flags(),
-    }
 
 
 def evaluate_risk_limits(
@@ -279,24 +265,14 @@ def evaluate_risk_limits(
     persist_audit: bool = False,
     base_data_dir: str | None = None,
 ) -> dict[str, Any]:
-    request = dict(request or {})
-    limits = dict(risk_limits or {})
-    blockers: list[str] = []
-    notional = float(request.get("notional") or request.get("max_notional") or 0.0)
-    max_notional = float(limits.get("max_notional") or 0.0)
-    if max_notional and notional > max_notional:
-        blockers.append("notional_limit_exceeded")
-    if request.get("requires_live_execution"):
-        blockers.append("live_execution_requested")
-    status = "risk_limit_pass" if not blockers else "risk_limit_blocked"
-    return {
-        "ok": not blockers,
-        "risk_limit_status": status,
-        "risk_blockers": blockers,
-        "persist_audit": bool(persist_audit),
-        "base_data_dir": base_data_dir,
-        **locked_safety_flags(),
-    }
+    from src.automation_scheduler_legacy.risk_limit_guard import evaluate_risk_limits as _legacy_evaluate_risk_limits
+
+    return _legacy_evaluate_risk_limits(
+        dict(request or {}),
+        risk_limits=dict(risk_limits or {}),
+        persist_audit=persist_audit,
+        base_data_dir=base_data_dir,
+    )
 
 
 def _safe_num(value: Any, default: float = 0.0) -> float:
@@ -442,34 +418,18 @@ def score_liquidity_context(row: Mapping[str, Any], asset_type: str | None = Non
 
 
 def evaluate_balance_sheet(row: Mapping[str, Any] | None) -> dict[str, Any]:
-    row = dict(row or {})
-    debt_to_equity = _safe_num(row.get("debt_to_equity"), 1.0)
-    cash_ratio = _safe_num(row.get("cash_ratio"), 1.0)
-    quality = max(0.0, min(100.0, 60.0 + cash_ratio * 10.0 - debt_to_equity * 10.0))
-    return {
-        "balance_sheet_quality_score": round(quality, 2),
-        "fundamental_risk_score": round(max(0.0, 100.0 - quality), 2),
-        "balance_sheet_risk_bucket": "low" if quality >= 70 else "medium" if quality >= 40 else "high",
-        "data_insufficient": not bool(row),
-        "force_status": "NO_REVIEW" if quality < 30 else "HIGH_RISK_REVIEW" if quality < 55 else None,
-        "risk_blockers": ["weak_balance_sheet"] if quality < 40 else [],
-    }
+    from src.automation_scheduler_legacy.balance_sheet_risk import evaluate_balance_sheet as legacy_evaluate_balance_sheet
+
+    return legacy_evaluate_balance_sheet(dict(row or {}))
 
 
 def detect_candlestick_patterns(candles: Sequence[Mapping[str, Any]] | None, context: Mapping[str, Any] | None = None) -> list[dict[str, Any]]:
-    candles = [dict(candle) for candle in candles or [] if isinstance(candle, Mapping)]
-    if len(candles) < 2:
-        return []
-    last = candles[-1]
-    prev = candles[-2]
-    result: list[dict[str, Any]] = []
-    if _safe_num(last.get("close")) > _safe_num(last.get("open")) and _safe_num(prev.get("close")) < _safe_num(prev.get("open")):
-        result.append({"pattern": "bullish_engulfing", "confidence": 65.0, "context": dict(context or {})})
-    if _safe_num(last.get("close")) < _safe_num(last.get("open")) and _safe_num(prev.get("close")) > _safe_num(prev.get("open")):
-        result.append({"pattern": "bearish_engulfing", "confidence": 65.0, "context": dict(context or {})})
-    if not result:
-        result.append({"pattern": "neutral", "confidence": 35.0, "context": dict(context or {})})
-    return result
+    from src.automation_scheduler_legacy.candlestick_pattern_detector import (
+        detect_candlestick_patterns as legacy_detect_candlestick_patterns,
+    )
+
+    legacy_candles = [dict(candle) for candle in candles or [] if isinstance(candle, Mapping)]
+    return legacy_detect_candlestick_patterns(legacy_candles, dict(context or {}))
 
 
 def build_calibration_by_asset_class(records: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
@@ -844,33 +804,22 @@ def build_pattern_review_item(
 
 
 def summarize_pattern_review_queue(items: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
-    rows = [dict(item) for item in items if isinstance(item, Mapping)]
-    counts: dict[str, int] = {}
-    for row in rows:
-        status = str(row.get("queue_status") or "unknown")
-        counts[status] = counts.get(status, 0) + 1
-    return {
-        "ok": True,
-        "status": "pattern_review_queue_summary",
-        "count": len(rows),
-        "queue_status_counts": counts,
-        **locked_safety_flags(),
-    }
+    from src.automation_scheduler_legacy.pattern_review_queue import (
+        summarize_pattern_review_queue as legacy_summarize_pattern_review_queue,
+    )
+
+    return legacy_summarize_pattern_review_queue([dict(item) for item in items if isinstance(item, Mapping)])
 
 
 def persist_pattern_review_queue(items: Sequence[Mapping[str, Any]], *, base_data_dir: str | None = None) -> dict[str, Any]:
-    root = resolve_base_data_dir(base_data_dir) / "small_account_review" / "pattern_review_queue"
-    root.mkdir(parents=True, exist_ok=True)
-    payload = [dict(item) for item in items if isinstance(item, Mapping)]
-    path = root / f"{sanitize_filename(utc_now_iso())}.json"
-    path.write_text(json.dumps({"ok": True, "items": payload, "count": len(payload)}, indent=2, sort_keys=True), encoding="utf-8")
-    return {
-        "ok": True,
-        "status": "pattern_review_queue_persisted",
-        "path": str(path),
-        "count": len(payload),
-        **locked_safety_flags(),
-    }
+    from src.automation_scheduler_legacy.pattern_review_queue import (
+        persist_pattern_review_queue as legacy_persist_pattern_review_queue,
+    )
+
+    return legacy_persist_pattern_review_queue(
+        [dict(item) for item in items if isinstance(item, Mapping)],
+        base_data_dir=base_data_dir,
+    )
 
 
 def get_storage_health() -> dict[str, Any]:
@@ -903,33 +852,15 @@ def get_storage_health() -> dict[str, Any]:
     }
 
 
-def read_existing_outputs(*, base_data_dir: str | None = None, asset_classes: Sequence[str] | None = None, limit: int = 200) -> list[dict[str, Any]]:
-    root = resolve_base_data_dir(base_data_dir)
-    allowed = {str(item).lower() for item in (asset_classes or []) if str(item).strip()}
-    rows: list[dict[str, Any]] = []
-    for path in sorted(root.rglob("*.json")):
-        if len(rows) >= max(1, int(limit)):
-            break
-        try:
-            payload = json.loads(path.read_text(encoding="utf-8"))
-        except Exception:
-            continue
-        if isinstance(payload, dict) and isinstance(payload.get("items"), list):
-            candidates = payload["items"]
-        elif isinstance(payload, list):
-            candidates = payload
-        else:
-            candidates = [payload]
-        for item in candidates:
-            if not isinstance(item, Mapping):
-                continue
-            asset = str(item.get("asset_class") or item.get("asset_type") or "").lower()
-            if allowed and asset and asset not in allowed:
-                continue
-            rows.append({"path": str(path), **dict(item)})
-            if len(rows) >= max(1, int(limit)):
-                break
-    return rows
+def read_existing_outputs(*, base_data_dir: str | None = None, asset_classes: Sequence[str] | None = None, limit: int = 200) -> dict[str, Any]:
+    from src.automation_scheduler_legacy.institutional_cross_asset_adapters import (
+        read_existing_outputs as legacy_read_existing_outputs,
+    )
+
+    return legacy_read_existing_outputs(
+        base_data_dir=base_data_dir,
+        asset_classes=asset_classes,
+    )
 
 
 __all__ = [

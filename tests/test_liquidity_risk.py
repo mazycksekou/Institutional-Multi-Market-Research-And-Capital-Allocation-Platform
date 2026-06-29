@@ -1,11 +1,6 @@
 import unittest
 
-from automation_scheduler.liquidity_risk import (
-    block_low_liquidity_arbitrage,
-    estimate_execution_feasibility,
-    estimate_limit_risk,
-    liquidity_score,
-)
+from src.services.streamlit_dashboard_facade import block_low_liquidity_arbitrage, estimate_execution_feasibility, estimate_limit_risk, liquidity_score
 
 
 class TestLiquidityRisk(unittest.TestCase):

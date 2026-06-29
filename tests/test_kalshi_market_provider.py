@@ -13,8 +13,8 @@ from src.services.prediction_market_runtime_bridge import (
     validate_prediction_market_snapshot as validate_kalshi_snapshot,
     write_prediction_market_snapshot as write_kalshi_snapshot,
 )
-from automation_scheduler.response_compactor import compact_provider_status
-from automation_scheduler.scheduler_runner import run_scheduler_once
+from src.services.streamlit_dashboard_facade import compact_provider_status
+from src.services.streamlit_dashboard_facade import run_scheduler_once
 
 
 class TestKalshiMarketProvider(unittest.TestCase):

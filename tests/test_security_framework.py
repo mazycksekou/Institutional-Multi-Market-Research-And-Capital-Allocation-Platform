@@ -6,19 +6,14 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
-import automation_scheduler
-from automation_scheduler.ai_provider_security import evaluate_ai_provider
-from automation_scheduler.owner_approval_gate import evaluate_owner_approval, sign_owner_approval
-from automation_scheduler.response_compactor import redact_and_limit_payload
-from automation_scheduler.risk_limit_guard import evaluate_risk_limits
-from automation_scheduler.secret_safety import assert_no_secret_leak, contains_secret_like_content, redact_sensitive
-from automation_scheduler.security_event_types import (
-    EXECUTION_ATTEMPT_BLOCKED,
-    FORBIDDEN_PROVIDER_REJECTED,
-    OWNER_APPROVAL_MISSING,
-    PROVIDER_WRITE_BLOCKED,
-)
-from automation_scheduler.security_policy import enforce_ai_capability_boundary, kill_switch_state
+import src.automation_scheduler_legacy as automation_scheduler
+from src.services.streamlit_dashboard_facade import evaluate_ai_provider
+from src.services.streamlit_dashboard_facade import evaluate_owner_approval, sign_owner_approval
+from src.services.streamlit_dashboard_facade import redact_and_limit_payload
+from src.services.streamlit_dashboard_facade import evaluate_risk_limits
+from src.services.streamlit_dashboard_facade import assert_no_secret_leak, contains_secret_like_content, redact_sensitive
+from src.services.streamlit_dashboard_facade import EXECUTION_ATTEMPT_BLOCKED, FORBIDDEN_PROVIDER_REJECTED, OWNER_APPROVAL_MISSING, PROVIDER_WRITE_BLOCKED
+from src.services.streamlit_dashboard_facade import enforce_ai_capability_boundary, kill_switch_state
 from src.brokerage.readiness import evaluate_execution_authorization
 from src.providers.policy.write_firewall import check_provider_write_attempt
 from src.services.ledger_service import load_security_audit_records

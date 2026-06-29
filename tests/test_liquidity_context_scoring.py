@@ -1,10 +1,6 @@
 import unittest
 
-from automation_scheduler.liquidity_context_scoring import (
-    calculate_float_rotation,
-    score_crypto_liquidity,
-    score_stock_liquidity,
-)
+from src.services.streamlit_dashboard_facade import calculate_float_rotation, score_crypto_liquidity, score_stock_liquidity
 
 
 class TestLiquidityContextScoring(unittest.TestCase):

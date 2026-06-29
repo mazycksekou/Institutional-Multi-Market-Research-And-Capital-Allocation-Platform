@@ -1,7 +1,7 @@
 import unittest
 
 import multi_sport_model_registry as registry
-from automation_scheduler.model_recheck_runner import run_model_recheck
+from src.automation_scheduler_legacy.model_recheck_runner import run_model_recheck
 
 
 class TestModelRecheckRunner(unittest.TestCase):

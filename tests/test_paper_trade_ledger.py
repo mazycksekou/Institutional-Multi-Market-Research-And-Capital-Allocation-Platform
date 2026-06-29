@@ -1,13 +1,7 @@
 import unittest
 from tempfile import TemporaryDirectory
 
-from automation_scheduler.paper_trade_ledger import (
-    create_paper_entry,
-    load_paper_ledger,
-    settle_paper_entry,
-    summarize_paper_ledger,
-    update_closing_line,
-)
+from src.services.streamlit_dashboard_facade import create_paper_entry, load_paper_ledger, settle_paper_entry, summarize_paper_ledger, update_closing_line
 
 
 class TestPaperTradeLedger(unittest.TestCase):

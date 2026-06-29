@@ -45,8 +45,8 @@ def test_live_ledger_persistence_imports_are_local_only(monkeypatch) -> None:
     monkeypatch.setattr(os, "getenv", lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("no env reads")))
     brokerage_ledger = _fresh_import("src.brokerage.ledger")
     ledger_service = _fresh_import("src.services.ledger_service")
-    paper_trade_ledger = _fresh_import("automation_scheduler.paper_trade_ledger")
-    paper_decision_ledger = _fresh_import("automation_scheduler.paper_decision_ledger")
+    paper_trade_ledger = _fresh_import("src.automation_scheduler_legacy.paper_trade_ledger")
+    paper_decision_ledger = _fresh_import("src.automation_scheduler_legacy.paper_decision_ledger")
     bet_log = _fresh_import("bet_log")
 
     event = brokerage_ledger.record_ledger_event(event_type="unit_test", subject_id="subject-1")

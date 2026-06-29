@@ -1,12 +1,7 @@
 import unittest
 from tempfile import TemporaryDirectory
 
-from automation_scheduler.paper_decision_ledger import (
-    create_paper_decision_record,
-    load_paper_decision_state,
-    load_paper_decisions,
-    persist_paper_decisions_for_review_items,
-)
+from src.services.streamlit_dashboard_facade import create_paper_decision_record, load_paper_decision_state, load_paper_decisions, persist_paper_decisions_for_review_items
 
 
 class TestPaperDecisionLedger(unittest.TestCase):

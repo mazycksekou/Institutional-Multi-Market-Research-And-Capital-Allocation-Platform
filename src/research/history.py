@@ -255,46 +255,19 @@ def format_report_money(value: Any) -> str:
 
 
 def build_experiment_report_sections(run: Mapping[str, Any]) -> dict[str, Any]:
-    payload = dict(run)
-    performance = dict(payload.get("performance") or {})
-    metrics = extract_experiment_history_metrics(payload)
-    return {
-        "summary": {
-            "run_id": payload.get("run_id"),
-            "run_type": payload.get("run_type"),
-            "run_label": payload.get("run_label"),
-        },
-        "performance": performance,
-        "metrics": metrics,
-        "safety": {
-            "warnings": list(payload.get("warnings") or []),
-            "leakage_fields_removed": [field for field in payload.get("active_fields", []) if field in ABLATION_NEVER_FEATURE_FIELDS],
-        },
-    }
+    from src.automation_scheduler_legacy.experiment_report_exporter import (
+        build_experiment_report_sections as legacy_build_experiment_report_sections,
+    )
+
+    return legacy_build_experiment_report_sections(run)
 
 
 def render_experiment_report_markdown(run: Mapping[str, Any]) -> dict[str, Any]:
-    sections = build_experiment_report_sections(run)
-    summary = sections["summary"]
-    performance = sections["performance"]
-    metrics = sections["metrics"]
-    markdown = "\n".join(
-        [
-            f"# Calibration Report: {summary.get('run_id') or 'unknown'}",
-            "",
-            f"- Run type: {summary.get('run_type') or 'unknown'}",
-            f"- Run label: {summary.get('run_label') or ''}",
-            f"- Rows: {performance.get('total_rows', 0)}",
-            f"- ROI: {format_report_percent(metrics.get('roi_percent'))}",
-            f"- Win rate: {format_report_percent(metrics.get('win_rate_percent'))}",
-            "",
-            "## Safety",
-            "- Local-only history store",
-            "- No live execution",
-            "- Leakage features removed before persistence",
-        ]
+    from src.automation_scheduler_legacy.experiment_report_exporter import (
+        render_experiment_report_markdown as legacy_render_experiment_report_markdown,
     )
-    return {"ok": True, "markdown": markdown, "sections": sections}
+
+    return legacy_render_experiment_report_markdown(run)
 
 
 def build_experiment_report_export(
@@ -303,25 +276,15 @@ def build_experiment_report_export(
     *,
     export_format: str = "markdown",
 ) -> dict[str, Any]:
-    if not str(run_id or "").strip():
-        return {"ok": False, "status": "missing_run_id", "warnings": ["missing_run_id"], "filename": "", "content": "", "markdown": ""}
-    retrieved = get_experiment_history_run(db_path, run_id)
-    if not retrieved.get("found"):
-        return {"ok": False, "status": "not_found", "warnings": ["run not found"], "filename": "", "content": "", "markdown": ""}
-    run = retrieved["run"]
-    if export_format != "markdown":
-        return {"ok": False, "status": "unsupported_format", "warnings": ["unsupported format"], "filename": "", "content": "", "markdown": "", "export": None}
-    rendered = render_experiment_report_markdown(run)
-    return {
-        "ok": True,
-        "status": "exported",
-        "format": "markdown",
-        "filename": f"{run_id}.md",
-        "content": rendered["markdown"],
-        "markdown": rendered["markdown"],
-        "sections": rendered["sections"],
-        "warnings": [],
-    }
+    from src.automation_scheduler_legacy.experiment_report_exporter import (
+        build_experiment_report_export as legacy_build_experiment_report_export,
+    )
+
+    return legacy_build_experiment_report_export(
+        db_path,
+        run_id,
+        export_format=export_format,
+    )
 
 
 def get_experiment_history_snapshot_for_dashboard(

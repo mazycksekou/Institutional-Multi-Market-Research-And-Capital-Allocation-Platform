@@ -5,6 +5,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DELETED = [
+    'automation_scheduler/__init__.py',
     'automation_scheduler/baseball_impact_common.py',
     'automation_scheduler/basketball_lineup_matchup_context.py',
     'automation_scheduler/basketball_market_relevance.py',
@@ -30,24 +31,28 @@ DELETED = [
     'automation_scheduler/tennis_impact_common.py',
 ]
 
+DOCS = [
+    ROOT / 'PHASE10K8ZMN_COMPATIBILITY_SHELL_ELIMINATION.md',
+    ROOT / 'COMPATIBILITY_SHELL_INVENTORY_AFTER_10K8ZMN.md',
+    ROOT / 'FILE_OWNERSHIP_MATRIX_AFTER_10K8ZMN.md',
+    ROOT / 'CALLER_MATRIX_AFTER_10K8ZMN.md',
+    ROOT / 'DELETE_PRIORITY_LIST_AFTER_10K8ZMN.md',
+    ROOT / 'FINAL_DELETE_PROOF_AFTER_10K8ZMN.md',
+]
+
 
 def test_phase10k8zl0_deleted_files_and_post_delete_docs() -> None:
-    docs = [
-        ROOT / 'PHASE10K8ZL0_AUTOMATION_SCHEDULER_DELETION.md',
-        ROOT / 'AUTOMATION_SCHEDULER_DELETION_PROOF_AFTER_10K8ZL0.md',
-        ROOT / 'POST_AUTOMATION_SCHEDULER_DELETION_IMPORT_SCAN_AFTER_10K8ZL0.md',
-        ROOT / 'AUTOMATION_SCHEDULER_DELETION_COMPLETION_STATUS_AFTER_10K8ZL0.md',
-        ROOT / 'REMAINING_AUTOMATION_SCHEDULER_BLOCKERS_AFTER_10K8ZL0.md',
-    ]
-    for path in docs:
+    for path in DOCS:
         assert path.is_file(), path
-    text = '\n'.join(path.read_text(encoding='utf-8') for path in docs)
-    assert 'No deletion occurred in this batch.' in text
-    assert 'Deleted files: 0' in text
-    assert 'Remaining delete-ready files: 23' in text
-    assert 'blocked' in text.lower()
+    text = '\n'.join(path.read_text(encoding='utf-8') for path in DOCS)
+    assert 'compatibility shell removed' in text.lower()
+    assert 'runtime imports: 0' in text.lower()
+    assert 'test imports: 0' in text.lower()
+    assert 'internal imports: 0' in text.lower()
+    assert 'delete priority' in text.lower()
     for rel in DELETED:
-        assert (ROOT / rel).exists(), rel
+        assert not (ROOT / rel).exists(), rel
+    assert not (ROOT / 'automation_scheduler').exists()
     for rel in [
         'main.py', 'streamlit_app.py', 'src/services/execution_service.py', 'src/services/ledger_service.py', 'src/services/settlement_service.py',
     ]:

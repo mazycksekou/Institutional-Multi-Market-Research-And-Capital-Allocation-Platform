@@ -6,18 +6,7 @@ from __future__ import annotations
 
 import json
 
-from automation_scheduler.line_movement_import_contract import (
-    LINE_MOVEMENT_IMPORT_CONTRACT_VERSION,
-    build_canonical_line_movement_snapshot_row,
-    build_line_movement_import_preview,
-    build_vendor_neutral_line_movement_contract,
-    describe_line_movement_import_contract,
-    make_line_movement_snapshot_id,
-    normalize_line_movement_import_value,
-    normalize_line_movement_market_family,
-    normalize_line_movement_snapshot_label,
-    validate_line_movement_import_row,
-)
+from src.services.streamlit_dashboard_facade import LINE_MOVEMENT_IMPORT_CONTRACT_VERSION, build_canonical_line_movement_snapshot_row, build_line_movement_import_preview, build_vendor_neutral_line_movement_contract, describe_line_movement_import_contract, make_line_movement_snapshot_id, normalize_line_movement_import_value, normalize_line_movement_market_family, normalize_line_movement_snapshot_label, validate_line_movement_import_row
 
 
 # ---------------------------------------------------------------------------

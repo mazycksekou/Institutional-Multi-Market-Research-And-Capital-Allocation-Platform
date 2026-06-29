@@ -140,29 +140,11 @@ def discover_backtest_artifacts(*, base_dir: str | Path | None = None) -> list[P
 
 
 def validate_paper_only_fixture_rows(rows: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
-    row_list = [dict(row) for row in rows if isinstance(row, Mapping)]
-    missing_field_reasons: list[dict[str, Any]] = []
-    valid_rows = 0
-    for index, row in enumerate(row_list):
-        missing = [field for field in PAPER_ONLY_FIXTURE_REQUIRED_FIELDS if row.get(field) in (None, "")]
-        if missing:
-            missing_field_reasons.append({"index": index, "missing_fields": missing})
-            continue
-        valid_rows += 1
-    invalid_rows = len(row_list) - valid_rows
-    warnings = []
-    if invalid_rows:
-        warnings.append("rows_missing_required_fields")
-    return {
-        "ok": not missing_field_reasons,
-        "status": "accepted" if not missing_field_reasons else "rejected",
-        "row_count": len(row_list),
-        "rows_tested": len(row_list),
-        "rows_valid": valid_rows,
-        "rows_invalid": invalid_rows,
-        "missing_field_reasons": missing_field_reasons,
-        "warning_reasons": warnings,
-    }
+    from src.automation_scheduler_legacy.backtest_dataset_builder import (
+        validate_paper_only_fixture_rows as legacy_validate_paper_only_fixture_rows,
+    )
+
+    return legacy_validate_paper_only_fixture_rows(rows)
 
 
 def _field_coverage(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:

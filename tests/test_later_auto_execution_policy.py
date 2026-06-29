@@ -1,10 +1,10 @@
 import unittest
 from tempfile import TemporaryDirectory
 
-from automation_scheduler.later.auto_execution_policy import get_disabled_auto_execution_policy
-from automation_scheduler.later.execution_audit_log import append_execution_audit_record, read_execution_audit_records
-from automation_scheduler.later.execution_guardrails import get_execution_guardrails
-from automation_scheduler.later.execution_readiness_check import check_execution_readiness
+from src.services.streamlit_dashboard_facade import get_disabled_auto_execution_policy
+from src.services.streamlit_dashboard_facade import append_execution_audit_record, read_execution_audit_records
+from src.services.streamlit_dashboard_facade import get_execution_guardrails
+from src.services.streamlit_dashboard_facade import check_execution_readiness
 
 
 class TestLaterAutoExecutionPolicy(unittest.TestCase):

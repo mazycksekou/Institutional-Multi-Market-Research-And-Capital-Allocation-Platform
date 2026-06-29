@@ -5,17 +5,14 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
-from automation_scheduler.extreme_randomness_diagnostics import diagnose_extreme_randomness
-from automation_scheduler.random_baseline_comparison import build_surrogate_baseline_summary, compare_to_random_baseline
-from automation_scheduler.random_matrix_risk import evaluate_random_matrix_risk
-from automation_scheduler.response_compactor import (
-    compact_extreme_randomness_diagnostics_response,
-    compact_extreme_randomness_report_response,
-)
-from automation_scheduler.strategy_registry import get_strategy_registry
-from automation_scheduler.tail_event_classifier import classify_tail_event
-from automation_scheduler.tracy_widom_research import evaluate_tracy_widom_research
-from automation_scheduler.universality_research_lanes import build_universality_research_lane
+from src.services.streamlit_dashboard_facade import diagnose_extreme_randomness
+from src.services.streamlit_dashboard_facade import build_surrogate_baseline_summary, compare_to_random_baseline
+from src.services.streamlit_dashboard_facade import evaluate_random_matrix_risk
+from src.automation_scheduler_legacy.response_compactor import compact_extreme_randomness_diagnostics_response, compact_extreme_randomness_report_response
+from src.services.streamlit_dashboard_facade import get_strategy_registry
+from src.services.streamlit_dashboard_facade import classify_tail_event
+from src.services.streamlit_dashboard_facade import evaluate_tracy_widom_research
+from src.services.streamlit_dashboard_facade import build_universality_research_lane
 from tests.support.action_imports import app
 
 
@@ -97,7 +94,7 @@ class TestExtremeRandomnessDiagnostics(unittest.TestCase):
         self.assertFalse(result["execution_allowed"])
 
     def test_tracy_widom_missing_dependency_returns_blocked(self):
-        with patch("automation_scheduler.tracy_widom_research._has_optional_tw_dependency", return_value=False):
+        with patch('src.automation_scheduler_legacy.tracy_widom_research._has_optional_tw_dependency', return_value=False):
             result = evaluate_tracy_widom_research({"largest_eigenvalue": 2.4, "bulk_edge_estimate": 1.3, "sample_size": 100, "dimension_count": 5})
         self.assertEqual(result["tracy_widom_status"], "blocked_missing_dependency")
         self.assertTrue(result["tw_applicable"])

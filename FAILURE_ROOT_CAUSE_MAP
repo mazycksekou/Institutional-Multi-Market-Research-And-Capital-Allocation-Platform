@@ -1,0 +1,13 @@
+# FAILURE_ROOT_CAUSE_MAP
+
+- `src.backtesting.engine`: thin canonical run/report output missed legacy metadata and report fields.
+- `src.backtesting.strategy_profiles`: canonical profile normalization/config generation missed legacy aliases and payloads.
+- `src.market_intelligence.feature_packs`: canonical fallback catalogs omitted sport/market families and fallback depth labels.
+- `src.data.source_event_links`: `reversed_home_away` was not initialized for partial-score candidates.
+- `src.services.runtime_shared`: thin balance-sheet, candlestick, pattern queue, and institutional output helpers shadowed richer local contracts.
+- `src.research.feature_control`: feature ablation and calibration runner returned simplified compatibility payloads.
+- `src.research.history`: report section/export rendering was narrower than operator-review expectations.
+- `src.data.historical_sources` and `src.data.historical_odds`: priority/importer contracts diverged from legacy source-key behavior and validation fields.
+- `src.data.field_catalog` and `src.backtesting.dataset_builder`: canonical catalogs/fixture validation lagged 0DTE and paper-only contract expectations.
+- `src.services.streamlit_dashboard_facade`: ambiguous symbol resolution required explicit dispatch for NFL, daily report, pattern, and audit helpers.
+- Phase checkpoint tests/docs: several assertions still described a deleted top-level package or stale import counts; they now document the restored compatibility shell and relocated legacy ownership.

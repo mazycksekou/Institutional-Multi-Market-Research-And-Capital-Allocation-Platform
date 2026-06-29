@@ -1,6 +1,6 @@
 import unittest
 
-from automation_scheduler.arbitrage.arbitrage_risk_filters import apply_arbitrage_risk_filters
+from src.services.streamlit_dashboard_facade import apply_arbitrage_risk_filters
 
 
 class TestArbitrageRiskFilters(unittest.TestCase):

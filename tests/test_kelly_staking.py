@@ -1,11 +1,7 @@
 import unittest
 
-from automation_scheduler.kelly_staking import (
-    calculate_full_kelly_american,
-    calculate_full_kelly_binary,
-    calculate_operating_full_kelly,
-)
-from automation_scheduler.stake_confidence import evaluate_stake_confidence
+from src.automation_scheduler_legacy.kelly_staking import calculate_full_kelly_american, calculate_full_kelly_binary, calculate_operating_full_kelly
+from src.automation_scheduler_legacy.stake_confidence import evaluate_stake_confidence
 
 
 class KellyStakingTests(unittest.TestCase):

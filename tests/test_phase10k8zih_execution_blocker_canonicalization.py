@@ -32,8 +32,8 @@ def test_execution_blocker_canonicalization_modules_import_and_delegate() -> Non
     decision_engine = importlib.import_module("src.services.decision_engine")
     brokerage = importlib.import_module("src.brokerage")
     execution = importlib.import_module("src.brokerage.execution")
-    paper_trade_ledger = importlib.import_module("automation_scheduler.paper_trade_ledger")
-    paper_decision_ledger = importlib.import_module("automation_scheduler.paper_decision_ledger")
+    paper_trade_ledger = importlib.import_module('src.automation_scheduler_legacy.paper_trade_ledger')
+    paper_decision_ledger = importlib.import_module('src.automation_scheduler_legacy.paper_decision_ledger')
     gatekeeper = importlib.import_module("src.brokerage.readiness")
     authorization = importlib.import_module("src.brokerage.readiness")
 

@@ -12,15 +12,15 @@ DOCS = [
 ]
 
 WRAPPERS = [
-    "automation_scheduler/settlement_rule_checker.py",
-    "automation_scheduler/settlement_discovery.py",
-    "automation_scheduler/audit_ledger.py",
-    "automation_scheduler/institutional_audit_ledger.py",
-    "automation_scheduler/strategy_performance_ledger.py",
-    "automation_scheduler/broker_quality_scoring.py",
-    "automation_scheduler/small_account_strategy.py",
-    "automation_scheduler/manifold_no_bet_detector.py",
-    "automation_scheduler/institutional_execution_desk.py",
+    'src/automation_scheduler_legacy/settlement_rule_checker.py',
+    'src/automation_scheduler_legacy/settlement_discovery.py',
+    'src/automation_scheduler_legacy/audit_ledger.py',
+    'src/automation_scheduler_legacy/institutional_audit_ledger.py',
+    'src/automation_scheduler_legacy/strategy_performance_ledger.py',
+    'src/automation_scheduler_legacy/broker_quality_scoring.py',
+    'src/automation_scheduler_legacy/small_account_strategy.py',
+    'src/automation_scheduler_legacy/manifold_no_bet_detector.py',
+    'src/automation_scheduler_legacy/institutional_execution_desk.py',
 ]
 
 

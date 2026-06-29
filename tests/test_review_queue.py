@@ -4,17 +4,9 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from automation_scheduler import get_scheduler_review_queue
-from automation_scheduler.review_queue import (
-    build_review_item,
-    filter_review_items,
-    list_active_review_items,
-    load_review_queue_state,
-    persist_review_queue_snapshot,
-    summarize_review_items,
-    upsert_review_item,
-)
-from automation_scheduler.scheduler_config import get_default_scheduler_config
+from src.automation_scheduler_legacy.__init__ import get_scheduler_review_queue
+from src.services.streamlit_dashboard_facade import build_review_item, filter_review_items, list_active_review_items, load_review_queue_state, persist_review_queue_snapshot, summarize_review_items, upsert_review_item
+from src.services.streamlit_dashboard_facade import get_default_scheduler_config
 
 
 class TestReviewQueue(unittest.TestCase):

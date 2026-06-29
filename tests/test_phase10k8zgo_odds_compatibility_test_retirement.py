@@ -23,8 +23,8 @@ DELETED_FILES = [
     ROOT / "betting_providers" / "sharp_api.py",
     ROOT / "betting_providers" / "the_odds_api.py",
     ROOT / "betting_providers" / "sportsgameodds.py",
-    ROOT / "automation_scheduler" / "sharp_sportsbook_adapter.py",
-    ROOT / "automation_scheduler" / "sportsbook_odds_provider.py",
+    ROOT / "src" / "automation_scheduler_legacy" / "sharp_sportsbook_adapter.py",
+    ROOT / "src" / "automation_scheduler_legacy" / "sportsbook_odds_provider.py",
 ]
 DELETED_MODULES = [
     "sharp_client",
@@ -32,8 +32,8 @@ DELETED_MODULES = [
     "betting_providers.sharp_api",
     "betting_providers.the_odds_api",
     "betting_providers.sportsgameodds",
-    "automation_scheduler.sharp_sportsbook_adapter",
-    "automation_scheduler.sportsbook_odds_provider",
+    'src.automation_scheduler_legacy.sharp_sportsbook_adapter',
+    'src.automation_scheduler_legacy.sportsbook_odds_provider',
 ]
 
 
@@ -196,3 +196,4 @@ def test_no_active_py_file_imports_deleted_odds_modules() -> None:
     }
 
     _assert_no_import_statements_reference_deleted_modules(historical_evidence_files)
+

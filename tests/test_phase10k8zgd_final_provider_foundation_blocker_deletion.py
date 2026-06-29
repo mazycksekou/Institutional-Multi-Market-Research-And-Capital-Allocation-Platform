@@ -10,12 +10,12 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 DELETED_PATHS = [
-    ROOT / "automation_scheduler" / "provider_registry.py",
-    ROOT / "automation_scheduler" / "provider_write_firewall.py",
+    ROOT / "src" / "automation_scheduler_legacy" / "provider_registry.py",
+    ROOT / "src" / "automation_scheduler_legacy" / "provider_write_firewall.py",
 ]
 TARGET_MODULES = {
-    "automation_scheduler.provider_registry",
-    "automation_scheduler.provider_write_firewall",
+    'src.automation_scheduler_legacy.provider_registry',
+    'src.automation_scheduler_legacy.provider_write_firewall',
 }
 ALLOWED_TEST_REFERENCES = {
     "tests/test_phase10k8zga_provider_registry_runtime_blocker.py",
@@ -57,7 +57,7 @@ def test_phase10k8zgd_final_provider_foundation_blocker_deletion(monkeypatch, tm
 
     canonical_registry = importlib.import_module("src.providers.registry")
     canonical_firewall = importlib.import_module("src.providers.policy.write_firewall")
-    scheduler_pkg = importlib.import_module("automation_scheduler")
+    scheduler_pkg = importlib.import_module('src.automation_scheduler_legacy')
 
     monkeypatch.setattr(os, "getenv", original_getenv)
     monkeypatch.setattr(canonical_registry.os, "getenv", lambda *_args, **_kwargs: None)
@@ -66,9 +66,9 @@ def test_phase10k8zgd_final_provider_foundation_blocker_deletion(monkeypatch, tm
         assert not deleted_path.exists(), deleted_path
 
     with pytest.raises(ModuleNotFoundError):
-        importlib.import_module("automation_scheduler.provider_registry")
+        importlib.import_module('src.automation_scheduler_legacy.provider_registry')
     with pytest.raises(ModuleNotFoundError):
-        importlib.import_module("automation_scheduler.provider_write_firewall")
+        importlib.import_module('src.automation_scheduler_legacy.provider_write_firewall')
 
     canonical_snapshot = canonical_registry.get_provider_registry(include_legacy_aliases=True)
     scheduler_snapshot = scheduler_pkg.get_provider_registry_snapshot(base_data_dir=str(tmp_path))
@@ -107,3 +107,4 @@ def test_phase10k8zgd_final_provider_foundation_blocker_deletion(monkeypatch, tm
         assert "Only the final proof-backed provider foundation compatibility shims are deleted in this phase." in text
         assert "provider_registry" in text
         assert "provider_write_firewall" in text
+

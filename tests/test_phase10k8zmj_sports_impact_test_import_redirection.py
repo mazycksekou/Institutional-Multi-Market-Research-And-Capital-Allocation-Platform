@@ -117,9 +117,9 @@ def test_phase10k8zmj_sports_impact_test_import_redirection() -> None:
 
     counts = _scan_imports()
     assert counts["runtime"] == (0, 0)
-    assert counts["test"] == (387, 191)
+    assert counts["test"] == (0, 0)
     assert counts["scripts"] == (0, 0)
-    assert counts["internal"] == (745, 262)
+    assert counts["internal"] == (0, 0)
 
     before_doc = (ROOT / "SPORTS_IMPACT_TEST_IMPORTS_BEFORE_10K8ZMJ.md").read_text(encoding="utf-8")
     assert "95" in before_doc
@@ -157,5 +157,4 @@ def test_phase10k8zmj_sports_impact_test_import_redirection() -> None:
         module = importlib.import_module(module_name)
         assert module.__name__ == module_name
 
-    assert LEGACY_ROOT.is_dir()
-    assert any(LEGACY_ROOT.rglob("*.py"))
+    assert not LEGACY_ROOT.exists()

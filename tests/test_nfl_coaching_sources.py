@@ -2,17 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from automation_scheduler.nfl_coaching_sources import (
-    COACHING_SOURCE_FAMILIES,
-    COACHING_TARGET_FIELDS,
-    MIN_CRAWL_DELAY_SECONDS,
-    RESEARCH_USER_AGENT,
-    build_nfl_coaching_source_report,
-    classify_coaching_source,
-    coaching_source_by_id,
-    nfl_coaching_sources,
-    write_nfl_coaching_source_report,
-)
+from src.services.streamlit_dashboard_facade import COACHING_SOURCE_FAMILIES, COACHING_TARGET_FIELDS, MIN_CRAWL_DELAY_SECONDS, RESEARCH_USER_AGENT, build_nfl_coaching_source_report, classify_coaching_source, coaching_source_by_id, nfl_coaching_sources, write_nfl_coaching_source_report
 
 
 class TestNflCoachingSources(unittest.TestCase):

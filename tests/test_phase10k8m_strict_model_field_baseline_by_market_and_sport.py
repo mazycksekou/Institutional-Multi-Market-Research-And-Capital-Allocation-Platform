@@ -2,28 +2,15 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from automation_scheduler.model_data_field_catalog import (
-    MODEL_DATA_FIELD_GROUPS_BY_MODE,
-    PAPER_ARBITRAGE_OUTPUT_FIELDS,
-    SPORTS_MODEL_INPUT_FIELD_GROUPS_BY_SPORT,
-    TECHNICAL_SIGNAL_EXCLUDED_UNIVERSAL_MATH_FIELDS,
-    UNIVERSAL_MATH_OUTPUT_FIELDS,
-    field_groups_for_model_mode,
-    fields_for_model_mode,
-    fields_for_sport,
-)
-from automation_scheduler.technical_signal_fields import (
-    TECHNICAL_SIGNAL_FIELDS,
-    TECHNICAL_SIGNAL_FIELDS_BY_MARKET,
-    technical_fields_for_market,
-)
+from src.services.streamlit_dashboard_facade import MODEL_DATA_FIELD_GROUPS_BY_MODE, PAPER_ARBITRAGE_OUTPUT_FIELDS, SPORTS_MODEL_INPUT_FIELD_GROUPS_BY_SPORT, TECHNICAL_SIGNAL_EXCLUDED_UNIVERSAL_MATH_FIELDS, UNIVERSAL_MATH_OUTPUT_FIELDS, field_groups_for_model_mode, fields_for_model_mode, fields_for_sport
+from src.services.streamlit_dashboard_facade import TECHNICAL_SIGNAL_FIELDS, TECHNICAL_SIGNAL_FIELDS_BY_MARKET, technical_fields_for_market
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 STREAMLIT_APP = REPO_ROOT / "streamlit_app.py"
-DATA_SOURCE_REGISTRY = REPO_ROOT / "automation_scheduler" / "data_source_registry.py"
-TECHNICAL_SIGNAL_FIELDS_FILE = REPO_ROOT / "automation_scheduler" / "technical_signal_fields.py"
-MODEL_DATA_FIELD_CATALOG_FILE = REPO_ROOT / "automation_scheduler" / "model_data_field_catalog.py"
+DATA_SOURCE_REGISTRY = REPO_ROOT / "src" / "automation_scheduler_legacy" / "data_source_registry.py"
+TECHNICAL_SIGNAL_FIELDS_FILE = REPO_ROOT / "src" / "automation_scheduler_legacy" / "technical_signal_fields.py"
+MODEL_DATA_FIELD_CATALOG_FILE = REPO_ROOT / "src" / "automation_scheduler_legacy" / "model_data_field_catalog.py"
 REPORT_FILE = REPO_ROOT / "PHASE10K8M_STRICT_MODEL_FIELD_BASELINE_BY_MARKET_AND_SPORT.md"
 LEGACY_GUARDRAIL_TEST = (
     REPO_ROOT / "tests" / "test_phase10k6k_controlled_dashboard_shell_review.py"
@@ -460,3 +447,4 @@ def test_streamlit_ui_forbidden_connector_strings_are_absent() -> None:
         "Run Synthetic Scraper",
     ]:
         assert forbidden not in streamlit_text
+

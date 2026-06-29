@@ -1,6 +1,6 @@
 import unittest
 
-from automation_scheduler.kalshi_scoring import KALSHI_LIQUIDITY_POLICY_VERSION, evaluate_kalshi_liquidity_policy, score_kalshi_candidate
+from src.services.streamlit_dashboard_facade import KALSHI_LIQUIDITY_POLICY_VERSION, evaluate_kalshi_liquidity_policy, score_kalshi_candidate
 
 
 class TestKalshiScoring(unittest.TestCase):

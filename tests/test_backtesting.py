@@ -1,6 +1,6 @@
 import unittest
 
-from automation_scheduler.backtesting_engine import run_backtesting_scaffold
+from src.services.streamlit_dashboard_facade import run_backtesting_scaffold
 
 
 class TestBacktesting(unittest.TestCase):

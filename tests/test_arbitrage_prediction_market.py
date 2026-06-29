@@ -1,6 +1,6 @@
 import unittest
 
-from automation_scheduler.arbitrage.prediction_market_arbitrage import detect_prediction_market_vs_sportsbook_arbitrage
+from src.services.streamlit_dashboard_facade import detect_prediction_market_vs_sportsbook_arbitrage
 
 
 class TestArbitragePredictionMarket(unittest.TestCase):

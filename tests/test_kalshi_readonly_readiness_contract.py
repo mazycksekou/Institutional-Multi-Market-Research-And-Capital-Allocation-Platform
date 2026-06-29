@@ -4,10 +4,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from automation_scheduler.kalshi_readonly_readiness import (
-    REQUIRED_ENV_NAMES,
-    build_kalshi_readonly_readiness_report,
-)
+from src.services.streamlit_dashboard_facade import REQUIRED_ENV_NAMES, build_kalshi_readonly_readiness_report
 from src.services.prediction_market_runtime_bridge import KalshiReadonlyAdapter
 
 

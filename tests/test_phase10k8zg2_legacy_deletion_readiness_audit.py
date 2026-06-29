@@ -197,8 +197,8 @@ def test_phase10k8zg2_legacy_deletion_readiness_audit():
         assert not (ROOT / relpath).exists(), relpath
 
     for relpath in (
-        "automation_scheduler/provider_registry.py",
-        "automation_scheduler/provider_write_firewall.py",
+        'src/automation_scheduler_legacy/provider_registry.py',
+        'src/automation_scheduler_legacy/provider_write_firewall.py',
     ):
         assert not (ROOT / relpath).exists(), relpath
 

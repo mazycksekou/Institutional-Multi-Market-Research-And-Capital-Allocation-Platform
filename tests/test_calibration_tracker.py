@@ -1,12 +1,6 @@
 import unittest
 
-from automation_scheduler.calibration_tracker import (
-    bucket_predictions,
-    calculate_brier_score,
-    calculate_expected_calibration_error,
-    calculate_log_loss,
-    detect_overconfidence,
-)
+from src.services.streamlit_dashboard_facade import bucket_predictions, calculate_brier_score, calculate_expected_calibration_error, calculate_log_loss, detect_overconfidence
 
 
 class TestCalibrationTracker(unittest.TestCase):

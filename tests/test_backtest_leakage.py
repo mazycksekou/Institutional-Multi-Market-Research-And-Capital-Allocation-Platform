@@ -1,12 +1,7 @@
 import pytest
 
-from automation_scheduler.backtest_leakage import (
-    assert_backtest_rows_no_hard_leakage,
-    evaluate_backtest_row_leakage,
-    evaluate_backtest_rows_leakage,
-    summarize_backtest_leakage_report,
-)
-from automation_scheduler.backtesting_engine import run_backtest
+from src.services.streamlit_dashboard_facade import assert_backtest_rows_no_hard_leakage, evaluate_backtest_row_leakage, evaluate_backtest_rows_leakage, summarize_backtest_leakage_report
+from src.services.streamlit_dashboard_facade import run_backtest
 
 
 def test_sharp_style_allows_top_level_results_and_clv_for_grading():

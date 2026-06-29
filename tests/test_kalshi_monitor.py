@@ -1,7 +1,7 @@
 import unittest
 
-from automation_scheduler.kalshi_monitor import monitor_kalshi_market
-from automation_scheduler.scheduler_config import get_default_scheduler_config
+from src.services.streamlit_dashboard_facade import monitor_kalshi_market
+from src.services.streamlit_dashboard_facade import get_default_scheduler_config
 
 
 class TestKalshiMonitor(unittest.TestCase):

@@ -2,20 +2,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from automation_scheduler.model_data_field_catalog import fields_for_model_mode
-from automation_scheduler.technical_signal_fields import (
-    TECHNICAL_SIGNAL_FIELDS,
-    TECHNICAL_SIGNAL_FIELDS_BY_MARKET,
-)
-from automation_scheduler.zero_dte_fixture_template import (
-    ZERO_DTE_PAPER_FIXTURE_OPTIONAL_FIELDS,
-    ZERO_DTE_PAPER_FIXTURE_REQUIRED_FIELDS,
-    ZERO_DTE_PAPER_REVIEW_OUTPUT_FIELDS,
-    build_zero_dte_fixture_template_row,
-    build_zero_dte_paper_pipeline_result,
-    evaluate_zero_dte_paper_fixture_rows,
-    validate_zero_dte_fixture_rows,
-)
+from src.services.streamlit_dashboard_facade import fields_for_model_mode
+from src.services.streamlit_dashboard_facade import TECHNICAL_SIGNAL_FIELDS, TECHNICAL_SIGNAL_FIELDS_BY_MARKET
+from src.automation_scheduler_legacy.zero_dte_fixture_template import ZERO_DTE_PAPER_FIXTURE_OPTIONAL_FIELDS, ZERO_DTE_PAPER_FIXTURE_REQUIRED_FIELDS, ZERO_DTE_PAPER_REVIEW_OUTPUT_FIELDS, build_zero_dte_fixture_template_row, build_zero_dte_paper_pipeline_result, evaluate_zero_dte_paper_fixture_rows, validate_zero_dte_fixture_rows
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -23,7 +12,7 @@ REPORT = ROOT / "PHASE10K8ZA_0DTE_DATA_FIELD_FORMULA_COVERAGE_AUDIT.md"
 APP = ROOT / "streamlit_app.py"
 LEGACY_PHASE_TEST = ROOT / "tests" / "test_phase10k6k_controlled_dashboard_shell_review.py"
 FINAL_FREEZE_REPORT = ROOT / "PHASE10K8Z_FINAL_CONTROLLED_PREDICTION_TESTING_FREEZE.md"
-TEMPLATE_SOURCE = ROOT / "automation_scheduler" / "zero_dte_fixture_template.py"
+TEMPLATE_SOURCE = ROOT / "src" / "automation_scheduler_legacy" / "zero_dte_fixture_template.py"
 QUANT_ENGINE = ROOT / "quant_engine.py"
 
 

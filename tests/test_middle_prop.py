@@ -1,6 +1,6 @@
 import unittest
 
-from automation_scheduler.middles.prop_middle import detect_prop_middle
+from src.services.streamlit_dashboard_facade import detect_prop_middle
 
 
 class TestMiddleProp(unittest.TestCase):

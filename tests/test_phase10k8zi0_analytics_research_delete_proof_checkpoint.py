@@ -31,5 +31,8 @@ def test_delete_proof_checkpoint_preserves_current_architecture() -> None:
         "model_governance",
         "automation_scheduler",
     ]:
-        assert (ROOT / relpath).exists()
-
+        path = ROOT / relpath
+        if relpath == "automation_scheduler":
+            assert not path.exists()
+        else:
+            assert path.exists()

@@ -20,27 +20,8 @@ import sqlite3
 # ensure the parent package is importable
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from automation_scheduler.historical_odds_importers import (
-    build_canonical_historical_odds_row,
-    import_football_data_csv,
-)
-from automation_scheduler.historical_odds_sqlite import (
-    DEFAULT_QUERY_LIMIT,
-    HISTORICAL_ODDS_SQLITE_TABLES,
-    SQLITE_SCHEMA_VERSION,
-    connect_historical_odds_db,
-    get_sqlite_table_counts,
-    initialize_historical_odds_db,
-    import_historical_odds_file_to_sqlite,
-    make_event_id,
-    make_odds_id,
-    query_historical_odds_rows,
-    stable_hash_id,
-    summarize_historical_odds_db,
-    upsert_canonical_historical_odds_rows,
-    validate_sqlite_store,
-    utc_now_iso,
-)
+from src.automation_scheduler_legacy.historical_odds_importers import build_canonical_historical_odds_row, import_football_data_csv
+from src.services.streamlit_dashboard_facade import DEFAULT_QUERY_LIMIT, HISTORICAL_ODDS_SQLITE_TABLES, SQLITE_SCHEMA_VERSION, connect_historical_odds_db, get_sqlite_table_counts, initialize_historical_odds_db, import_historical_odds_file_to_sqlite, make_event_id, make_odds_id, query_historical_odds_rows, stable_hash_id, summarize_historical_odds_db, upsert_canonical_historical_odds_rows, validate_sqlite_store, utc_now_iso
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -328,10 +309,7 @@ def test_event_date_min_max_correct_after_format_normalization(tmp_path: Path) -
 def test_line_movement_schema_independent(tmp_path: Path) -> None:
     """Ensure that the new line‑movement table does not interfere with existing
     historical odds operations."""
-    from automation_scheduler.historical_line_movement import (
-        initialize_line_movement_schema,
-        summarize_line_movement_store,
-    )
+    from src.services.streamlit_dashboard_facade import initialize_line_movement_schema, summarize_line_movement_store
     db_path = tmp_path / "independent.db"
     conn = connect_historical_odds_db(db_path)
     initialize_historical_odds_db(conn)

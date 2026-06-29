@@ -1,6 +1,6 @@
 import unittest
 
-from automation_scheduler.middles.team_total_middle import detect_team_total_middle
+from src.services.streamlit_dashboard_facade import detect_team_total_middle
 
 
 class TestMiddleTeamTotal(unittest.TestCase):

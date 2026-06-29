@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from importlib import import_module
 import json
 import sqlite3
 from datetime import datetime, timezone
@@ -36,6 +37,30 @@ REQUIRED_LINE_MOVEMENT_COLUMNS: list[str] = [
     "updated_at",
 ]
 
+LINE_MOVEMENT_READINESS_VERSION = "10H19"
+LINE_MOVEMENT_IMPORT_CONTRACT_VERSION = "10H20"
+AS_OF_LINE_MOVEMENT_QUERY_VERSION = "10H22"
+LINE_MOVEMENT_DATA_QUALITY_DASHBOARD_VERSION = "10H23"
+
+
+_LEGACY_LINE_MOVEMENT_MODULES: tuple[str, ...] = (
+    "src.automation_scheduler_legacy.line_movement_import_contract",
+    "src.automation_scheduler_legacy.line_movement_readiness",
+    "src.automation_scheduler_legacy.line_movement_data_quality_dashboard",
+    "src.automation_scheduler_legacy.asof_line_movement_query",
+    "src.automation_scheduler_legacy.historical_line_movement",
+)
+
+
+def __getattr__(name: str) -> Any:
+    for module_name in _LEGACY_LINE_MOVEMENT_MODULES:
+        module = import_module(module_name)
+        if hasattr(module, name):
+            value = getattr(module, name)
+            globals()[name] = value
+            return value
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
 
 def _parse_dt(value: Any) -> datetime | None:
     if value in (None, ""):
@@ -54,37 +79,24 @@ def _parse_dt(value: Any) -> datetime | None:
     return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
 
 
+def _utc_now() -> str:
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
 def initialize_line_movement_schema(conn: sqlite3.Connection) -> None:
-    conn.execute(
-        """
-        CREATE TABLE IF NOT EXISTS historical_line_snapshots (
-            snapshot_id TEXT PRIMARY KEY,
-            event_id TEXT,
-            odds_id TEXT,
-            event_date TEXT,
-            home_team TEXT,
-            away_team TEXT,
-            bookmaker TEXT,
-            market_family TEXT,
-            market TEXT,
-            selection TEXT,
-            line_value REAL,
-            odds_value REAL,
-            implied_probability REAL,
-            snapshot_label TEXT,
-            snapshot_time TEXT,
-            sport TEXT,
-            source_file TEXT
-        )
-        """
-    )
-    conn.commit()
+    from src.automation_scheduler_legacy.historical_line_movement import initialize_line_movement_schema as _legacy_initialize_line_movement_schema
+
+    _legacy_initialize_line_movement_schema(conn)
 
 
 def canonical_row_to_line_snapshots(row: dict[str, Any]) -> list[dict[str, Any]]:
     payload = dict(row)
     snapshot_time = payload.get("snapshot_time") or payload.get("timestamp") or payload.get("decision_time") or payload.get("collected_at")
+    now = _utc_now()
     event_id = payload.get("event_id") or payload.get("event")
+    source_key = payload.get("source_key") or ""
+    source_file = payload.get("source_file") or ""
+    league = payload.get("league") or ""
     bookmaker = payload.get("bookmaker") or payload.get("source_name") or "local"
     market_family = payload.get("market_family") or payload.get("market_type") or "unknown"
     market = payload.get("market") or payload.get("market_name") or payload.get("market_type") or "unknown"
@@ -97,6 +109,10 @@ def canonical_row_to_line_snapshots(row: dict[str, Any]) -> list[dict[str, Any]]
             "snapshot_id": payload.get("snapshot_id") or f"{payload.get('odds_id') or payload.get('raw_row_index') or event_id or 'event'}_{label}_{snap_time or 'latest'}",
             "event_id": event_id,
             "odds_id": payload.get("odds_id") or payload.get("raw_row_index"),
+            "source_key": source_key,
+            "source_file": source_file,
+            "sport": payload.get("sport"),
+            "league": league,
             "event_date": payload.get("event_date"),
             "home_team": payload.get("home_team"),
             "away_team": payload.get("away_team"),
@@ -104,13 +120,17 @@ def canonical_row_to_line_snapshots(row: dict[str, Any]) -> list[dict[str, Any]]
             "market_family": market_family,
             "market": market,
             "selection": selection,
+            "player_name": payload.get("player_name"),
+            "team_name": payload.get("team_name"),
             "line_value": value,
             "odds_value": payload.get("odds_at_decision_time") if label == "decision" else value,
             "implied_probability": payload.get("market_implied_probability"),
             "snapshot_label": label,
             "snapshot_time": snap_time or snapshot_time,
-            "sport": payload.get("sport"),
-            "source_file": payload.get("source_file"),
+            "raw_market_name": payload.get("raw_market_name") or "",
+            "raw_selection_name": payload.get("raw_selection_name") or "",
+            "created_at": payload.get("created_at") or snapshot_time or now,
+            "updated_at": payload.get("updated_at") or snapshot_time or now,
         }
         return snap_payload
 
@@ -126,105 +146,206 @@ def canonical_row_to_line_snapshots(row: dict[str, Any]) -> list[dict[str, Any]]
     return snapshots or [_snap("decision", line_value, snapshot_time)]
 
 
+def upsert_line_snapshots(
+    conn: sqlite3.Connection,
+    snapshots: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    from src.automation_scheduler_legacy.historical_line_movement import upsert_line_snapshots as _legacy_upsert_line_snapshots
+
+    return _legacy_upsert_line_snapshots(conn, [dict(row) for row in snapshots if isinstance(row, Mapping)])
+
+
 def upsert_line_snapshots_for_canonical_rows(
     conn: sqlite3.Connection,
     rows: Sequence[Mapping[str, Any]],
 ) -> dict[str, Any]:
-    initialize_line_movement_schema(conn)
     snapshots: list[dict[str, Any]] = []
     for row in rows:
         snapshots.extend(canonical_row_to_line_snapshots(dict(row)))
-    for snap in snapshots:
-        conn.execute(
-            """
-            INSERT OR REPLACE INTO historical_line_snapshots (
-                snapshot_id, event_id, odds_id, event_date, home_team, away_team,
-                bookmaker, market_family, market, selection, line_value,
-                odds_value, implied_probability, snapshot_label, snapshot_time,
-                sport, source_file
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            [
-                snap.get("snapshot_id"),
-                snap.get("event_id"),
-                snap.get("odds_id"),
-                snap.get("event_date"),
-                snap.get("home_team"),
-                snap.get("away_team"),
-                snap.get("bookmaker"),
-                snap.get("market_family"),
-                snap.get("market"),
-                snap.get("selection"),
-                snap.get("line_value"),
-                snap.get("odds_value"),
-                snap.get("implied_probability"),
-                snap.get("snapshot_label"),
-                snap.get("snapshot_time"),
-                snap.get("sport"),
-                snap.get("source_file"),
-            ],
-        )
-    conn.commit()
-    return {"ok": True, "status": "upserted", "snapshot_count": len(snapshots)}
+    return upsert_line_snapshots(conn, snapshots)
 
 
-def query_line_snapshots(conn: sqlite3.Connection | str | Path) -> list[dict[str, Any]]:
+def query_line_snapshots(
+    conn: sqlite3.Connection | str | Path,
+    *,
+    sport: str | None = None,
+    league: str | None = None,
+    market: str | None = None,
+    source_key: str | None = None,
+    snapshot_label: str | None = None,
+    player_name: str | None = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
+    limit: int = 1000,
+) -> list[dict[str, Any]]:
+    close_conn = False
     if not isinstance(conn, sqlite3.Connection):
-        handle = sqlite3.connect(str(conn))
+        path = Path(conn)
+        if not path.exists():
+            return []
+        handle = sqlite3.connect(str(path))
         handle.row_factory = sqlite3.Row
-        try:
-            return query_line_snapshots(handle)
-        finally:
-            handle.close()
+        conn = handle
+        close_conn = True
     try:
-        rows = conn.execute("SELECT * FROM historical_line_snapshots").fetchall()
-    except sqlite3.DatabaseError:
-        return []
-    return [dict(row) for row in rows]
+        conditions: list[str] = []
+        params: list[Any] = []
+        if sport is not None:
+            conditions.append("LOWER(sport) = LOWER(?)")
+            params.append(sport)
+        if league is not None:
+            conditions.append("LOWER(league) = LOWER(?)")
+            params.append(league)
+        if market is not None:
+            conditions.append("LOWER(market) = LOWER(?)")
+            params.append(market)
+        if source_key is not None:
+            conditions.append("LOWER(source_key) = LOWER(?)")
+            params.append(source_key)
+        if snapshot_label is not None:
+            conditions.append("LOWER(snapshot_label) = LOWER(?)")
+            params.append(snapshot_label)
+        if player_name is not None:
+            conditions.append("LOWER(player_name) LIKE LOWER(?)")
+            params.append(f"%{player_name}%")
+        if start_date is not None:
+            conditions.append("event_date >= ?")
+            params.append(start_date)
+        if end_date is not None:
+            conditions.append("event_date <= ?")
+            params.append(end_date)
+        where = " AND ".join(conditions) if conditions else "1=1"
+        sql = f"SELECT * FROM historical_line_snapshots WHERE {where} ORDER BY event_date, snapshot_time LIMIT ?"
+        params.append(max(0, int(limit)))
+        try:
+            rows = conn.execute(sql, params).fetchall()
+        except sqlite3.DatabaseError:
+            return []
+        return [dict(row) for row in rows]
+    finally:
+        if close_conn:
+            conn.close()
 
 
 def summarize_line_movement_store(conn: sqlite3.Connection | str | Path) -> dict[str, Any]:
-    rows = query_line_snapshots(conn)
-    counts_by_label: dict[str, int] = {}
-    for row in rows:
-        label = str(row.get("snapshot_label") or "decision")
-        counts_by_label[label] = counts_by_label.get(label, 0) + 1
-    opening = counts_by_label.get("opening", 0)
-    decision = counts_by_label.get("decision", 0)
-    closing = counts_by_label.get("closing", 0)
-    current = counts_by_label.get("current", 0)
-    return {
-        "ok": True,
-        "status": "summarized",
-        "snapshot_count": len(rows),
-        "total_snapshots": len(rows),
-        "event_count": len({row.get("event_id") for row in rows}),
-        "bookmakers": sorted({str(row.get("bookmaker") or "local") for row in rows}),
-        "opening_snapshots": opening,
-        "decision_snapshots": decision,
-        "closing_snapshots": closing,
-        "current_snapshots": current,
-        "line_movement_ready": bool(opening and decision and closing),
-        "clv_ready": bool(opening and decision and closing),
-        "warnings": [] if rows else ["no_snapshots"],
-    }
+    from src.automation_scheduler_legacy.historical_line_movement import summarize_line_movement_store as _legacy_summarize_line_movement_store
+
+    if isinstance(conn, sqlite3.Connection):
+        return _legacy_summarize_line_movement_store(conn)
+    path = Path(conn)
+    if not path.exists():
+        return {
+            "ok": True,
+            "total_snapshots": 0,
+            "opening_snapshots": 0,
+            "decision_snapshots": 0,
+            "current_snapshots": 0,
+            "closing_snapshots": 0,
+            "sports": [],
+            "leagues": [],
+            "markets": [],
+            "market_families": [],
+            "source_keys": [],
+            "player_names": [],
+            "line_movement_ready": False,
+            "clv_ready": False,
+            "warnings": ["missing_db"],
+        }
+    handle = sqlite3.connect(str(path))
+    handle.row_factory = sqlite3.Row
+    try:
+        return _legacy_summarize_line_movement_store(handle)
+    finally:
+        handle.close()
 
 
 def calculate_line_movement_readiness(conn: sqlite3.Connection | str | Path) -> dict[str, Any]:
-    summary = summarize_line_movement_store(conn)
+    if isinstance(conn, dict):
+        summary_or_rows = conn
+    elif isinstance(conn, list):
+        summary_or_rows = conn
+    else:
+        summary = summarize_line_movement_store(conn)
+        summary_or_rows = summary
+
+    if isinstance(summary_or_rows, dict) and {"opening_snapshots", "decision_snapshots", "closing_snapshots"} & set(summary_or_rows):
+        opening = int(summary_or_rows.get("opening_snapshots", 0) or 0)
+        decision = int(summary_or_rows.get("decision_snapshots", 0) or 0)
+        closing = int(summary_or_rows.get("closing_snapshots", 0) or 0)
+    else:
+        rows = summary_or_rows if isinstance(summary_or_rows, list) else []
+        opening = sum(1 for row in rows if isinstance(row, Mapping) and str(row.get("snapshot_label") or "").lower() == "opening")
+        decision = sum(1 for row in rows if isinstance(row, Mapping) and str(row.get("snapshot_label") or "").lower() == "decision")
+        closing = sum(1 for row in rows if isinstance(row, Mapping) and str(row.get("snapshot_label") or "").lower() == "closing")
+
+    line_movement_ready = bool(opening and decision and closing)
+    clv_ready = bool(line_movement_ready and closing)
+    missing: list[str] = []
+    if not opening:
+        missing.append("opening")
+    if not decision:
+        missing.append("decision")
+    if not closing:
+        missing.append("closing")
     return {
-        "ok": True,
-        "status": "ready" if summary["snapshot_count"] else "insufficient_data",
-        "snapshot_count": summary["snapshot_count"],
-        "messages": ["automation_scheduler removed from runtime boundary"],
+        "line_movement_ready": line_movement_ready,
+        "clv_ready": clv_ready,
+        "has_opening": bool(opening),
+        "has_decision": bool(decision),
+        "has_closing": bool(closing),
+        "reason": "Line movement is ready. CLV is ready." if clv_ready else f"Missing: {', '.join(missing)} snapshots",
+        "missing": missing,
     }
 
 
-def backfill_line_snapshots_from_historical_odds(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+def backfill_line_snapshots_from_historical_odds(
+    source: sqlite3.Connection | str | Path | Sequence[Mapping[str, Any]],
+    *,
+    limit: int = 100000,
+) -> dict[str, Any]:
+    if isinstance(source, sqlite3.Connection):
+        from src.data.historical_odds import query_historical_odds_rows
+
+        rows = query_historical_odds_rows(source, limit=limit)
+    elif isinstance(source, (str, Path)):
+        from src.data.historical_odds import connect_historical_odds_db, query_historical_odds_rows
+
+        path = Path(source)
+        if not path.exists():
+            return {"ok": True, "status": "backfilled", "rows_read": 0, "snapshots_created": 0, "warnings": ["missing_db"]}
+        conn = connect_historical_odds_db(path)
+        try:
+            rows = query_historical_odds_rows(conn, limit=limit)
+        finally:
+            conn.close()
+    else:
+        rows = [dict(row) for row in source if isinstance(row, Mapping)]
+
     snapshots: list[dict[str, Any]] = []
     for row in rows:
         snapshots.extend(canonical_row_to_line_snapshots(dict(row)))
-    return {"ok": True, "status": "backfilled", "snapshot_count": len(snapshots), "snapshots": snapshots}
+    result = {"rows_inserted_or_updated": len(snapshots), "warnings": []}
+    if snapshots:
+        if isinstance(source, sqlite3.Connection):
+            conn = source
+            initialize_line_movement_schema(conn)
+            result = upsert_line_snapshots(conn, snapshots)
+        elif isinstance(source, (str, Path)):
+            from src.data.historical_odds import connect_historical_odds_db
+
+            conn = connect_historical_odds_db(Path(source))
+            try:
+                initialize_line_movement_schema(conn)
+                result = upsert_line_snapshots(conn, snapshots)
+            finally:
+                conn.close()
+    return {
+        "ok": True,
+        "status": "backfilled",
+        "rows_read": len(rows),
+        "snapshots_created": int(result.get("rows_inserted_or_updated", result.get("snapshot_count", len(snapshots))) or 0),
+        "warnings": list(result.get("warnings", [])),
+    }
 
 
 def group_line_snapshots_for_volatility(rows: list[dict]) -> dict[str, list[dict]]:
@@ -236,75 +357,57 @@ def group_line_snapshots_for_volatility(rows: list[dict]) -> dict[str, list[dict
 
 
 def calculate_line_volatility_for_group(rows: list[dict]) -> dict:
-    values = [float(row.get("line_value") or 0.0) for row in rows if row.get("line_value") not in (None, "")]
-    volatility = pstdev(values) if len(values) > 1 else 0.0
-    return {
-        "ok": True,
-        "row_count": len(rows),
-        "mean": round(mean(values), 6) if values else 0.0,
-        "volatility": round(volatility, 6),
-    }
+    from src.automation_scheduler_legacy.historical_line_movement import calculate_line_volatility_for_group as _legacy_calculate_line_volatility_for_group
+
+    return _legacy_calculate_line_volatility_for_group([dict(row) for row in rows if isinstance(row, Mapping)])
 
 
 def calculate_line_volatility_summary(rows: list[dict]) -> dict:
-    grouped = group_line_snapshots_for_volatility(rows)
-    group_summaries = {key: calculate_line_volatility_for_group(value) for key, value in grouped.items()}
-    return {
-        "ok": True,
-        "group_count": len(group_summaries),
-        "group_summaries": group_summaries,
-    }
+    from src.automation_scheduler_legacy.historical_line_movement import calculate_line_volatility_summary as _legacy_calculate_line_volatility_summary
+
+    return _legacy_calculate_line_volatility_summary([dict(row) for row in rows if isinstance(row, Mapping)])
 
 
 def get_line_volatility_summary_from_sqlite(conn: sqlite3.Connection | str | Path) -> dict:
-    return calculate_line_volatility_summary(query_line_snapshots(conn))
+    from src.automation_scheduler_legacy.historical_line_movement import get_line_volatility_summary_from_sqlite as _legacy_get_line_volatility_summary_from_sqlite
+
+    return _legacy_get_line_volatility_summary_from_sqlite(conn)
 
 
-def attach_volatility_to_backtest_rows(rows: list[dict]) -> list[dict]:
-    summary = calculate_line_volatility_summary(rows)
-    return [dict(row, line_volatility_summary=summary) for row in rows]
+def attach_volatility_to_backtest_rows(
+    rows: list[dict],
+    volatility_rows: list[dict] | None = None,
+) -> list[dict]:
+    from src.automation_scheduler_legacy.historical_line_movement import attach_volatility_to_backtest_rows as _legacy_attach_volatility_to_backtest_rows
+
+    return _legacy_attach_volatility_to_backtest_rows(
+        [dict(row) for row in rows if isinstance(row, Mapping)],
+        [dict(row) for row in (volatility_rows or []) if isinstance(row, Mapping)],
+    )
 
 
 def summarize_results_by_volatility(rows: list[dict]) -> dict:
-    summary = calculate_line_volatility_summary(rows)
-    return {"ok": True, "status": "summarized", "volatility_summary": summary}
+    from src.automation_scheduler_legacy.historical_line_movement import summarize_results_by_volatility as _legacy_summarize_results_by_volatility
+
+    return _legacy_summarize_results_by_volatility([dict(row) for row in rows if isinstance(row, Mapping)])
 
 
 def build_line_movement_readiness_snapshot(db_path: str | Path) -> dict[str, Any]:
-    rows = query_line_snapshots(db_path)
-    return {
-        "ok": True,
-        "status": "ready" if rows else "insufficient_data",
-        "messages": ["local_only_line_movement_snapshot"],
-        "snapshot_count": len(rows),
-    }
+    from src.automation_scheduler_legacy.line_movement_readiness import build_line_movement_readiness_snapshot as _legacy_build_line_movement_readiness_snapshot
+
+    return _legacy_build_line_movement_readiness_snapshot(db_path)
 
 
 def describe_line_movement_readiness(snapshot: dict[str, Any] | None = None) -> list[str]:
-    snap = dict(snapshot or {})
-    return [
-        "Line movement readiness is local-only.",
-        f"snapshot_count={snap.get('snapshot_count', 0)}",
-        "does not connect to vendors",
-    ]
+    from src.automation_scheduler_legacy.line_movement_readiness import describe_line_movement_readiness as _legacy_describe_line_movement_readiness
+
+    return _legacy_describe_line_movement_readiness(dict(snapshot or {}))
 
 
 def build_vendor_neutral_line_movement_contract() -> dict[str, Any]:
-    return {
-        "ok": True,
-        "status": "contract_ready",
-        "fields": [
-            "snapshot_id",
-            "event_id",
-            "bookmaker",
-            "market_family",
-            "market",
-            "selection",
-            "line_value",
-            "snapshot_time",
-        ],
-        "vendor_neutral": True,
-    }
+    from src.automation_scheduler_legacy.line_movement_import_contract import build_vendor_neutral_line_movement_contract as _legacy_build_vendor_neutral_line_movement_contract
+
+    return _legacy_build_vendor_neutral_line_movement_contract()
 
 
 def build_line_movement_import_preview(
@@ -312,32 +415,16 @@ def build_line_movement_import_preview(
     *,
     limit: int | None = None,
 ) -> dict[str, Any]:
-    row_list = [dict(row) for row in (rows or []) if isinstance(row, Mapping)]
-    if limit is not None:
-        row_list = row_list[: max(0, int(limit))]
-    def _is_valid_preview_row(row: Mapping[str, Any]) -> bool:
-        required = ("source_name", "source_key", "sport", "event_date", "home_team", "away_team", "bookmaker", "market", "selection", "snapshot_time")
-        return all(str(row.get(field) or "").strip() for field in required)
+    from src.automation_scheduler_legacy.line_movement_import_contract import build_line_movement_import_preview as _legacy_build_line_movement_import_preview
 
-    valid_rows = [row for row in row_list if _is_valid_preview_row(row) or row.get("event_id") or row.get("event")]
-    return {
-        "ok": True,
-        "status": "previewed",
-        "row_count": len(row_list),
-        "valid_row_count": len(valid_rows),
-        "valid_rows": len(valid_rows),
-        "invalid_row_count": len(row_list) - len(valid_rows),
-        "invalid_rows": len(row_list) - len(valid_rows),
-        "warnings": [] if valid_rows else ["no_valid_rows"],
-    }
+    effective_limit = 100 if limit is None else int(limit)
+    return _legacy_build_line_movement_import_preview([dict(row) for row in (rows or []) if isinstance(row, Mapping)], limit=effective_limit)
 
 
 def describe_line_movement_import_contract() -> list[str]:
-    return [
-        "Line movement import contract is local-only.",
-        "It does not connect to vendors.",
-        "Phase 10H21 canonical contract.",
-    ]
+    from src.automation_scheduler_legacy.line_movement_import_contract import describe_line_movement_import_contract as _legacy_describe_line_movement_import_contract
+
+    return _legacy_describe_line_movement_import_contract()
 
 
 def build_asof_line_movement_query_snapshot(
@@ -351,7 +438,10 @@ def build_asof_line_movement_query_snapshot(
     selection: str | None = None,
     limit: int | None = None,
 ) -> dict[str, Any]:
-    selected = filter_line_movement_snapshots_as_of(
+    from src.automation_scheduler_legacy.asof_line_movement_query import build_asof_line_movement_query_snapshot as _legacy_build_asof_line_movement_query_snapshot
+
+    effective_limit = 100 if limit is None else int(limit)
+    return _legacy_build_asof_line_movement_query_snapshot(
         snapshots or [],
         hypothetical_bet_time=hypothetical_bet_time,
         event_id=event_id,
@@ -359,42 +449,14 @@ def build_asof_line_movement_query_snapshot(
         market_family=market_family,
         market=market,
         selection=selection,
-        limit=limit,
+        limit=effective_limit,
     )
-    return {
-        "ok": selected["ok"],
-        "status": "query_snapshot",
-        "query": {
-            "ok": selected["ok"],
-            "available_snapshots": selected["available_snapshots"],
-            "future_snapshots": selected["future_snapshots"],
-            "invalid_time_snapshots": selected["invalid_time_snapshots"],
-            "unmatched_snapshots": selected["unmatched_snapshots"],
-            "selected_snapshot_count": selected["selected_snapshot_count"],
-            "excluded_counts": {
-                "future_filtered": selected["future_snapshots"],
-                "invalid_time_filtered": selected["invalid_time_snapshots"],
-                "unmatched_filtered": selected["unmatched_snapshots"],
-            },
-            "latest_snapshots": selected["latest_snapshots"],
-            "warnings": selected.get("warnings", []),
-        },
-        "selection": selected,
-        "summary": summarize_asof_line_movement_snapshots(selected["latest_snapshots"]),
-        "messages": ["look-ahead bias guarded"],
-    }
 
 
 def summarize_asof_line_movement_snapshots(snapshots: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
-    rows = [dict(row) for row in snapshots if isinstance(row, Mapping)]
-    return {
-        "ok": True,
-        "snapshot_count": len(rows),
-        "sports": sorted({str(row.get("sport") or "") for row in rows if row.get("sport")}),
-        "bookmakers": sorted({str(row.get("bookmaker") or "") for row in rows if row.get("bookmaker")}),
-        "snapshot_labels": sorted({str(row.get("snapshot_label") or "") for row in rows if row.get("snapshot_label")}),
-        "warnings": [] if rows else ["no_snapshots"],
-    }
+    from src.automation_scheduler_legacy.asof_line_movement_query import summarize_asof_line_movement_snapshots as _legacy_summarize_asof_line_movement_snapshots
+
+    return _legacy_summarize_asof_line_movement_snapshots([dict(row) for row in snapshots if isinstance(row, Mapping)])
 
 
 def filter_line_movement_snapshots_as_of(
@@ -408,63 +470,17 @@ def filter_line_movement_snapshots_as_of(
     selection: str | None = None,
     limit: int | None = None,
 ) -> dict[str, Any]:
-    if hypothetical_bet_time is None:
-        return {
-            "ok": False,
-            "status": "rejected",
-            "warnings": ["missing_hypothetical_bet_time"],
-            "available_snapshots": 0,
-            "future_snapshots": 0,
-            "invalid_time_snapshots": 0,
-            "unmatched_snapshots": len(list(snapshots)),
-            "latest_snapshots": [],
-            "selected_snapshot_count": 0,
-        }
-    cutoff = _parse_dt(hypothetical_bet_time)
-    available: list[dict[str, Any]] = []
-    future = 0
-    invalid = 0
-    unmatched = 0
-    for row in snapshots:
-        payload = dict(row)
-        snap_time = _parse_dt(payload.get("snapshot_time"))
-        if snap_time is None:
-            invalid += 1
-            continue
-        if cutoff is not None and snap_time > cutoff:
-            future += 1
-            continue
-        if event_id is not None and str(payload.get("event_id")) != str(event_id):
-            unmatched += 1
-            continue
-        if bookmaker is not None and str(payload.get("bookmaker")) != str(bookmaker):
-            unmatched += 1
-            continue
-        if market_family is not None and str(payload.get("market_family")) != str(market_family):
-            unmatched += 1
-            continue
-        if market is not None and str(payload.get("market")) != str(market):
-            unmatched += 1
-            continue
-        if selection is not None and str(payload.get("selection")) != str(selection):
-            unmatched += 1
-            continue
-        available.append(payload)
-    available.sort(key=lambda row: (_parse_dt(row.get("snapshot_time")) or datetime.min.replace(tzinfo=timezone.utc), str(row.get("snapshot_id") or "")))
-    latest = available
-    if limit is not None:
-        latest = latest[: max(0, int(limit))]
-    return {
-        "ok": True,
-        "status": "accepted",
-        "available_snapshots": len(available),
-        "future_snapshots": future,
-        "invalid_time_snapshots": invalid,
-        "unmatched_snapshots": unmatched,
-        "latest_snapshots": latest,
-        "selected_snapshot_count": len(latest),
-        "warnings": [],
-    }
+    from src.automation_scheduler_legacy.asof_line_movement_query import filter_line_movement_snapshots_as_of as _legacy_filter_line_movement_snapshots_as_of
+
+    return _legacy_filter_line_movement_snapshots_as_of(
+        [dict(row) for row in snapshots if isinstance(row, Mapping)],
+        hypothetical_bet_time=hypothetical_bet_time,
+        event_id=event_id,
+        bookmaker=bookmaker,
+        market_family=market_family,
+        market=market,
+        selection=selection,
+    )
 
 
 def build_asof_line_movement_query_snapshot_from_sqlite(
@@ -478,26 +494,25 @@ def build_asof_line_movement_query_snapshot_from_sqlite(
     selection: str | None = None,
     limit: int | None = None,
 ) -> dict[str, Any]:
-    load = load_line_movement_snapshots_from_sqlite(db_path)
-    query_snapshot = build_asof_line_movement_query_snapshot(
-        load.get("snapshots", []),
+    from src.automation_scheduler_legacy.asof_line_movement_query import build_asof_line_movement_query_snapshot_from_sqlite as _legacy_build_asof_line_movement_query_snapshot_from_sqlite
+
+    effective_limit = 100 if limit is None else int(limit)
+    return _legacy_build_asof_line_movement_query_snapshot_from_sqlite(
+        db_path,
         hypothetical_bet_time=hypothetical_bet_time,
         event_id=event_id,
         bookmaker=bookmaker,
         market_family=market_family,
         market=market,
         selection=selection,
-        limit=limit,
+        limit=effective_limit,
     )
-    return {"ok": load["ok"], "load": load, "query_snapshot": query_snapshot}
 
 
 def describe_asof_line_movement_query_engine() -> list[str]:
-    return [
-        "As-of line movement query engine is local-only.",
-        "It does not connect to vendors.",
-        "It prevents look-ahead bias.",
-    ]
+    from src.automation_scheduler_legacy.asof_line_movement_query import describe_asof_line_movement_query_engine as _legacy_describe_asof_line_movement_query_engine
+
+    return _legacy_describe_asof_line_movement_query_engine()
 
 
 def load_line_movement_snapshots_from_sqlite(
@@ -510,30 +525,17 @@ def load_line_movement_snapshots_from_sqlite(
     selection: str | None = None,
     limit: int | None = None,
 ) -> dict[str, Any]:
-    path = Path(db_path)
-    if not path.exists():
-        return {"ok": False, "status": "missing_db", "warnings": ["cannot_open_database"], "snapshots": [], "total_snapshots": 0}
-    conn = sqlite3.connect(str(path))
-    conn.row_factory = sqlite3.Row
-    try:
-        rows = [dict(row) for row in conn.execute("SELECT * FROM historical_line_snapshots").fetchall()]
-    except sqlite3.DatabaseError:
-        rows = []
-    finally:
-        conn.close()
-    if event_id is not None:
-        rows = [row for row in rows if str(row.get("event_id")) == str(event_id)]
-    if bookmaker is not None:
-        rows = [row for row in rows if str(row.get("bookmaker")) == str(bookmaker)]
-    if market_family is not None:
-        rows = [row for row in rows if str(row.get("market_family")) == str(market_family)]
-    if market is not None:
-        rows = [row for row in rows if str(row.get("market")) == str(market)]
-    if selection is not None:
-        rows = [row for row in rows if str(row.get("selection")) == str(selection)]
-    if limit is not None:
-        rows = rows[: max(0, int(limit))]
-    return {"ok": True, "status": "loaded", "snapshots": rows, "total_snapshots": len(rows), "warnings": []}
+    from src.automation_scheduler_legacy.asof_line_movement_query import load_line_movement_snapshots_from_sqlite as _legacy_load_line_movement_snapshots_from_sqlite
+
+    return _legacy_load_line_movement_snapshots_from_sqlite(
+        db_path,
+        event_id=event_id,
+        bookmaker=bookmaker,
+        market_family=market_family,
+        market=market,
+        selection=selection,
+        limit=limit,
+    )
 
 
 def build_line_movement_data_quality_snapshot(
@@ -548,89 +550,18 @@ def build_line_movement_data_quality_snapshot(
     selection: str | None = None,
     limit: int | None = None,
 ) -> dict[str, Any]:
-    row_source = snapshot_rows if snapshot_rows is not None else rows
-    row_list = [dict(row) for row in (row_source or []) if isinstance(row, Mapping)]
-    duplicate_ids = set()
-    seen_ids: set[str] = set()
-    missing_links = 0
-    for row in row_list:
-        snapshot_id = str(row.get("snapshot_id") or "")
-        if snapshot_id and snapshot_id in seen_ids:
-            duplicate_ids.add(snapshot_id)
-        if snapshot_id:
-            seen_ids.add(snapshot_id)
-        if not row.get("event_id"):
-            missing_links += 1
-    asof_query = {"ok": False, "warnings": [], "selected_snapshot_count": 0}
-    if hypothetical_bet_time is not None:
-        asof_query = build_asof_line_movement_query_snapshot(
-            row_list,
-            hypothetical_bet_time=hypothetical_bet_time,
-            event_id=event_id,
-            bookmaker=bookmaker,
-            market_family=market_family,
-            market=market,
-            selection=selection,
-            limit=limit,
-        )
-    coverage = {
-        "ok": True,
-        "total_snapshots": len(row_list),
-        "linked_snapshots": len(row_list) - missing_links,
-        "missing_bookmaker_count": len([row for row in row_list if not row.get("bookmaker")]),
-        "missing_sport_count": len([row for row in row_list if not row.get("sport")]),
-        "missing_market_count": len([row for row in row_list if not row.get("market")]),
-        "missing_selection_count": len([row for row in row_list if not row.get("selection")]),
-        "missing_snapshot_time_count": len([row for row in row_list if not row.get("snapshot_time")]),
-        "missing_market_family_count": len([row for row in row_list if not row.get("market_family")]),
-        "warnings": [] if row_list else ["no_snapshots"],
-    }
-    duplicates_snapshot = {
-        "ok": True,
-        "duplicate_group_count": 1 if duplicate_ids else 0,
-        "duplicate_snapshot_count": len(duplicate_ids) * 2 if duplicate_ids else 0,
-        "warnings": [] if not duplicate_ids else ["duplicate_snapshots"],
-    }
-    missing_links_snapshot = {
-        "ok": True,
-        "missing_link_count": missing_links,
-        "linked_count": len(row_list) - missing_links,
-        "missing_link_rows": [dict(row) for row in row_list if not row.get("event_id")],
-        "warnings": [] if missing_links == 0 else ["missing_links"],
-    }
-    books_markets_sports = {
-        "ok": True,
-        "bookmaker_count": len({str(row.get("bookmaker") or "").strip().lower() for row in row_list if row.get("bookmaker")}),
-        "market_family_count": len({str(row.get("market_family") or "").strip().lower() for row in row_list if row.get("market_family")}),
-        "sport_count": len({str(row.get("sport") or "").strip().lower() for row in row_list if row.get("sport")}),
-        "market_count": len({str(row.get("market") or "").strip().lower() for row in row_list if row.get("market")}),
-        "warnings": [] if row_list else ["no_snapshots"],
-    }
-    readiness = {
-        "ok": True,
-        "ready": bool(row_list and not duplicate_ids and missing_links == 0),
-        "readiness_level": "strong" if row_list and not duplicate_ids and missing_links == 0 else "blocked",
-        "reasons": ([] if row_list else ["no_snapshots"]) + (["duplicate_snapshots"] if duplicate_ids else []) + (["missing_linked_events"] if missing_links else []),
-        "warnings": [],
-    }
-    return {
-        "ok": True,
-        "version": "10H23_bridge",
-        "coverage": coverage,
-        "duplicates": duplicates_snapshot,
-        "missing_links": missing_links_snapshot,
-        "books_markets_sports": books_markets_sports,
-        "asof_query": asof_query,
-        "readiness": readiness,
-        "messages": [
-            "Line Movement Data Quality Dashboard shows coverage, missing links, duplicate snapshots, sports, markets, books, and readiness before any real connector is added.",
-            "This checkpoint does not connect to vendors, import paid data, or scrape.",
-            "Missing event_id links must be resolved before line movement features are trusted.",
-            "As-of checks must filter snapshot_time <= hypothetical_bet_time to prevent look-ahead bias.",
-            "After this checkpoint is reviewed, Phase 10H24 may begin the first real data connector spike.",
-        ],
-        "warnings": [] if not duplicate_ids and not missing_links else ["quality_issue"],
-    }
+    from src.automation_scheduler_legacy.line_movement_data_quality_dashboard import build_line_movement_data_quality_snapshot as _legacy_build_line_movement_data_quality_snapshot
+
+    return _legacy_build_line_movement_data_quality_snapshot(
+        snapshot_rows=snapshot_rows,
+        hypothetical_bet_time=hypothetical_bet_time,
+        event_id=event_id,
+        bookmaker=bookmaker,
+        market_family=market_family,
+        market=market,
+        selection=selection,
+        limit=limit,
+    )
 
 
 def build_line_movement_data_quality_snapshot_from_sqlite(
@@ -644,7 +575,9 @@ def build_line_movement_data_quality_snapshot_from_sqlite(
     selection: str | None = None,
     limit: int | None = None,
 ) -> dict[str, Any]:
-    load = load_line_movement_snapshots_from_sqlite(
+    from src.automation_scheduler_legacy.line_movement_data_quality_dashboard import build_line_movement_data_quality_snapshot_from_sqlite as _legacy_build_line_movement_data_quality_snapshot_from_sqlite
+
+    return _legacy_build_line_movement_data_quality_snapshot_from_sqlite(
         db_path,
         hypothetical_bet_time=hypothetical_bet_time,
         event_id=event_id,
@@ -654,90 +587,30 @@ def build_line_movement_data_quality_snapshot_from_sqlite(
         selection=selection,
         limit=limit,
     )
-    return {
-        "ok": load["ok"],
-        "version": "10H23_bridge",
-        "load": load,
-        "data_quality": build_line_movement_data_quality_snapshot(
-            snapshot_rows=load.get("snapshots", []),
-            hypothetical_bet_time=hypothetical_bet_time,
-            event_id=event_id,
-            bookmaker=bookmaker,
-            market_family=market_family,
-            market=market,
-            selection=selection,
-            limit=limit,
-        ),
-        "messages": ["Line Movement Data Quality Dashboard shows coverage, missing links, duplicate snapshots, sports, markets, books, and readiness before any real connector is added."],
-        "warnings": load.get("warnings", []),
-    }
 
 
 def describe_line_movement_data_quality_dashboard() -> list[str]:
-    return [
-        "Line movement data quality dashboard is local-only.",
-        "It does not connect to vendors.",
-        "It checks duplicate snapshots and missing links.",
-    ]
+    from src.automation_scheduler_legacy.line_movement_data_quality_dashboard import describe_line_movement_data_quality_dashboard as _legacy_describe_line_movement_data_quality_dashboard
+
+    return _legacy_describe_line_movement_data_quality_dashboard()
 
 
 def get_line_volatility_summary_from_sqlite(conn: sqlite3.Connection | str | Path) -> dict[str, Any]:
-    rows = query_line_snapshots(conn)
-    grouped = group_line_snapshots_for_volatility(rows)
-    volatility_rows = []
-    high = medium = low = unknown = 0
-    for key, group_rows in grouped.items():
-        summary = calculate_line_volatility_for_group(group_rows)
-        volatility_rows.append({"group": key, **summary})
-        volatility = float(summary.get("volatility") or 0.0)
-        if volatility >= 1.0:
-            high += 1
-        elif volatility >= 0.25:
-            medium += 1
-        elif len(group_rows) > 0:
-            low += 1
-        else:
-            unknown += 1
-    if not rows:
-        unknown = 0
-    return {
-        "ok": True,
-        "groups_seen": len(volatility_rows),
-        "volatility_rows": volatility_rows,
-        "high_volatility_count": high,
-        "medium_volatility_count": medium,
-        "low_volatility_count": low,
-        "unknown_volatility_count": unknown,
-        "operator_interpretation": "local_only_volatility_summary",
-        "warnings": [] if rows else ["no_snapshots"],
-    }
+    from src.automation_scheduler_legacy.historical_line_movement import get_line_volatility_summary_from_sqlite as _legacy_get_line_volatility_summary_from_sqlite
+
+    return _legacy_get_line_volatility_summary_from_sqlite(conn)
 
 
 def get_line_movement_snapshot_for_dashboard(db_path: str | Path) -> dict[str, Any]:
-    from src.data.historical_odds import connect_historical_odds_db, initialize_historical_odds_db
+    from src.automation_scheduler_legacy.streamlit_dashboard_data import get_line_movement_snapshot_for_dashboard as _legacy_get_line_movement_snapshot_for_dashboard
 
-    conn = connect_historical_odds_db(str(db_path))
-    initialize_historical_odds_db(conn)
-    initialize_line_movement_schema(conn)
-    result = summarize_line_movement_store(conn)
-    conn.close()
-    return {
-        "ok": result.get("ok"),
-        "total_snapshots": result.get("total_snapshots", 0),
-        "opening_snapshots": result.get("opening_snapshots", 0),
-        "decision_snapshots": result.get("decision_snapshots", 0),
-        "current_snapshots": result.get("current_snapshots", 0),
-        "closing_snapshots": result.get("closing_snapshots", 0),
-        "line_movement_ready": result.get("line_movement_ready", False),
-        "clv_ready": result.get("clv_ready", False),
-        "warnings": result.get("warnings", []),
-    }
+    return _legacy_get_line_movement_snapshot_for_dashboard(db_path)
 
 
 def get_line_movement_readiness_snapshot_for_dashboard(db_path: str | Path) -> dict[str, Any]:
-    snapshot = build_line_movement_readiness_snapshot(db_path)
-    snapshot["messages"] = describe_line_movement_readiness(snapshot)
-    return snapshot
+    from src.automation_scheduler_legacy.streamlit_dashboard_data import get_line_movement_readiness_snapshot_for_dashboard as _legacy_get_line_movement_readiness_snapshot_for_dashboard
+
+    return _legacy_get_line_movement_readiness_snapshot_for_dashboard(db_path)
 
 
 def get_line_movement_data_quality_snapshot_for_dashboard(
@@ -751,64 +624,28 @@ def get_line_movement_data_quality_snapshot_for_dashboard(
     selection: str | None = None,
     limit: int = 100,
 ) -> dict[str, Any]:
-    try:
-        if db_path is not None:
-            snap = build_line_movement_data_quality_snapshot_from_sqlite(
-                db_path,
-                hypothetical_bet_time=hypothetical_bet_time,
-                event_id=event_id,
-                bookmaker=bookmaker,
-                market_family=market_family,
-                market=market,
-                selection=selection,
-                limit=limit,
-            )
-        else:
-            snap = build_line_movement_data_quality_snapshot(
-                snapshot_rows=snapshot_rows,
-                hypothetical_bet_time=hypothetical_bet_time,
-                event_id=event_id,
-                bookmaker=bookmaker,
-                market_family=market_family,
-                market=market,
-                selection=selection,
-                limit=limit,
-            )
-    except Exception as exc:
-        return {
-            "ok": False,
-            "version": "10H23_bridge",
-            "data_quality": None,
-            "messages": describe_line_movement_data_quality_dashboard(),
-            "warnings": [f"data_quality_error: {exc}"],
-        }
-    raw_warnings = snap.get("warnings", [])
-    top_warnings = [w for w in raw_warnings if w != "missing_hypothetical_bet_time"]
-    return {
-        "ok": snap.get("ok", False),
-        "version": snap.get("version", "10H23_bridge"),
-        "data_quality": snap,
-        "messages": describe_line_movement_data_quality_dashboard(),
-        "warnings": top_warnings,
-    }
+    from src.automation_scheduler_legacy.streamlit_dashboard_data import get_line_movement_data_quality_snapshot_for_dashboard as _legacy_get_line_movement_data_quality_snapshot_for_dashboard
+
+    return _legacy_get_line_movement_data_quality_snapshot_for_dashboard(
+        snapshot_rows=snapshot_rows,
+        db_path=db_path,
+        hypothetical_bet_time=hypothetical_bet_time,
+        event_id=event_id,
+        bookmaker=bookmaker,
+        market_family=market_family,
+        market=market,
+        selection=selection,
+        limit=limit,
+    )
 
 
 def get_line_movement_import_contract_snapshot_for_dashboard(
     rows: list[dict[str, Any]] | None = None,
     limit: int = 100,
 ) -> dict[str, Any]:
-    contract = build_vendor_neutral_line_movement_contract()
-    messages = describe_line_movement_import_contract()
-    preview: dict[str, Any] | None = None
-    if rows is not None:
-        preview = build_line_movement_import_preview(rows, limit=limit)
-    return {
-        "ok": True,
-        "version": "10H20_bridge",
-        "contract": contract,
-        "messages": messages,
-        "preview": preview,
-    }
+    from src.automation_scheduler_legacy.streamlit_dashboard_data import get_line_movement_import_contract_snapshot_for_dashboard as _legacy_get_line_movement_import_contract_snapshot_for_dashboard
+
+    return _legacy_get_line_movement_import_contract_snapshot_for_dashboard(rows=rows, limit=limit)
 
 
 def get_asof_line_movement_query_snapshot_for_dashboard(
@@ -822,130 +659,34 @@ def get_asof_line_movement_query_snapshot_for_dashboard(
     selection: str | None = None,
     limit: int = 100,
 ) -> dict[str, Any]:
-    try:
-        if db_path is not None:
-            result = build_asof_line_movement_query_snapshot_from_sqlite(
-                db_path=db_path,
-                event_id=event_id,
-                hypothetical_bet_time=hypothetical_bet_time,
-                bookmaker=bookmaker,
-                market_family=market_family,
-                market=market,
-                selection=selection,
-                limit=limit,
-            )
-        else:
-            result = build_asof_line_movement_query_snapshot(
-                snapshots=snapshots,
-                event_id=event_id,
-                hypothetical_bet_time=hypothetical_bet_time,
-                bookmaker=bookmaker,
-                market_family=market_family,
-                market=market,
-                selection=selection,
-                limit=limit,
-            )
-    except Exception as exc:
-        return {
-            "ok": False,
-            "version": "10H22",
-            "query_snapshot": None,
-            "messages": describe_asof_line_movement_query_engine(),
-            "warnings": [f"asof_query_error: {exc}"],
-        }
+    from src.automation_scheduler_legacy.streamlit_dashboard_data import get_asof_line_movement_query_snapshot_for_dashboard as _legacy_get_asof_line_movement_query_snapshot_for_dashboard
 
-    raw_warnings = result.get("warnings", [])
-    top_warnings = [w for w in raw_warnings if w != "missing_hypothetical_bet_time"]
-    return {
-        "ok": result.get("ok", False),
-        "version": result.get("version", "10H22"),
-        "query_snapshot": result.get("query_snapshot", result),
-        "messages": describe_asof_line_movement_query_engine(),
-        "warnings": top_warnings,
-    }
+    return _legacy_get_asof_line_movement_query_snapshot_for_dashboard(
+        snapshots=snapshots,
+        db_path=db_path,
+        event_id=event_id,
+        hypothetical_bet_time=hypothetical_bet_time,
+        bookmaker=bookmaker,
+        market_family=market_family,
+        market=market,
+        selection=selection,
+        limit=limit,
+    )
 
 
 def get_line_volatility_snapshot_for_dashboard(db_path: str | Path) -> dict[str, Any]:
-    from src.data.historical_odds import connect_historical_odds_db, initialize_historical_odds_db
+    from src.automation_scheduler_legacy.streamlit_dashboard_data import get_line_volatility_snapshot_for_dashboard as _legacy_get_line_volatility_snapshot_for_dashboard
 
-    conn = connect_historical_odds_db(str(db_path))
-    initialize_historical_odds_db(conn)
-    initialize_line_movement_schema(conn)
-    result = get_line_volatility_summary_from_sqlite(conn)
-    conn.close()
-    return {
-        "ok": result.get("ok"),
-        "groups_seen": result.get("groups_seen", 0),
-        "volatility_rows": result.get("volatility_rows", []),
-        "high_volatility_count": result.get("high_volatility_count", 0),
-        "medium_volatility_count": result.get("medium_volatility_count", 0),
-        "low_volatility_count": result.get("low_volatility_count", 0),
-        "unknown_volatility_count": result.get("unknown_volatility_count", 0),
-        "operator_interpretation": result.get("operator_interpretation", ""),
-        "warnings": result.get("warnings", []),
-    }
+    return _legacy_get_line_volatility_snapshot_for_dashboard(db_path)
 
 
 def get_volatility_result_breakdown_for_dashboard(
     db_path: str | Path,
     projection_result: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    from src.data.historical_odds import connect_historical_odds_db, initialize_historical_odds_db
+    from src.automation_scheduler_legacy.streamlit_dashboard_data import get_volatility_result_breakdown_for_dashboard as _legacy_get_volatility_result_breakdown_for_dashboard
 
-    result: dict[str, Any] = {
-        "ok": False,
-        "db_path": str(db_path),
-        "availability_summary": {},
-        "breakdown": {},
-        "operator_interpretation": "",
-        "warnings": [],
-    }
-
-    try:
-        conn = connect_historical_odds_db(str(db_path))
-        initialize_historical_odds_db(conn)
-        initialize_line_movement_schema(conn)
-        vol_summary = get_line_volatility_summary_from_sqlite(conn)
-        result["availability_summary"] = {
-            "groups_seen": vol_summary.get("groups_seen", 0),
-            "high_volatility_count": vol_summary.get("high_volatility_count", 0),
-            "medium_volatility_count": vol_summary.get("medium_volatility_count", 0),
-            "low_volatility_count": vol_summary.get("low_volatility_count", 0),
-            "unknown_volatility_count": vol_summary.get("unknown_volatility_count", 0),
-        }
-        conn.close()
-    except Exception as exc:
-        result["warnings"].append(f"Could not read SQLite store: {exc}")
-        return result
-
-    decisions: list[dict[str, Any]] = []
-    if projection_result is not None:
-        try:
-            bt = projection_result.get("backtest_result", {}) or {}
-            report = bt.get("strategy_bankroll_report", {}) or {}
-            decisions = list(report.get("decisions") or [])
-        except Exception:
-            decisions = []
-
-    if not decisions:
-        result["ok"] = True
-        result["operator_interpretation"] = (
-            "Row\u2011level projection results are not available for performance breakdown. "
-            "Volatility availability only is shown above."
-        )
-        result["warnings"].append(
-            "Volatility availability exists, but row\u2011level projection results are not available for breakdown yet."
-        )
-        return result
-
-    result["ok"] = True
-    result["breakdown"] = {
-        "volatility_rows": vol_summary.get("volatility_rows", []),
-        "decision_count": len(decisions),
-    }
-    result["operator_interpretation"] = "local_only_volatility_breakdown"
-    result["warnings"] = []
-    return result
+    return _legacy_get_volatility_result_breakdown_for_dashboard(db_path, projection_result=projection_result)
 
 
 __all__ = [

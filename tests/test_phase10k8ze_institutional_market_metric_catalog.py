@@ -2,18 +2,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from automation_scheduler.model_data_field_catalog import (
-    CORE_BACKTEST_VALIDATION_METRICS,
-    PREDICTION_MARKET_OUTPUT_METRICS,
-    SPORTS_BETTING_OUTPUT_METRICS,
-    ZERO_DTE_OUTPUT_METRICS,
-    output_metrics_for_product_lane,
-)
-from automation_scheduler.streamlit_dashboard_data import build_market_metric_display_payload
-from automation_scheduler.technical_signal_fields import (
-    TECHNICAL_SIGNAL_FIELDS,
-    TECHNICAL_SIGNAL_FIELDS_BY_MARKET,
-)
+from src.automation_scheduler_legacy.model_data_field_catalog import CORE_BACKTEST_VALIDATION_METRICS, PREDICTION_MARKET_OUTPUT_METRICS, SPORTS_BETTING_OUTPUT_METRICS, ZERO_DTE_OUTPUT_METRICS, output_metrics_for_product_lane
+from src.automation_scheduler_legacy.streamlit_dashboard_data import build_market_metric_display_payload
+from src.services.streamlit_dashboard_facade import TECHNICAL_SIGNAL_FIELDS, TECHNICAL_SIGNAL_FIELDS_BY_MARKET
 
 
 ROOT = Path(__file__).resolve().parents[1]

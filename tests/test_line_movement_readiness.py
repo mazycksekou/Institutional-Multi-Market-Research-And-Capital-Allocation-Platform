@@ -9,17 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from automation_scheduler.line_movement_readiness import (
-    LINE_MOVEMENT_READINESS_VERSION,
-    REQUIRED_LINE_MOVEMENT_COLUMNS,
-    normalize_line_movement_readiness_value,
-    get_sqlite_table_names,
-    get_sqlite_table_columns,
-    inspect_line_movement_schema,
-    build_line_movement_snapshot_coverage,
-    build_line_movement_readiness_snapshot,
-    describe_line_movement_readiness,
-)
+from src.services.streamlit_dashboard_facade import LINE_MOVEMENT_READINESS_VERSION, REQUIRED_LINE_MOVEMENT_COLUMNS, normalize_line_movement_readiness_value, get_sqlite_table_names, get_sqlite_table_columns, inspect_line_movement_schema, build_line_movement_snapshot_coverage, build_line_movement_readiness_snapshot, describe_line_movement_readiness
 
 
 # ---------------------------------------------------------------------------

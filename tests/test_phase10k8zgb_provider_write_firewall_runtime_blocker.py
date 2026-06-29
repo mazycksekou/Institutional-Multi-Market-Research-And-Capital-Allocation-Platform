@@ -16,7 +16,7 @@ MIGRATION_MAP_PATH = ROOT / "PROVIDER_WRITE_FIREWALL_MIGRATION_MAP_AFTER_10K8ZGB
 DELETE_READINESS_PATH = ROOT / "PROVIDER_WRITE_FIREWALL_DELETE_READINESS_AFTER_10K8ZGB.md"
 
 RUNTIME_FILES = [
-    ROOT / "automation_scheduler" / "__init__.py",
+    ROOT / "src" / "automation_scheduler_legacy" / "__init__.py",
     ROOT / "src" / "brokerage" / "readiness.py",
 ]
 
@@ -103,7 +103,7 @@ def test_phase10k8zgb_runtime_redirect_and_wrapper_compatibility(monkeypatch, tm
     monkeypatch.setattr(os, "getenv", fail_getenv)
 
     canonical = importlib.import_module("src.providers.policy.write_firewall")
-    scheduler_pkg = importlib.import_module("automation_scheduler")
+    scheduler_pkg = importlib.import_module('src.automation_scheduler_legacy')
     execution_authorization = importlib.import_module("src.brokerage.readiness")
 
     for path in RUNTIME_FILES:
@@ -130,7 +130,7 @@ def test_phase10k8zgb_runtime_redirect_and_wrapper_compatibility(monkeypatch, tm
     )
     assert not (ROOT / "automation_scheduler" / "provider_write_firewall.py").exists()
     with pytest.raises(ModuleNotFoundError):
-        importlib.import_module("automation_scheduler.provider_write_firewall")
+        importlib.import_module('src.automation_scheduler_legacy.provider_write_firewall')
 
     scheduler_result = scheduler_pkg.check_provider_write_firewall(
         provider="paper",
@@ -149,3 +149,4 @@ def test_phase10k8zgb_runtime_redirect_and_wrapper_compatibility(monkeypatch, tm
     assert execution_result["provider_write_firewall_status"] == canonical_result["status"]
     assert execution_result["status"] == "execution_attempt_blocked"
     assert execution_result["ok"] is False
+

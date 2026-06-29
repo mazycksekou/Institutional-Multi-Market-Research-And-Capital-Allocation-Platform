@@ -2,31 +2,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from automation_scheduler.model_data_field_catalog import (
-    ZERO_DTE_GEX_FIELDS,
-    ZERO_DTE_LIQUIDITY_EXECUTION_FIELDS,
-    ZERO_DTE_MACRO_EVENT_FIELDS,
-    ZERO_DTE_STRATEGY_FIELDS,
-    ZERO_DTE_VOLUME_PROFILE_FIELDS,
-    fields_for_model_mode,
-)
-from automation_scheduler.technical_signal_fields import (
-    TECHNICAL_SIGNAL_FIELDS,
-    TECHNICAL_SIGNAL_FIELDS_BY_MARKET,
-)
-from automation_scheduler.zero_dte_fixture_template import (
-    ZERO_DTE_PAPER_FIXTURE_OPTIONAL_FIELDS,
-    build_zero_dte_fixture_template_row,
-    build_zero_dte_formula_snapshot,
-    build_zero_dte_paper_pipeline_result,
-    calculate_zero_dte_estimated_slippage,
-    calculate_zero_dte_mid_price,
-    calculate_zero_dte_moneyness,
-    calculate_zero_dte_moneyness_percent,
-    calculate_zero_dte_spread,
-    calculate_zero_dte_spread_percent,
-    calculate_zero_dte_volume_open_interest_ratio,
-)
+from src.services.streamlit_dashboard_facade import ZERO_DTE_GEX_FIELDS, ZERO_DTE_LIQUIDITY_EXECUTION_FIELDS, ZERO_DTE_MACRO_EVENT_FIELDS, ZERO_DTE_STRATEGY_FIELDS, ZERO_DTE_VOLUME_PROFILE_FIELDS, fields_for_model_mode
+from src.services.streamlit_dashboard_facade import TECHNICAL_SIGNAL_FIELDS, TECHNICAL_SIGNAL_FIELDS_BY_MARKET
+from src.automation_scheduler_legacy.zero_dte_fixture_template import ZERO_DTE_PAPER_FIXTURE_OPTIONAL_FIELDS, build_zero_dte_fixture_template_row, build_zero_dte_formula_snapshot, build_zero_dte_paper_pipeline_result, calculate_zero_dte_estimated_slippage, calculate_zero_dte_mid_price, calculate_zero_dte_moneyness, calculate_zero_dte_moneyness_percent, calculate_zero_dte_spread, calculate_zero_dte_spread_percent, calculate_zero_dte_volume_open_interest_ratio
 
 
 ROOT = Path(__file__).resolve().parents[1]

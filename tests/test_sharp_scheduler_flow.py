@@ -4,8 +4,8 @@ from datetime import datetime, timezone
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
-from automation_scheduler import get_scheduler_review_queue
-from automation_scheduler.scheduler_runner import run_scheduler_once
+from src.automation_scheduler_legacy.__init__ import get_scheduler_review_queue
+from src.services.streamlit_dashboard_facade import run_scheduler_once
 
 
 def _sharp_snapshot_two_books() -> dict:
@@ -94,7 +94,7 @@ class TestSharpSchedulerFlow(unittest.TestCase):
         os.environ.pop("SHARP_LIVE_READS_ENABLED", None)
         os.environ.pop("SHARP_API_KEY", None)
 
-    @patch("automation_scheduler.scheduler_runner.SharpSportsbookAdapter.fetch_snapshot")
+    @patch('src.automation_scheduler_legacy.scheduler_runner.SharpSportsbookAdapter.fetch_snapshot')
     def test_sharp_records_flow_to_scheduler_read_only(self, mock_snapshot):
         mock_snapshot.return_value = _sharp_snapshot_two_books()
         with TemporaryDirectory() as tmp:

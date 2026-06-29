@@ -79,6 +79,7 @@ def score_event_link_candidate(
     cand = dict(candidate_row)
     reasons: list[str] = []
     score = 0
+    reversed_home_away = False
     source_key = build_event_link_key(source)
     cand_key = build_event_link_key(cand)
     reversed_key = build_reversed_event_link_key(cand)

@@ -1,9 +1,5 @@
-from automation_scheduler.backtest_strategy_bankroll import (
-    apply_regression_strategy_to_rows,
-    calculate_regression_probability,
-    simulate_backtest_bankroll,
-)
-from automation_scheduler.backtesting_engine import run_backtest
+from src.services.streamlit_dashboard_facade import apply_regression_strategy_to_rows, calculate_regression_probability, simulate_backtest_bankroll
+from src.services.streamlit_dashboard_facade import run_backtest
 
 
 def test_calculate_regression_probability_from_feature_weights():

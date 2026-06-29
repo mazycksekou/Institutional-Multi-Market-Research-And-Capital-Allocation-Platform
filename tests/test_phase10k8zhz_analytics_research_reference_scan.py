@@ -43,14 +43,14 @@ def test_canonical_architecture_remains_intact_and_deleted_shells_not_reintroduc
         "kalshi_client.py",
         "providers/kalshi_provider.py",
         "betting_providers/kalshi_api.py",
-        "automation_scheduler/kalshi_readonly_adapter.py",
-        "automation_scheduler/kalshi_market_provider.py",
+        'src/automation_scheduler_legacy/kalshi_readonly_adapter.py',
+        'src/automation_scheduler_legacy/kalshi_market_provider.py',
         "sharp_client.py",
         "providers/sharp_provider.py",
         "betting_providers/sharp_api.py",
         "betting_providers/the_odds_api.py",
         "betting_providers/sportsgameodds.py",
-        "automation_scheduler/sharp_sportsbook_adapter.py",
-        "automation_scheduler/sportsbook_odds_provider.py",
+        'src/automation_scheduler_legacy/sharp_sportsbook_adapter.py',
+        'src/automation_scheduler_legacy/sportsbook_odds_provider.py',
     ]:
         assert not (ROOT / relpath).exists()

@@ -401,6 +401,7 @@ def normalize_market_family(
         "full_time_result": "three_way_moneyline",
         "draw_market": "three_way_moneyline",
         "moneyline_or_1x2": "three_way_moneyline" if selection_text in {"draw", "x"} else "two_way_moneyline",
+        "match_winner": "three_way_moneyline" if selection_text in {"draw", "x"} else "two_way_moneyline",
         "spread": "spread_or_handicap",
         "point_spread": "spread_or_handicap",
         "line": "spread_or_handicap",
@@ -513,20 +514,15 @@ def _pack_summary(
 
 
 def get_sport_feature_pack(sport: Any | None) -> dict[str, Any]:
-    key = normalize_sport_key(sport)
-    pack = dict(_SPORT_FALLBACK.get(key, _SPORT_FALLBACK["general"]))
-    return _pack_summary(
-        key_name="sport_key",
-        key_value=key,
-        family=str(pack["sport_family"]),
-        required_fields=pack["required_fields"],
-        recommended_fields=pack["recommended_fields"],
-        version=SPORT_FEATURE_PACKS_VERSION,
-    )
+    from src.automation_scheduler_legacy import sport_feature_packs as legacy_packs
+
+    return legacy_packs.get_sport_feature_pack(sport)
 
 
-def get_supported_sport_feature_packs() -> list[str]:
-    return sorted(_SPORT_FALLBACK)
+def get_supported_sport_feature_packs() -> dict[str, dict[str, Any]]:
+    from src.automation_scheduler_legacy import sport_feature_packs as legacy_packs
+
+    return legacy_packs.get_supported_sport_feature_packs()
 
 
 def evaluate_sport_feature_readiness(
@@ -592,20 +588,19 @@ def get_market_feature_pack(
     selection: Any | None = None,
     sport: Any | None = None,
 ) -> dict[str, Any]:
-    family = normalize_market_family(market, selection=selection, sport=sport)
-    pack = dict(_MARKET_FALLBACK.get(family, _MARKET_FALLBACK["general_market"]))
-    return _pack_summary(
-        key_name="market_family",
-        key_value=family,
-        family=family,
-        required_fields=pack["required_fields"],
-        recommended_fields=pack["recommended_fields"],
-        version=MARKET_FEATURE_PACKS_VERSION,
+    from src.automation_scheduler_legacy import market_feature_packs as legacy_packs
+
+    return legacy_packs.get_market_feature_pack(
+        market,
+        selection=selection,
+        sport=sport,
     )
 
 
-def get_supported_market_feature_packs() -> list[str]:
-    return sorted(_MARKET_FALLBACK)
+def get_supported_market_feature_packs() -> dict[str, dict[str, Any]]:
+    from src.automation_scheduler_legacy import market_feature_packs as legacy_packs
+
+    return legacy_packs.get_supported_market_feature_packs()
 
 
 def evaluate_market_feature_readiness(

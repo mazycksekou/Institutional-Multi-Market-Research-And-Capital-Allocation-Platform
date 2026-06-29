@@ -1,6 +1,6 @@
 import unittest
 
-from automation_scheduler.arbitrage.draw_market_arbitrage import detect_draw_market_arbitrage
+from src.services.streamlit_dashboard_facade import detect_draw_market_arbitrage
 
 
 class TestArbitrageDrawMarket(unittest.TestCase):

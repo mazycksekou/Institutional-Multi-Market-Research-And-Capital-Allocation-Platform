@@ -9,20 +9,7 @@ from __future__ import annotations
 
 import json
 
-from automation_scheduler.line_movement_data_quality_dashboard import (
-    LINE_MOVEMENT_DATA_QUALITY_DASHBOARD_VERSION,
-    build_line_movement_data_quality_snapshot,
-    build_line_movement_data_quality_snapshot_from_sqlite,
-    build_line_movement_quality_group_key,
-    build_line_movement_quality_readiness,
-    describe_line_movement_data_quality_dashboard,
-    detect_line_movement_duplicate_snapshots,
-    is_missing_quality_value,
-    normalize_line_movement_quality_value,
-    summarize_line_movement_books_markets_sports,
-    summarize_line_movement_missing_links,
-    summarize_line_movement_quality_coverage,
-)
+from src.services.streamlit_dashboard_facade import LINE_MOVEMENT_DATA_QUALITY_DASHBOARD_VERSION, build_line_movement_data_quality_snapshot, build_line_movement_data_quality_snapshot_from_sqlite, build_line_movement_quality_group_key, build_line_movement_quality_readiness, describe_line_movement_data_quality_dashboard, detect_line_movement_duplicate_snapshots, is_missing_quality_value, normalize_line_movement_quality_value, summarize_line_movement_books_markets_sports, summarize_line_movement_missing_links, summarize_line_movement_quality_coverage
 
 
 def test_normalize_line_movement_quality_value_handles_common_values():

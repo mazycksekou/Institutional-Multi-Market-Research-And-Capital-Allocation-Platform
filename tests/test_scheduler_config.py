@@ -1,6 +1,6 @@
 import unittest
 from tempfile import TemporaryDirectory
-from automation_scheduler.scheduler_config import get_default_scheduler_config
+from src.services.streamlit_dashboard_facade import get_default_scheduler_config
 
 
 class TestSchedulerConfig(unittest.TestCase):

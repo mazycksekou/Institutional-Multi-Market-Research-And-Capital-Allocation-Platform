@@ -9,21 +9,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from automation_scheduler.asof_line_movement_query import (
-    AS_OF_LINE_MOVEMENT_QUERY_VERSION,
-    normalize_asof_line_movement_value,
-    parse_asof_datetime,
-    normalize_asof_date_time_label,
-    is_snapshot_available_as_of,
-    build_asof_snapshot_group_key,
-    filter_line_movement_snapshots_as_of,
-    select_latest_asof_snapshots,
-    summarize_asof_line_movement_snapshots,
-    build_asof_line_movement_query_snapshot,
-    load_line_movement_snapshots_from_sqlite,
-    build_asof_line_movement_query_snapshot_from_sqlite,
-    describe_asof_line_movement_query_engine,
-)
+from src.services.streamlit_dashboard_facade import AS_OF_LINE_MOVEMENT_QUERY_VERSION, normalize_asof_line_movement_value, parse_asof_datetime, normalize_asof_date_time_label, is_snapshot_available_as_of, build_asof_snapshot_group_key, filter_line_movement_snapshots_as_of, select_latest_asof_snapshots, summarize_asof_line_movement_snapshots, build_asof_line_movement_query_snapshot, load_line_movement_snapshots_from_sqlite, build_asof_line_movement_query_snapshot_from_sqlite, describe_asof_line_movement_query_engine
 
 
 # ---------------------------------------------------------------------------

@@ -5,8 +5,8 @@ import unittest
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from automation_scheduler.response_compactor import compact_provider_status
-from automation_scheduler.scheduler_runner import run_scheduler_once
+from src.services.streamlit_dashboard_facade import compact_provider_status
+from src.services.streamlit_dashboard_facade import run_scheduler_once
 from src.connectors.odds_data import build_odds_data_connector_configuration, describe_odds_data_connector_readiness
 from src.providers.registry import get_provider_registry
 from src.providers.sportsbooks.contracts import validate_sportsbook_payload

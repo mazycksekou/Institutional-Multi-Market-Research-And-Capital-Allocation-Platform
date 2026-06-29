@@ -1,6 +1,6 @@
 import unittest
 
-from automation_scheduler.middles.push_corridor_middle import detect_push_corridor_middle
+from src.services.streamlit_dashboard_facade import detect_push_corridor_middle
 
 
 class TestMiddlePushCorridor(unittest.TestCase):

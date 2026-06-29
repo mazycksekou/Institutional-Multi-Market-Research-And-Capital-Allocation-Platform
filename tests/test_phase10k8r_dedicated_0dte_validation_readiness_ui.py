@@ -3,14 +3,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from automation_scheduler.streamlit_dashboard_data import (
-    build_zero_dte_validation_readiness_payload,
-    build_zero_dte_validation_readiness_rows,
-)
-from automation_scheduler.zero_dte_fixture_template import (
-    build_zero_dte_fixture_template_row,
-    validate_zero_dte_fixture_rows,
-)
+from src.automation_scheduler_legacy.streamlit_dashboard_data import build_zero_dte_validation_readiness_payload, build_zero_dte_validation_readiness_rows
+from src.automation_scheduler_legacy.zero_dte_fixture_template import build_zero_dte_fixture_template_row, validate_zero_dte_fixture_rows
 
 
 ROOT = Path(__file__).resolve().parents[1]

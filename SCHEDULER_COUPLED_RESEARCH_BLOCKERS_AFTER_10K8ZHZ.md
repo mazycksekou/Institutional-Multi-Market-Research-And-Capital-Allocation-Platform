@@ -11,3 +11,9 @@
 - No scheduler activation occurred.
 - No AI/LLM calls occurred.
 - These remain separate from wrapper-only delete proof.
+
+## Canonical Replacements
+
+- `src.market_intelligence.feature_packs`
+- `src.research.feature_control`
+- `src.research.history`

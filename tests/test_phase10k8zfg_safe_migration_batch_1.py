@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from automation_scheduler import odds_math as legacy_odds_math
+from src.services.streamlit_dashboard_facade import odds_math as legacy_odds_math
 from src.core import math_utils as core_math_utils
 
 
@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 REPORT = ROOT / "PHASE10K8ZFG_SAFE_MIGRATION_BATCH_1_REPORT.md"
 README = ROOT / "README.md"
 STREAMLIT_APP = ROOT / "streamlit_app.py"
-DASHBOARD_DATA = ROOT / "automation_scheduler" / "streamlit_dashboard_data.py"
+DASHBOARD_DATA = ROOT / "src" / "automation_scheduler_legacy" / "streamlit_dashboard_data.py"
 DAILY_HYGIENE_SCRIPT = ROOT / "scripts" / "daily_data_hygiene.py"
 RUNNER = ROOT / "scripts" / "run_daily_data_hygiene.ps1"
 

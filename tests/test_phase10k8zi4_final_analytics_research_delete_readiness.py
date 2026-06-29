@@ -40,7 +40,7 @@ def test_final_canonical_architecture_imports_safely() -> None:
     analytics = importlib.import_module("src.analytics")
     research = importlib.import_module("src.research")
     model_governance = importlib.import_module("model_governance")
-    scheduler = importlib.import_module("automation_scheduler")
+    scheduler = importlib.import_module('src.automation_scheduler_legacy')
 
     assert analytics.build_governance_health({"model_inventory_count": 0}, {"blocked_model_count": 0})["governance_status"] == "ok"
     assert research.build_model_maturity_registry(total_labeled_outcomes=0)["status"] == "model_maturity_registry"
@@ -53,14 +53,14 @@ def test_no_deleted_wrappers_reintroduced_in_proof_phase() -> None:
         "kalshi_client.py",
         "providers/kalshi_provider.py",
         "betting_providers/kalshi_api.py",
-        "automation_scheduler/kalshi_readonly_adapter.py",
-        "automation_scheduler/kalshi_market_provider.py",
+        'src/automation_scheduler_legacy/kalshi_readonly_adapter.py',
+        'src/automation_scheduler_legacy/kalshi_market_provider.py',
         "sharp_client.py",
         "providers/sharp_provider.py",
         "betting_providers/sharp_api.py",
         "betting_providers/the_odds_api.py",
         "betting_providers/sportsgameodds.py",
-        "automation_scheduler/sharp_sportsbook_adapter.py",
-        "automation_scheduler/sportsbook_odds_provider.py",
+        'src/automation_scheduler_legacy/sharp_sportsbook_adapter.py',
+        'src/automation_scheduler_legacy/sportsbook_odds_provider.py',
     ]:
         assert not (ROOT / relpath).exists()

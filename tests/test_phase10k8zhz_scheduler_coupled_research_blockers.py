@@ -19,9 +19,9 @@ def test_scheduler_blocker_docs_exist() -> None:
         "SCHEDULER_COUPLED_BLOCKED",
         "FILE_IO_OR_STORAGE_BLOCKED",
         "AI_ADJACENT_BLOCKED",
-        "automation_scheduler/feature_ablation_lab.py",
-        "automation_scheduler/calibration_strategy_filter.py",
-        "automation_scheduler/experiment_history_store.py",
+        "src.market_intelligence.feature_packs",
+        "src.research.feature_control",
+        "src.research.history",
         "automation_scheduler/deepseek_*",
     ]:
         assert fragment.lower() in text.lower()
@@ -29,9 +29,9 @@ def test_scheduler_blocker_docs_exist() -> None:
 
 def test_scheduler_coupled_sources_are_local_and_deferred() -> None:
     for name in [
-        "automation_scheduler.feature_ablation_lab",
-        "automation_scheduler.calibration_strategy_filter",
-        "automation_scheduler.experiment_history_store",
+        "src.market_intelligence.feature_packs",
+        "src.research.feature_control",
+        "src.research.history",
     ]:
         module = importlib.import_module(name)
         source = inspect.getsource(module).lower()
@@ -42,5 +42,5 @@ def test_scheduler_coupled_sources_are_local_and_deferred() -> None:
         assert "apscheduler" not in source
         assert "schedule(" not in source
 
-    assert (ROOT / "automation_scheduler").exists()
-    assert (ROOT / "automation_scheduler" / "feature_ablation_lab.py").exists()
+    assert (ROOT / "src" / "automation_scheduler_legacy").exists()
+    assert (ROOT / "src" / "automation_scheduler_legacy" / "feature_ablation_lab.py").exists()

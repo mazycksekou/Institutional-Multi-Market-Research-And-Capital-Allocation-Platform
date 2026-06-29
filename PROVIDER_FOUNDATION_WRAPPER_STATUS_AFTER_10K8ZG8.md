@@ -15,6 +15,14 @@
 | `betting_providers/base.py` | Delete-ready | Legacy alias to `src.providers.compat` |
 | `betting_providers/normalization.py` | Delete-ready | Legacy normalization alias to canonical adapters |
 
+## Relocated Legacy Path Equivalents
+- `src/automation_scheduler_legacy/provider_contracts.py`
+- `src/automation_scheduler_legacy/provider_health.py`
+- `src/automation_scheduler_legacy/provider_adapter_base.py`
+- `src/automation_scheduler_legacy/provider_normalization_contract.py`
+- `src/automation_scheduler_legacy/provider_payload_validator.py`
+- `src/automation_scheduler_legacy/provider_secret_policy.py`
+
 ## Compatibility-Only Notes
 - Wrapper files remain on disk for the proof phase.
 - Test-only compatibility references still exist in older audit files.
@@ -22,6 +30,8 @@
 ## Files Not Delete-Ready
 - `automation_scheduler/provider_registry.py`
 - `automation_scheduler/provider_write_firewall.py`
+- `src/automation_scheduler_legacy/provider_registry.py`
+- `src/automation_scheduler_legacy/provider_write_firewall.py`
 
 ## Why No Deletion Occurred
 The goal is proof, not removal. The wrapper files stay in place until the next approved deletion batch.

@@ -1,7 +1,7 @@
 import unittest
 from tempfile import TemporaryDirectory
-from automation_scheduler.scheduler_config import get_default_scheduler_config
-from automation_scheduler.snapshot_store import save_snapshot, load_latest_snapshot, diff_snapshots
+from src.services.streamlit_dashboard_facade import get_default_scheduler_config
+from src.services.streamlit_dashboard_facade import save_snapshot, load_latest_snapshot, diff_snapshots
 
 
 class TestSnapshotStore(unittest.TestCase):

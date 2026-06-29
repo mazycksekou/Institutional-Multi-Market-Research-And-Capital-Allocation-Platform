@@ -3,18 +3,9 @@ from __future__ import annotations
 from pathlib import Path
 import re
 
-from automation_scheduler.streamlit_dashboard_data import (
-    build_zero_dte_evaluation_readiness_payload,
-    build_zero_dte_evaluation_readiness_rows,
-)
-from automation_scheduler.technical_signal_fields import (
-    TECHNICAL_SIGNAL_FIELDS,
-    TECHNICAL_SIGNAL_FIELDS_BY_MARKET,
-)
-from automation_scheduler.zero_dte_fixture_template import (
-    build_zero_dte_fixture_template_row,
-    evaluate_zero_dte_paper_fixture_rows,
-)
+from src.automation_scheduler_legacy.streamlit_dashboard_data import build_zero_dte_evaluation_readiness_payload, build_zero_dte_evaluation_readiness_rows
+from src.services.streamlit_dashboard_facade import TECHNICAL_SIGNAL_FIELDS, TECHNICAL_SIGNAL_FIELDS_BY_MARKET
+from src.automation_scheduler_legacy.zero_dte_fixture_template import build_zero_dte_fixture_template_row, evaluate_zero_dte_paper_fixture_rows
 
 
 ROOT = Path(__file__).resolve().parents[1]

@@ -8,18 +8,8 @@ from typing import Any
 
 import pytest
 
-from automation_scheduler.experiment_report_exporter import (
-    build_experiment_report_export,
-    build_experiment_report_sections,
-    format_report_money,
-    format_report_percent,
-    normalize_report_value,
-    render_experiment_report_markdown,
-)
-from automation_scheduler.experiment_history_store import (
-    save_experiment_history_run,
-    initialize_experiment_history_store,
-)
+from src.services.streamlit_dashboard_facade import build_experiment_report_export, build_experiment_report_sections, format_report_money, format_report_percent, normalize_report_value, render_experiment_report_markdown
+from src.services.streamlit_dashboard_facade import save_experiment_history_run, initialize_experiment_history_store
 
 
 # ---------------------------------------------------------------------------
@@ -255,18 +245,8 @@ from typing import Any
 
 import pytest
 
-from automation_scheduler.experiment_report_exporter import (
-    build_experiment_report_export,
-    build_experiment_report_sections,
-    format_report_money,
-    format_report_percent,
-    normalize_report_value,
-    render_experiment_report_markdown,
-)
-from automation_scheduler.experiment_history_store import (
-    save_experiment_history_run,
-    initialize_experiment_history_store,
-)
+from src.services.streamlit_dashboard_facade import build_experiment_report_export, build_experiment_report_sections, format_report_money, format_report_percent, normalize_report_value, render_experiment_report_markdown
+from src.services.streamlit_dashboard_facade import save_experiment_history_run, initialize_experiment_history_store
 
 
 # ---------------------------------------------------------------------------

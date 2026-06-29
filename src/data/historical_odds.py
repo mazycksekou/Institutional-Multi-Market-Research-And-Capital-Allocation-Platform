@@ -47,7 +47,15 @@ CANONICAL_HISTORICAL_ODDS_OPTIONAL_FIELDS: tuple[str, ...] = (
     "features",
 )
 
-SUPPORTED_IMPORTER_KEYS: tuple[str, ...] = ("csv", "json", "jsonl", "ndjson")
+SUPPORTED_IMPORTER_KEYS: list[str] = [
+    "football_data_uk",
+    "arnav_mlb_odds_scraper",
+    "sportsbookreview_scraper",
+]
+
+
+def get_supported_importer_keys() -> list[str]:
+    return list(SUPPORTED_IMPORTER_KEYS)
 
 
 def _stable_hash_id(prefix: str, parts: Sequence[Any]) -> str:
@@ -128,38 +136,21 @@ def odds_to_implied_probability(odds: Any) -> float:
 
 
 def validate_canonical_historical_odds_row(row: Mapping[str, Any]) -> dict[str, Any]:
+    from src.automation_scheduler_legacy.historical_odds_importers import (
+        validate_canonical_historical_odds_row as legacy_validate_canonical_historical_odds_row,
+    )
+
     payload = dict(row)
-    normalized = dict(payload)
-    warnings: list[str] = []
-
-    market = payload.get("market_type") or payload.get("market") or payload.get("market_name")
-    odds = payload.get("odds") if payload.get("odds") not in (None, "") else payload.get("odds_at_decision_time")
-    if market is not None:
-        normalized.setdefault("market", market)
-        normalized.setdefault("market_type", market)
-    if odds is not None:
-        normalized.setdefault("odds", odds)
-        normalized.setdefault("odds_at_decision_time", odds)
-    if payload.get("event_id") is None and payload.get("raw_event_id") is not None:
-        normalized.setdefault("event_id", payload.get("raw_event_id"))
-
-    missing: list[str] = []
-    for field in CANONICAL_HISTORICAL_ODDS_REQUIRED_FIELDS:
-        if payload.get(field) in (None, ""):
-            missing.append(field)
-    if market in (None, ""):
-        missing.append("market")
-    if odds in (None, ""):
-        missing.append("odds")
-    ok = not missing
-    if not ok:
-        warnings.append(f"missing_fields:{','.join(missing)}")
+    legacy_result = dict(legacy_validate_canonical_historical_odds_row(payload))
+    missing_required_fields = list(legacy_result.get("missing_required_fields") or legacy_result.get("missing_fields") or [])
+    warnings = list(legacy_result.get("warnings") or [])
+    ok = bool(legacy_result.get("ok", not missing_required_fields))
     return {
         "ok": ok,
         "status": "accepted" if ok else "rejected",
-        "missing_fields": missing,
+        "missing_required_fields": missing_required_fields,
         "warnings": warnings,
-        "row": normalized,
+        "row": payload,
     }
 
 
@@ -292,21 +283,13 @@ def _build_generic_rows(
 
 
 def import_historical_odds_file(*args: Any, source_file: str | None = None) -> list[dict[str, Any]]:
-    if not args:
-        return []
-    if len(args) == 1:
-        source_key = "local"
-        path = Path(args[0])
-    else:
-        source_key = str(args[0] or "local")
-        path = Path(args[1])
-    rows = _load_payload(path)
-    if source_key == "football_data_uk":
-        expanded: list[dict[str, Any]] = []
-        for row in rows:
-            expanded.extend(_build_football_data_rows(row, source_key=source_key, source_file=source_file or path.name))
-        return expanded
-    return _build_generic_rows(rows, source_key=source_key, source_file=source_file or path.name)
+    from src.automation_scheduler_legacy.historical_odds_importers import (
+        import_historical_odds_file as legacy_import_historical_odds_file,
+    )
+
+    if source_file is None:
+        return legacy_import_historical_odds_file(*args)
+    return legacy_import_historical_odds_file(*args, source_file=source_file)
 
 
 def connect_historical_odds_db(db_path: str | Path) -> sqlite3.Connection:
@@ -482,7 +465,7 @@ def import_historical_odds_file_to_sqlite(*args: Any, source_file: str | None = 
         if not validation["ok"]:
             rejected += 1
             continue
-        payload = dict(validation["row"])
+        payload = dict(validation.get("row") or row)
         event_id = _row_to_event_id(payload)
         odds_id = _row_to_odds_id(payload, event_id)
         conn.execute(

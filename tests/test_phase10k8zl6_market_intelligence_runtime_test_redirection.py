@@ -3,20 +3,20 @@ from __future__ import annotations
 import inspect
 import unittest
 
-from automation_scheduler.cross_asset_embedding_router import route_cross_asset_embedding
-from automation_scheduler.manifold_review_queue import build_manifold_review_queue
-from automation_scheduler.market_state_graph import infer_graph_asset_type
-from automation_scheduler.prediction_market_manifold_mapper import map_prediction_market
+from src.services.streamlit_dashboard_facade import route_cross_asset_embedding
+from src.services.streamlit_dashboard_facade import build_manifold_review_queue
+from src.services.streamlit_dashboard_facade import infer_graph_asset_type
+from src.services.streamlit_dashboard_facade import map_prediction_market
 from src.market_intelligence import build_market_intelligence_report
 
 
 class TestPhase10K8ZL6MarketIntelligenceRuntimeTestRedirection(unittest.TestCase):
     def test_wrappers_import_canonical_modules(self):
         modules = [
-            "automation_scheduler.cross_asset_embedding_router",
-            "automation_scheduler.manifold_review_queue",
-            "automation_scheduler.market_state_graph",
-            "automation_scheduler.prediction_market_manifold_mapper",
+            'src.automation_scheduler_legacy.cross_asset_embedding_router',
+            'src.automation_scheduler_legacy.manifold_review_queue',
+            'src.automation_scheduler_legacy.market_state_graph',
+            'src.automation_scheduler_legacy.prediction_market_manifold_mapper',
         ]
         for module_name in modules:
             module = __import__(module_name, fromlist=["*"])

@@ -11,19 +11,7 @@ from pathlib import Path
 
 import pytest
 
-from automation_scheduler.experiment_history_store import (
-    EXPERIMENT_HISTORY_STORE_VERSION,
-    ABLATION_NEVER_FEATURE_FIELDS,
-    initialize_experiment_history_store,
-    normalize_experiment_history_run_type,
-    make_experiment_run_id,
-    extract_experiment_history_metrics,
-    sanitize_experiment_history_result,
-    save_experiment_history_run,
-    list_experiment_history_runs,
-    get_experiment_history_run,
-    compare_experiment_history_runs,
-)
+from src.services.streamlit_dashboard_facade import EXPERIMENT_HISTORY_STORE_VERSION, ABLATION_NEVER_FEATURE_FIELDS, initialize_experiment_history_store, normalize_experiment_history_run_type, make_experiment_run_id, extract_experiment_history_metrics, sanitize_experiment_history_result, save_experiment_history_run, list_experiment_history_runs, get_experiment_history_run, compare_experiment_history_runs
 
 
 # ---------------------------------------------------------------------------

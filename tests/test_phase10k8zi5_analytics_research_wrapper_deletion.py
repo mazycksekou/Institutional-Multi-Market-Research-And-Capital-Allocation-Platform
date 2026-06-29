@@ -51,7 +51,7 @@ def test_canonical_packages_import_safely() -> None:
     analytics = importlib.import_module("src.analytics")
     research = importlib.import_module("src.research")
     governance = importlib.import_module("model_governance")
-    scheduler = importlib.import_module("automation_scheduler")
+    scheduler = importlib.import_module('src.automation_scheduler_legacy')
 
     assert analytics.build_governance_health({"model_inventory_count": 0}, {"blocked_model_count": 0})["governance_status"] == "ok"
     assert research.build_model_maturity_registry(total_labeled_outcomes=0)["status"] == "model_maturity_registry"
@@ -61,9 +61,9 @@ def test_canonical_packages_import_safely() -> None:
 
 def test_runtime_and_test_files_no_longer_require_deleted_wrappers() -> None:
     scan_paths = [
-        ROOT / "automation_scheduler" / "__init__.py",
-        ROOT / "automation_scheduler" / "data_intelligence_registry.py",
-        ROOT / "automation_scheduler" / "cross_asset_intelligence_router.py",
+        ROOT / "src" / "automation_scheduler_legacy" / "__init__.py",
+        ROOT / "src" / "automation_scheduler_legacy" / "data_intelligence_registry.py",
+        ROOT / "src" / "automation_scheduler_legacy" / "cross_asset_intelligence_router.py",
         ROOT / "model_governance" / "__init__.py",
         ROOT / "tests" / "test_governance_health.py",
         ROOT / "tests" / "test_governance_report.py",
@@ -97,14 +97,15 @@ def test_deleted_legacy_odds_prediction_shells_not_reintroduced() -> None:
         "kalshi_client.py",
         "providers/kalshi_provider.py",
         "betting_providers/kalshi_api.py",
-        "automation_scheduler/kalshi_readonly_adapter.py",
-        "automation_scheduler/kalshi_market_provider.py",
+        'src/automation_scheduler_legacy/kalshi_readonly_adapter.py',
+        'src/automation_scheduler_legacy/kalshi_market_provider.py',
         "sharp_client.py",
         "providers/sharp_provider.py",
         "betting_providers/sharp_api.py",
         "betting_providers/the_odds_api.py",
         "betting_providers/sportsgameodds.py",
-        "automation_scheduler/sharp_sportsbook_adapter.py",
-        "automation_scheduler/sportsbook_odds_provider.py",
+        'src/automation_scheduler_legacy/sharp_sportsbook_adapter.py',
+        'src/automation_scheduler_legacy/sportsbook_odds_provider.py',
     ]:
         assert not (ROOT / relpath).exists()
+

@@ -99,8 +99,8 @@ def test_no_active_runtime_imports_target_deleted_prediction_market_shells() -> 
         "kalshi_client",
         "providers.kalshi_provider",
         "betting_providers.kalshi_api",
-        "automation_scheduler.kalshi_readonly_adapter",
-        "automation_scheduler.kalshi_market_provider",
+        'src.automation_scheduler_legacy.kalshi_readonly_adapter',
+        'src.automation_scheduler_legacy.kalshi_market_provider',
     }
     runtime_hits = []
     for path in ROOT.rglob("*.py"):

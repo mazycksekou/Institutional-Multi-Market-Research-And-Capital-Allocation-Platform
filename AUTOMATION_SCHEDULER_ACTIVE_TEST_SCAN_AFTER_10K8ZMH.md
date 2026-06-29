@@ -1,29 +1,30 @@
 # Automation Scheduler Active Test Scan After 10K8ZMH
 
-Active test import statements:
-- Count: `524`
-- Unique files: `198`
+Active test import statements targeting the relocated legacy scheduler namespace:
+- Count: `105`
+- Unique files: `76`
 
 Top test blocker files:
-- `tests/test_streamlit_dashboard_data.py` -> `42`
-- `tests/test_baseball_impact_intelligence.py` -> `17`
-- `tests/test_golf_impact_intelligence.py` -> `16`
-- `tests/test_hockey_impact_intelligence.py` -> `16`
-- `tests/test_soccer_impact_intelligence.py` -> `16`
-- `tests/test_combat_impact_intelligence.py` -> `15`
-- `tests/test_tennis_impact_intelligence.py` -> `15`
-- `tests/test_football_impact_intelligence.py` -> `11`
-- `tests/test_advanced_red_team.py` -> `10`
-- `tests/test_phase10k5_core_arbitrage_engine.py` -> `10`
-- `tests/test_basketball_player_impact.py` -> `8`
-- `tests/test_extreme_randomness_diagnostics.py` -> `8`
-- `tests/test_historical_line_movement.py` -> `8`
-- `tests/test_market_state_manifold.py` -> `8`
-- `tests/test_security_framework.py` -> `8`
+- `tests/test_nfl_coaching_adapters.py` -> `5`
+- `tests/test_nfl_open_data_backfill.py` -> `4`
+- `tests/test_basketball_player_impact.py` -> `3`
+- `tests/test_data_intelligence_stack.py` -> `3`
+- `tests/test_market_state_manifold.py` -> `3`
+- `tests/test_strategy_framework.py` -> `3`
+- `tests/test_football_impact_intelligence.py` -> `2`
+- `tests/test_kelly_staking.py` -> `2`
+- `tests/test_nfl_coaching_feature_builders.py` -> `2`
+- `tests/test_phase10k5_core_arbitrage_engine.py` -> `2`
+- `tests/test_phase10k8q_dedicated_0dte_validation_readiness_payload.py` -> `2`
+- `tests/test_phase10k8r_dedicated_0dte_validation_readiness_ui.py` -> `2`
+- `tests/test_phase10k8t_dedicated_0dte_evaluation_readiness_payload.py` -> `2`
+- `tests/test_phase10k8u_dedicated_0dte_evaluation_ui.py` -> `2`
+- `tests/test_phase10k8x_controlled_0dte_paper_run_smoke_review.py` -> `2`
 
 Historical proof-only string references remain in two tests and are not counted as imports:
 - `tests/test_phase10k8zgz_post_provider_connector_cleanup_freeze.py`
 - `tests/test_phase10k8zgy_prediction_market_shell_deletion.py`
 
 Result:
-- The package is still blocked by active test imports, not runtime code.
+- Top-level `automation_scheduler` imports are at zero in tests.
+- The remaining test blockers target `src.automation_scheduler_legacy`.

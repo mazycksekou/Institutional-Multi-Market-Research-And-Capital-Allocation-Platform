@@ -5,20 +5,7 @@ from __future__ import annotations
 
 import pytest
 
-from automation_scheduler.historical_data_sources import (
-    HISTORICAL_DATA_SOURCES,
-    get_historical_data_source_rows,
-    get_historical_data_sources,
-    get_model_testing_source_plan,
-    get_priority_import_sources,
-    get_source_status_counts,
-    source_is_projection_ready,
-    summarize_source_registry,
-    KEEP,
-    KEEP_TOOL,
-    DOWNGRADE,
-    REMOVE,
-)
+from src.services.streamlit_dashboard_facade import HISTORICAL_DATA_SOURCES, get_historical_data_source_rows, get_historical_data_sources, get_model_testing_source_plan, get_priority_import_sources, get_source_status_counts, source_is_projection_ready, summarize_source_registry, KEEP, KEEP_TOOL, DOWNGRADE, REMOVE
 
 
 def test_priority_order():

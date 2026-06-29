@@ -22,23 +22,7 @@ import os
 # ensure the parent package is importable
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from automation_scheduler.historical_odds_importers import (
-    american_to_implied_probability,
-    decimal_to_implied_probability,
-    odds_to_implied_probability,
-    normalize_team_name,
-    normalize_market_name,
-    normalize_selection_name,
-    build_canonical_historical_odds_row,
-    validate_canonical_historical_odds_row,
-    import_football_data_csv,
-    import_mlb_odds_json,
-    import_sbr_odds_file,
-    import_historical_odds_file,
-    summarize_imported_historical_rows,
-    get_supported_importer_keys,
-    SUPPORTED_IMPORTER_KEYS,
-)
+from src.services.streamlit_dashboard_facade import american_to_implied_probability, decimal_to_implied_probability, odds_to_implied_probability, normalize_team_name, normalize_market_name, normalize_selection_name, build_canonical_historical_odds_row, validate_canonical_historical_odds_row, import_football_data_csv, import_mlb_odds_json, import_sbr_odds_file, import_historical_odds_file, summarize_imported_historical_rows, get_supported_importer_keys, SUPPORTED_IMPORTER_KEYS
 
 # ---------------------------------------------------------------------------
 # Helpers

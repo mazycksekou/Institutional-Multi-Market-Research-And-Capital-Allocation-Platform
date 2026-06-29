@@ -197,8 +197,8 @@ def test_deleted_legacy_odds_modules_stay_deleted() -> None:
         "betting_providers.sharp_api",
         "betting_providers.the_odds_api",
         "betting_providers.sportsgameodds",
-        "automation_scheduler.sharp_sportsbook_adapter",
-        "automation_scheduler.sportsbook_odds_provider",
+        'src.automation_scheduler_legacy.sharp_sportsbook_adapter',
+        'src.automation_scheduler_legacy.sportsbook_odds_provider',
     ]
 
     for module_name in deleted_modules:

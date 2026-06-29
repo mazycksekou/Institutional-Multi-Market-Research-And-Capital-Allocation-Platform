@@ -10,7 +10,7 @@ README = ROOT / "README.md"
 SOURCE_FILES = [
     ROOT / "main.py",
     ROOT / "streamlit_app.py",
-    ROOT / "automation_scheduler" / "streamlit_dashboard_data.py",
+    ROOT / "src" / "automation_scheduler_legacy" / "streamlit_dashboard_data.py",
     ROOT / "src" / "core" / "math_utils.py",
 ]
 
@@ -139,3 +139,4 @@ def test_phase10k8zfe_duplicate_code_evidence_scan_report() -> None:
     assert not any(ROOT.glob("app/pages/*.py"))
     assert not any(ROOT.glob("frontend/*.py"))
     assert not any(ROOT.glob("frontend/pages/*.py"))
+

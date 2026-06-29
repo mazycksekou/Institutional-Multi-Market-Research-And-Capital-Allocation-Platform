@@ -6,8 +6,8 @@ import urllib.parse
 from pathlib import Path
 from unittest.mock import patch
 
-from automation_scheduler import ncaaf_collegefootballdata_adapter as adapter
-from automation_scheduler.data_paths import AUTOMATION_DATA_DIR_ENV
+from src.services.streamlit_dashboard_facade import ncaaf_collegefootballdata_adapter as adapter
+from src.services.streamlit_dashboard_facade import AUTOMATION_DATA_DIR_ENV
 
 
 SAMPLE_GAME = {
@@ -123,7 +123,7 @@ class TestNcaafCollegeFootballDataAdapter(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             with patch.dict(os.environ, {AUTOMATION_DATA_DIR_ENV: tmp}, clear=False):
                 self._without_cfbd_key()
-                with patch("automation_scheduler.ncaaf_collegefootballdata_adapter.urllib.request.urlopen") as urlopen:
+                with patch('src.automation_scheduler_legacy.ncaaf_collegefootballdata_adapter.urllib.request.urlopen') as urlopen:
                     result = adapter.verify_ncaaf_cfbd_adapter(fetch_live_sample=True, max_records=5)
 
         self.assertEqual(result["adapter_status"], "missing_api_key")
@@ -136,7 +136,7 @@ class TestNcaafCollegeFootballDataAdapter(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             env = {AUTOMATION_DATA_DIR_ENV: tmp, adapter.CFBD_API_KEY_ENV: "do-not-leak"}
             with patch.dict(os.environ, env, clear=False):
-                with patch("automation_scheduler.ncaaf_collegefootballdata_adapter.urllib.request.urlopen") as urlopen:
+                with patch('src.automation_scheduler_legacy.ncaaf_collegefootballdata_adapter.urllib.request.urlopen') as urlopen:
                     result = adapter.verify_ncaaf_cfbd_adapter(fetch_live_sample=False, max_records=5)
 
         self.assertEqual(result["adapter_status"], "metadata_only_verified")
@@ -152,7 +152,7 @@ class TestNcaafCollegeFootballDataAdapter(unittest.TestCase):
             env = {AUTOMATION_DATA_DIR_ENV: tmp, adapter.CFBD_API_KEY_ENV: "do-not-leak"}
             with patch.dict(os.environ, env, clear=False):
                 with patch(
-                    "automation_scheduler.ncaaf_collegefootballdata_adapter.urllib.request.urlopen",
+                    'src.automation_scheduler_legacy.ncaaf_collegefootballdata_adapter.urllib.request.urlopen',
                     return_value=_FakeResponse(rows),
                 ):
                     result = adapter.verify_ncaaf_cfbd_adapter(fetch_live_sample=True, max_records=100)
@@ -178,7 +178,7 @@ class TestNcaafCollegeFootballDataAdapter(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             env = {AUTOMATION_DATA_DIR_ENV: tmp, adapter.CFBD_API_KEY_ENV: "do-not-leak"}
             with patch.dict(os.environ, env, clear=False):
-                with patch("automation_scheduler.ncaaf_collegefootballdata_adapter.urllib.request.urlopen", side_effect=router):
+                with patch('src.automation_scheduler_legacy.ncaaf_collegefootballdata_adapter.urllib.request.urlopen', side_effect=router):
                     result = adapter.verify_ncaaf_cfbd_adapter(
                         fetch_live_sample=True,
                         sample_profile="targeted_advanced_tiny",
@@ -224,7 +224,7 @@ class TestNcaafCollegeFootballDataAdapter(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             env = {AUTOMATION_DATA_DIR_ENV: tmp, adapter.CFBD_API_KEY_ENV: "do-not-leak"}
             with patch.dict(os.environ, env, clear=False):
-                with patch("automation_scheduler.ncaaf_collegefootballdata_adapter.urllib.request.urlopen", side_effect=router):
+                with patch('src.automation_scheduler_legacy.ncaaf_collegefootballdata_adapter.urllib.request.urlopen', side_effect=router):
                     result = adapter.verify_ncaaf_cfbd_adapter(
                         fetch_live_sample=True,
                         sample_profile="targeted_advanced_tiny",
@@ -246,7 +246,7 @@ class TestNcaafCollegeFootballDataAdapter(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             with patch.dict(os.environ, {AUTOMATION_DATA_DIR_ENV: tmp}, clear=False):
                 self._without_cfbd_key()
-                with patch("automation_scheduler.ncaaf_collegefootballdata_adapter.urllib.request.urlopen") as urlopen:
+                with patch('src.automation_scheduler_legacy.ncaaf_collegefootballdata_adapter.urllib.request.urlopen') as urlopen:
                     result = adapter.verify_ncaaf_cfbd_adapter(
                         fetch_live_sample=True,
                         sample_profile="targeted_advanced_tiny",

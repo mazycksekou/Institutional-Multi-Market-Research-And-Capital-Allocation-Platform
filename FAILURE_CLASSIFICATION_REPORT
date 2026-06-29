@@ -1,0 +1,18 @@
+# FAILURE_CLASSIFICATION_REPORT
+
+## Baseline
+- Starting HEAD: `f4a3688fc1afad94253663a7f121ae4556e9da05`
+- Initial full gate for this recovery phase: 96 failed, 4270 passed, 519 subtests passed.
+- Primary blocker type: behavioral compatibility between canonical `src.*` modules and migrated `src.automation_scheduler_legacy` contracts.
+
+## Categories
+- Backtesting metadata/schema/leakage/bankroll/strategy profiles: canonical backtesting omitted legacy report keys and strategy-profile behavior.
+- Market intelligence feature packs/source-event links: canonical catalogs were thinner than legacy catalogs; source-event scoring missed a default reverse-home-away flag.
+- Data and risk: canonical balance-sheet, candlestick, and calibration runner payloads were reduced compared with legacy contracts.
+- Research/reporting: experiment report export and feature ablation returned simplified sections/notes.
+- Historical data: source priority, importer validation, importer routing, and replay local-only behavior diverged from legacy contracts.
+- Institutional/NFL/pattern helpers: facade symbol resolution returned thin or ambiguous implementations.
+- Phase tests: several checkpoint tests asserted outdated path/count/deletion facts after the compatibility shell and relocation.
+
+## Resolution
+Canonical entrypoints now delegate to deterministic local migrated implementations where the detailed legacy contract is still required. Phase tests were updated only where their assertions described historical architecture rather than current behavior.

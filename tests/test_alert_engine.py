@@ -1,7 +1,7 @@
 import unittest
 
-from automation_scheduler.alert_engine import build_alert, generate_alert_candidates
-from automation_scheduler.scheduler_config import get_default_scheduler_config
+from src.services.streamlit_dashboard_facade import build_alert, generate_alert_candidates
+from src.services.streamlit_dashboard_facade import get_default_scheduler_config
 
 
 class TestAlertEngine(unittest.TestCase):

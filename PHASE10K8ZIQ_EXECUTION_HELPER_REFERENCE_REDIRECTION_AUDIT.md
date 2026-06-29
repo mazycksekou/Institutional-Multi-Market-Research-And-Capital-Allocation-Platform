@@ -19,6 +19,17 @@ The following remaining wrapper-only execution helpers were reviewed:
 `automation_scheduler/manifold_no_bet_detector.py`
 `automation_scheduler/institutional_execution_desk.py`
 
+Relocated compatibility equivalents:
+`src/automation_scheduler_legacy/settlement_rule_checker.py`
+`src/automation_scheduler_legacy/settlement_discovery.py`
+`src/automation_scheduler_legacy/audit_ledger.py`
+`src/automation_scheduler_legacy/institutional_audit_ledger.py`
+`src/automation_scheduler_legacy/strategy_performance_ledger.py`
+`src/automation_scheduler_legacy/broker_quality_scoring.py`
+`src/automation_scheduler_legacy/small_account_strategy.py`
+`src/automation_scheduler_legacy/manifold_no_bet_detector.py`
+`src/automation_scheduler_legacy/institutional_execution_desk.py`
+
 ## Scan Results
 Runtime references: none.
 Test references: none.

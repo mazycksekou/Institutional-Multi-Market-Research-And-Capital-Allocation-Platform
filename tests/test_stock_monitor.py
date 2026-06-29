@@ -1,7 +1,7 @@
 import unittest
 
-from automation_scheduler.scheduler_config import get_default_scheduler_config
-from automation_scheduler.stock_monitor import monitor_stocks
+from src.services.streamlit_dashboard_facade import get_default_scheduler_config
+from src.automation_scheduler_legacy.stock_monitor import monitor_stocks
 
 
 class TestStockMonitor(unittest.TestCase):

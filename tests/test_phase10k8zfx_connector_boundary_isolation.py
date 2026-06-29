@@ -52,8 +52,8 @@ PROVIDER_MODULES = [
     "src.providers.zero_dte_stocks",
 ]
 
-FORBIDDEN_CONNECTOR_IMPORT_PREFIXES = ("automation_scheduler", "betting_providers", "providers", "src.providers")
-FORBIDDEN_PROVIDER_IMPORT_PREFIXES = ("automation_scheduler", "betting_providers", "providers", "src.connectors")
+FORBIDDEN_CONNECTOR_IMPORT_PREFIXES = ('src.automation_scheduler_legacy', "betting_providers", "providers", "src.providers")
+FORBIDDEN_PROVIDER_IMPORT_PREFIXES = ('src.automation_scheduler_legacy', "betting_providers", "providers", "src.connectors")
 FORBIDDEN_DIRECT_IMPORTS = {
     "requests",
     "httpx",

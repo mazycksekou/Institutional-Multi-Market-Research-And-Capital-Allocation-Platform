@@ -33,4 +33,8 @@ def test_checkpoint_package_paths_exist() -> None:
         "automation_scheduler",
         "research",
     ]:
-        assert (ROOT / relpath).exists()
+        path = ROOT / relpath
+        if relpath == "automation_scheduler":
+            assert not path.exists()
+        else:
+            assert path.exists()

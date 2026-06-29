@@ -2,12 +2,7 @@ import json
 import unittest
 from tempfile import TemporaryDirectory
 
-from automation_scheduler.backtesting_engine import (
-    load_historical_rows,
-    replay_rows,
-    summarize_replay_result,
-    write_replay_result,
-)
+from src.services.streamlit_dashboard_facade import load_historical_rows, replay_rows, summarize_replay_result, write_replay_result
 
 
 class TestHistoricalReplay(unittest.TestCase):

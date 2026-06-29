@@ -10,7 +10,7 @@ README = ROOT / "README.md"
 SOURCE_FILES = [
     ROOT / "main.py",
     ROOT / "streamlit_app.py",
-    ROOT / "automation_scheduler" / "streamlit_dashboard_data.py",
+    ROOT / "src" / "automation_scheduler_legacy" / "streamlit_dashboard_data.py",
     ROOT / "scripts" / "daily_data_hygiene.py",
 ]
 
@@ -162,4 +162,5 @@ def test_phase10k8zff_canonical_owner_decision_report() -> None:
     assert not any(ROOT.glob("app/pages/*.py"))
     assert not any(ROOT.glob("frontend/*.py"))
     assert not any(ROOT.glob("frontend/pages/*.py"))
+
 

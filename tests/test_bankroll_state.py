@@ -1,7 +1,7 @@
 import unittest
 from pathlib import Path
 
-from automation_scheduler.bankroll_state import default_bankroll_state, load_bankroll_state, save_bankroll_state
+from src.automation_scheduler_legacy.bankroll_state import default_bankroll_state, load_bankroll_state, save_bankroll_state
 
 
 class BankrollStateTests(unittest.TestCase):

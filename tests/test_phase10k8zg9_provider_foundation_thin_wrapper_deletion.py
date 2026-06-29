@@ -9,20 +9,20 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 DELETED_FILES = [
-    ROOT / "automation_scheduler" / "provider_contracts.py",
-    ROOT / "automation_scheduler" / "provider_health.py",
-    ROOT / "automation_scheduler" / "provider_adapter_base.py",
-    ROOT / "automation_scheduler" / "provider_normalization_contract.py",
-    ROOT / "automation_scheduler" / "provider_payload_validator.py",
-    ROOT / "automation_scheduler" / "provider_secret_policy.py",
+    ROOT / "src" / "automation_scheduler_legacy" / "provider_contracts.py",
+    ROOT / "src" / "automation_scheduler_legacy" / "provider_health.py",
+    ROOT / "src" / "automation_scheduler_legacy" / "provider_adapter_base.py",
+    ROOT / "src" / "automation_scheduler_legacy" / "provider_normalization_contract.py",
+    ROOT / "src" / "automation_scheduler_legacy" / "provider_payload_validator.py",
+    ROOT / "src" / "automation_scheduler_legacy" / "provider_secret_policy.py",
     ROOT / "providers" / "base_provider.py",
     ROOT / "betting_providers" / "base.py",
     ROOT / "betting_providers" / "normalization.py",
 ]
 
 REMAINING_BLOCKERS = [
-    ROOT / "automation_scheduler" / "provider_registry.py",
-    ROOT / "automation_scheduler" / "provider_write_firewall.py",
+    ROOT / "src" / "automation_scheduler_legacy" / "provider_registry.py",
+    ROOT / "src" / "automation_scheduler_legacy" / "provider_write_firewall.py",
 ]
 
 CANONICAL_MODULES = [
@@ -39,12 +39,12 @@ CANONICAL_MODULES = [
 ]
 
 DELETED_IMPORT_TARGETS = {
-    "automation_scheduler.provider_contracts",
-    "automation_scheduler.provider_health",
-    "automation_scheduler.provider_adapter_base",
-    "automation_scheduler.provider_normalization_contract",
-    "automation_scheduler.provider_payload_validator",
-    "automation_scheduler.provider_secret_policy",
+    'src.automation_scheduler_legacy.provider_contracts',
+    'src.automation_scheduler_legacy.provider_health',
+    'src.automation_scheduler_legacy.provider_adapter_base',
+    'src.automation_scheduler_legacy.provider_normalization_contract',
+    'src.automation_scheduler_legacy.provider_payload_validator',
+    'src.automation_scheduler_legacy.provider_secret_policy',
     "providers.base_provider",
     "betting_providers.base",
     "betting_providers.normalization",
@@ -140,3 +140,4 @@ def test_phase10k8zg9_provider_foundation_thin_wrapper_deletion(monkeypatch):
         "Only the 10K8ZG8 proof-backed provider foundation thin wrappers are deleted in this phase.",
     ]:
         assert phrase in report
+

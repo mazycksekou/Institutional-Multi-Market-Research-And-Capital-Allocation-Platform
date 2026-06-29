@@ -92,6 +92,8 @@ def load_historical_rows(source: str | Path | Sequence[Mapping[str, Any]] | None
         return []
     if isinstance(source, Sequence) and not isinstance(source, (str, bytes, Path)):
         return _as_rows(source)
+    if isinstance(source, str) and source.lower().startswith(("http://", "https://")):
+        raise ValueError("historical replay only accepts local files or in-memory rows")
     path = Path(source)
     if not path.exists():
         return []
@@ -117,20 +119,9 @@ def load_historical_rows(source: str | Path | Sequence[Mapping[str, Any]] | None
 
 
 def replay_rows(rows: Sequence[Mapping[str, Any]], model_id: str = "historical_replay") -> dict[str, Any]:
-    replayed = []
-    for index, row in enumerate(_as_rows(rows)):
-        payload = dict(row)
-        payload.setdefault("replay_index", index)
-        payload.setdefault("model_id", model_id)
-        payload.setdefault("outcome_status", _normalize_outcome(payload.get("final_outcome")) or "unknown")
-        replayed.append(payload)
-    return {
-        "ok": True,
-        "status": "replayed",
-        "model_id": model_id,
-        "row_count": len(replayed),
-        "rows": replayed,
-    }
+    from src.automation_scheduler_legacy.backtesting_engine import replay_rows as _legacy_replay_rows
+
+    return _legacy_replay_rows([dict(row) for row in _as_rows(rows)], model_id=model_id)
 
 
 def run_backtest(
@@ -140,32 +131,14 @@ def run_backtest(
     base_data_dir: str | Path | None = None,
     strategy_config: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
-    row_list = _as_rows(rows)
-    decisions: list[dict[str, Any]] = []
-    for row in row_list:
-        decision = dict(row)
-        decision["model_probability"] = _score_probability(row, strategy_config)
-        decision.setdefault("paper_stake", row.get("paper_stake", row.get("stake", 0)))
-        decisions.append(decision)
-    report = {
-        "ok": True,
-        "status": "backtest_complete",
-        "model_id": model_id,
-        "row_count": len(row_list),
-        "strategy_bankroll_report": {
-            "decisions": decisions,
-            "row_count": len(decisions),
-        },
-        "backtest_rows": row_list,
-        "summary": run_backtesting_scaffold(row_list),
-    }
-    if base_data_dir is not None:
-        base = Path(base_data_dir)
-        base.mkdir(parents=True, exist_ok=True)
-        report_path = base / f"{model_id}.json"
-        report_path.write_text(json.dumps(report, indent=2, sort_keys=True), encoding="utf-8")
-        report["report_path"] = str(report_path)
-    return report
+    from src.automation_scheduler_legacy.backtesting_engine import run_backtest as _legacy_run_backtest
+
+    return _legacy_run_backtest(
+        model_id=model_id,
+        rows=[dict(row) for row in _as_rows(rows)],
+        base_data_dir=str(base_data_dir or "data"),
+        strategy_config=dict(strategy_config or {}) if strategy_config is not None else None,
+    )
 
 
 def generate_backtest_report(
@@ -174,15 +147,15 @@ def generate_backtest_report(
     rows: Sequence[Mapping[str, Any]],
     base_data_dir: str | Path | None = None,
 ) -> dict[str, Any]:
-    result = run_backtest(model_id=model_id, rows=rows, base_data_dir=base_data_dir)
-    compact = {
-        "ok": True,
-        "status": "generated",
-        "model_id": model_id,
-        "row_count": result["row_count"],
-    }
-    result["compact_report"] = compact
-    return result
+    from src.automation_scheduler_legacy.backtesting_engine import (
+        generate_backtest_report as _legacy_generate_backtest_report,
+    )
+
+    return _legacy_generate_backtest_report(
+        model_id=model_id,
+        rows=[dict(row) for row in _as_rows(rows)],
+        base_data_dir=str(base_data_dir or "data"),
+    )
 
 
 __all__ = [

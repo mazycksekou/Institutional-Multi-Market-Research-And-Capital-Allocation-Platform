@@ -12,7 +12,7 @@ from .sports import build_sports_intelligence_report
 from .targets import build_targets
 
 
-FEATURE_VECTOR_VERSION = "market_intelligence_manifold_features_v1"
+FEATURE_VECTOR_VERSION = "cross_asset_manifold_features_v1"
 GRAPH_RELATIONSHIP_VERSION = "market_intelligence_market_state_graph_v1"
 
 RELATIONSHIP_CATALOG: dict[str, list[dict[str, Any]]] = {
@@ -62,41 +62,17 @@ def infer_asset_type(item: Mapping[str, Any] | None) -> str:
 
 
 def build_manifold_feature_vector(item: Mapping[str, Any] | None, /, **overrides: Any) -> dict[str, Any]:
+    from src.automation_scheduler_legacy.manifold_feature_builder import build_manifold_feature_vector as _legacy_build_manifold_feature_vector
+
     data = dict(item or {})
     data.update(overrides)
-    asset_type = infer_asset_type(data)
-    confidence = clamp(data.get("confidence_score") or data.get("confidence") or 0.0)
-    liquidity = clamp(data.get("liquidity_score") or 0.0)
-    spread = clamp(data.get("spread_score") or data.get("bid_ask_spread") or 0.0)
-    edge = clamp(data.get("estimated_edge") or 0.0)
-    normalized = {
-        "asset_type_prediction_market": 1.0 if asset_type == "prediction_market" else 0.0,
-        "asset_type_sportsbook": 1.0 if asset_type == "sportsbook" else 0.0,
-        "asset_type_crypto": 1.0 if asset_type == "crypto" else 0.0,
-        "asset_type_futures": 1.0 if asset_type == "futures" else 0.0,
-        "confidence_score": confidence / 100.0,
-        "liquidity_score": liquidity / 100.0,
-        "spread_score": spread / 100.0,
-        "estimated_edge": edge / 100.0,
-    }
-    weighted = [round(value * 100.0, 4) for value in normalized.values()]
-    return {
-        "feature_vector_version": FEATURE_VECTOR_VERSION,
-        "asset_type": asset_type,
-        "normalized_features": normalized,
-        "feature_vector": list(normalized.values()),
-        "weighted_feature_vector": weighted,
-    }
+    return _legacy_build_manifold_feature_vector(data)
 
 
 def nearest_historical_neighbors(feature_vector: Mapping[str, Any] | None, historical_records: list[Mapping[str, Any]] | None = None) -> dict[str, Any]:
-    records = [dict(row) for row in historical_records or [] if isinstance(row, Mapping)]
-    sample = [row for row in records if row.get("final_outcome") is not None or row.get("return_pct") is not None]
-    return {
-        "nearest_historical_neighbors": len(sample) if feature_vector else 0,
-        "nearest_neighbor_distance": 0.0 if sample else None,
-        "neighbors": compact_list(sample, limit=10),
-    }
+    from src.automation_scheduler_legacy.market_state_manifold import nearest_historical_neighbors as _legacy_nearest_historical_neighbors
+
+    return _legacy_nearest_historical_neighbors(dict(feature_vector or {}), historical_records)
 
 
 def infer_graph_asset_type(item: Mapping[str, Any] | None) -> str:
@@ -211,60 +187,17 @@ def map_sportsbook_market(item: Mapping[str, Any] | None = None, /, **overrides:
 
 
 def map_market_state(item: Mapping[str, Any] | None = None, /, **overrides: Any) -> dict[str, Any]:
+    from src.automation_scheduler_legacy.market_state_manifold import map_market_state as _legacy_map_market_state
+
     data = dict(item or {})
     data.update(overrides)
-    asset_type = infer_asset_type(data)
-    if asset_type == "prediction_market":
-        return map_prediction_market(data)
-    if asset_type == "sportsbook":
-        return map_sportsbook_market(data)
-    confidence = build_confidence_profile(data)
-    liquidity = build_liquidity_zones(data)
-    targets = build_targets(data)
-    flow = build_flow_summary(data)
-    payload = build_market_intelligence_report(
-        {
-            "market": asset_type,
-            "symbol_or_event": data.get("symbol") or data.get("event") or data.get("market_type") or "",
-            "current_price_or_odds": data.get("price") or data.get("current_price") or data.get("yes_price"),
-            "bias": data.get("bias") or "neutral",
-            "confidence": confidence["confidence"],
-            "primary_target": targets["primary_target"],
-            "secondary_target": targets["secondary_target"],
-            "stretch_target": targets["stretch_target"],
-            "expected_move": targets["expected_move"],
-            "support": targets["support"],
-            "resistance": targets["resistance"],
-            "liquidity_zones": liquidity["liquidity_zones"],
-            "positioning_summary": "Manifold state mapped locally; execution disabled.",
-            "flow_summary": flow["flow_summary"],
-            "catalysts": compact_list(data.get("catalysts") or [], limit=10),
-            "trade_plan": "Review only; no live execution.",
-            "risk": "low",
-            "stop": data.get("stop"),
-            "invalidation": data.get("invalidation") or "state shifts away from support/resistance",
-            "reasoning": [f"asset_type={asset_type}", f"confidence={confidence['confidence']}"],
-            "no_trade_reason": data.get("no_trade_reason") or "none",
-        }
+    return _legacy_map_market_state(
+        data,
+        registry=data.get("registry"),
+        calibration_report=data.get("calibration_report"),
+        historical_records=data.get("historical_records"),
+        base_data_dir=str(data.get("base_data_dir") or "data"),
     )
-    payload.update(
-        {
-            "ok": True,
-            "status": "manifold_map_complete",
-            "provider_write": False,
-            "execution_allowed": False,
-            "live_execution_enabled": False,
-            "auto_execution": False,
-            "auto_execution_enabled": False,
-            "human_approval_required": True,
-            "actual_orders_submitted": 0,
-            "actual_bets_submitted": 0,
-            "actual_trades_submitted": 0,
-            "raw_payload_included": False,
-            "secrets_included": False,
-        }
-    )
-    return payload
 
 
 def compact_manifold_review_response(payload: Mapping[str, Any] | None = None, *, limit: int = 10) -> dict[str, Any]:

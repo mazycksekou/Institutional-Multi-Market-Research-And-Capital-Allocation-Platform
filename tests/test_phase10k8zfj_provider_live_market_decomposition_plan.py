@@ -133,7 +133,7 @@ def test_provider_live_market_decomposition_plan_has_no_obvious_secrets_or_front
     candidate_roots = [
         ROOT / "providers",
         ROOT / "betting_providers",
-        ROOT / "automation_scheduler",
+        ROOT / "src" / "automation_scheduler_legacy",
         ROOT / "src",
     ]
     for base in candidate_roots:
@@ -164,7 +164,7 @@ def test_provider_live_market_decomposition_plan_has_no_obvious_secrets_or_front
         assert not list(ROOT.glob(pattern)), f"Unexpected frontend page files matched {pattern}"
 
     streamlit_text = _read(ROOT / "streamlit_app.py")
-    dashboard_text = _read(ROOT / "automation_scheduler" / "streamlit_dashboard_data.py")
+    dashboard_text = _read(ROOT / "src" / "automation_scheduler_legacy" / "streamlit_dashboard_data.py")
     assert "Aggressive paper only" not in streamlit_text
     assert "None - no risk preset adjustment" in streamlit_text
     assert "Aggressive" in dashboard_text

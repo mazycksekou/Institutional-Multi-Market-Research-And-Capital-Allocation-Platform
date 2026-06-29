@@ -41,7 +41,7 @@ def test_research_lane_helpers_redirect_to_canonical_package(monkeypatch: pytest
         lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("import-time credential access is forbidden")),
     )
 
-    import automation_scheduler as scheduler_pkg
+    import src.automation_scheduler_legacy as scheduler_pkg
     from src.research import (
         build_deep_learning_maturity_records,
         build_deep_learning_research_lanes,
@@ -74,7 +74,7 @@ def test_research_sources_remain_local_only() -> None:
         "src.research.lanes",
         "src.research.maturity",
         "src.research.storage",
-        "automation_scheduler.__init__",
+        "src.research.feature_control",
     ]:
         module = importlib.import_module(name)
         source = inspect.getsource(module).lower()
@@ -86,7 +86,7 @@ def test_research_sources_remain_local_only() -> None:
 
 def test_legacy_research_files_remain_preserved() -> None:
     for relpath in [
-        "automation_scheduler/feature_ablation_lab.py",
+        'src/automation_scheduler_legacy/feature_ablation_lab.py',
         "src/research/lanes.py",
         "src/research/maturity.py",
     ]:

@@ -48,22 +48,22 @@ class TestPhase10K8ZL3SportsIntelligenceAbsorption(unittest.TestCase):
 
     def test_legacy_sports_wrappers_remain_importable(self):
         modules = [
-            "automation_scheduler.baseball_impact_common",
-            "automation_scheduler.basketball_lineup_matchup_context",
-            "automation_scheduler.basketball_market_relevance",
-            "automation_scheduler.basketball_player_impact_common",
-            "automation_scheduler.basketball_player_impact_red_team",
-            "automation_scheduler.combat_impact_common",
-            "automation_scheduler.football_impact_common",
-            "automation_scheduler.football_impact_red_team",
-            "automation_scheduler.football_impact_schema",
-            "automation_scheduler.golf_impact_common",
-            "automation_scheduler.hockey_impact_common",
-            "automation_scheduler.soccer_impact_common",
-            "automation_scheduler.tennis_impact_common",
+            'src.automation_scheduler_legacy.baseball_impact_common',
+            'src.automation_scheduler_legacy.basketball_lineup_matchup_context',
+            'src.automation_scheduler_legacy.basketball_market_relevance',
+            'src.automation_scheduler_legacy.basketball_player_impact_common',
+            'src.automation_scheduler_legacy.basketball_player_impact_red_team',
+            'src.automation_scheduler_legacy.combat_impact_common',
+            'src.automation_scheduler_legacy.football_impact_common',
+            'src.automation_scheduler_legacy.football_impact_red_team',
+            'src.automation_scheduler_legacy.football_impact_schema',
+            'src.automation_scheduler_legacy.golf_impact_common',
+            'src.automation_scheduler_legacy.hockey_impact_common',
+            'src.automation_scheduler_legacy.soccer_impact_common',
+            'src.automation_scheduler_legacy.tennis_impact_common',
         ]
         for module_name in modules:
             module = __import__(module_name, fromlist=["*"])
             self.assertIsNotNone(module)
-            self.assertTrue(module.__name__.startswith("automation_scheduler."))
+            self.assertTrue(module.__name__.startswith("src.automation_scheduler_legacy."))
 

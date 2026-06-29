@@ -40,8 +40,8 @@ def test_execution_migration_modules_use_canonical_brokerage_surfaces(monkeypatc
     decision_engine = importlib.import_module("src.services.decision_engine")
     gatekeeper = importlib.import_module("src.brokerage.readiness")
     authorization = importlib.import_module("src.brokerage.readiness")
-    paper_trade_ledger = importlib.import_module("automation_scheduler.paper_trade_ledger")
-    paper_decision_ledger = importlib.import_module("automation_scheduler.paper_decision_ledger")
+    paper_trade_ledger = importlib.import_module('src.automation_scheduler_legacy.paper_trade_ledger')
+    paper_decision_ledger = importlib.import_module('src.automation_scheduler_legacy.paper_decision_ledger')
 
     plan = decision_engine.build_brokerage_execution_plan(
         {"ticker": "TEST", "stake": 10, "american_odds": -110, "decision_id": "d1", "provider": "demo"}
@@ -90,8 +90,8 @@ def test_execution_migration_modules_use_canonical_brokerage_surfaces(monkeypatc
 
 def test_no_legacy_deletion_in_migration() -> None:
     for relpath in [
-        "automation_scheduler/paper_trade_ledger.py",
-        "automation_scheduler/paper_decision_ledger.py",
+        'src/automation_scheduler_legacy/paper_trade_ledger.py',
+        'src/automation_scheduler_legacy/paper_decision_ledger.py',
         "src/brokerage/readiness.py",
     ]:
         assert (ROOT / relpath).exists()
