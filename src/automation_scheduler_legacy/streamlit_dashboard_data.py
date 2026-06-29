@@ -88,7 +88,7 @@ from src.research.history import (
     list_experiment_history_runs,
     save_experiment_history_run,
 )
-from quant_engine import evaluate_paper_only_fixture_rows
+from src.core.quant_engine import evaluate_paper_only_fixture_rows
 
 
 DEFAULT_DASHBOARD_JSON_PATH = Path("data/backtests/dashboard/latest_dashboard.json")

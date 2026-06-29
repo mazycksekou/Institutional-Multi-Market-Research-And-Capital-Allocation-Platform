@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from model_governance.model_inventory import inventory_counts
+from src.analytics.model_governance.model_inventory import inventory_counts
 from .clv_tracker import summarize_clv_by_model
 from .data_paths import get_storage_health, resolve_base_data_dir
 from .paper_trade_ledger import load_paper_ledger

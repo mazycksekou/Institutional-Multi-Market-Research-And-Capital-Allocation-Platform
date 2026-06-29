@@ -1,5 +1,5 @@
 import unittest
-from model_governance.kelly_gate import evaluate_kelly_gate
+from src.analytics.model_governance.kelly_gate import evaluate_kelly_gate
 
 class TestKellyGate(unittest.TestCase):
     def test_modes(self):

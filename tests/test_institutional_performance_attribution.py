@@ -1,6 +1,6 @@
 import unittest
 
-from math_models.institutional.performance_attribution import OUTPUT_FIELDS, get_models, run_model
+from src.analytics.institutional.performance_attribution import OUTPUT_FIELDS, get_models, run_model
 
 
 class TestInstitutionalPerformanceAttribution(unittest.TestCase):

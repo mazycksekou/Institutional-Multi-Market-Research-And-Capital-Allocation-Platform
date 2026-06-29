@@ -50,7 +50,7 @@ def test_approved_wrappers_are_deleted() -> None:
 def test_canonical_packages_import_safely() -> None:
     analytics = importlib.import_module("src.analytics")
     research = importlib.import_module("src.research")
-    governance = importlib.import_module("model_governance")
+    governance = importlib.import_module("src.analytics.model_governance")
     scheduler = importlib.import_module('src.automation_scheduler_legacy')
 
     assert analytics.build_governance_health({"model_inventory_count": 0}, {"blocked_model_count": 0})["governance_status"] == "ok"
@@ -64,7 +64,7 @@ def test_runtime_and_test_files_no_longer_require_deleted_wrappers() -> None:
         ROOT / "src" / "automation_scheduler_legacy" / "__init__.py",
         ROOT / "src" / "automation_scheduler_legacy" / "data_intelligence_registry.py",
         ROOT / "src" / "automation_scheduler_legacy" / "cross_asset_intelligence_router.py",
-        ROOT / "model_governance" / "__init__.py",
+        ROOT / "src" / "analytics" / "model_governance" / "__init__.py",
         ROOT / "tests" / "test_governance_health.py",
         ROOT / "tests" / "test_governance_report.py",
         ROOT / "tests" / "test_model_validation_report.py",

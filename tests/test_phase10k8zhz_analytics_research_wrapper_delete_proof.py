@@ -30,7 +30,7 @@ def test_wrapper_delete_proof_docs_capture_classifications() -> None:
         "FILE_IO_OR_STORAGE_BLOCKED",
         "SCHEDULER_COUPLED_BLOCKED",
         "COMPATIBILITY_WRAPPER_ONLY",
-        "model_governance/governance_health.py",
+        "src/analytics/model_governance/governance_health.py",
         "research/market_research_store.py",
         "automation_scheduler/model_maturity_registry.py",
     ]:
@@ -75,7 +75,7 @@ def test_canonical_packages_remain_and_wrappers_are_not_required() -> None:
         "src/research/__init__.py",
         "src/analytics/governance.py",
         "src/research/maturity.py",
-        "model_governance/__init__.py",
+        "src/analytics/model_governance/__init__.py",
         'src/automation_scheduler_legacy/__init__.py',
     ]:
         assert (ROOT / relpath).exists()
@@ -87,7 +87,7 @@ def test_wrapper_sources_are_local_only() -> None:
         "src.analytics.reports",
         "src.research.maturity",
         "src.research.storage",
-        "model_governance",
+        "src.analytics.model_governance",
     ]:
         module = importlib.import_module(name)
         source = inspect.getsource(module).lower()
@@ -97,7 +97,7 @@ def test_wrapper_sources_are_local_only() -> None:
 
 
 def test_model_governance_enforcement_remains_preserved() -> None:
-    import model_governance as mg
+    import src.analytics.model_governance as mg
 
     assert mg.default_governance_config()["human_approval_required"] is True
     assert mg.contains_banned_language("can't lose")

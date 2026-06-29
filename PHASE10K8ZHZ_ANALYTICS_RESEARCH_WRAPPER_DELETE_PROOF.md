@@ -3,6 +3,7 @@
 ## Canonical ownership
 - `src.analytics` owns deterministic performance, attribution, calibration, governance, report, and model-evaluation summaries.
 - `src.research` owns deterministic research lane descriptors, experiment metadata, hypothesis records, ablation plans, and storage/schema descriptors.
+- `src/analytics/model_governance/governance_health.py` is the relocated canonical file for governance-health logic.
 
 ## Wrapper classification
 | File | Classification | Blocker summary | Canonical replacement target |

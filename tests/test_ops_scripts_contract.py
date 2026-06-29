@@ -27,8 +27,10 @@ class TestOpsScriptsContract(unittest.TestCase):
 
     def test_ops_check_exposes_required_modes(self):
         script = (ROOT / "scripts/ops_check.py").read_text(encoding="utf-8")
-        for mode in ("local", "render", "cron", "calibration", "datasources", "safety", "full"):
+        for mode in ("local", "render", "cron", "calibration", "datasources", "safety", "full", "inventory", "import-scan"):
             self.assertIn(f'"{mode}"', script)
+        for arg in ("--input", "--paths"):
+            self.assertIn(arg, script)
 
     def test_docs_file_exists(self):
         docs = ROOT / "docs/OPS_WORKFLOW.md"
@@ -44,4 +46,3 @@ class TestOpsScriptsContract(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

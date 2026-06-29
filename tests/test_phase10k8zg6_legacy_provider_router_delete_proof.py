@@ -62,7 +62,7 @@ def test_phase10k8zg6_legacy_provider_router_delete_proof(monkeypatch):
     main_text = _read("main.py")
     model_card_text = _read("src/api/model_card_service.py")
     market_routes_text = _read("src/api/market_metadata_routes.py")
-    screenshot_text = _read("screenshot_intake.py")
+    screenshot_text = _read("src/services/screenshot_intake.py")
     for text in (main_text, model_card_text, market_routes_text, screenshot_text):
         assert "from betting_providers.provider_router import ProviderRouter" not in text
         assert "from providers.odds_provider_router import enrich_ticket" not in text

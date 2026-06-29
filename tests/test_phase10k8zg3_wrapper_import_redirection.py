@@ -29,7 +29,7 @@ UPDATED_FILES = {
         "from src.providers.compat import PREDICTION_MARKET",
         "from betting_providers.base import PREDICTION_MARKET",
     ],
-    "screenshot_intake.py": [
+    "src/services/screenshot_intake.py": [
         "from src.services.enrichment_service import EnrichmentService",
     ],
     "tests/test_provider_contracts.py": [

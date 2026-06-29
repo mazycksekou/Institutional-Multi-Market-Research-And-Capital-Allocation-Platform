@@ -28,7 +28,7 @@ from src.core.math_utils import (
     no_vig_probabilities_three_way as _core_no_vig_probabilities_three_way,
     no_vig_probabilities_two_way as _core_no_vig_probabilities_two_way,
 )
-from risk_engine import (
+from src.core.risk_engine import (
     confidence_adjusted_stake as _risk_confidence_adjusted_stake,
     exposure_check as _risk_exposure_check,
     risk_adjusted_stake as _risk_adjusted_stake,

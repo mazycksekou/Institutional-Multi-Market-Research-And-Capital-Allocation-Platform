@@ -1,6 +1,6 @@
 import unittest
 
-import multi_sport_model_registry as registry
+import src.market_intelligence.multi_sport_model_registry as registry
 from src.automation_scheduler_legacy.model_recheck_runner import run_model_recheck
 
 

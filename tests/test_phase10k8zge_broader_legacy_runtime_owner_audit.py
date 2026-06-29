@@ -81,8 +81,8 @@ def test_broader_legacy_runtime_owner_audit_docs_and_tags() -> None:
 def test_audit_documents_preserve_repository_safety_context() -> None:
     main_text = _read(ROOT / "main.py")
     streamlit_text = _read(ROOT / "streamlit_app.py")
-    quant_text = _read(ROOT / "quant_engine.py")
-    risk_text = _read(ROOT / "risk_engine.py")
+    quant_text = _read(ROOT / "src" / "core" / "quant_engine.py")
+    risk_text = _read(ROOT / "src" / "core" / "risk_engine.py")
     provider_router_text = _read(ROOT / "src" / "providers" / "provider_router.py")
     model_card_text = _read(ROOT / "src" / "api" / "model_card_service.py")
     provider_status_text = _read(ROOT / "src" / "api" / "provider_status_routes.py")
@@ -90,11 +90,11 @@ def test_audit_documents_preserve_repository_safety_context() -> None:
     assert "from src.providers.provider_router import ProviderRouter" in model_card_text
     assert "import src.services.automation_scheduler_facade as automation_scheduler" in provider_status_text
     assert "ProviderRouter" in provider_router_text
-    assert "def evaluate_lines_payload" in _read(ROOT / "bet_decision_engine.py")
-    assert "def calculate_profit_loss" in _read(ROOT / "bet_log.py")
+    assert "def evaluate_lines_payload" in _read(ROOT / "src" / "services" / "bet_decision_engine.py")
+    assert "def calculate_profit_loss" in _read(ROOT / "src" / "services" / "bet_log.py")
 
     # Runtime owners still exist and are not deleted by this audit phase.
-    for path in [ROOT / "main.py", ROOT / "streamlit_app.py", ROOT / "quant_engine.py", ROOT / "risk_engine.py"]:
+    for path in [ROOT / "main.py", ROOT / "streamlit_app.py", ROOT / "src" / "core" / "quant_engine.py", ROOT / "src" / "core" / "risk_engine.py"]:
         assert path.exists()
 
     # The audit itself must not introduce live-network or credential material into the reports.

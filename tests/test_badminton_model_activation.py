@@ -2,7 +2,7 @@ import asyncio
 import unittest
 from copy import deepcopy
 
-import multi_sport_model_registry as registry
+import src.market_intelligence.multi_sport_model_registry as registry
 from tests.support.action_imports import ScreenshotAnalysisRequest, SportAnalysisRequest, action_analyze_sport_model, action_analyze_ticket_screenshot
 
 

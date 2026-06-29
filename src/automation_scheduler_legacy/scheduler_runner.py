@@ -4,10 +4,10 @@ from pathlib import Path
 from datetime import datetime, timezone
 from typing import Any
 
-from model_governance.cross_book_gate import evaluate_cross_book_gate
-from model_governance.data_lineage import create_lineage_record
-from model_governance.data_quality_monitor import evaluate_data_quality
-from model_governance.settlement_liquidity_gate import evaluate_settlement_liquidity_gate
+from src.analytics.model_governance.cross_book_gate import evaluate_cross_book_gate
+from src.analytics.model_governance.data_lineage import create_lineage_record
+from src.analytics.model_governance.data_quality_monitor import evaluate_data_quality
+from src.analytics.model_governance.settlement_liquidity_gate import evaluate_settlement_liquidity_gate
 
 from .arbitrage_detector import detect_arbitrage
 from .alert_engine import generate_alert_candidates

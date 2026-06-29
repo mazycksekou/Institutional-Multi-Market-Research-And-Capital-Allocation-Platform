@@ -5,7 +5,7 @@ from src.automation_scheduler_legacy.streamlit_dashboard_data import build_paper
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 REPORT_PATH = REPO_ROOT / "PHASE10K8I_PAPER_ONLY_FIXTURE_PIPELINE_HELPER.md"
-QUANT_ENGINE_PATH = REPO_ROOT / "quant_engine.py"
+QUANT_ENGINE_PATH = REPO_ROOT / "src" / "core" / "quant_engine.py"
 BACKTEST_DATASET_BUILDER_PATH = REPO_ROOT / "src" / "automation_scheduler_legacy" / "backtest_dataset_builder.py"
 DASHBOARD_DATA_PATH = REPO_ROOT / "src" / "automation_scheduler_legacy" / "streamlit_dashboard_data.py"
 STREAMLIT_APP_PATH = REPO_ROOT / "streamlit_app.py"

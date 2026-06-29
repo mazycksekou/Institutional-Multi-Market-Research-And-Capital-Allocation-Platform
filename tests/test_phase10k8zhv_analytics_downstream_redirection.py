@@ -57,7 +57,7 @@ def test_governance_health_redirects_to_canonical_helper(monkeypatch: pytest.Mon
     )
     (audits_dir / "audit.json").write_text(json.dumps({"ok": True}), encoding="utf-8")
 
-    import model_governance as legacy_governance
+    import src.analytics.model_governance as legacy_governance
     from src.analytics.governance import build_governance_health
     from src.analytics.reports import generate_governance_report
 

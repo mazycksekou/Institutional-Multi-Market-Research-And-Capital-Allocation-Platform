@@ -6,6 +6,13 @@ interfaces without depending on legacy provider ownership.
 """
 
 from .base import ProviderAdapterBase, ProviderAdapterProtocol
+from .aliases import (
+    SPORT_ALIASES,
+    SPORT_LABELS,
+    THE_ODDS_API_SPORT_KEYS,
+    UNKNOWN_SPORT_EXAMPLES,
+    resolve_sport_key,
+)
 from .categories import (
     PROVIDER_CATEGORIES,
     PROVIDER_CATEGORY_TO_PACKAGE,
@@ -167,6 +174,10 @@ __all__ = [
     "COMPAT_PREDICTION_MARKET",
     "COMPAT_SPORTSBOOK_ODDS",
     "ProviderAdapter",
+    "SPORT_ALIASES",
+    "SPORT_LABELS",
+    "THE_ODDS_API_SPORT_KEYS",
+    "UNKNOWN_SPORT_EXAMPLES",
     "build_scaffold_health_status",
     "build_scaffold_provider_contract",
     "build_scaffold_provider_write_policy",
@@ -253,6 +264,7 @@ __all__ = [
     "normalize_sportsbook_event",
     "normalize_sportsbook_odds",
     "normalize_sportsbook_quote",
+    "resolve_sport_key",
     "ADAPTER_ZERO_DTE_STOCK_PROVIDER_TYPE",
     "ZeroDteStockProviderAdapter",
     "ZeroDteStockQuote",

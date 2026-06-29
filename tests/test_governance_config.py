@@ -1,5 +1,5 @@
 import unittest
-from model_governance.governance_config import default_governance_config
+from src.analytics.model_governance.governance_config import default_governance_config
 
 class TestGovernanceConfig(unittest.TestCase):
     def test_safe_defaults(self):

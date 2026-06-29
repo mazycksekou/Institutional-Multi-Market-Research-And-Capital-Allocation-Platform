@@ -1,6 +1,6 @@
 import unittest
 
-from math_models.institutional.factor_risk_models import OUTPUT_FIELDS, get_models, run_model
+from src.analytics.institutional.factor_risk_models import OUTPUT_FIELDS, get_models, run_model
 
 
 class TestInstitutionalFactorRiskModels(unittest.TestCase):

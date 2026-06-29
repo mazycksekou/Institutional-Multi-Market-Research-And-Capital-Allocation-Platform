@@ -1,6 +1,6 @@
 import unittest
 
-from math_models.institutional.portfolio_construction import OUTPUT_FIELDS, get_models, run_model
+from src.analytics.institutional.portfolio_construction import OUTPUT_FIELDS, get_models, run_model
 
 
 class TestInstitutionalPortfolioConstruction(unittest.TestCase):

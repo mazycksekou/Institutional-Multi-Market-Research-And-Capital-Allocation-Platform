@@ -1,5 +1,5 @@
 import unittest
-from model_governance.promotion_gate import evaluate_promotion_gate
+from src.analytics.model_governance.promotion_gate import evaluate_promotion_gate
 
 class TestPromotionGate(unittest.TestCase):
     def test_one_tier(self):

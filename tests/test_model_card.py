@@ -1,5 +1,5 @@
 import unittest
-from model_governance.model_card import create_model_card, validate_model_card
+from src.analytics.model_governance.model_card import create_model_card, validate_model_card
 
 class TestModelCard(unittest.TestCase):
     def test_model_card_requires_mandatory_fields(self):

@@ -1,5 +1,5 @@
 import unittest
-from model_governance.settlement_liquidity_gate import evaluate_settlement_liquidity_gate
+from src.analytics.model_governance.settlement_liquidity_gate import evaluate_settlement_liquidity_gate
 
 class TestSettlementLiquidityGate(unittest.TestCase):
     def test_blocks(self):

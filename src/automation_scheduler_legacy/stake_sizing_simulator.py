@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from risk_engine import simulate_stake_plan as _risk_simulate_stake_plan
+from src.core.risk_engine import simulate_stake_plan as _risk_simulate_stake_plan
 
 
 def simulate_stake_plan(

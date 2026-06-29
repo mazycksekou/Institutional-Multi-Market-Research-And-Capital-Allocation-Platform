@@ -13,7 +13,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
 
-from betting_providers import aliases as betting_aliases
 from src.providers.compat import PREDICTION_MARKET
 from src.providers.provider_router import ProviderRouter
 from src.api.model_card_service import ModelCardService
@@ -66,12 +65,12 @@ from src.api.schemas.performance import PerformanceBacktestRequest
 from src.services.action_betting_service import ActionBettingService
 from src.services.bet_csv_service import BETS_FILE, append_bet, summarize_bets
 import src.services.automation_scheduler_facade as automation_scheduler
-import bet_log
-import bet_decision_engine
-import market_pricing
-import multi_sport_model_registry
-import model_probability
-import screenshot_intake
+import src.services.bet_log as bet_log
+import src.services.bet_decision_engine as bet_decision_engine
+import src.core.market_pricing as market_pricing
+import src.market_intelligence.multi_sport_model_registry as multi_sport_model_registry
+import src.core.model_probability as model_probability
+import src.services.screenshot_intake as screenshot_intake
 from src.services.automation_scheduler_facade import get_runtime_data_path, get_automation_data_dir
 from src.services.automation_scheduler_facade import (
     compact_advanced_red_team_response,
@@ -137,13 +136,13 @@ from src.services.automation_scheduler_facade import (
     compact_validation_response,
     redact_and_limit_payload,
 )
-from model_governance import (
+from src.analytics.model_governance import (
     build_model_validation_report,
     generate_governance_report,
     get_governance_health,
 )
-from model_governance.model_inventory import get_model_inventory
-from quant_engine import (
+from src.analytics.model_governance.model_inventory import get_model_inventory
+from src.core.quant_engine import (
     american_to_implied_probability,
     capm_required_return,
     build_market_pricing_row,
@@ -173,61 +172,6 @@ DEFAULT_REGIONS = os.getenv("DEFAULT_REGIONS", "us")
 DEFAULT_MARKETS = "h2h,spreads,totals"
 DATA_DIR = get_automation_data_dir()
 DATA_DIR.mkdir(parents=True, exist_ok=True)
-
-SPORT_ALIASES = {
-    "mlb": "baseball_mlb",
-    "baseball": "baseball_mlb",
-    "major league baseball": "baseball_mlb",
-    "nba": "basketball_nba",
-    "basketball": "basketball_nba",
-    "wnba": "basketball_wnba",
-    "nfl": "americanfootball_nfl",
-    "football": "americanfootball_nfl",
-    "ncaaf": "americanfootball_ncaaf",
-    "college football": "americanfootball_ncaaf",
-    "ncaab": "basketball_ncaab",
-    "college basketball": "basketball_ncaab",
-    "ncaa basketball": "basketball_ncaab",
-    "nhl": "icehockey_nhl",
-    "hockey": "icehockey_nhl",
-    "epl": "soccer_epl",
-    "premier league": "soccer_epl",
-    "english premier league": "soccer_epl",
-    "mls": "soccer_usa_mls",
-    "ufc": "mma_mixed_martial_arts",
-    "mma": "mma_mixed_martial_arts",
-    "mixed martial arts": "mma_mixed_martial_arts",
-    "combat sports": "mma_mixed_martial_arts",
-    "boxing": "boxing",
-    "atp": "tennis_atp",
-    "wta": "tennis_wta",
-    "tennis": "tennis_atp",
-    "golf": "golf_pga",
-    "pga": "golf_pga",
-    "pga_tour": "golf_pga",
-    "liv": "golf_pga",
-    "liv_golf": "golf_pga",
-    "dp_world_tour": "golf_pga",
-    "european_tour": "golf_pga",
-    "lpga": "golf_pga",
-}
-
-SPORT_LABELS = {
-    "baseball_mlb": "MLB",
-    "basketball_nba": "NBA",
-    "basketball_wnba": "WNBA",
-    "americanfootball_nfl": "NFL",
-    "americanfootball_ncaaf": "NCAAF",
-    "basketball_ncaab": "NCAAB",
-    "icehockey_nhl": "NHL",
-    "soccer_epl": "EPL",
-    "soccer_usa_mls": "MLS",
-    "mma_mixed_martial_arts": "UFC/MMA",
-    "boxing": "Boxing",
-    "tennis_atp": "ATP",
-    "tennis_wta": "WTA",
-    "golf_pga": "PGA",
-}
 
 PROVIDER_ROUTER = ProviderRouter()
 MODEL_CARD_SERVICE = ModelCardService(PROVIDER_ROUTER)
@@ -314,19 +258,6 @@ async def require_action_key(
     header_keys = [key.strip() for key in (x_api_key, extract_bearer_token(authorization)) if key and key.strip()]
     if not any(secrets.compare_digest(key, action_key) for key in header_keys):
         raise HTTPException(status_code=401, detail="Invalid or missing API key.")
-
-
-def resolve_sport_key(sport: Optional[str], league: Optional[str]) -> tuple[Optional[str], Optional[str], Optional[dict[str, Any]]]:
-    raw = (league or sport or "").strip()
-    if not raw:
-        return None, None, no_data_response("sport or league is required.", "SPORT_REQUIRED")
-
-    normalized = " ".join(raw.lower().replace("_", " ").replace("-", " ").split())
-    sport_key = SPORT_ALIASES.get(normalized)
-    if not sport_key:
-        return None, None, no_data_response(f"Unknown sport or league: {raw}", "UNKNOWN_SPORT")
-
-    return sport_key, SPORT_LABELS.get(sport_key, raw.upper()), None
 
 
 def stock_data(ticker: str, period: str, interval: str) -> dict[str, Any]:

@@ -1,6 +1,6 @@
 import unittest
 
-from math_models.institutional.liability_retirement_models import OUTPUT_FIELDS, get_models, run_model
+from src.analytics.institutional.liability_retirement_models import OUTPUT_FIELDS, get_models, run_model
 
 
 class TestInstitutionalLiabilityRetirementModels(unittest.TestCase):

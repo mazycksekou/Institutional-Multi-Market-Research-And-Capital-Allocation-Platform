@@ -63,7 +63,7 @@ def test_safe_files_not_automatic_deletion() -> None:
 
 def test_no_source_migration_or_deletion() -> None:
     # Ensure none of the audit targets have been moved or deleted
-    for mod in ("quant_engine.py", "risk_engine.py", "market_pricing.py",
-                "model_probability.py", "bet_decision_engine.py",
-                "screenshot_intake.py", "main.py", "streamlit_app.py"):
+    for mod in ("src/core/quant_engine.py", "src/core/risk_engine.py", "src/core/market_pricing.py",
+                "src/core/model_probability.py", "src/services/bet_decision_engine.py",
+                "src/services/screenshot_intake.py", "main.py", "streamlit_app.py"):
         assert (ROOT / mod).exists(), f"{mod} was deleted unexpectedly"

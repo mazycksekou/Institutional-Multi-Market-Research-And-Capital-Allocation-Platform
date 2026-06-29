@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from risk_engine import (
+from src.core.risk_engine import (
     EXPOSURE_LIMITS as LIMITS,
     apply_all_exposure_caps as _risk_apply_all_exposure_caps,
     cap_correlated_exposure as _risk_cap_correlated_exposure,

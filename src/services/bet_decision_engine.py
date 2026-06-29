@@ -3,9 +3,9 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
-import market_pricing
-import model_blender
-from quant_engine import (
+import src.core.market_pricing as market_pricing
+import src.services.model_blender as model_blender
+from src.core.quant_engine import (
     american_to_decimal,
     confidence_adjusted_stake,
     edge_percentage,

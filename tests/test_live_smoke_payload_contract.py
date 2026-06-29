@@ -3,7 +3,7 @@ import subprocess
 import unittest
 from copy import deepcopy
 
-import multi_sport_model_registry as registry
+import src.market_intelligence.multi_sport_model_registry as registry
 
 
 LIVE_SCRIPT_SPORTS = [

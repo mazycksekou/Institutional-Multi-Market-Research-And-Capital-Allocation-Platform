@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import unittest
 
-import market_pricing
+import src.core.market_pricing as market_pricing
 
 
 class TestMarketPricing(unittest.TestCase):

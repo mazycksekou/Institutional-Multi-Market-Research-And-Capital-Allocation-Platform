@@ -41,8 +41,8 @@ def test_execution_audit_modules_import_safely() -> None:
         "src.automation_scheduler_legacy.paper_decision_ledger",
         "src.services.ledger_service",
         "src.services.execution_service",
-        "bet_decision_engine",
-        "bet_log",
+        "src.services.bet_decision_engine",
+        "src.services.bet_log",
         "src.services.action_betting_service",
         "src.services.decision_engine",
     ]:

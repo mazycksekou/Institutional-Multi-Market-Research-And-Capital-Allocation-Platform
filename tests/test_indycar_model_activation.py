@@ -4,7 +4,7 @@ from copy import deepcopy
 from unittest.mock import patch
 
 from tests.support.action_imports import ScreenshotAnalysisRequest, SportAnalysisRequest, action_analyze_sport_model, action_analyze_ticket_screenshot
-from multi_sport_model_registry import get_sport_model_config
+from src.market_intelligence.multi_sport_model_registry import get_sport_model_config
 
 
 def indy_payload(**extra):

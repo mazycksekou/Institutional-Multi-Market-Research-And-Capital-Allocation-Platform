@@ -145,7 +145,7 @@ def test_provider_live_market_decomposition_plan_has_no_obvious_secrets_or_front
             )
     candidate_paths.extend(
         path
-        for path in [ROOT / "main.py", ROOT / "api_server.py", ROOT / "streamlit_app.py", ROOT / "screenshot_intake.py"]
+        for path in [ROOT / "main.py", ROOT / "api_server.py", ROOT / "streamlit_app.py", ROOT / "src" / "services" / "screenshot_intake.py"]
         if path.exists()
     )
 

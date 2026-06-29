@@ -127,26 +127,28 @@ def register_market_utility_routes(
         }
 
         priority_files = {
-            "model_probability.py",
-            "quant_engine.py",
-            "market_pricing.py",
-            "bet_decision_engine.py",
-            "risk_engine.py",
-            "full_board_engine.py",
-            "multi_sport_model_registry.py",
-            "model_blender.py",
+            "src/core/model_probability.py",
+            "src/core/quant_engine.py",
+            "src/core/market_pricing.py",
+            "src/services/bet_decision_engine.py",
+            "src/core/risk_engine.py",
+            "src/services/full_board_engine.py",
+            "src/market_intelligence/multi_sport_model_registry.py",
+            "src/services/model_blender.py",
             "sharp_client.py",
             "kalshi_client.py",
-            "logbook_engine.py",
+            "src/services/logbook_engine.py",
         }
 
         priority_dirs = {
-            "math_models",
-            "providers",
-            "betting_providers",
-            "live_market_intelligence",
-            "research_engine",
-            "model_governance",
+            "src/analytics",
+            "src/backtesting",
+            "src/core",
+            "src/data",
+            "src/market_intelligence",
+            "src/providers",
+            "src/research",
+            "src/services",
         }
 
         sport_keywords = {

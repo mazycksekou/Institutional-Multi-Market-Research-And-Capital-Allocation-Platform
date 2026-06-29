@@ -35,8 +35,8 @@ CANONICAL_FILES = [
     "src/services/ledger_service.py",
     "src/services/execution_service.py",
     "src/brokerage/readiness.py",
-    "bet_decision_engine.py",
-    "bet_log.py",
+    "src/services/bet_decision_engine.py",
+    "src/services/bet_log.py",
 ]
 
 REMOVED_FILES = [

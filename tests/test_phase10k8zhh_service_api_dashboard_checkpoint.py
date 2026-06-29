@@ -46,5 +46,5 @@ def test_checkpoint_canonical_modules_import_safely() -> None:
 
 
 def test_checkpoint_files_remain_shell_boundaries() -> None:
-    for relpath in ["main.py", "streamlit_app.py", "screenshot_intake.py", "bet_log.py", "bet_decision_engine.py"]:
+    for relpath in ["main.py", "streamlit_app.py", "src/services/screenshot_intake.py", "src/services/bet_log.py", "src/services/bet_decision_engine.py"]:
         assert (ROOT / relpath).exists()

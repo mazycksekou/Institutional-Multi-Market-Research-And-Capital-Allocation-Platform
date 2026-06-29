@@ -3,8 +3,8 @@ from __future__ import annotations
 
 import unittest
 
-import bet_decision_engine
-from quant_engine import american_to_decimal, no_vig_probabilities_two_way
+import src.services.bet_decision_engine as bet_decision_engine
+from src.core.quant_engine import american_to_decimal, no_vig_probabilities_two_way
 
 
 class TestQuantPrimitives(unittest.TestCase):

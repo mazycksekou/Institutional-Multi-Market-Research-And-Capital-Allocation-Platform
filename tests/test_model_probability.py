@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import unittest
 
-import model_probability
+import src.core.model_probability as model_probability
 
 
 class TestIndependentInputs(unittest.TestCase):

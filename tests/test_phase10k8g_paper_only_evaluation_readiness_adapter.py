@@ -2,12 +2,12 @@ from pathlib import Path
 
 from src.services.streamlit_dashboard_facade import validate_paper_only_fixture_rows
 from src.automation_scheduler_legacy.streamlit_dashboard_data import build_paper_only_evaluation_readiness_payload, build_paper_only_evaluation_readiness_rows
-from quant_engine import evaluate_paper_only_fixture_rows
+from src.core.quant_engine import evaluate_paper_only_fixture_rows
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 REPORT_PATH = REPO_ROOT / "PHASE10K8G_PAPER_ONLY_EVALUATION_READINESS_ADAPTER.md"
-QUANT_ENGINE_PATH = REPO_ROOT / "quant_engine.py"
+QUANT_ENGINE_PATH = REPO_ROOT / "src" / "core" / "quant_engine.py"
 BACKTEST_DATASET_BUILDER_PATH = REPO_ROOT / "src" / "automation_scheduler_legacy" / "backtest_dataset_builder.py"
 DASHBOARD_DATA_PATH = REPO_ROOT / "src" / "automation_scheduler_legacy" / "streamlit_dashboard_data.py"
 STREAMLIT_APP_PATH = REPO_ROOT / "streamlit_app.py"

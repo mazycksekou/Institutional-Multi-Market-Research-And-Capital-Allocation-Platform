@@ -142,7 +142,7 @@ def test_test_suite_cleanup_plan_has_no_obvious_secrets_or_frontend_pages() -> N
         for path in [
             ROOT / "main.py",
             ROOT / "streamlit_app.py",
-            ROOT / "screenshot_intake.py",
+            ROOT / "src" / "services" / "screenshot_intake.py",
             ROOT / "src" / "api" / "provider_status_routes.py",
             ROOT / "src" / "services" / "enrichment_service.py",
             ROOT / "src" / "automation_scheduler_legacy" / "streamlit_dashboard_data.py",

@@ -1,6 +1,6 @@
 import unittest
 
-from math_models.institutional.model_governance import OUTPUT_FIELDS, get_models, run_model
+from src.analytics.institutional.model_governance import OUTPUT_FIELDS, get_models, run_model
 
 
 class TestInstitutionalModelGovernance(unittest.TestCase):

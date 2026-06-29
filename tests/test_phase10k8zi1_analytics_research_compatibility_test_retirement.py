@@ -47,9 +47,9 @@ def test_active_tests_now_use_canonical_owners() -> None:
     for path in ACTIVE_TESTS:
         content = _read(path)
         assert "from src.analytics" in content or "from src.research" in content
-        assert "from model_governance.governance_health" not in content
-        assert "from model_governance.governance_report" not in content
-        assert "from model_governance.model_validation_report" not in content
+        assert "from src.analytics.model_governance.governance_health" not in content
+        assert "from src.analytics.model_governance.governance_report" not in content
+        assert "from src.analytics.model_governance.model_validation_report" not in content
         assert "from research.market_research_schema" not in content
         assert "from research.market_research_store" not in content
         assert "import research.market_research_schema" not in content

@@ -744,7 +744,7 @@ def _apply_rating_side_context(records: list[dict[str, Any]], game_records: list
 
 
 def _contract_fields() -> tuple[list[str], list[str]]:
-    from multi_sport_model_registry import (
+    from src.market_intelligence.multi_sport_model_registry import (
         COLLEGE_FOOTBALL_OPTIONAL_ENRICHMENT_INPUTS,
         COLLEGE_FOOTBALL_REQUIRED_CORE_INPUTS,
     )

@@ -4,7 +4,7 @@ from typing import Any, Optional
 
 from fastapi import HTTPException
 
-from betting_providers import aliases as betting_aliases
+from src.providers import resolve_sport_key
 
 
 ACTION_SAFE_EVENT_KEYS: frozenset[str] = frozenset({
@@ -139,7 +139,7 @@ class ActionBettingService:
         sport_key_out: Optional[str] = None
 
         try:
-            sport_key, _label, resolve_err = betting_aliases.resolve_sport_key(None, league_param)
+            sport_key, _label, resolve_err = resolve_sport_key(None, league_param)
             if resolve_err:
                 return {
                     "ok": False,
@@ -227,7 +227,7 @@ class ActionBettingService:
         sport_key_out: Optional[str] = None
 
         try:
-            sport_key, _label, resolve_err = betting_aliases.resolve_sport_key(None, league_param)
+            sport_key, _label, resolve_err = resolve_sport_key(None, league_param)
             if resolve_err:
                 return self.event_odds_fail(
                     endpoint_id,

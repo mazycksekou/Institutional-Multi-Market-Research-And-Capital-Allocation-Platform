@@ -27,7 +27,7 @@ def test_screenshot_docs_state_service_ownership() -> None:
 
 
 def test_screenshot_intake_imports_and_behaves_safely() -> None:
-    screenshot_intake = importlib.import_module("screenshot_intake")
+    screenshot_intake = importlib.import_module("src.services.screenshot_intake")
     payload = {"sport": "basketball_nba", "market": "h2h", "selection": "home", "odds_american": -110}
     parsed = screenshot_intake.parse_ticket(payload)
     assert parsed["sport"] == "basketball_nba"
@@ -36,6 +36,6 @@ def test_screenshot_intake_imports_and_behaves_safely() -> None:
 
 
 def test_screenshot_intake_source_is_local_only() -> None:
-    text = (ROOT / "screenshot_intake.py").read_text(encoding="utf-8").lower()
+    text = (ROOT / "src" / "services" / "screenshot_intake.py").read_text(encoding="utf-8").lower()
     for forbidden in ["requests", "httpx", "yfinance", "selenium", "playwright", "openai", "anthropic", "alpaca", "robinhood", "ib_insync", "ccxt"]:
         assert forbidden not in text

@@ -1,5 +1,5 @@
 import unittest
-from model_governance.model_router import route_model_candidate
+from src.analytics.model_governance.model_router import route_model_candidate
 
 class TestModelRouter(unittest.TestCase):
     def test_blocks_wrong_market(self):

@@ -1,5 +1,5 @@
 import unittest
-from model_governance.research_evidence_gate import evaluate_research_evidence_gate
+from src.analytics.model_governance.research_evidence_gate import evaluate_research_evidence_gate
 
 class TestResearchEvidenceGate(unittest.TestCase):
     def test_blocks_weak(self):

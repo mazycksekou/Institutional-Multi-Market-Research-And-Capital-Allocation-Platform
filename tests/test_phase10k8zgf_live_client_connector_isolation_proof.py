@@ -115,7 +115,7 @@ def test_bridge_shells_are_not_deletion_candidates() -> None:
         ROOT / "src" / "api" / "provider_status_routes.py",
         ROOT / "src" / "api" / "market_metadata_routes.py",
         ROOT / "src" / "services" / "enrichment_service.py",
-        ROOT / "screenshot_intake.py",
+        ROOT / "src" / "services" / "screenshot_intake.py",
     ]:
         assert path.exists()
 

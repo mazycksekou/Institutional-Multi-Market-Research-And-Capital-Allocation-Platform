@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
-from full_board_engine import build_full_board_preview
+from src.services.full_board_engine import build_full_board_preview
 from tests.support.action_imports import ScreenshotAnalysisRequest, SportAnalysisRequest, action_analyze_sport_model, action_analyze_ticket_screenshot, app, require_action_key
 
 

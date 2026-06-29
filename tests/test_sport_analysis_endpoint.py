@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
-import multi_sport_model_registry as registry
+import src.market_intelligence.multi_sport_model_registry as registry
 from tests.support.action_imports import SportAnalysisRequest, action_analyze_sport_model, app, require_action_key
 
 

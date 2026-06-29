@@ -1,5 +1,5 @@
 import unittest
-from model_governance.cross_book_gate import evaluate_cross_book_gate
+from src.analytics.model_governance.cross_book_gate import evaluate_cross_book_gate
 
 class TestCrossBookGate(unittest.TestCase):
     def test_blocks_low_identity(self):

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-import multi_sport_model_registry as registry
+import src.market_intelligence.multi_sport_model_registry as registry
 
 
 def _candidate_payload(candidate: dict[str, Any]) -> dict[str, Any]:

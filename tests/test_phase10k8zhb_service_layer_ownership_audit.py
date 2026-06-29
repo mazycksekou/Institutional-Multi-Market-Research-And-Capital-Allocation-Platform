@@ -43,9 +43,9 @@ def test_service_layer_modules_import_safely() -> None:
         "src.services.model_backtest_service",
         "src.services.odds_runtime_bridge",
         "src.services.prediction_market_runtime_bridge",
-        "bet_log",
-        "bet_decision_engine",
-        "screenshot_intake",
+        "src.services.bet_log",
+        "src.services.bet_decision_engine",
+        "src.services.screenshot_intake",
     ]
     imported = [importlib.import_module(name) for name in modules]
     assert [module.__name__ for module in imported] == modules
@@ -69,9 +69,9 @@ def test_service_layer_sources_have_no_live_network_clients() -> None:
         "src/services/model_backtest_service.py",
         "src/services/odds_runtime_bridge.py",
         "src/services/prediction_market_runtime_bridge.py",
-        "bet_log.py",
-        "bet_decision_engine.py",
-        "screenshot_intake.py",
+        "src/services/bet_log.py",
+        "src/services/bet_decision_engine.py",
+        "src/services/screenshot_intake.py",
     ]:
         text = (ROOT / relpath).read_text(encoding="utf-8").lower()
         for item in forbidden:

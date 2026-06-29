@@ -1,6 +1,6 @@
 import unittest
 
-import quant_engine
+import src.core.quant_engine as quant_engine
 
 
 class TestQuantEngineFoundation(unittest.TestCase):

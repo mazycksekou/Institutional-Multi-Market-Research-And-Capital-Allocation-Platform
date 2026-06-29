@@ -46,8 +46,8 @@ def test_execution_blocker_modules_import_safely_and_remain_disabled(monkeypatch
     paper_decision_ledger = importlib.import_module('src.automation_scheduler_legacy.paper_decision_ledger')
     settlement_rule_checker = importlib.import_module("src.brokerage.settlement")
     settlement_discovery = importlib.import_module("src.services.settlement_service")
-    bet_log = importlib.import_module("bet_log")
-    bet_decision_engine = importlib.import_module("bet_decision_engine")
+    bet_log = importlib.import_module("src.services.bet_log")
+    bet_decision_engine = importlib.import_module("src.services.bet_decision_engine")
 
     plan = decision_engine.build_brokerage_execution_plan(
         {"ticker": "TEST", "stake": 10, "american_odds": -110, "decision_id": "d1", "provider": "demo"}
@@ -103,8 +103,8 @@ def test_execution_blocker_modules_import_safely_and_remain_disabled(monkeypatch
     for relpath in [
         'src/automation_scheduler_legacy/paper_trade_ledger.py',
         'src/automation_scheduler_legacy/paper_decision_ledger.py',
-        "bet_decision_engine.py",
-        "bet_log.py",
+        "src/services/bet_decision_engine.py",
+        "src/services/bet_log.py",
         "src/brokerage/readiness.py",
     ]:
         assert (ROOT / relpath).exists()

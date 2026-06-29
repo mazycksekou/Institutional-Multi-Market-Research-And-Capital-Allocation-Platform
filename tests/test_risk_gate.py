@@ -1,5 +1,5 @@
 import unittest
-from model_governance.risk_gate import evaluate_risk_gate
+from src.analytics.model_governance.risk_gate import evaluate_risk_gate
 
 class TestRiskGate(unittest.TestCase):
     def test_blocks(self):

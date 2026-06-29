@@ -6,7 +6,7 @@ import math
 import re
 from typing import Any, Optional
 
-from quant_engine import (
+from src.core.quant_engine import (
     american_to_decimal,
     edge_percentage,
     expected_value_per_100,

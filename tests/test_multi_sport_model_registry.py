@@ -1,7 +1,7 @@
 import asyncio
 import unittest
 
-import multi_sport_model_registry as registry
+import src.market_intelligence.multi_sport_model_registry as registry
 from tests.support.action_imports import action_get_sports_model_registry, app
 
 

@@ -1,5 +1,5 @@
 import unittest
-from model_governance.review_queue_gate import evaluate_review_queue_gate
+from src.analytics.model_governance.review_queue_gate import evaluate_review_queue_gate
 
 class TestReviewQueueGate(unittest.TestCase):
     def test_blocks_low_tier(self):

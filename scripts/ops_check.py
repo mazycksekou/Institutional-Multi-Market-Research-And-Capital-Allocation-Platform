@@ -12,6 +12,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from src.services.ops_workflow import DEFAULT_APP_BASE_URL, run_ops_check  # noqa: E402
+from src.services.repo_inventory import build_import_scan_report, build_inventory_report, tracked_python_files  # noqa: E402
 
 
 def _line(label: str, value: Any) -> str:
@@ -51,6 +52,32 @@ def _text_summary(report: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def _load_path_list(value: str | None) -> list[Path]:
+    if not value:
+        return []
+    candidate = Path(value)
+    if candidate.exists() and candidate.is_file():
+        resolved: list[Path] = []
+        for raw in candidate.read_text(encoding="utf-8").splitlines():
+            text = raw.strip()
+            if not text:
+                continue
+            path = Path(text)
+            resolved.append(path if path.is_absolute() else ROOT / path)
+        return resolved
+    path = Path(value)
+    return [path if path.is_absolute() else ROOT / path]
+
+
+def _write_json_report(output: str, report: dict[str, Any]) -> Path:
+    path = Path(output)
+    if not path.is_absolute():
+        path = ROOT / path
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(report, indent=2, sort_keys=True), encoding="utf-8")
+    return path
+
+
 def _exit_code(report: dict[str, Any], fail_on_critical: bool) -> int:
     blocker = report.get("blocker_classification") or {}
     primary = blocker.get("primary")
@@ -63,9 +90,11 @@ def _exit_code(report: dict[str, Any], fail_on_critical: bool) -> int:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Run unified betting-stock-api ops checks.")
-    parser.add_argument("--mode", choices=["local", "render", "cron", "calibration", "datasources", "safety", "outcome-reconcile", "full"], default="local")
+    parser.add_argument("--mode", choices=["local", "render", "cron", "calibration", "datasources", "safety", "outcome-reconcile", "full", "inventory", "import-scan"], default="local")
     parser.add_argument("--base-url", default=None)
-    parser.add_argument("--output", choices=["json", "text"], default="text")
+    parser.add_argument("--output", default="text")
+    parser.add_argument("--input", default=None)
+    parser.add_argument("--paths", default=None)
     parser.add_argument("--write-report", action="store_true")
     parser.add_argument("--timeout", type=int, default=20)
     parser.add_argument("--skip-network", action="store_true")
@@ -78,6 +107,28 @@ def main(argv: list[str] | None = None) -> int:
     base_url = args.base_url
     if not base_url and args.use_default_render_url and args.mode in {"render", "full"}:
         base_url = DEFAULT_APP_BASE_URL
+
+    if args.mode in {"inventory", "import-scan"}:
+        input_paths = _load_path_list(args.input or args.paths)
+        if not input_paths:
+            input_paths = [path for path in tracked_python_files(ROOT) if not path.relative_to(ROOT).as_posix().startswith("src/")]
+        if args.mode == "inventory":
+            report = build_inventory_report(input_paths, root=ROOT)
+        else:
+            report = build_import_scan_report(input_paths, root=ROOT)
+        if args.output in {"json", "text"}:
+            if args.output == "json":
+                print(json.dumps(report, indent=2, sort_keys=True))
+            else:
+                print(f"mode: {args.mode}")
+                print(f"input_count: {report.get('input_count', 0)}")
+                print(f"file_count: {len(report.get('files') or [])}")
+                for row in (report.get("files") or [])[:10]:
+                    print(f"- {row.get('path')}: runtime={row.get('runtime_importer_count', row.get('runtime_importers', []))} test={row.get('test_importer_count', row.get('test_importers', []))}")
+        else:
+            written = _write_json_report(args.output, report)
+            print(str(written))
+        return 0
 
     report = run_ops_check(
         mode=args.mode,

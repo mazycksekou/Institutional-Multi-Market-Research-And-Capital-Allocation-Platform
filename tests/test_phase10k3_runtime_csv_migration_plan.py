@@ -77,7 +77,7 @@ def test_runtime_and_bets_csv_owners_are_source_backed_and_documented() -> None:
     data_paths = (REPO_ROOT / "src" / "automation_scheduler_legacy" / "data_paths.py").read_text(encoding="utf-8")
     csv_service = (REPO_ROOT / "src" / "services" / "bet_csv_service.py").read_text(encoding="utf-8")
     csv_routes = (REPO_ROOT / "src" / "api" / "bet_csv_routes.py").read_text(encoding="utf-8")
-    bet_log = (REPO_ROOT / "bet_log.py").read_text(encoding="utf-8")
+    bet_log = (REPO_ROOT / "src" / "services" / "bet_log.py").read_text(encoding="utf-8")
 
     assert "def get_runtime_data_path" in data_paths
     assert "AUTOMATION_DATA_DIR" in data_paths

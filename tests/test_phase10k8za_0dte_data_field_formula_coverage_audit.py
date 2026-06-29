@@ -13,7 +13,7 @@ APP = ROOT / "streamlit_app.py"
 LEGACY_PHASE_TEST = ROOT / "tests" / "test_phase10k6k_controlled_dashboard_shell_review.py"
 FINAL_FREEZE_REPORT = ROOT / "PHASE10K8Z_FINAL_CONTROLLED_PREDICTION_TESTING_FREEZE.md"
 TEMPLATE_SOURCE = ROOT / "src" / "automation_scheduler_legacy" / "zero_dte_fixture_template.py"
-QUANT_ENGINE = ROOT / "quant_engine.py"
+QUANT_ENGINE = ROOT / "src" / "core" / "quant_engine.py"
 
 
 def read_text(path: Path) -> str:

@@ -33,11 +33,11 @@ def test_root_engine_wrappers_import_and_match_canonical(monkeypatch: pytest.Mon
     pricing = importlib.import_module("src.core.pricing")
     probability = importlib.import_module("src.core.probability")
     risk = importlib.import_module("src.core.risk")
-    quant_engine = importlib.import_module("quant_engine")
-    market_pricing = importlib.import_module("market_pricing")
-    model_probability = importlib.import_module("model_probability")
-    risk_engine = importlib.import_module("risk_engine")
-    bet_decision_engine = importlib.import_module("bet_decision_engine")
+    quant_engine = importlib.import_module("src.core.quant_engine")
+    market_pricing = importlib.import_module("src.core.market_pricing")
+    model_probability = importlib.import_module("src.core.model_probability")
+    risk_engine = importlib.import_module("src.core.risk_engine")
+    bet_decision_engine = importlib.import_module("src.services.bet_decision_engine")
 
     assert quant_engine.american_to_decimal(-110) == pricing.american_to_decimal(-110)
     assert market_pricing.american_to_decimal(-110) == pricing.american_to_decimal(-110)
@@ -48,11 +48,11 @@ def test_root_engine_wrappers_import_and_match_canonical(monkeypatch: pytest.Mon
 
 def test_root_engine_files_have_no_live_dependencies() -> None:
     for relpath in [
-        "quant_engine.py",
-        "market_pricing.py",
-        "model_probability.py",
-        "risk_engine.py",
-        "bet_decision_engine.py",
+        "src/core/quant_engine.py",
+        "src/core/market_pricing.py",
+        "src/core/model_probability.py",
+        "src/core/risk_engine.py",
+        "src/services/bet_decision_engine.py",
     ]:
         text = (ROOT / relpath).read_text(encoding="utf-8").lower()
         for forbidden in ["requests", "httpx", "yfinance", "selenium", "playwright", "openai", "anthropic", "alpaca", "robinhood", "ib_insync", "ccxt"]:

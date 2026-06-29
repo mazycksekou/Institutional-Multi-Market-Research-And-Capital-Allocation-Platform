@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from typing import Any
 
-import multi_sport_model_registry
-from full_board_engine import build_full_board_preview
-from logbook_engine import build_logbook_ready_row
+import src.market_intelligence.multi_sport_model_registry as multi_sport_model_registry
+from src.services.full_board_engine import build_full_board_preview
+from src.services.logbook_engine import build_logbook_ready_row
 from src.services.enrichment_service import EnrichmentService
 from src.core.entity_resolver import normalize_ticket_fields
 

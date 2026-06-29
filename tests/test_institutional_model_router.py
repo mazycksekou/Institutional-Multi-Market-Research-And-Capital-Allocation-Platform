@@ -3,8 +3,8 @@ from tempfile import TemporaryDirectory
 
 from src.services.streamlit_dashboard_facade import build_review_item
 from src.services.streamlit_dashboard_facade import get_default_scheduler_config
-from math_models.institutional import ensure_no_banned_language
-from math_models.institutional.model_router import get_model_library, institutional_review_fields, route_models
+from src.analytics.institutional import ensure_no_banned_language
+from src.analytics.institutional.model_router import get_model_library, institutional_review_fields, route_models
 
 
 class TestInstitutionalModelRouter(unittest.TestCase):
