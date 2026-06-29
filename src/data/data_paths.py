@@ -9,7 +9,7 @@ AUTOMATION_DATA_DIR_ENV = "AUTOMATION_DATA_DIR"
 
 
 def _repo_root() -> Path:
-    return Path(__file__).resolve().parents[1]
+    return Path(__file__).resolve().parents[2]
 
 
 def _is_render_runtime() -> bool:

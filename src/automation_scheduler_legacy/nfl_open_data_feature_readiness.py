@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
-from .data_paths import get_data_sources_dir, get_storage_health, resolve_base_data_dir
+from src.data.data_paths import get_data_sources_dir, get_storage_health, resolve_base_data_dir
 from .nfl_open_data_feature_builders import (
     build_expanded_feature_readiness,
     build_nfl_feature_builder_report,
@@ -25,7 +25,7 @@ from .nfl_open_data_feature_builders import (
 from .nfl_open_data_field_catalog import build_nfl_open_data_field_catalog
 from .nfl_historical_pattern_lab import build_validation_guard_summary
 from .open_sports_history_sources import SAFETY_FIELDS
-from .scheduler_config import sanitize_filename, utc_now_iso
+from src.services.scheduler_config import sanitize_filename, utc_now_iso
 
 
 NFL_FEATURE_READINESS_SCHEMA_VERSION = "nfl_open_data_feature_readiness_v1"

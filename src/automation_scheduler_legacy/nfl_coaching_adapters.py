@@ -24,7 +24,7 @@ from pathlib import Path
 from typing import Any, Callable
 from uuid import uuid4
 
-from .data_paths import get_data_sources_dir, get_storage_health, resolve_base_data_dir
+from src.data.data_paths import get_data_sources_dir, get_storage_health, resolve_base_data_dir
 from .nfl_coaching_sources import (
     COACHING_TARGET_FIELDS,
     MIN_CRAWL_DELAY_SECONDS,
@@ -33,7 +33,7 @@ from .nfl_coaching_sources import (
     nfl_coaching_sources,
 )
 from .open_sports_history_sources import SAFETY_FIELDS
-from .scheduler_config import sanitize_filename, utc_now_iso
+from src.services.scheduler_config import sanitize_filename, utc_now_iso
 
 
 NFL_COACHING_ADAPTER_SCHEMA_VERSION = "nfl_coaching_adapter_v2"

@@ -5,7 +5,7 @@ import secrets
 from typing import Any
 
 from .calibration_collector import run_collector_cycle
-from .data_paths import get_storage_health, resolve_base_data_dir
+from src.data.data_paths import get_storage_health, resolve_base_data_dir
 
 
 CRON_TOKEN_ENV = "COLLECTOR_CRON_TOKEN"

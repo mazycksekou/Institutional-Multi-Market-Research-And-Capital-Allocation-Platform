@@ -16,7 +16,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
-from .data_paths import AUTOMATION_DATA_DIR_ENV, get_automation_data_dir, get_collector_scheduler_dir, get_runtime_data_path, get_storage_health
+from src.data.data_paths import AUTOMATION_DATA_DIR_ENV, get_automation_data_dir, get_collector_scheduler_dir, get_runtime_data_path, get_storage_health
 
 
 DEFAULT_APP_BASE_URL = "https://betting-stock-api-code-integration.onrender.com"

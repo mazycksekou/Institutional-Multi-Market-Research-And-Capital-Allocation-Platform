@@ -4,7 +4,7 @@ import math
 from typing import Any
 
 from .micro_outcome_calibration import settle_outcome_window, supports_outcome_window
-from .scheduler_config import utc_now_iso
+from src.services.scheduler_config import utc_now_iso
 
 
 NORMAL_OUTCOME_WINDOWS = ("5m", "15m", "30m", "60m", "end_of_day")

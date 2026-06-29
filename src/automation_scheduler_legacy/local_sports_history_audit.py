@@ -7,8 +7,8 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
-from .data_paths import get_data_sources_dir, get_storage_health, resolve_base_data_dir
-from .scheduler_config import sanitize_filename, utc_now_iso
+from src.data.data_paths import get_data_sources_dir, get_storage_health, resolve_base_data_dir
+from src.services.scheduler_config import sanitize_filename, utc_now_iso
 
 
 LOCAL_SPORTS_HISTORY_SCHEMA_VERSION = "local_sports_history_audit_v1"

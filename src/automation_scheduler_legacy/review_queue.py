@@ -7,7 +7,7 @@ from typing import Any
 from .cadence_controller import choose_next_check_seconds
 from .market_clock import apply_score_decay, is_market_closed, is_stale, seconds_since
 from .opportunity_scoring import classify_opportunity
-from .scheduler_config import SCHEMA_VERSION, redact_secrets, safe_run_id, sanitize_filename, utc_now_iso
+from src.services.scheduler_config import SCHEMA_VERSION, redact_secrets, safe_run_id, sanitize_filename, utc_now_iso
 
 
 def _queue_path(config: dict[str, Any]) -> Path:

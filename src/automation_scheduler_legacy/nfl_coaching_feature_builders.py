@@ -17,11 +17,11 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
-from .data_paths import get_data_sources_dir, get_storage_health, resolve_base_data_dir
+from src.data.data_paths import get_data_sources_dir, get_storage_health, resolve_base_data_dir
 from .nfl_coaching_adapters import build_nfl_coaching_ingestion_report, load_validated_coaching_rows
 from .nfl_coaching_sources import COACHING_TARGET_FIELDS, build_nfl_coaching_source_report
 from .open_sports_history_sources import SAFETY_FIELDS
-from .scheduler_config import sanitize_filename, utc_now_iso
+from src.services.scheduler_config import sanitize_filename, utc_now_iso
 
 
 COACHING_READINESS_FLAG_DEFAULTS = {

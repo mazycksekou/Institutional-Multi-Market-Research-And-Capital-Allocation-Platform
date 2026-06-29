@@ -79,7 +79,7 @@ _LEGACY_MODULES: tuple[str, ...] = (
     "src.automation_scheduler_legacy.strategy_router",
     "src.automation_scheduler_legacy.strategy_maturity",
     "src.automation_scheduler_legacy.source_event_link_resolver",
-    "src.automation_scheduler_legacy.scheduler_config",
+    "src.services.scheduler_config",
     "src.automation_scheduler_legacy.security_event_types",
     "src.automation_scheduler_legacy.security_policy",
     "src.automation_scheduler_legacy.streamlit_dashboard_data",

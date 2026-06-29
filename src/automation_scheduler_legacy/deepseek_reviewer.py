@@ -6,7 +6,7 @@ from typing import Any
 
 import httpx
 
-from .scheduler_config import utc_now_iso
+from src.services.scheduler_config import utc_now_iso
 
 FORBIDDEN_RECOMMENDED_ACTIONS = {
     "place_bet",

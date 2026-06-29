@@ -7,8 +7,8 @@ from typing import Any
 
 from src.brokerage.ledger import record_ledger_event
 
-from .data_paths import get_paper_ledger_dir
-from .scheduler_config import SCHEMA_VERSION, redact_secrets as _redact_secrets, utc_now_iso
+from src.data.data_paths import get_paper_ledger_dir
+from src.services.scheduler_config import SCHEMA_VERSION, redact_secrets as _redact_secrets, utc_now_iso
 
 
 LEDGER_SCHEMA_VERSION = f"{SCHEMA_VERSION}.paper_ledger.v1"

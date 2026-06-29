@@ -15,9 +15,11 @@ IMPORT_SCAN_PATH = ROOT / "PROVIDER_REGISTRY_IMPORT_SCAN_AFTER_10K8ZGA.md"
 MIGRATION_MAP_PATH = ROOT / "PROVIDER_REGISTRY_MIGRATION_MAP_AFTER_10K8ZGA.md"
 DELETE_READINESS_PATH = ROOT / "PROVIDER_REGISTRY_DELETE_READINESS_AFTER_10K8ZGA.md"
 
+pytestmark = pytest.mark.smoke
+
 RUNTIME_FILES = [
     ROOT / "src" / "automation_scheduler_legacy" / "__init__.py",
-    ROOT / "src" / "automation_scheduler_legacy" / "scheduler_config.py",
+    ROOT / "src" / "services" / "scheduler_config.py",
     ROOT / "src" / "automation_scheduler_legacy" / "cadence_controller.py",
     ROOT / "src" / "automation_scheduler_legacy" / "kalshi_readonly_readiness.py",
 ]
@@ -102,7 +104,7 @@ def test_phase10k8zga_runtime_dependency_redirect(monkeypatch, tmp_path):
     monkeypatch.setattr(os, "getenv", fail_getenv)
 
     canonical_registry = importlib.import_module("src.providers.registry")
-    scheduler_config = importlib.import_module('src.automation_scheduler_legacy.scheduler_config')
+    scheduler_config = importlib.import_module('src.services.scheduler_config')
     readiness = importlib.import_module('src.automation_scheduler_legacy.kalshi_readonly_readiness')
     cadence_controller = importlib.import_module('src.automation_scheduler_legacy.cadence_controller')
     scheduler_pkg = importlib.import_module('src.automation_scheduler_legacy')

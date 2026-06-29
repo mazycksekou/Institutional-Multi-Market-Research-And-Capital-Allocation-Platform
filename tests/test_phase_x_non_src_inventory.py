@@ -3,12 +3,16 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from src.services.repo_inventory import tracked_python_files
 
 
 ROOT = Path(__file__).resolve().parents[1]
 INVENTORY = ROOT / "inventories" / "inventory_PHASE_X.json"
 IMPORT_SCAN = ROOT / "inventories" / "import_scan_PHASE_X.json"
+
+pytestmark = pytest.mark.smoke
 
 
 def _read_json(path: Path) -> dict:

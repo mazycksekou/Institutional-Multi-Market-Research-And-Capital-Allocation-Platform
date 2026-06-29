@@ -6,10 +6,10 @@ from typing import Any
 
 from src.analytics.model_governance.model_inventory import inventory_counts
 from .clv_tracker import summarize_clv_by_model
-from .data_paths import get_storage_health, resolve_base_data_dir
+from src.data.data_paths import get_storage_health, resolve_base_data_dir
 from .paper_trade_ledger import load_paper_ledger
 from .review_queue import load_review_queue_state
-from .scheduler_config import SCHEMA_VERSION, utc_now_iso
+from src.services.scheduler_config import SCHEMA_VERSION, utc_now_iso
 
 
 def get_system_health(config: dict[str, Any]) -> dict[str, Any]:

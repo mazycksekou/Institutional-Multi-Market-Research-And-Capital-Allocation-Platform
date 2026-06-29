@@ -8,13 +8,13 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
-from .data_paths import get_data_sources_dir, get_storage_health, resolve_base_data_dir
+from src.data.data_paths import get_data_sources_dir, get_storage_health, resolve_base_data_dir
 from .open_sports_history_import import (
     build_open_sports_history_import_report,
     write_open_sports_history_import_report,
 )
 from .open_sports_history_sources import SAFETY_FIELDS, source_by_id
-from .scheduler_config import sanitize_filename, utc_now_iso
+from src.services.scheduler_config import sanitize_filename, utc_now_iso
 
 
 OPEN_SPORTS_HISTORY_BACKFILL_SCHEMA_VERSION = "open_sports_history_backfill_v1"

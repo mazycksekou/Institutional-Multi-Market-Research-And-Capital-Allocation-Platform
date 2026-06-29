@@ -13,7 +13,7 @@ from .arbitrage_detector import detect_arbitrage
 from .alert_engine import generate_alert_candidates
 from .backtesting_engine import run_backtesting_scaffold
 from .calibration import build_calibration_report
-from .data_paths import resolve_base_data_dir
+from src.data.data_paths import resolve_base_data_dir
 from .cross_book_line_comparator import group_cross_book_markets
 from .ev_line_shopper import shop_ev_lines
 from .kalshi_monitor import monitor_kalshi_market
@@ -24,7 +24,7 @@ from src.providers.base import ProviderAdapterBase
 from src.providers.health import summarize_provider_health, write_provider_health_snapshot
 from .market_structure import kalshi_market_structure_signals
 from .kalshi_scoring import KALSHI_LIQUIDITY_POLICY_VERSION, evaluate_kalshi_liquidity_policy, score_kalshi_candidate
-from .scheduler_config import get_default_scheduler_config, ensure_runtime_directories
+from src.services.scheduler_config import get_default_scheduler_config, ensure_runtime_directories
 from .snapshot_store import save_snapshot
 from .snapshot_store import SnapshotStore
 from .report_writer import write_report

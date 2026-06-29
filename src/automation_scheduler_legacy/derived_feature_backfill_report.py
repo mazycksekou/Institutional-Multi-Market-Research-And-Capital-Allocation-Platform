@@ -8,12 +8,12 @@ from typing import Any
 from uuid import uuid4
 
 from .data_availability_tiers import resolve_profile_key
-from .data_paths import get_data_sources_dir, get_storage_health, resolve_base_data_dir
+from src.data.data_paths import get_data_sources_dir, get_storage_health, resolve_base_data_dir
 from .nfl_open_data_feature_builders import nfl_feature_availability_flags
 from .nfl_coaching_feature_builders import COACHING_READINESS_FLAG_DEFAULTS, coaching_readiness_flags
 from .nfl_cutoff_week_features import cutoff_feature_availability_summary
 from .nfl_open_data_source_exhaustion import build_nfl_source_exhaustion_report
-from .scheduler_config import sanitize_filename, utc_now_iso
+from src.services.scheduler_config import sanitize_filename, utc_now_iso
 
 
 def nfl_exhaustion_coaching_cutoff_flags(base_data_dir: str | Path | None = None) -> dict[str, Any]:

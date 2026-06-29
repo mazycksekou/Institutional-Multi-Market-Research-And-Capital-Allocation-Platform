@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from .scheduler_config import clamp
+from src.services.scheduler_config import clamp
 
 _SCORE_KEYS = (
     "edge_score",

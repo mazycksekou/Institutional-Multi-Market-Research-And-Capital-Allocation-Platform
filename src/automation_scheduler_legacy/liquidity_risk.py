@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from .scheduler_config import clamp
+from src.services.scheduler_config import clamp
 
 
 def liquidity_score(*, limit_estimate: Any, spread_percent: Any = 0, book_count: Any = 1) -> float:

@@ -2,7 +2,7 @@
 
 The current non-src cleanup leaves a small set of compatibility and entrypoint blockers.
 
-- Delete-ready files: 540
+- Delete-ready files: 541
 - Non-delete-ready files: 10
 
 ## Blocked Files

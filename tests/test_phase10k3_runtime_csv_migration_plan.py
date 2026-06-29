@@ -4,9 +4,13 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 REPORT_PATH = REPO_ROOT / "PHASE10K3_RUNTIME_CSV_MIGRATION_PLAN.md"
+
+pytestmark = pytest.mark.smoke
 
 
 def _read_report() -> str:
@@ -74,7 +78,7 @@ def test_streamlit_main_menu_remains_exactly_protected() -> None:
 
 def test_runtime_and_bets_csv_owners_are_source_backed_and_documented() -> None:
     report = _read_report()
-    data_paths = (REPO_ROOT / "src" / "automation_scheduler_legacy" / "data_paths.py").read_text(encoding="utf-8")
+    data_paths = (REPO_ROOT / "src" / "data" / "data_paths.py").read_text(encoding="utf-8")
     csv_service = (REPO_ROOT / "src" / "services" / "bet_csv_service.py").read_text(encoding="utf-8")
     csv_routes = (REPO_ROOT / "src" / "api" / "bet_csv_routes.py").read_text(encoding="utf-8")
     bet_log = (REPO_ROOT / "src" / "services" / "bet_log.py").read_text(encoding="utf-8")

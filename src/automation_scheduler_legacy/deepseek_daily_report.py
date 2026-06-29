@@ -4,13 +4,13 @@ import json
 from pathlib import Path
 from typing import Any, Mapping
 
-from .data_paths import get_storage_health, resolve_base_data_dir
+from src.data.data_paths import get_storage_health, resolve_base_data_dir
 from .deepseek_response_validator import (
     compact_redacted_for_deepseek,
     default_daily_report,
     profit_lab_safety_flags,
 )
-from .scheduler_config import SCHEMA_VERSION, sanitize_filename, utc_now_iso
+from src.services.scheduler_config import SCHEMA_VERSION, sanitize_filename, utc_now_iso
 
 
 DAILY_REPORT_SCHEMA_VERSION = f"{SCHEMA_VERSION}.deepseek_profit_lab.daily_report.v1"

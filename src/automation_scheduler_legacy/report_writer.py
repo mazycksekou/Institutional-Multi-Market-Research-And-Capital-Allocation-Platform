@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from .scheduler_config import ROI_TARGET_DISCLAIMER, SCHEMA_VERSION, redact_secrets, sanitize_filename, utc_now_iso
+from src.services.scheduler_config import ROI_TARGET_DISCLAIMER, SCHEMA_VERSION, redact_secrets, sanitize_filename, utc_now_iso
 
 
 def write_report(config: dict[str, Any], *, report_name: str, payload: dict[str, Any]) -> dict[str, Any]:

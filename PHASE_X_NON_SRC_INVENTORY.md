@@ -1,7 +1,7 @@
 # PHASE X Non-Src Inventory
 
-- Total tracked non-src Python files: 550
-- Delete-ready after proof: 540
+- Total tracked non-src Python files: 551
+- Delete-ready after proof: 541
 - Remaining blockers: 10
 
 ## Non-Delete-Ready Files

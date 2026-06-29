@@ -3,7 +3,7 @@ from __future__ import annotations
 import math
 from typing import Any
 
-from .scheduler_config import utc_now_iso
+from src.services.scheduler_config import utc_now_iso
 
 
 FEATURE_VECTOR_VERSION = "cross_asset_manifold_features_v1"

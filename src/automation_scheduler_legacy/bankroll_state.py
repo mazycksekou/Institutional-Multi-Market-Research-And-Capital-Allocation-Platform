@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
-from .data_paths import get_runtime_data_path
+from src.data.data_paths import get_runtime_data_path
 
 SCHEMA_VERSION = "bankroll_state_v1"
 

@@ -8,7 +8,7 @@ import httpx
 
 from .ai_provider_security import evaluate_ai_provider
 from .calibration import build_calibration_report
-from .data_paths import get_storage_health, resolve_base_data_dir
+from src.data.data_paths import get_storage_health, resolve_base_data_dir
 from .deepseek_daily_report import build_local_daily_report, write_daily_report
 from .deepseek_disagreement_queue import (
     append_disagreement_record,
@@ -30,7 +30,7 @@ from src.services.execution_service import compact_trap_report, load_trap_report
 from .outcome_store import load_outcome_state, summarize_outcomes
 from src.providers.health import summarize_provider_health
 from .review_queue import load_review_queue_state, summarize_review_items
-from .scheduler_config import get_default_scheduler_config, utc_now_iso
+from src.services.scheduler_config import get_default_scheduler_config, utc_now_iso
 from .security_readiness_report import build_security_readiness_report
 
 

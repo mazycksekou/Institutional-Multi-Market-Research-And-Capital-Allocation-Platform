@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
-from .data_paths import get_data_sources_dir, get_storage_health, resolve_base_data_dir
+from src.data.data_paths import get_data_sources_dir, get_storage_health, resolve_base_data_dir
 from .nfl_coaching_feature_builders import coaching_readiness_flags
 from .nfl_cutoff_week_features import cutoff_feature_availability_summary
 from .nfl_open_data_feature_builders import (
@@ -19,7 +19,7 @@ from .nfl_open_data_feature_builders import (
 )
 from .nfl_open_data_source_exhaustion import build_nfl_source_exhaustion_report
 from .open_sports_history_sources import SAFETY_FIELDS
-from .scheduler_config import sanitize_filename, utc_now_iso
+from src.services.scheduler_config import sanitize_filename, utc_now_iso
 
 
 NFL_PATTERN_LAB_SCHEMA_VERSION = "nfl_historical_pattern_lab_v2"

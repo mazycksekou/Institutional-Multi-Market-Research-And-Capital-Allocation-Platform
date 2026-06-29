@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Mapping
 
-from .data_paths import get_storage_health
+from src.data.data_paths import get_storage_health
 from .owner_approval_gate import evaluate_owner_approval
 from .provider_allowlist import classify_provider
 from .risk_limit_guard import evaluate_risk_limits

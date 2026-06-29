@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
-from .data_paths import get_storage_health, resolve_base_data_dir
+from src.data.data_paths import get_storage_health, resolve_base_data_dir
 from .data_source_registry import SPORT_REQUIRED_INPUTS, build_registry
 from .source_quality_scoring import score_source
 

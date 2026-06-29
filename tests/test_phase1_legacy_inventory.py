@@ -5,6 +5,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 
 ROOT = Path(__file__).resolve().parents[1]
 LEGACY_ROOT = ROOT / "src" / "automation_scheduler_legacy"
@@ -14,6 +16,8 @@ DOCS = [
     ROOT / "PHASE1_DELETE_LIST.md",
     ROOT / "PHASE1_IMPORT_GRAPH.md",
 ]
+
+pytestmark = pytest.mark.smoke
 
 
 def _read_json(path: Path) -> dict:

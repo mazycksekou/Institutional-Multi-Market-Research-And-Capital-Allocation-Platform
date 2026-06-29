@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+import hashlib
 import re
 import uuid
-import hashlib
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+from src.data.data_paths import resolve_base_data_dir
+from src.providers.registry import get_provider_registry
+
 
 SCHEMA_VERSION = "automation_scheduler.v1"
 ROI_TARGET_DISCLAIMER = "ROI target is a filter target, not a guarantee."
@@ -59,9 +63,6 @@ def ensure_runtime_directories(config: dict[str, Any]) -> dict[str, str]:
 
 
 def get_default_scheduler_config(base_data_dir: str | None = None) -> dict[str, Any]:
-    from .data_paths import resolve_base_data_dir
-    from src.providers.registry import get_provider_registry
-
     root = resolve_base_data_dir(base_data_dir)
     cfg = {
         "schema_version": SCHEMA_VERSION,

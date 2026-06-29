@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from .scheduler_config import safe_run_id, utc_now_iso
+from src.services.scheduler_config import safe_run_id, utc_now_iso
 
 
 HIGH_PRIORITY_PATTERNS = {

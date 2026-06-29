@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from src.providers.validation import validate_provider_payload
-from .scheduler_config import utc_now_iso
+from src.services.scheduler_config import utc_now_iso
 
 REQUIRED_FIELDS = ["event_id", "player_name", "team", "market", "selection", "line", "odds", "timestamp"]
 OPTIONAL_FIELDS = ["book"]

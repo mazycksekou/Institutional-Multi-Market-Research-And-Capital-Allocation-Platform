@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from src.providers.validation import validate_provider_payload
-from .scheduler_config import utc_now_iso
+from src.services.scheduler_config import utc_now_iso
 
 REQUIRED_FIELDS = ["source", "title", "event_type", "affected_entities", "severity_score", "published_at", "timestamp"]
 OPTIONAL_FIELDS = []

@@ -4,7 +4,7 @@ from collections import Counter
 from typing import Any
 
 from .data_intelligence_registry import build_data_intelligence_registry
-from .data_paths import get_storage_health, resolve_base_data_dir
+from src.data.data_paths import get_storage_health, resolve_base_data_dir
 from .manifold_feature_builder import infer_asset_type
 from .outcome_store import load_outcome_records
 from .security_readiness_report import build_security_readiness_report

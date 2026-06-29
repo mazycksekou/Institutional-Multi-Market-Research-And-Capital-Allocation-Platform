@@ -6,11 +6,11 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
-from .data_paths import get_data_sources_dir, get_storage_health, resolve_base_data_dir
+from src.data.data_paths import get_data_sources_dir, get_storage_health, resolve_base_data_dir
 from .nfl_open_data_adapters import FIELD_HINTS, adapter_by_id
 from .nfl_open_data_sources import NFL_MODULE, nfl_open_data_sources
 from .open_sports_history_sources import SAFETY_FIELDS
-from .scheduler_config import sanitize_filename, utc_now_iso
+from src.services.scheduler_config import sanitize_filename, utc_now_iso
 
 
 NFL_OPEN_DATA_FIELD_CATALOG_SCHEMA_VERSION = "nfl_open_data_field_catalog_v1"
