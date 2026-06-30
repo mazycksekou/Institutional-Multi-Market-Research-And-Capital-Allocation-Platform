@@ -2,9 +2,12 @@ from __future__ import annotations
 
 from typing import Any
 
-from .ai_provider_security import get_ai_provider_config
 from src.data.data_paths import get_storage_health
+from src.security.ai_provider_security import get_ai_provider_config
 from src.security.policy import ALLOWED_AI_PROVIDERS, DEFAULT_AI_PROVIDER, kill_switch_state, locked_safety_flags
+
+
+__all__ = ["build_security_readiness_report"]
 
 
 def build_security_readiness_report(*, base_data_dir: str | None = None) -> dict[str, Any]:
@@ -45,3 +48,4 @@ def build_security_readiness_report(*, base_data_dir: str | None = None) -> dict
         "signature_exposed": False,
         "redaction_applied": True,
     }
+

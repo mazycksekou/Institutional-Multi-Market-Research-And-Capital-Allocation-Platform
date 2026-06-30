@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from src.providers.policy.allowlist import classify_provider
-from src.research.maturity import locked_safety_flags
+from src.security.policy import locked_safety_flags
 
 
 AUTOMATION_DATA_DIR_ENV = "AUTOMATION_DATA_DIR"
@@ -245,9 +245,9 @@ def evaluate_owner_approval(
     used_nonces: Sequence[str] | None = None,
     actor_type: str = "system",
 ) -> dict[str, Any]:
-    from src.automation_scheduler_legacy.owner_approval_gate import evaluate_owner_approval as _legacy_evaluate_owner_approval
+    from src.security.owner_approval_gate import evaluate_owner_approval as _canonical_evaluate_owner_approval
 
-    return _legacy_evaluate_owner_approval(
+    return _canonical_evaluate_owner_approval(
         dict(owner_approval or {}),
         requested_scope=dict(requested_scope or {}),
         persist_audit=persist_audit,
@@ -265,9 +265,9 @@ def evaluate_risk_limits(
     persist_audit: bool = False,
     base_data_dir: str | None = None,
 ) -> dict[str, Any]:
-    from src.automation_scheduler_legacy.risk_limit_guard import evaluate_risk_limits as _legacy_evaluate_risk_limits
+    from src.security.risk_limit_guard import evaluate_risk_limits as _canonical_evaluate_risk_limits
 
-    return _legacy_evaluate_risk_limits(
+    return _canonical_evaluate_risk_limits(
         dict(request or {}),
         risk_limits=dict(risk_limits or {}),
         persist_audit=persist_audit,

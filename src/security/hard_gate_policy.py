@@ -3,11 +3,12 @@ from __future__ import annotations
 from typing import Any, Mapping
 
 from src.data.data_paths import get_storage_health
+from src.providers.policy.allowlist import classify_provider
+
 from .owner_approval_gate import evaluate_owner_approval
-from .provider_allowlist import classify_provider
+from .policy import kill_switch_state, locked_safety_flags
 from .risk_limit_guard import evaluate_risk_limits
-from src.security.secret_safety import redact_sensitive, secret_safety_fields
-from src.security.policy import kill_switch_state, locked_safety_flags
+from .secret_safety import redact_sensitive, secret_safety_fields
 
 
 HARD_GATE_NAMES = (
@@ -31,6 +32,13 @@ HARD_GATE_NAMES = (
 
 VALID_EXECUTION_MODES = {"sandbox_owner_approved", "live_owner_approved"}
 ANALYSIS_PROVIDER_CLASSES = {"deepseek", "openai", "internal_deterministic"}
+
+__all__ = [
+    "HARD_GATE_NAMES",
+    "VALID_EXECUTION_MODES",
+    "ANALYSIS_PROVIDER_CLASSES",
+    "evaluate_hard_gates",
+]
 
 
 def _truthy(value: Any) -> bool:
@@ -131,3 +139,4 @@ def evaluate_hard_gates(
         **secret,
         **locked_safety_flags(),
     }
+

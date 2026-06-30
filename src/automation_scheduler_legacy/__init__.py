@@ -120,43 +120,10 @@ except ModuleNotFoundError:
             "actual_trades_submitted": 0,
         }
 
-try:
-    from .security_readiness_report import build_security_readiness_report
-except ModuleNotFoundError:
-    def build_security_readiness_report(*, base_data_dir: str | None = None):
-        analysis_flag_key = "open" + "ai_enabled_for_analysis"
-        secondary_provider = "op" + "enai"
-        return {
-            "ok": True,
-            "status": "security_readiness",
-            "ai_allowed_providers": ["deepseek", secondary_provider],
-            "default_ai_provider": "deepseek",
-            "deepseek_enabled_for_analysis": False,
-            "forbidden_provider_policy": "deny_by_default",
-            "kill_switches_active": True,
-            "kill_switches": {},
-            "audit_ledger_enabled": False,
-            "security_posture": "locked_read_only",
-            "ai_execution_authority": "blocked",
-            "provider_write_firewall": "locked",
-            "owner_approval_scaffold": "enabled_fail_closed",
-            "risk_limit_guard": "enabled_fail_closed",
-            "storage": {"write_ok": False},
-            "allowed_ai_provider_config_names": [],
-            "provider_write": False,
-            "execution_allowed": False,
-            "live_execution_enabled": False,
-            "auto_execution": False,
-            "auto_execution_enabled": False,
-            "human_approval_required": True,
-            "owner_approval_required": True,
-            "secrets_detected": False,
-            "raw_payload_exposed": False,
-            "auth_header_exposed": False,
-            "signature_exposed": False,
-            "redaction_applied": True,
-            analysis_flag_key: False,
-        }
+def build_security_readiness_report(*, base_data_dir: str | None = None):
+    from src.services.security_readiness import build_security_readiness_report as _build_security_readiness_report
+
+    return _build_security_readiness_report(base_data_dir=base_data_dir)
 
 
 def _data_dir(base_data_dir: str | None = None) -> str:
@@ -829,7 +796,7 @@ def evaluate_strategy_execution_gate(
     execution_mode: str | None = None,
     base_data_dir: str | None = None,
 ):
-    from .hard_gate_policy import evaluate_hard_gates
+    from src.security.hard_gate_policy import evaluate_hard_gates
 
     return evaluate_hard_gates(
         candidate or {},
@@ -977,7 +944,7 @@ def evaluate_ai_analyst_provider(
     base_data_dir: str | None = None,
     persist_audit: bool = True,
 ):
-    from .ai_provider_security import evaluate_ai_provider
+    from src.security.ai_provider_security import evaluate_ai_provider
 
     return evaluate_ai_provider(provider, provider_type=provider_type, base_data_dir=_data_dir(base_data_dir), persist_audit=persist_audit)
 
@@ -997,7 +964,7 @@ def evaluate_owner_approval_gate(
     base_data_dir: str | None = None,
     persist_audit: bool = True,
 ):
-    from .owner_approval_gate import evaluate_owner_approval
+    from src.security.owner_approval_gate import evaluate_owner_approval
 
     return evaluate_owner_approval(
         approval,
