@@ -39,7 +39,6 @@ DELETED_WRAPPERS = [
 ]
 
 LEGACY_WRAPPERS = [
-    'src.automation_scheduler_legacy.provider_allowlist',
     'src.automation_scheduler_legacy.kalshi_adapter_contract',
     'src.automation_scheduler_legacy.sportsbook_adapter_contract',
 ]
@@ -118,7 +117,6 @@ def test_provider_foundation_modules_import_without_env_access(monkeypatch):
     assert imported["src.providers"].ProviderHealthStatus.__name__ == imported["src.providers.health"].ProviderHealthStatus.__name__ == "ProviderHealthStatus"
     assert imported["src.providers"].ProviderAdapterBase.__name__ == imported["src.providers.base"].ProviderAdapterBase.__name__ == "ProviderAdapterBase"
     assert imported["src.providers"].normalize_provider_payload("sportsbook_odds", {"event_id": "e1"})["provider_type"] == "sportsbook_odds"
-    assert callable(imported["src.automation_scheduler_legacy.provider_allowlist"].classify_provider)
     assert callable(imported["src.providers.policy.allowlist"].classify_provider)
 
     assert imported["src.automation_scheduler_legacy.kalshi_adapter_contract"].validate_payload(
@@ -154,7 +152,7 @@ def test_legacy_wrappers_preserve_foundation_behavior(monkeypatch):
     canonical_normalization = importlib.import_module("src.providers.normalization")
     canonical_validation = importlib.import_module("src.providers.validation")
     canonical_allowlist = importlib.import_module("src.providers.policy.allowlist")
-    legacy_allowlist = importlib.import_module('src.automation_scheduler_legacy.provider_allowlist')
+    canonical_allowlist = importlib.import_module('src.providers.policy.allowlist')
     legacy_kalshi = importlib.import_module('src.automation_scheduler_legacy.kalshi_adapter_contract')
     legacy_sportsbook = importlib.import_module('src.automation_scheduler_legacy.sportsbook_adapter_contract')
 
@@ -169,8 +167,9 @@ def test_legacy_wrappers_preserve_foundation_behavior(monkeypatch):
     assert "sharp_sportsbook" in legacy_registry_snapshot
     assert "kalshi_prediction_market" in legacy_registry_snapshot
     assert canonical_registry_snapshot["sportsbook_placeholder"]["provider_type"] == legacy_registry_snapshot["sportsbooks"]["provider_type"]
-    assert legacy_allowlist.classify_provider("draftkings_sportsbook") == canonical_allowlist.classify_provider("draftkings_sportsbook")
-    assert legacy_allowlist.provider_allowlist_response("internal_math") == canonical_allowlist.provider_allowlist_response("internal_math")
+    assert canonical_allowlist.classify_provider("draftkings_sportsbook") == "sportsbook"
+    assert canonical_allowlist.provider_allowlist_response("internal_math")["provider_class"] == "internal_deterministic"
+    assert canonical_allowlist.provider_allowlist_response("internal_math")["ok"] is True
     assert legacy_kalshi.validate_payload(legacy_kalshi.SAMPLE_DRY_RUN_PAYLOAD)["ok"] is True
     assert legacy_sportsbook.validate_payload(legacy_sportsbook.SAMPLE_DRY_RUN_PAYLOAD)["ok"] is True
 

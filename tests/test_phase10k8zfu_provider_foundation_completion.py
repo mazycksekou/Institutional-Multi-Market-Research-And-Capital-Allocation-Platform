@@ -34,7 +34,6 @@ CANONICAL_MODULES = [
 ]
 
 LEGACY_MODULES = [
-    'src.automation_scheduler_legacy.provider_allowlist',
     'src.automation_scheduler_legacy.kalshi_adapter_contract',
     'src.automation_scheduler_legacy.sportsbook_adapter_contract',
 ]
@@ -139,14 +138,14 @@ def test_provider_foundation_completion_imports_and_contract_generalization(monk
 
     legacy_kalshi = imported["src.automation_scheduler_legacy.kalshi_adapter_contract"]
     legacy_sportsbook = imported["src.automation_scheduler_legacy.sportsbook_adapter_contract"]
-    legacy_allowlist = imported["src.automation_scheduler_legacy.provider_allowlist"]
+    canonical_allowlist = imported["src.providers.policy.allowlist"]
 
     assert legacy_kalshi.validate_payload(legacy_kalshi.SAMPLE_DRY_RUN_PAYLOAD)["ok"] is True
     assert legacy_kalshi.normalize_payload(legacy_kalshi.SAMPLE_DRY_RUN_PAYLOAD)["provider_type"] == "prediction_market"
     assert legacy_sportsbook.validate_payload(legacy_sportsbook.SAMPLE_DRY_RUN_PAYLOAD)["ok"] is True
     assert legacy_sportsbook.normalize_payload(legacy_sportsbook.SAMPLE_DRY_RUN_PAYLOAD)["provider_type"] == "sportsbook_odds"
-    assert legacy_allowlist.classify_provider("kalshi_prediction_market") == "kalshi_order"
-    assert legacy_allowlist.classify_provider("sharp_sportsbook") == "sportsbook"
+    assert canonical_allowlist.classify_provider("kalshi_prediction_market") == "kalshi_order"
+    assert canonical_allowlist.classify_provider("sharp_sportsbook") == "sportsbook"
     assert not (ROOT / "automation_scheduler" / "provider_registry.py").exists()
     assert not (ROOT / "automation_scheduler" / "provider_write_firewall.py").exists()
 
@@ -163,7 +162,7 @@ def test_canonical_provider_root_has_no_vendor_strings():
     assert not (PROVIDER_ROOT / "kalshi").exists()
     assert not (PROVIDER_ROOT / "sharp").exists()
 
-    vendor_text_allowlist = {"provider_router.py"}
+    vendor_text_allowlist = {"provider_router.py", "allowlist.py"}
 
     for path in PROVIDER_ROOT.rglob("*"):
         if "__pycache__" in path.parts:

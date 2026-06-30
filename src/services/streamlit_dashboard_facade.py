@@ -75,7 +75,6 @@ _LEGACY_MODULES: tuple[str, ...] = (
     "src.automation_scheduler_legacy.nfl_coaching_sources",
     "src.automation_scheduler_legacy.nfl_open_data_adapters",
     "src.automation_scheduler_legacy.nfl_open_data_sources",
-    "src.automation_scheduler_legacy.owner_approval_gate",
     "src.automation_scheduler_legacy.pattern_calibration",
     "src.automation_scheduler_legacy.pattern_review_queue",
     "src.automation_scheduler_legacy.performance_metrics",
@@ -86,7 +85,6 @@ _LEGACY_MODULES: tuple[str, ...] = (
     "src.automation_scheduler_legacy.strategy_maturity",
     "src.automation_scheduler_legacy.source_event_link_resolver",
     "src.services.scheduler_config",
-    "src.automation_scheduler_legacy.security_event_types",
     "src.automation_scheduler_legacy.streamlit_dashboard_data",
     "src.automation_scheduler_legacy.zero_dte_fixture_template",
 )

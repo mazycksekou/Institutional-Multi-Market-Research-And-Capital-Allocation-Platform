@@ -72,7 +72,6 @@ _LEGACY_MODULES: tuple[str, ...] = (
     "src.automation_scheduler_legacy.manifold_cluster_registry",
     "src.automation_scheduler_legacy.market_state_manifold",
     "src.automation_scheduler_legacy.model_data_field_catalog",
-    "src.automation_scheduler_legacy.owner_approval_gate",
     "src.automation_scheduler_legacy.representation_feature_builder",
     "src.automation_scheduler_legacy.response_compactor",
     "src.services.security_readiness",
@@ -81,7 +80,6 @@ _LEGACY_MODULES: tuple[str, ...] = (
     "src.automation_scheduler_legacy.strategy_maturity",
     "src.automation_scheduler_legacy.source_event_link_resolver",
     "src.services.scheduler_config",
-    "src.automation_scheduler_legacy.security_event_types",
     "src.automation_scheduler_legacy.streamlit_dashboard_data",
     "src.automation_scheduler_legacy.zero_dte_fixture_template",
 )

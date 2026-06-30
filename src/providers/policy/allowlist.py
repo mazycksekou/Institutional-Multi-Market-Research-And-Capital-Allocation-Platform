@@ -22,6 +22,7 @@ BROKER_PROVIDER_HINTS = ("broker", "alpaca", "interactive_brokers", "ibkr", "sch
 SPORTSBOOK_PROVIDER_HINTS = ("sportsbook", "draftkings", "fanduel", "betmgm", "caesars", "espnbet", "bet365")
 MARKET_ORDER_PROVIDER_HINTS = ("order", "execution", "trading", "write")
 CRYPTO_EXCHANGE_HINTS = ("crypto_exchange", "coinbase", "binance", "kraken", "bybit", "okx")
+KALSHI_ORDER_HINTS = ("kalshi_order", "kalshi_execution", "kalshi_trading", "kalshi_write", "kalshi")
 
 
 def _locked_safety_flags() -> dict[str, Any]:
@@ -58,6 +59,8 @@ def normalize_provider_name(provider: str | None) -> str:
 def classify_provider(provider: str | None, *, provider_type: str | None = None) -> str:
     explicit_type = normalize_provider_name(provider_type)
     if explicit_type:
+        if explicit_type == "kalshi_order":
+            return "kalshi_order"
         if explicit_type in {"deepseek", "openai", "internal_diagnostics", "internal_deterministic"}:
             return explicit_type
         if explicit_type in FORBIDDEN_AI_PROVIDER_TYPES:
@@ -65,8 +68,10 @@ def classify_provider(provider: str | None, *, provider_type: str | None = None)
     name = normalize_provider_name(provider)
     if name in {"deepseek", "openai"}:
         return name
-    if name in {"internal_diagnostics", "internal_deterministic", "python_diagnostics", "local_math"}:
+    if name in {"internal_diagnostics", "internal_deterministic", "python_diagnostics", "local_math", "internal_math"}:
         return "internal_deterministic"
+    if any(hint in name for hint in KALSHI_ORDER_HINTS):
+        return "kalshi_order"
     if any(hint in name for hint in BROKER_PROVIDER_HINTS):
         return "broker"
     if any(hint in name for hint in SPORTSBOOK_PROVIDER_HINTS):

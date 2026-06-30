@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from typing import Any
 
-from .provider_allowlist import normalize_provider_name
+from src.providers.policy.allowlist import normalize_provider_name
 from src.security.policy import locked_safety_flags
 
 
