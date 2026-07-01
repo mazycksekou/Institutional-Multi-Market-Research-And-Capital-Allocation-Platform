@@ -7,7 +7,7 @@ from src.connectors.odds_data import (
     build_odds_data_connector_configuration,
     describe_odds_data_connector_readiness,
 )
-from .compat import PREDICTION_MARKET, SPORTSBOOK_ODDS, ProviderAdapter, provider_disabled, unknown_provider
+from .core import PREDICTION_MARKET, SPORTSBOOK_ODDS, ProviderAdapter, provider_disabled, unknown_provider
 from .routing import default_provider_id_for_category, resolve_provider_category
 from .prediction_markets import normalize_prediction_market_payload, validate_prediction_market_payload
 from .sportsbooks import normalize_sportsbook_payload, validate_sportsbook_payload

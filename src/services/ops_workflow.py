@@ -828,7 +828,7 @@ def check_data_source_registry(base_url: str | None = None) -> dict[str, Any]:
         summary["coverage_endpoint_ok"] = bool(coverage.get("ok"))
         return summary
     try:
-        from .automation_scheduler_facade import get_data_source_coverage_snapshot, get_data_source_registry_health, get_data_source_registry_snapshot
+        from .streamlit_dashboard_facade import get_data_source_coverage_snapshot, get_data_source_registry_health, get_data_source_registry_snapshot
 
         health = get_data_source_registry_health()
         registry = get_data_source_registry_snapshot()

@@ -22,7 +22,7 @@ RUNTIME_FILES = [
     ROOT / "src" / "services" / "scheduler_config.py",
     ROOT / "src" / "services" / "cadence_controller.py",
     ROOT / "src" / "providers" / "kalshi_readonly_readiness.py",
-    ROOT / "src" / "services" / "automation_scheduler_facade.py",
+    ROOT / "src" / "services" / "streamlit_dashboard_facade.py",
 ]
 
 FORBIDDEN_NETWORK_ROOTS = {
@@ -108,7 +108,7 @@ def test_phase10k8zga_runtime_dependency_redirect(monkeypatch, tmp_path):
     scheduler_config = importlib.import_module('src.services.scheduler_config')
     readiness = importlib.import_module('src.providers.kalshi_readonly_readiness')
     cadence_controller = importlib.import_module('src.services.cadence_controller')
-    scheduler_pkg = importlib.import_module('src.services.automation_scheduler_facade')
+    scheduler_pkg = importlib.import_module('src.services.streamlit_dashboard_facade')
 
     monkeypatch.setattr(os, "getenv", original_getenv)
     monkeypatch.setattr(canonical_registry.os, "getenv", lambda *_args, **_kwargs: None)
@@ -124,7 +124,7 @@ def test_phase10k8zga_runtime_dependency_redirect(monkeypatch, tmp_path):
     runtime_texts = {path.as_posix(): _read(path) for path in RUNTIME_FILES}
     for path_str, text in runtime_texts.items():
         assert not _runtime_uses_legacy_registry_import(text), path_str
-        if path_str.endswith(("cadence_controller.py", "kalshi_readonly_readiness.py", "automation_scheduler_facade.py")):
+        if path_str.endswith(("cadence_controller.py", "kalshi_readonly_readiness.py", "streamlit_dashboard_facade.py")):
             assert "src.providers.registry" in text, path_str
 
     for path in RUNTIME_FILES:

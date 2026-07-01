@@ -88,7 +88,7 @@ def test_audit_documents_preserve_repository_safety_context() -> None:
     provider_status_text = _read(ROOT / "src" / "api" / "provider_status_routes.py")
 
     assert "from src.providers.provider_router import ProviderRouter" in model_card_text
-    assert "import src.services.automation_scheduler_facade as automation_scheduler" in provider_status_text
+    assert "import src.services.streamlit_dashboard_facade as automation_scheduler" in provider_status_text
     assert "ProviderRouter" in provider_router_text
     assert "def evaluate_lines_payload" in _read(ROOT / "src" / "services" / "bet_decision_engine.py")
     assert "def calculate_profit_loss" in _read(ROOT / "src" / "services" / "bet_log.py")

@@ -57,7 +57,7 @@ def test_phase10k8zgd_final_provider_foundation_blocker_deletion(monkeypatch, tm
 
     canonical_registry = importlib.import_module("src.providers.registry")
     canonical_firewall = importlib.import_module("src.providers.policy.write_firewall")
-    scheduler_pkg = importlib.import_module('src.services.automation_scheduler_facade')
+    scheduler_pkg = importlib.import_module('src.services.streamlit_dashboard_facade')
 
     monkeypatch.setattr(os, "getenv", original_getenv)
     monkeypatch.setattr(canonical_registry.os, "getenv", lambda *_args, **_kwargs: None)

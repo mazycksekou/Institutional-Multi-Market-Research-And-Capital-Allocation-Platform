@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from src.market_intelligence.manifold import map_prediction_market as _map_prediction_market
+from src.market_intelligence.prediction_markets import build_prediction_market_intelligence_report
 
 
 def map_prediction_market(
@@ -16,10 +16,22 @@ def map_prediction_market(
     row = dict(item or {})
     row.setdefault("asset_type", "prediction_market")
     row.setdefault("market_type", "prediction_market")
-    return _map_prediction_market(
-        row,
-        registry=registry,
-        calibration_report=calibration_report,
-        historical_records=historical_records,
-        base_data_dir=base_data_dir,
+    payload = build_prediction_market_intelligence_report(row)
+    payload.update(
+        {
+            "ok": True,
+            "status": "prediction_market_map_complete",
+            "provider_write": False,
+            "execution_allowed": False,
+            "live_execution_enabled": False,
+            "auto_execution": False,
+            "auto_execution_enabled": False,
+            "human_approval_required": True,
+            "actual_orders_submitted": 0,
+            "actual_bets_submitted": 0,
+            "actual_trades_submitted": 0,
+            "raw_payload_included": False,
+            "secrets_included": False,
+        }
     )
+    return payload

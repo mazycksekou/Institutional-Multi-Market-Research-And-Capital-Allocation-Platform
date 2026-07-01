@@ -185,7 +185,7 @@ class TestDataSourceEndpoints(unittest.TestCase):
 
     def test_no_regression_kalshi_collector_endpoint_still_works(self):
         with patch(
-            'src.services.automation_scheduler_facade.run_automation_calibration_collector',
+            'src.services.streamlit_dashboard_facade.run_automation_calibration_collector',
             return_value={
                 "ok": True,
                 "status": "collector_cycle_complete",

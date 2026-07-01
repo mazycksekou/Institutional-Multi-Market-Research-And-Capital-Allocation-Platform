@@ -9,6 +9,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 CANONICAL_MODULES = [
+    "src.providers",
     "src.providers.contracts",
     "src.providers.registry",
     "src.providers.health",
@@ -18,7 +19,6 @@ CANONICAL_MODULES = [
     "src.providers.policy.allowlist",
     "src.providers.policy.secret_policy",
     "src.providers.policy.write_firewall",
-    "src.providers.compat",
 ]
 
 DELETED_WRAPPER_FILES = [
@@ -150,7 +150,7 @@ def test_phase10k8zg8_provider_foundation_deletion_proof(monkeypatch):
     assert callable(imported["src.providers.policy.allowlist"].classify_provider)
     assert callable(imported["src.providers.policy.secret_policy"].redact_secret)
     assert callable(imported["src.providers.policy.write_firewall"].check_provider_write_attempt)
-    assert hasattr(imported["src.providers.compat"], "provider_error")
+    assert hasattr(imported["src.providers"], "provider_error")
 
     for wrapper_path in DELETED_WRAPPER_FILES:
         assert not wrapper_path.exists(), wrapper_path

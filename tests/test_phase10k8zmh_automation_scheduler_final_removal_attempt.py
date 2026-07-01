@@ -19,7 +19,7 @@ DOC_FILES = [
 
 CANONICAL_IMPORTS = [
     "src.services.streamlit_dashboard_facade",
-    "src.services.automation_scheduler_facade",
+    "src.services.streamlit_dashboard_facade",
     "src.market_intelligence.manifold",
     "src.data.historical_odds",
     "src.backtesting.engine",

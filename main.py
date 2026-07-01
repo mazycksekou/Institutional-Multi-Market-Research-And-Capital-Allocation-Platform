@@ -13,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
 
-from src.providers.compat import PREDICTION_MARKET
+from src.providers import PREDICTION_MARKET
 from src.providers.provider_router import ProviderRouter
 from src.api.model_card_service import ModelCardService
 from src.api.system_routes import register_system_routes
@@ -64,15 +64,15 @@ from src.api.schemas.quant import BetAnalysisRequest, MarketPricingRequest, Stoc
 from src.api.schemas.performance import PerformanceBacktestRequest
 from src.services.action_betting_service import ActionBettingService
 from src.services.bet_csv_service import BETS_FILE, append_bet, summarize_bets
-import src.services.automation_scheduler_facade as automation_scheduler
+import src.services.streamlit_dashboard_facade as automation_scheduler
 import src.services.bet_log as bet_log
 import src.services.bet_decision_engine as bet_decision_engine
 import src.core.market_pricing as market_pricing
 import src.market_intelligence.multi_sport_model_registry as multi_sport_model_registry
 import src.core.model_probability as model_probability
 import src.services.screenshot_intake as screenshot_intake
-from src.services.automation_scheduler_facade import get_runtime_data_path, get_automation_data_dir
-from src.services.automation_scheduler_facade import (
+from src.services.streamlit_dashboard_facade import get_runtime_data_path, get_automation_data_dir
+from src.services.streamlit_dashboard_facade import (
     compact_advanced_red_team_response,
     compact_calibration_response,
     compact_calibration_collector_response,

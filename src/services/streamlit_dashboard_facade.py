@@ -11,11 +11,27 @@ symbol is actually requested.
 from importlib import import_module
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Mapping
+from typing import TYPE_CHECKING, Any, Mapping
 
 from src.market_intelligence.local_sports_history_audit import (
     ALLOWED_BLOCKED_REASONS as _LEGACY_ALLOWED_BLOCKED_REASONS,
 )
+
+if TYPE_CHECKING:
+    from src.services.odds_runtime_bridge import SharpSportsbookAdapter
+    from src.services.odds_runtime_bridge import get_sportsbook_snapshot
+    from src.services.odds_runtime_bridge import summarize_sportsbook_snapshot
+    from src.services.prediction_market_runtime_bridge import KalshiReadonlyAdapter
+    from src.services.prediction_market_runtime_bridge import get_kalshi_snapshot
+    from src.services.prediction_market_runtime_bridge import summarize_kalshi_snapshot
+    from src.services.settlement_service import build_outcome_completion_report, write_outcome_completion_candidates
+    from src.services.ledger_service import load_security_audit_records
+    from src.services.ledger_service import append_security_event
+    from src.services.execution_service import build_broker_quality_report
+    from src.services.execution_service import SAFETY_FLAGS
+    from src.services.execution_service import run_small_account_review
+    from src.services.execution_service import simulate_execution
+    from src.services.execution_service import rejection_response
 
 
 _CANONICAL_MODULES: tuple[str, ...] = (

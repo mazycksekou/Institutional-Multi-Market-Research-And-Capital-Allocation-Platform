@@ -26,6 +26,7 @@ REMAINING_BLOCKERS = [
 ]
 
 CANONICAL_MODULES = [
+    "src.providers",
     "src.providers.contracts",
     "src.providers.registry",
     "src.providers.health",
@@ -35,7 +36,6 @@ CANONICAL_MODULES = [
     "src.providers.policy.allowlist",
     "src.providers.policy.secret_policy",
     "src.providers.policy.write_firewall",
-    "src.providers.compat",
 ]
 
 DELETED_IMPORT_TARGETS = {
@@ -103,7 +103,7 @@ def test_phase10k8zg9_provider_foundation_thin_wrapper_deletion(monkeypatch):
     assert callable(imported["src.providers.policy.allowlist"].classify_provider)
     assert callable(imported["src.providers.policy.secret_policy"].redact_secret)
     assert callable(imported["src.providers.policy.write_firewall"].check_provider_write_attempt)
-    assert hasattr(imported["src.providers.compat"], "provider_error")
+    assert hasattr(imported["src.providers"], "provider_error")
 
     for deleted_path in DELETED_FILES:
         assert not deleted_path.exists(), deleted_path

@@ -22,7 +22,7 @@ DOCS = [
 RUNTIME_FILES = [
     ROOT / "src" / "services" / "enrichment_service.py",
     ROOT / "src" / "services" / "scheduler_runner.py",
-    ROOT / "src" / "services" / "automation_scheduler_facade.py",
+    ROOT / "src" / "services" / "streamlit_dashboard_facade.py",
     ROOT / "src" / "services" / "odds_runtime_bridge.py",
 ]
 
@@ -108,7 +108,7 @@ def test_docs_exist_and_contain_required_redirection_language() -> None:
 def test_runtime_files_redirect_to_canonical_bridge() -> None:
     enrichment = _read(ROOT / "src" / "services" / "enrichment_service.py")
     scheduler_runner = _read(ROOT / "src" / "services" / "scheduler_runner.py")
-    scheduler_init = _read(ROOT / "src" / "services" / "automation_scheduler_facade.py")
+    scheduler_init = _read(ROOT / "src" / "services" / "streamlit_dashboard_facade.py")
     bridge = _read(ROOT / "src" / "services" / "odds_runtime_bridge.py")
 
     assert "src.services.odds_runtime_bridge" in enrichment

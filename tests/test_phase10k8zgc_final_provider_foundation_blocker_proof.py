@@ -141,7 +141,7 @@ def test_phase10k8zgc_runtime_and_test_redirect(monkeypatch, tmp_path):
 
     canonical_registry = importlib.import_module("src.providers.registry")
     canonical_firewall = importlib.import_module("src.providers.policy.write_firewall")
-    scheduler_pkg = importlib.import_module("src.services.automation_scheduler_facade")
+    scheduler_pkg = importlib.import_module("src.services.streamlit_dashboard_facade")
     execution_authorization = importlib.import_module("src.brokerage.readiness")
 
     monkeypatch.setattr(os, "getenv", original_getenv)

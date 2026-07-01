@@ -50,4 +50,4 @@ def test_api_model_card_service_uses_canonical_provider_router() -> None:
 
 def test_provider_status_route_source_still_marks_scheduler_coupling() -> None:
     text = (ROOT / "src/api/provider_status_routes.py").read_text(encoding="utf-8")
-    assert "import src.services.automation_scheduler_facade as automation_scheduler" in text
+    assert "import src.services.streamlit_dashboard_facade as automation_scheduler" in text

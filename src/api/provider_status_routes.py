@@ -4,8 +4,8 @@ from typing import Any
 
 from fastapi import Query
 
-import src.services.automation_scheduler_facade as automation_scheduler
-from src.services.automation_scheduler_facade import (
+import src.services.streamlit_dashboard_facade as automation_scheduler
+from src.services.streamlit_dashboard_facade import (
     compact_provider_health_response,
     compact_provider_registry_response,
     compact_provider_status,

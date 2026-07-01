@@ -34,7 +34,6 @@ CONNECTOR_MODULES = [
 PROVIDER_MODULES = [
     "src.providers",
     "src.providers.categories",
-    "src.providers.compat",
     "src.providers.routing",
     "src.providers.base",
     "src.providers.contracts",

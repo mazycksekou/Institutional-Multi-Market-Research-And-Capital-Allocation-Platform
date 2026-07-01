@@ -40,7 +40,7 @@ class TestCollectorScheduledRunner(unittest.TestCase):
     def test_endpoint_accepts_correct_token_and_returns_compact_report(self):
         with patch.dict(os.environ, {"COLLECTOR_CRON_TOKEN": "secret"}, clear=False):
             with patch(
-                "src.services.automation_scheduler_facade.run_automation_calibration_collector_scheduled",
+                "src.services.streamlit_dashboard_facade.run_automation_calibration_collector_scheduled",
                 return_value={
                     "ok": True,
                     "status": "collector_cycle_complete",

@@ -55,7 +55,7 @@ def test_required_docs_and_runtime_redirection_text() -> None:
 
 def test_runtime_scheduler_files_import_the_canonical_bridge_and_not_legacy_shells() -> None:
     runtime_files = [
-        "src/services/automation_scheduler_facade.py",
+        "src/services/streamlit_dashboard_facade.py",
         "src/services/prediction_market_runtime_bridge.py",
         "src/services/scheduler_runner.py",
         "src/services/settlement_service.py",
@@ -77,7 +77,7 @@ def test_canonical_prediction_market_bridge_connectors_and_legacy_shells_remain_
     odds_bridge = importlib.import_module("src.services.odds_runtime_bridge")
     odds_connector = importlib.import_module("src.connectors.odds_data")
     odds_provider = importlib.import_module("src.providers.sportsbooks")
-    automation_scheduler_pkg = importlib.import_module("src.services.automation_scheduler_facade")
+    automation_scheduler_pkg = importlib.import_module("src.services.streamlit_dashboard_facade")
     scheduler_runner = importlib.import_module('src.services.scheduler_runner')
     settlement_service = importlib.import_module("src.services.settlement_service")
     calibration_collector = importlib.import_module('src.analytics.calibration_collector')

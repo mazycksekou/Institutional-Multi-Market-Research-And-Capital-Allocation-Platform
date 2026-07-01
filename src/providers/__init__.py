@@ -37,9 +37,9 @@ from .contracts import (
     get_default_provider_contracts,
     write_provider_contract_snapshot,
 )
-from .compat import (
-    PREDICTION_MARKET as COMPAT_PREDICTION_MARKET,
-    SPORTSBOOK_ODDS as COMPAT_SPORTSBOOK_ODDS,
+from .core import (
+    PREDICTION_MARKET,
+    SPORTSBOOK_ODDS,
     ProviderAdapter,
     available,
     clean_error,
@@ -171,8 +171,8 @@ __all__ = [
     "PROVIDER_CATEGORY_TO_PACKAGE",
     "PROVIDER_CATEGORY_TO_PROVIDER_TYPES",
     "CATEGORY_DEFAULT_PROVIDER_IDS",
-    "COMPAT_PREDICTION_MARKET",
-    "COMPAT_SPORTSBOOK_ODDS",
+    "PREDICTION_MARKET",
+    "SPORTSBOOK_ODDS",
     "ProviderAdapter",
     "SPORT_ALIASES",
     "SPORT_LABELS",

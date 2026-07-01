@@ -35,7 +35,7 @@ def test_scheduler_canonical_bridge_modules_import_safely() -> None:
         "src.services.odds_runtime_bridge",
         "src.providers.registry",
         "src.providers.health",
-        "src.services.automation_scheduler_facade",
+        "src.services.streamlit_dashboard_facade",
         'src.services.scheduler_runner',
         'src.analytics.calibration_collector',
         "src.services.settlement_service",
@@ -47,7 +47,7 @@ def test_scheduler_canonical_bridge_modules_import_safely() -> None:
 
 
 def test_scheduler_package_still_points_to_canonical_bridges() -> None:
-    text = (ROOT / 'src/services/automation_scheduler_facade.py').read_text(encoding="utf-8")
+    text = (ROOT / 'src/services/streamlit_dashboard_facade.py').read_text(encoding="utf-8")
     assert "from src.services.odds_runtime_bridge import" in text
     assert "from src.services.prediction_market_runtime_bridge import" in text
 

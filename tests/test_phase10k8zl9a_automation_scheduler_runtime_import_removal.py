@@ -17,10 +17,10 @@ RUNTIME_FILES = [
 ]
 
 EXPECTED_CANONICAL_IMPORTS = {
-    "main.py": {"src.services.automation_scheduler_facade"},
+    "main.py": {"src.services.streamlit_dashboard_facade"},
     "streamlit_app.py": {"src.services.streamlit_dashboard_facade"},
     "src/api/automation_review_outcomes_routes.py": {"src.api.automation_security"},
-    "src/api/provider_status_routes.py": {"src.services.automation_scheduler_facade"},
+    "src/api/provider_status_routes.py": {"src.services.streamlit_dashboard_facade"},
     "src/brokerage/readiness.py": {"src.brokerage.readiness_support"},
     "src/services/execution_service.py": {"src.services.execution_support"},
     "src/services/ledger_service.py": {"src.services.ledger_support"},
@@ -28,7 +28,7 @@ EXPECTED_CANONICAL_IMPORTS = {
 }
 
 REPLACEMENT_MODULES = [
-    "src.services.automation_scheduler_facade",
+    "src.services.streamlit_dashboard_facade",
     "src.services.streamlit_dashboard_facade",
     "src.services.execution_support",
     "src.services.ledger_support",
@@ -68,7 +68,7 @@ def test_phase10k8zl9a_runtime_import_removal():
         module = import_module(module_name)
         assert module is not None
 
-    facade = import_module("src.services.automation_scheduler_facade")
+    facade = import_module("src.services.streamlit_dashboard_facade")
     assert hasattr(facade, "get_runtime_data_path")
     assert hasattr(facade, "get_automation_data_dir")
 

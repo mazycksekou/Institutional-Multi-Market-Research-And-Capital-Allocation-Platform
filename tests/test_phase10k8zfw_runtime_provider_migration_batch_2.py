@@ -14,7 +14,6 @@ COMPAT_STATUS_PATH = ROOT / "PROVIDER_COMPATIBILITY_STATUS_AFTER_10K8ZFW.md"
 CANONICAL_MODULES = [
     "src.providers",
     "src.providers.categories",
-    "src.providers.compat",
     "src.providers.routing",
     "src.providers.base",
     "src.providers.contracts",
@@ -73,7 +72,7 @@ def test_runtime_helper_and_router_modules_import_safely(monkeypatch):
 
     categories = imported["src.providers.categories"]
     routing = imported["src.providers.routing"]
-    compat = imported["src.providers.compat"]
+    providers = imported["src.providers"]
 
     assert categories.PROVIDER_CATEGORIES == ("prediction_markets", "sportsbooks", "zero_dte_stocks")
     assert categories.category_package_name("prediction_markets") == "src.providers.prediction_markets"
@@ -93,29 +92,26 @@ def test_runtime_helper_and_router_modules_import_safely(monkeypatch):
     assert routing.default_provider_id_for_category("zero_dte_stocks") == "zero_dte_stock_placeholder"
     assert routing.category_route_summary(provider_type="prediction_market")["provider_category"] == "prediction_markets"
 
-    assert callable(compat.env_bool)
-    assert callable(compat.provider_disabled)
-    assert callable(compat.unavailable)
-    assert callable(compat.available)
-
-    canonical_compat = imported["src.providers.compat"]
-    assert callable(canonical_compat.ProviderAdapter)
-    assert canonical_compat.provider_disabled("demo")["provider"] == "demo"
-    assert canonical_compat.provider_not_configured("demo")["provider"] == "demo"
-    assert canonical_compat.method_not_implemented("demo", "boom")["provider"] == "demo"
-    assert canonical_compat.unknown_provider(["a", "b"])["available_providers"] == ["a", "b"]
+    assert callable(providers.ProviderAdapter)
+    assert callable(providers.env_bool)
+    assert callable(providers.provider_disabled)
+    assert callable(providers.unavailable)
+    assert callable(providers.available)
+    assert providers.provider_disabled("demo")["provider"] == "demo"
+    assert providers.provider_not_configured("demo")["provider"] == "demo"
+    assert providers.method_not_implemented("demo", "boom")["provider"] == "demo"
+    assert providers.unknown_provider(["a", "b"])["available_providers"] == ["a", "b"]
     monkeypatch.setattr(os, "getenv", lambda *_args, **_kwargs: None)
-    assert canonical_compat.env_bool("MISSING_FLAG", default=True) is True
-    assert canonical_compat.available("demo", [])["provider"] == "demo"
-    assert canonical_compat.unavailable("demo")["provider"] == "demo"
-    assert canonical_compat.provider_error("demo", "boom")["provider"] == "demo"
+    assert providers.env_bool("MISSING_FLAG", default=True) is True
+    assert providers.available("demo", [])["provider"] == "demo"
+    assert providers.unavailable("demo")["provider"] == "demo"
+    assert providers.provider_error("demo", "boom")["provider"] == "demo"
 
 
 def test_canonical_router_modules_do_not_import_legacy_packages_or_network_clients():
     for module_name in [
         "src.providers",
         "src.providers.categories",
-        "src.providers.compat",
         "src.providers.routing",
         "src.providers.base",
         "src.providers.contracts",

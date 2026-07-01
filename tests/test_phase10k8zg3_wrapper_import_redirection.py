@@ -26,8 +26,7 @@ REMAINING_WRAPPER_FILES = [
 
 UPDATED_FILES = {
     "main.py": [
-        "from src.providers.compat import PREDICTION_MARKET",
-        "from betting_providers.base import PREDICTION_MARKET",
+        "from src.providers import PREDICTION_MARKET",
     ],
     "src/services/screenshot_intake.py": [
         "from src.services.enrichment_service import EnrichmentService",
@@ -76,7 +75,6 @@ CANONICAL_IMPORTS = [
     "src.providers.validation",
     "src.providers.policy.secret_policy",
     "src.providers.policy.write_firewall",
-    "src.providers.compat",
     "src.services.enrichment_service",
 ]
 

@@ -12,7 +12,7 @@ DOCS = [
 ]
 
 RUNTIME_FILES = [
-    ROOT / "src" / "services" / "automation_scheduler_facade.py",
+    ROOT / "src" / "services" / "streamlit_dashboard_facade.py",
     ROOT / "src" / "brokerage" / "readiness.py",
     ROOT / "src" / "api" / "automation_institutional_lab_routes.py",
 ]

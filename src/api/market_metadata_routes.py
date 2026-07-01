@@ -4,7 +4,7 @@ from typing import Any, Optional
 
 from fastapi import Depends
 
-from src.providers.compat import PREDICTION_MARKET
+from src.providers import PREDICTION_MARKET
 
 
 def register_market_metadata_routes(

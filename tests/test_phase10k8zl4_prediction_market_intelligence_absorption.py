@@ -3,7 +3,7 @@ from __future__ import annotations
 import inspect
 import unittest
 
-from src.market_intelligence.manifold import map_prediction_market
+from src.market_intelligence.prediction_market_manifold_mapper import map_prediction_market
 from src.market_intelligence.prediction_markets import build_prediction_market_intelligence_report
 
 
@@ -55,4 +55,3 @@ class TestPhase10K8ZL4PredictionMarketIntelligenceAbsorption(unittest.TestCase):
         source = inspect.getsource(module).lower()
         for token in ("requests", "httpx", "websocket", "openai", "deepseek", "anthropic"):
             self.assertNotIn(token, source)
-

@@ -60,7 +60,7 @@ def test_canonical_packages_import_safely() -> None:
 
 def test_runtime_and_test_files_no_longer_require_deleted_wrappers() -> None:
     scan_paths = [
-        ROOT / "src" / "services" / "automation_scheduler_facade.py",
+        ROOT / "src" / "services" / "streamlit_dashboard_facade.py",
         ROOT / "src" / "market_intelligence" / "data_intelligence_registry.py",
         ROOT / "src" / "market_intelligence" / "cross_asset_intelligence_router.py",
         ROOT / "src" / "analytics" / "model_governance" / "__init__.py",
