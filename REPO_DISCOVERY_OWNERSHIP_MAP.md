@@ -1,0 +1,2461 @@
+# Repository Discovery Ownership Map
+
+## `ai`
+
+- File count: `18`
+- Entrypoints: `src/ai/deepseek_data_pull_check.py`
+- Called by: `ai, analytics, market intelligence, services, tests`
+- Calls into: `ai, analytics, data, market intelligence, providers, security, services`
+- Duplicate-looking modules: `src/ai/contracts.py, src/ai/deepseek_daily_report.py, src/ai/deepseek_data_pull_check.py, src/ai/deepseek_reviewer.py, src/ai/disabled_client.py, src/ai/readiness.py`
+- Facades/wrappers: `none`
+- External-boundary signals: `src/ai/deepseek_profit_lab.py, src/ai/deepseek_reviewer.py, src/ai/institutional_deepseek_review.py`
+- Disabled-boundary signals: `src/ai/__init__.py, src/ai/contracts.py, src/ai/deepseek_daily_report.py, src/ai/deepseek_data_pull_check.py, src/ai/deepseek_disagreement_queue.py, src/ai/deepseek_profit_lab.py, src/ai/deepseek_prompt_contracts.py, src/ai/deepseek_response_validator.py, src/ai/deepseek_reviewer.py, src/ai/disabled_client.py, src/ai/evaluation/__init__.py, src/ai/institutional_deepseek_review.py, src/ai/llm/__init__.py, src/ai/models/__init__.py, src/ai/policy/__init__.py, src/ai/prompt_policy.py, src/ai/prompts/__init__.py, src/ai/readiness.py`
+- Test coverage files: `tests/test_deepseek_data_pull_check_contract.py, tests/test_deepseek_profit_lab.py, tests/test_phase10k8zi6_ai_llm_boundary_audit.py, tests/test_phase10k8zi9_ai_boundary_checkpoint.py`
+
+### Files
+
+- `src/ai/__init__.py`
+- `src/ai/contracts.py`
+- `src/ai/deepseek_daily_report.py`
+- `src/ai/deepseek_data_pull_check.py`
+- `src/ai/deepseek_disagreement_queue.py`
+- `src/ai/deepseek_profit_lab.py`
+- `src/ai/deepseek_prompt_contracts.py`
+- `src/ai/deepseek_response_validator.py`
+- `src/ai/deepseek_reviewer.py`
+- `src/ai/disabled_client.py`
+- `src/ai/evaluation/__init__.py`
+- `src/ai/institutional_deepseek_review.py`
+- `src/ai/llm/__init__.py`
+- `src/ai/models/__init__.py`
+- `src/ai/policy/__init__.py`
+- `src/ai/prompt_policy.py`
+- `src/ai/prompts/__init__.py`
+- `src/ai/readiness.py`
+
+## `analytics`
+
+- File count: `96`
+- Entrypoints: `src/analytics/calibration_collector.py, src/analytics/derived_feature_backfill_report.py`
+- Called by: `ai, analytics, backtesting, market intelligence, providers, research, root/non-src python, services, tests`
+- Calls into: `ai, analytics, brokerage, core, data, market intelligence, providers, research, security, services`
+- Duplicate-looking modules: `src/analytics/advanced_red_team_report.py, src/analytics/advanced_shape_diagnostics.py, src/analytics/calibration_collector.py, src/analytics/contracts.py, src/analytics/derived_feature_backfill_report.py, src/analytics/institutional/__init__.py, src/analytics/institutional/model_router.py, src/analytics/institutional_cross_asset_calibration.py, src/analytics/institutional_cross_asset_reports.py, src/analytics/manifold_review_queue.py, src/analytics/model_governance/__init__.py, src/analytics/model_governance/model_card.py, src/analytics/model_governance/model_router.py, src/analytics/pattern_review_queue.py, src/analytics/performance.py, src/analytics/performance_metrics.py, src/analytics/tennis_impact_report.py`
+- Facades/wrappers: `none`
+- External-boundary signals: `src/analytics/calibration_collector.py`
+- Disabled-boundary signals: `none`
+- Test coverage files: `tests/test_activation_tiers.py, tests/test_advanced_red_team.py, tests/test_alert_gate.py, tests/test_backtest_gate.py, tests/test_calibration_gate.py, tests/test_champion_challenger.py, tests/test_cross_book_gate.py, tests/test_data_intelligence_stack.py, tests/test_data_lineage.py, tests/test_data_quality_monitor.py, tests/test_execution_later_gate.py, tests/test_field_scorecard.py, tests/test_football_impact_intelligence.py, tests/test_governance_audit_log.py, tests/test_governance_config.py, tests/test_governance_health.py, tests/test_governance_report.py, tests/test_human_approval_gate.py, tests/test_input_quality_gate.py, tests/test_institutional_alternative_investments.py, tests/test_institutional_credit_risk_models.py, tests/test_institutional_cross_asset_calibration.py, tests/test_institutional_derivatives_hedging.py, tests/test_institutional_execution_cost_models.py, tests/test_institutional_factor_risk_models.py, tests/test_institutional_fixed_income_rates.py, tests/test_institutional_liability_retirement_models.py, tests/test_institutional_macro_regime_models.py, tests/test_institutional_model_governance.py, tests/test_institutional_model_router.py, tests/test_institutional_performance_attribution.py, tests/test_institutional_portfolio_construction.py, tests/test_institutional_tax_aware_models.py, tests/test_kelly_gate.py, tests/test_market_state_manifold.py, tests/test_model_card.py, tests/test_model_drift_monitor.py, tests/test_model_inventory.py, tests/test_model_router.py, tests/test_model_router_registry.py, tests/test_model_validation_report.py, tests/test_open_sports_history_derived_features.py, tests/test_phase10k8zhn_analytics_foundation.py, tests/test_phase10k8zhv_analytics_downstream_redirection.py, tests/test_phase10k8zhz_analytics_research_wrapper_delete_proof.py, tests/test_promotion_gate.py, tests/test_research_evidence_gate.py, tests/test_review_queue_gate.py, tests/test_risk_gate.py, tests/test_settlement_liquidity_gate.py, tests/test_status_classifier.py, tests/test_walk_forward_gate.py`
+
+### Files
+
+- `src/analytics/__init__.py`
+- `src/analytics/advanced_red_team_provider_policy.py`
+- `src/analytics/advanced_red_team_report.py`
+- `src/analytics/advanced_shape_diagnostics.py`
+- `src/analytics/attribution.py`
+- `src/analytics/baseball_impact_calibration.py`
+- `src/analytics/baseball_impact_red_team.py`
+- `src/analytics/baseball_impact_report.py`
+- `src/analytics/basketball_player_impact_calibration.py`
+- `src/analytics/basketball_player_impact_red_team.py`
+- `src/analytics/bayesian_structural_baseline.py`
+- `src/analytics/calibration.py`
+- `src/analytics/calibration_collector.py`
+- `src/analytics/calibration_tracker.py`
+- `src/analytics/combat_impact_calibration.py`
+- `src/analytics/combat_impact_red_team.py`
+- `src/analytics/combat_impact_report.py`
+- `src/analytics/contracts.py`
+- `src/analytics/derived_feature_backfill_report.py`
+- `src/analytics/dynamical_systems_diagnostics.py`
+- `src/analytics/extreme_signal_red_team.py`
+- `src/analytics/field_scorecard.py`
+- `src/analytics/football_impact_calibration.py`
+- `src/analytics/football_impact_red_team.py`
+- `src/analytics/football_impact_report.py`
+- `src/analytics/golf_impact_calibration.py`
+- `src/analytics/golf_impact_red_team.py`
+- `src/analytics/golf_impact_report.py`
+- `src/analytics/governance.py`
+- `src/analytics/hockey_impact_calibration.py`
+- `src/analytics/hockey_impact_red_team.py`
+- `src/analytics/hockey_impact_report.py`
+- `src/analytics/information_theory_diagnostics.py`
+- `src/analytics/institutional/__init__.py`
+- `src/analytics/institutional/alternative_investments.py`
+- `src/analytics/institutional/credit_risk_models.py`
+- `src/analytics/institutional/derivatives_hedging.py`
+- `src/analytics/institutional/execution_cost_models.py`
+- `src/analytics/institutional/factor_risk_models.py`
+- `src/analytics/institutional/fixed_income_rates.py`
+- `src/analytics/institutional/liability_retirement_models.py`
+- `src/analytics/institutional/macro_regime_models.py`
+- `src/analytics/institutional/model_governance.py`
+- `src/analytics/institutional/model_router.py`
+- `src/analytics/institutional/performance_attribution.py`
+- `src/analytics/institutional/portfolio_construction.py`
+- `src/analytics/institutional/tax_aware_models.py`
+- `src/analytics/institutional_cross_asset_calibration.py`
+- `src/analytics/institutional_cross_asset_reports.py`
+- `src/analytics/intelligence_readiness_report.py`
+- `src/analytics/manifold_calibration.py`
+- `src/analytics/manifold_review_queue.py`
+- `src/analytics/micro_outcome_calibration.py`
+- `src/analytics/model_governance/__init__.py`
+- `src/analytics/model_governance/activation_tiers.py`
+- `src/analytics/model_governance/alert_gate.py`
+- `src/analytics/model_governance/backtest_gate.py`
+- `src/analytics/model_governance/calibration_gate.py`
+- `src/analytics/model_governance/champion_challenger.py`
+- `src/analytics/model_governance/cross_book_gate.py`
+- `src/analytics/model_governance/data_lineage.py`
+- `src/analytics/model_governance/data_quality_monitor.py`
+- `src/analytics/model_governance/execution_later_gate.py`
+- `src/analytics/model_governance/governance_audit_log.py`
+- `src/analytics/model_governance/governance_config.py`
+- `src/analytics/model_governance/human_approval_gate.py`
+- `src/analytics/model_governance/input_quality_gate.py`
+- `src/analytics/model_governance/kelly_gate.py`
+- `src/analytics/model_governance/model_card.py`
+- `src/analytics/model_governance/model_drift_monitor.py`
+- `src/analytics/model_governance/model_inventory.py`
+- `src/analytics/model_governance/model_router.py`
+- `src/analytics/model_governance/model_router_registry.py`
+- `src/analytics/model_governance/promotion_gate.py`
+- `src/analytics/model_governance/research_evidence_gate.py`
+- `src/analytics/model_governance/review_queue_gate.py`
+- `src/analytics/model_governance/risk_gate.py`
+- `src/analytics/model_governance/settlement_liquidity_gate.py`
+- `src/analytics/model_governance/status_classifier.py`
+- `src/analytics/model_governance/walk_forward_gate.py`
+- `src/analytics/model_performance_report.py`
+- `src/analytics/pattern_review_queue.py`
+- `src/analytics/performance.py`
+- `src/analytics/performance_metrics.py`
+- `src/analytics/random_baseline_comparison.py`
+- `src/analytics/report_writer.py`
+- `src/analytics/reports.py`
+- `src/analytics/review_queue.py`
+- `src/analytics/soccer_impact_calibration.py`
+- `src/analytics/soccer_impact_red_team.py`
+- `src/analytics/soccer_impact_report.py`
+- `src/analytics/strategy_readiness_report.py`
+- `src/analytics/tennis_impact_calibration.py`
+- `src/analytics/tennis_impact_red_team.py`
+- `src/analytics/tennis_impact_report.py`
+- `src/analytics/topological_red_team.py`
+
+## `api`
+
+- File count: `32`
+- Entrypoints: `api_server.py, src/api/__init__.py, src/api/automation_core_routes.py, src/api/automation_data_source_routes.py, src/api/automation_deepseek_routes.py, src/api/automation_institutional_lab_routes.py, src/api/automation_manifold_routes.py, src/api/automation_review_outcomes_routes.py, src/api/automation_run_once_routes.py, src/api/automation_security.py, src/api/automation_small_account_routes.py, src/api/automation_sport_impact_routes.py, src/api/bet_csv_routes.py, src/api/betting_action_routes.py, src/api/betting_metadata_routes.py, src/api/debug_routes.py, src/api/governance_routes.py, src/api/market_metadata_routes.py, src/api/market_utility_routes.py, src/api/model_backtest_routes.py, src/api/model_card_service.py, src/api/performance_routes.py, src/api/provider_status_routes.py, src/api/quant_routes.py, src/api/schemas/__init__.py, src/api/schemas/automation.py, src/api/schemas/bet_csv.py, src/api/schemas/betting_actions.py, src/api/schemas/performance.py, src/api/schemas/quant.py, src/api/stock_analysis_routes.py, src/api/system_routes.py`
+- Called by: `api, root/non-src python, tests`
+- Calls into: `api, core, providers, services, src/unknown`
+- Duplicate-looking modules: `src/api/automation_security.py, src/api/schemas/performance.py`
+- Facades/wrappers: `api_server.py`
+- External-boundary signals: `src/api/market_utility_routes.py`
+- Disabled-boundary signals: `none`
+- Test coverage files: `tests/support/action_imports.py, tests/test_analyze_event.py`
+
+### Files
+
+- `api_server.py`
+- `src/api/__init__.py`
+- `src/api/automation_core_routes.py`
+- `src/api/automation_data_source_routes.py`
+- `src/api/automation_deepseek_routes.py`
+- `src/api/automation_institutional_lab_routes.py`
+- `src/api/automation_manifold_routes.py`
+- `src/api/automation_review_outcomes_routes.py`
+- `src/api/automation_run_once_routes.py`
+- `src/api/automation_security.py`
+- `src/api/automation_small_account_routes.py`
+- `src/api/automation_sport_impact_routes.py`
+- `src/api/bet_csv_routes.py`
+- `src/api/betting_action_routes.py`
+- `src/api/betting_metadata_routes.py`
+- `src/api/debug_routes.py`
+- `src/api/governance_routes.py`
+- `src/api/market_metadata_routes.py`
+- `src/api/market_utility_routes.py`
+- `src/api/model_backtest_routes.py`
+- `src/api/model_card_service.py`
+- `src/api/performance_routes.py`
+- `src/api/provider_status_routes.py`
+- `src/api/quant_routes.py`
+- `src/api/schemas/__init__.py`
+- `src/api/schemas/automation.py`
+- `src/api/schemas/bet_csv.py`
+- `src/api/schemas/betting_actions.py`
+- `src/api/schemas/performance.py`
+- `src/api/schemas/quant.py`
+- `src/api/stock_analysis_routes.py`
+- `src/api/system_routes.py`
+
+## `backtesting`
+
+- File count: `17`
+- Entrypoints: `none`
+- Called by: `backtesting, data, services, tests`
+- Calls into: `analytics, backtesting, brokerage, data, market intelligence, services`
+- Duplicate-looking modules: `src/backtesting/bankroll_state.py, src/backtesting/contracts.py, src/backtesting/strategy_profiles.py`
+- Facades/wrappers: `none`
+- External-boundary signals: `none`
+- Disabled-boundary signals: `none`
+- Test coverage files: `tests/test_bankroll_state.py, tests/test_phase10k8zhk_backtesting_foundation.py, tests/test_phase10k8zl9b_internal_scheduler_self_import_break.py`
+
+### Files
+
+- `src/backtesting/__init__.py`
+- `src/backtesting/backtest_dataset_builder.py`
+- `src/backtesting/backtest_leakage.py`
+- `src/backtesting/backtest_schema.py`
+- `src/backtesting/backtest_strategy_bankroll.py`
+- `src/backtesting/backtest_strategy_profiles.py`
+- `src/backtesting/backtesting_engine.py`
+- `src/backtesting/bankroll_state.py`
+- `src/backtesting/contracts.py`
+- `src/backtesting/dataset_builder.py`
+- `src/backtesting/datasets.py`
+- `src/backtesting/engine.py`
+- `src/backtesting/historical_bridge.py`
+- `src/backtesting/leakage.py`
+- `src/backtesting/replay.py`
+- `src/backtesting/simulation.py`
+- `src/backtesting/strategy_profiles.py`
+
+## `brokerage`
+
+- File count: `53`
+- Entrypoints: `none`
+- Called by: `analytics, backtesting, brokerage, core, market intelligence, providers, services, tests`
+- Calls into: `brokerage, data, providers, research, services`
+- Duplicate-looking modules: `src/brokerage/adapter.py, src/brokerage/contracts.py, src/brokerage/execution.py, src/brokerage/paper_trade_ledger.py, src/brokerage/readiness.py`
+- Facades/wrappers: `src/brokerage/execution.py, src/brokerage/execution/__init__.py`
+- External-boundary signals: `src/brokerage/approval_evidence.py`
+- Disabled-boundary signals: `src/brokerage/__init__.py, src/brokerage/_execution_core.py, src/brokerage/accounts.py, src/brokerage/activation.py, src/brokerage/adapter.py, src/brokerage/adapter_readiness.py, src/brokerage/approval.py, src/brokerage/approval_audit.py, src/brokerage/approval_evidence.py, src/brokerage/client_factory.py, src/brokerage/contracts.py, src/brokerage/credential_loader.py, src/brokerage/credential_readiness.py, src/brokerage/credentials.py, src/brokerage/deployment_policy.py, src/brokerage/deployment_readiness.py, src/brokerage/dry_run.py, src/brokerage/dry_run_ledger.py, src/brokerage/execution.py, src/brokerage/execution/__init__.py, src/brokerage/kill_switch.py, src/brokerage/kill_switch_policy.py, src/brokerage/later/__init__.py, src/brokerage/later/auto_execution_policy.py, src/brokerage/later/execution_audit_log.py, src/brokerage/later/execution_guardrails.py, src/brokerage/later/execution_readiness_check.py, src/brokerage/ledger.py, src/brokerage/live_ledger.py, src/brokerage/live_reconciliation.py, src/brokerage/live_submit.py, src/brokerage/live_trading/__init__.py, src/brokerage/monitoring.py, src/brokerage/operator.py, src/brokerage/order_gateway/__init__.py, src/brokerage/orders.py, src/brokerage/paper_decision_ledger.py, src/brokerage/paper_trade_ledger.py, src/brokerage/paper_trading/__init__.py, src/brokerage/positions.py, src/brokerage/readiness.py, src/brokerage/readiness_support.py, src/brokerage/reconciliation.py, src/brokerage/risk_controls/__init__.py, src/brokerage/rollback.py, src/brokerage/sandbox.py, src/brokerage/sandbox_activation.py, src/brokerage/sandbox_adapter.py, src/brokerage/sandbox_enablement.py, src/brokerage/sandbox_proof.py, src/brokerage/sandbox_submit.py, src/brokerage/settlement.py, src/brokerage/submit_readiness.py`
+- Test coverage files: `tests/test_security_framework.py, tests/test_settlement_rule_checker.py, tests/test_strategy_framework.py`
+
+### Files
+
+- `src/brokerage/__init__.py`
+- `src/brokerage/_execution_core.py`
+- `src/brokerage/accounts.py`
+- `src/brokerage/activation.py`
+- `src/brokerage/adapter.py`
+- `src/brokerage/adapter_readiness.py`
+- `src/brokerage/approval.py`
+- `src/brokerage/approval_audit.py`
+- `src/brokerage/approval_evidence.py`
+- `src/brokerage/client_factory.py`
+- `src/brokerage/contracts.py`
+- `src/brokerage/credential_loader.py`
+- `src/brokerage/credential_readiness.py`
+- `src/brokerage/credentials.py`
+- `src/brokerage/deployment_policy.py`
+- `src/brokerage/deployment_readiness.py`
+- `src/brokerage/dry_run.py`
+- `src/brokerage/dry_run_ledger.py`
+- `src/brokerage/execution.py`
+- `src/brokerage/execution/__init__.py`
+- `src/brokerage/kill_switch.py`
+- `src/brokerage/kill_switch_policy.py`
+- `src/brokerage/later/__init__.py`
+- `src/brokerage/later/auto_execution_policy.py`
+- `src/brokerage/later/execution_audit_log.py`
+- `src/brokerage/later/execution_guardrails.py`
+- `src/brokerage/later/execution_readiness_check.py`
+- `src/brokerage/ledger.py`
+- `src/brokerage/live_ledger.py`
+- `src/brokerage/live_reconciliation.py`
+- `src/brokerage/live_submit.py`
+- `src/brokerage/live_trading/__init__.py`
+- `src/brokerage/monitoring.py`
+- `src/brokerage/operator.py`
+- `src/brokerage/order_gateway/__init__.py`
+- `src/brokerage/orders.py`
+- `src/brokerage/paper_decision_ledger.py`
+- `src/brokerage/paper_trade_ledger.py`
+- `src/brokerage/paper_trading/__init__.py`
+- `src/brokerage/positions.py`
+- `src/brokerage/readiness.py`
+- `src/brokerage/readiness_support.py`
+- `src/brokerage/reconciliation.py`
+- `src/brokerage/risk_controls/__init__.py`
+- `src/brokerage/rollback.py`
+- `src/brokerage/sandbox.py`
+- `src/brokerage/sandbox_activation.py`
+- `src/brokerage/sandbox_adapter.py`
+- `src/brokerage/sandbox_enablement.py`
+- `src/brokerage/sandbox_proof.py`
+- `src/brokerage/sandbox_submit.py`
+- `src/brokerage/settlement.py`
+- `src/brokerage/submit_readiness.py`
+
+## `core`
+
+- File count: `46`
+- Entrypoints: `none`
+- Called by: `analytics, api, core, market intelligence, providers, research, root/non-src python, scripts/ops, services, src/unknown, tests`
+- Calls into: `brokerage, core, data, market intelligence, providers, security, services, src/unknown`
+- Duplicate-looking modules: `src/core/backtester.py, src/core/balance_sheet_risk.py, src/core/clv.py, src/core/entity_resolver.py, src/core/execution.py, src/core/institutional_risk_engine.py, src/core/liquidity_context_scoring.py, src/core/market_clock.py, src/core/math_utils.py, src/core/model_probability.py, src/core/pricing.py, src/core/probability.py, src/core/risk.py, src/core/session_risk_rules.py, src/core/settings.py, src/core/strategy_context_buckets.py, src/core/strategy_disagreement.py`
+- Facades/wrappers: `src/core/market_pricing.py, src/core/model_probability.py, src/core/quant_engine.py, src/core/risk_engine.py`
+- External-boundary signals: `none`
+- Disabled-boundary signals: `none`
+- Test coverage files: `tests/test_drawdown_controls.py, tests/test_evaluate_lines.py, tests/test_exposure_limits.py, tests/test_institutional_cross_asset_lab.py, tests/test_kelly_staking.py, tests/test_market_clock.py, tests/test_model_probability.py, tests/test_phase10k5_core_arbitrage_engine.py, tests/test_phase10k8f_paper_only_fixture_evaluation_helper.py, tests/test_phase10k8g_paper_only_evaluation_readiness_adapter.py, tests/test_phase10k8zfg_safe_migration_batch_1.py, tests/test_phase10k8zh1_core_math_foundation_batch.py, tests/test_phase10k8zh2_risk_foundation_batch.py, tests/test_price_event.py, tests/test_quant_engine_foundation.py, tests/test_risk_of_ruin.py, tests/test_stake_confidence.py, tests/test_stake_sizing_simulator.py, tests/test_strategy_framework.py`
+
+### Files
+
+- `src/core/__init__.py`
+- `src/core/backtester.py`
+- `src/core/balance_sheet_risk.py`
+- `src/core/budget_gates.py`
+- `src/core/calibrator.py`
+- `src/core/clv.py`
+- `src/core/conformal_uncertainty.py`
+- `src/core/cross_book_line_comparator.py`
+- `src/core/drawdown_controls.py`
+- `src/core/entity_resolver.py`
+- `src/core/ev_line_shopper.py`
+- `src/core/execution.py`
+- `src/core/exposure_limits.py`
+- `src/core/game_theory.py`
+- `src/core/institutional_risk_engine.py`
+- `src/core/kelly_staking.py`
+- `src/core/liquidity_context_scoring.py`
+- `src/core/liquidity_risk.py`
+- `src/core/market_clock.py`
+- `src/core/market_impact.py`
+- `src/core/market_pricing.py`
+- `src/core/market_structure.py`
+- `src/core/math_utils.py`
+- `src/core/model_probability.py`
+- `src/core/no_vig_pricing.py`
+- `src/core/opportunity_scanner.py`
+- `src/core/portfolio.py`
+- `src/core/pricing.py`
+- `src/core/probability.py`
+- `src/core/quant_engine.py`
+- `src/core/random_matrix_risk.py`
+- `src/core/risk.py`
+- `src/core/risk_engine.py`
+- `src/core/risk_of_ruin.py`
+- `src/core/session_risk_rules.py`
+- `src/core/settings.py`
+- `src/core/stake_confidence.py`
+- `src/core/stake_sizing_simulator.py`
+- `src/core/status_codes.py`
+- `src/core/strategy_context_buckets.py`
+- `src/core/strategy_disagreement.py`
+- `src/core/strategy_maturity.py`
+- `src/core/strategy_promotion.py`
+- `src/core/strategy_registry.py`
+- `src/core/strategy_router.py`
+- `src/core/strategy_score_aggregator.py`
+
+## `dashboard/frontend`
+
+- File count: `17`
+- Entrypoints: `streamlit_app.py`
+- Called by: `none`
+- Calls into: `services`
+- Duplicate-looking modules: `none`
+- Facades/wrappers: `none`
+- External-boundary signals: `none`
+- Disabled-boundary signals: `none`
+- Test coverage files: `none`
+
+### Files
+
+- `DASHBOARD_ENTRYPOINT_OWNERSHIP_MAP_AFTER_10K8ZHF.md`
+- `DASHBOARD_THINNING_SEQUENCE_AFTER_10K8ZHF.md`
+- `PHASE10H23_LINE_MOVEMENT_DATA_QUALITY_DASHBOARD.md`
+- `PHASE10H2_DASHBOARD_SWEEP_REPORT.md`
+- `PHASE10H3_STREAMLIT_OPERATOR_DASHBOARD.md`
+- `PHASE10H8_STREAMLIT_SQLITE_IMPORT_PROJECTION_UI.md`
+- `PHASE10K6B_DASHBOARD_NAVIGATION_PLAN_CONTRACT.md`
+- `PHASE10K6K_CONTROLLED_DASHBOARD_SHELL_REVIEW.md`
+- `PHASE10K8ZC_DASHBOARD_PRODUCT_LANE_CLEANUP.md`
+- `PHASE10K8ZHF_DASHBOARD_ENTRYPOINT_OWNERSHIP_AUDIT.md`
+- `PHASE10K8ZHH_SERVICE_API_DASHBOARD_CHECKPOINT.md`
+- `PHASE10K8ZMI_STREAMLIT_DASHBOARD_TEST_IMPORT_REDIRECTION.md`
+- `REMAINING_SERVICE_DASHBOARD_API_QUEUE_AFTER_10K8ZHA.md`
+- `STREAMLIT_DASHBOARD_TEST_IMPORTS_BEFORE_10K8ZMI.md`
+- `STREAMLIT_DASHBOARD_TEST_REDIRECTION_MAP_AFTER_10K8ZMI.md`
+- `STREAMLIT_DASHBOARD_TEST_ZERO_IMPORT_PROOF_AFTER_10K8ZMI.md`
+- `streamlit_app.py`
+
+## `data`
+
+- File count: `11`
+- Entrypoints: `none`
+- Called by: `ai, analytics, backtesting, brokerage, core, data, market intelligence, providers, research, security, services, tests`
+- Calls into: `backtesting, data, services`
+- Duplicate-looking modules: `src/data/contracts.py, src/data/data_paths.py, src/data/historical_odds.py, src/data/line_movement.py, src/data/source_event_links.py, src/data/validation.py`
+- Facades/wrappers: `src/data/line_movement.py`
+- External-boundary signals: `src/data/local_loader.py`
+- Disabled-boundary signals: `none`
+- Test coverage files: `tests/test_data_source_endpoints.py, tests/test_data_source_registry.py, tests/test_data_source_research_lanes.py, tests/test_historical_odds_sqlite.py, tests/test_nfl_historical_pattern_lab.py, tests/test_nfl_source_exhaustion.py, tests/test_odds_line_monitor.py, tests/test_open_sports_history_backfill.py, tests/test_open_sports_history_import.py, tests/test_open_sports_history_sources.py, tests/test_phase10k2_sports_snapshot_pipeline.py, tests/test_phase10k8o_dedicated_0dte_paper_fixture_template.py, tests/test_phase10k8p_dedicated_0dte_fixture_validation_adapter.py, tests/test_phase10k8q_dedicated_0dte_validation_readiness_payload.py, tests/test_phase10k8r_dedicated_0dte_validation_readiness_ui.py, tests/test_phase10k8s_dedicated_0dte_paper_evaluation_adapter.py, tests/test_phase10k8t_dedicated_0dte_evaluation_readiness_payload.py, tests/test_phase10k8u_dedicated_0dte_evaluation_ui.py, tests/test_phase10k8v_full_0dte_paper_pipeline_adapter.py, tests/test_phase10k8w_full_0dte_paper_pipeline_ui.py, tests/test_phase10k8x_controlled_0dte_paper_run_smoke_review.py, tests/test_phase10k8y_0dte_prediction_testing_readiness_review.py, tests/test_phase10k8za_0dte_data_field_formula_coverage_audit.py, tests/test_phase10k8zb_0dte_field_formula_gap_patch.py, tests/test_phase10k8ze_institutional_market_metric_catalog.py, tests/test_phase10k8zf1_compatibility_alias_migration.py, tests/test_phase10k8zf2_production_symbol_migration.py, tests/test_phase10k8zhj_data_foundation.py, tests/test_phase10k8zl9b_internal_scheduler_self_import_break.py, tests/test_streamlit_dashboard_data.py, tests/test_synthetic_line_movement_sandbox.py`
+
+### Files
+
+- `src/data/__init__.py`
+- `src/data/contracts.py`
+- `src/data/data_paths.py`
+- `src/data/historical_odds.py`
+- `src/data/historical_sources.py`
+- `src/data/line_movement.py`
+- `src/data/local_loader.py`
+- `src/data/metadata.py`
+- `src/data/source_event_links.py`
+- `src/data/source_registry.py`
+- `src/data/validation.py`
+
+## `docs/proofs`
+
+- File count: `897`
+- Entrypoints: `none`
+- Called by: `none`
+- Calls into: `none`
+- Duplicate-looking modules: `none`
+- Facades/wrappers: `none`
+- External-boundary signals: `none`
+- Disabled-boundary signals: `none`
+- Test coverage files: `none`
+
+### Files
+
+- `ACTIVATION_GATE_DISABLED_BEHAVIOR_AFTER_10K8ZJJ.md`
+- `ACTIVATION_GATE_REQUIREMENTS_AFTER_10K8ZJJ.md`
+- `AI_ADJACENT_RESEARCH_DEFERRED_BLOCKERS_AFTER_10K8ZHZ.md`
+- `AI_BOUNDARY_OWNERSHIP_MAP_AFTER_10K8ZI7.md`
+- `AI_DISABLED_BEHAVIOR_AFTER_10K8ZI7.md`
+- `AI_LLM_CREDENTIAL_RISK_MAP_AFTER_10K8ZI6.md`
+- `AI_LLM_DEFERRED_ACTIVATION_PLAN_AFTER_10K8ZI6.md`
+- `AI_LLM_FILE_INVENTORY_AFTER_10K8ZI6.md`
+- `AI_LLM_RUNTIME_RISK_MAP_AFTER_10K8ZI6.md`
+- `AI_PROMPT_POLICY_AFTER_10K8ZI7.md`
+- `AI_SCHEDULER_BLOCKER_MAP_AFTER_10K8ZI8.md`
+- `AI_SCHEDULER_DELETE_READINESS_AFTER_10K8ZI8.md`
+- `AI_SCHEDULER_MIGRATION_SEQUENCE_AFTER_10K8ZI8.md`
+- `ANALYTICS_BATCH_1_COMPATIBILITY_REPORT_AFTER_10K8ZHR.md`
+- `ANALYTICS_BATCH_1_DELETE_READINESS_AFTER_10K8ZHR.md`
+- `ANALYTICS_BATCH_1_MIGRATION_MAP_AFTER_10K8ZHR.md`
+- `ANALYTICS_DOWNSTREAM_COMPATIBILITY_REPORT_AFTER_10K8ZHV.md`
+- `ANALYTICS_DOWNSTREAM_DELETE_READINESS_AFTER_10K8ZHV.md`
+- `ANALYTICS_DOWNSTREAM_REDIRECTION_MAP_AFTER_10K8ZHV.md`
+- `ANALYTICS_FOUNDATION_OWNERSHIP_MAP_AFTER_10K8ZHN.md`
+- `ANALYTICS_GOVERNANCE_MIGRATION_MAP_AFTER_10K8ZHN.md`
+- `ANALYTICS_LAYER_OWNERSHIP_MAP_AFTER_10K8ZHI.md`
+- `ANALYTICS_RESEARCH_ACTIVE_REFERENCE_SCAN_AFTER_10K8ZHZ.md`
+- `ANALYTICS_RESEARCH_ACTIVE_TEST_REFERENCE_SCAN_AFTER_10K8ZI1.md`
+- `ANALYTICS_RESEARCH_BATCH_1_LEGACY_IMPORT_SCAN_AFTER_10K8ZHT.md`
+- `ANALYTICS_RESEARCH_BATCH_1_NEXT_SEQUENCE_AFTER_10K8ZHT.md`
+- `ANALYTICS_RESEARCH_BATCH_1_REMAINING_BLOCKERS_AFTER_10K8ZHT.md`
+- `ANALYTICS_RESEARCH_BATCH_2_DELETE_READINESS_AFTER_10K8ZHX.md`
+- `ANALYTICS_RESEARCH_BATCH_2_LEGACY_IMPORT_SCAN_AFTER_10K8ZHX.md`
+- `ANALYTICS_RESEARCH_BATCH_2_REMAINING_BLOCKERS_AFTER_10K8ZHX.md`
+- `ANALYTICS_RESEARCH_COMPATIBILITY_TEST_RETIREMENT_MAP_AFTER_10K8ZI1.md`
+- `ANALYTICS_RESEARCH_DELETE_READINESS_AFTER_10K8ZHP.md`
+- `ANALYTICS_RESEARCH_MIGRATION_SEQUENCE_AFTER_10K8ZHP.md`
+- `ANALYTICS_RESEARCH_REFERENCE_REMEDIATION_PLAN_AFTER_10K8ZHZ.md`
+- `ANALYTICS_RESEARCH_TEST_BLOCKER_STATUS_AFTER_10K8ZI1.md`
+- `ANALYTICS_RESEARCH_WRAPPER_DELETE_READINESS_AFTER_10K8ZHZ.md`
+- `ANALYTICS_RESEARCH_WRAPPER_DELETION_COMPLETION_STATUS_AFTER_10K8ZI5.md`
+- `ANALYTICS_RESEARCH_WRAPPER_DELETION_PROOF_AFTER_10K8ZI5.md`
+- `ANALYTICS_RESEARCH_WRAPPER_IMPORT_SCAN_AFTER_10K8ZHZ.md`
+- `ANALYTICS_RESEARCH_WRAPPER_TEST_SCAN_AFTER_10K8ZHZ.md`
+- `ANALYTICS_VALIDATION_REPORT_AFTER_10K8ZHN.md`
+- `API_LAYER_THINNING_SEQUENCE_AFTER_10K8ZHE.md`
+- `API_ROUTE_OWNERSHIP_MAP_AFTER_10K8ZHE.md`
+- `APPROVAL_AUDIT_REQUIREMENTS_AFTER_10K8ZJW.md`
+- `APPROVAL_EVIDENCE_DISABLED_BEHAVIOR_AFTER_10K8ZJP.md`
+- `APPROVAL_EVIDENCE_REQUIREMENTS_AFTER_10K8ZJP.md`
+- `ARCHITECTURE_EVOLUTION_SUMMARY_AFTER_10K8ZK4.md`
+- `AUTOMATION_SCHEDULER_ACTIVE_IMPORT_SCAN_AFTER_10K8ZMH.md`
+- `AUTOMATION_SCHEDULER_ACTIVE_TEST_SCAN_AFTER_10K8ZMH.md`
+- `AUTOMATION_SCHEDULER_CANONICAL_TARGETS_AFTER_10K8ZK6.md`
+- `AUTOMATION_SCHEDULER_COMPATIBILITY_REPORT_AFTER_10K8ZK6.md`
+- `AUTOMATION_SCHEDULER_DECOMMISSION_QUEUE_AFTER_10K8ZK5.md`
+- `AUTOMATION_SCHEDULER_DECOMMISSION_SEQUENCE_AFTER_10K8ZHG.md`
+- `AUTOMATION_SCHEDULER_DELETION_COMPLETION_STATUS_AFTER_10K8ZL0.md`
+- `AUTOMATION_SCHEDULER_DELETION_PROOF_AFTER_10K8ZL0.md`
+- `AUTOMATION_SCHEDULER_EXACT_BLOCKER_LEDGER_AFTER_10K8ZMH.md`
+- `AUTOMATION_SCHEDULER_EXIT_SEQUENCE_AFTER_10K8ZFS.md`
+- `AUTOMATION_SCHEDULER_FILE_INVENTORY_AFTER_10K8ZK5.md`
+- `AUTOMATION_SCHEDULER_FINAL_DELETE_DECISION_AFTER_10K8ZMH.md`
+- `AUTOMATION_SCHEDULER_FINAL_REDIRECTION_MAP_AFTER_10K8ZMH.md`
+- `AUTOMATION_SCHEDULER_IMPORT_SCAN_AFTER_10K8ZK5.md`
+- `AUTOMATION_SCHEDULER_INTERNAL_IMPORT_SCAN_AFTER_10K8ZMH.md`
+- `AUTOMATION_SCHEDULER_MIGRATION_MAP_AFTER_10K8ZK6.md`
+- `AUTOMATION_SCHEDULER_OWNERSHIP_CLASSIFICATION_AFTER_10K8ZK5.md`
+- `AUTOMATION_SCHEDULER_PROVIDER_RETIREMENT_BLOCKERS_AFTER_10K8ZFN.md`
+- `AUTOMATION_SCHEDULER_REMAINING_OWNERSHIP_AFTER_10K8ZGE.md`
+- `AUTOMATION_SCHEDULER_REMAINING_OWNER_MAP_AFTER_10K8ZHG.md`
+- `AUTOMATION_SCHEDULER_RETIREMENT_MAP_AFTER_10K8ZFM.md`
+- `AUTOMATION_SCHEDULER_RETIREMENT_PROGRESS_AFTER_10K8ZG2.md`
+- `AUTOMATION_SCHEDULER_RUNTIME_DELETE_READINESS_AFTER_10K8ZK7.md`
+- `AUTOMATION_SCHEDULER_RUNTIME_IMPORTERS_BEFORE_10K8ZL9A.md`
+- `AUTOMATION_SCHEDULER_RUNTIME_IMPORTS_AFTER_10K8ZK7.md`
+- `AUTOMATION_SCHEDULER_RUNTIME_REDIRECTION_MAP_AFTER_10K8ZK7.md`
+- `AUTOMATION_SCHEDULER_RUNTIME_REDIRECTION_MAP_AFTER_10K8ZL9A.md`
+- `AUTOMATION_SCHEDULER_RUNTIME_ZERO_IMPORT_PROOF_AFTER_10K8ZL9A.md`
+- `AUTOMATION_SCHEDULER_TEST_DELETE_READINESS_AFTER_10K8ZK8.md`
+- `AUTOMATION_SCHEDULER_TEST_REDIRECTION_MAP_AFTER_10K8ZK8.md`
+- `AUTOMATION_SCHEDULER_TEST_REFERENCE_SCAN_AFTER_10K8ZK8.md`
+- `AUTOMATION_SCHEDULER_TEST_SCAN_AFTER_10K8ZK5.md`
+- `BACKTESTING_DATASET_CONTRACTS_AFTER_10K8ZHK.md`
+- `BACKTESTING_FOUNDATION_OWNERSHIP_MAP_AFTER_10K8ZHK.md`
+- `BACKTESTING_LAYER_OWNERSHIP_MAP_AFTER_10K8ZHI.md`
+- `BACKTESTING_LEAKAGE_VALIDATION_AFTER_10K8ZHK.md`
+- `BASELINE_LEGACY_BRIDGE_STATUS_AFTER_10K8ZMU.md`
+- `BET_LOG_MIGRATION_PLAN_AFTER_10K8ZHD.md`
+- `BROKERAGE_CONTRACTS_AFTER_10K8ZIB.md`
+- `BROKERAGE_DISABLED_BEHAVIOR_AFTER_10K8ZIB.md`
+- `BROKER_ACCOUNT_CONTRACTS_AFTER_10K8ZJ3.md`
+- `BROKER_ACCOUNT_CREDENTIAL_RISK_MAP_AFTER_10K8ZJ2.md`
+- `BROKER_ACCOUNT_FILE_INVENTORY_AFTER_10K8ZJ2.md`
+- `BROKER_ACCOUNT_RUNTIME_RISK_MAP_AFTER_10K8ZJ2.md`
+- `BROKER_ACTIVATION_REQUIREMENTS_AFTER_10K8ZJ5.md`
+- `BROKER_ADAPTER_BOUNDARY_AFTER_10K8ZJD.md`
+- `BROKER_ADAPTER_CAPABILITIES_AFTER_10K8ZJD.md`
+- `BROKER_ADAPTER_READINESS_DISABLED_BEHAVIOR_AFTER_10K8ZJK.md`
+- `BROKER_ADAPTER_READINESS_REQUIREMENTS_AFTER_10K8ZJK.md`
+- `BROKER_CLIENT_FACTORY_DISABLED_BEHAVIOR_AFTER_10K8ZJ8.md`
+- `BROKER_CLIENT_FACTORY_REQUIREMENTS_AFTER_10K8ZJ8.md`
+- `BROKER_CREDENTIAL_POLICY_AFTER_10K8ZJ3.md`
+- `BROKER_INTEGRATION_TASK_GRAPH_AFTER_10K8ZK4.md`
+- `BROKER_RECONCILIATION_DISABLED_BEHAVIOR_AFTER_10K8ZJ3.md`
+- `CALLER_MATRIX_AFTER_10K8ZMN.md`
+- `CANONICAL_MODULE_OWNERSHIP_AFTER_10K8ZK4.md`
+- `CANONICAL_OWNERSHIP_STATUS_AFTER_10K8ZG2.md`
+- `COMPATIBILITY_SHELL_INVENTORY_AFTER_10K8ZMN.md`
+- `CONNECTOR_BOUNDARY_MAP_AFTER_10K8ZFX.md`
+- `CONNECTOR_CONTRACT_READINESS_AFTER_10K8ZFX.md`
+- `CONNECTOR_DISABLED_BEHAVIOR_REPORT_AFTER_10K8ZFY.md`
+- `CONTROLLED_ACTIVATION_BLOCKER_MAP_AFTER_10K8ZJO.md`
+- `CONTROLLED_ROLLOUT_PLAN_AFTER_10K8ZK4.md`
+- `CORE_ENGINE_COMPATIBILITY_WRAPPER_REPORT_AFTER_10K8ZH9.md`
+- `CORE_ENGINE_DUPLICATION_REPORT_AFTER_10K8ZH0.md`
+- `CORE_ENGINE_FUNCTION_INVENTORY_AFTER_10K8ZH0.md`
+- `CORE_ENGINE_MIGRATION_COMPLETION_STATUS_AFTER_10K8ZH9.md`
+- `CORE_ENGINE_MIGRATION_SEQUENCE_AFTER_10K8ZH0.md`
+- `CORE_ENGINE_OWNERSHIP_MAP_AFTER_10K8ZH0.md`
+- `CORE_MATH_FUNCTION_MAP_AFTER_10K8ZH1.md`
+- `CORE_MATH_VALIDATION_REPORT_AFTER_10K8ZH1.md`
+- `CORE_PORTFOLIO_FUNCTION_MAP_AFTER_10K8ZH6.md`
+- `CORE_PORTFOLIO_VALIDATION_AFTER_10K8ZH6.md`
+- `CORE_PRICING_COMPATIBILITY_REPORT_AFTER_10K8ZH4.md`
+- `CORE_PRICING_OWNERSHIP_MAP_AFTER_10K8ZH4.md`
+- `CORE_PROBABILITY_COMPATIBILITY_REPORT_AFTER_10K8ZH5.md`
+- `CORE_PROBABILITY_OWNERSHIP_MAP_AFTER_10K8ZH5.md`
+- `CREDENTIAL_LOADING_DISABLED_BEHAVIOR_AFTER_10K8ZJF.md`
+- `CREDENTIAL_LOADING_REQUIREMENTS_AFTER_10K8ZJF.md`
+- `CREDENTIAL_READINESS_DISABLED_BEHAVIOR_AFTER_10K8ZJL.md`
+- `CREDENTIAL_READINESS_REQUIREMENTS_AFTER_10K8ZJL.md`
+- `CURRENT_CHANGESET_NAME_STATUS_AFTER_10K8ZMP.md`
+- `CURRENT_CHANGESET_STAT_AFTER_10K8ZMP.md`
+- `CURRENT_DIRTY_WORKTREE_INVENTORY_AFTER_10K8ZMP.md`
+- `DATA_BACKTESTING_DELETE_READINESS_AFTER_10K8ZHL.md`
+- `DATA_BACKTESTING_FOUNDATION_AUDIT_AFTER_10K8ZHI.md`
+- `DATA_BACKTESTING_MIGRATION_SEQUENCE_AFTER_10K8ZHI.md`
+- `DATA_BACKTESTING_MIGRATION_SEQUENCE_AFTER_10K8ZHL.md`
+- `DATA_FOUNDATION_OWNERSHIP_MAP_AFTER_10K8ZHJ.md`
+- `DATA_LAYER_OWNERSHIP_MAP_AFTER_10K8ZHI.md`
+- `DATA_SOURCE_REGISTRY_MAP_AFTER_10K8ZHJ.md`
+- `DATA_VALIDATION_REPORT_AFTER_10K8ZHJ.md`
+- `DECISION_ENGINE_OWNERSHIP_MAP_AFTER_10K8ZH8.md`
+- `DECISION_ENGINE_SERVICE_OWNERSHIP_AFTER_10K8ZHD.md`
+- `DECOMMISSION_CANDIDATES_AFTER_10K8ZFM.md`
+- `DELETE_PRIORITY_LIST_AFTER_10K8ZMN.md`
+- `DEPLOYMENT_READINESS_DISABLED_BEHAVIOR_AFTER_10K8ZJN.md`
+- `DISABLED_BOUNDARY_INVARIANTS_AFTER_10K8ZK4.md`
+- `DUPLICATE_LOGIC_EVIDENCE_REPORT_AFTER_10K8ZFM.md`
+- `EXECUTION_BLOCKER_CANONICALIZATION_MAP_AFTER_10K8ZIH.md`
+- `EXECUTION_BLOCKER_COMPATIBILITY_REPORT_AFTER_10K8ZIH.md`
+- `EXECUTION_BLOCKER_DELETION_COMPLETION_STATUS_AFTER_10K8ZIJ.md`
+- `EXECUTION_BLOCKER_DELETION_PROOF_AFTER_10K8ZIJ.md`
+- `EXECUTION_BLOCKER_IMPORT_SCAN_AFTER_10K8ZIG.md`
+- `EXECUTION_BLOCKER_OWNERSHIP_MAP_AFTER_10K8ZIG.md`
+- `EXECUTION_BLOCKER_RUNTIME_REDIRECTION_AFTER_10K8ZIH.md`
+- `EXECUTION_BLOCKER_TEST_SCAN_AFTER_10K8ZIG.md`
+- `EXECUTION_COMPATIBILITY_REPORT_AFTER_10K8ZIC.md`
+- `EXECUTION_DELETION_COMPLETION_STATUS_AFTER_10K8ZIE.md`
+- `EXECUTION_GAME_THEORY_FUNCTION_MAP_AFTER_10K8ZH7.md`
+- `EXECUTION_HELPER_ACTIVE_REFERENCE_SCAN_AFTER_10K8ZIQ.md`
+- `EXECUTION_HELPER_COMPATIBILITY_REPORT_AFTER_10K8ZIR.md`
+- `EXECUTION_HELPER_REDIRECTION_PLAN_AFTER_10K8ZIQ.md`
+- `EXECUTION_HELPER_RUNTIME_DELETE_READINESS_AFTER_10K8ZIR.md`
+- `EXECUTION_HELPER_RUNTIME_REDIRECTION_MAP_AFTER_10K8ZIR.md`
+- `EXECUTION_HELPER_TEST_COMPATIBILITY_REPORT_AFTER_10K8ZIS.md`
+- `EXECUTION_HELPER_TEST_DELETE_READINESS_AFTER_10K8ZIS.md`
+- `EXECUTION_HELPER_TEST_REDIRECTION_MAP_AFTER_10K8ZIS.md`
+- `EXECUTION_HELPER_TEST_REFERENCE_SCAN_AFTER_10K8ZIQ.md`
+- `EXECUTION_HELPER_WRAPPER_DELETION_COMPLETION_STATUS_AFTER_10K8ZIU.md`
+- `EXECUTION_HELPER_WRAPPER_DELETION_PROOF_AFTER_10K8ZIU.md`
+- `EXECUTION_OWNERSHIP_MIGRATION_MAP_AFTER_10K8ZIC.md`
+- `EXECUTION_RUNTIME_REDIRECTION_AFTER_10K8ZIC.md`
+- `EXECUTION_SCHEDULER_DELETE_CANDIDATE_QUEUE_AFTER_10K8ZIA.md`
+- `EXECUTION_SCHEDULER_DELETION_PROOF_AFTER_10K8ZIE.md`
+- `EXECUTION_SCHEDULER_FILE_INVENTORY_AFTER_10K8ZIA.md`
+- `EXECUTION_SCHEDULER_OWNERSHIP_MAP_AFTER_10K8ZIA.md`
+- `FILE_OWNERSHIP_MATRIX_AFTER_10K8ZMN.md`
+- `FINAL_ACCOUNT_CREATION_DISABLED_PROOF_AFTER_10K8ZK2.md`
+- `FINAL_ANALYTICS_RESEARCH_DELETE_DECISION_AFTER_10K8ZI4.md`
+- `FINAL_ANALYTICS_RESEARCH_IMPORT_SCAN_AFTER_10K8ZI4.md`
+- `FINAL_ANALYTICS_RESEARCH_TEST_SCAN_AFTER_10K8ZI4.md`
+- `FINAL_ARCHITECTURE_INVARIANTS_AFTER_10K8ZK4.md`
+- `FINAL_AUTOMATION_SCHEDULER_DELETE_DECISION_AFTER_10K8ZK9.md`
+- `FINAL_AUTOMATION_SCHEDULER_IMPORT_SCAN_AFTER_10K8ZK9.md`
+- `FINAL_AUTOMATION_SCHEDULER_STATUS_AFTER_10K8ZL1.md`
+- `FINAL_AUTOMATION_SCHEDULER_TEST_SCAN_AFTER_10K8ZK9.md`
+- `FINAL_BROKER_SDK_IMPORT_FREEZE_AFTER_10K8ZK2.md`
+- `FINAL_CANONICAL_ARCHITECTURE_MAP_AFTER_10K8ZK2.md`
+- `FINAL_CREDENTIAL_SAFETY_FREEZE_AFTER_10K8ZK2.md`
+- `FINAL_DELETE_PROOF_AFTER_10K8ZMN.md`
+- `FINAL_DEPLOYMENT_DISABLED_PROOF_AFTER_10K8ZK2.md`
+- `FINAL_DISABLED_BOUNDARY_MAP_AFTER_10K8ZK2.md`
+- `FINAL_EXECUTION_BLOCKER_CANONICALIZATION_MAP_AFTER_10K8ZIX.md`
+- `FINAL_EXECUTION_BLOCKER_COMPATIBILITY_REPORT_AFTER_10K8ZIX.md`
+- `FINAL_EXECUTION_BLOCKER_DELETE_DECISION_AFTER_10K8ZII.md`
+- `FINAL_EXECUTION_BLOCKER_DELETE_DECISION_AFTER_10K8ZIZ.md`
+- `FINAL_EXECUTION_BLOCKER_DELETION_COMPLETION_STATUS_AFTER_10K8ZJ0.md`
+- `FINAL_EXECUTION_BLOCKER_DELETION_PROOF_AFTER_10K8ZJ0.md`
+- `FINAL_EXECUTION_BLOCKER_IMPORT_SCAN_AFTER_10K8ZII.md`
+- `FINAL_EXECUTION_BLOCKER_IMPORT_SCAN_AFTER_10K8ZIW.md`
+- `FINAL_EXECUTION_BLOCKER_IMPORT_SCAN_AFTER_10K8ZIZ.md`
+- `FINAL_EXECUTION_BLOCKER_OWNERSHIP_MAP_AFTER_10K8ZIW.md`
+- `FINAL_EXECUTION_BLOCKER_RUNTIME_REDIRECTION_AFTER_10K8ZIX.md`
+- `FINAL_EXECUTION_BLOCKER_TEST_SCAN_AFTER_10K8ZII.md`
+- `FINAL_EXECUTION_BLOCKER_TEST_SCAN_AFTER_10K8ZIW.md`
+- `FINAL_EXECUTION_BLOCKER_TEST_SCAN_AFTER_10K8ZIZ.md`
+- `FINAL_EXECUTION_DELETE_DECISION_AFTER_10K8ZID.md`
+- `FINAL_EXECUTION_HELPER_DELETE_DECISION_AFTER_10K8ZIO.md`
+- `FINAL_EXECUTION_HELPER_DELETE_DECISION_AFTER_10K8ZIT.md`
+- `FINAL_EXECUTION_HELPER_IMPORT_SCAN_AFTER_10K8ZIO.md`
+- `FINAL_EXECUTION_HELPER_IMPORT_SCAN_AFTER_10K8ZIT.md`
+- `FINAL_EXECUTION_HELPER_TEST_SCAN_AFTER_10K8ZIO.md`
+- `FINAL_EXECUTION_HELPER_TEST_SCAN_AFTER_10K8ZIT.md`
+- `FINAL_EXECUTION_IMPORT_SCAN_AFTER_10K8ZID.md`
+- `FINAL_EXECUTION_TEST_COMPATIBILITY_REPORT_AFTER_10K8ZIY.md`
+- `FINAL_EXECUTION_TEST_DELETE_READINESS_AFTER_10K8ZIY.md`
+- `FINAL_EXECUTION_TEST_REDIRECTION_MAP_AFTER_10K8ZIY.md`
+- `FINAL_EXECUTION_TEST_SCAN_AFTER_10K8ZID.md`
+- `FINAL_LIVE_TRADING_DISABLED_PROOF_AFTER_10K8ZK2.md`
+- `FINAL_MARKET_INTELLIGENCE_STATUS_AFTER_10K8ZL8.md`
+- `FINAL_NETWORK_ACTIVATION_FREEZE_AFTER_10K8ZK2.md`
+- `FINAL_ODDS_DELETE_READINESS_AFTER_10K8ZGN.md`
+- `FINAL_ODDS_SHELL_DELETE_PROOF_AFTER_10K8ZGO.md`
+- `FINAL_ORDER_SUBMISSION_DISABLED_PROOF_AFTER_10K8ZK2.md`
+- `FINAL_PREDICTION_MARKET_DELETE_READINESS_AFTER_10K8ZGX.md`
+- `FINAL_PRODUCTION_SHAPED_EXECUTION_PATH_AFTER_10K8ZK2.md`
+- `FINAL_PROVIDER_FOUNDATION_BLOCKER_DELETION_PROOF_AFTER_10K8ZGD.md`
+- `FINAL_PROVIDER_FOUNDATION_DELETE_READINESS_AFTER_10K8ZGC.md`
+- `FINAL_PROVIDER_FOUNDATION_IMPORT_SCAN_AFTER_10K8ZGC.md`
+- `FINAL_PROVIDER_FOUNDATION_TEST_REDIRECTION_AFTER_10K8ZGC.md`
+- `FINAL_REMAINING_ACTIVATION_QUEUE_AFTER_10K8ZK3.md`
+- `FINAL_SANDBOX_GOVERNANCE_STATUS_AFTER_10K8ZK1.md`
+- `FINAL_SANDBOX_PROOF_STATUS_AFTER_10K8ZJU.md`
+- `FIRST_SAFE_TRANSPORT_BATCH_AFTER_10K8ZFS.md`
+- `FULL_GATE_FAILURE_INVENTORY_AFTER_10K8ZHI.md`
+- `FULL_GATE_REMEDIATION_DECISIONS_AFTER_10K8ZHI.md`
+- `FULL_IMPORT_DEPENDENCY_GRAPH_AFTER_10K8ZFM.md`
+- `FULL_RUNTIME_FLOW_MAP_AFTER_10K8ZFM.md`
+- `FULL_VENDOR_REFERENCE_INVENTORY_AFTER_10K8ZFQ.md`
+- `FUTURE_AI_INSERTION_BOUNDARY_REPORT_AFTER_10K8ZFM.md`
+- `FUTURE_SRC_PROVIDERS_STRUCTURE_AFTER_10K8ZFN.md`
+- `GAME_THEORY_EXECUTION_OWNERSHIP_MAP_AFTER_10K8ZH3.md`
+- `GREEN_BASELINE_CHECKPOINT.md`
+- `GREEN_BASELINE_FILE_INVENTORY.md`
+- `GREEN_BASELINE_HANDOFF_NOTES.md`
+- `GREEN_BASELINE_VALIDATION_PROOF.md`
+- `IMPLEMENTATION_DEPENDENCY_GRAPH_AFTER_10K8ZK4.md`
+- `INTERNAL_SCHEDULER_CANONICAL_REDIRECTION_MAP_AFTER_10K8ZL9B.md`
+- `INTERNAL_SCHEDULER_SELF_IMPORTS_BEFORE_10K8ZL9B.md`
+- `INTERNAL_SCHEDULER_ZERO_SELF_IMPORT_PROOF_AFTER_10K8ZL9B.md`
+- `INTERNAL_ZERO_IMPORT_PROOF_AFTER_10K8ZMN.md`
+- `INTERNAL_ZERO_IMPORT_PROOF_PHASE_X.md`
+- `KILL_SWITCH_DISABLED_BEHAVIOR_AFTER_10K8ZJB.md`
+- `LEDGER_COMPATIBILITY_REPORT_AFTER_10K8ZIM.md`
+- `LEDGER_COMPATIBILITY_STATUS_AFTER_10K8ZJ4.md`
+- `LEDGER_DELETE_READINESS_AFTER_10K8ZIM.md`
+- `LEDGER_OWNERSHIP_MAP_AFTER_10K8ZIM.md`
+- `LEGACY_ANALYTICS_RESEARCH_OWNER_MAP_AFTER_10K8ZHP.md`
+- `LEGACY_APPLE_TRANSPORT_MAP_AFTER_10K8ZGE.md`
+- `LEGACY_BRIDGE_BLOCKER_COUNTS_AFTER_10K8ZMR.md`
+- `LEGACY_BRIDGE_BLOCKER_COUNTS_AFTER_10K8ZMS.md`
+- `LEGACY_BRIDGE_BLOCKER_COUNTS_AFTER_10K8ZMT.md`
+- `LEGACY_DATA_BACKTESTING_OWNER_MAP_AFTER_10K8ZHL.md`
+- `LEGACY_DELETE_AND_SHIM_QUEUE_AFTER_10K8ZFS.md`
+- `LEGACY_DELETE_CANDIDATE_QUEUE_AFTER_10K8ZG2.md`
+- `LEGACY_LIVE_CLIENT_DELETE_READINESS_AFTER_10K8ZGF.md`
+- `LEGACY_PROVIDER_ROUTER_COMPATIBILITY_AFTER_10K8ZG5.md`
+- `LEGACY_PROVIDER_ROUTER_DELETION_PROOF_AFTER_10K8ZG7.md`
+- `LEGACY_PROVIDER_ROUTER_IMPORT_SCAN_AFTER_10K8ZG6.md`
+- `LEGACY_RUNTIME_DEPENDENCY_REPORT_AFTER_10K8ZG2.md`
+- `LEGACY_RUNTIME_OWNER_INVENTORY_AFTER_10K8ZGE.md`
+- `LEGACY_SHIM_STATUS_AFTER_10K8ZG2.md`
+- `LEGACY_VENDOR_DESTINATION_MATRIX_AFTER_10K8ZFS.md`
+- `LEGACY_VENDOR_TRANSPORT_ROADMAP_AFTER_10K8ZFS.md`
+- `LIVE_APPROVAL_DISABLED_BEHAVIOR_AFTER_10K8ZJ7.md`
+- `LIVE_APPROVAL_REQUIREMENTS_AFTER_10K8ZJ7.md`
+- `LIVE_CLIENT_CONNECTOR_INVENTORY_AFTER_10K8ZGF.md`
+- `LIVE_CLIENT_CREDENTIAL_AND_NETWORK_RISK_MAP_AFTER_10K8ZGF.md`
+- `LIVE_CLIENT_TO_CONNECTOR_TRANSPORT_PLAN_AFTER_10K8ZGF.md`
+- `LIVE_FETCH_DEFERRED_MODULES_AFTER_10K8ZFX.md`
+- `LIVE_IMPLEMENTATION_WORK_BREAKDOWN_AFTER_10K8ZK4.md`
+- `LIVE_LEDGER_PERSISTENCE_DEFERRED_PLAN_AFTER_10K8ZJ4.md`
+- `LIVE_LEDGER_PERSISTENCE_DISABLED_BEHAVIOR_AFTER_10K8ZJA.md`
+- `LIVE_LEDGER_PERSISTENCE_OWNERSHIP_MAP_AFTER_10K8ZJ4.md`
+- `LIVE_RECONCILIATION_DISABLED_BEHAVIOR_AFTER_10K8ZJA.md`
+- `LIVE_SUBMIT_DISABLED_BEHAVIOR_AFTER_10K8ZJ9.md`
+- `LIVE_SUBMIT_READINESS_DISABLED_BEHAVIOR_AFTER_10K8ZJM.md`
+- `LIVE_SUBMIT_READINESS_REQUIREMENTS_AFTER_10K8ZJM.md`
+- `LIVE_SUBMIT_REQUIREMENTS_AFTER_10K8ZJ9.md`
+- `LIVE_TRADING_APPROVAL_CHECKLIST_AFTER_10K8ZJ5.md`
+- `MARKET_DATA_CONNECTOR_MIGRATION_MAP_AFTER_10K8ZG0.md`
+- `MARKET_DATA_DISABLED_BEHAVIOR_REPORT_AFTER_10K8ZG0.md`
+- `MARKET_DATA_LEGACY_COMPATIBILITY_AFTER_10K8ZG0.md`
+- `MARKET_IMPACT_AND_SLIPPAGE_PLAN_AFTER_10K8ZH3.md`
+- `MARKET_IMPACT_VALIDATION_AFTER_10K8ZH7.md`
+- `MARKET_INTELLIGENCE_CANONICAL_OWNERSHIP_AFTER_10K8ZL2.md`
+- `MARKET_INTELLIGENCE_DELETE_READINESS_AFTER_10K8ZL6.md`
+- `MARKET_INTELLIGENCE_DISABLED_BOUNDARY_AFTER_10K8ZL2.md`
+- `MARKET_INTELLIGENCE_RUNTIME_REDIRECTION_MAP_AFTER_10K8ZL6.md`
+- `MARKET_INTELLIGENCE_SCHEDULER_DELETE_PROOF_AFTER_10K8ZL7.md`
+- `MARKET_INTELLIGENCE_SCHEDULER_DELETION_COMPLETION_STATUS_AFTER_10K8ZL7.md`
+- `MARKET_INTELLIGENCE_STANDARD_REPORT_CONTRACT_AFTER_10K8ZL2.md`
+- `MARKET_INTELLIGENCE_TEST_REDIRECTION_MAP_AFTER_10K8ZL6.md`
+- `MIGRATION_LOOP_RISK_AUDIT_AFTER_10K8ZMP.md`
+- `MODEL_MATURITY_REGISTRY_COMPATIBILITY_REPORT_AFTER_10K8ZI3.md`
+- `MODEL_MATURITY_REGISTRY_DELETE_READINESS_AFTER_10K8ZI3.md`
+- `MODEL_MATURITY_REGISTRY_MIGRATION_MAP_AFTER_10K8ZI3.md`
+- `MONITORING_READINESS_REQUIREMENTS_AFTER_10K8ZJN.md`
+- `NEXT_AI_BROKERAGE_DEFERRED_PLAN_AFTER_10K8ZHA.md`
+- `NEXT_AI_BROKERAGE_DEFERRED_PLAN_AFTER_10K8ZHQ.md`
+- `NEXT_ANALYTICS_RESEARCH_BATCH_2_PLAN_AFTER_10K8ZHU.md`
+- `NEXT_ANALYTICS_RESEARCH_DELETE_PROOF_PLAN_AFTER_10K8ZHY.md`
+- `NEXT_ANALYTICS_RESEARCH_PLAN_AFTER_10K8ZHM.md`
+- `NEXT_ANALYTICS_RESEARCH_WRAPPER_DELETION_PLAN_AFTER_10K8ZI0.md`
+- `NEXT_AUTOMATION_SCHEDULER_BLOCKER_BATCH_AFTER_10K8ZMH.md`
+- `NEXT_AUTOMATION_SCHEDULER_INTERNAL_IMPORT_BREAK_PLAN_AFTER_10K8ZL9A.md`
+- `NEXT_AUTOMATION_SCHEDULER_TEST_IMPORT_BATCH_AFTER_10K8ZMI.md`
+- `NEXT_AUTOMATION_SCHEDULER_TEST_IMPORT_BATCH_AFTER_10K8ZMJ.md`
+- `NEXT_AUTOMATION_SCHEDULER_TEST_IMPORT_REDIRECTION_PLAN_AFTER_10K8ZL9B.md`
+- `NEXT_BROKERAGE_EXECUTION_BOUNDARY_PLAN_AFTER_10K8ZI9.md`
+- `NEXT_CONNECTOR_MIGRATION_SEQUENCE_AFTER_10K8ZGF.md`
+- `NEXT_CONTROLLED_ACTIVATION_PHASE_AFTER_10K8ZJI.md`
+- `NEXT_CONTROLLED_LIVE_ACTIVATION_PLAN_AFTER_10K8ZJC.md`
+- `NEXT_CONTROLLED_SANDBOX_IMPLEMENTATION_PLAN_AFTER_10K8ZJO.md`
+- `NEXT_CORE_ENGINE_EXTRACTION_PLAN_AFTER_10K8ZGZ.md`
+- `NEXT_DATA_BACKTESTING_LAYER_PLAN_AFTER_10K8ZHH.md`
+- `NEXT_DELETION_BATCH_RECOMMENDATIONS_AFTER_10K8ZG2.md`
+- `NEXT_EXECUTION_HELPER_DELETION_PLAN_AFTER_10K8ZIP.md`
+- `NEXT_LEGACY_BRIDGE_BATCH_AFTER_10K8ZMR.md`
+- `NEXT_LEGACY_BRIDGE_BATCH_AFTER_10K8ZMS.md`
+- `NEXT_LEGACY_BRIDGE_BATCH_AFTER_10K8ZMT.md`
+- `NEXT_LIVE_TRADING_PREP_PLAN_AFTER_10K8ZIK.md`
+- `NEXT_LIVE_TRADING_PREP_PLAN_AFTER_10K8ZIV.md`
+- `NEXT_LIVE_TRADING_READINESS_PLAN_AFTER_10K8ZJ1.md`
+- `NEXT_MARKET_INTELLIGENCE_DATA_ADAPTER_PLAN_AFTER_10K8ZL8.md`
+- `NEXT_MARKET_INTELLIGENCE_REPO_INVENTORY_PLAN_AFTER_10K8ZL1.md`
+- `NEXT_MIGRATION_AND_DELETION_SEQUENCE_AFTER_10K8ZGE.md`
+- `NEXT_OPERATOR_APPROVAL_PHASE_AFTER_10K8ZJU.md`
+- `NEXT_OPERATOR_APPROVED_IMPLEMENTATION_PHASE_AFTER_10K8ZK4.md`
+- `NEXT_OPERATOR_APPROVED_LIVE_IMPLEMENTATION_PLAN_AFTER_10K8ZK3.md`
+- `NEXT_OPERATOR_ENABLED_SANDBOX_PLAN_AFTER_10K8ZK1.md`
+- `NEXT_PHASE_SPLIT_PLAN.md`
+- `NEXT_PRODUCTION_ACTIVATION_PLAN_AFTER_10K8ZJ6.md`
+- `NEXT_PRODUCTION_DEPLOYMENT_BOUNDARY_PLAN_AFTER_10K8ZIF.md`
+- `NEXT_PROVIDER_FOUNDATION_DELETION_BATCH_AFTER_10K8ZG8.md`
+- `NEXT_SCHEDULER_RESEARCH_REMEDIATION_PLAN_AFTER_10K8ZHZ.md`
+- `ODDS_COMPATIBILITY_DELETE_READINESS_AFTER_10K8ZGK.md`
+- `ODDS_COMPATIBILITY_IMPORT_SCAN_AFTER_10K8ZGK.md`
+- `ODDS_COMPATIBILITY_SHELL_DELETION_PROOF_AFTER_10K8ZGP.md`
+- `ODDS_COMPATIBILITY_TEST_REDIRECTION_AFTER_10K8ZGK.md`
+- `ODDS_COMPATIBILITY_TEST_RETIREMENT_MAP_AFTER_10K8ZGO.md`
+- `ODDS_DATA_CONNECTOR_DISABLED_LIVE_BEHAVIOR_AFTER_10K8ZGH.md`
+- `ODDS_DATA_CONNECTOR_MIGRATION_MAP_AFTER_10K8ZFZ.md`
+- `ODDS_DATA_DELETE_READINESS_AFTER_10K8ZGH.md`
+- `ODDS_DATA_DISABLED_BEHAVIOR_REPORT_AFTER_10K8ZFZ.md`
+- `ODDS_DATA_LEGACY_COMPATIBILITY_AFTER_10K8ZFZ.md`
+- `ODDS_DATA_LEGACY_COMPATIBILITY_AFTER_10K8ZGH.md`
+- `ODDS_DATA_LIVE_CLIENT_MIGRATION_MAP_AFTER_10K8ZGH.md`
+- `ODDS_DELETION_COMPLETION_STATUS_AFTER_10K8ZGP.md`
+- `ODDS_DISABLED_METHOD_BEHAVIOR_AFTER_10K8ZGJ.md`
+- `ODDS_FINAL_IMPORT_SCAN_AFTER_10K8ZGO.md`
+- `ODDS_HISTORICAL_TEST_REDIRECTION_MAP_AFTER_10K8ZGM.md`
+- `ODDS_LEGACY_DELETE_READINESS_AFTER_10K8ZGI.md`
+- `ODDS_LEGACY_DELETE_READINESS_AFTER_10K8ZGJ.md`
+- `ODDS_LEGACY_IMPORT_SCAN_AFTER_10K8ZGI.md`
+- `ODDS_LEGACY_LIVE_METHOD_RETIREMENT_MAP_AFTER_10K8ZGJ.md`
+- `ODDS_PROOF_HISTORY_CLEANUP_MAP_AFTER_10K8ZGN.md`
+- `ODDS_PROOF_HISTORY_REFERENCE_SCAN_AFTER_10K8ZGN.md`
+- `ODDS_RUNTIME_CONSUMER_REDIRECTION_MAP_AFTER_10K8ZGI.md`
+- `ODDS_RUNTIME_CONSUMER_REDIRECTION_MAP_AFTER_10K8ZGL.md`
+- `ODDS_RUNTIME_DELETE_READINESS_AFTER_10K8ZGL.md`
+- `ODDS_RUNTIME_IMPORT_SCAN_AFTER_10K8ZGL.md`
+- `ODDS_SHELL_DELETE_READINESS_AFTER_10K8ZGM.md`
+- `ODDS_SHELL_IMPORT_SCAN_AFTER_10K8ZGM.md`
+- `OPERATOR_APPROVAL_DISABLED_BEHAVIOR_AFTER_10K8ZJV.md`
+- `OPERATOR_APPROVAL_REQUIREMENTS_AFTER_10K8ZJV.md`
+- `OPERATOR_SIGNOFF_CHECKLIST_AFTER_10K8ZK4.md`
+- `OPTIONS_0DTE_HANDLING_AFTER_10K8ZL5.md`
+- `OPTIONS_GEX_VANNA_MODEL_AFTER_10K8ZL5.md`
+- `OPTIONS_INTELLIGENCE_DELETE_READINESS_AFTER_10K8ZL5.md`
+- `ORPHAN_CODE_REPORT_AFTER_10K8ZFM.md`
+- `PHASE10A_BACKTEST_OWNER_AND_SCHEMA_AUDIT.md`
+- `PHASE10B_BACKTEST_OWNER_SLIMMING.md`
+- `PHASE10B_BACKTEST_OWNER_SLIMMING_REPAIR.md`
+- `PHASE10C_BACKTEST_SCHEMA_ALIAS_REGISTRY.md`
+- `PHASE10D_SHARP_STYLE_NO_LEAKAGE_GATE.md`
+- `PHASE10E_UNIFIED_REPLAY_STRATEGY_BANKROLL.md`
+- `PHASE10F_REGRESSION_STRATEGY_HOOKS.md`
+- `PHASE10G2_EXISTING_SPORT_REGRESSION_WIRING_AUDIT.md`
+- `PHASE10G2_SPORT_PROFILE_OWNER_REVIEW.md`
+- `PHASE10G2_SPORT_REGRESSION_PROFILE_WIRING.md`
+- `PHASE10G_CANONICAL_HISTORICAL_DATASET_BUILDER.md`
+- `PHASE10H10_SPORT_DATA_EXPLORER_FIELD_COVERAGE.md`
+- `PHASE10H11_FEATURE_CONTROL_LAB_AND_INSTRUCTIONS.md`
+- `PHASE10H12A_LINE_VOLATILITY_EXPRESSION.md`
+- `PHASE10H12B_VOLATILITY_RESULT_BREAKDOWN.md`
+- `PHASE10H12_LINE_MOVEMENT_SCHEMA_ODDS_SNAPSHOT_STORE.md`
+- `PHASE10H13_SPORT_FEATURE_PACKS.md`
+- `PHASE10H14_MARKET_FEATURE_PACKS.md`
+- `PHASE10H15_FEATURE_ABLATION_LAB.md`
+- `PHASE10H16_CALIBRATION_READY_STRATEGY_FILTER.md`
+- `PHASE10H17_ABLATION_EXPERIMENT_HISTORY.md`
+- `PHASE10H18_CALIBRATION_REPORT_EXPORT.md`
+- `PHASE10H19_LINE_MOVEMENT_READINESS.md`
+- `PHASE10H20_VENDOR_NEUTRAL_LINE_MOVEMENT_IMPORT_CONTRACT.md`
+- `PHASE10H21_SOURCE_EVENT_LINK_RESOLVER.md`
+- `PHASE10H22_AS_OF_LINE_MOVEMENT_QUERY_ENGINE.md`
+- `PHASE10H23A_SYNTHETIC_LINE_MOVEMENT_SANDBOX.md`
+- `PHASE10H23B_OPERATOR_UI_SIMPLIFICATION.md`
+- `PHASE10H23C_FEATURE_ABLATION_RESULTS_AND_SETTINGS_CLARITY.md`
+- `PHASE10H23D_FEATURE_ABLATION_LAYOUT_DENSITY_AND_RUN_GUARDS.md`
+- `PHASE10H23E_TRUE_BASELINE_AND_NEUTRAL_PRESETS.md`
+- `PHASE10H23F_DESIGNER_RESULTS_UX_AND_SPORT_POPULATION.md`
+- `PHASE10H23G_PRODUCT_UI_SIMPLIFICATION.md`
+- `PHASE10H23H_CURRENT_DATA_SOURCE_READ_ONLY_PANEL.md`
+- `PHASE10H23I_ROW_COUNT_THRESHOLD_SETTINGS.md`
+- `PHASE10H4_HISTORICAL_DATA_SOURCE_REGISTRY.md`
+- `PHASE10H5_CANONICAL_HISTORICAL_ODDS_IMPORTERS.md`
+- `PHASE10H6_SQLITE_HISTORICAL_ODDS_STORE.md`
+- `PHASE10H7_SQLITE_BACKTEST_BRIDGE.md`
+- `PHASE10H9A_REAL_SAMPLE_IMPORT_HARDENING.md`
+- `PHASE10K0_INSTITUTIONAL_REPO_AUDIT_AND_0DTE_SPECIFICITY_MAP.md`
+- `PHASE10K1_UNIFIED_RESEARCH_WAREHOUSE_FOUNDATION.md`
+- `PHASE10K2_SPORTS_ODDS_SNAPSHOT_PIPELINE_MAP.md`
+- `PHASE10K3_RUNTIME_CSV_MIGRATION_PLAN.md`
+- `PHASE10K4_0DTE_OPTIONS_SCHEMA_FOUNDATION.md`
+- `PHASE10K5_CORE_ARBITRAGE_ENGINE.md`
+- `PHASE10K6A_FRONTEND_READINESS_GATE_INSPECTION.md`
+- `PHASE10K6C_CONTROLLED_UI_SHELL.md`
+- `PHASE10K6D_READINESS_GATE_DISPLAY_CONTRACT.md`
+- `PHASE10K6E_READINESS_DISPLAY_DATA_HELPER.md`
+- `PHASE10K6F_READINESS_DISPLAY_PAYLOAD_BUILDER.md`
+- `PHASE10K6G_READINESS_DISPLAY_RENDERER_CONTRACT.md`
+- `PHASE10K6H_READINESS_DISPLAY_RENDERER_HELPER.md`
+- `PHASE10K6I_CONTROLLED_NAVIGATION_SHELL.md`
+- `PHASE10K6J_CONTROLLED_READINESS_UI_WIRING.md`
+- `PHASE10K7A_FULL_SUITE_READINESS_OWNERSHIP_MAP.md`
+- `PHASE10K7B_TEST_GUARDRAIL_STABILIZATION.md`
+- `PHASE10K7C_FULL_SUITE_READINESS_GATE_MATRIX.md`
+- `PHASE10K7D_10K8_PREDICTION_TESTING_ENTRY_CONTRACT.md`
+- `PHASE10K8A_PAPER_ONLY_PREDICTION_TESTING_OWNER_SCAN.md`
+- `PHASE10K8B_PAPER_ONLY_FIXTURE_TESTING_CONTRACT.md`
+- `PHASE10K8C_PAPER_ONLY_FIXTURE_VALIDATION_HELPER.md`
+- `PHASE10K8D_PAPER_ONLY_FIXTURE_READINESS_PAYLOAD_ADAPTER.md`
+- `PHASE10K8E_PAPER_ONLY_FIXTURE_EVALUATION_CONTRACT.md`
+- `PHASE10K8F_PAPER_ONLY_FIXTURE_EVALUATION_HELPER.md`
+- `PHASE10K8G_PAPER_ONLY_EVALUATION_READINESS_ADAPTER.md`
+- `PHASE10K8H_PAPER_ONLY_FIXTURE_PIPELINE_CONTRACT.md`
+- `PHASE10K8I_PAPER_ONLY_FIXTURE_PIPELINE_HELPER.md`
+- `PHASE10K8J_CONTROLLED_PIPELINE_SMOKE_REVIEW.md`
+- `PHASE10K8K_PREDICTION_TESTING_READINESS_REVIEW.md`
+- `PHASE10K8L_CONTROLLED_MULTI_MARKET_TEST_MODE_UI.md`
+- `PHASE10K8M_STRICT_MODEL_FIELD_BASELINE_BY_MARKET_AND_SPORT.md`
+- `PHASE10K8N_CONTROLLED_FIELD_CATALOG_UI_REVIEW.md`
+- `PHASE10K8O_DEDICATED_0DTE_PAPER_FIXTURE_TEMPLATE.md`
+- `PHASE10K8P_DEDICATED_0DTE_FIXTURE_VALIDATION_ADAPTER.md`
+- `PHASE10K8Q_DEDICATED_0DTE_VALIDATION_READINESS_PAYLOAD.md`
+- `PHASE10K8R_DEDICATED_0DTE_VALIDATION_READINESS_UI.md`
+- `PHASE10K8S_DEDICATED_0DTE_PAPER_EVALUATION_ADAPTER.md`
+- `PHASE10K8T_DEDICATED_0DTE_EVALUATION_READINESS_PAYLOAD.md`
+- `PHASE10K8U_DEDICATED_0DTE_EVALUATION_UI.md`
+- `PHASE10K8V_FULL_0DTE_PAPER_PIPELINE_ADAPTER.md`
+- `PHASE10K8W_FULL_0DTE_PAPER_PIPELINE_UI.md`
+- `PHASE10K8X_CONTROLLED_0DTE_PAPER_RUN_SMOKE_REVIEW.md`
+- `PHASE10K8Y_0DTE_PREDICTION_TESTING_READINESS_REVIEW.md`
+- `PHASE10K8ZA_0DTE_DATA_FIELD_FORMULA_COVERAGE_AUDIT.md`
+- `PHASE10K8ZB0_PRODUCT_CONTRACT_RESET.md`
+- `PHASE10K8ZB_0DTE_FIELD_FORMULA_GAP_PATCH.md`
+- `PHASE10K8ZD_ORB_STRATEGY_RESEARCH_INTEGRATION_AUDIT.md`
+- `PHASE10K8ZE_INSTITUTIONAL_MARKET_METRIC_CATALOG.md`
+- `PHASE10K8ZF0A_FROZEN_TEST_CONTRACT_RESET.md`
+- `PHASE10K8ZF0_CANONICAL_RESEARCH_BACKTEST_WORKFLOW_MIGRATION_PLAN.md`
+- `PHASE10K8ZF1_COMPATIBILITY_ALIAS_MIGRATION.md`
+- `PHASE10K8ZF2_PRODUCTION_SYMBOL_MIGRATION.md`
+- `PHASE10K8ZF3_PRODUCT_UI_LANGUAGE_FINALIZATION.md`
+- `PHASE10K8ZF4_ASSET_GRADE_REPO_CLEAN_INVENTORY.md`
+- `PHASE10K8ZF5_UNIVERSAL_RUNTIME_OWNERSHIP_MAP.md`
+- `PHASE10K8ZF6_R2_OBJECT_STORAGE_ARCHIVE_CONTRACT.md`
+- `PHASE10K8ZF7_R2_ARCHIVE_PIPELINE.md`
+- `PHASE10K8ZF8_R2_TRANSFER_PROOF_AND_STORAGE_CLEARANCE_REPORT.md`
+- `PHASE10K8ZF9B_BATCH_SAFE_R2_REMAINING_TRANSFER_REPORT.md`
+- `PHASE10K8ZF9C_HEADERLESS_CSV_FINAL_DELETION_REPORT.md`
+- `PHASE10K8ZF9D_FINAL_DATA_INVENTORY_RECONCILIATION_REPORT.md`
+- `PHASE10K8ZF9_FULL_R2_TRANSFER_AND_VERIFIED_LOCAL_DELETION_REPORT.md`
+- `PHASE10K8ZFE1_UNIVERSAL_PRODUCT_LANGUAGE_ALIGNMENT.md`
+- `PHASE10K8ZFE2_DAILY_DATA_HYGIENE_SCHEDULER_REPORT.md`
+- `PHASE10K8ZFE_DUPLICATE_CODE_EVIDENCE_SCAN.md`
+- `PHASE10K8ZFF_CANONICAL_OWNER_DECISION_REPORT.md`
+- `PHASE10K8ZFG_SAFE_MIGRATION_BATCH_1_REPORT.md`
+- `PHASE10K8ZFH_SAFE_MIGRATION_BATCH_2_BOUNDARY_GUARDS_REPORT.md`
+- `PHASE10K8ZFI_AUTOMATION_SCHEDULER_DECOMPOSITION_PLAN.md`
+- `PHASE10K8ZFJ_PROVIDER_LIVE_MARKET_DECOMPOSITION_PLAN.md`
+- `PHASE10K8ZFK_TEST_SUITE_CLEANUP_PLAN.md`
+- `PHASE10K8ZFN_PROVIDER_CANONICALIZATION_PLAN.md`
+- `PHASE10K8ZFO_SRC_PROVIDERS_SKELETON.md`
+- `PHASE10K8ZFP_PROVIDER_TAXONOMY_CORRECTION.md`
+- `PHASE10K8ZFQ_VENDOR_MODULE_AUDIT.md`
+- `PHASE10K8ZFR_PRODUCTION_MODULE_BOUNDARY_SCAFFOLD.md`
+- `PHASE10K8ZFS_LEGACY_VENDOR_TRANSPORT_BATCH_PLAN.md`
+- `PHASE10K8ZFT_PROVIDER_FOUNDATION_TRANSPORT.md`
+- `PHASE10K8ZFU_PROVIDER_FOUNDATION_COMPLETION.md`
+- `PHASE10K8ZFV_RUNTIME_PROVIDER_MIGRATION_BATCH_1.md`
+- `PHASE10K8ZFW_RUNTIME_PROVIDER_MIGRATION_BATCH_2.md`
+- `PHASE10K8ZFX_CONNECTOR_BOUNDARY_ISOLATION_PLAN.md`
+- `PHASE10K8ZFY_PREDICTION_MARKET_CONNECTOR_BATCH_1.md`
+- `PHASE10K8ZFZ_ODDS_DATA_CONNECTOR_BATCH_2.md`
+- `PHASE10K8ZG0_MARKET_DATA_CONNECTOR_BATCH_3.md`
+- `PHASE10K8ZG1_ZERO_DTE_STOCKS_PROVIDER_BATCH.md`
+- `PHASE10K8ZG2_LEGACY_DELETION_READINESS_AUDIT.md`
+- `PHASE10K8ZG3_WRAPPER_IMPORT_REDIRECTION.md`
+- `PHASE10K8ZG4_RUNTIME_BRIDGE_IMPORT_REDIRECTION.md`
+- `PHASE10K8ZG5_CANONICAL_PROVIDER_ROUTER_INDEPENDENCE.md`
+- `PHASE10K8ZG6_LEGACY_PROVIDER_ROUTER_DELETE_PROOF.md`
+- `PHASE10K8ZG7_LEGACY_PROVIDER_ROUTER_DELETION.md`
+- `PHASE10K8ZG8_PROVIDER_FOUNDATION_DELETION_PROOF.md`
+- `PHASE10K8ZG9_PROVIDER_FOUNDATION_THIN_WRAPPER_DELETION.md`
+- `PHASE10K8ZGA_PROVIDER_REGISTRY_RUNTIME_BLOCKER_PROOF.md`
+- `PHASE10K8ZGB_PROVIDER_WRITE_FIREWALL_RUNTIME_BLOCKER_PROOF.md`
+- `PHASE10K8ZGC_FINAL_PROVIDER_FOUNDATION_BLOCKER_PROOF.md`
+- `PHASE10K8ZGD_FINAL_PROVIDER_FOUNDATION_BLOCKER_DELETION.md`
+- `PHASE10K8ZGE_BROADER_LEGACY_RUNTIME_OWNER_AUDIT.md`
+- `PHASE10K8ZGF_LIVE_CLIENT_CONNECTOR_ISOLATION_PROOF.md`
+- `PHASE10K8ZGG_PREDICTION_MARKET_LIVE_CLIENT_CONNECTOR_MIGRATION.md`
+- `PHASE10K8ZGH_ODDS_DATA_LIVE_CLIENT_CONNECTOR_MIGRATION.md`
+- `PHASE10K8ZGI_ODDS_RUNTIME_CONSUMER_REDIRECTION.md`
+- `PHASE10K8ZGJ_ODDS_LEGACY_LIVE_METHOD_RETIREMENT.md`
+- `PHASE10K8ZGK_ODDS_COMPATIBILITY_SHELL_DELETE_READINESS.md`
+- `PHASE10K8ZGL_ODDS_RUNTIME_CONSUMER_REDIRECTION_BATCH_2.md`
+- `PHASE10K8ZGM_ODDS_HISTORICAL_TEST_REDIRECTION.md`
+- `PHASE10K8ZGN_ODDS_PROOF_HISTORY_CLEANUP.md`
+- `PHASE10K8ZGO_ODDS_COMPATIBILITY_TEST_RETIREMENT.md`
+- `PHASE10K8ZGP_ODDS_COMPATIBILITY_SHELL_DELETION.md`
+- `PHASE10K8ZGQ_PREDICTION_MARKET_RUNTIME_CONSUMER_REDIRECTION.md`
+- `PHASE10K8ZGR_PREDICTION_MARKET_LEGACY_LIVE_METHOD_RETIREMENT.md`
+- `PHASE10K8ZGS_PREDICTION_MARKET_COMPATIBILITY_SHELL_DELETE_READINESS.md`
+- `PHASE10K8ZGT_PREDICTION_MARKET_RUNTIME_SCHEDULER_REDIRECTION.md`
+- `PHASE10K8ZGU_PREDICTION_MARKET_HISTORICAL_COMPATIBILITY_TEST_REDIRECTION.md`
+- `PHASE10K8ZGV_PREDICTION_MARKET_COMPATIBILITY_TEST_RETIREMENT.md`
+- `PHASE10K8ZGW_PREDICTION_MARKET_FINAL_DELETE_READINESS.md`
+- `PHASE10K8ZGX_PREDICTION_MARKET_PROOF_TEST_RETIREMENT.md`
+- `PHASE10K8ZGY_PREDICTION_MARKET_SHELL_DELETION.md`
+- `PHASE10K8ZGZ_POST_PROVIDER_CONNECTOR_CLEANUP_FREEZE.md`
+- `PHASE10K8ZH0_CORE_ENGINE_EXTRACTION_AUDIT.md`
+- `PHASE10K8ZH1_CORE_MATH_FOUNDATION_BATCH.md`
+- `PHASE10K8ZH2_RISK_FOUNDATION_BATCH.md`
+- `PHASE10K8ZH3_GAME_THEORY_EXECUTION_EDGE_PLAN.md`
+- `PHASE10K8ZH4_CORE_PRICING_EXTRACTION.md`
+- `PHASE10K8ZH5_CORE_PROBABILITY_EXTRACTION.md`
+- `PHASE10K8ZH6_PORTFOLIO_FOUNDATION.md`
+- `PHASE10K8ZH7_EXECUTION_GAME_THEORY_FOUNDATION.md`
+- `PHASE10K8ZH8_DECISION_ENGINE_SERVICE_PLAN.md`
+- `PHASE10K8ZHA_CORE_ENGINE_MIGRATION_CHECKPOINT.md`
+- `PHASE10K8ZHB_SERVICE_LAYER_OWNERSHIP_AUDIT.md`
+- `PHASE10K8ZHC_SCREENSHOT_WORKFLOW_THINNING_PLAN.md`
+- `PHASE10K8ZHD_DECISION_AND_BET_LOG_AUDIT.md`
+- `PHASE10K8ZHE_API_LAYER_OWNERSHIP_AUDIT.md`
+- `PHASE10K8ZHG_AUTOMATION_SCHEDULER_DECOMMISSION_AUDIT.md`
+- `PHASE10K8ZHI_LEGACY_FULL_GATE_REMEDIATION.md`
+- `PHASE10K8ZHJ_DATA_FOUNDATION.md`
+- `PHASE10K8ZHK_BACKTESTING_FOUNDATION.md`
+- `PHASE10K8ZHM_DATA_BACKTESTING_CHECKPOINT.md`
+- `PHASE10K8ZHN_ANALYTICS_FOUNDATION.md`
+- `PHASE10K8ZHO_RESEARCH_FOUNDATION.md`
+- `PHASE10K8ZHQ_ANALYTICS_RESEARCH_CHECKPOINT.md`
+- `PHASE10K8ZHR_ANALYTICS_MIGRATION_BATCH_1.md`
+- `PHASE10K8ZHS_RESEARCH_MIGRATION_BATCH_1.md`
+- `PHASE10K8ZHU_ANALYTICS_RESEARCH_BATCH_1_CHECKPOINT.md`
+- `PHASE10K8ZHV_ANALYTICS_DOWNSTREAM_REDIRECTION.md`
+- `PHASE10K8ZHW_RESEARCH_DOWNSTREAM_REDIRECTION.md`
+- `PHASE10K8ZHY_ANALYTICS_RESEARCH_BATCH_2_CHECKPOINT.md`
+- `PHASE10K8ZHZ_ANALYTICS_RESEARCH_WRAPPER_DELETE_PROOF.md`
+- `PHASE10K8ZI0_ANALYTICS_RESEARCH_DELETE_PROOF_CHECKPOINT.md`
+- `PHASE10K8ZI1_ANALYTICS_RESEARCH_COMPATIBILITY_TEST_RETIREMENT.md`
+- `PHASE10K8ZI2_RESEARCH_STORE_OWNERSHIP_MIGRATION.md`
+- `PHASE10K8ZI3_MODEL_MATURITY_REGISTRY_DECOUPLING.md`
+- `PHASE10K8ZI4_FINAL_ANALYTICS_RESEARCH_DELETE_READINESS.md`
+- `PHASE10K8ZI5_ANALYTICS_RESEARCH_WRAPPER_DELETION.md`
+- `PHASE10K8ZI6_AI_LLM_BOUNDARY_AUDIT.md`
+- `PHASE10K8ZI7_AI_BOUNDARY_SCAFFOLD.md`
+- `PHASE10K8ZI9_AI_BOUNDARY_CHECKPOINT.md`
+- `PHASE10K8ZIA_EXECUTION_SCHEDULER_AUDIT.md`
+- `PHASE10K8ZIB_UNIFIED_BROKERAGE_BOUNDARY.md`
+- `PHASE10K8ZIC_EXECUTION_OWNERSHIP_MIGRATION.md`
+- `PHASE10K8ZID_EXECUTION_FINAL_DELETE_READINESS.md`
+- `PHASE10K8ZIE_EXECUTION_SCHEDULER_WRAPPER_DELETION.md`
+- `PHASE10K8ZIF_EXECUTION_BOUNDARY_CHECKPOINT.md`
+- `PHASE10K8ZIG_EXECUTION_BLOCKER_REMEDIATION_AUDIT.md`
+- `PHASE10K8ZIH_EXECUTION_BLOCKER_CANONICALIZATION.md`
+- `PHASE10K8ZII_EXECUTION_BLOCKER_FINAL_DELETE_READINESS.md`
+- `PHASE10K8ZIJ_EXECUTION_BLOCKER_WRAPPER_DELETION.md`
+- `PHASE10K8ZIK_EXECUTION_REMEDIATION_CHECKPOINT.md`
+- `PHASE10K8ZIL_SETTLEMENT_CANONICALIZATION.md`
+- `PHASE10K8ZIM_LEDGER_CANONICALIZATION.md`
+- `PHASE10K8ZIN_STRATEGY_EXECUTION_HELPER_CANONICALIZATION.md`
+- `PHASE10K8ZIO_EXECUTION_HELPER_FINAL_DELETE_READINESS.md`
+- `PHASE10K8ZIP_EXECUTION_HELPER_CANONICALIZATION_CHECKPOINT.md`
+- `PHASE10K8ZIQ_EXECUTION_HELPER_REFERENCE_REDIRECTION_AUDIT.md`
+- `PHASE10K8ZIR_EXECUTION_HELPER_RUNTIME_REDIRECTION.md`
+- `PHASE10K8ZIS_EXECUTION_HELPER_TEST_REDIRECTION.md`
+- `PHASE10K8ZIT_EXECUTION_HELPER_FINAL_DELETE_PROOF.md`
+- `PHASE10K8ZIU_EXECUTION_HELPER_WRAPPER_DELETION.md`
+- `PHASE10K8ZIV_EXECUTION_HELPER_DELETION_CHECKPOINT.md`
+- `PHASE10K8ZIW_FINAL_EXECUTION_BLOCKER_AUDIT.md`
+- `PHASE10K8ZIX_FINAL_EXECUTION_BLOCKER_CANONICALIZATION.md`
+- `PHASE10K8ZIY_FINAL_EXECUTION_TEST_REDIRECTION.md`
+- `PHASE10K8ZIZ_FINAL_EXECUTION_BLOCKER_DELETE_PROOF.md`
+- `PHASE10K8ZJ0_FINAL_EXECUTION_BLOCKER_DELETION.md`
+- `PHASE10K8ZJ1_EXECUTION_CLEANUP_CHECKPOINT.md`
+- `PHASE10K8ZJ2_BROKER_ACCOUNT_BOUNDARY_AUDIT.md`
+- `PHASE10K8ZJ3_DISABLED_BROKER_ACCOUNT_BOUNDARY.md`
+- `PHASE10K8ZJ4_LIVE_LEDGER_PERSISTENCE_BOUNDARY_PLAN.md`
+- `PHASE10K8ZJ5_PRODUCTION_APPROVAL_GATE_PLAN.md`
+- `PHASE10K8ZJ6_LIVE_TRADING_READINESS_CHECKPOINT.md`
+- `PHASE10K8ZJ7_APPROVAL_GATE_SCAFFOLD.md`
+- `PHASE10K8ZJ8_BROKER_CLIENT_FACTORY_SCAFFOLD.md`
+- `PHASE10K8ZJ9_LIVE_SUBMIT_INTERFACE_SCAFFOLD.md`
+- `PHASE10K8ZJA_LIVE_RECONCILIATION_LEDGER_SCAFFOLD.md`
+- `PHASE10K8ZJB_KILL_SWITCH_ROLLBACK_SCAFFOLD.md`
+- `PHASE10K8ZJC_LIVE_ACTIVATION_SCAFFOLD_CHECKPOINT.md`
+- `PHASE10K8ZJD_BROKER_ADAPTER_PROTOCOL.md`
+- `PHASE10K8ZJE_SANDBOX_BROKER_BOUNDARY.md`
+- `PHASE10K8ZJF_CREDENTIAL_ACTIVATION_BOUNDARY.md`
+- `PHASE10K8ZJG_SANDBOX_SUBMIT_FLOW.md`
+- `PHASE10K8ZJH_PRODUCTION_ACTIVATION_BLOCKER_AUDIT.md`
+- `PHASE10K8ZJI_SANDBOX_ACTIVATION_CHECKPOINT.md`
+- `PHASE10K8ZJJ_ACTIVATION_GATE_VERIFICATION.md`
+- `PHASE10K8ZJK_BROKER_ADAPTER_READINESS.md`
+- `PHASE10K8ZJL_CREDENTIAL_READINESS_VERIFICATION.md`
+- `PHASE10K8ZJM_LIVE_SUBMIT_READINESS_VERIFICATION.md`
+- `PHASE10K8ZJN_MONITORING_ROLLBACK_READINESS.md`
+- `PHASE10K8ZJO_CONTROLLED_ACTIVATION_READINESS_CHECKPOINT.md`
+- `PHASE10K8ZJP_APPROVAL_EVIDENCE.md`
+- `PHASE10K8ZJQ_SANDBOX_ACTIVATION_COMPOSITION.md`
+- `PHASE10K8ZJR_DRY_RUN_SUBMIT_PROOF.md`
+- `PHASE10K8ZJS_DRY_RUN_LEDGER_VERIFICATION.md`
+- `PHASE10K8ZJT_FINAL_SANDBOX_ACTIVATION_PROOF.md`
+- `PHASE10K8ZJU_SANDBOX_ACTIVATION_PROOF_CHECKPOINT.md`
+- `PHASE10K8ZJV_OPERATOR_APPROVAL_INTERFACE.md`
+- `PHASE10K8ZJW_APPROVAL_AUDIT_LAYER.md`
+- `PHASE10K8ZK1_CONTROLLED_SANDBOX_GOVERNANCE_CHECKPOINT.md`
+- `PHASE10K8ZK2_FINAL_SYSTEM_FREEZE.md`
+- `PHASE10K8ZK3_FINAL_PRODUCTION_READINESS_CHECKPOINT.md`
+- `PHASE10K8ZK4_OPERATOR_IMPLEMENTATION_PLAN.md`
+- `PHASE10K8ZK5_AUTOMATION_SCHEDULER_FULL_INVENTORY.md`
+- `PHASE10K8ZK6_AUTOMATION_SCHEDULER_OWNERSHIP_MIGRATION.md`
+- `PHASE10K8ZK7_AUTOMATION_SCHEDULER_RUNTIME_REDIRECTION.md`
+- `PHASE10K8ZK8_AUTOMATION_SCHEDULER_TEST_REDIRECTION.md`
+- `PHASE10K8ZK9_AUTOMATION_SCHEDULER_FINAL_DELETE_PROOF.md`
+- `PHASE10K8ZL0_AUTOMATION_SCHEDULER_DELETION.md`
+- `PHASE10K8ZL1_AUTOMATION_SCHEDULER_DECOMMISSION_CHECKPOINT.md`
+- `PHASE10K8ZL2_MARKET_INTELLIGENCE_FOUNDATION.md`
+- `PHASE10K8ZL3_SPORTS_INTELLIGENCE_ABSORPTION.md`
+- `PHASE10K8ZL4_PREDICTION_MARKET_INTELLIGENCE_ABSORPTION.md`
+- `PHASE10K8ZL5_OPTIONS_0DTE_GEX_VANNA_FOUNDATION.md`
+- `PHASE10K8ZL6_MARKET_INTELLIGENCE_RUNTIME_TEST_REDIRECTION.md`
+- `PHASE10K8ZL7_MARKET_INTELLIGENCE_SCHEDULER_DELETION.md`
+- `PHASE10K8ZL8_MARKET_INTELLIGENCE_ABSORPTION_CHECKPOINT.md`
+- `PHASE10K8ZL9A_AUTOMATION_SCHEDULER_RUNTIME_IMPORT_REMOVAL.md`
+- `PHASE10K8ZL9B_INTERNAL_SCHEDULER_SELF_IMPORT_BREAK.md`
+- `PHASE10K8ZMH_AUTOMATION_SCHEDULER_FINAL_REMOVAL_ATTEMPT.md`
+- `PHASE10K8ZMJ_SPORTS_IMPACT_TEST_IMPORT_REDIRECTION.md`
+- `PHASE10K8ZMN_COMPATIBILITY_SHELL_ELIMINATION.md`
+- `PHASE10K8ZMP_REPOSITORY_STABILIZATION.md`
+- `PHASE10K8ZMR_SECURITY_POLICY_SECRET_SAFETY_MIGRATION.md`
+- `PHASE10K8ZMS_SECURITY_CLUSTER_MIGRATION.md`
+- `PHASE10K8ZMT_PROVIDER_SECURITY_SURFACE_RETIREMENT.md`
+- `PHASE10K8ZMU_BASELINE_VALIDATION.md`
+- `PHASE10K8Z_FINAL_CONTROLLED_PREDICTION_TESTING_FREEZE.md`
+- `PHASE10X1_REPO_ARCHITECTURE_HYGIENE.md`
+- `PHASE10X_FULL_REPO_PROFESSIONAL_ARCHITECT_REVIEW.md`
+- `PHASE10_MODEL_BACKTEST_READINESS_SCAN.md`
+- `PHASE1_CLASSIFICATION.md`
+- `PHASE1_DELETE_LIST.md`
+- `PHASE1_IMPORT_GRAPH.md`
+- `PHASE1_LEGACY_INVENTORY.md`
+- `PHASE6_CLOSEOUT_REPORT.md`
+- `PHASE7_OPERATIONAL_GAP_REPORT.md`
+- `PHASE8B_RUN_ONCE_EXACT_PAYLOAD_REPORT.md`
+- `PHASE8C_RUN_ONCE_ARTIFACT_VERIFICATION.md`
+- `PHASE8_PAPER_RUN_REPORT.md`
+- `PHASE9C_SCHEDULER_RUNNER_ARTIFACT_PATH_FIX.md`
+- `PHASE9_LEDGER_REVIEW_PATH_DISCOVERY.md`
+- `PHASE9_LEDGER_REVIEW_RESPONSE_PATH_PATCH.md`
+- `PHASE_X_CLASSIFICATION.md`
+- `PHASE_X_NON_SRC_INVENTORY.md`
+- `POSITION_ACCUMULATION_PLAN_AFTER_10K8ZH3.md`
+- `POSITION_ACCUMULATION_VALIDATION_AFTER_10K8ZH7.md`
+- `POST_AI_BOUNDARY_ARCHITECTURE_MAP_AFTER_10K8ZI9.md`
+- `POST_ANALYTICS_RESEARCH_ARCHITECTURE_MAP_AFTER_10K8ZHQ.md`
+- `POST_ANALYTICS_RESEARCH_BATCH_1_ARCHITECTURE_MAP_AFTER_10K8ZHU.md`
+- `POST_ANALYTICS_RESEARCH_BATCH_2_ARCHITECTURE_MAP_AFTER_10K8ZHY.md`
+- `POST_ANALYTICS_RESEARCH_DELETE_PROOF_ARCHITECTURE_MAP_AFTER_10K8ZI0.md`
+- `POST_ANALYTICS_RESEARCH_WRAPPER_DELETION_IMPORT_SCAN_AFTER_10K8ZI5.md`
+- `POST_AUTOMATION_SCHEDULER_ARCHITECTURE_MAP_AFTER_10K8ZL1.md`
+- `POST_AUTOMATION_SCHEDULER_DELETION_IMPORT_SCAN_AFTER_10K8ZL0.md`
+- `POST_CONTROLLED_ACTIVATION_ARCHITECTURE_MAP_AFTER_10K8ZJO.md`
+- `POST_CORE_ENGINE_ARCHITECTURE_MAP_AFTER_10K8ZHA.md`
+- `POST_DATA_BACKTESTING_ARCHITECTURE_MAP_AFTER_10K8ZHM.md`
+- `POST_DELETION_IMPORT_HEALTH_AFTER_10K8ZGZ.md`
+- `POST_DELETION_IMPORT_SCAN_AFTER_10K8ZG7.md`
+- `POST_EXECUTION_BLOCKER_DELETION_IMPORT_SCAN_AFTER_10K8ZIJ.md`
+- `POST_EXECUTION_BOUNDARY_ARCHITECTURE_MAP_AFTER_10K8ZIF.md`
+- `POST_EXECUTION_CLEANUP_ARCHITECTURE_MAP_AFTER_10K8ZJ1.md`
+- `POST_EXECUTION_DELETION_IMPORT_SCAN_AFTER_10K8ZIE.md`
+- `POST_EXECUTION_HELPER_ARCHITECTURE_MAP_AFTER_10K8ZIP.md`
+- `POST_EXECUTION_HELPER_DELETION_ARCHITECTURE_MAP_AFTER_10K8ZIV.md`
+- `POST_EXECUTION_HELPER_DELETION_IMPORT_SCAN_AFTER_10K8ZIU.md`
+- `POST_EXECUTION_REMEDIATION_ARCHITECTURE_MAP_AFTER_10K8ZIK.md`
+- `POST_FINAL_EXECUTION_BLOCKER_DELETION_IMPORT_SCAN_AFTER_10K8ZJ0.md`
+- `POST_FINAL_PROVIDER_FOUNDATION_DELETION_IMPORT_SCAN_AFTER_10K8ZGD.md`
+- `POST_FINAL_SYSTEM_FREEZE_ARCHITECTURE_MAP_AFTER_10K8ZK3.md`
+- `POST_LIVE_ACTIVATION_SCAFFOLD_ARCHITECTURE_MAP_AFTER_10K8ZJC.md`
+- `POST_LIVE_TRADING_READINESS_ARCHITECTURE_MAP_AFTER_10K8ZJ6.md`
+- `POST_MARKET_INTELLIGENCE_ARCHITECTURE_MAP_AFTER_10K8ZL8.md`
+- `POST_MARKET_INTELLIGENCE_SCHEDULER_DELETION_IMPORT_SCAN_AFTER_10K8ZL7.md`
+- `POST_ODDS_SHELL_DELETION_IMPORT_SCAN_AFTER_10K8ZGP.md`
+- `POST_PREDICTION_MARKET_SHELL_DELETION_IMPORT_SCAN_AFTER_10K8ZGY.md`
+- `POST_PROVIDER_CONNECTOR_ARCHITECTURE_MAP_AFTER_10K8ZGZ.md`
+- `POST_PROVIDER_FOUNDATION_DELETION_IMPORT_SCAN_AFTER_10K8ZG9.md`
+- `POST_SANDBOX_ACTIVATION_ARCHITECTURE_MAP_AFTER_10K8ZJU.md`
+- `POST_SANDBOX_BOUNDARY_ARCHITECTURE_MAP_AFTER_10K8ZJI.md`
+- `POST_SANDBOX_GOVERNANCE_ARCHITECTURE_AFTER_10K8ZK1.md`
+- `POST_SERVICE_THINNING_ARCHITECTURE_MAP_AFTER_10K8ZHH.md`
+- `POST_STABILIZATION_FULL_GATE_PROOF_AFTER_10K8ZMP.md`
+- `POST_STABILIZATION_SAFETY_PROOF_AFTER_10K8ZMP.md`
+- `PREDICTION_MARKET_COMPATIBILITY_DELETE_READINESS_AFTER_10K8ZGS.md`
+- `PREDICTION_MARKET_COMPATIBILITY_IMPORT_SCAN_AFTER_10K8ZGS.md`
+- `PREDICTION_MARKET_COMPATIBILITY_REFERENCE_SCAN_AFTER_10K8ZGU.md`
+- `PREDICTION_MARKET_COMPATIBILITY_REFERENCE_SCAN_AFTER_10K8ZGV.md`
+- `PREDICTION_MARKET_COMPATIBILITY_TEST_REDIRECTION_AFTER_10K8ZGS.md`
+- `PREDICTION_MARKET_COMPATIBILITY_TEST_RETIREMENT_MAP_AFTER_10K8ZGV.md`
+- `PREDICTION_MARKET_CONNECTOR_DISABLED_LIVE_BEHAVIOR_AFTER_10K8ZGG.md`
+- `PREDICTION_MARKET_CONNECTOR_MIGRATION_MAP_AFTER_10K8ZFY.md`
+- `PREDICTION_MARKET_DELETE_READINESS_AFTER_10K8ZGG.md`
+- `PREDICTION_MARKET_DELETE_READINESS_AFTER_10K8ZGR.md`
+- `PREDICTION_MARKET_DELETE_READINESS_RECHECK_AFTER_10K8ZGU.md`
+- `PREDICTION_MARKET_DELETE_READINESS_STATUS_AFTER_10K8ZGV.md`
+- `PREDICTION_MARKET_DELETION_COMPLETION_STATUS_AFTER_10K8ZGY.md`
+- `PREDICTION_MARKET_DISABLED_METHOD_BEHAVIOR_AFTER_10K8ZGR.md`
+- `PREDICTION_MARKET_FINAL_DELETE_DECISION_AFTER_10K8ZGW.md`
+- `PREDICTION_MARKET_FINAL_IMPORT_SCAN_AFTER_10K8ZGW.md`
+- `PREDICTION_MARKET_FINAL_REFERENCE_SCAN_AFTER_10K8ZGX.md`
+- `PREDICTION_MARKET_FINAL_TEST_SCAN_AFTER_10K8ZGW.md`
+- `PREDICTION_MARKET_HISTORICAL_TEST_REDIRECTION_MAP_AFTER_10K8ZGU.md`
+- `PREDICTION_MARKET_INTELLIGENCE_DELETE_READINESS_AFTER_10K8ZL4.md`
+- `PREDICTION_MARKET_INTELLIGENCE_MIGRATION_MAP_AFTER_10K8ZL4.md`
+- `PREDICTION_MARKET_LEGACY_COMPATIBILITY_AFTER_10K8ZFY.md`
+- `PREDICTION_MARKET_LEGACY_COMPATIBILITY_AFTER_10K8ZGG.md`
+- `PREDICTION_MARKET_LEGACY_LIVE_METHOD_RETIREMENT_MAP_AFTER_10K8ZGR.md`
+- `PREDICTION_MARKET_LIVE_CLIENT_MIGRATION_MAP_AFTER_10K8ZGG.md`
+- `PREDICTION_MARKET_MANIFOLD_COMPATIBILITY_REPORT_AFTER_10K8ZL4.md`
+- `PREDICTION_MARKET_PROOF_TEST_RETIREMENT_MAP_AFTER_10K8ZGX.md`
+- `PREDICTION_MARKET_RUNTIME_CONSUMER_REDIRECTION_MAP_AFTER_10K8ZGQ.md`
+- `PREDICTION_MARKET_RUNTIME_DELETE_READINESS_AFTER_10K8ZGQ.md`
+- `PREDICTION_MARKET_RUNTIME_DELETE_READINESS_AFTER_10K8ZGT.md`
+- `PREDICTION_MARKET_RUNTIME_IMPORT_SCAN_AFTER_10K8ZGQ.md`
+- `PREDICTION_MARKET_RUNTIME_IMPORT_SCAN_AFTER_10K8ZGT.md`
+- `PREDICTION_MARKET_RUNTIME_SCHEDULER_REDIRECTION_MAP_AFTER_10K8ZGT.md`
+- `PREDICTION_MARKET_SHELL_DELETION_PROOF_AFTER_10K8ZGY.md`
+- `PRODUCTION_ACTIVATION_APPROVAL_LEDGER_AFTER_10K8ZK2.md`
+- `PRODUCTION_ACTIVATION_BLOCKER_LEDGER_AFTER_10K8ZK2.md`
+- `PRODUCTION_ACTIVATION_BLOCKER_MAP_AFTER_10K8ZJH.md`
+- `PRODUCTION_ACTIVATION_KILL_SWITCH_LEDGER_AFTER_10K8ZK2.md`
+- `PRODUCTION_ACTIVATION_READINESS_LEDGER_AFTER_10K8ZK2.md`
+- `PRODUCTION_ACTIVATION_SEQUENCE_AFTER_10K8ZJH.md`
+- `PRODUCTION_DEPLOYMENT_BLOCKERS_AFTER_10K8ZJ5.md`
+- `PROJECT_COMPLETION_STATUS_AFTER_10K8ZK4.md`
+- `PROVIDER_COMPATIBILITY_STATUS_AFTER_10K8ZFW.md`
+- `PROVIDER_COMPATIBILITY_WRAPPER_REPORT_AFTER_10K8ZFT.md`
+- `PROVIDER_CONTRACT_GENERALIZATION_MAP_AFTER_10K8ZFU.md`
+- `PROVIDER_DEPENDENCY_SPLIT_MAP_AFTER_10K8ZFN.md`
+- `PROVIDER_DUPLICATION_AND_OVERLAP_REPORT_AFTER_10K8ZFN.md`
+- `PROVIDER_FOUNDATION_DELETE_READINESS_AFTER_10K8ZG8.md`
+- `PROVIDER_FOUNDATION_DELETION_COMPLETION_STATUS_AFTER_10K8ZGD.md`
+- `PROVIDER_FOUNDATION_IMPORT_SCAN_AFTER_10K8ZG8.md`
+- `PROVIDER_FOUNDATION_OWNERSHIP_MAP_AFTER_10K8ZFT.md`
+- `PROVIDER_FOUNDATION_THIN_WRAPPER_DELETION_PROOF_AFTER_10K8ZG9.md`
+- `PROVIDER_FOUNDATION_WRAPPER_STATUS_AFTER_10K8ZG8.md`
+- `PROVIDER_HELPER_MIGRATION_MAP_AFTER_10K8ZFW.md`
+- `PROVIDER_LEGACY_IMPORT_REDIRECTS_AFTER_10K8ZFV.md`
+- `PROVIDER_LEGACY_WRAPPER_STATUS_AFTER_10K8ZFU.md`
+- `PROVIDER_PRODUCT_GOAL_ALIGNMENT_REPORT_AFTER_10K8ZFQ.md`
+- `PROVIDER_REGISTRY_DELETE_READINESS_AFTER_10K8ZGA.md`
+- `PROVIDER_REGISTRY_IMPORT_SCAN_AFTER_10K8ZGA.md`
+- `PROVIDER_REGISTRY_MIGRATION_MAP_AFTER_10K8ZGA.md`
+- `PROVIDER_ROUTER_COMPATIBILITY_HOOK_STATUS_AFTER_10K8ZG6.md`
+- `PROVIDER_ROUTER_DELETE_READINESS_AFTER_10K8ZG6.md`
+- `PROVIDER_ROUTER_DELETION_READINESS_AFTER_10K8ZG5.md`
+- `PROVIDER_ROUTER_INDEPENDENCE_MAP_AFTER_10K8ZG5.md`
+- `PROVIDER_ROUTER_SPLIT_PLAN_AFTER_10K8ZFW.md`
+- `PROVIDER_RUNTIME_MIGRATION_MAP_AFTER_10K8ZFV.md`
+- `PROVIDER_RUNTIME_MIGRATION_READINESS_AFTER_10K8ZFU.md`
+- `PROVIDER_SECURITY_CALLER_SCAN_AFTER_10K8ZMT.md`
+- `PROVIDER_SECURITY_MIGRATION_MAP_AFTER_10K8ZMT.md`
+- `PROVIDER_SECURITY_ZERO_IMPORT_PROOF_AFTER_10K8ZMT.md`
+- `PROVIDER_TO_CONNECTOR_SPLIT_REPORT_AFTER_10K8ZFX.md`
+- `PROVIDER_WRITE_FIREWALL_DELETE_READINESS_AFTER_10K8ZGB.md`
+- `PROVIDER_WRITE_FIREWALL_IMPORT_SCAN_AFTER_10K8ZGB.md`
+- `PROVIDER_WRITE_FIREWALL_MIGRATION_MAP_AFTER_10K8ZGB.md`
+- `README.md`
+- `REMAINING_AI_ACTIVATION_QUEUE_AFTER_10K8ZI9.md`
+- `REMAINING_AI_BROKERAGE_PRODUCTION_QUEUE_AFTER_10K8ZHQ.md`
+- `REMAINING_ANALYTICS_RESEARCH_QUEUE_AFTER_10K8ZHM.md`
+- `REMAINING_AUTOMATION_SCHEDULER_BLOCKERS_AFTER_10K8ZL0.md`
+- `REMAINING_AUTOMATION_SCHEDULER_INTELLIGENCE_BLOCKERS_AFTER_10K8ZL7.md`
+- `REMAINING_DELETION_BLOCKERS_AFTER_10K8ZG4.md`
+- `REMAINING_EXECUTION_BLOCKERS_AFTER_10K8ZIK.md`
+- `REMAINING_EXECUTION_BLOCKERS_AFTER_10K8ZJ1.md`
+- `REMAINING_EXECUTION_HELPER_BLOCKERS_AFTER_10K8ZIP.md`
+- `REMAINING_EXECUTION_HELPER_BLOCKERS_AFTER_10K8ZIV.md`
+- `REMAINING_IMPLEMENTATION_BACKLOG_AFTER_10K8ZK4.md`
+- `REMAINING_LEGACY_IMPORTS_AFTER_10K8ZG3.md`
+- `REMAINING_LEGACY_RUNTIME_OWNER_QUEUE_AFTER_10K8ZGZ.md`
+- `REMAINING_LEGACY_TEST_BLOCKERS_AFTER_10K8ZHI.md`
+- `REMAINING_LIVE_ACTIVATION_BLOCKERS_AFTER_10K8ZJC.md`
+- `REMAINING_LIVE_TRADING_ACTIVATION_QUEUE_AFTER_10K8ZIF.md`
+- `REMAINING_LIVE_TRADING_BLOCKERS_AFTER_10K8ZJ6.md`
+- `REMAINING_MIGRATION_QUEUE_AFTER_10K8ZHH.md`
+- `REMAINING_PRODUCTION_BLOCKERS_AFTER_10K8ZJI.md`
+- `REMAINING_PROVIDER_FOUNDATION_BLOCKERS_AFTER_10K8ZG9.md`
+- `RESEARCH_BATCH_1_COMPATIBILITY_REPORT_AFTER_10K8ZHS.md`
+- `RESEARCH_BATCH_1_DELETE_READINESS_AFTER_10K8ZHS.md`
+- `RESEARCH_BATCH_1_MIGRATION_MAP_AFTER_10K8ZHS.md`
+- `RESEARCH_DOWNSTREAM_COMPATIBILITY_REPORT_AFTER_10K8ZHW.md`
+- `RESEARCH_DOWNSTREAM_DELETE_READINESS_AFTER_10K8ZHW.md`
+- `RESEARCH_DOWNSTREAM_REDIRECTION_MAP_AFTER_10K8ZHW.md`
+- `RESEARCH_FOUNDATION_OWNERSHIP_MAP_AFTER_10K8ZHO.md`
+- `RESEARCH_LANE_MIGRATION_MAP_AFTER_10K8ZHO.md`
+- `RESEARCH_LAYER_OWNERSHIP_MAP_AFTER_10K8ZHI.md`
+- `RESEARCH_STORE_COMPATIBILITY_REPORT_AFTER_10K8ZI2.md`
+- `RESEARCH_STORE_DELETE_READINESS_AFTER_10K8ZI2.md`
+- `RESEARCH_STORE_MIGRATION_MAP_AFTER_10K8ZI2.md`
+- `RESEARCH_VALIDATION_REPORT_AFTER_10K8ZHO.md`
+- `RISK_ENGINE_OWNERSHIP_MAP_AFTER_10K8ZH2.md`
+- `RISK_FUNCTION_VALIDATION_AFTER_10K8ZH2.md`
+- `RISK_REDUCTION_PLAN_AFTER_10K8ZK4.md`
+- `ROADMAP_TO_DATA_MIGRATION_AND_BACKTESTING_AFTER_10K8ZMP.md`
+- `ROLLBACK_PLAN_AFTER_10K8ZJB.md`
+- `ROOT_ENGINE_IMPORT_SCAN_AFTER_10K8ZH9.md`
+- `ROOT_LEVEL_ENGINE_OWNERSHIP_MAP_AFTER_10K8ZGE.md`
+- `RUNTIME_BRIDGE_REDIRECTION_MAP_AFTER_10K8ZG4.md`
+- `RUNTIME_ZERO_IMPORT_PROOF_AFTER_10K8ZMN.md`
+- `RUNTIME_ZERO_IMPORT_PROOF_PHASE_X.md`
+- `SANDBOX_BROKER_DISABLED_BEHAVIOR_AFTER_10K8ZJE.md`
+- `SANDBOX_BROKER_REQUIREMENTS_AFTER_10K8ZJE.md`
+- `SANDBOX_SUBMIT_DISABLED_BEHAVIOR_AFTER_10K8ZJG.md`
+- `SANDBOX_SUBMIT_REQUIREMENTS_AFTER_10K8ZJG.md`
+- `SANDBOX_TO_PRODUCTION_SEQUENCE_AFTER_10K8ZK4.md`
+- `SCHEDULER_COUPLED_RESEARCH_BLOCKERS_AFTER_10K8ZHZ.md`
+- `SCREENSHOT_WORKFLOW_MIGRATION_SEQUENCE_AFTER_10K8ZHC.md`
+- `SCREENSHOT_WORKFLOW_OWNERSHIP_MAP_AFTER_10K8ZHC.md`
+- `SECURITY_CLUSTER_CALLER_SCAN_AFTER_10K8ZMS.md`
+- `SECURITY_CLUSTER_MIGRATION_MAP_AFTER_10K8ZMS.md`
+- `SECURITY_CLUSTER_ZERO_IMPORT_PROOF_AFTER_10K8ZMS.md`
+- `SECURITY_POLICY_SECRET_SAFETY_CALLER_SCAN_AFTER_10K8ZMR.md`
+- `SECURITY_POLICY_SECRET_SAFETY_MIGRATION_MAP_AFTER_10K8ZMR.md`
+- `SECURITY_POLICY_SECRET_SAFETY_ZERO_IMPORT_PROOF_AFTER_10K8ZMR.md`
+- `SERVICE_LAYER_FUNCTION_INVENTORY_AFTER_10K8ZHB.md`
+- `SERVICE_LAYER_OWNERSHIP_MAP_AFTER_10K8ZHB.md`
+- `SERVICE_LAYER_THINNING_PLAN_AFTER_10K8ZH8.md`
+- `SERVICE_LAYER_THINNING_SEQUENCE_AFTER_10K8ZHB.md`
+- `SETTLEMENT_COMPATIBILITY_REPORT_AFTER_10K8ZIL.md`
+- `SETTLEMENT_DELETE_READINESS_AFTER_10K8ZIL.md`
+- `SETTLEMENT_OWNERSHIP_MAP_AFTER_10K8ZIL.md`
+- `SPORTS_IMPACT_TEST_IMPORTS_BEFORE_10K8ZMJ.md`
+- `SPORTS_IMPACT_TEST_REDIRECTION_MAP_AFTER_10K8ZMJ.md`
+- `SPORTS_IMPACT_TEST_ZERO_IMPORT_PROOF_AFTER_10K8ZMJ.md`
+- `SPORTS_INTELLIGENCE_COMPATIBILITY_REPORT_AFTER_10K8ZL3.md`
+- `SPORTS_INTELLIGENCE_DELETE_READINESS_AFTER_10K8ZL3.md`
+- `SPORTS_INTELLIGENCE_MIGRATION_MAP_AFTER_10K8ZL3.md`
+- `SRC_AUTOMATION_SCHEDULER_LEGACY_CALLER_MAP_AFTER_10K8ZMP.md`
+- `SRC_AUTOMATION_SCHEDULER_LEGACY_DECOMMISSION_PLAN_AFTER_10K8ZMP.md`
+- `SRC_AUTOMATION_SCHEDULER_LEGACY_INVENTORY_AFTER_10K8ZMP.md`
+- `STRATEGY_EXECUTION_HELPER_COMPATIBILITY_REPORT_AFTER_10K8ZIN.md`
+- `STRATEGY_EXECUTION_HELPER_DELETE_READINESS_AFTER_10K8ZIN.md`
+- `STRATEGY_EXECUTION_HELPER_OWNERSHIP_MAP_AFTER_10K8ZIN.md`
+- `TASK_BOARD.md`
+- `TEST_ZERO_IMPORT_PROOF_AFTER_10K8ZMN.md`
+- `TEST_ZERO_IMPORT_PROOF_PHASE_X.md`
+- `TOP_LEVEL_AUTOMATION_SCHEDULER_IMPORT_SCAN_AFTER_10K8ZMP.md`
+- `TOP_LEVEL_AUTOMATION_SCHEDULER_STATUS_AFTER_10K8ZMP.md`
+- `TOP_LEVEL_AUTOMATION_SCHEDULER_ZERO_IMPORT_PROOF_AFTER_10K8ZMP.md`
+- `UNIFIED_EXECUTION_ARCHITECTURE_AFTER_10K8ZIB.md`
+- `UNTRACKED_FILE_DECISION_LOG_AFTER_10K8ZMP.md`
+- `VENDOR_FUNCTIONALITY_TRANSPORT_MAP_AFTER_10K8ZFQ.md`
+- `VENDOR_MODULE_DELETION_CANDIDATES_AFTER_10K8ZFQ.md`
+- `WINDOWS_SETUP.md`
+- `WRAPPER_DELETION_PROOF_AFTER_10K8ZG3.md`
+- `WRAPPER_DELETION_PROOF_AFTER_10K8ZG4.md`
+- `WRAPPER_IMPORT_REDIRECTION_MAP_AFTER_10K8ZG3.md`
+- `ZERO_DTE_STOCKS_DISABLED_BEHAVIOR_REPORT_AFTER_10K8ZG1.md`
+- `ZERO_DTE_STOCKS_PROVIDER_CONNECTOR_BOUNDARY_AFTER_10K8ZG1.md`
+- `ZERO_DTE_STOCKS_PROVIDER_MIGRATION_MAP_AFTER_10K8ZG1.md`
+- `docs/DAILY_DATA_HYGIENE_SCHEDULER.md`
+- `docs/DEEPSEEK_DATA_PULL_CHECK.md`
+- `docs/OPS_WORKFLOW.md`
+- `docs/PROVIDER_ADAPTER_CONTRACTS_V1.md`
+- `docs/RENDER_PERSISTENT_STORAGE_AND_CRON.md`
+- `prompts/deepseek_data_pull_check_prompt.md`
+
+## `market intelligence`
+
+- File count: `169`
+- Entrypoints: `src/market_intelligence/local_sports_history_audit.py, src/market_intelligence/nfl_coaching_feature_builders.py, src/market_intelligence/nfl_coaching_sources.py, src/market_intelligence/nfl_cutoff_week_features.py`
+- Called by: `ai, analytics, backtesting, core, market intelligence, providers, research, root/non-src python, services, tests`
+- Calls into: `ai, analytics, brokerage, core, data, market intelligence, providers, research, security, services`
+- Duplicate-looking modules: `src/market_intelligence/_shared.py, src/market_intelligence/bookmaker_normalizer.py, src/market_intelligence/candlestick_pattern_detector.py, src/market_intelligence/contracts.py, src/market_intelligence/feature_packs.py, src/market_intelligence/hockey_possession_impact.py, src/market_intelligence/institutional_cross_asset_lab.py, src/market_intelligence/institutional_cross_asset_scores.py, src/market_intelligence/local_sports_history_audit.py, src/market_intelligence/manifold.py, src/market_intelligence/manifold_feature_builder.py, src/market_intelligence/market_state_manifold.py, src/market_intelligence/multi_sport_model_registry.py, src/market_intelligence/nfl_coaching_feature_builders.py, src/market_intelligence/nfl_coaching_sources.py, src/market_intelligence/nfl_cutoff_week_features.py, src/market_intelligence/prediction_market_outcome_candidates.py, src/market_intelligence/response_compactor.py, src/market_intelligence/risk.py, src/market_intelligence/soccer_possession_value_impact.py, src/market_intelligence/sports.py, src/market_intelligence/tennis_impact_readiness.py`
+- Facades/wrappers: `src/market_intelligence/sports.py`
+- External-boundary signals: `src/market_intelligence/nfl_coaching_feature_builders.py`
+- Disabled-boundary signals: `none`
+- Test coverage files: `tests/test_afl_model_activation.py, tests/test_badminton_model_activation.py, tests/test_baseball_impact_intelligence.py, tests/test_basketball_player_impact.py, tests/test_call_of_duty_esports_model_activation.py, tests/test_combat_impact_intelligence.py, tests/test_cs2_esports_model_activation.py, tests/test_darts_model_activation.py, tests/test_data_intelligence_stack.py, tests/test_dota2_esports_model_activation.py, tests/test_extreme_randomness_diagnostics.py, tests/test_football_impact_intelligence.py, tests/test_formula_e_model_activation.py, tests/test_golf_impact_intelligence.py, tests/test_handball_model_activation.py, tests/test_hockey_impact_intelligence.py, tests/test_indycar_model_activation.py, tests/test_kalshi_provider_shape_contract.py, tests/test_lacrosse_model_activation.py, tests/test_league_of_legends_esports_model_activation.py, tests/test_live_smoke_payload_contract.py, tests/test_market_state_manifold.py, tests/test_model_input_coverage.py, tests/test_model_recheck_runner.py, tests/test_motogp_model_activation.py, tests/test_multi_sport_model_registry.py, tests/test_news_event_monitor.py, tests/test_nfl_coaching_feature_builders.py, tests/test_nfl_cutoff_week_features.py, tests/test_overwatch_esports_model_activation.py, tests/test_pattern_calibration.py, tests/test_phase10k5_core_arbitrage_engine.py, tests/test_phase10k8zl2_market_intelligence_foundation.py, tests/test_phase10k8zl3_sports_intelligence_absorption.py, tests/test_phase10k8zl4_prediction_market_intelligence_absorption.py, tests/test_phase10k8zl5_options_0dte_gex_vanna_foundation.py, tests/test_phase10k8zl6_market_intelligence_runtime_test_redirection.py, tests/test_phase10k8zl7_market_intelligence_scheduler_deletion.py, tests/test_phase10k8zl8_market_intelligence_absorption_checkpoint.py, tests/test_phase10k8zl9b_internal_scheduler_self_import_break.py, tests/test_pickleball_model_activation.py, tests/test_player_prop_monitor.py, tests/test_rugby_model_activation.py, tests/test_screenshot_normalization_parity.py, tests/test_sharp_cross_book_review_queue.py, tests/test_snooker_model_activation.py, tests/test_soccer_impact_intelligence.py, tests/test_sport_analysis_endpoint.py, tests/test_sport_model_routing.py, tests/test_table_tennis_model_activation.py, tests/test_tennis_impact_intelligence.py, tests/test_valorant_esports_model_activation.py, tests/test_volleyball_model_activation.py, tests/test_water_polo_model_activation.py`
+
+### Files
+
+- `src/market_intelligence/__init__.py`
+- `src/market_intelligence/_shared.py`
+- `src/market_intelligence/arbitrage/__init__.py`
+- `src/market_intelligence/arbitrage/arbitrage_risk_filters.py`
+- `src/market_intelligence/arbitrage/draw_market_arbitrage.py`
+- `src/market_intelligence/arbitrage/exchange_arbitrage.py`
+- `src/market_intelligence/arbitrage/prediction_market_arbitrage.py`
+- `src/market_intelligence/arbitrage/three_way_arbitrage.py`
+- `src/market_intelligence/arbitrage/two_way_arbitrage.py`
+- `src/market_intelligence/arbitrage_detector.py`
+- `src/market_intelligence/baseball_availability_context.py`
+- `src/market_intelligence/baseball_batter_impact.py`
+- `src/market_intelligence/baseball_bullpen_context.py`
+- `src/market_intelligence/baseball_data_availability.py`
+- `src/market_intelligence/baseball_defense_baserunning_context.py`
+- `src/market_intelligence/baseball_impact_common.py`
+- `src/market_intelligence/baseball_impact_readiness.py`
+- `src/market_intelligence/baseball_incentive_context.py`
+- `src/market_intelligence/baseball_lineup_context.py`
+- `src/market_intelligence/baseball_market_relevance.py`
+- `src/market_intelligence/baseball_matchup_context.py`
+- `src/market_intelligence/baseball_park_weather_umpire_context.py`
+- `src/market_intelligence/baseball_pitcher_impact.py`
+- `src/market_intelligence/baseball_run_value_impact.py`
+- `src/market_intelligence/basketball_incentive_context.py`
+- `src/market_intelligence/basketball_lineup_matchup_context.py`
+- `src/market_intelligence/basketball_market_relevance.py`
+- `src/market_intelligence/basketball_player_impact.py`
+- `src/market_intelligence/basketball_player_impact_common.py`
+- `src/market_intelligence/basketball_player_impact_readiness.py`
+- `src/market_intelligence/basketball_possession_impact.py`
+- `src/market_intelligence/basketball_role_context.py`
+- `src/market_intelligence/basketball_tracking_opportunity.py`
+- `src/market_intelligence/bookmaker_normalizer.py`
+- `src/market_intelligence/candlestick_manifold_detector.py`
+- `src/market_intelligence/candlestick_pattern_detector.py`
+- `src/market_intelligence/catalysts.py`
+- `src/market_intelligence/clv_tracker.py`
+- `src/market_intelligence/combat_availability_context.py`
+- `src/market_intelligence/combat_damage_durability_context.py`
+- `src/market_intelligence/combat_data_availability.py`
+- `src/market_intelligence/combat_grappling_control_impact.py`
+- `src/market_intelligence/combat_impact_common.py`
+- `src/market_intelligence/combat_impact_readiness.py`
+- `src/market_intelligence/combat_incentive_context.py`
+- `src/market_intelligence/combat_market_relevance.py`
+- `src/market_intelligence/combat_matchup_context.py`
+- `src/market_intelligence/combat_pace_cardio_context.py`
+- `src/market_intelligence/combat_phase_control_context.py`
+- `src/market_intelligence/combat_ruleset_referee_judging_context.py`
+- `src/market_intelligence/combat_striking_impact.py`
+- `src/market_intelligence/confidence.py`
+- `src/market_intelligence/contracts.py`
+- `src/market_intelligence/cross_asset_embedding_router.py`
+- `src/market_intelligence/cross_asset_intelligence_router.py`
+- `src/market_intelligence/cross_asset_manifold_router.py`
+- `src/market_intelligence/crypto.py`
+- `src/market_intelligence/data_intelligence_registry.py`
+- `src/market_intelligence/feature_packs.py`
+- `src/market_intelligence/flow.py`
+- `src/market_intelligence/football_availability_context.py`
+- `src/market_intelligence/football_data_availability.py`
+- `src/market_intelligence/football_impact_common.py`
+- `src/market_intelligence/football_impact_schema.py`
+- `src/market_intelligence/football_incentive_context.py`
+- `src/market_intelligence/football_market_relevance.py`
+- `src/market_intelligence/football_matchup_context.py`
+- `src/market_intelligence/football_personnel_context.py`
+- `src/market_intelligence/football_play_drive_impact.py`
+- `src/market_intelligence/football_role_impact.py`
+- `src/market_intelligence/futures.py`
+- `src/market_intelligence/golf_approach_impact.py`
+- `src/market_intelligence/golf_availability_context.py`
+- `src/market_intelligence/golf_course_fit_context.py`
+- `src/market_intelligence/golf_data_availability.py`
+- `src/market_intelligence/golf_field_tournament_context.py`
+- `src/market_intelligence/golf_impact_common.py`
+- `src/market_intelligence/golf_impact_readiness.py`
+- `src/market_intelligence/golf_incentive_context.py`
+- `src/market_intelligence/golf_market_relevance.py`
+- `src/market_intelligence/golf_off_tee_impact.py`
+- `src/market_intelligence/golf_short_game_putting_context.py`
+- `src/market_intelligence/golf_strokes_gained_impact.py`
+- `src/market_intelligence/golf_weather_wave_context.py`
+- `src/market_intelligence/graph_relationship_mapper.py`
+- `src/market_intelligence/hockey_availability_context.py`
+- `src/market_intelligence/hockey_data_availability.py`
+- `src/market_intelligence/hockey_goalie_impact.py`
+- `src/market_intelligence/hockey_impact_common.py`
+- `src/market_intelligence/hockey_impact_readiness.py`
+- `src/market_intelligence/hockey_incentive_context.py`
+- `src/market_intelligence/hockey_line_pair_context.py`
+- `src/market_intelligence/hockey_market_relevance.py`
+- `src/market_intelligence/hockey_matchup_context.py`
+- `src/market_intelligence/hockey_possession_impact.py`
+- `src/market_intelligence/hockey_skater_impact.py`
+- `src/market_intelligence/hockey_special_teams_context.py`
+- `src/market_intelligence/hockey_transition_context.py`
+- `src/market_intelligence/impact.py`
+- `src/market_intelligence/institutional_cross_asset_lab.py`
+- `src/market_intelligence/institutional_cross_asset_scores.py`
+- `src/market_intelligence/liquidity.py`
+- `src/market_intelligence/local_sports_history_audit.py`
+- `src/market_intelligence/manifold.py`
+- `src/market_intelligence/manifold_cluster_registry.py`
+- `src/market_intelligence/manifold_feature_builder.py`
+- `src/market_intelligence/market_feature_packs.py`
+- `src/market_intelligence/market_state_graph.py`
+- `src/market_intelligence/market_state_manifold.py`
+- `src/market_intelligence/middle_opportunity_detector.py`
+- `src/market_intelligence/middles/__init__.py`
+- `src/market_intelligence/middles/alt_line_middle.py`
+- `src/market_intelligence/middles/key_number_middle.py`
+- `src/market_intelligence/middles/middle_ev_simulator.py`
+- `src/market_intelligence/middles/prop_middle.py`
+- `src/market_intelligence/middles/push_corridor_middle.py`
+- `src/market_intelligence/middles/spread_middle.py`
+- `src/market_intelligence/middles/team_total_middle.py`
+- `src/market_intelligence/middles/total_middle.py`
+- `src/market_intelligence/model_input_coverage.py`
+- `src/market_intelligence/multi_sport_model_registry.py`
+- `src/market_intelligence/news_event_monitor.py`
+- `src/market_intelligence/nfl_coaching_feature_builders.py`
+- `src/market_intelligence/nfl_coaching_sources.py`
+- `src/market_intelligence/nfl_cutoff_week_features.py`
+- `src/market_intelligence/no_trade.py`
+- `src/market_intelligence/opportunity_scoring.py`
+- `src/market_intelligence/options.py`
+- `src/market_intelligence/player_prop_monitor.py`
+- `src/market_intelligence/positioning.py`
+- `src/market_intelligence/prediction_market_manifold_mapper.py`
+- `src/market_intelligence/prediction_market_outcome_candidates.py`
+- `src/market_intelligence/prediction_markets.py`
+- `src/market_intelligence/regime.py`
+- `src/market_intelligence/report.py`
+- `src/market_intelligence/response_compactor.py`
+- `src/market_intelligence/risk.py`
+- `src/market_intelligence/scoring.py`
+- `src/market_intelligence/soccer_data_availability.py`
+- `src/market_intelligence/soccer_goalkeeper_context.py`
+- `src/market_intelligence/soccer_impact_common.py`
+- `src/market_intelligence/soccer_impact_readiness.py`
+- `src/market_intelligence/soccer_incentive_context.py`
+- `src/market_intelligence/soccer_lineup_availability_context.py`
+- `src/market_intelligence/soccer_market_relevance.py`
+- `src/market_intelligence/soccer_matchup_context.py`
+- `src/market_intelligence/soccer_player_role_impact.py`
+- `src/market_intelligence/soccer_possession_value_impact.py`
+- `src/market_intelligence/soccer_pressing_transition_context.py`
+- `src/market_intelligence/soccer_referee_context.py`
+- `src/market_intelligence/soccer_set_piece_context.py`
+- `src/market_intelligence/soccer_tactical_context.py`
+- `src/market_intelligence/sport_feature_packs.py`
+- `src/market_intelligence/sports.py`
+- `src/market_intelligence/tail_event_classifier.py`
+- `src/market_intelligence/targets.py`
+- `src/market_intelligence/technical_signal_fields.py`
+- `src/market_intelligence/tennis_availability_context.py`
+- `src/market_intelligence/tennis_data_availability.py`
+- `src/market_intelligence/tennis_format_markov_context.py`
+- `src/market_intelligence/tennis_impact_common.py`
+- `src/market_intelligence/tennis_impact_readiness.py`
+- `src/market_intelligence/tennis_incentive_context.py`
+- `src/market_intelligence/tennis_market_relevance.py`
+- `src/market_intelligence/tennis_matchup_context.py`
+- `src/market_intelligence/tennis_pressure_tiebreak_context.py`
+- `src/market_intelligence/tennis_return_impact.py`
+- `src/market_intelligence/tennis_serve_impact.py`
+- `src/market_intelligence/tennis_surface_context.py`
+
+## `providers`
+
+- File count: `51`
+- Entrypoints: `src/providers/kalshi_readonly_readiness.py, src/providers/nfl_coaching_adapters.py, src/providers/nfl_open_data_adapters.py, src/providers/nfl_open_data_backfill.py, src/providers/nfl_open_data_feature_builders.py, src/providers/nfl_open_data_feature_readiness.py`
+- Called by: `ai, analytics, api, brokerage, core, market intelligence, providers, root/non-src python, security, services, tests`
+- Calls into: `analytics, brokerage, core, data, market intelligence, providers, services, src/unknown`
+- Duplicate-looking modules: `src/providers/aliases.py, src/providers/compat.py, src/providers/contracts.py, src/providers/errors.py, src/providers/injury_weather_adapter_contract.py, src/providers/institutional_cross_asset_adapters.py, src/providers/kalshi_adapter_contract.py, src/providers/kalshi_readonly_readiness.py, src/providers/ncaaf_collegefootballdata_adapter.py, src/providers/news_events_adapter_contract.py, src/providers/nfl_coaching_adapters.py, src/providers/nfl_open_data_adapters.py, src/providers/nfl_open_data_feature_builders.py, src/providers/nfl_open_data_feature_readiness.py, src/providers/normalization.py, src/providers/player_props_adapter_contract.py, src/providers/policy/allowlist.py, src/providers/policy/secret_policy.py, src/providers/prediction_markets/adapters.py, src/providers/prediction_markets/contracts.py, src/providers/prediction_markets/models.py, src/providers/provider_router.py, src/providers/registry.py, src/providers/sportsbook_adapter_contract.py, src/providers/sportsbook_manifold_mapper.py, src/providers/sportsbooks/adapters.py, src/providers/sportsbooks/contracts.py, src/providers/sportsbooks/models.py, src/providers/stock_fundamentals_adapter_contract.py, src/providers/stock_price_adapter_contract.py, src/providers/validation.py, src/providers/zero_dte_stocks/adapters.py, src/providers/zero_dte_stocks/contracts.py, src/providers/zero_dte_stocks/models.py, src/providers/zero_dte_stocks/normalization.py`
+- Facades/wrappers: `src/providers/compat.py`
+- External-boundary signals: `src/providers/ncaaf_collegefootballdata_adapter.py, src/providers/nfl_coaching_adapters.py, src/providers/nfl_open_data_adapters.py, src/providers/policy/allowlist.py, src/providers/registry.py`
+- Disabled-boundary signals: `none`
+- Test coverage files: `tests/test_kalshi_market_provider.py, tests/test_kalshi_readonly_adapter.py, tests/test_nfl_coaching_adapters.py, tests/test_nfl_coaching_feature_builders.py, tests/test_nfl_open_data_adapters.py, tests/test_nfl_open_data_backfill.py, tests/test_nfl_open_data_feature_builders.py, tests/test_phase10k8zfo_src_providers_skeleton.py, tests/test_phase10k8zg1_zero_dte_stocks_provider_batch.py, tests/test_phase10k8zt_provider_security_surface_retirement.py, tests/test_provider_adapter_base.py, tests/test_provider_contracts.py, tests/test_provider_health.py, tests/test_provider_normalization_contract.py, tests/test_provider_payload_validator.py, tests/test_provider_registry.py, tests/test_provider_secret_policy.py, tests/test_screenshot_analysis.py, tests/test_security_framework.py, tests/test_sharp_sportsbook_adapter.py, tests/test_sportsbook_odds_provider.py, tests/test_stock_monitor.py`
+
+### Files
+
+- `src/providers/__init__.py`
+- `src/providers/adapters/__init__.py`
+- `src/providers/aliases.py`
+- `src/providers/base.py`
+- `src/providers/categories.py`
+- `src/providers/compat.py`
+- `src/providers/contracts.py`
+- `src/providers/errors.py`
+- `src/providers/health.py`
+- `src/providers/injury_weather_adapter_contract.py`
+- `src/providers/institutional_cross_asset_adapters.py`
+- `src/providers/kalshi_adapter_contract.py`
+- `src/providers/kalshi_monitor.py`
+- `src/providers/kalshi_readonly_readiness.py`
+- `src/providers/kalshi_scoring.py`
+- `src/providers/ncaaf_collegefootballdata_adapter.py`
+- `src/providers/news_events_adapter_contract.py`
+- `src/providers/nfl_coaching_adapters.py`
+- `src/providers/nfl_open_data_adapters.py`
+- `src/providers/nfl_open_data_backfill.py`
+- `src/providers/nfl_open_data_feature_builders.py`
+- `src/providers/nfl_open_data_feature_readiness.py`
+- `src/providers/normalization.py`
+- `src/providers/player_props_adapter_contract.py`
+- `src/providers/policy/__init__.py`
+- `src/providers/policy/allowlist.py`
+- `src/providers/policy/secret_policy.py`
+- `src/providers/policy/write_firewall.py`
+- `src/providers/prediction_markets/__init__.py`
+- `src/providers/prediction_markets/adapters.py`
+- `src/providers/prediction_markets/contracts.py`
+- `src/providers/prediction_markets/models.py`
+- `src/providers/provider_router.py`
+- `src/providers/registry.py`
+- `src/providers/routing.py`
+- `src/providers/sportsbook_adapter_contract.py`
+- `src/providers/sportsbook_manifold_mapper.py`
+- `src/providers/sportsbooks/__init__.py`
+- `src/providers/sportsbooks/adapters.py`
+- `src/providers/sportsbooks/contracts.py`
+- `src/providers/sportsbooks/models.py`
+- `src/providers/stock_fundamentals_adapter_contract.py`
+- `src/providers/stock_monitor.py`
+- `src/providers/stock_price_adapter_contract.py`
+- `src/providers/validation.py`
+- `src/providers/zero_dte_stocks/__init__.py`
+- `src/providers/zero_dte_stocks/adapters.py`
+- `src/providers/zero_dte_stocks/contracts.py`
+- `src/providers/zero_dte_stocks/models.py`
+- `src/providers/zero_dte_stocks/normalization.py`
+- `src/providers/zero_dte_stocks/provider.py`
+
+## `research`
+
+- File count: `24`
+- Entrypoints: `none`
+- Called by: `analytics, brokerage, market intelligence, research, services, tests`
+- Calls into: `analytics, core, data, market intelligence, research, security, services`
+- Duplicate-looking modules: `src/research/contracts.py, src/research/derived_feature_planner.py, src/research/feature_control.py, src/research/history.py, src/research/maturity.py, src/research/pattern_calibration.py`
+- Facades/wrappers: `none`
+- External-boundary signals: `none`
+- Disabled-boundary signals: `none`
+- Test coverage files: `tests/test_data_intelligence_stack.py, tests/test_market_research_store.py, tests/test_phase10k2_sports_snapshot_pipeline.py, tests/test_phase10k3_runtime_csv_migration_plan.py, tests/test_phase10k4_0dte_options_schema_foundation.py, tests/test_phase10k5_core_arbitrage_engine.py, tests/test_phase10k8zho_research_foundation.py, tests/test_phase10k8zhw_research_downstream_redirection.py, tests/test_phase10k8zl9b_internal_scheduler_self_import_break.py, tests/test_streamlit_dashboard_data.py`
+
+### Files
+
+- `src/research/__init__.py`
+- `src/research/ablation.py`
+- `src/research/calibration_strategy_filter.py`
+- `src/research/causal_discovery_research.py`
+- `src/research/causal_scaffold.py`
+- `src/research/contracts.py`
+- `src/research/contrastive_embedding_diagnostics.py`
+- `src/research/correlation_structure_diagnostics.py`
+- `src/research/derived_feature_planner.py`
+- `src/research/experiment_history_store.py`
+- `src/research/experiment_report_exporter.py`
+- `src/research/experiments.py`
+- `src/research/extreme_randomness_diagnostics.py`
+- `src/research/extreme_randomness_report.py`
+- `src/research/feature_ablation_lab.py`
+- `src/research/feature_control.py`
+- `src/research/history.py`
+- `src/research/lanes.py`
+- `src/research/maturity.py`
+- `src/research/pattern_calibration.py`
+- `src/research/representation_feature_builder.py`
+- `src/research/storage.py`
+- `src/research/tracy_widom_research.py`
+- `src/research/universality_research_lanes.py`
+
+## `root/non-src python`
+
+- File count: `1`
+- Entrypoints: `main.py`
+- Called by: `none`
+- Calls into: `analytics, api, core, market intelligence, providers, services`
+- Duplicate-looking modules: `main.py`
+- Facades/wrappers: `none`
+- External-boundary signals: `main.py`
+- Disabled-boundary signals: `none`
+- Test coverage files: `none`
+
+### Files
+
+- `main.py`
+
+## `scripts/ops`
+
+- File count: `84`
+- Entrypoints: `scripts/analyze_json_data.py, scripts/daily_data_hygiene.py, scripts/init_sports_master_db.py, scripts/ops_check.py, scripts/r2_archive_pipeline.py, scripts/smoke_test.py`
+- Called by: `scripts/ops, tests`
+- Calls into: `core, scripts/ops, services, src/unknown`
+- Duplicate-looking modules: `scripts/analyze_json_data.py, scripts/init_sports_master_db.py`
+- Facades/wrappers: `none`
+- External-boundary signals: `scripts/smoke_test.py`
+- Disabled-boundary signals: `none`
+- Test coverage files: `tests/test_phase10k8zfe2_daily_data_hygiene_scheduler.py`
+
+### Files
+
+- `scripts/README_live_tests.md`
+- `scripts/analyze_json_data.py`
+- `scripts/backfill_open_sports_history.ps1`
+- `scripts/check_all.ps1`
+- `scripts/check_cron.ps1`
+- `scripts/check_data_availability_tiers.ps1`
+- `scripts/check_derived_features.ps1`
+- `scripts/check_kalshi_readonly_ready.ps1`
+- `scripts/check_live_payload_contract.ps1`
+- `scripts/check_local.ps1`
+- `scripts/check_local_sports_history.ps1`
+- `scripts/check_nfl_open_data_sources.ps1`
+- `scripts/check_open_sports_history_sources.ps1`
+- `scripts/check_outcome_reconcile.ps1`
+- `scripts/check_render.ps1`
+- `scripts/daily_data_hygiene.py`
+- `scripts/deepseek_data_pull_check.ps1`
+- `scripts/dry_run_import_kalshi_outcomes.ps1`
+- `scripts/export_kalshi_local_outcomes.ps1`
+- `scripts/import_open_sports_history.ps1`
+- `scripts/init_sports_master_db.py`
+- `scripts/install_json_audit_scheduled_task.ps1`
+- `scripts/live_afl_smoke.ps1`
+- `scripts/live_all_smoke.ps1`
+- `scripts/live_badminton_smoke.ps1`
+- `scripts/live_basketball_smoke.ps1`
+- `scripts/live_checks.ps1`
+- `scripts/live_cod_smoke.ps1`
+- `scripts/live_combat_smoke.ps1`
+- `scripts/live_core_smoke.ps1`
+- `scripts/live_cricket_smoke.ps1`
+- `scripts/live_cs2_smoke.ps1`
+- `scripts/live_darts_smoke.ps1`
+- `scripts/live_dota2_smoke.ps1`
+- `scripts/live_f1_smoke.ps1`
+- `scripts/live_formula_e_smoke.ps1`
+- `scripts/live_golf_smoke.ps1`
+- `scripts/live_handball_smoke.ps1`
+- `scripts/live_helpers.ps1`
+- `scripts/live_indycar_smoke.ps1`
+- `scripts/live_lacrosse_smoke.ps1`
+- `scripts/live_lol_smoke.ps1`
+- `scripts/live_mlb_smoke.ps1`
+- `scripts/live_motogp_smoke.ps1`
+- `scripts/live_nascar_smoke.ps1`
+- `scripts/live_nba_smoke.ps1`
+- `scripts/live_ncaab_smoke.ps1`
+- `scripts/live_ncaaf_smoke.ps1`
+- `scripts/live_ncaawb_smoke.ps1`
+- `scripts/live_nfl_smoke.ps1`
+- `scripts/live_nhl_smoke.ps1`
+- `scripts/live_overwatch_smoke.ps1`
+- `scripts/live_payloads.ps1`
+- `scripts/live_pickleball_smoke.ps1`
+- `scripts/live_rugby_smoke.ps1`
+- `scripts/live_snooker_smoke.ps1`
+- `scripts/live_soccer_smoke.ps1`
+- `scripts/live_sport_template.ps1`
+- `scripts/live_table_tennis_smoke.ps1`
+- `scripts/live_tennis_smoke.ps1`
+- `scripts/live_valorant_smoke.ps1`
+- `scripts/live_volleyball_smoke.ps1`
+- `scripts/live_water_polo_smoke.ps1`
+- `scripts/live_wnba_smoke.ps1`
+- `scripts/ops_check.py`
+- `scripts/persist_import_kalshi_outcomes.ps1`
+- `scripts/r2_archive_pipeline.py`
+- `scripts/review_json_audit_with_deepseek.ps1`
+- `scripts/run_daily_data_hygiene.ps1`
+- `scripts/run_json_audit_pipeline.ps1`
+- `scripts/run_nfl_coaching_import.ps1`
+- `scripts/run_nfl_cutoff_features.ps1`
+- `scripts/run_nfl_open_data_backfill.ps1`
+- `scripts/run_nfl_open_data_feature_readiness.ps1`
+- `scripts/run_nfl_open_data_field_catalog.ps1`
+- `scripts/run_nfl_partial_backfills_v2.ps1`
+- `scripts/run_nfl_pattern_lab.ps1`
+- `scripts/run_nfl_pattern_validation.ps1`
+- `scripts/run_scheduler_health_check.ps1`
+- `scripts/run_scheduler_once.ps1`
+- `scripts/run_tests.ps1`
+- `scripts/setup_dev.ps1`
+- `scripts/smoke_test.py`
+- `scripts/uninstall_json_audit_scheduled_task.ps1`
+
+## `security`
+
+- File count: `7`
+- Entrypoints: `none`
+- Called by: `ai, analytics, core, market intelligence, research, security, services, tests`
+- Calls into: `data, providers, security, services`
+- Duplicate-looking modules: `src/security/owner_approval_gate.py, src/security/policy.py, src/security/risk_limit_guard.py, src/security/secret_safety.py`
+- Facades/wrappers: `src/security/__init__.py`
+- External-boundary signals: `none`
+- Disabled-boundary signals: `none`
+- Test coverage files: `tests/test_phase10k8zt_provider_security_surface_retirement.py`
+
+### Files
+
+- `src/security/__init__.py`
+- `src/security/ai_provider_security.py`
+- `src/security/hard_gate_policy.py`
+- `src/security/owner_approval_gate.py`
+- `src/security/policy.py`
+- `src/security/risk_limit_guard.py`
+- `src/security/secret_safety.py`
+
+## `services`
+
+- File count: `38`
+- Entrypoints: `none`
+- Called by: `ai, analytics, api, backtesting, brokerage, core, dashboard/frontend, data, market intelligence, providers, research, root/non-src python, scripts/ops, security, services, tests`
+- Calls into: `ai, analytics, backtesting, brokerage, core, data, market intelligence, providers, research, security, services, src/unknown`
+- Duplicate-looking modules: `src/services/alert_engine.py, src/services/automation_scheduler_facade.py, src/services/bet_csv_service.py, src/services/bet_log.py, src/services/collector_scheduled_runner.py, src/services/execution_service.py, src/services/ledger_support.py, src/services/model_blender.py, src/services/odds_runtime_bridge.py, src/services/ops_workflow.py, src/services/prediction_market_runtime_bridge.py, src/services/repo_inventory.py, src/services/runtime_shared.py, src/services/scheduler_config.py, src/services/streamlit_dashboard_data.py, src/services/streamlit_dashboard_facade.py`
+- Facades/wrappers: `src/services/automation_scheduler_facade.py, src/services/ops_workflow.py, src/services/streamlit_dashboard_facade.py`
+- External-boundary signals: `src/services/ops_workflow.py`
+- Disabled-boundary signals: `none`
+- Test coverage files: `tests/test_advanced_red_team.py, tests/test_alert_engine.py, tests/test_analyze_event.py, tests/test_arbitrage_detector.py, tests/test_arbitrage_draw_market.py, tests/test_arbitrage_exchange.py, tests/test_arbitrage_prediction_market.py, tests/test_arbitrage_risk_filters.py, tests/test_arbitrage_three_way.py, tests/test_arbitrage_two_way.py, tests/test_asof_line_movement_query.py, tests/test_audit_log.py, tests/test_backtest_dataset_builder.py, tests/test_backtest_leakage.py, tests/test_backtest_regression_strategy.py, tests/test_backtest_schema.py, tests/test_backtest_strategy_bankroll.py, tests/test_backtest_strategy_profiles.py, tests/test_backtesting.py, tests/test_backtesting_engine.py, tests/test_balance_sheet_risk.py, tests/test_basketball_player_impact.py, tests/test_bet_log.py, tests/test_bookmaker_normalizer.py, tests/test_broker_quality_scoring.py, tests/test_budget_gates.py, tests/test_cadence_controller.py, tests/test_calibration.py, tests/test_calibration_collector.py, tests/test_calibration_strategy_filter.py, tests/test_calibration_tracker.py, tests/test_candlestick_pattern_detector.py, tests/test_clv_tracker.py, tests/test_collector_scheduled_runner.py, tests/test_cross_book_line_comparator.py, tests/test_crypto_edge_lab_registry.py, tests/test_data_availability_tiers.py, tests/test_data_intelligence_stack.py, tests/test_data_paths.py, tests/test_deepseek_data_pull_check_contract.py, tests/test_deepseek_profit_lab.py, tests/test_deepseek_reviewer.py, tests/test_derived_feature_backfill_report.py, tests/test_derived_feature_planner.py, tests/test_ev_line_shopper.py, tests/test_evaluate_lines.py, tests/test_experiment_history_store.py, tests/test_experiment_report_exporter.py, tests/test_extreme_randomness_diagnostics.py, tests/test_feature_ablation_lab.py, tests/test_football_impact_intelligence.py, tests/test_historical_backtest_bridge.py, tests/test_historical_data_sources.py, tests/test_historical_line_movement.py, tests/test_historical_odds_importers.py, tests/test_historical_odds_sqlite.py, tests/test_historical_replay.py, tests/test_injury_weather_adapter_contract.py, tests/test_institutional_audit_ledger.py, tests/test_institutional_cross_asset_adapters.py, tests/test_institutional_cross_asset_lab.py, tests/test_institutional_cross_asset_reports.py, tests/test_institutional_cross_asset_scores.py, tests/test_institutional_deepseek_review.py, tests/test_institutional_execution_desk.py, tests/test_institutional_model_router.py, tests/test_institutional_risk_engine.py, tests/test_institutional_stock_pro_analyst_registry.py, tests/test_kalshi_adapter_contract.py, tests/test_kalshi_market_provider.py, tests/test_kalshi_monitor.py, tests/test_kalshi_provider_shape_contract.py, tests/test_kalshi_readonly_readiness_contract.py, tests/test_kalshi_scoring.py, tests/test_later_auto_execution_policy.py, tests/test_line_movement_data_quality_dashboard.py, tests/test_line_movement_import_contract.py, tests/test_line_movement_readiness.py, tests/test_liquidity_context_scoring.py, tests/test_liquidity_risk.py, tests/test_local_sports_history_audit.py, tests/test_market_feature_packs.py, tests/test_market_identity_resolver.py, tests/test_market_state_manifold.py, tests/test_market_structure.py, tests/test_middle_alt_line.py, tests/test_middle_ev_simulator.py, tests/test_middle_key_number.py, tests/test_middle_opportunity_detector.py, tests/test_middle_prop.py, tests/test_middle_push_corridor.py, tests/test_middle_spread.py, tests/test_middle_team_total.py, tests/test_middle_total.py, tests/test_model_input_coverage.py, tests/test_model_performance_report.py, tests/test_model_recheck_runner.py, tests/test_nba_model_activation.py, tests/test_ncaaf_collegefootballdata_adapter.py, tests/test_news_event_monitor.py, tests/test_news_events_adapter_contract.py, tests/test_nfl_coaching_adapters.py, tests/test_nfl_coaching_feature_builders.py, tests/test_nfl_coaching_sources.py, tests/test_nfl_historical_pattern_lab.py, tests/test_nfl_historical_pattern_validation.py, tests/test_nfl_open_data_adapters.py, tests/test_nfl_open_data_backfill.py, tests/test_nfl_open_data_feature_builders.py, tests/test_nfl_open_data_field_catalog.py, tests/test_nfl_open_data_sources.py, tests/test_nfl_source_exhaustion.py, tests/test_no_vig_pricing.py, tests/test_odds_line_monitor.py, tests/test_odds_math.py, tests/test_open_sports_history_derived_features.py, tests/test_open_sports_history_import.py, tests/test_opportunity_scoring.py, tests/test_ops_workflow.py, tests/test_outcome_import_endpoint.py, tests/test_outcome_migration.py, tests/test_outcome_reconciliation.py, tests/test_outcome_store.py, tests/test_paper_decision_ledger.py, tests/test_paper_trade_ledger.py, tests/test_pattern_calibration.py, tests/test_pattern_review_queue.py, tests/test_performance_metrics.py, tests/test_phase10k5_core_arbitrage_engine.py, tests/test_phase10k8c_paper_only_fixture_validation_helper.py, tests/test_phase10k8d_paper_only_fixture_readiness_payload_adapter.py, tests/test_phase10k8f_paper_only_fixture_evaluation_helper.py, tests/test_phase10k8g_paper_only_evaluation_readiness_adapter.py, tests/test_phase10k8i_paper_only_fixture_pipeline_helper.py, tests/test_phase10k8j_controlled_pipeline_smoke_review.py, tests/test_phase10k8k_prediction_testing_readiness_review.py, tests/test_phase10k8m_strict_model_field_baseline_by_market_and_sport.py, tests/test_phase10k8n_controlled_field_catalog_ui_review.py, tests/test_phase10k8o_dedicated_0dte_paper_fixture_template.py, tests/test_phase10k8p_dedicated_0dte_fixture_validation_adapter.py, tests/test_phase10k8q_dedicated_0dte_validation_readiness_payload.py, tests/test_phase10k8r_dedicated_0dte_validation_readiness_ui.py, tests/test_phase10k8s_dedicated_0dte_paper_evaluation_adapter.py, tests/test_phase10k8t_dedicated_0dte_evaluation_readiness_payload.py, tests/test_phase10k8u_dedicated_0dte_evaluation_ui.py, tests/test_phase10k8v_full_0dte_paper_pipeline_adapter.py, tests/test_phase10k8x_controlled_0dte_paper_run_smoke_review.py, tests/test_phase10k8y_0dte_prediction_testing_readiness_review.py, tests/test_phase10k8za_0dte_data_field_formula_coverage_audit.py, tests/test_phase10k8zb_0dte_field_formula_gap_patch.py, tests/test_phase10k8ze_institutional_market_metric_catalog.py, tests/test_phase10k8zf1_compatibility_alias_migration.py, tests/test_phase10k8zf2_production_symbol_migration.py, tests/test_phase10k8zfg_safe_migration_batch_1.py, tests/test_phase10k8zl6_market_intelligence_runtime_test_redirection.py, tests/test_phase_x_non_src_inventory.py, tests/test_player_prop_monitor.py, tests/test_player_props_adapter_contract.py, tests/test_report_writer.py, tests/test_response_compactor.py, tests/test_review_queue.py, tests/test_run_context.py, tests/test_scheduler_config.py, tests/test_scheduler_runner.py, tests/test_security_framework.py, tests/test_settlement_discovery.py, tests/test_sharp_cross_book_review_queue.py, tests/test_sharp_scheduler_flow.py, tests/test_sharp_sportsbook_adapter.py, tests/test_small_account_strategy.py, tests/test_snapshot_store.py, tests/test_source_event_link_resolver.py, tests/test_source_quality_scoring.py, tests/test_sport_feature_packs.py, tests/test_sportsbook_adapter_contract.py, tests/test_sportsbook_odds_provider.py, tests/test_stock_fundamentals_adapter_contract.py, tests/test_stock_monitor.py, tests/test_stock_price_adapter_contract.py, tests/test_strategy_framework.py, tests/test_streamlit_dashboard_data.py, tests/test_system_health.py, tests/test_tennis_model_activation.py`
+
+### Files
+
+- `src/services/__init__.py`
+- `src/services/action_betting_service.py`
+- `src/services/alert_engine.py`
+- `src/services/audit_log.py`
+- `src/services/automation_scheduler_facade.py`
+- `src/services/bet_csv_service.py`
+- `src/services/bet_decision_engine.py`
+- `src/services/bet_log.py`
+- `src/services/cadence_controller.py`
+- `src/services/collector_scheduled_runner.py`
+- `src/services/decision_engine.py`
+- `src/services/enrichment_service.py`
+- `src/services/execution_service.py`
+- `src/services/execution_support.py`
+- `src/services/full_board_engine.py`
+- `src/services/ledger_service.py`
+- `src/services/ledger_support.py`
+- `src/services/logbook_engine.py`
+- `src/services/model_backtest_service.py`
+- `src/services/model_blender.py`
+- `src/services/model_recheck_runner.py`
+- `src/services/odds_runtime_bridge.py`
+- `src/services/ops_workflow.py`
+- `src/services/outcome_store.py`
+- `src/services/prediction_market_runtime_bridge.py`
+- `src/services/repo_inventory.py`
+- `src/services/run_context.py`
+- `src/services/runtime_shared.py`
+- `src/services/scheduler_config.py`
+- `src/services/scheduler_runner.py`
+- `src/services/screenshot_intake.py`
+- `src/services/security_readiness.py`
+- `src/services/settlement_service.py`
+- `src/services/settlement_support.py`
+- `src/services/snapshot_store.py`
+- `src/services/streamlit_dashboard_data.py`
+- `src/services/streamlit_dashboard_facade.py`
+- `src/services/system_health.py`
+
+## `src/unknown`
+
+- File count: `50`
+- Entrypoints: `none`
+- Called by: `api, core, providers, scripts/ops, services, src/unknown, tests`
+- Calls into: `core, src/unknown`
+- Duplicate-looking modules: `src/connectors/contracts.py, src/connectors/errors.py, src/connectors/feeds/contracts.py, src/connectors/market_data/adapter.py, src/connectors/market_data/client.py, src/connectors/market_data/contracts.py, src/connectors/market_data/models.py, src/connectors/market_data/payloads.py, src/connectors/market_data/read_only.py, src/connectors/models.py, src/connectors/odds_data/adapter.py, src/connectors/odds_data/auth.py, src/connectors/odds_data/client.py, src/connectors/odds_data/configuration.py, src/connectors/odds_data/contracts.py, src/connectors/odds_data/disabled_client.py, src/connectors/odds_data/models.py, src/connectors/odds_data/payloads.py, src/connectors/odds_data/read_only.py, src/connectors/odds_data/readiness.py, src/connectors/odds_data/transport.py, src/connectors/policy.py, src/connectors/prediction_market_data/adapter.py, src/connectors/prediction_market_data/auth.py, src/connectors/prediction_market_data/client.py, src/connectors/prediction_market_data/configuration.py, src/connectors/prediction_market_data/contracts.py, src/connectors/prediction_market_data/disabled_client.py, src/connectors/prediction_market_data/models.py, src/connectors/prediction_market_data/payloads.py, src/connectors/prediction_market_data/read_only.py, src/connectors/prediction_market_data/readiness.py, src/connectors/prediction_market_data/transport.py, src/connectors/registry.py, src/connectors/web_scraping/contracts.py, src/storage/archive_manifest.py`
+- Facades/wrappers: `none`
+- External-boundary signals: `src/connectors/policy.py, src/storage/r2_archive_adapter.py`
+- Disabled-boundary signals: `src/connectors/odds_data/disabled_client.py, src/connectors/prediction_market_data/disabled_client.py`
+- Test coverage files: `tests/test_kalshi_readonly_adapter.py, tests/test_phase10k5_core_arbitrage_engine.py, tests/test_phase10k8zfy_prediction_market_connector_batch_1.py, tests/test_phase10k8zfz_odds_data_connector_batch_2.py, tests/test_phase10k8zg0_market_data_connector_batch_3.py, tests/test_phase10k8zgl_odds_runtime_consumer_redirection_batch_2.py, tests/test_phase10k8zgm_odds_historical_test_redirection.py, tests/test_phase10k8zgn_odds_proof_history_cleanup.py, tests/test_phase10k8zgp_odds_compatibility_shell_deletion.py, tests/test_phase10k8zgr_prediction_market_legacy_live_method_retirement.py, tests/test_phase10k8zgs_prediction_market_compatibility_shell_delete_readiness.py, tests/test_phase10k8zgt_prediction_market_runtime_scheduler_redirection.py, tests/test_phase10k8zgu_prediction_market_historical_compatibility_test_redirection.py, tests/test_phase10k8zgv_prediction_market_compatibility_test_retirement.py, tests/test_phase10k8zgw_prediction_market_final_delete_readiness.py, tests/test_phase10k8zgx_prediction_market_proof_test_retirement.py, tests/test_phase10k8zgy_prediction_market_shell_deletion.py, tests/test_sharp_sportsbook_adapter.py, tests/test_sportsbook_odds_provider.py`
+
+### Files
+
+- `src/__init__.py`
+- `src/connectors/__init__.py`
+- `src/connectors/contracts.py`
+- `src/connectors/errors.py`
+- `src/connectors/feeds/__init__.py`
+- `src/connectors/feeds/contracts.py`
+- `src/connectors/market_data/__init__.py`
+- `src/connectors/market_data/adapter.py`
+- `src/connectors/market_data/client.py`
+- `src/connectors/market_data/contracts.py`
+- `src/connectors/market_data/models.py`
+- `src/connectors/market_data/payloads.py`
+- `src/connectors/market_data/read_only.py`
+- `src/connectors/models.py`
+- `src/connectors/odds_data/__init__.py`
+- `src/connectors/odds_data/adapter.py`
+- `src/connectors/odds_data/auth.py`
+- `src/connectors/odds_data/client.py`
+- `src/connectors/odds_data/configuration.py`
+- `src/connectors/odds_data/contracts.py`
+- `src/connectors/odds_data/disabled_client.py`
+- `src/connectors/odds_data/live_client.py`
+- `src/connectors/odds_data/models.py`
+- `src/connectors/odds_data/payloads.py`
+- `src/connectors/odds_data/read_only.py`
+- `src/connectors/odds_data/readiness.py`
+- `src/connectors/odds_data/source_profile.py`
+- `src/connectors/odds_data/transport.py`
+- `src/connectors/policy.py`
+- `src/connectors/prediction_market_data/__init__.py`
+- `src/connectors/prediction_market_data/adapter.py`
+- `src/connectors/prediction_market_data/auth.py`
+- `src/connectors/prediction_market_data/client.py`
+- `src/connectors/prediction_market_data/configuration.py`
+- `src/connectors/prediction_market_data/contracts.py`
+- `src/connectors/prediction_market_data/disabled_client.py`
+- `src/connectors/prediction_market_data/models.py`
+- `src/connectors/prediction_market_data/payloads.py`
+- `src/connectors/prediction_market_data/read_only.py`
+- `src/connectors/prediction_market_data/readiness.py`
+- `src/connectors/prediction_market_data/signing.py`
+- `src/connectors/prediction_market_data/transport.py`
+- `src/connectors/registry.py`
+- `src/connectors/web_scraping/__init__.py`
+- `src/connectors/web_scraping/contracts.py`
+- `src/sports/__init__.py`
+- `src/sports/nba_features.py`
+- `src/storage/__init__.py`
+- `src/storage/archive_manifest.py`
+- `src/storage/r2_archive_adapter.py`
+
+## `tests`
+
+- File count: `545`
+- Entrypoints: `tests/test_advanced_red_team.py, tests/test_afl_model_activation.py, tests/test_analyze_event.py, tests/test_backtesting_engine.py, tests/test_badminton_model_activation.py, tests/test_balance_sheet_risk.py, tests/test_bankroll_state.py, tests/test_baseball_impact_intelligence.py, tests/test_basketball_player_impact.py, tests/test_bet_log.py, tests/test_broker_quality_scoring.py, tests/test_budget_gates.py, tests/test_calibration_collector.py, tests/test_calibration_tracker.py, tests/test_call_of_duty_esports_model_activation.py, tests/test_candlestick_pattern_detector.py, tests/test_clv_tracker.py, tests/test_collector_scheduled_runner.py, tests/test_college_football_model_activation.py, tests/test_combat_impact_intelligence.py, tests/test_combat_sports_model_activation.py, tests/test_cricket_model_activation.py, tests/test_crypto_edge_lab_registry.py, tests/test_cs2_esports_model_activation.py, tests/test_darts_model_activation.py, tests/test_data_availability_tiers.py, tests/test_data_intelligence_stack.py, tests/test_data_paths.py, tests/test_data_source_endpoints.py, tests/test_data_source_registry.py, tests/test_data_source_research_lanes.py, tests/test_deepseek_data_pull_check_contract.py, tests/test_deepseek_profit_lab.py, tests/test_deepseek_reviewer.py, tests/test_derived_feature_backfill_report.py, tests/test_derived_feature_planner.py, tests/test_dota2_esports_model_activation.py, tests/test_drawdown_controls.py, tests/test_evaluate_lines.py, tests/test_exposure_limits.py, tests/test_extreme_randomness_diagnostics.py, tests/test_football_impact_intelligence.py, tests/test_formula_1_model_activation.py, tests/test_formula_e_model_activation.py, tests/test_golf_impact_intelligence.py, tests/test_golf_model_activation.py, tests/test_handball_model_activation.py, tests/test_historical_replay.py, tests/test_hockey_impact_intelligence.py, tests/test_indycar_model_activation.py, tests/test_injury_weather_adapter_contract.py, tests/test_institutional_audit_ledger.py, tests/test_institutional_cross_asset_adapters.py, tests/test_institutional_cross_asset_calibration.py, tests/test_institutional_cross_asset_lab.py, tests/test_institutional_cross_asset_reports.py, tests/test_institutional_cross_asset_scores.py, tests/test_institutional_deepseek_review.py, tests/test_institutional_execution_desk.py, tests/test_institutional_risk_engine.py, tests/test_institutional_stock_pro_analyst_registry.py, tests/test_kalshi_adapter_contract.py, tests/test_kalshi_market_provider.py, tests/test_kalshi_readonly_adapter.py, tests/test_kalshi_readonly_readiness_contract.py, tests/test_kelly_staking.py, tests/test_lacrosse_model_activation.py, tests/test_league_of_legends_esports_model_activation.py, tests/test_liquidity_context_scoring.py, tests/test_live_smoke_payload_contract.py, tests/test_local_sports_history_audit.py, tests/test_market_state_manifold.py, tests/test_mens_college_basketball_model_activation.py, tests/test_mlb_model_activation.py, tests/test_model_input_coverage.py, tests/test_model_performance_report.py, tests/test_model_probability.py, tests/test_motogp_model_activation.py, tests/test_multi_sport_model_registry.py, tests/test_nascar_model_activation.py, tests/test_ncaaf_collegefootballdata_adapter.py, tests/test_news_events_adapter_contract.py, tests/test_nfl_coaching_adapters.py, tests/test_nfl_coaching_feature_builders.py, tests/test_nfl_coaching_sources.py, tests/test_nfl_cutoff_week_features.py, tests/test_nfl_historical_pattern_lab.py, tests/test_nfl_historical_pattern_validation.py, tests/test_nfl_model_activation.py, tests/test_nfl_open_data_adapters.py, tests/test_nfl_open_data_backfill.py, tests/test_nfl_open_data_feature_builders.py, tests/test_nfl_open_data_field_catalog.py, tests/test_nfl_open_data_sources.py, tests/test_nfl_source_exhaustion.py, tests/test_nhl_model_activation.py, tests/test_open_sports_history_backfill.py, tests/test_open_sports_history_derived_features.py, tests/test_open_sports_history_import.py, tests/test_open_sports_history_sources.py, tests/test_ops_scripts_contract.py, tests/test_ops_workflow.py, tests/test_outcome_import_endpoint.py, tests/test_outcome_migration.py, tests/test_outcome_reconciliation.py, tests/test_overwatch_esports_model_activation.py, tests/test_paper_trade_ledger.py, tests/test_pattern_calibration.py, tests/test_pattern_review_queue.py, tests/test_performance_metrics.py, tests/test_phase10k5_core_arbitrage_engine.py, tests/test_pickleball_model_activation.py, tests/test_player_props_adapter_contract.py, tests/test_price_event.py, tests/test_provider_adapter_base.py, tests/test_provider_contracts.py, tests/test_provider_health.py, tests/test_provider_normalization_contract.py, tests/test_provider_payload_validator.py, tests/test_provider_secret_policy.py, tests/test_quant_engine_foundation.py, tests/test_risk_of_ruin.py, tests/test_rugby_model_activation.py, tests/test_screenshot_normalization_parity.py, tests/test_security_framework.py, tests/test_settlement_discovery.py, tests/test_sharp_cross_book_review_queue.py, tests/test_sharp_scheduler_flow.py, tests/test_sharp_sportsbook_adapter.py, tests/test_small_account_endpoints.py, tests/test_small_account_strategy.py, tests/test_snooker_model_activation.py, tests/test_soccer_impact_intelligence.py, tests/test_soccer_model_activation.py, tests/test_source_quality_scoring.py, tests/test_sport_analysis_endpoint.py, tests/test_sport_model_routing.py, tests/test_sportsbook_adapter_contract.py, tests/test_sportsbook_odds_provider.py, tests/test_stake_confidence.py, tests/test_stock_fundamentals_adapter_contract.py, tests/test_stock_price_adapter_contract.py, tests/test_strategy_framework.py, tests/test_table_tennis_model_activation.py, tests/test_tennis_impact_intelligence.py, tests/test_tennis_model_activation.py, tests/test_valorant_esports_model_activation.py, tests/test_volleyball_model_activation.py, tests/test_water_polo_model_activation.py, tests/test_wnba_model_activation.py, tests/test_womens_college_basketball_model_activation.py`
+- Called by: `tests`
+- Calls into: `ai, analytics, api, backtesting, brokerage, core, data, market intelligence, providers, research, scripts/ops, security, services, src/unknown, tests`
+- Duplicate-looking modules: `tests/test_phase10k8zf9b_batch_safe_remaining_transfer.py, tests/test_phase10k8zf9c_headerless_csv_final_deletion.py, tests/test_phase10k8zf9d_final_data_inventory_reconciliation.py, tests/test_repo_architecture_guard.py`
+- Facades/wrappers: `tests/conftest.py, tests/support/action_imports.py, tests/test_kalshi_readonly_adapter.py, tests/test_phase10k8z0_deployment_governance.py, tests/test_phase10k8zf1_compatibility_alias_migration.py, tests/test_phase10k8zf7_r2_archive_pipeline.py, tests/test_phase10k8zf9b_batch_safe_remaining_transfer.py, tests/test_phase10k8zf9c_headerless_csv_final_deletion.py, tests/test_phase10k8zf9d_final_data_inventory_reconciliation.py, tests/test_phase10k8zfo_src_providers_skeleton.py, tests/test_phase10k8zfr_production_module_boundaries.py, tests/test_phase10k8zfs_legacy_vendor_transport_batch_plan.py, tests/test_phase10k8zft_provider_foundation_transport.py, tests/test_phase10k8zfu_provider_foundation_completion.py, tests/test_phase10k8zfv_runtime_provider_migration_batch_1.py, tests/test_phase10k8zfw_runtime_provider_migration_batch_2.py, tests/test_phase10k8zfx_connector_boundary_isolation.py, tests/test_phase10k8zfy_prediction_market_connector_batch_1.py, tests/test_phase10k8zfz_odds_data_connector_batch_2.py, tests/test_phase10k8zg0_market_data_connector_batch_3.py, tests/test_phase10k8zg1_zero_dte_stocks_provider_batch.py, tests/test_phase10k8zg2_legacy_deletion_readiness_audit.py, tests/test_phase10k8zg3_wrapper_import_redirection.py, tests/test_phase10k8zg4_runtime_bridge_import_redirection.py, tests/test_phase10k8zg5_provider_router_independence.py, tests/test_phase10k8zg6_legacy_provider_router_delete_proof.py, tests/test_phase10k8zg7_legacy_provider_router_deletion.py, tests/test_phase10k8zg8_provider_foundation_deletion_proof.py, tests/test_phase10k8zg9_provider_foundation_thin_wrapper_deletion.py, tests/test_phase10k8zga_provider_registry_runtime_blocker.py, tests/test_phase10k8zgb_provider_write_firewall_runtime_blocker.py, tests/test_phase10k8zgc_final_provider_foundation_blocker_proof.py, tests/test_phase10k8zgd_final_provider_foundation_blocker_deletion.py, tests/test_phase10k8zge_broader_legacy_runtime_owner_audit.py, tests/test_phase10k8zgf_live_client_connector_isolation_proof.py, tests/test_phase10k8zgg_prediction_market_live_client_connector_migration.py, tests/test_phase10k8zgh_odds_data_live_client_connector_migration.py, tests/test_phase10k8zgi_odds_runtime_consumer_redirection.py, tests/test_phase10k8zgj_odds_legacy_live_method_retirement.py, tests/test_phase10k8zgk_odds_compatibility_shell_delete_readiness.py, tests/test_phase10k8zgl_odds_runtime_consumer_redirection_batch_2.py, tests/test_phase10k8zgm_odds_historical_test_redirection.py, tests/test_phase10k8zgn_odds_proof_history_cleanup.py, tests/test_phase10k8zgo_odds_compatibility_test_retirement.py, tests/test_phase10k8zgp_odds_compatibility_shell_deletion.py, tests/test_phase10k8zgq_prediction_market_runtime_consumer_redirection.py, tests/test_phase10k8zgr_prediction_market_legacy_live_method_retirement.py, tests/test_phase10k8zgs_prediction_market_compatibility_shell_delete_readiness.py, tests/test_phase10k8zgt_prediction_market_runtime_scheduler_redirection.py, tests/test_phase10k8zgu_prediction_market_historical_compatibility_test_redirection.py, tests/test_phase10k8zgv_prediction_market_compatibility_test_retirement.py, tests/test_phase10k8zgw_prediction_market_final_delete_readiness.py, tests/test_phase10k8zgx_prediction_market_proof_test_retirement.py, tests/test_phase10k8zgy_prediction_market_shell_deletion.py, tests/test_phase10k8zgz_post_provider_connector_cleanup_freeze.py, tests/test_phase10k8zh4_core_pricing_extraction.py, tests/test_phase10k8zh5_core_probability_extraction.py, tests/test_phase10k8zh6_portfolio_foundation.py, tests/test_phase10k8zh7_execution_game_theory_foundation.py, tests/test_phase10k8zh8_decision_engine_service_plan.py, tests/test_phase10k8zh9_core_engine_compatibility_wrappers.py, tests/test_phase10k8zha_core_engine_migration_checkpoint.py, tests/test_phase10k8zhb_service_layer_ownership_audit.py, tests/test_phase10k8zhc_screenshot_workflow_thinning_plan.py, tests/test_phase10k8zhd_decision_and_bet_log_audit.py, tests/test_phase10k8zhe_api_layer_ownership_audit.py, tests/test_phase10k8zhg_automation_scheduler_decommission_audit.py, tests/test_phase10k8zhh_service_api_dashboard_checkpoint.py, tests/test_phase10k8zhi_legacy_full_gate_remediation.py, tests/test_phase10k8zhj_data_foundation.py, tests/test_phase10k8zhk_backtesting_foundation.py, tests/test_phase10k8zhl_legacy_data_backtesting_owner_map.py, tests/test_phase10k8zhm_data_backtesting_checkpoint.py, tests/test_phase10k8zhn_analytics_foundation.py, tests/test_phase10k8zho_research_foundation.py, tests/test_phase10k8zhp_legacy_analytics_research_owner_map.py, tests/test_phase10k8zhq_analytics_research_checkpoint.py, tests/test_phase10k8zhr_analytics_migration_batch_1.py, tests/test_phase10k8zhs_research_migration_batch_1.py, tests/test_phase10k8zht_analytics_research_batch_1_legacy_scan.py, tests/test_phase10k8zhv_analytics_downstream_redirection.py, tests/test_phase10k8zhw_research_downstream_redirection.py, tests/test_phase10k8zhx_analytics_research_batch_2_legacy_scan.py, tests/test_phase10k8zhz_analytics_research_wrapper_delete_proof.py, tests/test_phase10k8zhz_scheduler_coupled_research_blockers.py, tests/test_phase10k8zi1_analytics_research_compatibility_test_retirement.py, tests/test_phase10k8zi2_research_store_ownership_migration.py, tests/test_phase10k8zi3_model_maturity_registry_decoupling.py, tests/test_phase10k8zi4_final_analytics_research_delete_readiness.py, tests/test_phase10k8zi5_analytics_research_wrapper_deletion.py, tests/test_phase10k8zi6_ai_llm_boundary_audit.py, tests/test_phase10k8zi7_ai_boundary_scaffold.py, tests/test_phase10k8zia_execution_scheduler_audit.py, tests/test_phase10k8zib_unified_brokerage_boundary.py, tests/test_phase10k8zic_execution_ownership_migration.py, tests/test_phase10k8zid_execution_final_delete_readiness.py, tests/test_phase10k8zie_execution_scheduler_wrapper_deletion.py, tests/test_phase10k8zif_execution_boundary_checkpoint.py, tests/test_phase10k8zig_execution_blocker_remediation_audit.py, tests/test_phase10k8zih_execution_blocker_canonicalization.py, tests/test_phase10k8zii_execution_blocker_final_delete_readiness.py, tests/test_phase10k8zij_execution_blocker_wrapper_deletion.py, tests/test_phase10k8zik_execution_remediation_checkpoint.py, tests/test_phase10k8zil_settlement_canonicalization.py, tests/test_phase10k8zim_ledger_canonicalization.py, tests/test_phase10k8zin_strategy_execution_helper_canonicalization.py, tests/test_phase10k8zio_execution_helper_final_delete_readiness.py, tests/test_phase10k8zip_execution_helper_canonicalization_checkpoint.py, tests/test_phase10k8ziu_execution_helper_wrapper_deletion.py, tests/test_phase10k8ziw_final_execution_blocker_audit.py, tests/test_phase10k8zix_final_execution_blocker_canonicalization.py, tests/test_phase10k8ziz_final_execution_blocker_delete_proof.py, tests/test_phase10k8zj0_final_execution_blocker_deletion.py, tests/test_phase10k8zj1_execution_cleanup_checkpoint.py, tests/test_phase10k8zj2_broker_account_boundary_audit.py, tests/test_phase10k8zj3_disabled_broker_account_boundary.py, tests/test_phase10k8zj4_live_ledger_persistence_boundary_plan.py, tests/test_phase10k8zj6_live_trading_readiness_checkpoint.py, tests/test_phase10k8zj7_approval_gate_scaffold.py, tests/test_phase10k8zj8_broker_client_factory_scaffold.py, tests/test_phase10k8zj9_live_submit_interface_scaffold.py, tests/test_phase10k8zja_live_reconciliation_ledger_scaffold.py, tests/test_phase10k8zjb_kill_switch_rollback_scaffold.py, tests/test_phase10k8zjc_live_activation_scaffold_checkpoint.py, tests/test_phase10k8zjd_broker_adapter_protocol.py, tests/test_phase10k8zje_sandbox_broker_boundary.py, tests/test_phase10k8zjf_credential_activation_boundary.py, tests/test_phase10k8zjg_sandbox_submit_flow.py, tests/test_phase10k8zjh_production_activation_blocker_audit.py, tests/test_phase10k8zji_sandbox_activation_checkpoint.py, tests/test_phase10k8zjj_activation_gate_verification.py, tests/test_phase10k8zjk_broker_adapter_readiness.py, tests/test_phase10k8zjl_credential_readiness_verification.py, tests/test_phase10k8zjm_live_submit_readiness_verification.py, tests/test_phase10k8zjn_monitoring_rollback_readiness.py, tests/test_phase10k8zjo_controlled_activation_readiness_checkpoint.py, tests/test_phase10k8zjp_approval_evidence.py, tests/test_phase10k8zjq_sandbox_activation_composition.py, tests/test_phase10k8zjr_dry_run_submit_proof.py, tests/test_phase10k8zjs_dry_run_ledger_verification.py, tests/test_phase10k8zjt_final_sandbox_activation_proof.py, tests/test_phase10k8zjv_operator_approval_interface.py, tests/test_phase10k8zjw_approval_audit_layer.py, tests/test_phase10k8zjx_sandbox_enablement_layer.py, tests/test_phase10k8zjy_sandbox_adapter_stub.py, tests/test_phase10k8zjz_kill_switch_governance.py, tests/test_phase10k8zk1_controlled_sandbox_governance_checkpoint.py, tests/test_phase10k8zk2_credential_sdk_network_freeze.py, tests/test_phase10k8zk2_final_live_trading_disabled_proof.py, tests/test_phase10k8zk2_final_system_freeze.py, tests/test_phase10k8zk2_production_activation_readiness_ledger.py, tests/test_phase10k8zk3_final_production_readiness_checkpoint.py, tests/test_phase10k8zk4_architecture_invariants.py, tests/test_phase10k8zk4_operator_implementation_plan.py, tests/test_phase10k8zk5_automation_scheduler_full_inventory.py, tests/test_phase10k8zk6_automation_scheduler_ownership_migration.py, tests/test_phase10k8zl0_automation_scheduler_deletion.py, tests/test_phase10k8zl9b_internal_scheduler_self_import_break.py, tests/test_phase10k8zmh_automation_scheduler_final_removal_attempt.py, tests/test_phase10k8zmi_streamlit_dashboard_test_import_redirection.py, tests/test_phase10k8zmj_sports_impact_test_import_redirection.py, tests/test_phase10k8zmr_security_policy_secret_safety_migration.py, tests/test_phase10k8zms_security_cluster_migration.py, tests/test_phase1_legacy_inventory.py`
+- External-boundary signals: `tests/test_data_source_endpoints.py, tests/test_deepseek_profit_lab.py, tests/test_deepseek_reviewer.py, tests/test_institutional_deepseek_review.py, tests/test_institutional_stock_pro_analyst_registry.py, tests/test_market_research_store.py, tests/test_ncaaf_collegefootballdata_adapter.py, tests/test_nfl_coaching_adapters.py, tests/test_nfl_open_data_adapters.py, tests/test_nfl_open_data_backfill.py, tests/test_open_sports_history_backfill.py, tests/test_open_sports_history_import.py, tests/test_ops_workflow.py, tests/test_phase10k2_sports_snapshot_pipeline.py, tests/test_phase10k4_0dte_options_schema_foundation.py, tests/test_phase10k5_core_arbitrage_engine.py, tests/test_phase10k8z0_deployment_governance.py, tests/test_phase10k8zf7_r2_archive_pipeline.py, tests/test_phase10k8zf8_r2_transfer_proof_report.py, tests/test_phase10k8zfo_src_providers_skeleton.py, tests/test_phase10k8zfr_production_module_boundaries.py, tests/test_phase10k8zft_provider_foundation_transport.py, tests/test_phase10k8zfu_provider_foundation_completion.py, tests/test_phase10k8zfv_runtime_provider_migration_batch_1.py, tests/test_phase10k8zfw_runtime_provider_migration_batch_2.py, tests/test_phase10k8zfx_connector_boundary_isolation.py, tests/test_phase10k8zfy_prediction_market_connector_batch_1.py, tests/test_phase10k8zfz_odds_data_connector_batch_2.py, tests/test_phase10k8zg0_market_data_connector_batch_3.py, tests/test_phase10k8zg1_zero_dte_stocks_provider_batch.py, tests/test_phase10k8zg2_legacy_deletion_readiness_audit.py, tests/test_phase10k8zg3_wrapper_import_redirection.py, tests/test_phase10k8zg4_runtime_bridge_import_redirection.py, tests/test_phase10k8zg5_provider_router_independence.py, tests/test_phase10k8zg7_legacy_provider_router_deletion.py, tests/test_phase10k8zg8_provider_foundation_deletion_proof.py, tests/test_phase10k8zga_provider_registry_runtime_blocker.py, tests/test_phase10k8zgb_provider_write_firewall_runtime_blocker.py, tests/test_phase10k8zgf_live_client_connector_isolation_proof.py, tests/test_phase10k8zgg_prediction_market_live_client_connector_migration.py, tests/test_phase10k8zgh_odds_data_live_client_connector_migration.py, tests/test_phase10k8zgj_odds_legacy_live_method_retirement.py, tests/test_phase10k8zgk_odds_compatibility_shell_delete_readiness.py, tests/test_phase10k8zgl_odds_runtime_consumer_redirection_batch_2.py, tests/test_phase10k8zgm_odds_historical_test_redirection.py, tests/test_phase10k8zgn_odds_proof_history_cleanup.py, tests/test_phase10k8zgq_prediction_market_runtime_consumer_redirection.py, tests/test_phase10k8zgv_prediction_market_compatibility_test_retirement.py, tests/test_phase10k8zh1_core_math_foundation_batch.py, tests/test_phase10k8zh4_core_pricing_extraction.py, tests/test_phase10k8zh5_core_probability_extraction.py, tests/test_phase10k8zh6_portfolio_foundation.py, tests/test_phase10k8zh7_execution_game_theory_foundation.py, tests/test_phase10k8zh8_decision_engine_service_plan.py, tests/test_phase10k8zh9_core_engine_compatibility_wrappers.py, tests/test_phase10k8zhb_service_layer_ownership_audit.py, tests/test_phase10k8zhc_screenshot_workflow_thinning_plan.py, tests/test_phase10k8zhf_dashboard_entrypoint_ownership_audit.py, tests/test_phase10k8zhj_data_foundation.py, tests/test_phase10k8zhk_backtesting_foundation.py, tests/test_phase10k8zhn_analytics_foundation.py, tests/test_phase10k8zho_research_foundation.py, tests/test_phase10k8zhr_analytics_migration_batch_1.py, tests/test_phase10k8zhs_research_migration_batch_1.py, tests/test_phase10k8zhv_analytics_downstream_redirection.py, tests/test_phase10k8zhw_research_downstream_redirection.py, tests/test_phase10k8zhz_analytics_research_wrapper_delete_proof.py, tests/test_phase10k8zhz_scheduler_coupled_research_blockers.py, tests/test_phase10k8zi2_research_store_ownership_migration.py, tests/test_phase10k8zi3_model_maturity_registry_decoupling.py, tests/test_phase10k8zi6_ai_llm_boundary_audit.py, tests/test_phase10k8zj3_disabled_broker_account_boundary.py, tests/test_phase10k8zj8_broker_client_factory_scaffold.py, tests/test_phase10k8zj9_live_submit_interface_scaffold.py, tests/test_phase10k8zjd_broker_adapter_protocol.py, tests/test_phase10k8zje_sandbox_broker_boundary.py, tests/test_phase10k8zjf_credential_activation_boundary.py, tests/test_phase10k8zjg_sandbox_submit_flow.py, tests/test_phase10k8zjj_activation_gate_verification.py, tests/test_phase10k8zjk_broker_adapter_readiness.py, tests/test_phase10k8zjl_credential_readiness_verification.py, tests/test_phase10k8zjm_live_submit_readiness_verification.py, tests/test_phase10k8zjn_monitoring_rollback_readiness.py, tests/test_phase10k8zjo_controlled_activation_readiness_checkpoint.py, tests/test_phase10k8zjp_approval_evidence.py, tests/test_phase10k8zjq_sandbox_activation_composition.py, tests/test_phase10k8zjr_dry_run_submit_proof.py, tests/test_phase10k8zjs_dry_run_ledger_verification.py, tests/test_phase10k8zjt_final_sandbox_activation_proof.py, tests/test_phase10k8zjv_operator_approval_interface.py, tests/test_phase10k8zjw_approval_audit_layer.py, tests/test_phase10k8zjx_sandbox_enablement_layer.py, tests/test_phase10k8zjy_sandbox_adapter_stub.py, tests/test_phase10k8zjz_kill_switch_governance.py, tests/test_phase10k8zk1_controlled_sandbox_governance_checkpoint.py, tests/test_phase10k8zk2_credential_sdk_network_freeze.py, tests/test_phase10k8zl2_market_intelligence_foundation.py, tests/test_phase10k8zl4_prediction_market_intelligence_absorption.py, tests/test_phase10k8zl9b_internal_scheduler_self_import_break.py, tests/test_phase10k8zmr_security_policy_secret_safety_migration.py, tests/test_phase10k8zms_security_cluster_migration.py, tests/test_phase10k8zt_provider_security_surface_retirement.py, tests/test_security_framework.py, tests/test_stock_monitor.py`
+- Disabled-boundary signals: `tests/test_phase10k8zj3_disabled_broker_account_boundary.py, tests/test_phase10k8zk2_final_live_trading_disabled_proof.py`
+- Test coverage files: `none`
+
+### Files
+
+- `tests/conftest.py`
+- `tests/support/__init__.py`
+- `tests/support/action_imports.py`
+- `tests/test_activation_tiers.py`
+- `tests/test_advanced_red_team.py`
+- `tests/test_afl_model_activation.py`
+- `tests/test_alert_engine.py`
+- `tests/test_alert_gate.py`
+- `tests/test_analyze_event.py`
+- `tests/test_arbitrage_detector.py`
+- `tests/test_arbitrage_draw_market.py`
+- `tests/test_arbitrage_exchange.py`
+- `tests/test_arbitrage_prediction_market.py`
+- `tests/test_arbitrage_risk_filters.py`
+- `tests/test_arbitrage_three_way.py`
+- `tests/test_arbitrage_two_way.py`
+- `tests/test_asof_line_movement_query.py`
+- `tests/test_audit_log.py`
+- `tests/test_automation_scheduler_endpoints.py`
+- `tests/test_automation_scheduler_scripts.py`
+- `tests/test_backtest_dataset_builder.py`
+- `tests/test_backtest_gate.py`
+- `tests/test_backtest_leakage.py`
+- `tests/test_backtest_regression_strategy.py`
+- `tests/test_backtest_schema.py`
+- `tests/test_backtest_strategy_bankroll.py`
+- `tests/test_backtest_strategy_profiles.py`
+- `tests/test_backtesting.py`
+- `tests/test_backtesting_engine.py`
+- `tests/test_badminton_model_activation.py`
+- `tests/test_balance_sheet_risk.py`
+- `tests/test_bankroll_state.py`
+- `tests/test_baseball_impact_intelligence.py`
+- `tests/test_basketball_player_impact.py`
+- `tests/test_bet_log.py`
+- `tests/test_bookmaker_normalizer.py`
+- `tests/test_broker_quality_scoring.py`
+- `tests/test_budget_gates.py`
+- `tests/test_cadence_controller.py`
+- `tests/test_calibration.py`
+- `tests/test_calibration_collector.py`
+- `tests/test_calibration_gate.py`
+- `tests/test_calibration_strategy_filter.py`
+- `tests/test_calibration_tracker.py`
+- `tests/test_call_of_duty_esports_model_activation.py`
+- `tests/test_candlestick_pattern_detector.py`
+- `tests/test_champion_challenger.py`
+- `tests/test_clv_tracker.py`
+- `tests/test_collector_scheduled_runner.py`
+- `tests/test_college_football_model_activation.py`
+- `tests/test_combat_impact_intelligence.py`
+- `tests/test_combat_sports_model_activation.py`
+- `tests/test_cricket_model_activation.py`
+- `tests/test_cross_book_gate.py`
+- `tests/test_cross_book_line_comparator.py`
+- `tests/test_crypto_edge_lab_registry.py`
+- `tests/test_cs2_esports_model_activation.py`
+- `tests/test_darts_model_activation.py`
+- `tests/test_data_availability_tiers.py`
+- `tests/test_data_intelligence_stack.py`
+- `tests/test_data_lineage.py`
+- `tests/test_data_paths.py`
+- `tests/test_data_quality_monitor.py`
+- `tests/test_data_source_endpoints.py`
+- `tests/test_data_source_registry.py`
+- `tests/test_data_source_research_lanes.py`
+- `tests/test_deepseek_data_pull_check_contract.py`
+- `tests/test_deepseek_profit_lab.py`
+- `tests/test_deepseek_reviewer.py`
+- `tests/test_derived_feature_backfill_report.py`
+- `tests/test_derived_feature_planner.py`
+- `tests/test_dota2_esports_model_activation.py`
+- `tests/test_drawdown_controls.py`
+- `tests/test_ev_line_shopper.py`
+- `tests/test_evaluate_lines.py`
+- `tests/test_execution_later_gate.py`
+- `tests/test_experiment_history_store.py`
+- `tests/test_experiment_report_exporter.py`
+- `tests/test_exposure_limits.py`
+- `tests/test_extreme_randomness_diagnostics.py`
+- `tests/test_feature_ablation_lab.py`
+- `tests/test_field_scorecard.py`
+- `tests/test_football_impact_intelligence.py`
+- `tests/test_formula_1_model_activation.py`
+- `tests/test_formula_e_model_activation.py`
+- `tests/test_golf_impact_intelligence.py`
+- `tests/test_golf_model_activation.py`
+- `tests/test_governance_audit_log.py`
+- `tests/test_governance_config.py`
+- `tests/test_governance_health.py`
+- `tests/test_governance_report.py`
+- `tests/test_handball_model_activation.py`
+- `tests/test_historical_backtest_bridge.py`
+- `tests/test_historical_data_sources.py`
+- `tests/test_historical_line_movement.py`
+- `tests/test_historical_odds_importers.py`
+- `tests/test_historical_odds_sqlite.py`
+- `tests/test_historical_replay.py`
+- `tests/test_hockey_impact_intelligence.py`
+- `tests/test_human_approval_gate.py`
+- `tests/test_indycar_model_activation.py`
+- `tests/test_injury_weather_adapter_contract.py`
+- `tests/test_input_quality_gate.py`
+- `tests/test_institutional_alternative_investments.py`
+- `tests/test_institutional_audit_ledger.py`
+- `tests/test_institutional_credit_risk_models.py`
+- `tests/test_institutional_cross_asset_adapters.py`
+- `tests/test_institutional_cross_asset_calibration.py`
+- `tests/test_institutional_cross_asset_lab.py`
+- `tests/test_institutional_cross_asset_reports.py`
+- `tests/test_institutional_cross_asset_scores.py`
+- `tests/test_institutional_deepseek_review.py`
+- `tests/test_institutional_derivatives_hedging.py`
+- `tests/test_institutional_execution_cost_models.py`
+- `tests/test_institutional_execution_desk.py`
+- `tests/test_institutional_factor_risk_models.py`
+- `tests/test_institutional_fixed_income_rates.py`
+- `tests/test_institutional_liability_retirement_models.py`
+- `tests/test_institutional_macro_regime_models.py`
+- `tests/test_institutional_model_governance.py`
+- `tests/test_institutional_model_router.py`
+- `tests/test_institutional_performance_attribution.py`
+- `tests/test_institutional_portfolio_construction.py`
+- `tests/test_institutional_risk_engine.py`
+- `tests/test_institutional_stock_pro_analyst_registry.py`
+- `tests/test_institutional_tax_aware_models.py`
+- `tests/test_kalshi_adapter_contract.py`
+- `tests/test_kalshi_market_provider.py`
+- `tests/test_kalshi_monitor.py`
+- `tests/test_kalshi_provider_shape_contract.py`
+- `tests/test_kalshi_readonly_adapter.py`
+- `tests/test_kalshi_readonly_readiness_contract.py`
+- `tests/test_kalshi_scoring.py`
+- `tests/test_kelly_gate.py`
+- `tests/test_kelly_staking.py`
+- `tests/test_lacrosse_model_activation.py`
+- `tests/test_later_auto_execution_policy.py`
+- `tests/test_league_of_legends_esports_model_activation.py`
+- `tests/test_line_movement_data_quality_dashboard.py`
+- `tests/test_line_movement_import_contract.py`
+- `tests/test_line_movement_readiness.py`
+- `tests/test_liquidity_context_scoring.py`
+- `tests/test_liquidity_risk.py`
+- `tests/test_live_smoke_payload_contract.py`
+- `tests/test_local_sports_history_audit.py`
+- `tests/test_market_clock.py`
+- `tests/test_market_feature_packs.py`
+- `tests/test_market_identity_resolver.py`
+- `tests/test_market_research_store.py`
+- `tests/test_market_state_manifold.py`
+- `tests/test_market_structure.py`
+- `tests/test_mens_college_basketball_model_activation.py`
+- `tests/test_middle_alt_line.py`
+- `tests/test_middle_ev_simulator.py`
+- `tests/test_middle_key_number.py`
+- `tests/test_middle_opportunity_detector.py`
+- `tests/test_middle_prop.py`
+- `tests/test_middle_push_corridor.py`
+- `tests/test_middle_spread.py`
+- `tests/test_middle_team_total.py`
+- `tests/test_middle_total.py`
+- `tests/test_mlb_model_activation.py`
+- `tests/test_model_card.py`
+- `tests/test_model_drift_monitor.py`
+- `tests/test_model_input_coverage.py`
+- `tests/test_model_inventory.py`
+- `tests/test_model_performance_report.py`
+- `tests/test_model_probability.py`
+- `tests/test_model_recheck_runner.py`
+- `tests/test_model_router.py`
+- `tests/test_model_router_registry.py`
+- `tests/test_model_validation_report.py`
+- `tests/test_motogp_model_activation.py`
+- `tests/test_multi_sport_model_registry.py`
+- `tests/test_nascar_model_activation.py`
+- `tests/test_nba_model_activation.py`
+- `tests/test_ncaaf_collegefootballdata_adapter.py`
+- `tests/test_news_event_monitor.py`
+- `tests/test_news_events_adapter_contract.py`
+- `tests/test_nfl_coaching_adapters.py`
+- `tests/test_nfl_coaching_feature_builders.py`
+- `tests/test_nfl_coaching_sources.py`
+- `tests/test_nfl_cutoff_week_features.py`
+- `tests/test_nfl_historical_pattern_lab.py`
+- `tests/test_nfl_historical_pattern_validation.py`
+- `tests/test_nfl_model_activation.py`
+- `tests/test_nfl_open_data_adapters.py`
+- `tests/test_nfl_open_data_backfill.py`
+- `tests/test_nfl_open_data_feature_builders.py`
+- `tests/test_nfl_open_data_field_catalog.py`
+- `tests/test_nfl_open_data_sources.py`
+- `tests/test_nfl_source_exhaustion.py`
+- `tests/test_nhl_model_activation.py`
+- `tests/test_no_vig_pricing.py`
+- `tests/test_odds_line_monitor.py`
+- `tests/test_odds_math.py`
+- `tests/test_open_sports_history_backfill.py`
+- `tests/test_open_sports_history_derived_features.py`
+- `tests/test_open_sports_history_import.py`
+- `tests/test_open_sports_history_sources.py`
+- `tests/test_opportunity_scoring.py`
+- `tests/test_ops_scripts_contract.py`
+- `tests/test_ops_workflow.py`
+- `tests/test_outcome_import_endpoint.py`
+- `tests/test_outcome_migration.py`
+- `tests/test_outcome_reconciliation.py`
+- `tests/test_outcome_store.py`
+- `tests/test_overwatch_esports_model_activation.py`
+- `tests/test_paper_decision_ledger.py`
+- `tests/test_paper_trade_ledger.py`
+- `tests/test_pattern_calibration.py`
+- `tests/test_pattern_review_queue.py`
+- `tests/test_performance_metrics.py`
+- `tests/test_phase10k0_audit.py`
+- `tests/test_phase10k2_sports_snapshot_pipeline.py`
+- `tests/test_phase10k3_runtime_csv_migration_plan.py`
+- `tests/test_phase10k4_0dte_options_schema_foundation.py`
+- `tests/test_phase10k5_core_arbitrage_engine.py`
+- `tests/test_phase10k6a_frontend_readiness_gate_inspection.py`
+- `tests/test_phase10k6b_dashboard_navigation_plan_contract.py`
+- `tests/test_phase10k6c_controlled_ui_shell.py`
+- `tests/test_phase10k6d_readiness_gate_display_contract.py`
+- `tests/test_phase10k6e_readiness_display_data_helper.py`
+- `tests/test_phase10k6f_readiness_display_payload_builder.py`
+- `tests/test_phase10k6g_readiness_display_renderer_contract.py`
+- `tests/test_phase10k6h_readiness_display_renderer_helper.py`
+- `tests/test_phase10k6i_controlled_navigation_shell.py`
+- `tests/test_phase10k6j_controlled_readiness_ui_wiring.py`
+- `tests/test_phase10k6k_controlled_dashboard_shell_review.py`
+- `tests/test_phase10k7a_full_suite_readiness_ownership_map.py`
+- `tests/test_phase10k7b_test_guardrail_stabilization.py`
+- `tests/test_phase10k7c_full_suite_readiness_gate_matrix.py`
+- `tests/test_phase10k7d_10k8_prediction_testing_entry_contract.py`
+- `tests/test_phase10k8a_paper_only_prediction_testing_owner_scan.py`
+- `tests/test_phase10k8b_paper_only_fixture_testing_contract.py`
+- `tests/test_phase10k8c_paper_only_fixture_validation_helper.py`
+- `tests/test_phase10k8d_paper_only_fixture_readiness_payload_adapter.py`
+- `tests/test_phase10k8e_paper_only_fixture_evaluation_contract.py`
+- `tests/test_phase10k8f_paper_only_fixture_evaluation_helper.py`
+- `tests/test_phase10k8g_paper_only_evaluation_readiness_adapter.py`
+- `tests/test_phase10k8h_paper_only_fixture_pipeline_contract.py`
+- `tests/test_phase10k8i_paper_only_fixture_pipeline_helper.py`
+- `tests/test_phase10k8j_controlled_pipeline_smoke_review.py`
+- `tests/test_phase10k8k_prediction_testing_readiness_review.py`
+- `tests/test_phase10k8l_controlled_multi_market_test_mode_ui.py`
+- `tests/test_phase10k8m_strict_model_field_baseline_by_market_and_sport.py`
+- `tests/test_phase10k8n_controlled_field_catalog_ui_review.py`
+- `tests/test_phase10k8o_dedicated_0dte_paper_fixture_template.py`
+- `tests/test_phase10k8p_dedicated_0dte_fixture_validation_adapter.py`
+- `tests/test_phase10k8q_dedicated_0dte_validation_readiness_payload.py`
+- `tests/test_phase10k8r_dedicated_0dte_validation_readiness_ui.py`
+- `tests/test_phase10k8s_dedicated_0dte_paper_evaluation_adapter.py`
+- `tests/test_phase10k8t_dedicated_0dte_evaluation_readiness_payload.py`
+- `tests/test_phase10k8u_dedicated_0dte_evaluation_ui.py`
+- `tests/test_phase10k8v_full_0dte_paper_pipeline_adapter.py`
+- `tests/test_phase10k8w_full_0dte_paper_pipeline_ui.py`
+- `tests/test_phase10k8x_controlled_0dte_paper_run_smoke_review.py`
+- `tests/test_phase10k8y_0dte_prediction_testing_readiness_review.py`
+- `tests/test_phase10k8z0_deployment_governance.py`
+- `tests/test_phase10k8z_final_controlled_prediction_testing_freeze.py`
+- `tests/test_phase10k8za_0dte_data_field_formula_coverage_audit.py`
+- `tests/test_phase10k8zb0_product_contract_reset.py`
+- `tests/test_phase10k8zb_0dte_field_formula_gap_patch.py`
+- `tests/test_phase10k8zc_dashboard_product_lane_cleanup.py`
+- `tests/test_phase10k8zd_orb_strategy_research_integration_audit.py`
+- `tests/test_phase10k8ze_institutional_market_metric_catalog.py`
+- `tests/test_phase10k8zf0_canonical_research_backtest_workflow_migration_plan.py`
+- `tests/test_phase10k8zf0a_frozen_test_contract_reset.py`
+- `tests/test_phase10k8zf1_compatibility_alias_migration.py`
+- `tests/test_phase10k8zf2_production_symbol_migration.py`
+- `tests/test_phase10k8zf3_product_ui_language_finalization.py`
+- `tests/test_phase10k8zf4_asset_grade_repo_clean_inventory.py`
+- `tests/test_phase10k8zf5_universal_runtime_ownership_map.py`
+- `tests/test_phase10k8zf6_r2_object_storage_archive_contract.py`
+- `tests/test_phase10k8zf7_r2_archive_pipeline.py`
+- `tests/test_phase10k8zf8_r2_transfer_proof_report.py`
+- `tests/test_phase10k8zf9_full_r2_transfer_report.py`
+- `tests/test_phase10k8zf9b_batch_safe_remaining_transfer.py`
+- `tests/test_phase10k8zf9c_headerless_csv_final_deletion.py`
+- `tests/test_phase10k8zf9d_final_data_inventory_reconciliation.py`
+- `tests/test_phase10k8zfe1_universal_product_language_alignment.py`
+- `tests/test_phase10k8zfe2_daily_data_hygiene_scheduler.py`
+- `tests/test_phase10k8zfe_duplicate_code_evidence_scan.py`
+- `tests/test_phase10k8zff_canonical_owner_decision_report.py`
+- `tests/test_phase10k8zfg_safe_migration_batch_1.py`
+- `tests/test_phase10k8zfh_safe_migration_batch_2_boundary_guards.py`
+- `tests/test_phase10k8zfi_automation_scheduler_decomposition_plan.py`
+- `tests/test_phase10k8zfj_provider_live_market_decomposition_plan.py`
+- `tests/test_phase10k8zfk_test_suite_cleanup_plan.py`
+- `tests/test_phase10k8zfo_src_providers_skeleton.py`
+- `tests/test_phase10k8zfp_provider_taxonomy_correction.py`
+- `tests/test_phase10k8zfr_production_module_boundaries.py`
+- `tests/test_phase10k8zfs_legacy_vendor_transport_batch_plan.py`
+- `tests/test_phase10k8zft_provider_foundation_transport.py`
+- `tests/test_phase10k8zfu_provider_foundation_completion.py`
+- `tests/test_phase10k8zfv_runtime_provider_migration_batch_1.py`
+- `tests/test_phase10k8zfw_runtime_provider_migration_batch_2.py`
+- `tests/test_phase10k8zfx_connector_boundary_isolation.py`
+- `tests/test_phase10k8zfy_prediction_market_connector_batch_1.py`
+- `tests/test_phase10k8zfz_odds_data_connector_batch_2.py`
+- `tests/test_phase10k8zg0_market_data_connector_batch_3.py`
+- `tests/test_phase10k8zg1_zero_dte_stocks_provider_batch.py`
+- `tests/test_phase10k8zg2_legacy_deletion_readiness_audit.py`
+- `tests/test_phase10k8zg3_wrapper_import_redirection.py`
+- `tests/test_phase10k8zg4_runtime_bridge_import_redirection.py`
+- `tests/test_phase10k8zg5_provider_router_independence.py`
+- `tests/test_phase10k8zg6_legacy_provider_router_delete_proof.py`
+- `tests/test_phase10k8zg7_legacy_provider_router_deletion.py`
+- `tests/test_phase10k8zg8_provider_foundation_deletion_proof.py`
+- `tests/test_phase10k8zg9_provider_foundation_thin_wrapper_deletion.py`
+- `tests/test_phase10k8zga_provider_registry_runtime_blocker.py`
+- `tests/test_phase10k8zgb_provider_write_firewall_runtime_blocker.py`
+- `tests/test_phase10k8zgc_final_provider_foundation_blocker_proof.py`
+- `tests/test_phase10k8zgd_final_provider_foundation_blocker_deletion.py`
+- `tests/test_phase10k8zge_broader_legacy_runtime_owner_audit.py`
+- `tests/test_phase10k8zgf_live_client_connector_isolation_proof.py`
+- `tests/test_phase10k8zgg_prediction_market_live_client_connector_migration.py`
+- `tests/test_phase10k8zgh_odds_data_live_client_connector_migration.py`
+- `tests/test_phase10k8zgi_odds_runtime_consumer_redirection.py`
+- `tests/test_phase10k8zgj_odds_legacy_live_method_retirement.py`
+- `tests/test_phase10k8zgk_odds_compatibility_shell_delete_readiness.py`
+- `tests/test_phase10k8zgl_odds_runtime_consumer_redirection_batch_2.py`
+- `tests/test_phase10k8zgm_odds_historical_test_redirection.py`
+- `tests/test_phase10k8zgn_odds_proof_history_cleanup.py`
+- `tests/test_phase10k8zgo_odds_compatibility_test_retirement.py`
+- `tests/test_phase10k8zgp_odds_compatibility_shell_deletion.py`
+- `tests/test_phase10k8zgq_prediction_market_runtime_consumer_redirection.py`
+- `tests/test_phase10k8zgr_prediction_market_legacy_live_method_retirement.py`
+- `tests/test_phase10k8zgs_prediction_market_compatibility_shell_delete_readiness.py`
+- `tests/test_phase10k8zgt_prediction_market_runtime_scheduler_redirection.py`
+- `tests/test_phase10k8zgu_prediction_market_historical_compatibility_test_redirection.py`
+- `tests/test_phase10k8zgv_prediction_market_compatibility_test_retirement.py`
+- `tests/test_phase10k8zgw_prediction_market_final_delete_readiness.py`
+- `tests/test_phase10k8zgx_prediction_market_proof_test_retirement.py`
+- `tests/test_phase10k8zgy_prediction_market_shell_deletion.py`
+- `tests/test_phase10k8zgz_post_provider_connector_cleanup_freeze.py`
+- `tests/test_phase10k8zh0_core_engine_extraction_audit.py`
+- `tests/test_phase10k8zh1_core_math_foundation_batch.py`
+- `tests/test_phase10k8zh2_risk_foundation_batch.py`
+- `tests/test_phase10k8zh3_game_theory_execution_edge_plan.py`
+- `tests/test_phase10k8zh4_core_pricing_extraction.py`
+- `tests/test_phase10k8zh5_core_probability_extraction.py`
+- `tests/test_phase10k8zh6_portfolio_foundation.py`
+- `tests/test_phase10k8zh7_execution_game_theory_foundation.py`
+- `tests/test_phase10k8zh8_decision_engine_service_plan.py`
+- `tests/test_phase10k8zh9_core_engine_compatibility_wrappers.py`
+- `tests/test_phase10k8zha_core_engine_migration_checkpoint.py`
+- `tests/test_phase10k8zhb_service_layer_ownership_audit.py`
+- `tests/test_phase10k8zhc_screenshot_workflow_thinning_plan.py`
+- `tests/test_phase10k8zhd_decision_and_bet_log_audit.py`
+- `tests/test_phase10k8zhe_api_layer_ownership_audit.py`
+- `tests/test_phase10k8zhf_dashboard_entrypoint_ownership_audit.py`
+- `tests/test_phase10k8zhg_automation_scheduler_decommission_audit.py`
+- `tests/test_phase10k8zhh_service_api_dashboard_checkpoint.py`
+- `tests/test_phase10k8zhi_legacy_full_gate_remediation.py`
+- `tests/test_phase10k8zhj_data_foundation.py`
+- `tests/test_phase10k8zhk_backtesting_foundation.py`
+- `tests/test_phase10k8zhl_legacy_data_backtesting_owner_map.py`
+- `tests/test_phase10k8zhm_data_backtesting_checkpoint.py`
+- `tests/test_phase10k8zhn_analytics_foundation.py`
+- `tests/test_phase10k8zho_research_foundation.py`
+- `tests/test_phase10k8zhp_legacy_analytics_research_owner_map.py`
+- `tests/test_phase10k8zhq_analytics_research_checkpoint.py`
+- `tests/test_phase10k8zhr_analytics_migration_batch_1.py`
+- `tests/test_phase10k8zhs_research_migration_batch_1.py`
+- `tests/test_phase10k8zht_analytics_research_batch_1_legacy_scan.py`
+- `tests/test_phase10k8zhu_analytics_research_batch_1_checkpoint.py`
+- `tests/test_phase10k8zhv_analytics_downstream_redirection.py`
+- `tests/test_phase10k8zhw_research_downstream_redirection.py`
+- `tests/test_phase10k8zhx_analytics_research_batch_2_legacy_scan.py`
+- `tests/test_phase10k8zhy_analytics_research_batch_2_checkpoint.py`
+- `tests/test_phase10k8zhz_analytics_research_reference_scan.py`
+- `tests/test_phase10k8zhz_analytics_research_wrapper_delete_proof.py`
+- `tests/test_phase10k8zhz_scheduler_coupled_research_blockers.py`
+- `tests/test_phase10k8zi0_analytics_research_delete_proof_checkpoint.py`
+- `tests/test_phase10k8zi1_analytics_research_compatibility_test_retirement.py`
+- `tests/test_phase10k8zi2_research_store_ownership_migration.py`
+- `tests/test_phase10k8zi3_model_maturity_registry_decoupling.py`
+- `tests/test_phase10k8zi4_final_analytics_research_delete_readiness.py`
+- `tests/test_phase10k8zi5_analytics_research_wrapper_deletion.py`
+- `tests/test_phase10k8zi6_ai_llm_boundary_audit.py`
+- `tests/test_phase10k8zi7_ai_boundary_scaffold.py`
+- `tests/test_phase10k8zi8_ai_scheduler_blocker_map.py`
+- `tests/test_phase10k8zi9_ai_boundary_checkpoint.py`
+- `tests/test_phase10k8zia_execution_scheduler_audit.py`
+- `tests/test_phase10k8zib_unified_brokerage_boundary.py`
+- `tests/test_phase10k8zic_execution_ownership_migration.py`
+- `tests/test_phase10k8zid_execution_final_delete_readiness.py`
+- `tests/test_phase10k8zie_execution_scheduler_wrapper_deletion.py`
+- `tests/test_phase10k8zif_execution_boundary_checkpoint.py`
+- `tests/test_phase10k8zig_execution_blocker_remediation_audit.py`
+- `tests/test_phase10k8zih_execution_blocker_canonicalization.py`
+- `tests/test_phase10k8zii_execution_blocker_final_delete_readiness.py`
+- `tests/test_phase10k8zij_execution_blocker_wrapper_deletion.py`
+- `tests/test_phase10k8zik_execution_remediation_checkpoint.py`
+- `tests/test_phase10k8zil_settlement_canonicalization.py`
+- `tests/test_phase10k8zim_ledger_canonicalization.py`
+- `tests/test_phase10k8zin_strategy_execution_helper_canonicalization.py`
+- `tests/test_phase10k8zio_execution_helper_final_delete_readiness.py`
+- `tests/test_phase10k8zip_execution_helper_canonicalization_checkpoint.py`
+- `tests/test_phase10k8ziq_execution_helper_reference_redirection_audit.py`
+- `tests/test_phase10k8zir_execution_helper_runtime_redirection.py`
+- `tests/test_phase10k8zis_execution_helper_test_redirection.py`
+- `tests/test_phase10k8zit_execution_helper_final_delete_proof.py`
+- `tests/test_phase10k8ziu_execution_helper_wrapper_deletion.py`
+- `tests/test_phase10k8ziv_execution_helper_deletion_checkpoint.py`
+- `tests/test_phase10k8ziw_final_execution_blocker_audit.py`
+- `tests/test_phase10k8zix_final_execution_blocker_canonicalization.py`
+- `tests/test_phase10k8ziy_final_execution_test_redirection.py`
+- `tests/test_phase10k8ziz_final_execution_blocker_delete_proof.py`
+- `tests/test_phase10k8zj0_final_execution_blocker_deletion.py`
+- `tests/test_phase10k8zj1_execution_cleanup_checkpoint.py`
+- `tests/test_phase10k8zj2_broker_account_boundary_audit.py`
+- `tests/test_phase10k8zj3_disabled_broker_account_boundary.py`
+- `tests/test_phase10k8zj4_live_ledger_persistence_boundary_plan.py`
+- `tests/test_phase10k8zj5_production_approval_gate_plan.py`
+- `tests/test_phase10k8zj6_live_trading_readiness_checkpoint.py`
+- `tests/test_phase10k8zj7_approval_gate_scaffold.py`
+- `tests/test_phase10k8zj8_broker_client_factory_scaffold.py`
+- `tests/test_phase10k8zj9_live_submit_interface_scaffold.py`
+- `tests/test_phase10k8zja_live_reconciliation_ledger_scaffold.py`
+- `tests/test_phase10k8zjb_kill_switch_rollback_scaffold.py`
+- `tests/test_phase10k8zjc_live_activation_scaffold_checkpoint.py`
+- `tests/test_phase10k8zjd_broker_adapter_protocol.py`
+- `tests/test_phase10k8zje_sandbox_broker_boundary.py`
+- `tests/test_phase10k8zjf_credential_activation_boundary.py`
+- `tests/test_phase10k8zjg_sandbox_submit_flow.py`
+- `tests/test_phase10k8zjh_production_activation_blocker_audit.py`
+- `tests/test_phase10k8zji_sandbox_activation_checkpoint.py`
+- `tests/test_phase10k8zjj_activation_gate_verification.py`
+- `tests/test_phase10k8zjk_broker_adapter_readiness.py`
+- `tests/test_phase10k8zjl_credential_readiness_verification.py`
+- `tests/test_phase10k8zjm_live_submit_readiness_verification.py`
+- `tests/test_phase10k8zjn_monitoring_rollback_readiness.py`
+- `tests/test_phase10k8zjo_controlled_activation_readiness_checkpoint.py`
+- `tests/test_phase10k8zjp_approval_evidence.py`
+- `tests/test_phase10k8zjq_sandbox_activation_composition.py`
+- `tests/test_phase10k8zjr_dry_run_submit_proof.py`
+- `tests/test_phase10k8zjs_dry_run_ledger_verification.py`
+- `tests/test_phase10k8zjt_final_sandbox_activation_proof.py`
+- `tests/test_phase10k8zjv_operator_approval_interface.py`
+- `tests/test_phase10k8zjw_approval_audit_layer.py`
+- `tests/test_phase10k8zjx_sandbox_enablement_layer.py`
+- `tests/test_phase10k8zjy_sandbox_adapter_stub.py`
+- `tests/test_phase10k8zjz_kill_switch_governance.py`
+- `tests/test_phase10k8zk1_controlled_sandbox_governance_checkpoint.py`
+- `tests/test_phase10k8zk2_credential_sdk_network_freeze.py`
+- `tests/test_phase10k8zk2_final_live_trading_disabled_proof.py`
+- `tests/test_phase10k8zk2_final_system_freeze.py`
+- `tests/test_phase10k8zk2_production_activation_readiness_ledger.py`
+- `tests/test_phase10k8zk3_final_production_readiness_checkpoint.py`
+- `tests/test_phase10k8zk4_architecture_invariants.py`
+- `tests/test_phase10k8zk4_operator_implementation_plan.py`
+- `tests/test_phase10k8zk4_project_completion_status.py`
+- `tests/test_phase10k8zk4_rollout_plan.py`
+- `tests/test_phase10k8zk5_automation_scheduler_full_inventory.py`
+- `tests/test_phase10k8zk6_automation_scheduler_ownership_migration.py`
+- `tests/test_phase10k8zk7_automation_scheduler_runtime_redirection.py`
+- `tests/test_phase10k8zk8_automation_scheduler_test_redirection.py`
+- `tests/test_phase10k8zk9_automation_scheduler_final_delete_proof.py`
+- `tests/test_phase10k8zl0_automation_scheduler_deletion.py`
+- `tests/test_phase10k8zl1_automation_scheduler_decommission_checkpoint.py`
+- `tests/test_phase10k8zl2_market_intelligence_foundation.py`
+- `tests/test_phase10k8zl3_sports_intelligence_absorption.py`
+- `tests/test_phase10k8zl4_prediction_market_intelligence_absorption.py`
+- `tests/test_phase10k8zl5_options_0dte_gex_vanna_foundation.py`
+- `tests/test_phase10k8zl6_market_intelligence_runtime_test_redirection.py`
+- `tests/test_phase10k8zl7_market_intelligence_scheduler_deletion.py`
+- `tests/test_phase10k8zl8_market_intelligence_absorption_checkpoint.py`
+- `tests/test_phase10k8zl9a_automation_scheduler_runtime_import_removal.py`
+- `tests/test_phase10k8zl9b_internal_scheduler_self_import_break.py`
+- `tests/test_phase10k8zmh_automation_scheduler_final_removal_attempt.py`
+- `tests/test_phase10k8zmi_streamlit_dashboard_test_import_redirection.py`
+- `tests/test_phase10k8zmj_sports_impact_test_import_redirection.py`
+- `tests/test_phase10k8zmr_security_policy_secret_safety_migration.py`
+- `tests/test_phase10k8zms_security_cluster_migration.py`
+- `tests/test_phase10k8zt_provider_security_surface_retirement.py`
+- `tests/test_phase1_legacy_inventory.py`
+- `tests/test_phase_x_non_src_inventory.py`
+- `tests/test_pickleball_model_activation.py`
+- `tests/test_player_prop_monitor.py`
+- `tests/test_player_props_adapter_contract.py`
+- `tests/test_price_event.py`
+- `tests/test_promotion_gate.py`
+- `tests/test_provider_adapter_base.py`
+- `tests/test_provider_contracts.py`
+- `tests/test_provider_health.py`
+- `tests/test_provider_normalization_contract.py`
+- `tests/test_provider_payload_validator.py`
+- `tests/test_provider_registry.py`
+- `tests/test_provider_secret_policy.py`
+- `tests/test_quant_engine_foundation.py`
+- `tests/test_repo_architecture_guard.py`
+- `tests/test_report_writer.py`
+- `tests/test_research_evidence_gate.py`
+- `tests/test_response_compactor.py`
+- `tests/test_review_queue.py`
+- `tests/test_review_queue_gate.py`
+- `tests/test_risk_gate.py`
+- `tests/test_risk_of_ruin.py`
+- `tests/test_rugby_model_activation.py`
+- `tests/test_run_context.py`
+- `tests/test_scheduler_config.py`
+- `tests/test_scheduler_runner.py`
+- `tests/test_screenshot_analysis.py`
+- `tests/test_screenshot_normalization_parity.py`
+- `tests/test_security_framework.py`
+- `tests/test_settlement_discovery.py`
+- `tests/test_settlement_liquidity_gate.py`
+- `tests/test_settlement_rule_checker.py`
+- `tests/test_sharp_cross_book_review_queue.py`
+- `tests/test_sharp_scheduler_flow.py`
+- `tests/test_sharp_sportsbook_adapter.py`
+- `tests/test_small_account_endpoints.py`
+- `tests/test_small_account_strategy.py`
+- `tests/test_snapshot_store.py`
+- `tests/test_snooker_model_activation.py`
+- `tests/test_soccer_impact_intelligence.py`
+- `tests/test_soccer_model_activation.py`
+- `tests/test_source_event_link_resolver.py`
+- `tests/test_source_quality_scoring.py`
+- `tests/test_sport_analysis_endpoint.py`
+- `tests/test_sport_feature_packs.py`
+- `tests/test_sport_model_routing.py`
+- `tests/test_sportsbook_adapter_contract.py`
+- `tests/test_sportsbook_odds_provider.py`
+- `tests/test_stake_confidence.py`
+- `tests/test_stake_sizing_simulator.py`
+- `tests/test_status_classifier.py`
+- `tests/test_stock_fundamentals_adapter_contract.py`
+- `tests/test_stock_monitor.py`
+- `tests/test_stock_price_adapter_contract.py`
+- `tests/test_strategy_framework.py`
+- `tests/test_streamlit_dashboard_data.py`
+- `tests/test_synthetic_line_movement_sandbox.py`
+- `tests/test_system_health.py`
+- `tests/test_table_tennis_model_activation.py`
+- `tests/test_tennis_impact_intelligence.py`
+- `tests/test_tennis_model_activation.py`
+- `tests/test_valorant_esports_model_activation.py`
+- `tests/test_volleyball_model_activation.py`
+- `tests/test_walk_forward_gate.py`
+- `tests/test_water_polo_model_activation.py`
+- `tests/test_wnba_model_activation.py`
+- `tests/test_womens_college_basketball_model_activation.py`
+
+## `unknown`
+
+- File count: `19`
+- Entrypoints: `none`
+- Called by: `none`
+- Calls into: `none`
+- Duplicate-looking modules: `none`
+- Facades/wrappers: `none`
+- External-boundary signals: `none`
+- Disabled-boundary signals: `none`
+- Test coverage files: `none`
+
+### Files
+
+- `.env.example`
+- `.gitattributes`
+- `.gitignore`
+- `.python-version`
+- `Dockerfile`
+- `FAILURE_CLASSIFICATION_REPORT`
+- `FAILURE_COUNT_BY_MODULE`
+- `FAILURE_ROOT_CAUSE_MAP`
+- `FULL_REPO_TREE_AFTER_PHASE_6.txt`
+- `betting stock api code intergration.code-workspace`
+- `legacy_remaining_files_phase10k8zmu.txt`
+- `models/compressed/basketball_nba_v1.joblib`
+- `models/compressed/basketball_nba_v1.metadata.json`
+- `openapi.yaml`
+- `pytest.ini`
+- `render.yaml`
+- `requirements-dev.txt`
+- `requirements.txt`
+- `runtime.txt`
