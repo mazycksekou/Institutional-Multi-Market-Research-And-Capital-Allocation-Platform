@@ -42,8 +42,8 @@ def test_execution_blocker_final_delete_readiness_modules_import_safe() -> None:
         "src.services.settlement_service",
         "src.services.ledger_service",
         "src.services.execution_service",
-        "src.automation_scheduler_legacy.paper_trade_ledger",
-        "src.automation_scheduler_legacy.paper_decision_ledger",
+        "src.brokerage.paper_trade_ledger",
+        "src.brokerage.paper_decision_ledger",
         "bet_decision_engine",
         "bet_log",
     ]:

@@ -222,13 +222,13 @@ class TestPhase10K5CoreArbitrageEngine(unittest.TestCase):
 
     def test_prediction_market_yes_no_positive(self) -> None:
         """yes=0.47, no=0.47 -> prediction-market yes/no arbitrage."""
-        from src.automation_scheduler_legacy.arbitrage.two_way_arbitrage import detect_prediction_arbitrage
+        from src.market_intelligence.arbitrage.two_way_arbitrage import detect_prediction_arbitrage
 
         self.assertTrue(detect_prediction_arbitrage(0.47, 0.47))
 
     def test_prediction_market_yes_no_negative(self) -> None:
         """yes=0.53, no=0.51 -> no prediction-market yes/no arbitrage."""
-        from src.automation_scheduler_legacy.arbitrage.two_way_arbitrage import detect_prediction_arbitrage
+        from src.market_intelligence.arbitrage.two_way_arbitrage import detect_prediction_arbitrage
 
         self.assertFalse(detect_prediction_arbitrage(0.53, 0.51))
 

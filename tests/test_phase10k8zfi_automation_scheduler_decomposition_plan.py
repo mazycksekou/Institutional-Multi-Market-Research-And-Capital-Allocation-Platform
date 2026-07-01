@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 REPORT = ROOT / "PHASE10K8ZFI_AUTOMATION_SCHEDULER_DECOMPOSITION_PLAN.md"
 README = ROOT / "README.md"
 STREAMLIT_APP = ROOT / "streamlit_app.py"
-DASHBOARD_DATA = ROOT / "src" / "automation_scheduler_legacy" / "streamlit_dashboard_data.py"
+DASHBOARD_DATA = ROOT / "src" / "services" / "streamlit_dashboard_data.py"
 DAILY_HYGIENE_SCRIPT = ROOT / "scripts" / "daily_data_hygiene.py"
 RUNNER = ROOT / "scripts" / "run_daily_data_hygiene.ps1"
 CANONICAL_REPORT = ROOT / "PHASE10K8ZFF_CANONICAL_OWNER_DECISION_REPORT.md"
@@ -179,3 +179,4 @@ def test_phase10k8zfi_automation_scheduler_decomposition_plan() -> None:
     assert not any(ROOT.glob("app/pages/*.py"))
     assert not any(ROOT.glob("frontend/*.py"))
     assert not any(ROOT.glob("frontend/pages/*.py"))
+

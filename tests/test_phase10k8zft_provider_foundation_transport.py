@@ -39,8 +39,8 @@ DELETED_WRAPPERS = [
 ]
 
 LEGACY_WRAPPERS = [
-    'src.automation_scheduler_legacy.kalshi_adapter_contract',
-    'src.automation_scheduler_legacy.sportsbook_adapter_contract',
+    'src.providers.kalshi_adapter_contract',
+    'src.providers.sportsbook_adapter_contract',
 ]
 
 DELETED_COMPAT_WRAPPER_PATHS = [
@@ -119,17 +119,17 @@ def test_provider_foundation_modules_import_without_env_access(monkeypatch):
     assert imported["src.providers"].normalize_provider_payload("sportsbook_odds", {"event_id": "e1"})["provider_type"] == "sportsbook_odds"
     assert callable(imported["src.providers.policy.allowlist"].classify_provider)
 
-    assert imported["src.automation_scheduler_legacy.kalshi_adapter_contract"].validate_payload(
-        imported["src.automation_scheduler_legacy.kalshi_adapter_contract"].SAMPLE_DRY_RUN_PAYLOAD
+    assert imported["src.providers.kalshi_adapter_contract"].validate_payload(
+        imported["src.providers.kalshi_adapter_contract"].SAMPLE_DRY_RUN_PAYLOAD
     )["ok"] is True
-    assert imported["src.automation_scheduler_legacy.kalshi_adapter_contract"].normalize_payload(
-        imported["src.automation_scheduler_legacy.kalshi_adapter_contract"].SAMPLE_DRY_RUN_PAYLOAD
+    assert imported["src.providers.kalshi_adapter_contract"].normalize_payload(
+        imported["src.providers.kalshi_adapter_contract"].SAMPLE_DRY_RUN_PAYLOAD
     )["provider_type"] == "prediction_market"
-    assert imported["src.automation_scheduler_legacy.sportsbook_adapter_contract"].validate_payload(
-        imported["src.automation_scheduler_legacy.sportsbook_adapter_contract"].SAMPLE_DRY_RUN_PAYLOAD
+    assert imported["src.providers.sportsbook_adapter_contract"].validate_payload(
+        imported["src.providers.sportsbook_adapter_contract"].SAMPLE_DRY_RUN_PAYLOAD
     )["ok"] is True
-    assert imported["src.automation_scheduler_legacy.sportsbook_adapter_contract"].normalize_payload(
-        imported["src.automation_scheduler_legacy.sportsbook_adapter_contract"].SAMPLE_DRY_RUN_PAYLOAD
+    assert imported["src.providers.sportsbook_adapter_contract"].normalize_payload(
+        imported["src.providers.sportsbook_adapter_contract"].SAMPLE_DRY_RUN_PAYLOAD
     )["provider_type"] == "sportsbook_odds"
 
     for module_name in DELETED_WRAPPERS:
@@ -153,8 +153,8 @@ def test_legacy_wrappers_preserve_foundation_behavior(monkeypatch):
     canonical_validation = importlib.import_module("src.providers.validation")
     canonical_allowlist = importlib.import_module("src.providers.policy.allowlist")
     canonical_allowlist = importlib.import_module('src.providers.policy.allowlist')
-    legacy_kalshi = importlib.import_module('src.automation_scheduler_legacy.kalshi_adapter_contract')
-    legacy_sportsbook = importlib.import_module('src.automation_scheduler_legacy.sportsbook_adapter_contract')
+    legacy_kalshi = importlib.import_module('src.providers.kalshi_adapter_contract')
+    legacy_sportsbook = importlib.import_module('src.providers.sportsbook_adapter_contract')
 
     canonical_defaults = canonical_contracts.get_default_provider_contracts()
     assert "prediction_market_placeholder" in canonical_defaults
@@ -188,13 +188,15 @@ def test_legacy_wrappers_preserve_foundation_behavior(monkeypatch):
 
 def test_canonical_foundation_files_do_not_import_legacy_or_network_modules():
     all_paths = [_module_path(name) for name in CANONICAL_MODULES]
-    all_paths.extend(ROOT / "src" / "automation_scheduler_legacy" / f"{name.split('.')[-1]}.py" for name in LEGACY_WRAPPERS)
 
     for path in all_paths:
         names = _import_names(path)
         for name in names:
             assert not any(name == prefix or name.startswith(f"{prefix}.") for prefix in FORBIDDEN_IMPORT_PREFIXES), f"{path} imports legacy package {name}"
             assert name not in FORBIDDEN_DIRECT_IMPORTS, f"{path} imports network package {name}"
+
+    for wrapper in LEGACY_WRAPPERS:
+        assert not (ROOT / "src" / "automation_scheduler_legacy" / f"{wrapper.split('.')[-1]}.py").exists()
 
 
 def test_phase_report_and_ownership_docs_exist_and_cover_required_strings():

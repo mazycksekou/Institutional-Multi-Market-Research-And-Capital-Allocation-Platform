@@ -4,7 +4,7 @@ import re
 
 ROOT = Path(__file__).resolve().parents[1]
 STREAMLIT_APP = ROOT / "streamlit_app.py"
-DASHBOARD_DATA = ROOT / "src" / "automation_scheduler_legacy" / "streamlit_dashboard_data.py"
+DASHBOARD_DATA = ROOT / "src" / "services" / "streamlit_dashboard_data.py"
 REPORT = ROOT / "PHASE10K6A_FRONTEND_READINESS_GATE_INSPECTION.md"
 
 

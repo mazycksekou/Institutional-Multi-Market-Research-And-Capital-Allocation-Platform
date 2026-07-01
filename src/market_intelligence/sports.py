@@ -203,11 +203,34 @@ def build_sports_intelligence_report(payload: Mapping[str, Any] | None = None, /
     return report
 
 
-LEGACY_PACKAGE = "src.automation_scheduler_legacy"
+CANONICAL_PACKAGE = "src.market_intelligence"
 SPORT_TOKENS = {"baseball", "golf", "hockey", "soccer", "combat", "tennis"}
 
+_SPECIAL_ALIAS_TARGETS: dict[str, tuple[str, str]] = {
+    "get_basketball_player_impact_readiness": ("src.market_intelligence.basketball_player_impact_readiness", "build_basketball_player_impact_readiness"),
+    "run_automation_basketball_player_impact": ("src.market_intelligence.basketball_player_impact", "run_basketball_player_impact"),
+    "get_football_impact_readiness": ("src.analytics.football_impact_report", "build_football_impact_readiness"),
+    "run_football_impact_diagnostics": ("src.analytics.football_impact_report", "build_football_impact_diagnostics"),
+    "get_soccer_impact_readiness": ("src.market_intelligence.soccer_impact_readiness", "build_soccer_impact_readiness"),
+    "run_soccer_impact_diagnostics": ("src.analytics.soccer_impact_report", "build_soccer_impact_diagnostics"),
+    "get_hockey_impact_readiness": ("src.market_intelligence.hockey_impact_readiness", "build_hockey_impact_readiness"),
+    "run_hockey_impact_diagnostics": ("src.analytics.hockey_impact_report", "build_hockey_impact_diagnostics"),
+    "get_baseball_impact_readiness": ("src.market_intelligence.baseball_impact_readiness", "build_baseball_impact_readiness"),
+    "run_baseball_impact_diagnostics": ("src.analytics.baseball_impact_report", "build_baseball_impact_diagnostics"),
+    "get_golf_impact_readiness": ("src.market_intelligence.golf_impact_readiness", "build_golf_impact_readiness"),
+    "run_golf_impact_diagnostics": ("src.analytics.golf_impact_report", "build_golf_impact_diagnostics"),
+    "get_combat_impact_readiness": ("src.market_intelligence.combat_impact_readiness", "build_combat_impact_readiness"),
+    "run_combat_impact_diagnostics": ("src.analytics.combat_impact_report", "build_combat_impact_diagnostics"),
+    "get_tennis_impact_readiness": ("src.market_intelligence.tennis_impact_readiness", "build_tennis_impact_readiness"),
+    "run_tennis_impact_diagnostics": ("src.analytics.tennis_impact_report", "build_tennis_impact_diagnostics"),
+    "get_automation_advanced_red_team_report": ("src.analytics.advanced_red_team_report", "build_advanced_red_team_report"),
+    "run_automation_advanced_shape_diagnostics": ("src.analytics.advanced_shape_diagnostics", "run_automation_advanced_shape_diagnostics"),
+    "get_extreme_randomness_report": ("src.research.extreme_randomness_report", "build_extreme_randomness_report"),
+    "run_extreme_randomness_diagnostics": ("src.research.extreme_randomness_diagnostics", "diagnose_extreme_randomness"),
+}
 
-def _legacy_sports_module_name(name: str) -> str | None:
+
+def _legacy_sports_module_path(name: str) -> str | None:
     if name.startswith("evaluate_"):
         legacy_name = name[len("evaluate_") :]
     if name.startswith("build_"):
@@ -221,19 +244,46 @@ def _legacy_sports_module_name(name: str) -> str | None:
     sport_token = legacy_name.split("_", 1)[0]
     if sport_token not in SPORT_TOKENS:
         return None
-    return legacy_name
+    if legacy_name.endswith(("_impact_report", "_impact_calibration", "_impact_red_team")):
+        return f"src.analytics.{legacy_name}"
+    if legacy_name.endswith("_impact_readiness"):
+        return f"{CANONICAL_PACKAGE}.{legacy_name}"
+    return f"{CANONICAL_PACKAGE}.{legacy_name}"
 
 
 def __getattr__(name: str) -> Any:
-    module_name = _legacy_sports_module_name(name)
-    if module_name is None:
+    special_target = _SPECIAL_ALIAS_TARGETS.get(name)
+    if special_target is not None:
+        module = importlib.import_module(special_target[0])
+        attr = getattr(module, special_target[1])
+        globals()[name] = attr
+        return attr
+
+    module_path = _legacy_sports_module_path(name)
+    if module_path is None:
         raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
-    module = importlib.import_module(f"{LEGACY_PACKAGE}.{module_name}")
+    module = importlib.import_module(module_path)
     try:
         attr = getattr(module, name)
     except AttributeError as exc:  # pragma: no cover - legacy compatibility guard
-        raise AttributeError(f"module {__name__!r} has no attribute {name!r}") from exc
+        if name.startswith("evaluate_") and name.endswith("_impact_report"):
+            alias_name = "build_" + name[len("evaluate_") :].replace("_impact_report", "_impact_diagnostics")
+            try:
+                attr = getattr(module, alias_name)
+            except AttributeError:
+                pass
+            else:
+                globals()[name] = attr
+                return attr
+        if name.startswith("evaluate_") and name.endswith("_impact_readiness"):
+            alias_name = "build_" + name[len("evaluate_") :]
+            try:
+                attr = getattr(module, alias_name)
+            except AttributeError:
+                raise AttributeError(f"module {__name__!r} has no attribute {name!r}") from exc
+        else:
+            raise AttributeError(f"module {__name__!r} has no attribute {name!r}") from exc
 
     globals()[name] = attr
     return attr

@@ -55,12 +55,13 @@ def test_required_docs_and_runtime_redirection_text() -> None:
 
 def test_runtime_scheduler_files_import_the_canonical_bridge_and_not_legacy_shells() -> None:
     runtime_files = [
-        'src/automation_scheduler_legacy/__init__.py',
-        'src/automation_scheduler_legacy/scheduler_runner.py',
+        "src/services/automation_scheduler_facade.py",
+        "src/services/prediction_market_runtime_bridge.py",
+        "src/services/scheduler_runner.py",
         "src/services/settlement_service.py",
-        'src/automation_scheduler_legacy/calibration_collector.py',
-        'src/automation_scheduler_legacy/prediction_market_outcome_candidates.py',
-        'src/automation_scheduler_legacy/kalshi_readonly_readiness.py',
+        "src/analytics/calibration_collector.py",
+        "src/market_intelligence/prediction_market_outcome_candidates.py",
+        "src/providers/kalshi_readonly_readiness.py",
     ]
     for relative in runtime_files:
         text = _read(relative)
@@ -76,12 +77,12 @@ def test_canonical_prediction_market_bridge_connectors_and_legacy_shells_remain_
     odds_bridge = importlib.import_module("src.services.odds_runtime_bridge")
     odds_connector = importlib.import_module("src.connectors.odds_data")
     odds_provider = importlib.import_module("src.providers.sportsbooks")
-    automation_scheduler_pkg = importlib.import_module('src.automation_scheduler_legacy')
-    scheduler_runner = importlib.import_module('src.automation_scheduler_legacy.scheduler_runner')
+    automation_scheduler_pkg = importlib.import_module("src.services.automation_scheduler_facade")
+    scheduler_runner = importlib.import_module('src.services.scheduler_runner')
     settlement_service = importlib.import_module("src.services.settlement_service")
-    calibration_collector = importlib.import_module('src.automation_scheduler_legacy.calibration_collector')
-    outcome_candidates = importlib.import_module('src.automation_scheduler_legacy.prediction_market_outcome_candidates')
-    readiness = importlib.import_module('src.automation_scheduler_legacy.kalshi_readonly_readiness')
+    calibration_collector = importlib.import_module('src.analytics.calibration_collector')
+    outcome_candidates = importlib.import_module('src.market_intelligence.prediction_market_outcome_candidates')
+    readiness = importlib.import_module('src.providers.kalshi_readonly_readiness')
 
     assert bridge is not None
     assert connector is not None
@@ -95,6 +96,8 @@ def test_canonical_prediction_market_bridge_connectors_and_legacy_shells_remain_
     assert calibration_collector.KalshiReadonlyAdapter.__module__ == "src.services.prediction_market_runtime_bridge"
     assert outcome_candidates.KalshiReadonlyAdapter.__module__ == "src.services.prediction_market_runtime_bridge"
     assert readiness.KalshiReadonlyAdapter.__module__ == "src.services.prediction_market_runtime_bridge"
+    assert hasattr(automation_scheduler_pkg, "get_kalshi_provider_health")
+    assert hasattr(automation_scheduler_pkg, "get_provider_registry_snapshot")
 
     adapter = bridge.KalshiReadonlyAdapter()
     assert adapter.validate_config()["ok"] is False

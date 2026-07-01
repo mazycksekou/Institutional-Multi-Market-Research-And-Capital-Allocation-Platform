@@ -164,10 +164,11 @@ def test_provider_live_market_decomposition_plan_has_no_obvious_secrets_or_front
         assert not list(ROOT.glob(pattern)), f"Unexpected frontend page files matched {pattern}"
 
     streamlit_text = _read(ROOT / "streamlit_app.py")
-    dashboard_text = _read(ROOT / "src" / "automation_scheduler_legacy" / "streamlit_dashboard_data.py")
+    dashboard_text = _read(ROOT / "src" / "services" / "streamlit_dashboard_data.py")
     assert "Aggressive paper only" not in streamlit_text
     assert "None - no risk preset adjustment" in streamlit_text
     assert "Aggressive" in dashboard_text
     assert "Baseline / Imputed" in dashboard_text
     assert "Strict / Complete Cases Only" in dashboard_text
     assert "Stress / Adverse Missing-Data Fill" in dashboard_text
+

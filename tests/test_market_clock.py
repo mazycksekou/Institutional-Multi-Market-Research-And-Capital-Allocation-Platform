@@ -1,6 +1,6 @@
 import unittest
 from datetime import datetime, timezone
-from src.automation_scheduler_legacy.market_clock import market_open_status
+from src.core.market_clock import market_open_status
 
 
 class TestMarketClock(unittest.TestCase):

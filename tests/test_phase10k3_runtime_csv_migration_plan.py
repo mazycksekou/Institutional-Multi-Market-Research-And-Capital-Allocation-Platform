@@ -140,9 +140,9 @@ def test_market_research_db_targets_are_existing_schema_tables(tmp_path: Path) -
 
 def test_existing_sports_sqlite_flow_is_preserved_by_source_and_report() -> None:
     report = _read_report()
-    sqlite_owner = (REPO_ROOT / "src" / "automation_scheduler_legacy" / "historical_odds_sqlite.py").read_text(encoding="utf-8")
-    line_owner = (REPO_ROOT / "src" / "automation_scheduler_legacy" / "historical_line_movement.py").read_text(encoding="utf-8")
-    dashboard_data = (REPO_ROOT / "src" / "automation_scheduler_legacy" / "streamlit_dashboard_data.py").read_text(encoding="utf-8")
+    sqlite_owner = (REPO_ROOT / "src" / "data" / "historical_odds.py").read_text(encoding="utf-8")
+    line_owner = (REPO_ROOT / "src" / "data" / "historical_line_movement.py").read_text(encoding="utf-8")
+    dashboard_data = (REPO_ROOT / "src" / "services" / "streamlit_dashboard_data.py").read_text(encoding="utf-8")
 
     for token in ("source_imports", "historical_events", "historical_odds", "historical_results"):
         assert token in sqlite_owner

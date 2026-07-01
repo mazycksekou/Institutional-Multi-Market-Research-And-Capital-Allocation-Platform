@@ -32,8 +32,8 @@ def test_execution_cleanup_checkpoint_imports_safe() -> None:
     brokerage = importlib.import_module("src.brokerage")
     readiness = importlib.import_module("src.brokerage.readiness")
     decision_engine = importlib.import_module("src.services.decision_engine")
-    paper_trade_ledger = importlib.import_module('src.automation_scheduler_legacy.paper_trade_ledger')
-    paper_decision_ledger = importlib.import_module('src.automation_scheduler_legacy.paper_decision_ledger')
+    paper_trade_ledger = importlib.import_module('src.brokerage.paper_trade_ledger')
+    paper_decision_ledger = importlib.import_module('src.brokerage.paper_decision_ledger')
 
     plan = decision_engine.build_brokerage_execution_plan(
         {"ticker": "META", "stake": 7, "american_odds": -108, "decision_id": "d6", "provider": "demo"}

@@ -44,11 +44,11 @@ LINE_MOVEMENT_DATA_QUALITY_DASHBOARD_VERSION = "10H23"
 
 
 _LEGACY_LINE_MOVEMENT_MODULES: tuple[str, ...] = (
-    "src.automation_scheduler_legacy.line_movement_import_contract",
-    "src.automation_scheduler_legacy.line_movement_readiness",
-    "src.automation_scheduler_legacy.line_movement_data_quality_dashboard",
-    "src.automation_scheduler_legacy.asof_line_movement_query",
-    "src.automation_scheduler_legacy.historical_line_movement",
+    "src.data.line_movement_import_contract",
+    "src.data.line_movement_readiness",
+    "src.data.line_movement_data_quality_dashboard",
+    "src.data.asof_line_movement_query",
+    "src.data.historical_line_movement",
 )
 
 
@@ -84,7 +84,7 @@ def _utc_now() -> str:
 
 
 def initialize_line_movement_schema(conn: sqlite3.Connection) -> None:
-    from src.automation_scheduler_legacy.historical_line_movement import initialize_line_movement_schema as _legacy_initialize_line_movement_schema
+    from src.data.historical_line_movement import initialize_line_movement_schema as _legacy_initialize_line_movement_schema
 
     _legacy_initialize_line_movement_schema(conn)
 
@@ -150,7 +150,7 @@ def upsert_line_snapshots(
     conn: sqlite3.Connection,
     snapshots: Sequence[Mapping[str, Any]],
 ) -> dict[str, Any]:
-    from src.automation_scheduler_legacy.historical_line_movement import upsert_line_snapshots as _legacy_upsert_line_snapshots
+    from src.data.historical_line_movement import upsert_line_snapshots as _legacy_upsert_line_snapshots
 
     return _legacy_upsert_line_snapshots(conn, [dict(row) for row in snapshots if isinstance(row, Mapping)])
 
@@ -228,7 +228,7 @@ def query_line_snapshots(
 
 
 def summarize_line_movement_store(conn: sqlite3.Connection | str | Path) -> dict[str, Any]:
-    from src.automation_scheduler_legacy.historical_line_movement import summarize_line_movement_store as _legacy_summarize_line_movement_store
+    from src.data.historical_line_movement import summarize_line_movement_store as _legacy_summarize_line_movement_store
 
     if isinstance(conn, sqlite3.Connection):
         return _legacy_summarize_line_movement_store(conn)
@@ -357,19 +357,19 @@ def group_line_snapshots_for_volatility(rows: list[dict]) -> dict[str, list[dict
 
 
 def calculate_line_volatility_for_group(rows: list[dict]) -> dict:
-    from src.automation_scheduler_legacy.historical_line_movement import calculate_line_volatility_for_group as _legacy_calculate_line_volatility_for_group
+    from src.data.historical_line_movement import calculate_line_volatility_for_group as _legacy_calculate_line_volatility_for_group
 
     return _legacy_calculate_line_volatility_for_group([dict(row) for row in rows if isinstance(row, Mapping)])
 
 
 def calculate_line_volatility_summary(rows: list[dict]) -> dict:
-    from src.automation_scheduler_legacy.historical_line_movement import calculate_line_volatility_summary as _legacy_calculate_line_volatility_summary
+    from src.data.historical_line_movement import calculate_line_volatility_summary as _legacy_calculate_line_volatility_summary
 
     return _legacy_calculate_line_volatility_summary([dict(row) for row in rows if isinstance(row, Mapping)])
 
 
 def get_line_volatility_summary_from_sqlite(conn: sqlite3.Connection | str | Path) -> dict:
-    from src.automation_scheduler_legacy.historical_line_movement import get_line_volatility_summary_from_sqlite as _legacy_get_line_volatility_summary_from_sqlite
+    from src.data.historical_line_movement import get_line_volatility_summary_from_sqlite as _legacy_get_line_volatility_summary_from_sqlite
 
     return _legacy_get_line_volatility_summary_from_sqlite(conn)
 
@@ -378,7 +378,7 @@ def attach_volatility_to_backtest_rows(
     rows: list[dict],
     volatility_rows: list[dict] | None = None,
 ) -> list[dict]:
-    from src.automation_scheduler_legacy.historical_line_movement import attach_volatility_to_backtest_rows as _legacy_attach_volatility_to_backtest_rows
+    from src.data.historical_line_movement import attach_volatility_to_backtest_rows as _legacy_attach_volatility_to_backtest_rows
 
     return _legacy_attach_volatility_to_backtest_rows(
         [dict(row) for row in rows if isinstance(row, Mapping)],
@@ -387,25 +387,25 @@ def attach_volatility_to_backtest_rows(
 
 
 def summarize_results_by_volatility(rows: list[dict]) -> dict:
-    from src.automation_scheduler_legacy.historical_line_movement import summarize_results_by_volatility as _legacy_summarize_results_by_volatility
+    from src.data.historical_line_movement import summarize_results_by_volatility as _legacy_summarize_results_by_volatility
 
     return _legacy_summarize_results_by_volatility([dict(row) for row in rows if isinstance(row, Mapping)])
 
 
 def build_line_movement_readiness_snapshot(db_path: str | Path) -> dict[str, Any]:
-    from src.automation_scheduler_legacy.line_movement_readiness import build_line_movement_readiness_snapshot as _legacy_build_line_movement_readiness_snapshot
+    from src.data.line_movement_readiness import build_line_movement_readiness_snapshot as _legacy_build_line_movement_readiness_snapshot
 
     return _legacy_build_line_movement_readiness_snapshot(db_path)
 
 
 def describe_line_movement_readiness(snapshot: dict[str, Any] | None = None) -> list[str]:
-    from src.automation_scheduler_legacy.line_movement_readiness import describe_line_movement_readiness as _legacy_describe_line_movement_readiness
+    from src.data.line_movement_readiness import describe_line_movement_readiness as _legacy_describe_line_movement_readiness
 
     return _legacy_describe_line_movement_readiness(dict(snapshot or {}))
 
 
 def build_vendor_neutral_line_movement_contract() -> dict[str, Any]:
-    from src.automation_scheduler_legacy.line_movement_import_contract import build_vendor_neutral_line_movement_contract as _legacy_build_vendor_neutral_line_movement_contract
+    from src.data.line_movement_import_contract import build_vendor_neutral_line_movement_contract as _legacy_build_vendor_neutral_line_movement_contract
 
     return _legacy_build_vendor_neutral_line_movement_contract()
 
@@ -415,14 +415,14 @@ def build_line_movement_import_preview(
     *,
     limit: int | None = None,
 ) -> dict[str, Any]:
-    from src.automation_scheduler_legacy.line_movement_import_contract import build_line_movement_import_preview as _legacy_build_line_movement_import_preview
+    from src.data.line_movement_import_contract import build_line_movement_import_preview as _legacy_build_line_movement_import_preview
 
     effective_limit = 100 if limit is None else int(limit)
     return _legacy_build_line_movement_import_preview([dict(row) for row in (rows or []) if isinstance(row, Mapping)], limit=effective_limit)
 
 
 def describe_line_movement_import_contract() -> list[str]:
-    from src.automation_scheduler_legacy.line_movement_import_contract import describe_line_movement_import_contract as _legacy_describe_line_movement_import_contract
+    from src.data.line_movement_import_contract import describe_line_movement_import_contract as _legacy_describe_line_movement_import_contract
 
     return _legacy_describe_line_movement_import_contract()
 
@@ -438,7 +438,7 @@ def build_asof_line_movement_query_snapshot(
     selection: str | None = None,
     limit: int | None = None,
 ) -> dict[str, Any]:
-    from src.automation_scheduler_legacy.asof_line_movement_query import build_asof_line_movement_query_snapshot as _legacy_build_asof_line_movement_query_snapshot
+    from src.data.asof_line_movement_query import build_asof_line_movement_query_snapshot as _legacy_build_asof_line_movement_query_snapshot
 
     effective_limit = 100 if limit is None else int(limit)
     return _legacy_build_asof_line_movement_query_snapshot(
@@ -454,7 +454,7 @@ def build_asof_line_movement_query_snapshot(
 
 
 def summarize_asof_line_movement_snapshots(snapshots: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
-    from src.automation_scheduler_legacy.asof_line_movement_query import summarize_asof_line_movement_snapshots as _legacy_summarize_asof_line_movement_snapshots
+    from src.data.asof_line_movement_query import summarize_asof_line_movement_snapshots as _legacy_summarize_asof_line_movement_snapshots
 
     return _legacy_summarize_asof_line_movement_snapshots([dict(row) for row in snapshots if isinstance(row, Mapping)])
 
@@ -470,7 +470,7 @@ def filter_line_movement_snapshots_as_of(
     selection: str | None = None,
     limit: int | None = None,
 ) -> dict[str, Any]:
-    from src.automation_scheduler_legacy.asof_line_movement_query import filter_line_movement_snapshots_as_of as _legacy_filter_line_movement_snapshots_as_of
+    from src.data.asof_line_movement_query import filter_line_movement_snapshots_as_of as _legacy_filter_line_movement_snapshots_as_of
 
     return _legacy_filter_line_movement_snapshots_as_of(
         [dict(row) for row in snapshots if isinstance(row, Mapping)],
@@ -494,7 +494,7 @@ def build_asof_line_movement_query_snapshot_from_sqlite(
     selection: str | None = None,
     limit: int | None = None,
 ) -> dict[str, Any]:
-    from src.automation_scheduler_legacy.asof_line_movement_query import build_asof_line_movement_query_snapshot_from_sqlite as _legacy_build_asof_line_movement_query_snapshot_from_sqlite
+    from src.data.asof_line_movement_query import build_asof_line_movement_query_snapshot_from_sqlite as _legacy_build_asof_line_movement_query_snapshot_from_sqlite
 
     effective_limit = 100 if limit is None else int(limit)
     return _legacy_build_asof_line_movement_query_snapshot_from_sqlite(
@@ -510,7 +510,7 @@ def build_asof_line_movement_query_snapshot_from_sqlite(
 
 
 def describe_asof_line_movement_query_engine() -> list[str]:
-    from src.automation_scheduler_legacy.asof_line_movement_query import describe_asof_line_movement_query_engine as _legacy_describe_asof_line_movement_query_engine
+    from src.data.asof_line_movement_query import describe_asof_line_movement_query_engine as _legacy_describe_asof_line_movement_query_engine
 
     return _legacy_describe_asof_line_movement_query_engine()
 
@@ -525,7 +525,7 @@ def load_line_movement_snapshots_from_sqlite(
     selection: str | None = None,
     limit: int | None = None,
 ) -> dict[str, Any]:
-    from src.automation_scheduler_legacy.asof_line_movement_query import load_line_movement_snapshots_from_sqlite as _legacy_load_line_movement_snapshots_from_sqlite
+    from src.data.asof_line_movement_query import load_line_movement_snapshots_from_sqlite as _legacy_load_line_movement_snapshots_from_sqlite
 
     return _legacy_load_line_movement_snapshots_from_sqlite(
         db_path,
@@ -550,7 +550,7 @@ def build_line_movement_data_quality_snapshot(
     selection: str | None = None,
     limit: int | None = None,
 ) -> dict[str, Any]:
-    from src.automation_scheduler_legacy.line_movement_data_quality_dashboard import build_line_movement_data_quality_snapshot as _legacy_build_line_movement_data_quality_snapshot
+    from src.data.line_movement_data_quality_dashboard import build_line_movement_data_quality_snapshot as _legacy_build_line_movement_data_quality_snapshot
 
     return _legacy_build_line_movement_data_quality_snapshot(
         snapshot_rows=snapshot_rows,
@@ -575,7 +575,7 @@ def build_line_movement_data_quality_snapshot_from_sqlite(
     selection: str | None = None,
     limit: int | None = None,
 ) -> dict[str, Any]:
-    from src.automation_scheduler_legacy.line_movement_data_quality_dashboard import build_line_movement_data_quality_snapshot_from_sqlite as _legacy_build_line_movement_data_quality_snapshot_from_sqlite
+    from src.data.line_movement_data_quality_dashboard import build_line_movement_data_quality_snapshot_from_sqlite as _legacy_build_line_movement_data_quality_snapshot_from_sqlite
 
     return _legacy_build_line_movement_data_quality_snapshot_from_sqlite(
         db_path,
@@ -590,25 +590,25 @@ def build_line_movement_data_quality_snapshot_from_sqlite(
 
 
 def describe_line_movement_data_quality_dashboard() -> list[str]:
-    from src.automation_scheduler_legacy.line_movement_data_quality_dashboard import describe_line_movement_data_quality_dashboard as _legacy_describe_line_movement_data_quality_dashboard
+    from src.data.line_movement_data_quality_dashboard import describe_line_movement_data_quality_dashboard as _legacy_describe_line_movement_data_quality_dashboard
 
     return _legacy_describe_line_movement_data_quality_dashboard()
 
 
 def get_line_volatility_summary_from_sqlite(conn: sqlite3.Connection | str | Path) -> dict[str, Any]:
-    from src.automation_scheduler_legacy.historical_line_movement import get_line_volatility_summary_from_sqlite as _legacy_get_line_volatility_summary_from_sqlite
+    from src.data.historical_line_movement import get_line_volatility_summary_from_sqlite as _legacy_get_line_volatility_summary_from_sqlite
 
     return _legacy_get_line_volatility_summary_from_sqlite(conn)
 
 
 def get_line_movement_snapshot_for_dashboard(db_path: str | Path) -> dict[str, Any]:
-    from src.automation_scheduler_legacy.streamlit_dashboard_data import get_line_movement_snapshot_for_dashboard as _legacy_get_line_movement_snapshot_for_dashboard
+    from src.services.streamlit_dashboard_data import get_line_movement_snapshot_for_dashboard as _legacy_get_line_movement_snapshot_for_dashboard
 
     return _legacy_get_line_movement_snapshot_for_dashboard(db_path)
 
 
 def get_line_movement_readiness_snapshot_for_dashboard(db_path: str | Path) -> dict[str, Any]:
-    from src.automation_scheduler_legacy.streamlit_dashboard_data import get_line_movement_readiness_snapshot_for_dashboard as _legacy_get_line_movement_readiness_snapshot_for_dashboard
+    from src.services.streamlit_dashboard_data import get_line_movement_readiness_snapshot_for_dashboard as _legacy_get_line_movement_readiness_snapshot_for_dashboard
 
     return _legacy_get_line_movement_readiness_snapshot_for_dashboard(db_path)
 
@@ -624,7 +624,7 @@ def get_line_movement_data_quality_snapshot_for_dashboard(
     selection: str | None = None,
     limit: int = 100,
 ) -> dict[str, Any]:
-    from src.automation_scheduler_legacy.streamlit_dashboard_data import get_line_movement_data_quality_snapshot_for_dashboard as _legacy_get_line_movement_data_quality_snapshot_for_dashboard
+    from src.services.streamlit_dashboard_data import get_line_movement_data_quality_snapshot_for_dashboard as _legacy_get_line_movement_data_quality_snapshot_for_dashboard
 
     return _legacy_get_line_movement_data_quality_snapshot_for_dashboard(
         snapshot_rows=snapshot_rows,
@@ -643,7 +643,7 @@ def get_line_movement_import_contract_snapshot_for_dashboard(
     rows: list[dict[str, Any]] | None = None,
     limit: int = 100,
 ) -> dict[str, Any]:
-    from src.automation_scheduler_legacy.streamlit_dashboard_data import get_line_movement_import_contract_snapshot_for_dashboard as _legacy_get_line_movement_import_contract_snapshot_for_dashboard
+    from src.services.streamlit_dashboard_data import get_line_movement_import_contract_snapshot_for_dashboard as _legacy_get_line_movement_import_contract_snapshot_for_dashboard
 
     return _legacy_get_line_movement_import_contract_snapshot_for_dashboard(rows=rows, limit=limit)
 
@@ -659,7 +659,7 @@ def get_asof_line_movement_query_snapshot_for_dashboard(
     selection: str | None = None,
     limit: int = 100,
 ) -> dict[str, Any]:
-    from src.automation_scheduler_legacy.streamlit_dashboard_data import get_asof_line_movement_query_snapshot_for_dashboard as _legacy_get_asof_line_movement_query_snapshot_for_dashboard
+    from src.services.streamlit_dashboard_data import get_asof_line_movement_query_snapshot_for_dashboard as _legacy_get_asof_line_movement_query_snapshot_for_dashboard
 
     return _legacy_get_asof_line_movement_query_snapshot_for_dashboard(
         snapshots=snapshots,
@@ -675,7 +675,7 @@ def get_asof_line_movement_query_snapshot_for_dashboard(
 
 
 def get_line_volatility_snapshot_for_dashboard(db_path: str | Path) -> dict[str, Any]:
-    from src.automation_scheduler_legacy.streamlit_dashboard_data import get_line_volatility_snapshot_for_dashboard as _legacy_get_line_volatility_snapshot_for_dashboard
+    from src.services.streamlit_dashboard_data import get_line_volatility_snapshot_for_dashboard as _legacy_get_line_volatility_snapshot_for_dashboard
 
     return _legacy_get_line_volatility_snapshot_for_dashboard(db_path)
 
@@ -684,7 +684,7 @@ def get_volatility_result_breakdown_for_dashboard(
     db_path: str | Path,
     projection_result: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    from src.automation_scheduler_legacy.streamlit_dashboard_data import get_volatility_result_breakdown_for_dashboard as _legacy_get_volatility_result_breakdown_for_dashboard
+    from src.services.streamlit_dashboard_data import get_volatility_result_breakdown_for_dashboard as _legacy_get_volatility_result_breakdown_for_dashboard
 
     return _legacy_get_volatility_result_breakdown_for_dashboard(db_path, projection_result=projection_result)
 

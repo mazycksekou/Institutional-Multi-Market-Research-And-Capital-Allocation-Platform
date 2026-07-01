@@ -17,8 +17,8 @@ def test_execution_scheduler_wrapper_deletion_docs_state_no_deletion() -> None:
 
 def test_execution_scheduler_wrappers_still_exist() -> None:
     for relpath in [
-        'src/automation_scheduler_legacy/paper_trade_ledger.py',
-        'src/automation_scheduler_legacy/paper_decision_ledger.py',
+        'src/brokerage/paper_trade_ledger.py',
+        'src/brokerage/paper_decision_ledger.py',
     ]:
         assert (ROOT / relpath).exists()
     for relpath in [

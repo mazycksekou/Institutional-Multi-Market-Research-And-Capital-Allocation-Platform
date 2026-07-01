@@ -15,7 +15,7 @@ class TestInstitutionalDeepSeekReview(unittest.TestCase):
         self.assertTrue(result["review"]["must_not_execute"])
         self.assertNotIn("provider_payload", str(result))
 
-    @patch('src.automation_scheduler_legacy.institutional_deepseek_review.httpx.post')
+    @patch('src.ai.institutional_deepseek_review.httpx.post')
     def test_local_server_unavailable_is_safe(self, post):
         post.side_effect = RuntimeError("down")
         with tempfile.TemporaryDirectory() as tmp:
@@ -24,7 +24,7 @@ class TestInstitutionalDeepSeekReview(unittest.TestCase):
         self.assertFalse(result["local_server_reachable"])
         self.assertFalse(result["provider_write"])
 
-    @patch('src.automation_scheduler_legacy.institutional_deepseek_review.httpx.post')
+    @patch('src.ai.institutional_deepseek_review.httpx.post')
     def test_forbidden_action_is_rejected(self, post):
         response = Mock()
         response.raise_for_status = Mock()
@@ -48,7 +48,7 @@ class TestInstitutionalDeepSeekReview(unittest.TestCase):
         self.assertTrue(result["forbidden_actions_rejected"])
         self.assertFalse(result["provider_write"])
 
-    @patch('src.automation_scheduler_legacy.institutional_deepseek_review.httpx.post')
+    @patch('src.ai.institutional_deepseek_review.httpx.post')
     def test_valid_schema_passes_without_side_effects(self, post):
         response = Mock()
         response.raise_for_status = Mock()

@@ -1,6 +1,6 @@
 import unittest
 
-from src.automation_scheduler_legacy.odds_line_monitor import monitor_odds_lines
+from src.data.odds_line_monitor import monitor_odds_lines
 from src.services.streamlit_dashboard_facade import get_default_scheduler_config
 
 

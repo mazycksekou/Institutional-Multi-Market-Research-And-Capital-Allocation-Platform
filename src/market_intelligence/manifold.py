@@ -62,7 +62,7 @@ def infer_asset_type(item: Mapping[str, Any] | None) -> str:
 
 
 def build_manifold_feature_vector(item: Mapping[str, Any] | None, /, **overrides: Any) -> dict[str, Any]:
-    from src.automation_scheduler_legacy.manifold_feature_builder import build_manifold_feature_vector as _legacy_build_manifold_feature_vector
+    from src.market_intelligence.manifold_feature_builder import build_manifold_feature_vector as _legacy_build_manifold_feature_vector
 
     data = dict(item or {})
     data.update(overrides)
@@ -70,7 +70,7 @@ def build_manifold_feature_vector(item: Mapping[str, Any] | None, /, **overrides
 
 
 def nearest_historical_neighbors(feature_vector: Mapping[str, Any] | None, historical_records: list[Mapping[str, Any]] | None = None) -> dict[str, Any]:
-    from src.automation_scheduler_legacy.market_state_manifold import nearest_historical_neighbors as _legacy_nearest_historical_neighbors
+    from src.market_intelligence.market_state_manifold import nearest_historical_neighbors as _legacy_nearest_historical_neighbors
 
     return _legacy_nearest_historical_neighbors(dict(feature_vector or {}), historical_records)
 
@@ -187,7 +187,7 @@ def map_sportsbook_market(item: Mapping[str, Any] | None = None, /, **overrides:
 
 
 def map_market_state(item: Mapping[str, Any] | None = None, /, **overrides: Any) -> dict[str, Any]:
-    from src.automation_scheduler_legacy.market_state_manifold import map_market_state as _legacy_map_market_state
+    from src.market_intelligence.market_state_manifold import map_market_state as _legacy_map_market_state
 
     data = dict(item or {})
     data.update(overrides)
@@ -323,3 +323,56 @@ def route_cross_asset_embedding(item: Mapping[str, Any] | None = None, /, **over
         }
     )
     return payload
+
+
+def map_automation_manifold_item(
+    item: Mapping[str, Any] | None = None,
+    /,
+    *,
+    historical_records: list[Mapping[str, Any]] | None = None,
+    base_data_dir: str = "data",
+) -> dict[str, Any]:
+    from src.market_intelligence.cross_asset_manifold_router import map_manifold_endpoint_item
+
+    data = dict(item or {})
+    records = [dict(row) for row in historical_records or [] if isinstance(row, Mapping)] or None
+    return map_manifold_endpoint_item(data, historical_records=records, base_data_dir=base_data_dir)
+
+
+def get_automation_manifold_clusters(*, base_data_dir: str = "data", limit: int = 25) -> dict[str, Any]:
+    from src.market_intelligence.cross_asset_manifold_router import get_manifold_cluster_snapshot
+
+    return get_manifold_cluster_snapshot(base_data_dir=base_data_dir, limit=limit)
+
+
+def get_automation_manifold_calibration(*, base_data_dir: str = "data", limit: int = 25) -> dict[str, Any]:
+    from src.market_intelligence.cross_asset_manifold_router import get_manifold_calibration_snapshot
+
+    return get_manifold_calibration_snapshot(base_data_dir=base_data_dir, limit=limit)
+
+
+def get_automation_manifold_no_bet_traps(*, base_data_dir: str = "data", limit: int = 25) -> dict[str, Any]:
+    from src.market_intelligence.cross_asset_manifold_router import get_manifold_trap_snapshot
+
+    return get_manifold_trap_snapshot(base_data_dir=base_data_dir, limit=limit)
+
+
+def run_automation_cross_asset_manifold_review(
+    items: list[Mapping[str, Any]] | None,
+    *,
+    historical_records: list[Mapping[str, Any]] | None = None,
+    persist: bool = True,
+    base_data_dir: str = "data",
+    max_items: int = 250,
+) -> dict[str, Any]:
+    from src.market_intelligence.cross_asset_manifold_router import run_cross_asset_manifold_review
+
+    records = [dict(row) for row in historical_records or [] if isinstance(row, Mapping)] or None
+    payload_items = [dict(row) for row in items or [] if isinstance(row, Mapping)] if items is not None else None
+    return run_cross_asset_manifold_review(
+        payload_items,
+        historical_records=records,
+        persist=persist,
+        base_data_dir=base_data_dir,
+        max_items=max_items,
+    )

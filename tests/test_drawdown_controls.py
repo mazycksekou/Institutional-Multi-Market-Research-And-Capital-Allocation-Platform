@@ -1,6 +1,6 @@
 import unittest
 
-from src.automation_scheduler_legacy.drawdown_controls import apply_drawdown_controls
+from src.core.drawdown_controls import apply_drawdown_controls
 
 
 class DrawdownControlsTests(unittest.TestCase):

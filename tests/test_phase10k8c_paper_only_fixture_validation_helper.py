@@ -7,8 +7,8 @@ from src.services.streamlit_dashboard_facade import validate_paper_only_fixture_
 
 REPORT_PATH = Path("PHASE10K8C_PAPER_ONLY_FIXTURE_VALIDATION_HELPER.md")
 STREAMLIT_APP_PATH = Path("streamlit_app.py")
-DASHBOARD_DATA_PATH = Path("src/automation_scheduler_legacy/streamlit_dashboard_data.py")
-BACKTEST_BUILDER_PATH = Path("src/automation_scheduler_legacy/backtest_dataset_builder.py")
+DASHBOARD_DATA_PATH = Path("src/services/streamlit_dashboard_data.py")
+BACKTEST_BUILDER_PATH = Path("src/backtesting/backtest_dataset_builder.py")
 PHASE10K6K_TEST_PATH = Path("tests/test_phase10k6k_controlled_dashboard_shell_review.py")
 
 

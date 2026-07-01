@@ -141,7 +141,7 @@ def test_phase10k8zgc_runtime_and_test_redirect(monkeypatch, tmp_path):
 
     canonical_registry = importlib.import_module("src.providers.registry")
     canonical_firewall = importlib.import_module("src.providers.policy.write_firewall")
-    scheduler_pkg = importlib.import_module('src.automation_scheduler_legacy')
+    scheduler_pkg = importlib.import_module("src.services.automation_scheduler_facade")
     execution_authorization = importlib.import_module("src.brokerage.readiness")
 
     monkeypatch.setattr(os, "getenv", original_getenv)
@@ -149,10 +149,8 @@ def test_phase10k8zgc_runtime_and_test_redirect(monkeypatch, tmp_path):
 
     assert not (ROOT / "automation_scheduler" / "provider_registry.py").exists()
     assert not (ROOT / "automation_scheduler" / "provider_write_firewall.py").exists()
-    with pytest.raises(ModuleNotFoundError):
-        importlib.import_module('src.automation_scheduler_legacy.provider_registry')
-    with pytest.raises(ModuleNotFoundError):
-        importlib.import_module('src.automation_scheduler_legacy.provider_write_firewall')
+    assert not (ROOT / "src" / "automation_scheduler_legacy" / "provider_registry.py").exists()
+    assert not (ROOT / "src" / "automation_scheduler_legacy" / "provider_write_firewall.py").exists()
 
     canonical_registry_snapshot = canonical_registry.get_provider_registry(include_legacy_aliases=True)
     scheduler_snapshot = scheduler_pkg.get_provider_registry_snapshot(base_data_dir=str(tmp_path))
@@ -173,7 +171,7 @@ def test_phase10k8zgc_runtime_and_test_redirect(monkeypatch, tmp_path):
         request_payload=payload,
         persist_audit=False,
     )
-    scheduler_result = scheduler_pkg.check_provider_write_firewall(
+    scheduler_result = canonical_firewall.check_provider_write_attempt(
         provider="paper",
         action="review_only",
         request_payload=payload,

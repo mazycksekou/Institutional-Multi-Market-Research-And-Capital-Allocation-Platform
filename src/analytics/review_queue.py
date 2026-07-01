@@ -1,0 +1,482 @@
+from __future__ import annotations
+
+import json
+from pathlib import Path
+from typing import Any
+
+from src.services.cadence_controller import choose_next_check_seconds
+from src.core.market_clock import apply_score_decay, is_market_closed, is_stale, seconds_since
+from src.market_intelligence.opportunity_scoring import classify_opportunity
+from src.services.scheduler_config import SCHEMA_VERSION, redact_secrets, safe_run_id, sanitize_filename, utc_now_iso
+
+
+def _queue_path(config: dict[str, Any]) -> Path:
+    path = _queue_dir(config) / "review_queue.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def _queue_dir(config: dict[str, Any]) -> Path:
+    path = Path(config["paths"]["review_queue"])
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def _latest_queue_path(config: dict[str, Any]) -> Path:
+    return _queue_dir(config) / "latest.json"
+
+
+def _queue_items_dir(config: dict[str, Any]) -> Path:
+    path = _queue_dir(config) / "items"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def _queue_run_path(config: dict[str, Any], run_id: str) -> Path:
+    return _queue_items_dir(config) / f"{sanitize_filename(run_id)}.json"
+
+
+def _project_relative_path(config: dict[str, Any], path: Path) -> str:
+    try:
+        root = Path(config["paths"]["review_queue"]).parent
+        return str(path.resolve().relative_to(root.resolve())).replace("\\", "/")
+    except Exception:
+        return path.name
+
+
+def _read_json_file(path: Path) -> Any | None:
+    if not path.exists():
+        return None
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+
+
+def _atomic_write_json(path: Path, payload: Any) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = path.with_name(f"{path.name}.tmp")
+    tmp_path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
+    tmp_path.replace(path)
+
+
+def _sanitize_persisted_item(item: dict[str, Any]) -> dict[str, Any]:
+    redacted = redact_secrets(dict(item))
+    for key in ("provider_payload", "raw_payload", "external_payload", "source_payload"):
+        redacted.pop(key, None)
+    return redacted
+
+
+def load_review_queue(config: dict[str, Any]) -> list[dict[str, Any]]:
+    path = _queue_path(config)
+    payload = _read_json_file(path)
+    if payload is None:
+        return []
+    if isinstance(payload, list):
+        return [item for item in payload if isinstance(item, dict)]
+    if isinstance(payload, dict) and isinstance(payload.get("items"), list):
+        return [item for item in payload["items"] if isinstance(item, dict)]
+    return []
+
+
+def save_review_queue(config: dict[str, Any], items: list[dict[str, Any]]) -> None:
+    path = _queue_path(config)
+    _atomic_write_json(path, items)
+
+
+def persist_review_queue_snapshot(
+    config: dict[str, Any],
+    items: list[dict[str, Any]],
+    *,
+    run_id: str,
+    summary: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    now = utc_now_iso()
+    safe_items = [_sanitize_persisted_item(item) for item in items if isinstance(item, dict)]
+    wrapper = {
+        "schema_version": SCHEMA_VERSION,
+        "storage_backend": "file",
+        "latest_run_id": str(run_id),
+        "last_updated_at": now,
+        "items_written_count": len(safe_items),
+        "summary": dict(summary or {}),
+        "items": safe_items,
+    }
+    latest_path = _latest_queue_path(config)
+    run_path = _queue_run_path(config, str(run_id))
+    save_review_queue(config, safe_items)
+    _atomic_write_json(run_path, wrapper)
+    _atomic_write_json(latest_path, wrapper)
+    return {
+        "storage_backend": "file",
+        "latest_run_id": str(run_id),
+        "last_updated_at": now,
+        "queue_write_path": _project_relative_path(config, latest_path),
+        "queue_items_run_path": _project_relative_path(config, run_path),
+        "items_written_count": len(safe_items),
+    }
+
+
+def load_review_queue_state(config: dict[str, Any]) -> dict[str, Any]:
+    latest_path = _latest_queue_path(config)
+    legacy_path = _queue_path(config)
+    latest_payload = _read_json_file(latest_path)
+    if isinstance(latest_payload, dict):
+        items = latest_payload.get("items")
+        if isinstance(items, list):
+            filtered_items = [item for item in items if isinstance(item, dict)]
+            return {
+                "storage_backend": str(latest_payload.get("storage_backend") or "file"),
+                "latest_run_id": latest_payload.get("latest_run_id"),
+                "last_updated_at": latest_payload.get("last_updated_at"),
+                "queue_read_ok": True,
+                "queue_error_category": None,
+                "queue_read_path": _project_relative_path(config, latest_path),
+                "items_read_count": len(filtered_items),
+                "items": filtered_items,
+            }
+    malformed_latest = latest_path.exists() and latest_payload is None
+    legacy_payload = _read_json_file(legacy_path)
+    if isinstance(legacy_payload, list):
+        filtered_items = [item for item in legacy_payload if isinstance(item, dict)]
+        return {
+            "storage_backend": "file",
+            "latest_run_id": None,
+            "last_updated_at": None,
+            "queue_read_ok": True,
+            "queue_error_category": None,
+            "queue_read_path": _project_relative_path(config, legacy_path),
+            "items_read_count": len(filtered_items),
+            "items": filtered_items,
+        }
+    malformed_legacy = legacy_path.exists() and legacy_payload is None
+    error_category = None
+    if malformed_latest and malformed_legacy:
+        error_category = "malformed_queue_storage_files"
+    elif malformed_latest:
+        error_category = "malformed_latest_queue_file"
+    elif malformed_legacy:
+        error_category = "malformed_legacy_queue_file"
+    return {
+        "storage_backend": "file",
+        "latest_run_id": None,
+        "last_updated_at": None,
+        "queue_read_ok": error_category is None,
+        "queue_error_category": error_category,
+        "queue_read_path": None,
+        "items_read_count": 0,
+        "items": [],
+    }
+
+
+def _review_item_id(candidate: dict[str, Any]) -> str:
+    parts = [
+        str(candidate.get("source") or "unknown"),
+        str(candidate.get("market_type") or "unknown"),
+        str(candidate.get("sport_or_symbol") or "unknown"),
+        str(candidate.get("market") or "unknown"),
+        str(candidate.get("selection") or "unknown"),
+    ]
+    return safe_run_id("review_item", "|".join(parts))
+
+
+def build_review_item(candidate: dict[str, Any], config: dict[str, Any]) -> dict[str, Any] | None:
+    thresholds = config["score_thresholds"]
+    opportunity_score = float(candidate.get("opportunity_score", 0))
+    if opportunity_score < float(thresholds["watch_threshold"]):
+        return None
+
+    cadence = choose_next_check_seconds(
+        market_type=str(candidate.get("market_type") or "news_events"),
+        opportunity_score=opportunity_score,
+        provider_name=str(candidate.get("provider") or "news_provider"),
+        config=config,
+        low_liquidity=bool(candidate.get("low_liquidity")),
+        market_closed=False,
+    )
+    now = utc_now_iso()
+    recommended_action = classify_opportunity(opportunity_score, thresholds)
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "id": _review_item_id(candidate),
+        "created_at": str(candidate.get("created_at") or now),
+        "updated_at": now,
+        "source": candidate.get("source", "scheduler"),
+        "provider_id": candidate.get("provider_id", candidate.get("provider", "unknown")),
+        "source_type": candidate.get("source_type", candidate.get("market_type", "unknown")),
+        "market_type": candidate.get("market_type", "unknown"),
+        "sport_or_symbol": candidate.get("sport_or_symbol", "unknown"),
+        "event_id": candidate.get("event_id"),
+        "event_name": candidate.get("event_name"),
+        "event_title": candidate.get("event_title", candidate.get("event_name")),
+        "sport": candidate.get("sport"),
+        "league": candidate.get("league"),
+        "market": candidate.get("market", "unknown"),
+        "market_id": candidate.get("market_id"),
+        "selection": candidate.get("selection", "unknown"),
+        "ticker": candidate.get("ticker"),
+        "contract_id": candidate.get("contract_id"),
+        "contract_title": candidate.get("contract_title"),
+        "book": candidate.get("book", candidate.get("bookmaker")),
+        "odds_or_price": candidate.get("odds_or_price"),
+        "yes_bid": candidate.get("yes_bid"),
+        "yes_ask": candidate.get("yes_ask"),
+        "no_bid": candidate.get("no_bid"),
+        "no_ask": candidate.get("no_ask"),
+        "yes_price": candidate.get("yes_price"),
+        "no_price": candidate.get("no_price"),
+        "price_source": candidate.get("price_source"),
+        "derived_price": bool(candidate.get("derived_price", False)),
+        "partial_pricing": bool(candidate.get("partial_pricing", False)),
+        "pricing_quality": candidate.get("pricing_quality"),
+        "candidate_type": candidate.get("candidate_type"),
+        "books_compared": candidate.get("books_compared"),
+        "best_book": candidate.get("best_book"),
+        "best_line": candidate.get("best_line"),
+        "best_odds": candidate.get("best_odds"),
+        "worst_book": candidate.get("worst_book"),
+        "worst_line": candidate.get("worst_line"),
+        "worst_odds": candidate.get("worst_odds"),
+        "model_probability": candidate.get("model_probability"),
+        "implied_probability": candidate.get("implied_probability"),
+        "no_vig_probability": candidate.get("no_vig_probability"),
+        "consensus_probability": candidate.get("consensus_probability"),
+        "ev_percent": candidate.get("ev_percent"),
+        "estimated_roi_percent": candidate.get("estimated_roi_percent"),
+        "middle_zone": candidate.get("middle_zone"),
+        "middle_width": candidate.get("middle_width"),
+        "break_even_probability": candidate.get("break_even_probability"),
+        "arbitrage_implied_sum": candidate.get("arbitrage_implied_sum"),
+        "raw_full_kelly_fraction": candidate.get("raw_full_kelly_fraction"),
+        "operating_full_kelly_fraction": candidate.get("operating_full_kelly_fraction"),
+        "fractional_fallback_fraction": candidate.get("fractional_fallback_fraction"),
+        "recommended_kelly_mode": candidate.get("recommended_kelly_mode"),
+        "stake_confidence_score": candidate.get("stake_confidence_score"),
+        "drawdown_gate_result": candidate.get("drawdown_gate_result"),
+        "exposure_gate_result": candidate.get("exposure_gate_result"),
+        "risk_of_ruin_score": candidate.get("risk_of_ruin_score"),
+        "bankroll_id": candidate.get("bankroll_id"),
+        "bankroll_snapshot": candidate.get("bankroll_snapshot"),
+        "final_recommended_stake": candidate.get("final_recommended_stake"),
+        "final_recommended_stake_percent": candidate.get("final_recommended_stake_percent"),
+        "stake_blockers": list(candidate.get("stake_blockers") or []),
+        "stake_plan": candidate.get("stake_plan"),
+        "max_loss": candidate.get("max_loss"),
+        "max_gain": candidate.get("max_gain"),
+        "market_identity_confidence": candidate.get("market_identity_confidence", candidate.get("line_match_confidence")),
+        "line_match_confidence": candidate.get("line_match_confidence"),
+        "book_disagreement_score": candidate.get("book_disagreement_score"),
+        "settlement_risk": candidate.get("settlement_risk"),
+        "settlement_rule": candidate.get("settlement_rule"),
+        "settlement_rule_status": candidate.get("settlement_rule_status", candidate.get("settlement_rule_status_gate")),
+        "stale_data_risk": candidate.get("stale_data_risk", False),
+        "data_quality_status": candidate.get("data_quality_status", candidate.get("data_quality_result")),
+        "execution_feasibility_score": candidate.get("execution_feasibility_score"),
+        "governance_status": candidate.get("governance_status"),
+        "activation_tier": candidate.get("activation_tier"),
+        "model_card_id": candidate.get("model_card_id"),
+        "model_group": candidate.get("model_group"),
+        "model_type": candidate.get("model_type"),
+        "status_reason": candidate.get("status_reason"),
+        "promotion_gate_result": candidate.get("promotion_gate_result"),
+        "champion_challenger_result": candidate.get("champion_challenger_result"),
+        "input_quality_gate_result": candidate.get("input_quality_gate_result"),
+        "data_quality_result": candidate.get("data_quality_result"),
+        "calibration_gate_result": candidate.get("calibration_gate_result"),
+        "backtest_gate_result": candidate.get("backtest_gate_result"),
+        "walk_forward_gate_result": candidate.get("walk_forward_gate_result"),
+        "risk_gate_result": candidate.get("risk_gate_result"),
+        "kelly_gate_result": candidate.get("kelly_gate_result"),
+        "cross_book_gate_result": candidate.get("cross_book_gate_result"),
+        "settlement_liquidity_gate_result": candidate.get("settlement_liquidity_gate_result"),
+        "research_evidence_gate_result": candidate.get("research_evidence_gate_result"),
+        "review_queue_gate_result": candidate.get("review_queue_gate_result"),
+        "alert_gate_result": candidate.get("alert_gate_result"),
+        "governance_audit_id": candidate.get("governance_audit_id"),
+        "institutional_model_family": candidate.get("institutional_model_family"),
+        "institutional_model_purpose": candidate.get("institutional_model_purpose"),
+        "institutional_model_status": candidate.get("institutional_model_status"),
+        "institutional_model_evidence_score": candidate.get("institutional_model_evidence_score"),
+        "institutional_model_risk_rating": candidate.get("institutional_model_risk_rating"),
+        "institutional_model_router_reason": candidate.get("institutional_model_router_reason"),
+        "portfolio_construction_score": candidate.get("portfolio_construction_score"),
+        "risk_attribution_score": candidate.get("risk_attribution_score"),
+        "execution_cost_score": candidate.get("execution_cost_score"),
+        "liability_alignment_score": candidate.get("liability_alignment_score"),
+        "macro_regime_score": candidate.get("macro_regime_score"),
+        "tax_aware_score": candidate.get("tax_aware_score"),
+        "governance_score": candidate.get("governance_score"),
+        "movement": candidate.get("movement", {}),
+        "field_scores": candidate.get("field_scores", {}),
+        "opportunity_score": round(opportunity_score, 2),
+        "confidence": candidate.get("confidence"),
+        "risk": candidate.get("risk"),
+        "confidence_score": candidate.get("confidence_score"),
+        "risk_score": candidate.get("risk_score"),
+        "review_priority_score": candidate.get("review_priority_score"),
+        "liquidity": candidate.get("liquidity", 0.5),
+        "liquidity_score": candidate.get("liquidity_score"),
+        "liquidity_policy_version": candidate.get("liquidity_policy_version"),
+        "liquidity_source": candidate.get("liquidity_source"),
+        "liquidity_tier": candidate.get("liquidity_tier"),
+        "liquidity_reason": candidate.get("liquidity_reason"),
+        "low_liquidity_flag": bool(candidate.get("low_liquidity_flag", candidate.get("low_liquidity", False))),
+        "missing_liquidity_flag": bool(candidate.get("missing_liquidity_flag", candidate.get("missing_liquidity", False))),
+        "missing_liquidity": bool(candidate.get("missing_liquidity", candidate.get("missing_liquidity_flag", False))),
+        "liquidity_threshold_used": candidate.get("liquidity_threshold_used"),
+        "spread_score": candidate.get("spread_score"),
+        "pricing_quality_score": candidate.get("pricing_quality_score"),
+        "close_time_score": candidate.get("close_time_score"),
+        "market_structure_score": candidate.get("market_structure_score"),
+        "low_liquidity": bool(candidate.get("low_liquidity", False)),
+        "volume": candidate.get("volume"),
+        "open_interest": candidate.get("open_interest"),
+        "recommended_action": recommended_action,
+        "recheck_after_seconds": cadence["next_check_seconds"],
+        "stale_after_seconds": int(candidate.get("stale_after_seconds") or max(300, cadence["next_check_seconds"] * 4)),
+        "human_approval_required": True,
+        "auto_execution_enabled": False,
+        "execution_allowed": False,
+        "recommendation_status": candidate.get("recommendation_status", "review_only"),
+        "reason": candidate.get("reason", ""),
+        "reason_codes": list(candidate.get("reason_codes") or ([] if not candidate.get("reason") else [candidate.get("reason")])),
+        "blockers": list(candidate.get("blockers") or []),
+        "top_reasons": list(candidate.get("top_reasons") or [])[:5],
+        "blocked_reasons": list(candidate.get("blocked_reasons") or []),
+        "provider": candidate.get("provider", "unknown"),
+        "market_close_at": candidate.get("market_close_at"),
+        "status": "active",
+    }
+
+
+def upsert_review_item(config: dict[str, Any], item: dict[str, Any]) -> dict[str, Any]:
+    items = load_review_queue(config)
+    by_id = {existing["id"]: existing for existing in items}
+    existing = by_id.get(item["id"])
+    if existing:
+        item["created_at"] = existing.get("created_at", item["created_at"])
+    by_id[item["id"]] = item
+    ordered = sorted(by_id.values(), key=lambda row: (-float(row.get("opportunity_score", 0)), row.get("id", "")))
+    save_review_queue(config, ordered)
+    return item
+
+
+def rescore_review_queue(config: dict[str, Any]) -> list[dict[str, Any]]:
+    thresholds = config["score_thresholds"]
+    items = load_review_queue(config)
+    current_items: list[dict[str, Any]] = []
+    for item in items:
+        age_seconds = seconds_since(item.get("updated_at")) or 0
+        decayed_score = apply_score_decay(float(item.get("opportunity_score", 0)), age_seconds)
+        item["opportunity_score"] = decayed_score
+        item["updated_at"] = utc_now_iso()
+
+        if str(item.get("human_decision") or "").lower() == "rejected":
+            item["status"] = "inactive"
+            item["recommended_action"] = "no_bet"
+        elif is_market_closed(item):
+            item["status"] = "inactive"
+            item["recommended_action"] = "no_action"
+            if "market_closed" not in item["blockers"]:
+                item["blockers"].append("market_closed")
+        elif is_stale(item):
+            item["status"] = "inactive"
+            item["recommended_action"] = "no_action"
+            if "stale_data" not in item["blockers"]:
+                item["blockers"].append("stale_data")
+        elif decayed_score < float(thresholds["ignore_below"]):
+            item["status"] = "inactive"
+            item["recommended_action"] = "no_action"
+            if "score_decay_below_threshold" not in item["blockers"]:
+                item["blockers"].append("score_decay_below_threshold")
+        else:
+            item["status"] = "active"
+            item["recommended_action"] = classify_opportunity(decayed_score, thresholds)
+            cadence = choose_next_check_seconds(
+                market_type=str(item.get("market_type") or "news_events"),
+                opportunity_score=decayed_score,
+                provider_name=str(item.get("provider") or "news_provider"),
+                config=config,
+                low_liquidity=bool(item.get("low_liquidity", item.get("low_liquidity_flag", False))),
+                market_closed=False,
+            )
+            item["recheck_after_seconds"] = cadence["next_check_seconds"]
+            current_items.append(item)
+
+    ordered = sorted(items, key=lambda row: (-float(row.get("opportunity_score", 0)), row.get("id", "")))
+    save_review_queue(config, ordered)
+    return sorted(current_items, key=lambda row: (-float(row.get("opportunity_score", 0)), row.get("id", "")))
+
+
+def list_active_review_items(config: dict[str, Any]) -> list[dict[str, Any]]:
+    return rescore_review_queue(config)
+
+
+def filter_review_items(
+    items: list[dict[str, Any]],
+    *,
+    provider: str = "all",
+    market_type: str = "all",
+    reason: str | None = None,
+) -> list[dict[str, Any]]:
+    filtered = list(items)
+    provider_key = str(provider or "all").lower()
+    market_key = str(market_type or "all").lower()
+    reason_key = str(reason or "").strip().lower()
+    if provider_key != "all":
+        filtered = [
+            item
+            for item in filtered
+            if str(item.get("provider_id", item.get("provider", ""))).lower() == provider_key
+        ]
+    if market_key != "all":
+        filtered = [item for item in filtered if str(item.get("market_type", "")).lower() == market_key]
+    if reason_key:
+        filtered = [
+            item
+            for item in filtered
+            if reason_key == str(item.get("reason", "")).lower()
+            or reason_key in {str(code).lower() for code in (item.get("reason_codes") or [])}
+        ]
+    return filtered
+
+
+def summarize_review_items(items: list[dict[str, Any]], *, rejected_reason_counts: dict[str, int] | None = None) -> dict[str, Any]:
+    provider_counts: dict[str, int] = {}
+    for item in items:
+        provider_id = str(item.get("provider_id", item.get("provider", "unknown")))
+        provider_counts[provider_id] = provider_counts.get(provider_id, 0) + 1
+    kalshi_items = [item for item in items if item.get("provider_id") == "kalshi_prediction_market"]
+    liquidity_tier_counts: dict[str, int] = {}
+    review_priority_scores: list[float] = []
+    for item in items:
+        tier = item.get("liquidity_tier")
+        if tier:
+            tier_key = str(tier)
+            liquidity_tier_counts[tier_key] = liquidity_tier_counts.get(tier_key, 0) + 1
+        try:
+            review_priority_scores.append(float(item.get("review_priority_score")))
+        except (TypeError, ValueError):
+            continue
+    average_priority = round(sum(review_priority_scores) / len(review_priority_scores), 4) if review_priority_scores else 0.0
+    summary = {
+        "total_count": len(items),
+        "provider_counts": provider_counts,
+        "kalshi_candidate_count": len(kalshi_items),
+        "sharp_candidate_count": len([item for item in items if item.get("provider_id") == "sharp_sportsbook"]),
+        "prediction_market_count": len([item for item in items if item.get("market_type") == "prediction_market"]),
+        "sportsbook_count": len([item for item in items if item.get("market_type") != "prediction_market"]),
+        "review_only_count": len([item for item in items if item.get("recommendation_status") == "review_only"]),
+        "execution_allowed_count": len([item for item in items if bool(item.get("execution_allowed"))]),
+        "low_liquidity_count": len([item for item in items if bool(item.get("low_liquidity", item.get("low_liquidity_flag", False)))]),
+        "missing_liquidity_count": len([item for item in items if bool(item.get("missing_liquidity", item.get("missing_liquidity_flag", False)))]),
+        "liquidity_tier_counts": liquidity_tier_counts,
+        "high_priority_count": len([item for item in items if float(item.get("review_priority_score") or 0.0) >= 70.0]),
+        "average_review_priority_score": average_priority,
+        "flagged_low_liquidity_count": len([item for item in items if bool(item.get("low_liquidity"))]),
+        "flagged_partial_pricing_count": len([item for item in items if bool(item.get("partial_pricing"))]),
+        "rejected_count": int(sum((rejected_reason_counts or {}).values())),
+        "rejected_reason_counts": dict(rejected_reason_counts or {}),
+    }
+    return summary

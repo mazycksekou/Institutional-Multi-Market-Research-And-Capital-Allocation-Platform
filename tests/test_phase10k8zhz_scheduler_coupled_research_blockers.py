@@ -42,5 +42,6 @@ def test_scheduler_coupled_sources_are_local_and_deferred() -> None:
         assert "apscheduler" not in source
         assert "schedule(" not in source
 
-    assert (ROOT / "src" / "automation_scheduler_legacy").exists()
-    assert (ROOT / "src" / "automation_scheduler_legacy" / "feature_ablation_lab.py").exists()
+    assert not (ROOT / "src" / "automation_scheduler_legacy").exists()
+    assert (ROOT / "src" / "research" / "feature_ablation_lab.py").exists()
+

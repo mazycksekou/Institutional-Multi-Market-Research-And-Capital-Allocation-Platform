@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
-from src.automation_scheduler_legacy.deepseek_data_pull_check import build_deepseek_data_pull_check_report, provider_call_gate
+from src.ai.deepseek_data_pull_check import build_deepseek_data_pull_check_report, provider_call_gate
 from src.services.streamlit_dashboard_facade import build_candidate_report, evaluate_outcome_evidence, run_tiny_read_only_settlement_check
 from tests.support.action_imports import app
 

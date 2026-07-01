@@ -5,7 +5,7 @@ from pathlib import Path
 
 REPORT_PATH = Path("PHASE10K7A_FULL_SUITE_READINESS_OWNERSHIP_MAP.md")
 STREAMLIT_APP_PATH = Path("streamlit_app.py")
-DASHBOARD_DATA_PATH = Path("src/automation_scheduler_legacy/streamlit_dashboard_data.py")
+DASHBOARD_DATA_PATH = Path("src/services/streamlit_dashboard_data.py")
 
 
 def read_text(path: Path) -> str:

@@ -119,7 +119,7 @@ def load_historical_rows(source: str | Path | Sequence[Mapping[str, Any]] | None
 
 
 def replay_rows(rows: Sequence[Mapping[str, Any]], model_id: str = "historical_replay") -> dict[str, Any]:
-    from src.automation_scheduler_legacy.backtesting_engine import replay_rows as _legacy_replay_rows
+    from src.backtesting.backtesting_engine import replay_rows as _legacy_replay_rows
 
     return _legacy_replay_rows([dict(row) for row in _as_rows(rows)], model_id=model_id)
 
@@ -131,7 +131,7 @@ def run_backtest(
     base_data_dir: str | Path | None = None,
     strategy_config: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
-    from src.automation_scheduler_legacy.backtesting_engine import run_backtest as _legacy_run_backtest
+    from src.backtesting.backtesting_engine import run_backtest as _legacy_run_backtest
 
     return _legacy_run_backtest(
         model_id=model_id,
@@ -147,7 +147,7 @@ def generate_backtest_report(
     rows: Sequence[Mapping[str, Any]],
     base_data_dir: str | Path | None = None,
 ) -> dict[str, Any]:
-    from src.automation_scheduler_legacy.backtesting_engine import (
+    from src.backtesting.backtesting_engine import (
         generate_backtest_report as _legacy_generate_backtest_report,
     )
 

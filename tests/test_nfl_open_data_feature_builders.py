@@ -4,7 +4,7 @@ import unittest
 from pathlib import Path
 
 from src.services.streamlit_dashboard_facade import FEATURE_BUILDER_SPECS, build_expanded_feature_readiness, build_nfl_feature_builder_report, nfl_feature_availability_flags
-from src.automation_scheduler_legacy.nfl_open_data_feature_readiness import build_nfl_feature_readiness_report, write_nfl_feature_readiness_report
+from src.providers.nfl_open_data_feature_readiness import build_nfl_feature_readiness_report, write_nfl_feature_readiness_report
 
 
 def _write_validated(base, source_id, *, fields, records=100, seasons=("2023", "2024")):

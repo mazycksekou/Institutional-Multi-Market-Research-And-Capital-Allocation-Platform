@@ -3,37 +3,69 @@ from __future__ import annotations
 """Import-safe dashboard compatibility facade.
 
 This module preserves the dashboard-facing symbol surface while avoiding any
-top-level import of the removed ``automation_scheduler`` package.  It prefers
-canonical ``src.*`` modules and only falls back to the relocated legacy code
-under ``src.automation_scheduler_legacy`` when a symbol is actually requested.
+top-level import of the removed scheduler bridge.  It prefers canonical
+``src.*`` modules and only falls back to relocated compatibility modules when a
+symbol is actually requested.
 """
 
 from importlib import import_module
+from functools import lru_cache
+from pathlib import Path
 from typing import Any, Mapping
 
-from src.automation_scheduler_legacy.local_sports_history_audit import (
+from src.market_intelligence.local_sports_history_audit import (
     ALLOWED_BLOCKED_REASONS as _LEGACY_ALLOWED_BLOCKED_REASONS,
 )
 
 
 _CANONICAL_MODULES: tuple[str, ...] = (
     "src.analytics",
+    "src.analytics.calibration",
+    "src.analytics.calibration_collector",
+    "src.analytics.intelligence_readiness_report",
+    "src.analytics.institutional_cross_asset_calibration",
+    "src.analytics.institutional_cross_asset_reports",
+    "src.analytics.manifold_calibration",
+    "src.analytics.manifold_review_queue",
+    "src.analytics.micro_outcome_calibration",
+    "src.analytics.pattern_review_queue",
+    "src.analytics.performance_metrics",
+    "src.analytics.report_writer",
+    "src.analytics.strategy_readiness_report",
+    "src.analytics.review_queue",
     "src.backtesting.dataset_builder",
     "src.backtesting.engine",
     "src.backtesting.historical_bridge",
     "src.backtesting.strategy_profiles",
+    "src.brokerage.paper_decision_ledger",
     "src.data.field_catalog",
     "src.data.historical_odds",
     "src.data.historical_sources",
     "src.data.line_movement",
+    "src.data.odds_math",
+    "src.data.outcome_migration",
+    "src.data.data_availability_tiers",
+    "src.data.data_source_registry",
+    "src.data.data_source_research_lanes",
     "src.data.source_event_links",
+    "src.market_intelligence.data_intelligence_registry",
+    "src.services.collector_scheduled_runner",
+    "src.services.execution_service",
+    "src.services.ledger_service",
+    "src.services.outcome_store",
+    "src.services.settlement_service",
     "src.market_intelligence.feature_packs",
     "src.market_intelligence.impact",
     "src.market_intelligence.manifold",
     "src.market_intelligence.options",
     "src.market_intelligence.response_compactor",
     "src.market_intelligence.sports",
+    "src.market_intelligence.institutional_cross_asset_lab",
+    "src.market_intelligence.model_input_coverage",
     "src.providers",
+    "src.providers.health",
+    "src.providers.registry",
+    "src.providers.ncaaf_collegefootballdata_adapter",
     "src.security.ai_provider_security",
     "src.security.hard_gate_policy",
     "src.security.owner_approval_gate",
@@ -44,50 +76,121 @@ _CANONICAL_MODULES: tuple[str, ...] = (
     "src.research.history",
     "src.services.ops_workflow",
     "src.services.runtime_shared",
+    "src.services.system_health",
     "src.services.automation_scheduler_facade",
+    "src.ai.deepseek_daily_report",
+    "src.ai.deepseek_disagreement_queue",
+    "src.ai.deepseek_profit_lab",
+    "src.ai.deepseek_reviewer",
+    "src.ai.institutional_deepseek_review",
+    "src.services.scheduler_runner",
     "src.services.security_readiness",
 )
 
+_MODULE_ALIASES: dict[str, str] = {
+    "append_audit_record": "src.services.audit_log",
+    "read_audit_records": "src.services.audit_log",
+    "ops_workflow": "src.services.ops_workflow",
+    "ncaaf_collegefootballdata_adapter": "src.providers.ncaaf_collegefootballdata_adapter",
+    "odds_math": "src.data.odds_math",
+    "outcome_migration": "src.data.outcome_migration",
+    "quality_tier": "src.market_intelligence.institutional_cross_asset_scores",
+}
+
 _LEGACY_MODULES: tuple[str, ...] = (
     "src.security.ai_provider_security",
-    "src.automation_scheduler_legacy.causal_scaffold",
-    "src.automation_scheduler_legacy.candlestick_manifold_detector",
-    "src.automation_scheduler_legacy.cross_asset_intelligence_router",
-    "src.automation_scheduler_legacy.cross_asset_manifold_router",
-    "src.automation_scheduler_legacy.data_intelligence_registry",
-    "src.automation_scheduler_legacy.feature_ablation_lab",
-    "src.automation_scheduler_legacy.field_scorecard",
-    "src.automation_scheduler_legacy.graph_relationship_mapper",
+    "src.research.causal_scaffold",
+    "src.market_intelligence.candlestick_manifold_detector",
+    "src.market_intelligence.cross_asset_intelligence_router",
+    "src.market_intelligence.cross_asset_manifold_router",
+    "src.market_intelligence.data_intelligence_registry",
+    "src.research.feature_ablation_lab",
+    "src.analytics.field_scorecard",
+    "src.market_intelligence.graph_relationship_mapper",
     "src.security.hard_gate_policy",
-    "src.automation_scheduler_legacy.historical_backtest_bridge",
-    "src.automation_scheduler_legacy.historical_line_movement",
-    "src.automation_scheduler_legacy.historical_odds_importers",
-    "src.automation_scheduler_legacy.historical_odds_sqlite",
-    "src.automation_scheduler_legacy.historical_data_sources",
-    "src.automation_scheduler_legacy.institutional_cross_asset_adapters",
-    "src.automation_scheduler_legacy.institutional_cross_asset_reports",
-    "src.automation_scheduler_legacy.line_movement_data_quality_dashboard",
-    "src.automation_scheduler_legacy.local_sports_history_audit",
-    "src.automation_scheduler_legacy.manifold_cluster_registry",
-    "src.automation_scheduler_legacy.market_state_manifold",
-    "src.automation_scheduler_legacy.model_data_field_catalog",
-    "src.automation_scheduler_legacy.nfl_coaching_adapters",
-    "src.automation_scheduler_legacy.nfl_coaching_sources",
-    "src.automation_scheduler_legacy.nfl_open_data_adapters",
-    "src.automation_scheduler_legacy.nfl_open_data_sources",
-    "src.automation_scheduler_legacy.pattern_calibration",
-    "src.automation_scheduler_legacy.pattern_review_queue",
-    "src.automation_scheduler_legacy.performance_metrics",
-    "src.automation_scheduler_legacy.representation_feature_builder",
+    "src.data.historical_backtest_bridge",
+    "src.data.historical_line_movement",
+    "src.data.historical_odds_importers",
+    "src.data.historical_odds_sqlite",
+    "src.data.historical_data_sources",
+    "src.providers.institutional_cross_asset_adapters",
+    "src.analytics.institutional_cross_asset_reports",
+    "src.data.line_movement_data_quality_dashboard",
+    "src.market_intelligence.local_sports_history_audit",
+    "src.market_intelligence.manifold_cluster_registry",
+    "src.market_intelligence.market_state_manifold",
+    "src.data.model_data_field_catalog",
+    "src.providers.nfl_coaching_adapters",
+    "src.market_intelligence.nfl_coaching_sources",
+    "src.providers.nfl_open_data_adapters",
+    "src.data.nfl_open_data_sources",
+    "src.research.pattern_calibration",
+    "src.analytics.pattern_review_queue",
+    "src.analytics.performance_metrics",
+    "src.research.representation_feature_builder",
     "src.services.security_readiness",
-    "src.automation_scheduler_legacy.strategy_readiness_report",
-    "src.automation_scheduler_legacy.strategy_router",
-    "src.automation_scheduler_legacy.strategy_maturity",
-    "src.automation_scheduler_legacy.source_event_link_resolver",
+    "src.analytics.strategy_readiness_report",
+    "src.core.strategy_router",
+    "src.core.strategy_maturity",
+    "src.data.source_event_link_resolver",
     "src.services.scheduler_config",
-    "src.automation_scheduler_legacy.streamlit_dashboard_data",
-    "src.automation_scheduler_legacy.zero_dte_fixture_template",
+    "src.services.streamlit_dashboard_data",
+    "src.data.zero_dte_fixture_template",
 )
+
+_DISCOVERY_PACKAGES: tuple[str, ...] = (
+    "src.analytics",
+    "src.backtesting",
+    "src.brokerage",
+    "src.core",
+    "src.data",
+    "src.market_intelligence",
+    "src.providers",
+    "src.research",
+    "src.security",
+    "src.services",
+    "src.ai",
+)
+
+
+@lru_cache(maxsize=1)
+def _discovered_module_names() -> tuple[str, ...]:
+    root = Path(__file__).resolve().parents[2]
+    discovered: list[str] = []
+    for package in _DISCOVERY_PACKAGES:
+        package_path = root / Path(*package.split("."))
+        if not package_path.exists():
+            continue
+        for path in sorted(package_path.rglob("*.py")):
+            if path.name == "__init__.py":
+                continue
+            try:
+                module = path.relative_to(root).with_suffix("").as_posix().replace("/", ".")
+            except Exception:
+                continue
+            if module.startswith("src.api."):
+                continue
+            if module == __name__:
+                continue
+            discovered.append(module)
+    return tuple(dict.fromkeys(discovered))
+
+
+@lru_cache(maxsize=1)
+def _discovered_symbol_index() -> dict[str, str]:
+    index: dict[str, str] = {}
+    for module_name in _CANONICAL_MODULES + _discovered_module_names() + _LEGACY_MODULES:
+        if module_name == __name__:
+            continue
+        try:
+            module = import_module(module_name)
+        except Exception:
+            continue
+        for attr in dir(module):
+            if attr.startswith("_"):
+                continue
+            index.setdefault(attr, module_name)
+    return index
 
 
 SAMPLE_DRY_RUN_PAYLOAD: dict[str, Any] = {
@@ -124,29 +227,29 @@ def validate_payload(payload: Mapping[str, Any] | None) -> dict[str, Any]:
 
 
 def nfl_coaching_sources() -> list[dict[str, Any]]:
-    from src.automation_scheduler_legacy.nfl_coaching_sources import nfl_coaching_sources as legacy_nfl_coaching_sources
+    from src.market_intelligence.nfl_coaching_sources import nfl_coaching_sources as legacy_nfl_coaching_sources
 
     return legacy_nfl_coaching_sources()
 
 
 def nfl_open_data_sources() -> list[dict[str, Any]]:
-    from src.automation_scheduler_legacy.nfl_open_data_sources import nfl_open_data_sources as legacy_nfl_open_data_sources
+    from src.data.nfl_open_data_sources import nfl_open_data_sources as legacy_nfl_open_data_sources
 
     return legacy_nfl_open_data_sources()
 
 
 def adapter_by_id(source_id: str) -> Any:
-    from src.automation_scheduler_legacy.nfl_coaching_adapters import adapter_by_id as coaching_adapter_by_id
-    from src.automation_scheduler_legacy.nfl_open_data_adapters import adapter_by_id as open_data_adapter_by_id
+    from src.providers.nfl_coaching_adapters import adapter_by_id as coaching_adapter_by_id
+    from src.providers.nfl_open_data_adapters import adapter_by_id as open_data_adapter_by_id
 
     return coaching_adapter_by_id(source_id) or open_data_adapter_by_id(source_id)
 
 
 def calculate_performance_metrics(entries: list[dict[str, Any]] | None) -> dict[str, Any]:
-    from src.automation_scheduler_legacy.pattern_calibration import (
+    from src.research.pattern_calibration import (
         calculate_performance_metrics as pattern_calibration_metrics,
     )
-    from src.automation_scheduler_legacy.performance_metrics import (
+    from src.analytics.performance_metrics import (
         calculate_performance_metrics as paper_performance_metrics,
     )
 
@@ -186,7 +289,7 @@ def calculate_performance_metrics(entries: list[dict[str, Any]] | None) -> dict[
 
 
 def load_pattern_review_queue(*, base_data_dir: str | None = None, limit: int | None = None) -> dict[str, Any]:
-    from src.automation_scheduler_legacy.pattern_review_queue import (
+    from src.analytics.pattern_review_queue import (
         load_pattern_review_queue as legacy_load_pattern_review_queue,
     )
 
@@ -206,7 +309,7 @@ def load_pattern_review_queue(*, base_data_dir: str | None = None, limit: int | 
 
 
 def build_daily_report_payload(run_result: dict[str, Any]) -> dict[str, Any]:
-    from src.automation_scheduler_legacy.institutional_cross_asset_reports import (
+    from src.analytics.institutional_cross_asset_reports import (
         build_daily_report_payload as legacy_build_daily_report_payload,
     )
 
@@ -214,7 +317,7 @@ def build_daily_report_payload(run_result: dict[str, Any]) -> dict[str, Any]:
 
 
 def render_markdown_report(report: dict[str, Any]) -> str:
-    from src.automation_scheduler_legacy.institutional_cross_asset_reports import (
+    from src.analytics.institutional_cross_asset_reports import (
         render_markdown_report as legacy_render_markdown_report,
     )
 
@@ -223,12 +326,12 @@ def render_markdown_report(report: dict[str, Any]) -> str:
 
 def write_daily_report(*args: Any, **kwargs: Any) -> dict[str, Any]:
     if args and isinstance(args[0], Mapping):
-        from src.automation_scheduler_legacy.institutional_cross_asset_reports import (
+        from src.analytics.institutional_cross_asset_reports import (
             write_daily_report as legacy_write_institutional_daily_report,
         )
 
         return legacy_write_institutional_daily_report(*args, **kwargs)
-    from src.automation_scheduler_legacy.calibration_collector import (
+    from src.analytics.calibration_collector import (
         write_daily_report as legacy_write_calibration_daily_report,
     )
 
@@ -236,7 +339,7 @@ def write_daily_report(*args: Any, **kwargs: Any) -> dict[str, Any]:
 
 
 def build_local_sports_history_audit_report(*args: Any, **kwargs: Any) -> dict[str, Any]:
-    from src.automation_scheduler_legacy.local_sports_history_audit import (
+    from src.market_intelligence.local_sports_history_audit import (
         build_local_sports_history_audit_report as legacy_build_local_sports_history_audit_report,
     )
 
@@ -244,14 +347,55 @@ def build_local_sports_history_audit_report(*args: Any, **kwargs: Any) -> dict[s
 
 
 def _resolve_symbol(name: str) -> Any:
+    module_alias = _MODULE_ALIASES.get(name)
+    if module_alias is not None:
+        module = import_module(module_alias)
+        if hasattr(module, name):
+            value = getattr(module, name)
+            globals()[name] = value
+            return value
+        globals()[name] = module
+        return module
+    module_name = _discovered_symbol_index().get(name)
+    if module_name is not None:
+        try:
+            module = import_module(module_name)
+        except Exception:
+            pass
+        else:
+            if hasattr(module, name):
+                value = getattr(module, name)
+                globals()[name] = value
+                return value
     for module_name in _CANONICAL_MODULES:
-        module = import_module(module_name)
+        if module_name == __name__:
+            continue
+        try:
+            module = import_module(module_name)
+        except Exception:
+            continue
+        if hasattr(module, name):
+            value = getattr(module, name)
+            globals()[name] = value
+            return value
+    for module_name in _discovered_module_names():
+        if module_name == __name__:
+            continue
+        try:
+            module = import_module(module_name)
+        except Exception:
+            continue
         if hasattr(module, name):
             value = getattr(module, name)
             globals()[name] = value
             return value
     for module_name in _LEGACY_MODULES:
-        module = import_module(module_name)
+        if module_name == __name__:
+            continue
+        try:
+            module = import_module(module_name)
+        except ModuleNotFoundError:
+            continue
         if hasattr(module, name):
             value = getattr(module, name)
             globals()[name] = value
@@ -266,6 +410,8 @@ def __getattr__(name: str) -> Any:
 def __dir__() -> list[str]:
     names = set(globals())
     for module_name in _CANONICAL_MODULES + _LEGACY_MODULES:
+        if module_name == __name__:
+            continue
         try:
             module = import_module(module_name)
         except Exception:

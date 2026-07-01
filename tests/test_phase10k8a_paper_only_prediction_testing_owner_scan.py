@@ -5,7 +5,7 @@ from pathlib import Path
 
 REPORT_PATH = Path("PHASE10K8A_PAPER_ONLY_PREDICTION_TESTING_OWNER_SCAN.md")
 STREAMLIT_APP_PATH = Path("streamlit_app.py")
-DASHBOARD_DATA_PATH = Path("src/automation_scheduler_legacy/streamlit_dashboard_data.py")
+DASHBOARD_DATA_PATH = Path("src/services/streamlit_dashboard_data.py")
 PHASE10K6K_TEST_PATH = Path("tests/test_phase10k6k_controlled_dashboard_shell_review.py")
 
 

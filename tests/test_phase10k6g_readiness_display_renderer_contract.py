@@ -2,7 +2,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-DATA_HELPER = ROOT / "src" / "automation_scheduler_legacy" / "streamlit_dashboard_data.py"
+DATA_HELPER = ROOT / "src" / "services" / "streamlit_dashboard_data.py"
 REPORT = ROOT / "PHASE10K6G_READINESS_DISPLAY_RENDERER_CONTRACT.md"
 STREAMLIT_APP = ROOT / "streamlit_app.py"
 

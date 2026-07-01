@@ -29,7 +29,7 @@ class TestPhase10K8ZL7MarketIntelligenceSchedulerDeletion(unittest.TestCase):
             'src/automation_scheduler_legacy/cross_asset_embedding_router.py',
         ]
         for rel_path in candidate_paths:
-            self.assertTrue(Path(rel_path).exists(), rel_path)
+            self.assertFalse(Path(rel_path).exists(), rel_path)
 
     def test_canonical_market_intelligence_remains_safe(self):
         report = build_market_intelligence_report({"market": "prediction markets", "confidence": 45})

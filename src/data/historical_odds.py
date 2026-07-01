@@ -136,7 +136,7 @@ def odds_to_implied_probability(odds: Any) -> float:
 
 
 def validate_canonical_historical_odds_row(row: Mapping[str, Any]) -> dict[str, Any]:
-    from src.automation_scheduler_legacy.historical_odds_importers import (
+    from src.data.historical_odds_importers import (
         validate_canonical_historical_odds_row as legacy_validate_canonical_historical_odds_row,
     )
 
@@ -283,7 +283,7 @@ def _build_generic_rows(
 
 
 def import_historical_odds_file(*args: Any, source_file: str | None = None) -> list[dict[str, Any]]:
-    from src.automation_scheduler_legacy.historical_odds_importers import (
+    from src.data.historical_odds_importers import (
         import_historical_odds_file as legacy_import_historical_odds_file,
     )
 

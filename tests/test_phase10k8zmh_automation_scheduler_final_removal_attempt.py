@@ -111,4 +111,4 @@ def test_phase10k8zmh_automation_scheduler_final_removal_attempt(monkeypatch: py
         assert imported.__name__ == module_name
 
     assert not (ROOT / "automation_scheduler").exists()
-    assert (ROOT / "src" / "automation_scheduler_legacy").is_dir()
+    assert not (ROOT / "src" / "automation_scheduler_legacy").exists()

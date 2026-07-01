@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 import re
 
-from src.automation_scheduler_legacy.zero_dte_fixture_template import build_zero_dte_fixture_template_row, build_zero_dte_paper_pipeline_result
+from src.data.zero_dte_fixture_template import build_zero_dte_fixture_template_row, build_zero_dte_paper_pipeline_result
 
 
 ROOT = Path(__file__).resolve().parents[1]

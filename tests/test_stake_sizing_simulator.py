@@ -1,6 +1,6 @@
 import unittest
 
-from src.automation_scheduler_legacy.stake_sizing_simulator import simulate_stake_plan
+from src.core.stake_sizing_simulator import simulate_stake_plan
 
 
 class TestStakeSizingSimulator(unittest.TestCase):

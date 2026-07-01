@@ -1,7 +1,7 @@
 from pathlib import Path
 
-import src.automation_scheduler_legacy.zero_dte_fixture_template as zt
-import src.automation_scheduler_legacy.streamlit_dashboard_data as sd
+import src.data.zero_dte_fixture_template as zt
+import src.services.streamlit_dashboard_data as sd
 
 
 ROOT = Path(__file__).resolve().parents[1]

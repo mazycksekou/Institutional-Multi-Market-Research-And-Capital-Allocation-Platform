@@ -20,7 +20,7 @@ class TestOutcomeReconciliation(unittest.TestCase):
         }
 
     def test_reconciliation_without_base_url_builds_local_package_only(self):
-        with patch('src.automation_scheduler_legacy.outcome_migration.build_kalshi_outcome_migration_package', return_value=self._package()):
+        with patch('src.data.outcome_migration.build_kalshi_outcome_migration_package', return_value=self._package()):
             result = ops_workflow.check_outcome_reconciliation(None)
 
         self.assertTrue(result["ok"])
@@ -45,9 +45,9 @@ class TestOutcomeReconciliation(unittest.TestCase):
                 "render_outcomes_after_import_if_persisted": 6,
             },
         }
-        with patch('src.automation_scheduler_legacy.outcome_migration.build_kalshi_outcome_migration_package', return_value=self._package()):
-            with patch('src.automation_scheduler_legacy.ops_workflow.safe_post_json', return_value=dry_run):
-                with patch('src.automation_scheduler_legacy.ops_workflow.check_calibration_status', return_value={"matched_outcomes_count": 4}):
+        with patch('src.data.outcome_migration.build_kalshi_outcome_migration_package', return_value=self._package()):
+            with patch('src.services.ops_workflow.safe_post_json', return_value=dry_run):
+                with patch('src.services.ops_workflow.check_calibration_status', return_value={"matched_outcomes_count": 4}):
                     result = ops_workflow.check_outcome_reconciliation("https://example.test")
 
         self.assertEqual(result["status"], "local_render_state_mismatch")
@@ -81,9 +81,9 @@ class TestOutcomeReconciliation(unittest.TestCase):
         }
         package = self._package()
         package["records"] = package["records"][:1]
-        with patch('src.automation_scheduler_legacy.outcome_migration.build_kalshi_outcome_migration_package', return_value=package):
-            with patch('src.automation_scheduler_legacy.ops_workflow.safe_post_json', return_value=dry_run):
-                with patch('src.automation_scheduler_legacy.ops_workflow.check_calibration_status', return_value={"matched_outcomes_count": 4}):
+        with patch('src.data.outcome_migration.build_kalshi_outcome_migration_package', return_value=package):
+            with patch('src.services.ops_workflow.safe_post_json', return_value=dry_run):
+                with patch('src.services.ops_workflow.check_calibration_status', return_value={"matched_outcomes_count": 4}):
                     result = ops_workflow.check_outcome_reconciliation("https://example.test")
 
         self.assertEqual(result["unmatched_count"], 1)

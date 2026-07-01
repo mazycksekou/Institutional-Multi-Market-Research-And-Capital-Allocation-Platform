@@ -18,8 +18,8 @@ DELETED = [
 ]
 
 PRESERVED = [
-    ROOT / "src" / "automation_scheduler_legacy" / "paper_trade_ledger.py",
-    ROOT / "src" / "automation_scheduler_legacy" / "paper_decision_ledger.py",
+    ROOT / "src" / "brokerage" / "paper_trade_ledger.py",
+    ROOT / "src" / "brokerage" / "paper_decision_ledger.py",
     ROOT / "src" / "brokerage" / "settlement.py",
     ROOT / "src" / "services" / "settlement_service.py",
     ROOT / "src" / "services" / "ledger_service.py",

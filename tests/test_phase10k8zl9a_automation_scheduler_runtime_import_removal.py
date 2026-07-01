@@ -62,7 +62,7 @@ def test_phase10k8zl9a_runtime_import_removal():
         assert modules.intersection(expected), f"canonical replacement missing in {path}"
 
     assert not Path("automation_scheduler").exists()
-    assert Path("src/automation_scheduler_legacy/__init__.py").exists()
+    assert not Path("src/automation_scheduler_legacy/__init__.py").exists()
 
     for module_name in REPLACEMENT_MODULES:
         module = import_module(module_name)

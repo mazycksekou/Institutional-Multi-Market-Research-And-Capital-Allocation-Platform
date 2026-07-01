@@ -35,29 +35,29 @@ def test_scheduler_canonical_bridge_modules_import_safely() -> None:
         "src.services.odds_runtime_bridge",
         "src.providers.registry",
         "src.providers.health",
-        'src.automation_scheduler_legacy',
-        'src.automation_scheduler_legacy.scheduler_runner',
-        'src.automation_scheduler_legacy.calibration_collector',
+        "src.services.automation_scheduler_facade",
+        'src.services.scheduler_runner',
+        'src.analytics.calibration_collector',
         "src.services.settlement_service",
-        'src.automation_scheduler_legacy.prediction_market_outcome_candidates',
-        'src.automation_scheduler_legacy.streamlit_dashboard_data',
+        'src.market_intelligence.prediction_market_outcome_candidates',
+        'src.services.streamlit_dashboard_data',
     ]
     imported = [importlib.import_module(name) for name in modules]
     assert [module.__name__ for module in imported] == modules
 
 
 def test_scheduler_package_still_points_to_canonical_bridges() -> None:
-    text = (ROOT / 'src/automation_scheduler_legacy/__init__.py').read_text(encoding="utf-8")
+    text = (ROOT / 'src/services/automation_scheduler_facade.py').read_text(encoding="utf-8")
     assert "from src.services.odds_runtime_bridge import" in text
     assert "from src.services.prediction_market_runtime_bridge import" in text
 
 
 def test_scheduler_source_scan_shows_canonical_bridge_dependencies() -> None:
     for relpath in [
-        'src/automation_scheduler_legacy/scheduler_runner.py',
-        'src/automation_scheduler_legacy/calibration_collector.py',
+        'src/services/scheduler_runner.py',
+        'src/analytics/calibration_collector.py',
         "src/services/settlement_service.py",
-        'src/automation_scheduler_legacy/prediction_market_outcome_candidates.py',
+        'src/market_intelligence/prediction_market_outcome_candidates.py',
     ]:
         text = (ROOT / relpath).read_text(encoding="utf-8")
         assert "src.services.prediction_market_runtime_bridge" in text or "src.services.odds_runtime_bridge" in text or "src.services.settlement_service" in text

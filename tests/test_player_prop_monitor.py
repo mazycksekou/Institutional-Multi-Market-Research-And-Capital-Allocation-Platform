@@ -1,6 +1,6 @@
 import unittest
 
-from src.automation_scheduler_legacy.player_prop_monitor import monitor_player_props
+from src.market_intelligence.player_prop_monitor import monitor_player_props
 from src.services.streamlit_dashboard_facade import get_default_scheduler_config
 
 

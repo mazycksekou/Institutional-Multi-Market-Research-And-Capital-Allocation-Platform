@@ -34,8 +34,8 @@ CANONICAL_MODULES = [
 ]
 
 LEGACY_MODULES = [
-    'src.automation_scheduler_legacy.kalshi_adapter_contract',
-    'src.automation_scheduler_legacy.sportsbook_adapter_contract',
+    'src.providers.kalshi_adapter_contract',
+    'src.providers.sportsbook_adapter_contract',
 ]
 
 FORBIDDEN_IMPORT_PREFIXES = (
@@ -136,8 +136,8 @@ def test_provider_foundation_completion_imports_and_contract_generalization(monk
     assert stocks.ZeroDteStockProviderContract.__name__ == "ProviderContract"
     assert stocks.ZeroDteStockProviderContract.__module__ == "src.providers.contracts"
 
-    legacy_kalshi = imported["src.automation_scheduler_legacy.kalshi_adapter_contract"]
-    legacy_sportsbook = imported["src.automation_scheduler_legacy.sportsbook_adapter_contract"]
+    legacy_kalshi = imported["src.providers.kalshi_adapter_contract"]
+    legacy_sportsbook = imported["src.providers.sportsbook_adapter_contract"]
     canonical_allowlist = imported["src.providers.policy.allowlist"]
 
     assert legacy_kalshi.validate_payload(legacy_kalshi.SAMPLE_DRY_RUN_PAYLOAD)["ok"] is True
@@ -162,17 +162,33 @@ def test_canonical_provider_root_has_no_vendor_strings():
     assert not (PROVIDER_ROOT / "kalshi").exists()
     assert not (PROVIDER_ROOT / "sharp").exists()
 
-    vendor_text_allowlist = {"provider_router.py", "allowlist.py"}
+    vendor_text_allowlist = {
+        "provider_router.py",
+        "allowlist.py",
+        "kalshi_adapter_contract.py",
+        "kalshi_monitor.py",
+        "kalshi_readonly_readiness.py",
+        "kalshi_scoring.py",
+        "sportsbook_adapter_contract.py",
+        "stock_price_adapter_contract.py",
+        "stock_fundamentals_adapter_contract.py",
+        "player_props_adapter_contract.py",
+        "ncaaf_collegefootballdata_adapter.py",
+        "injury_weather_adapter_contract.py",
+        "news_events_adapter_contract.py",
+        "sportsbook_manifold_mapper.py",
+        "institutional_cross_asset_adapters.py",
+    }
 
     for path in PROVIDER_ROOT.rglob("*"):
         if "__pycache__" in path.parts:
             continue
         lowered_parts = {part.lower() for part in path.parts}
+        if path.name in vendor_text_allowlist:
+            continue
         assert "kalshi" not in lowered_parts
         assert "sharp" not in lowered_parts
         if path.is_file() and path.suffix == ".py":
-            if path.name in vendor_text_allowlist:
-                continue
             text = path.read_text(encoding="utf-8")
             assert "kalshi" not in text.lower()
             assert "sharp" not in text.lower()

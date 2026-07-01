@@ -1,6 +1,6 @@
 import unittest
 
-from src.automation_scheduler_legacy.news_event_monitor import monitor_news_events
+from src.market_intelligence.news_event_monitor import monitor_news_events
 from src.services.streamlit_dashboard_facade import get_default_scheduler_config
 
 

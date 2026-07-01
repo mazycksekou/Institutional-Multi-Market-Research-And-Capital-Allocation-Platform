@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from src.automation_scheduler_legacy.open_sports_history_backfill import build_open_sports_history_backfill_report, build_open_sports_history_coverage_report, write_open_sports_history_backfill_report
+from src.data.open_sports_history_backfill import build_open_sports_history_backfill_report, build_open_sports_history_coverage_report, write_open_sports_history_backfill_report
 
 
 class TestOpenSportsHistoryBackfill(unittest.TestCase):
@@ -237,7 +237,7 @@ class TestOpenSportsHistoryBackfill(unittest.TestCase):
                 }
             ],
         }
-        with patch('src.automation_scheduler_legacy.open_sports_history_backfill._run_import', return_value=(fake_import, {})) as run_import:
+        with patch('src.data.open_sports_history_backfill._run_import', return_value=(fake_import, {})) as run_import:
             report = build_open_sports_history_backfill_report(
                 source_id="nflverse_nfl",
                 mode="season_backfill",
@@ -464,7 +464,7 @@ class TestOpenSportsHistoryBackfill(unittest.TestCase):
         self.assertEqual(coverage["nflverse_nfl_coverage_percentage"], 0.0)
 
     def test_no_download_occurs_unless_allow_download_is_true(self):
-        with patch('src.automation_scheduler_legacy.open_sports_history_import.urllib.request.urlopen') as urlopen:
+        with patch('src.data.open_sports_history_import.urllib.request.urlopen') as urlopen:
             report = build_open_sports_history_backfill_report(
                 source_id="nflverse_nfl",
                 mode="season_backfill",
@@ -494,7 +494,7 @@ class TestOpenSportsHistoryBackfill(unittest.TestCase):
             "future_paid_candidate": True,
             "requires_budget_approval": True,
         }
-        with patch('src.automation_scheduler_legacy.open_sports_history_backfill.source_by_id', return_value=paid_source):
+        with patch('src.data.open_sports_history_backfill.source_by_id', return_value=paid_source):
             paid = build_open_sports_history_backfill_report(source_id="paid_fixture", mode="smoke_test")
 
         self.assertFalse(unsupported["ok"])

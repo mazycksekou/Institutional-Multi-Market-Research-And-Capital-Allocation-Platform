@@ -42,8 +42,8 @@ def test_execution_blocker_modules_import_safely_and_remain_disabled(monkeypatch
     readiness = importlib.import_module("src.brokerage.readiness")
     gatekeeper = importlib.import_module("src.brokerage.readiness")
     authorization = importlib.import_module("src.brokerage.readiness")
-    paper_trade_ledger = importlib.import_module('src.automation_scheduler_legacy.paper_trade_ledger')
-    paper_decision_ledger = importlib.import_module('src.automation_scheduler_legacy.paper_decision_ledger')
+    paper_trade_ledger = importlib.import_module('src.brokerage.paper_trade_ledger')
+    paper_decision_ledger = importlib.import_module('src.brokerage.paper_decision_ledger')
     settlement_rule_checker = importlib.import_module("src.brokerage.settlement")
     settlement_discovery = importlib.import_module("src.services.settlement_service")
     bet_log = importlib.import_module("src.services.bet_log")
@@ -101,8 +101,8 @@ def test_execution_blocker_modules_import_safely_and_remain_disabled(monkeypatch
     assert callable(bet_decision_engine.evaluate_lines_payload)
 
     for relpath in [
-        'src/automation_scheduler_legacy/paper_trade_ledger.py',
-        'src/automation_scheduler_legacy/paper_decision_ledger.py',
+        'src/brokerage/paper_trade_ledger.py',
+        'src/brokerage/paper_decision_ledger.py',
         "src/services/bet_decision_engine.py",
         "src/services/bet_log.py",
         "src/brokerage/readiness.py",

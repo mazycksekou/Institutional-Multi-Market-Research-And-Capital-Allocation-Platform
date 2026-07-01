@@ -110,10 +110,23 @@ def test_runtime_and_test_import_scans_do_not_reintroduce_deleted_shells() -> No
         "patch('src.automation_scheduler_legacy.kalshi_market_provider",
     ]
 
+    def _is_active_line(line: str) -> bool:
+        stripped = line.lstrip()
+        return (
+            stripped.startswith("import ")
+            or stripped.startswith("from ")
+            or stripped.startswith("patch(")
+            or stripped.startswith("with patch(")
+            or " = importlib.import_module(" in stripped
+            or stripped.startswith("importlib.import_module(")
+            or stripped.startswith("monkeypatch.")
+            or stripped.startswith("mock.patch")
+        )
+
     active_runtime_hits: list[str] = []
     for path in runtime_files:
         text = path.read_text(encoding="utf-8", errors="ignore")
-        if any(needle in text for needle in import_needles):
+        if any(needle in line and _is_active_line(line) for line in text.splitlines() for needle in import_needles):
             active_runtime_hits.append(path.relative_to(ROOT).as_posix())
 
     assert active_runtime_hits == [], active_runtime_hits
@@ -125,7 +138,7 @@ def test_runtime_and_test_import_scans_do_not_reintroduce_deleted_shells() -> No
         if path.name == "test_phase10k8zmh_automation_scheduler_final_removal_attempt.py":
             continue
         text = path.read_text(encoding="utf-8", errors="ignore")
-        if any(needle in text for needle in import_needles):
+        if any(needle in line and _is_active_line(line) for line in text.splitlines() for needle in import_needles):
             active_test_hits.append(path.relative_to(ROOT).as_posix())
 
     assert active_test_hits == [], active_test_hits

@@ -6,12 +6,12 @@ from unittest.mock import patch
 from fastapi.testclient import TestClient
 
 from src.services.streamlit_dashboard_facade import build_causal_scaffold_report, evaluate_causal_hypothesis
-from src.automation_scheduler_legacy.cross_asset_intelligence_router import route_cross_asset_intelligence
+from src.market_intelligence.cross_asset_intelligence_router import route_cross_asset_intelligence
 from src.services.streamlit_dashboard_facade import build_data_intelligence_registry
 from src.services.streamlit_dashboard_facade import map_graph_relationships
 from src.services.streamlit_dashboard_facade import build_representation_vector
-from src.automation_scheduler_legacy.response_compactor import compact_intelligence_readiness_response
-from src.automation_scheduler_legacy.intelligence_readiness_report import build_intelligence_readiness_report
+from src.market_intelligence.response_compactor import compact_intelligence_readiness_response
+from src.analytics.intelligence_readiness_report import build_intelligence_readiness_report
 from src.research import (
     build_deep_learning_research_lanes,
     build_mdp_review_policy_scaffold,

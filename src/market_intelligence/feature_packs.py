@@ -514,13 +514,13 @@ def _pack_summary(
 
 
 def get_sport_feature_pack(sport: Any | None) -> dict[str, Any]:
-    from src.automation_scheduler_legacy import sport_feature_packs as legacy_packs
+    from src.market_intelligence import sport_feature_packs as legacy_packs
 
     return legacy_packs.get_sport_feature_pack(sport)
 
 
 def get_supported_sport_feature_packs() -> dict[str, dict[str, Any]]:
-    from src.automation_scheduler_legacy import sport_feature_packs as legacy_packs
+    from src.market_intelligence import sport_feature_packs as legacy_packs
 
     return legacy_packs.get_supported_sport_feature_packs()
 
@@ -588,7 +588,7 @@ def get_market_feature_pack(
     selection: Any | None = None,
     sport: Any | None = None,
 ) -> dict[str, Any]:
-    from src.automation_scheduler_legacy import market_feature_packs as legacy_packs
+    from src.market_intelligence import market_feature_packs as legacy_packs
 
     return legacy_packs.get_market_feature_pack(
         market,
@@ -598,7 +598,7 @@ def get_market_feature_pack(
 
 
 def get_supported_market_feature_packs() -> dict[str, dict[str, Any]]:
-    from src.automation_scheduler_legacy import market_feature_packs as legacy_packs
+    from src.market_intelligence import market_feature_packs as legacy_packs
 
     return legacy_packs.get_supported_market_feature_packs()
 

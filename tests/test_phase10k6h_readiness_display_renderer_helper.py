@@ -10,7 +10,7 @@ def read_text(relative_path: str) -> str:
 
 def test_phase10k6h_report_and_helper_text_guards():
     report = read_text("PHASE10K6H_READINESS_DISPLAY_RENDERER_HELPER.md")
-    helper = read_text('src/automation_scheduler_legacy/streamlit_dashboard_data.py')
+    helper = read_text("src/services/streamlit_dashboard_data.py")
     streamlit_app = read_text("streamlit_app.py")
 
     required_report_strings = [

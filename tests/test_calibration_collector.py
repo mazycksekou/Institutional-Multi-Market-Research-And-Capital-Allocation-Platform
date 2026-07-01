@@ -137,7 +137,7 @@ class TestCalibrationCollector(unittest.TestCase):
                     "settlement_time": self._past(minutes=5),
                 },
             }
-            with patch('src.automation_scheduler_legacy.calibration_collector._fetch_public_market_by_ticker', return_value=fetched):
+            with patch('src.analytics.calibration_collector._fetch_public_market_by_ticker', return_value=fetched):
                 result = run_collector_cycle(
                     dry_run=False,
                     persist_outcomes=True,
@@ -285,7 +285,7 @@ class TestCalibrationCollector(unittest.TestCase):
                     "settlement_time": self._past(minutes=5),
                 },
             }
-            with patch('src.automation_scheduler_legacy.calibration_collector._fetch_public_market_by_ticker', return_value=fetched):
+            with patch('src.analytics.calibration_collector._fetch_public_market_by_ticker', return_value=fetched):
                 result = run_collector_cycle(
                     dry_run=False,
                     persist_outcomes=True,
@@ -325,7 +325,7 @@ class TestCalibrationCollector(unittest.TestCase):
                     "close_time": self._past(hours=1),
                 },
             }
-            with patch('src.automation_scheduler_legacy.calibration_collector._fetch_public_market_by_ticker', return_value=fetched):
+            with patch('src.analytics.calibration_collector._fetch_public_market_by_ticker', return_value=fetched):
                 result = run_collector_cycle(
                     dry_run=False,
                     persist_outcomes=True,
@@ -388,7 +388,7 @@ class TestCalibrationCollector(unittest.TestCase):
     def test_provider_rate_limit_triggers_adaptive_throttle(self):
         with tempfile.TemporaryDirectory() as tmp:
             scan = {"status": "provider_error", "markets_scanned": 1, "records": [_market("KXRATE", self._future(hours=2))], "blockers": ["http_429"]}
-            with patch('src.automation_scheduler_legacy.calibration_collector._fetch_public_markets', return_value=scan):
+            with patch('src.analytics.calibration_collector._fetch_public_markets', return_value=scan):
                 result = run_collector_cycle(
                     dry_run=True,
                     max_new_contracts=50,
@@ -402,7 +402,7 @@ class TestCalibrationCollector(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             records = _normalize_records([_market(f"KXPARTIAL{i}", self._future(hours=2)) for i in range(50)], KalshiReadonlyAdapter({}))
             scan = {"status": "provider_error", "markets_scanned": 50, "records": records, "blockers": ["read_timeout"]}
-            with patch('src.automation_scheduler_legacy.calibration_collector._fetch_public_markets', return_value=scan):
+            with patch('src.analytics.calibration_collector._fetch_public_markets', return_value=scan):
                 result = run_collector_cycle(
                     dry_run=True,
                     max_new_contracts=50,

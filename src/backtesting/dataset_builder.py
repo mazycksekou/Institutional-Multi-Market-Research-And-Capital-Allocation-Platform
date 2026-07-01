@@ -140,7 +140,7 @@ def discover_backtest_artifacts(*, base_dir: str | Path | None = None) -> list[P
 
 
 def validate_paper_only_fixture_rows(rows: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
-    from src.automation_scheduler_legacy.backtest_dataset_builder import (
+    from src.backtesting.backtest_dataset_builder import (
         validate_paper_only_fixture_rows as legacy_validate_paper_only_fixture_rows,
     )
 

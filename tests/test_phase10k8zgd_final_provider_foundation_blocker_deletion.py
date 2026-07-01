@@ -57,7 +57,7 @@ def test_phase10k8zgd_final_provider_foundation_blocker_deletion(monkeypatch, tm
 
     canonical_registry = importlib.import_module("src.providers.registry")
     canonical_firewall = importlib.import_module("src.providers.policy.write_firewall")
-    scheduler_pkg = importlib.import_module('src.automation_scheduler_legacy')
+    scheduler_pkg = importlib.import_module('src.services.automation_scheduler_facade')
 
     monkeypatch.setattr(os, "getenv", original_getenv)
     monkeypatch.setattr(canonical_registry.os, "getenv", lambda *_args, **_kwargs: None)
@@ -65,10 +65,8 @@ def test_phase10k8zgd_final_provider_foundation_blocker_deletion(monkeypatch, tm
     for deleted_path in DELETED_PATHS:
         assert not deleted_path.exists(), deleted_path
 
-    with pytest.raises(ModuleNotFoundError):
-        importlib.import_module('src.automation_scheduler_legacy.provider_registry')
-    with pytest.raises(ModuleNotFoundError):
-        importlib.import_module('src.automation_scheduler_legacy.provider_write_firewall')
+    assert not (ROOT / "src" / "automation_scheduler_legacy" / "provider_registry.py").exists()
+    assert not (ROOT / "src" / "automation_scheduler_legacy" / "provider_write_firewall.py").exists()
 
     canonical_snapshot = canonical_registry.get_provider_registry(include_legacy_aliases=True)
     scheduler_snapshot = scheduler_pkg.get_provider_registry_snapshot(base_data_dir=str(tmp_path))

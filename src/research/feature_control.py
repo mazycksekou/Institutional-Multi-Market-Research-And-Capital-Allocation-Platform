@@ -149,7 +149,7 @@ def _coerce_rows(rows: Any) -> list[dict[str, Any]]:
 
 
 def run_feature_ablation_lab(*args: Any, **kwargs: Any) -> dict[str, Any]:
-    from src.automation_scheduler_legacy.feature_ablation_lab import (
+    from src.research.feature_ablation_lab import (
         run_feature_ablation_lab as legacy_run_feature_ablation_lab,
     )
 
@@ -163,7 +163,7 @@ def run_feature_ablation_lab(*args: Any, **kwargs: Any) -> dict[str, Any]:
 
 
 def run_calibration_strategy_filter(*args: Any, **kwargs: Any) -> dict[str, Any]:
-    from src.automation_scheduler_legacy.calibration_strategy_filter import (
+    from src.research.calibration_strategy_filter import (
         run_calibration_strategy_filter as legacy_run_calibration_strategy_filter,
     )
 

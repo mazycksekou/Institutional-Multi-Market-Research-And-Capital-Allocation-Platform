@@ -6,9 +6,9 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
-import src.automation_scheduler_legacy as automation_scheduler
 from src.services.streamlit_dashboard_facade import evaluate_ai_provider
 from src.services.streamlit_dashboard_facade import evaluate_owner_approval, sign_owner_approval
+from src.services.streamlit_dashboard_facade import get_security_readiness
 from src.services.streamlit_dashboard_facade import redact_and_limit_payload
 from src.services.streamlit_dashboard_facade import evaluate_risk_limits
 from src.services.streamlit_dashboard_facade import assert_no_secret_leak, contains_secret_like_content, redact_sensitive
@@ -292,11 +292,11 @@ class TestSecurityFramework(unittest.TestCase):
         self.assertFalse(payload["raw_payload_exposed"])
 
     def test_scheduler_wrappers_preserve_no_execution(self):
-        readiness = automation_scheduler.get_security_readiness()
-        ai = automation_scheduler.evaluate_ai_analyst_provider("deepseek", persist_audit=False)
-        boundary = automation_scheduler.enforce_ai_analysis_boundaries({"action": "request_more_data"}, actor_provider="deepseek")
-        write = automation_scheduler.check_provider_write_firewall(provider="paper", action="review_only", persist_audit=False)
-        auth = automation_scheduler.evaluate_execution_security_authorization({"provider": "paper", "action": "review_only"}, persist_audit=False)
+        readiness = get_security_readiness()
+        ai = evaluate_ai_provider("deepseek", persist_audit=False)
+        boundary = enforce_ai_capability_boundary({"action": "request_more_data"}, actor_provider="deepseek")
+        write = check_provider_write_attempt(provider="paper", action="review_only", request_payload={"provider": "paper", "action": "review_only"}, persist_audit=False)
+        auth = evaluate_execution_authorization({"provider": "paper", "action": "review_only"}, persist_audit=False)
         for payload in (readiness, ai, boundary, write, auth):
             self.assertFalse(payload["provider_write"])
             self.assertFalse(payload["execution_allowed"])

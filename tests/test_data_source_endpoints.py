@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
-from src.automation_scheduler_legacy.data_source_registry import MANDATORY_LANES
+from src.data.data_source_registry import MANDATORY_LANES
 from tests.support.action_imports import app
 
 
@@ -128,7 +128,7 @@ class TestDataSourceEndpoints(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             with patch.dict(os.environ, {"AUTOMATION_DATA_DIR": tmp}, clear=False):
                 os.environ.pop("CFBD_API_KEY", None)
-                with patch('src.automation_scheduler_legacy.ncaaf_collegefootballdata_adapter.urllib.request.urlopen') as urlopen:
+                with patch('src.providers.ncaaf_collegefootballdata_adapter.urllib.request.urlopen') as urlopen:
                     response = self.client.post(
                         "/api/automation/data-sources/adapters/ncaaf/cfbd/verify",
                         json={"dry_run": True, "fetch_live_sample": False, "max_records": 5},
@@ -153,7 +153,7 @@ class TestDataSourceEndpoints(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             with patch.dict(os.environ, {"AUTOMATION_DATA_DIR": tmp}, clear=False):
                 os.environ.pop("CFBD_API_KEY", None)
-                with patch('src.automation_scheduler_legacy.ncaaf_collegefootballdata_adapter.urllib.request.urlopen') as urlopen:
+                with patch('src.providers.ncaaf_collegefootballdata_adapter.urllib.request.urlopen') as urlopen:
                     response = self.client.post(
                         "/api/automation/data-sources/adapters/ncaaf/cfbd/verify",
                         json={"dry_run": True, "fetch_live_sample": True, "max_records": 5},
@@ -185,7 +185,7 @@ class TestDataSourceEndpoints(unittest.TestCase):
 
     def test_no_regression_kalshi_collector_endpoint_still_works(self):
         with patch(
-            'src.automation_scheduler_legacy.run_automation_calibration_collector',
+            'src.services.automation_scheduler_facade.run_automation_calibration_collector',
             return_value={
                 "ok": True,
                 "status": "collector_cycle_complete",

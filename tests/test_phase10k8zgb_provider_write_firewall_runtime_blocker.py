@@ -16,7 +16,6 @@ MIGRATION_MAP_PATH = ROOT / "PROVIDER_WRITE_FIREWALL_MIGRATION_MAP_AFTER_10K8ZGB
 DELETE_READINESS_PATH = ROOT / "PROVIDER_WRITE_FIREWALL_DELETE_READINESS_AFTER_10K8ZGB.md"
 
 RUNTIME_FILES = [
-    ROOT / "src" / "automation_scheduler_legacy" / "__init__.py",
     ROOT / "src" / "brokerage" / "readiness.py",
 ]
 
@@ -103,13 +102,12 @@ def test_phase10k8zgb_runtime_redirect_and_wrapper_compatibility(monkeypatch, tm
     monkeypatch.setattr(os, "getenv", fail_getenv)
 
     canonical = importlib.import_module("src.providers.policy.write_firewall")
-    scheduler_pkg = importlib.import_module('src.automation_scheduler_legacy')
     execution_authorization = importlib.import_module("src.brokerage.readiness")
 
     for path in RUNTIME_FILES:
         text = _read(path)
         assert not _uses_legacy_firewall_import(text), path
-        assert ("src.providers.policy.write_firewall" in text or "src.brokerage.readiness" in text), path
+        assert "src.providers.policy.write_firewall" in text, path
         assert not any(token in text for token in ("requests", "httpx", "yfinance", "openai", "anthropic", "playwright", "selenium", "alpaca", "robinhood", "ib_insync", "ccxt"))
 
     for path in RUNTIME_FILES:
@@ -129,10 +127,9 @@ def test_phase10k8zgb_runtime_redirect_and_wrapper_compatibility(monkeypatch, tm
         persist_audit=False,
     )
     assert not (ROOT / "automation_scheduler" / "provider_write_firewall.py").exists()
-    with pytest.raises(ModuleNotFoundError):
-        importlib.import_module('src.automation_scheduler_legacy.provider_write_firewall')
+    assert not (ROOT / "src" / "automation_scheduler_legacy" / "provider_write_firewall.py").exists()
 
-    scheduler_result = scheduler_pkg.check_provider_write_firewall(
+    scheduler_result = canonical.check_provider_write_attempt(
         provider="paper",
         action="review_only",
         request_payload=sample,

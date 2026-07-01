@@ -2,7 +2,7 @@ import unittest
 
 from src.services.streamlit_dashboard_facade import record_micro_outcome_windows, supports_outcome_window
 from src.services.streamlit_dashboard_facade import build_pattern_calibration_report, calculate_performance_metrics, record_trade_outcome_windows
-from src.automation_scheduler_legacy.response_compactor import compact_micro_outcome_calibration_response
+from src.market_intelligence.response_compactor import compact_micro_outcome_calibration_response
 
 
 class TestPatternCalibration(unittest.TestCase):

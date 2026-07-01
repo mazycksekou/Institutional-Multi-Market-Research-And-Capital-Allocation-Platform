@@ -25,8 +25,8 @@ def test_execution_remediation_checkpoint_status_is_local_only() -> None:
     )
     assert brokerage.get_execution_readiness(plan["order_request"]).ready is False
     for relpath in [
-        'src/automation_scheduler_legacy/paper_trade_ledger.py',
-        'src/automation_scheduler_legacy/paper_decision_ledger.py',
+        'src/brokerage/paper_trade_ledger.py',
+        'src/brokerage/paper_decision_ledger.py',
         "src/brokerage/readiness.py",
     ]:
         assert (ROOT / relpath).exists()

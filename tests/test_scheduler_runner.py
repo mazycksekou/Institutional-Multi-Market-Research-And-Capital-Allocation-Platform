@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
-from src.automation_scheduler_legacy.__init__ import get_scheduler_review_queue
+from src.services.streamlit_dashboard_facade import get_scheduler_review_queue
 from src.services.streamlit_dashboard_facade import load_paper_decisions
 from src.services.streamlit_dashboard_facade import run_scheduler_once
 
@@ -170,7 +170,7 @@ class TestSchedulerRunner(unittest.TestCase):
             clear=False,
         ):
             with patch(
-                'src.automation_scheduler_legacy.scheduler_runner._collect_provider_placeholders',
+                'src.services.scheduler_runner._collect_provider_placeholders',
                 return_value={
                     "snapshots": [],
                     "skipped": [],
@@ -222,10 +222,10 @@ class TestSchedulerRunner(unittest.TestCase):
                     self.assertTrue(all(decision["execution_allowed"] is False for decision in paper_decisions))
                     self.assertTrue(all(decision.get("review_priority_score") is not None for decision in paper_decisions))
 
-    @patch('src.automation_scheduler_legacy.scheduler_runner.monitor_kalshi_market')
-    @patch('src.automation_scheduler_legacy.scheduler_runner._evaluate_kalshi_review_candidates')
-    @patch('src.automation_scheduler_legacy.scheduler_runner._evaluate_sharp_review_candidates')
-    @patch('src.automation_scheduler_legacy.scheduler_runner._collect_provider_placeholders')
+    @patch('src.services.scheduler_runner.monitor_kalshi_market')
+    @patch('src.services.scheduler_runner._evaluate_kalshi_review_candidates')
+    @patch('src.services.scheduler_runner._evaluate_sharp_review_candidates')
+    @patch('src.services.scheduler_runner._collect_provider_placeholders')
     def test_run_once_persists_paper_decisions_for_sharp_and_kalshi_review_items(
         self,
         mock_collect,
@@ -414,7 +414,7 @@ class TestSchedulerRunner(unittest.TestCase):
             clear=False,
         ):
             with patch(
-                'src.automation_scheduler_legacy.scheduler_runner._collect_provider_placeholders',
+                'src.services.scheduler_runner._collect_provider_placeholders',
                 return_value={
                     "snapshots": [],
                     "skipped": [],
@@ -538,7 +538,7 @@ class TestSchedulerRunner(unittest.TestCase):
             clear=False,
         ):
             with patch(
-                'src.automation_scheduler_legacy.scheduler_runner._collect_provider_placeholders',
+                'src.services.scheduler_runner._collect_provider_placeholders',
                 return_value={
                     "snapshots": [],
                     "skipped": [],

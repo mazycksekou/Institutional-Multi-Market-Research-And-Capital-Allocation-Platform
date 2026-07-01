@@ -418,13 +418,13 @@ def score_liquidity_context(row: Mapping[str, Any], asset_type: str | None = Non
 
 
 def evaluate_balance_sheet(row: Mapping[str, Any] | None) -> dict[str, Any]:
-    from src.automation_scheduler_legacy.balance_sheet_risk import evaluate_balance_sheet as legacy_evaluate_balance_sheet
+    from src.core.balance_sheet_risk import evaluate_balance_sheet as legacy_evaluate_balance_sheet
 
     return legacy_evaluate_balance_sheet(dict(row or {}))
 
 
 def detect_candlestick_patterns(candles: Sequence[Mapping[str, Any]] | None, context: Mapping[str, Any] | None = None) -> list[dict[str, Any]]:
-    from src.automation_scheduler_legacy.candlestick_pattern_detector import (
+    from src.market_intelligence.candlestick_pattern_detector import (
         detect_candlestick_patterns as legacy_detect_candlestick_patterns,
     )
 
@@ -804,7 +804,7 @@ def build_pattern_review_item(
 
 
 def summarize_pattern_review_queue(items: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
-    from src.automation_scheduler_legacy.pattern_review_queue import (
+    from src.analytics.pattern_review_queue import (
         summarize_pattern_review_queue as legacy_summarize_pattern_review_queue,
     )
 
@@ -812,7 +812,7 @@ def summarize_pattern_review_queue(items: Sequence[Mapping[str, Any]]) -> dict[s
 
 
 def persist_pattern_review_queue(items: Sequence[Mapping[str, Any]], *, base_data_dir: str | None = None) -> dict[str, Any]:
-    from src.automation_scheduler_legacy.pattern_review_queue import (
+    from src.analytics.pattern_review_queue import (
         persist_pattern_review_queue as legacy_persist_pattern_review_queue,
     )
 
@@ -853,7 +853,7 @@ def get_storage_health() -> dict[str, Any]:
 
 
 def read_existing_outputs(*, base_data_dir: str | None = None, asset_classes: Sequence[str] | None = None, limit: int = 200) -> dict[str, Any]:
-    from src.automation_scheduler_legacy.institutional_cross_asset_adapters import (
+    from src.providers.institutional_cross_asset_adapters import (
         read_existing_outputs as legacy_read_existing_outputs,
     )
 

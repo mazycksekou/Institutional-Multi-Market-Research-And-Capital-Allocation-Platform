@@ -6,7 +6,7 @@ None of these tests call external APIs, vendors, or scrapers.
 
 from __future__ import annotations
 
-from src.automation_scheduler_legacy.synthetic_line_movement_sandbox import SYNTHETIC_LINE_MOVEMENT_SANDBOX_VERSION, normalize_synthetic_line_movement_value, get_supported_synthetic_sports, build_synthetic_event_rows, build_synthetic_line_movement_rows, build_synthetic_line_movement_demo_payload, run_synthetic_line_movement_sandbox, clear_synthetic_line_movement_sandbox, describe_synthetic_line_movement_sandbox
+from src.data.synthetic_line_movement_sandbox import SYNTHETIC_LINE_MOVEMENT_SANDBOX_VERSION, normalize_synthetic_line_movement_value, get_supported_synthetic_sports, build_synthetic_event_rows, build_synthetic_line_movement_rows, build_synthetic_line_movement_demo_payload, run_synthetic_line_movement_sandbox, clear_synthetic_line_movement_sandbox, describe_synthetic_line_movement_sandbox
 
 
 # ---------------------------------------------------------------------------

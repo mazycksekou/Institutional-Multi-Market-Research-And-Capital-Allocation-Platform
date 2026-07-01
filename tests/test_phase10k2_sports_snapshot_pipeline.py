@@ -87,7 +87,7 @@ def test_streamlit_main_menu_remains_exactly_protected() -> None:
 
 
 def test_existing_asof_owner_excludes_future_snapshots() -> None:
-    from src.automation_scheduler_legacy.asof_line_movement_query import select_latest_asof_snapshots
+    from src.data.asof_line_movement_query import select_latest_asof_snapshots
 
     snapshots = [
         {
@@ -128,9 +128,9 @@ def test_backend_snapshot_modules_have_no_streamlit_or_live_connector_imports() 
     module_paths = [
         REPO_ROOT / "src" / "research" / "storage.py",
         REPO_ROOT / "src" / "research" / "__init__.py",
-        REPO_ROOT / "src" / "automation_scheduler_legacy" / "historical_line_movement.py",
-        REPO_ROOT / "src" / "automation_scheduler_legacy" / "line_movement_import_contract.py",
-        REPO_ROOT / "src" / "automation_scheduler_legacy" / "asof_line_movement_query.py",
+        REPO_ROOT / "src" / "data" / "historical_line_movement.py",
+        REPO_ROOT / "src" / "data" / "line_movement_import_contract.py",
+        REPO_ROOT / "src" / "data" / "asof_line_movement_query.py",
     ]
     forbidden_tokens = [
         "import streamlit",
@@ -200,4 +200,5 @@ def test_no_forbidden_phase10k2_overreach_text_in_report() -> None:
     ]
     for forbidden in forbidden_claims:
         assert forbidden not in text
+
 

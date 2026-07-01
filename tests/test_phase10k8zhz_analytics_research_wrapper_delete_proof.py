@@ -78,7 +78,10 @@ def test_canonical_packages_remain_and_wrappers_are_not_required() -> None:
         "src/analytics/model_governance/__init__.py",
         'src/automation_scheduler_legacy/__init__.py',
     ]:
-        assert (ROOT / relpath).exists()
+        if relpath.startswith("src/automation_scheduler_legacy/"):
+            assert not (ROOT / relpath).exists()
+        else:
+            assert (ROOT / relpath).exists()
 
 
 def test_wrapper_sources_are_local_only() -> None:

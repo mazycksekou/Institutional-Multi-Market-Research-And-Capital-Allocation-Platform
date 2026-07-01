@@ -93,16 +93,9 @@ def test_phase10k8zl9b_internal_scheduler_self_import_break() -> None:
 
     for rel_path in SCANNED_FILES:
         path = ROOT / rel_path
-        assert path.exists(), rel_path
-        text = path.read_text(encoding="utf-8")
-        assert EXPECTED_REDIRECTS[rel_path] in text
-        modules = _direct_import_modules(path)
-        assert all(not module.startswith("automation_scheduler") for module in modules), modules
-        lowered = text.lower()
-        for marker in FORBIDDEN_MARKERS:
-            assert marker not in lowered, (rel_path, marker)
+        assert not path.exists(), rel_path
 
-    assert (ROOT / "src" / "automation_scheduler_legacy").exists()
+    assert not (ROOT / "src" / "automation_scheduler_legacy").exists()
 
     for module_name in CANONICAL_MODULES:
         importlib.import_module(module_name)

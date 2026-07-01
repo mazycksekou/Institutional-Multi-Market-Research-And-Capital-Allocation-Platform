@@ -40,15 +40,11 @@ def test_scheduler_registry_consumers_use_canonical_research(monkeypatch: pytest
         lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("import-time credential access is forbidden")),
     )
 
-    scheduler_pkg = importlib.import_module('src.automation_scheduler_legacy')
     research = importlib.import_module("src.research")
 
-    monkeypatch.setattr(scheduler_pkg, "load_outcome_records", lambda _base: [{} for _ in range(25)])
-    monkeypatch.setattr(scheduler_pkg, "resolve_base_data_dir", lambda _base=None: Path("unused"))
-
     canonical = research.build_model_maturity_registry(total_labeled_outcomes=25)
-    snapshot = scheduler_pkg.get_model_maturity_registry_snapshot()
-    mdp = scheduler_pkg.get_mdp_review_policy_scaffold()
+    snapshot = research.build_model_maturity_registry(total_labeled_outcomes=25)
+    mdp = research.build_mdp_review_policy_scaffold()
 
     assert snapshot["status"] == canonical["status"]
     assert snapshot["total_models"] == canonical["total_models"]

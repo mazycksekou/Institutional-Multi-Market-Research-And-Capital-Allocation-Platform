@@ -14,13 +14,13 @@ HISTORICAL_BACKTEST_BRIDGE_VERSION = "10H7"
 
 
 def sqlite_odds_row_to_backtest_row(row: Mapping[str, Any]) -> dict[str, Any]:
-    from src.automation_scheduler_legacy.historical_backtest_bridge import sqlite_odds_row_to_backtest_row as _legacy_sqlite_odds_row_to_backtest_row
+    from src.data.historical_backtest_bridge import sqlite_odds_row_to_backtest_row as _legacy_sqlite_odds_row_to_backtest_row
 
     return _legacy_sqlite_odds_row_to_backtest_row(dict(row))
 
 
 def sqlite_odds_rows_to_backtest_rows(rows: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
-    from src.automation_scheduler_legacy.historical_backtest_bridge import sqlite_odds_rows_to_backtest_rows as _legacy_sqlite_odds_rows_to_backtest_rows
+    from src.data.historical_backtest_bridge import sqlite_odds_rows_to_backtest_rows as _legacy_sqlite_odds_rows_to_backtest_rows
 
     return _legacy_sqlite_odds_rows_to_backtest_rows([dict(row) for row in rows if isinstance(row, Mapping)])
 
@@ -37,7 +37,7 @@ def query_sqlite_backtest_rows(
     end_date: str | None = None,
     limit: int | None = None,
 ) -> list[dict[str, Any]]:
-    from src.automation_scheduler_legacy.historical_backtest_bridge import query_sqlite_backtest_rows as _legacy_query_sqlite_backtest_rows
+    from src.data.historical_backtest_bridge import query_sqlite_backtest_rows as _legacy_query_sqlite_backtest_rows
 
     if isinstance(db_path, sqlite3.Connection):
         return _legacy_query_sqlite_backtest_rows(
@@ -85,7 +85,7 @@ def run_sqlite_historical_backtest(
     model_probability: float | None = None,
     strategy_config: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    from src.automation_scheduler_legacy.historical_backtest_bridge import run_sqlite_historical_backtest as _legacy_run_sqlite_historical_backtest
+    from src.data.historical_backtest_bridge import run_sqlite_historical_backtest as _legacy_run_sqlite_historical_backtest
 
     if isinstance(db_path, sqlite3.Connection):
         return _legacy_run_sqlite_historical_backtest(
@@ -155,7 +155,7 @@ def summarize_sqlite_historical_backtest(
     table_name: str = "historical_odds",
     limit: int | None = None,
 ) -> dict[str, Any]:
-    from src.automation_scheduler_legacy.historical_backtest_bridge import summarize_sqlite_historical_backtest as _legacy_summarize_sqlite_historical_backtest
+    from src.data.historical_backtest_bridge import summarize_sqlite_historical_backtest as _legacy_summarize_sqlite_historical_backtest
 
     return _legacy_summarize_sqlite_historical_backtest(db_path)
 
@@ -165,7 +165,7 @@ def get_sqlite_backtest_filter_options(
     *,
     table_name: str = "historical_odds",
 ) -> dict[str, Any]:
-    from src.automation_scheduler_legacy.historical_backtest_bridge import get_sqlite_backtest_filter_options as _legacy_get_sqlite_backtest_filter_options
+    from src.data.historical_backtest_bridge import get_sqlite_backtest_filter_options as _legacy_get_sqlite_backtest_filter_options
 
     if isinstance(db_path, sqlite3.Connection):
         return _legacy_get_sqlite_backtest_filter_options(db_path)

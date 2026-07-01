@@ -5,7 +5,7 @@ from pathlib import Path
 
 from src.services.streamlit_dashboard_facade import get_institutional_lab_health, run_institutional_lab
 from src.services.streamlit_dashboard_facade import get_default_scheduler_config
-from src.automation_scheduler_legacy.stake_sizing_simulator import simulate_stake_plan
+from src.core.stake_sizing_simulator import simulate_stake_plan
 
 
 class TestInstitutionalCrossAssetLab(unittest.TestCase):

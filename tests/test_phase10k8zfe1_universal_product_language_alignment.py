@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 REPORT = ROOT / "PHASE10K8ZFE1_UNIVERSAL_PRODUCT_LANGUAGE_ALIGNMENT.md"
 README = ROOT / "README.md"
 APP = ROOT / "streamlit_app.py"
-DATA_HELPERS = ROOT / "src" / "automation_scheduler_legacy" / "streamlit_dashboard_data.py"
+DATA_HELPERS = ROOT / "src" / "services" / "streamlit_dashboard_data.py"
 
 
 def read_text(path: Path) -> str:
@@ -103,3 +103,4 @@ def test_phase10k8zfe1_universal_product_language_alignment() -> None:
     assert not any(ROOT.glob("app/pages/*.py"))
     assert not any(ROOT.glob("frontend/*.py"))
     assert not any(ROOT.glob("frontend/pages/*.py"))
+

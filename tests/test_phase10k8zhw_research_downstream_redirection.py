@@ -41,7 +41,7 @@ def test_research_lane_helpers_redirect_to_canonical_package(monkeypatch: pytest
         lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("import-time credential access is forbidden")),
     )
 
-    import src.automation_scheduler_legacy as scheduler_pkg
+    import src.research as scheduler_pkg
     from src.research import (
         build_deep_learning_maturity_records,
         build_deep_learning_research_lanes,
@@ -50,16 +50,13 @@ def test_research_lane_helpers_redirect_to_canonical_package(monkeypatch: pytest
         build_tabular_ml_research_lanes,
     )
 
-    monkeypatch.setattr(scheduler_pkg, "load_outcome_records", lambda _base: [{} for _ in range(25)])
-    monkeypatch.setattr(scheduler_pkg, "resolve_base_data_dir", lambda _base=None: Path("unused"))
-
     canonical_tabular = build_tabular_ml_research_lanes(total_labeled_outcomes=25, label_coverage=0.025)
     canonical_deep = build_deep_learning_research_lanes()
     canonical_tabular_records = build_tabular_maturity_records(total_labeled_outcomes=25)
     canonical_deep_records = build_deep_learning_maturity_records()
 
-    scheduler_tabular_payload = scheduler_pkg.get_tabular_ml_research_lanes()
-    scheduler_deep_payload = scheduler_pkg.get_deep_learning_research_lanes()
+    scheduler_tabular_payload = scheduler_pkg.build_tabular_ml_research_lanes(total_labeled_outcomes=25, label_coverage=0.025)
+    scheduler_deep_payload = scheduler_pkg.build_deep_learning_research_lanes()
     registry_payload = build_model_maturity_registry(total_labeled_outcomes=25)
 
     assert scheduler_tabular_payload["status"] == canonical_tabular["status"]
@@ -86,7 +83,7 @@ def test_research_sources_remain_local_only() -> None:
 
 def test_legacy_research_files_remain_preserved() -> None:
     for relpath in [
-        'src/automation_scheduler_legacy/feature_ablation_lab.py',
+        'src/research/feature_ablation_lab.py',
         "src/research/lanes.py",
         "src/research/maturity.py",
     ]:

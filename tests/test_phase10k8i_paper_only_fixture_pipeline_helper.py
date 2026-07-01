@@ -1,13 +1,13 @@
 from pathlib import Path
 
-from src.automation_scheduler_legacy.streamlit_dashboard_data import build_paper_only_fixture_pipeline_result
+from src.services.streamlit_dashboard_data import build_paper_only_fixture_pipeline_result
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 REPORT_PATH = REPO_ROOT / "PHASE10K8I_PAPER_ONLY_FIXTURE_PIPELINE_HELPER.md"
 QUANT_ENGINE_PATH = REPO_ROOT / "src" / "core" / "quant_engine.py"
-BACKTEST_DATASET_BUILDER_PATH = REPO_ROOT / "src" / "automation_scheduler_legacy" / "backtest_dataset_builder.py"
-DASHBOARD_DATA_PATH = REPO_ROOT / "src" / "automation_scheduler_legacy" / "streamlit_dashboard_data.py"
+BACKTEST_DATASET_BUILDER_PATH = REPO_ROOT / "src" / "backtesting" / "backtest_dataset_builder.py"
+DASHBOARD_DATA_PATH = REPO_ROOT / "src" / "services" / "streamlit_dashboard_data.py"
 STREAMLIT_APP_PATH = REPO_ROOT / "streamlit_app.py"
 PHASE_10K6K_TEST_PATH = (
     REPO_ROOT / "tests" / "test_phase10k6k_controlled_dashboard_shell_review.py"
@@ -217,5 +217,6 @@ def test_phase_report_and_source_guardrails():
     assert not list(REPO_ROOT.glob("app/pages/*.py"))
     assert not list(REPO_ROOT.glob("frontend/*.py"))
     assert not list(REPO_ROOT.glob("frontend/pages/*.py"))
+
 
 

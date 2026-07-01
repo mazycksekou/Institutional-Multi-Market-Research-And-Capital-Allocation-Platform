@@ -6,7 +6,7 @@ from unittest.mock import patch
 from fastapi.testclient import TestClient
 
 from src.services.streamlit_dashboard_facade import evaluate_advanced_red_team_provider
-from src.automation_scheduler_legacy.advanced_red_team_report import build_advanced_red_team_report
+from src.analytics.advanced_red_team_report import build_advanced_red_team_report
 from src.services.streamlit_dashboard_facade import get_advanced_diagnostic_registry, run_advanced_shape_diagnostics
 from src.services.streamlit_dashboard_facade import run_bayesian_structural_baseline
 from src.services.streamlit_dashboard_facade import run_causal_discovery_research

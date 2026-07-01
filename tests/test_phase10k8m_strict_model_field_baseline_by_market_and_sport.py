@@ -8,9 +8,9 @@ from src.services.streamlit_dashboard_facade import TECHNICAL_SIGNAL_FIELDS, TEC
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 STREAMLIT_APP = REPO_ROOT / "streamlit_app.py"
-DATA_SOURCE_REGISTRY = REPO_ROOT / "src" / "automation_scheduler_legacy" / "data_source_registry.py"
-TECHNICAL_SIGNAL_FIELDS_FILE = REPO_ROOT / "src" / "automation_scheduler_legacy" / "technical_signal_fields.py"
-MODEL_DATA_FIELD_CATALOG_FILE = REPO_ROOT / "src" / "automation_scheduler_legacy" / "model_data_field_catalog.py"
+DATA_SOURCE_REGISTRY = REPO_ROOT / "src" / "data" / "data_source_registry.py"
+TECHNICAL_SIGNAL_FIELDS_FILE = REPO_ROOT / "src" / "market_intelligence" / "technical_signal_fields.py"
+MODEL_DATA_FIELD_CATALOG_FILE = REPO_ROOT / "src" / "data" / "model_data_field_catalog.py"
 REPORT_FILE = REPO_ROOT / "PHASE10K8M_STRICT_MODEL_FIELD_BASELINE_BY_MARKET_AND_SPORT.md"
 LEGACY_GUARDRAIL_TEST = (
     REPO_ROOT / "tests" / "test_phase10k6k_controlled_dashboard_shell_review.py"
@@ -359,7 +359,7 @@ def test_report_and_source_texts_cover_the_new_baseline() -> None:
         assert required in streamlit_text
 
     for required in [
-        "from .technical_signal_fields import technical_fields_for_market",
+        "from src.market_intelligence.technical_signal_fields import technical_fields_for_market",
         "institutional_stock_pro_analyst",
         "cryptocurrency_edge_lab",
         "prediction_market",
@@ -447,4 +447,5 @@ def test_streamlit_ui_forbidden_connector_strings_are_absent() -> None:
         "Run Synthetic Scraper",
     ]:
         assert forbidden not in streamlit_text
+
 

@@ -98,7 +98,7 @@ def get_historical_data_sources(*args: Any, status: str | None = None, **kwargs:
 
 
 def get_priority_import_sources(*args: Any, sport: str | None = None, **kwargs: Any) -> list[dict[str, Any]]:
-    from src.automation_scheduler_legacy.historical_data_sources import (
+    from src.data.historical_data_sources import (
         get_priority_import_sources as legacy_get_priority_import_sources,
     )
 

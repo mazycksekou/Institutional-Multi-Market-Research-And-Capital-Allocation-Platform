@@ -116,8 +116,8 @@ def test_updated_runtime_files_reference_the_canonical_connector_boundary() -> N
     for path in [
         ROOT / "src" / "services" / "odds_runtime_bridge.py",
         ROOT / "src" / "services" / "enrichment_service.py",
-        ROOT / "src" / "automation_scheduler_legacy" / "scheduler_runner.py",
-        ROOT / "src" / "automation_scheduler_legacy" / "__init__.py",
+        ROOT / "src" / "services" / "scheduler_runner.py",
+        ROOT / "src" / "services" / "automation_scheduler_facade.py",
     ]:
         text = path.read_text(encoding="utf-8")
         if path.name == "odds_runtime_bridge.py":

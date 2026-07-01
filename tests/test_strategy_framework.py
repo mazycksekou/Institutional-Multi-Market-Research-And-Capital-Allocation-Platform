@@ -3,12 +3,12 @@ import tempfile
 import unittest
 
 from src.services.streamlit_dashboard_facade import evaluate_hard_gates
-from src.automation_scheduler_legacy.strategy_disagreement import load_strategy_disagreements
+from src.core.strategy_disagreement import load_strategy_disagreements
 from src.services.streamlit_dashboard_facade import evaluate_strategy_maturity
-from src.automation_scheduler_legacy.strategy_promotion import evaluate_strategy_promotion
+from src.core.strategy_promotion import evaluate_strategy_promotion
 from src.services.streamlit_dashboard_facade import get_strategy_registry
 from src.services.streamlit_dashboard_facade import route_strategies
-from src.automation_scheduler_legacy.strategy_score_aggregator import aggregate_strategy_scores
+from src.core.strategy_score_aggregator import aggregate_strategy_scores
 from src.brokerage.readiness import evaluate_future_execution_eligibility
 
 

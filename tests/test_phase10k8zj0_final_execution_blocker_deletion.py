@@ -23,8 +23,8 @@ def test_final_execution_blocker_deletion_docs_and_file_state() -> None:
         assert not path.exists()
 
     for path in [
-        ROOT / "src" / "automation_scheduler_legacy" / "paper_trade_ledger.py",
-        ROOT / "src" / "automation_scheduler_legacy" / "paper_decision_ledger.py",
+        ROOT / "src" / "brokerage" / "paper_trade_ledger.py",
+        ROOT / "src" / "brokerage" / "paper_decision_ledger.py",
     ]:
         assert path.exists()
 

@@ -1,7 +1,7 @@
 import unittest
 
 from src.services.streamlit_dashboard_facade import MANDATORY_LANES, build_registry
-from src.automation_scheduler_legacy.model_input_coverage import build_coverage_report
+from src.market_intelligence.model_input_coverage import build_coverage_report
 
 
 class TestModelInputCoverage(unittest.TestCase):

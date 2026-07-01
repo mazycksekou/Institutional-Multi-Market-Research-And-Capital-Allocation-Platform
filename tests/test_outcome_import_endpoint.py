@@ -163,7 +163,7 @@ class TestOutcomeImportEndpoint(unittest.TestCase):
         with TemporaryDirectory() as tmp:
             env = {"AUTOMATION_DATA_DIR": tmp, "COLLECTOR_CRON_TOKEN": "endpoint-secret"}
             with patch.dict(os.environ, env, clear=False):
-                with patch('src.automation_scheduler_legacy.outcome_migration._transactional_write_json', side_effect=OSError("forced atomic failure")):
+                with patch('src.data.outcome_migration._transactional_write_json', side_effect=OSError("forced atomic failure")):
                     response = self._post(
                         {
                             "dry_run": False,

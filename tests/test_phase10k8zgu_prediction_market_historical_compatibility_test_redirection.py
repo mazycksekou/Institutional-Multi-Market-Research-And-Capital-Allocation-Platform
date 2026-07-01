@@ -79,11 +79,11 @@ def test_historical_prediction_market_redirection_uses_canonical_bridge_and_keep
     assert odds_connector is not None
     assert odds_provider is not None
 
-    scheduler_runner = importlib.import_module('src.automation_scheduler_legacy.scheduler_runner')
+    scheduler_runner = importlib.import_module('src.services.scheduler_runner')
     settlement_service = importlib.import_module("src.services.settlement_service")
-    calibration_collector = importlib.import_module('src.automation_scheduler_legacy.calibration_collector')
-    outcome_candidates = importlib.import_module('src.automation_scheduler_legacy.prediction_market_outcome_candidates')
-    readiness = importlib.import_module('src.automation_scheduler_legacy.kalshi_readonly_readiness')
+    calibration_collector = importlib.import_module('src.analytics.calibration_collector')
+    outcome_candidates = importlib.import_module('src.market_intelligence.prediction_market_outcome_candidates')
+    readiness = importlib.import_module('src.providers.kalshi_readonly_readiness')
 
     assert scheduler_runner.KalshiReadonlyAdapter.__module__ == "src.services.prediction_market_runtime_bridge"
     assert settlement_service.KalshiReadonlyAdapter.__module__ == "src.services.prediction_market_runtime_bridge"

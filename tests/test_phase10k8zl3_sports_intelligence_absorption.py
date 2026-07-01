@@ -48,22 +48,23 @@ class TestPhase10K8ZL3SportsIntelligenceAbsorption(unittest.TestCase):
 
     def test_legacy_sports_wrappers_remain_importable(self):
         modules = [
-            'src.automation_scheduler_legacy.baseball_impact_common',
-            'src.automation_scheduler_legacy.basketball_lineup_matchup_context',
-            'src.automation_scheduler_legacy.basketball_market_relevance',
-            'src.automation_scheduler_legacy.basketball_player_impact_common',
-            'src.automation_scheduler_legacy.basketball_player_impact_red_team',
-            'src.automation_scheduler_legacy.combat_impact_common',
-            'src.automation_scheduler_legacy.football_impact_common',
-            'src.automation_scheduler_legacy.football_impact_red_team',
-            'src.automation_scheduler_legacy.football_impact_schema',
-            'src.automation_scheduler_legacy.golf_impact_common',
-            'src.automation_scheduler_legacy.hockey_impact_common',
-            'src.automation_scheduler_legacy.soccer_impact_common',
-            'src.automation_scheduler_legacy.tennis_impact_common',
+            'src.market_intelligence.baseball_impact_common',
+            'src.market_intelligence.basketball_lineup_matchup_context',
+            'src.market_intelligence.basketball_market_relevance',
+            'src.market_intelligence.basketball_player_impact_common',
+            'src.analytics.basketball_player_impact_red_team',
+            'src.market_intelligence.combat_impact_common',
+            'src.market_intelligence.football_impact_common',
+            'src.analytics.football_impact_red_team',
+            'src.market_intelligence.football_impact_schema',
+            'src.market_intelligence.golf_impact_common',
+            'src.market_intelligence.hockey_impact_common',
+            'src.market_intelligence.soccer_impact_common',
+            'src.market_intelligence.tennis_impact_common',
         ]
         for module_name in modules:
             module = __import__(module_name, fromlist=["*"])
             self.assertIsNotNone(module)
-            self.assertTrue(module.__name__.startswith("src.automation_scheduler_legacy."))
+            self.assertTrue(module.__name__.startswith("src."))
+            self.assertNotIn("automation_scheduler_legacy", module.__name__)
 

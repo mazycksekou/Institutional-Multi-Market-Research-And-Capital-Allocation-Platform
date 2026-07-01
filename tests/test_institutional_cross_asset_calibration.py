@@ -1,6 +1,6 @@
 import unittest
 
-from src.automation_scheduler_legacy.institutional_cross_asset_calibration import calibrate_asset_class
+from src.analytics.institutional_cross_asset_calibration import calibrate_asset_class
 
 
 class TestInstitutionalCrossAssetCalibration(unittest.TestCase):

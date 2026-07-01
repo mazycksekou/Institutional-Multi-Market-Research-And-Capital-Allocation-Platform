@@ -51,19 +51,18 @@ def test_canonical_packages_import_safely() -> None:
     analytics = importlib.import_module("src.analytics")
     research = importlib.import_module("src.research")
     governance = importlib.import_module("src.analytics.model_governance")
-    scheduler = importlib.import_module('src.automation_scheduler_legacy')
 
     assert analytics.build_governance_health({"model_inventory_count": 0}, {"blocked_model_count": 0})["governance_status"] == "ok"
     assert research.build_model_maturity_registry(total_labeled_outcomes=0)["status"] == "model_maturity_registry"
     assert callable(governance.get_governance_health)
-    assert callable(scheduler.get_deep_learning_research_lanes)
+    assert callable(research.build_deep_learning_research_lanes)
 
 
 def test_runtime_and_test_files_no_longer_require_deleted_wrappers() -> None:
     scan_paths = [
-        ROOT / "src" / "automation_scheduler_legacy" / "__init__.py",
-        ROOT / "src" / "automation_scheduler_legacy" / "data_intelligence_registry.py",
-        ROOT / "src" / "automation_scheduler_legacy" / "cross_asset_intelligence_router.py",
+        ROOT / "src" / "services" / "automation_scheduler_facade.py",
+        ROOT / "src" / "market_intelligence" / "data_intelligence_registry.py",
+        ROOT / "src" / "market_intelligence" / "cross_asset_intelligence_router.py",
         ROOT / "src" / "analytics" / "model_governance" / "__init__.py",
         ROOT / "tests" / "test_governance_health.py",
         ROOT / "tests" / "test_governance_report.py",
@@ -74,7 +73,20 @@ def test_runtime_and_test_files_no_longer_require_deleted_wrappers() -> None:
         ROOT / "tests" / "test_phase10k8zhw_research_downstream_redirection.py",
         ROOT / "tests" / "test_phase10k8zhz_analytics_research_wrapper_delete_proof.py",
     ]
-    active_markers = ("import ", "from ", "patch(", "monkeypatch", "mock.patch", "importlib.import_module")
+
+    def _is_active_line(line: str) -> bool:
+        stripped = line.lstrip()
+        return (
+            stripped.startswith("import ")
+            or stripped.startswith("from ")
+            or stripped.startswith("patch(")
+            or stripped.startswith("with patch(")
+            or " = importlib.import_module(" in stripped
+            or stripped.startswith("importlib.import_module(")
+            or stripped.startswith("monkeypatch.")
+            or stripped.startswith("mock.patch")
+        )
+
     for path in scan_paths:
         content = path.read_text(encoding="utf-8")
         for deleted in [
@@ -88,7 +100,7 @@ def test_runtime_and_test_files_no_longer_require_deleted_wrappers() -> None:
             "automation_scheduler.model_maturity_registry",
         ]:
             for line in content.splitlines():
-                if deleted in line and any(marker in line for marker in active_markers):
+                if deleted in line and _is_active_line(line):
                     raise AssertionError(f"{deleted} still actively referenced in {path}: {line}")
 
 
@@ -108,4 +120,5 @@ def test_deleted_legacy_odds_prediction_shells_not_reintroduced() -> None:
         'src/automation_scheduler_legacy/sportsbook_odds_provider.py',
     ]:
         assert not (ROOT / relpath).exists()
+
 

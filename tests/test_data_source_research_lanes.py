@@ -1,6 +1,6 @@
 import unittest
 
-from src.automation_scheduler_legacy.data_source_registry import build_registry_report
+from src.data.data_source_registry import build_registry_report
 
 
 class TestDataSourceResearchLanes(unittest.TestCase):

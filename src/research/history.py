@@ -255,7 +255,7 @@ def format_report_money(value: Any) -> str:
 
 
 def build_experiment_report_sections(run: Mapping[str, Any]) -> dict[str, Any]:
-    from src.automation_scheduler_legacy.experiment_report_exporter import (
+    from src.research.experiment_report_exporter import (
         build_experiment_report_sections as legacy_build_experiment_report_sections,
     )
 
@@ -263,7 +263,7 @@ def build_experiment_report_sections(run: Mapping[str, Any]) -> dict[str, Any]:
 
 
 def render_experiment_report_markdown(run: Mapping[str, Any]) -> dict[str, Any]:
-    from src.automation_scheduler_legacy.experiment_report_exporter import (
+    from src.research.experiment_report_exporter import (
         render_experiment_report_markdown as legacy_render_experiment_report_markdown,
     )
 
@@ -276,7 +276,7 @@ def build_experiment_report_export(
     *,
     export_format: str = "markdown",
 ) -> dict[str, Any]:
-    from src.automation_scheduler_legacy.experiment_report_exporter import (
+    from src.research.experiment_report_exporter import (
         build_experiment_report_export as legacy_build_experiment_report_export,
     )
 

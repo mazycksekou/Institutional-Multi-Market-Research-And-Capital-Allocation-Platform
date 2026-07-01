@@ -213,7 +213,7 @@ class TestNflCoachingAdapters(unittest.TestCase):
         self.assertEqual([row["season"] for row in expanded], ["2013", "2014"])
 
     def test_wikidata_user_agent_is_descriptive_not_spoofed(self):
-        from src.automation_scheduler_legacy.nfl_coaching_adapters import WIKIDATA_USER_AGENT, WIKIDATA_CONTACT_URL
+        from src.providers.nfl_coaching_adapters import WIKIDATA_USER_AGENT, WIKIDATA_CONTACT_URL
 
         self.assertIn("betting-stock-api-research-bot", WIKIDATA_USER_AGENT)
         self.assertIn(WIKIDATA_CONTACT_URL, WIKIDATA_USER_AGENT)
@@ -269,7 +269,7 @@ class TestNflCoachingAdapters(unittest.TestCase):
         self.assertEqual(run["downloads_attempted"], 1)
 
     def test_entity_api_fallback_exists_and_avoids_sparql(self):
-        from src.automation_scheduler_legacy.nfl_coaching_adapters import WikidataEntityApiCoachingAdapter
+        from src.providers.nfl_coaching_adapters import WikidataEntityApiCoachingAdapter
 
         adapter = adapter_by_id("wikidata_entity_api")
         self.assertIsInstance(adapter, WikidataEntityApiCoachingAdapter)
@@ -293,7 +293,7 @@ class TestNflCoachingAdapters(unittest.TestCase):
         self.assertEqual(run["records_validated"], 0)
 
     def test_entity_api_normalizes_with_injected_fetch(self):
-        from src.automation_scheduler_legacy.nfl_coaching_adapters import read_team_qid_manifest, team_qid_manifest_path
+        from src.providers.nfl_coaching_adapters import read_team_qid_manifest, team_qid_manifest_path
 
         entities = {
             "Q221196": {"entities": {"Q221196": {"claims": {"P286": [{"id": "stmt$1", "mainsnak": {"datavalue": {"value": {"id": "Q1226299"}}}, "qualifiers": {"P580": [{"datavalue": {"value": {"time": "+2013-09-08T00:00:00Z"}}}], "P582": [{"datavalue": {"value": {"time": "+2014-09-01T00:00:00Z"}}}]}}]}}}},
@@ -304,7 +304,7 @@ class TestNflCoachingAdapters(unittest.TestCase):
             return entities[qid]
 
         with tempfile.TemporaryDirectory() as tmp:
-            from src.automation_scheduler_legacy.nfl_coaching_adapters import generate_team_qid_manifest_template
+            from src.providers.nfl_coaching_adapters import generate_team_qid_manifest_template
             generate_team_qid_manifest_template(base_data_dir=tmp)
             path = team_qid_manifest_path(Path(tmp))
             rows = path.read_text(encoding="utf-8").splitlines()
@@ -361,7 +361,7 @@ class TestNflCoachingAdapters(unittest.TestCase):
         self.assertEqual(run["license_status"], "cc_by_sa")
 
     def test_generate_manual_templates(self):
-        from src.automation_scheduler_legacy.nfl_coaching_adapters import generate_manual_templates
+        from src.providers.nfl_coaching_adapters import generate_manual_templates
 
         with tempfile.TemporaryDirectory() as tmp:
             result = generate_manual_templates(base_data_dir=tmp)

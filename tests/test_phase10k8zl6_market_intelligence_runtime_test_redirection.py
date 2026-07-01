@@ -13,10 +13,10 @@ from src.market_intelligence import build_market_intelligence_report
 class TestPhase10K8ZL6MarketIntelligenceRuntimeTestRedirection(unittest.TestCase):
     def test_wrappers_import_canonical_modules(self):
         modules = [
-            'src.automation_scheduler_legacy.cross_asset_embedding_router',
-            'src.automation_scheduler_legacy.manifold_review_queue',
-            'src.automation_scheduler_legacy.market_state_graph',
-            'src.automation_scheduler_legacy.prediction_market_manifold_mapper',
+            'src.market_intelligence.cross_asset_embedding_router',
+            'src.analytics.manifold_review_queue',
+            'src.market_intelligence.market_state_graph',
+            'src.market_intelligence.prediction_market_manifold_mapper',
         ]
         for module_name in modules:
             module = __import__(module_name, fromlist=["*"])

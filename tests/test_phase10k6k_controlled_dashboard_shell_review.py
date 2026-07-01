@@ -6,7 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 REPORT = ROOT / "PHASE10K6K_CONTROLLED_DASHBOARD_SHELL_REVIEW.md"
 STREAMLIT_APP = ROOT / "streamlit_app.py"
-READINESS_DATA = ROOT / "src" / "automation_scheduler_legacy" / "streamlit_dashboard_data.py"
+READINESS_DATA = ROOT / "src" / "services" / "streamlit_dashboard_data.py"
 
 
 def read_text(path: Path) -> str:

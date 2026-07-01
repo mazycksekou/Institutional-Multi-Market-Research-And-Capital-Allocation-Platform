@@ -40,12 +40,11 @@ def test_final_canonical_architecture_imports_safely() -> None:
     analytics = importlib.import_module("src.analytics")
     research = importlib.import_module("src.research")
     model_governance = importlib.import_module("model_governance")
-    scheduler = importlib.import_module('src.automation_scheduler_legacy')
 
     assert analytics.build_governance_health({"model_inventory_count": 0}, {"blocked_model_count": 0})["governance_status"] == "ok"
     assert research.build_model_maturity_registry(total_labeled_outcomes=0)["status"] == "model_maturity_registry"
     assert callable(model_governance.get_governance_health)
-    assert callable(scheduler.get_model_maturity_registry_snapshot)
+    assert callable(research.build_deep_learning_research_lanes)
 
 
 def test_no_deleted_wrappers_reintroduced_in_proof_phase() -> None:

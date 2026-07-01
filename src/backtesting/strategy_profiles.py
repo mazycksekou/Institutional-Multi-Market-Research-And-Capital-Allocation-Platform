@@ -17,7 +17,7 @@ _PROFILE_ALIASES = {
 
 
 def normalize_strategy_profile_key(value: Any) -> str | None:
-    from src.automation_scheduler_legacy.backtest_strategy_profiles import normalize_strategy_profile_key as _legacy_normalize_strategy_profile_key
+    from src.backtesting.backtest_strategy_profiles import normalize_strategy_profile_key as _legacy_normalize_strategy_profile_key
 
     return _legacy_normalize_strategy_profile_key(value)
 
@@ -51,7 +51,7 @@ def build_strategy_config_for_row(
     all_sports_profile: Mapping[str, Any] | None = None,
     sport_profiles: Mapping[str, Mapping[str, Any]] | None = None,
 ) -> dict[str, Any]:
-    from src.automation_scheduler_legacy.backtest_strategy_profiles import build_strategy_config_for_row as _legacy_build_strategy_config_for_row
+    from src.backtesting.backtest_strategy_profiles import build_strategy_config_for_row as _legacy_build_strategy_config_for_row
 
     return _legacy_build_strategy_config_for_row(
         row,
@@ -61,7 +61,7 @@ def build_strategy_config_for_row(
 
 
 def describe_regression_profiles() -> dict[str, Any]:
-    from src.automation_scheduler_legacy.backtest_strategy_profiles import describe_regression_profiles as _legacy_describe_regression_profiles
+    from src.backtesting.backtest_strategy_profiles import describe_regression_profiles as _legacy_describe_regression_profiles
 
     return _legacy_describe_regression_profiles()
 
@@ -73,7 +73,7 @@ def get_regression_profile(
     all_sports_profile: Mapping[str, Any] | None = None,
     sport_profiles: Mapping[str, Mapping[str, Any]] | None = None,
 ) -> dict[str, Any]:
-    from src.automation_scheduler_legacy.backtest_strategy_profiles import get_regression_profile as _legacy_get_regression_profile
+    from src.backtesting.backtest_strategy_profiles import get_regression_profile as _legacy_get_regression_profile
 
     return _legacy_get_regression_profile(
         sport=sport,

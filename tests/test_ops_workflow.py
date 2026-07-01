@@ -159,7 +159,7 @@ class TestOpsWorkflow(unittest.TestCase):
 
     def test_outcome_reconcile_mode_reports_mismatch_warning(self):
         with patch(
-            'src.automation_scheduler_legacy.ops_workflow.check_outcome_reconciliation',
+            'src.services.ops_workflow.check_outcome_reconciliation',
             return_value={
                 "ok": True,
                 "status": "local_render_state_mismatch",

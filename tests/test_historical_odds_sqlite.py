@@ -20,7 +20,7 @@ import sqlite3
 # ensure the parent package is importable
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from src.automation_scheduler_legacy.historical_odds_importers import build_canonical_historical_odds_row, import_football_data_csv
+from src.data.historical_odds_importers import build_canonical_historical_odds_row, import_football_data_csv
 from src.services.streamlit_dashboard_facade import DEFAULT_QUERY_LIMIT, HISTORICAL_ODDS_SQLITE_TABLES, SQLITE_SCHEMA_VERSION, connect_historical_odds_db, get_sqlite_table_counts, initialize_historical_odds_db, import_historical_odds_file_to_sqlite, make_event_id, make_odds_id, query_historical_odds_rows, stable_hash_id, summarize_historical_odds_db, upsert_canonical_historical_odds_rows, validate_sqlite_store, utc_now_iso
 
 # ---------------------------------------------------------------------------

@@ -50,7 +50,7 @@ class TestDeepSeekReviewer(unittest.TestCase):
     def test_invalid_json_is_handled(self):
         os.environ["DEEPSEEK_ENABLED"] = "true"
         response = _FakeResponse({"response": "not json"})
-        with patch('src.automation_scheduler_legacy.deepseek_reviewer.httpx.Client', return_value=_FakeClient(response=response)):
+        with patch('src.ai.deepseek_reviewer.httpx.Client', return_value=_FakeClient(response=response)):
             result = run_deepseek_review(collector_cycle_report={})
         self.assertEqual(result["status"], "invalid_json")
         self.assertFalse(result["json_schema_valid"])
@@ -58,7 +58,7 @@ class TestDeepSeekReviewer(unittest.TestCase):
 
     def test_timeout_is_handled(self):
         os.environ["DEEPSEEK_ENABLED"] = "true"
-        with patch('src.automation_scheduler_legacy.deepseek_reviewer.httpx.Client', return_value=_FakeClient(exc=httpx.TimeoutException("timeout"))):
+        with patch('src.ai.deepseek_reviewer.httpx.Client', return_value=_FakeClient(exc=httpx.TimeoutException("timeout"))):
             result = run_deepseek_review(collector_cycle_report={})
         self.assertEqual(result["status"], "timeout")
         self.assertFalse(result["local_server_reachable"])
@@ -77,7 +77,7 @@ class TestDeepSeekReviewer(unittest.TestCase):
             "must_not_execute": True,
         }
         response = _FakeResponse({"response": json.dumps(payload)})
-        with patch('src.automation_scheduler_legacy.deepseek_reviewer.httpx.Client', return_value=_FakeClient(response=response)):
+        with patch('src.ai.deepseek_reviewer.httpx.Client', return_value=_FakeClient(response=response)):
             result = run_deepseek_review(collector_cycle_report={})
         self.assertEqual(result["status"], "review_rejected")
         self.assertTrue(result["forbidden_actions_rejected"])

@@ -29,8 +29,8 @@ def test_final_execution_blocker_delete_proof_docs_exist_and_classify() -> None:
 def test_final_execution_blocker_delete_proof_canonical_imports_safe() -> None:
     readiness = importlib.import_module("src.brokerage.readiness")
     decision_engine = importlib.import_module("src.services.decision_engine")
-    paper_trade_ledger = importlib.import_module('src.automation_scheduler_legacy.paper_trade_ledger')
-    paper_decision_ledger = importlib.import_module('src.automation_scheduler_legacy.paper_decision_ledger')
+    paper_trade_ledger = importlib.import_module('src.brokerage.paper_trade_ledger')
+    paper_decision_ledger = importlib.import_module('src.brokerage.paper_decision_ledger')
 
     plan = decision_engine.build_brokerage_execution_plan(
         {"ticker": "MSFT", "stake": 8, "american_odds": -105, "decision_id": "d4", "provider": "demo"}
