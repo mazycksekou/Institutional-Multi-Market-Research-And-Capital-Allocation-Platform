@@ -8,6 +8,9 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 
+SOURCE_EVENT_LINK_RESOLVER_VERSION = "10H21"
+
+
 def normalize_event_link_value(value: Any) -> str:
     if value in (None, ""):
         return ""
@@ -336,6 +339,7 @@ __all__ = [
     "normalize_event_link_date",
     "normalize_event_link_token",
     "normalize_event_link_value",
+    "SOURCE_EVENT_LINK_RESOLVER_VERSION",
     "resolve_source_event_link",
     "resolve_source_event_links",
     "score_event_link_candidate",

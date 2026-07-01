@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from .market_state_graph import GRAPH_RELATIONSHIP_VERSION, infer_graph_asset_type, relationship_templates_for_item
+from .manifold import GRAPH_RELATIONSHIP_VERSION, infer_graph_asset_type, relationship_templates_for_item
 from src.security.policy import locked_safety_flags
 
 

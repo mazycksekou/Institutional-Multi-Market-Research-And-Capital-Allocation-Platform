@@ -139,12 +139,96 @@ def discover_backtest_artifacts(*, base_dir: str | Path | None = None) -> list[P
     return sorted(set(candidates))
 
 
-def validate_paper_only_fixture_rows(rows: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
-    from src.backtesting.backtest_dataset_builder import (
-        validate_paper_only_fixture_rows as legacy_validate_paper_only_fixture_rows,
-    )
+def _safe_float(value: Any) -> float | None:
+    try:
+        if value in (None, ""):
+            return None
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    if number != number or number in (float("inf"), float("-inf")):
+        return None
+    return number
 
-    return legacy_validate_paper_only_fixture_rows(rows)
+
+def validate_paper_only_fixture_rows(rows: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
+    rows_tested = 0
+    rows_valid = 0
+    rows_invalid = 0
+    missing_field_reasons: list[str] = []
+    warning_reasons: list[str] = []
+    observed_execution_modes: set[str] = set()
+    observed_source_types: set[str] = set()
+
+    for row in rows:
+        rows_tested += 1
+        row_missing: list[str] = []
+        row_warnings: list[str] = []
+
+        for field in PAPER_ONLY_FIXTURE_REQUIRED_FIELDS:
+            value = row.get(field)
+            if value in (None, ""):
+                row_missing.append(field)
+
+        execution_mode = str(row.get("execution_mode") or "").strip().lower()
+        if execution_mode:
+            observed_execution_modes.add(execution_mode)
+        if execution_mode not in {"paper_only", "fixture_only"}:
+            row_missing.append("execution_mode")
+            row_warnings.append(f"invalid_execution_mode:{execution_mode or 'missing'}")
+
+        source_type = str(row.get("source_type") or "").strip().lower()
+        if source_type:
+            observed_source_types.add(source_type)
+        if "fixture" not in source_type:
+            row_missing.append("source_type")
+            row_warnings.append(f"invalid_source_type:{source_type or 'missing'}")
+
+        for field in ("model_probability", "implied_probability"):
+            numeric_value = _safe_float(row.get(field))
+            if numeric_value is None:
+                row_warnings.append(f"invalid_numeric_value:{field}")
+                continue
+            if not 0.0 <= numeric_value <= 1.0:
+                row_warnings.append(f"probability_out_of_range:{field}")
+
+        for field in ("market_odds_american", "expected_value", "stake_units", "bankroll_snapshot"):
+            if _safe_float(row.get(field)) is None:
+                row_warnings.append(f"invalid_numeric_value:{field}")
+
+        if row_missing:
+            rows_invalid += 1
+            missing_field_reasons.extend(row_missing)
+        else:
+            rows_valid += 1
+
+        warning_reasons.extend(row_warnings)
+
+    execution_mode_result = "mixed"
+    if len(observed_execution_modes) == 1:
+        execution_mode_result = next(iter(observed_execution_modes))
+    elif not observed_execution_modes:
+        execution_mode_result = ""
+
+    source_type_result = "mixed"
+    if len(observed_source_types) == 1:
+        source_type_result = next(iter(observed_source_types))
+    elif not observed_source_types:
+        source_type_result = ""
+
+    return {
+        "rows_tested": rows_tested,
+        "rows_valid": rows_valid,
+        "rows_invalid": rows_invalid,
+        "missing_field_reasons": missing_field_reasons,
+        "warning_reasons": warning_reasons,
+        "execution_mode": execution_mode_result,
+        "source_type": source_type_result,
+        "prediction_testing_started": False,
+        "live_connectors_enabled": False,
+        "api_calls_enabled": False,
+        "database_writes_enabled": False,
+    }
 
 
 def _field_coverage(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
