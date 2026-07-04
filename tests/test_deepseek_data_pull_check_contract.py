@@ -54,7 +54,7 @@ class TestDeepSeekDataPullCheckContract(unittest.TestCase):
     def test_required_files_exist(self):
         for relative in (
             "scripts/deepseek_data_pull_check.ps1",
-            "prompts/deepseek_data_pull_check_prompt.md",
+            "src/ai/prompts/deepseek_data_pull_check_prompt.md",
             "docs/DEEPSEEK_DATA_PULL_CHECK.md",
         ):
             self.assertTrue((ROOT / relative).exists(), relative)
