@@ -68,7 +68,7 @@ PROVIDER_CACHE_PATH = Path("data/provider_cache.json")
 ALERT_LEDGER_PATH = Path("data/alert_ledger.jsonl")
 LIVE_AGENT_LOG_PATH = Path("data/live_agent.log")
 EXPOSURE_LEDGER_PATH = Path("data/exposure_ledger.jsonl")
-MODEL_REGISTRY_PATH = Path("models/compressed/model_registry.json")
+MODEL_REGISTRY_PATH = Path("src") / "sports" / "models" / "compressed" / "model_registry.json"
 
 
 def get_redacted_config() -> dict[str, Any]:

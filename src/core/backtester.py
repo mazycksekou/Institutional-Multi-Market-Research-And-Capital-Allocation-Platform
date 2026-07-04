@@ -17,7 +17,7 @@ from src.core.math_utils import edge_percent, expected_value, profit_units
 from src.sports.nba_features import build_training_rows, get_feature_columns
 
 DEFAULT_DB_PATH = Path("data") / "sports_master.db"
-DEFAULT_MODEL_DIR = Path("models") / "compressed"
+DEFAULT_MODEL_DIR = Path("src") / "sports" / "models" / "compressed"
 
 
 class SimpleLogisticModel:
