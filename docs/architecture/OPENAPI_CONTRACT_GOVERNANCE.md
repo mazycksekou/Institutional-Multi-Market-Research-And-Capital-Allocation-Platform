@@ -26,6 +26,7 @@
   - JSON Schema validity for component schemas
   - removal of vendor-specific wording from the public contract
 - Integrate the validator into repository checks so contract regressions fail early.
+- The repository already ships `scripts/check_openapi_contract.py`, and `scripts/ops_check.py` wraps it for local validation.
 
 ## Version Governance Recommendations
 - Use semantic versioning for the public contract.

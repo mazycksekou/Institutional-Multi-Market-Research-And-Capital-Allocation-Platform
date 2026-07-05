@@ -10,6 +10,7 @@
 ## Approved documentation layout
 
 - `docs/architecture/`
+- `docs/architecture/adr/`
 - `docs/api/`
 - `docs/setup/`
 - `docs/development/`
@@ -41,3 +42,4 @@ Before every commit:
 4. Update active documentation links when a moved document is still referenced.
 
 The repository validation script `scripts/check_root_markdown.py` and `scripts/ops_check.py` both enforce this rule.
+GitHub Actions, when present, should call those same local scripts rather than duplicating validation logic.
