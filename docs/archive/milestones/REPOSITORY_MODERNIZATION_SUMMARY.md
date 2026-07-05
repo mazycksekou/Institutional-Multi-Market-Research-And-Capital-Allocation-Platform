@@ -48,4 +48,6 @@ It exists so reviewers can find the current truth quickly without reading every 
 If you are trying to understand the repository now, start with the active architecture docs and contracts above.
 Use the historical inputs only when you need to trace why a decision was made.
 
+For the archive reduction pass that removes redundant discovery and compatibility snapshots, see [Legacy Cleanup Summary](./LEGACY_CLEANUP_SUMMARY.md).
+
 This summary is intentionally compact. It replaces a long chain of transitional reports with a single durable milestone reference.

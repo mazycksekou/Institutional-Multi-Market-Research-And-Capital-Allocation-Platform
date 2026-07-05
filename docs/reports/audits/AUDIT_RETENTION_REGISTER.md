@@ -3,10 +3,10 @@
 This register classifies audit, checkpoint, proof, and historical report material so the repository can keep useful evidence without letting temporary reports accumulate indefinitely.
 
 - register_path: `docs/reports/audits/AUDIT_RETENTION_REGISTER.md`
-- scanned_files: 976
+- scanned_files: 950
 - active: 3
 - decision_captured: 5
-- archive: 968
+- archive: 942
 - delete_candidate: 0
 - delete_approved: 0
 
@@ -91,7 +91,6 @@ This register classifies audit, checkpoint, proof, and historical report materia
 | docs/archive/historical_reports/AUTOMATION_SCHEDULER_RUNTIME_DELETE_READINESS_AFTER_10K8ZK7.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/AUTOMATION_SCHEDULER_RUNTIME_IMPORTERS_BEFORE_10K8ZL9A.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/AUTOMATION_SCHEDULER_RUNTIME_IMPORTS_AFTER_10K8ZK7.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
-| docs/archive/historical_reports/AUTOMATION_SCHEDULER_RUNTIME_REDIRECTION_MAP_AFTER_10K8ZK7.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/AUTOMATION_SCHEDULER_RUNTIME_REDIRECTION_MAP_AFTER_10K8ZL9A.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/AUTOMATION_SCHEDULER_RUNTIME_ZERO_IMPORT_PROOF_AFTER_10K8ZL9A.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/AUTOMATION_SCHEDULER_TEST_DELETE_READINESS_AFTER_10K8ZK8.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
@@ -236,7 +235,6 @@ This register classifies audit, checkpoint, proof, and historical report materia
 | docs/archive/historical_reports/FINAL_EXECUTION_BLOCKER_DELETE_DECISION_AFTER_10K8ZIZ.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/FINAL_EXECUTION_BLOCKER_DELETION_COMPLETION_STATUS_AFTER_10K8ZJ0.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/FINAL_EXECUTION_BLOCKER_DELETION_PROOF_AFTER_10K8ZJ0.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
-| docs/archive/historical_reports/FINAL_EXECUTION_BLOCKER_IMPORT_SCAN_AFTER_10K8ZII.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/FINAL_EXECUTION_BLOCKER_IMPORT_SCAN_AFTER_10K8ZIW.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/FINAL_EXECUTION_BLOCKER_IMPORT_SCAN_AFTER_10K8ZIZ.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/FINAL_EXECUTION_BLOCKER_OWNERSHIP_MAP_AFTER_10K8ZIW.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
@@ -247,9 +245,7 @@ This register classifies audit, checkpoint, proof, and historical report materia
 | docs/archive/historical_reports/FINAL_EXECUTION_DELETE_DECISION_AFTER_10K8ZID.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/FINAL_EXECUTION_HELPER_DELETE_DECISION_AFTER_10K8ZIO.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/FINAL_EXECUTION_HELPER_DELETE_DECISION_AFTER_10K8ZIT.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
-| docs/archive/historical_reports/FINAL_EXECUTION_HELPER_IMPORT_SCAN_AFTER_10K8ZIO.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/FINAL_EXECUTION_HELPER_IMPORT_SCAN_AFTER_10K8ZIT.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
-| docs/archive/historical_reports/FINAL_EXECUTION_HELPER_TEST_SCAN_AFTER_10K8ZIO.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/FINAL_EXECUTION_HELPER_TEST_SCAN_AFTER_10K8ZIT.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/FINAL_EXECUTION_IMPORT_SCAN_AFTER_10K8ZID.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/FINAL_EXECUTION_TEST_COMPATIBILITY_REPORT_AFTER_10K8ZIY.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
@@ -399,7 +395,6 @@ This register classifies audit, checkpoint, proof, and historical report materia
 | docs/archive/historical_reports/ODDS_DATA_CONNECTOR_MIGRATION_MAP_AFTER_10K8ZFZ.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/ODDS_DATA_DELETE_READINESS_AFTER_10K8ZGH.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/ODDS_DATA_DISABLED_BEHAVIOR_REPORT_AFTER_10K8ZFZ.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
-| docs/archive/historical_reports/ODDS_DATA_LEGACY_COMPATIBILITY_AFTER_10K8ZFZ.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/ODDS_DATA_LEGACY_COMPATIBILITY_AFTER_10K8ZGH.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/ODDS_DATA_LIVE_CLIENT_MIGRATION_MAP_AFTER_10K8ZGH.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/ODDS_DELETION_COMPLETION_STATUS_AFTER_10K8ZGP.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
@@ -784,16 +779,12 @@ This register classifies audit, checkpoint, proof, and historical report materia
 | docs/archive/historical_reports/POST_STABILIZATION_SAFETY_PROOF_AFTER_10K8ZMP.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/PREDICTION_MARKET_COMPATIBILITY_DELETE_READINESS_AFTER_10K8ZGS.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/PREDICTION_MARKET_COMPATIBILITY_IMPORT_SCAN_AFTER_10K8ZGS.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
-| docs/archive/historical_reports/PREDICTION_MARKET_COMPATIBILITY_REFERENCE_SCAN_AFTER_10K8ZGU.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/PREDICTION_MARKET_COMPATIBILITY_REFERENCE_SCAN_AFTER_10K8ZGV.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/PREDICTION_MARKET_COMPATIBILITY_TEST_REDIRECTION_AFTER_10K8ZGS.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/PREDICTION_MARKET_COMPATIBILITY_TEST_RETIREMENT_MAP_AFTER_10K8ZGV.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/PREDICTION_MARKET_CONNECTOR_DISABLED_LIVE_BEHAVIOR_AFTER_10K8ZGG.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/PREDICTION_MARKET_CONNECTOR_MIGRATION_MAP_AFTER_10K8ZFY.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
-| docs/archive/historical_reports/PREDICTION_MARKET_DELETE_READINESS_AFTER_10K8ZGG.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/PREDICTION_MARKET_DELETE_READINESS_AFTER_10K8ZGR.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
-| docs/archive/historical_reports/PREDICTION_MARKET_DELETE_READINESS_RECHECK_AFTER_10K8ZGU.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
-| docs/archive/historical_reports/PREDICTION_MARKET_DELETE_READINESS_STATUS_AFTER_10K8ZGV.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/PREDICTION_MARKET_DELETION_COMPLETION_STATUS_AFTER_10K8ZGY.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/PREDICTION_MARKET_DISABLED_METHOD_BEHAVIOR_AFTER_10K8ZGR.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/PREDICTION_MARKET_FINAL_DELETE_DECISION_AFTER_10K8ZGW.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
@@ -803,7 +794,6 @@ This register classifies audit, checkpoint, proof, and historical report materia
 | docs/archive/historical_reports/PREDICTION_MARKET_HISTORICAL_TEST_REDIRECTION_MAP_AFTER_10K8ZGU.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/PREDICTION_MARKET_INTELLIGENCE_DELETE_READINESS_AFTER_10K8ZL4.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/PREDICTION_MARKET_INTELLIGENCE_MIGRATION_MAP_AFTER_10K8ZL4.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
-| docs/archive/historical_reports/PREDICTION_MARKET_LEGACY_COMPATIBILITY_AFTER_10K8ZFY.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/PREDICTION_MARKET_LEGACY_COMPATIBILITY_AFTER_10K8ZGG.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/PREDICTION_MARKET_LEGACY_LIVE_METHOD_RETIREMENT_MAP_AFTER_10K8ZGR.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/PREDICTION_MARKET_LIVE_CLIENT_MIGRATION_MAP_AFTER_10K8ZGG.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
@@ -864,9 +854,7 @@ This register classifies audit, checkpoint, proof, and historical report materia
 | docs/archive/historical_reports/REMAINING_AUTOMATION_SCHEDULER_BLOCKERS_AFTER_10K8ZL0.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/REMAINING_AUTOMATION_SCHEDULER_INTELLIGENCE_BLOCKERS_AFTER_10K8ZL7.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/REMAINING_DELETION_BLOCKERS_AFTER_10K8ZG4.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
-| docs/archive/historical_reports/REMAINING_EXECUTION_BLOCKERS_AFTER_10K8ZIK.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/REMAINING_EXECUTION_BLOCKERS_AFTER_10K8ZJ1.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
-| docs/archive/historical_reports/REMAINING_EXECUTION_HELPER_BLOCKERS_AFTER_10K8ZIP.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/REMAINING_EXECUTION_HELPER_BLOCKERS_AFTER_10K8ZIV.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/REMAINING_IMPLEMENTATION_BACKLOG_AFTER_10K8ZK4.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/REMAINING_LEGACY_IMPORTS_AFTER_10K8ZG3.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
@@ -881,20 +869,6 @@ This register classifies audit, checkpoint, proof, and historical report materia
 | docs/archive/historical_reports/REMAINING_PRODUCTION_BLOCKERS_AFTER_10K8ZJI.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/REMAINING_PROVIDER_FOUNDATION_BLOCKERS_AFTER_10K8ZG9.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/REMAINING_SERVICE_DASHBOARD_API_QUEUE_AFTER_10K8ZHA.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
-| docs/archive/historical_reports/REPO_DISCOVERY_DEPENDENCY_GRAPH.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
-| docs/archive/historical_reports/REPO_DISCOVERY_DIRECTORY_TREE.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
-| docs/archive/historical_reports/REPO_DISCOVERY_DUPLICATE_OVERLAP_REPORT.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
-| docs/archive/historical_reports/REPO_DISCOVERY_ENTRYPOINTS.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
-| docs/archive/historical_reports/REPO_DISCOVERY_FACADES_WRAPPERS.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
-| docs/archive/historical_reports/REPO_DISCOVERY_FILE_INVENTORY.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
-| docs/archive/historical_reports/REPO_DISCOVERY_IMPORT_MATRIX.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
-| docs/archive/historical_reports/REPO_DISCOVERY_LEGACY_REFERENCE_SCAN.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
-| docs/archive/historical_reports/REPO_DISCOVERY_MASTER_REPORT.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
-| docs/archive/historical_reports/REPO_DISCOVERY_ORPHAN_DEAD_CODE_REPORT.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
-| docs/archive/historical_reports/REPO_DISCOVERY_OWNERSHIP_MAP.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
-| docs/archive/historical_reports/REPO_DISCOVERY_PYTHON_MODULE_MAP.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
-| docs/archive/historical_reports/REPO_DISCOVERY_TEST_SUITE_MAP.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
-| docs/archive/historical_reports/REPO_DISCOVERY_VALIDATION_STATUS.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/REPOSITORY_OWNERSHIP_MATRIX.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/RESEARCH_BATCH_1_COMPATIBILITY_REPORT_AFTER_10K8ZHS.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/RESEARCH_BATCH_1_DELETE_READINESS_AFTER_10K8ZHS.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |

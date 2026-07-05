@@ -112,6 +112,7 @@ This index points readers to the current truth and the durable historical entry 
 ### MILESTONE SUMMARY
 - `docs/archive/milestones/CURRENT_DATA_PLATFORM_STATUS.md` - Current Data Platform Status
 - `docs/archive/milestones/CURRENT_STORAGE_IMPLEMENTATION.md` - Current Storage Implementation
+- `docs/archive/milestones/LEGACY_CLEANUP_SUMMARY.md` - Legacy Cleanup Summary
 - `docs/archive/milestones/PHASE2_EXECUTIVE_SUMMARY.md` - Phase 2 Executive Summary
 - `docs/archive/milestones/REPOSITORY_MODERNIZATION_SUMMARY.md` - Repository Modernization Summary
 
