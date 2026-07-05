@@ -37,3 +37,7 @@
 ## Root Location Recommendation
 - Keep `openapi.yaml` at repository root.
 - Reason: it is a stable public contract artifact, it is not loaded as runtime code, the filename is the standard OpenAPI filename, and there is no current evidence that moving it would improve safety or maintainability.
+
+## Terminology Note
+- Public contract wording in active docs should follow `docs/architecture/TERMINOLOGY_STANDARD.md`.
+- Historical reports keep their original terminology as evidence unless a clarifying note is safer than a rewrite.

@@ -5,6 +5,7 @@
 - OpenAPI is not OpenAI.
 - `openapi.yaml` is the correct contract filename for a checked-in OpenAPI document.
 - `openapi.yaml` should remain at repository root unless a real tooling or deployment dependency proves a safe move.
+- This note is specialized; the canonical terminology definitions live in `TERMINOLOGY_STANDARD.md`.
 
 ## Public Contract Boundary
 - The OpenAPI contract exposes only the public interface.

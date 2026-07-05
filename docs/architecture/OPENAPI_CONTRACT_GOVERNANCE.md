@@ -46,6 +46,7 @@
 - Avoid vendor names in the public contract unless a compatibility note is strictly necessary.
 - OpenAPI is the specification standard.
 - `openapi.yaml` is the correct checked-in filename for the contract artifact and should remain at repository root unless tooling requirements change.
+- See `TERMINOLOGY_STANDARD.md` for canonical meanings of public contract, client integration, model provider, data provider, connector, adapter, and analysis route.
 
 ## Proprietary IP Exposure Assessment
 - The contract does not expose proprietary algorithms, feature engineering, weights, or internal storage details.
