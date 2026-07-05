@@ -2,10 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
-import subprocess
 import sys
-import tempfile
 from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
@@ -23,7 +20,36 @@ ALLOWED_DOC_ROOT_MARKDOWN = {
     "DOCUMENT_RETENTION_INDEX.md",
     "MASTER_DOCUMENT_INDEX.md",
 }
-TEXT_EXTENSIONS = {".md", ".txt", ".json"}
+SEARCHABLE_TEXT_EXTENSIONS = {
+    ".py",
+    ".md",
+    ".txt",
+    ".json",
+    ".jsonl",
+    ".yml",
+    ".yaml",
+    ".ps1",
+    ".psm1",
+    ".toml",
+    ".ini",
+    ".cfg",
+    ".sh",
+    ".bat",
+    ".cmd",
+}
+SEARCH_EXCLUDED_PARTS = {
+    ".git",
+    ".pytest_cache",
+    "__pycache__",
+    ".mypy_cache",
+    ".ruff_cache",
+    ".venv",
+    "venv",
+    "env",
+    "node_modules",
+    "build",
+    "dist",
+}
 
 
 def _relative(path: Path) -> str:
@@ -31,24 +57,15 @@ def _relative(path: Path) -> str:
 
 
 def _tracked_document_files(root: Path = ROOT) -> list[Path]:
-    proc = subprocess.run(
-        ["git", "ls-files", "docs"],
-        cwd=root,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    if proc.returncode != 0:
+    docs_root = root / "docs"
+    if not docs_root.exists():
         return []
-    files: list[Path] = []
-    for raw in proc.stdout.splitlines():
-        text = raw.strip()
-        if not text:
-            continue
-        path = root / text
-        if path.is_file() and path.suffix.lower() in TEXT_EXTENSIONS:
-            files.append(path)
-    return sorted({path.resolve() for path in files}, key=lambda item: _relative(item).lower())
+    files = [
+        path.resolve()
+        for path in docs_root.rglob("*")
+        if path.is_file() and path.suffix.lower() in SEARCHABLE_TEXT_EXTENSIONS
+    ]
+    return sorted({path for path in files}, key=lambda item: _relative(item).lower())
 
 
 def _title(path: Path) -> str:
@@ -231,66 +248,39 @@ def _unique_value(category: str, state: str) -> str:
     return "Documentation artifact"
 
 
+def _searchable_reference_files(root: Path = ROOT) -> list[Path]:
+    files: list[Path] = []
+    for path in root.rglob("*"):
+        if not path.is_file() or path.suffix.lower() not in SEARCHABLE_TEXT_EXTENSIONS:
+            continue
+        if set(path.parts) & SEARCH_EXCLUDED_PARTS:
+            continue
+        files.append(path.resolve())
+    return sorted({path for path in files}, key=lambda item: _relative(item).lower())
+
+
 def _active_reference_buckets(doc_paths: list[Path]) -> dict[str, dict[str, list[str]]]:
     if not doc_paths:
         return {}
-    with tempfile.NamedTemporaryFile("w", delete=False, encoding="utf-8") as handle:
-        for path in doc_paths:
-            handle.write(f"{_relative(path)}\n")
-        pattern_path = Path(handle.name)
-
-    try:
-        proc = subprocess.run(
-            [
-                "rg",
-                "-n",
-                "-o",
-                "-F",
-                "-f",
-                str(pattern_path),
-                ".",
-                "--hidden",
-                "--glob",
-                "!.git/**",
-                "--glob",
-                "!**/.venv/**",
-                "--glob",
-                "!**/__pycache__/**",
-                "--glob",
-                "!docs/archive/historical_reports/**",
-                "--glob",
-                "!docs/archive/deprecated_docs/**",
-                "--glob",
-                "!docs/archive/completed_phases/**",
-            ],
-            cwd=ROOT,
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-    finally:
-        try:
-            pattern_path.unlink(missing_ok=True)
-        except Exception:
-            pass
-
     buckets: dict[str, dict[str, list[str]]] = {
         _relative(path): {"active": [], "historical": []} for path in doc_paths
     }
-    if proc.returncode not in {0, 1}:
-        return buckets
-    for line in proc.stdout.splitlines():
+    needles = [_relative(path) for path in doc_paths]
+    for referrer in _searchable_reference_files(ROOT):
         try:
-            referrer, _, match = line.split(":", 2)
-        except ValueError:
+            text = referrer.read_text(encoding="utf-8", errors="ignore")
+        except Exception:
             continue
-        referrer_rel = Path(referrer).as_posix().replace("\\", "/")
-        matched = match.strip()
-        if matched not in buckets:
+        if "docs/" not in text:
             continue
+        referrer_rel = _relative(referrer)
         bucket = "historical" if referrer_rel.startswith("docs/archive/") else "active"
-        if referrer_rel not in buckets[matched][bucket]:
-            buckets[matched][bucket].append(referrer_rel)
+        for matched in needles:
+            if matched in text and referrer_rel not in buckets[matched][bucket]:
+                buckets[matched][bucket].append(referrer_rel)
+    for entry in buckets.values():
+        entry["active"].sort()
+        entry["historical"].sort()
     return buckets
 
 

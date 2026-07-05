@@ -4,6 +4,7 @@ import argparse
 import json
 import subprocess
 import sys
+import shutil
 from pathlib import Path
 from typing import Any
 
@@ -69,17 +70,23 @@ def _root_markdown_offenders(root: Path = ROOT) -> list[str]:
 
 def _ignored_source_files(root: Path = ROOT) -> list[dict[str, str]]:
     offenders: list[dict[str, str]] = []
+    git_path = shutil.which("git")
+    if git_path is None:
+        return [{"path": "<git>", "rule": "git is required for ignored source file validation"}]
     for path in tracked_python_files(root):
         rel = path.relative_to(root).as_posix()
         if not rel.startswith("src/") or path.suffix != ".py":
             continue
-        result = subprocess.run(
-            ["git", "check-ignore", "-v", rel],
-            cwd=root,
-            capture_output=True,
-            text=True,
-            check=False,
-        )
+        try:
+            result = subprocess.run(
+                [git_path, "check-ignore", "-v", rel],
+                cwd=root,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+        except FileNotFoundError:
+            return [{"path": "<git>", "rule": "git is required for ignored source file validation"}]
         if result.returncode == 0 and result.stdout.strip():
             offenders.append({"path": rel, "rule": result.stdout.strip()})
     return offenders

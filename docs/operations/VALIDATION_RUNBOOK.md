@@ -18,7 +18,7 @@ Use this runbook when you need to verify repository health locally.
 
 - `git` for repository-state checks
 - `python` for the governance scripts and validation commands
-- `rg` (ripgrep) for `python scripts/check_document_lifecycle.py`
+- `ripgrep` is not required; `python scripts/check_document_lifecycle.py` is now Python-native
 
 ## When to Use Full Regression
 

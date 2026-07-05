@@ -137,6 +137,7 @@ This index points readers to the current truth and the durable historical entry 
 
 ## Historical Entry Points
 
+- `docs/archive/historical_reports/.aider.chat.history.md` - aider chat started at 2026-06-13 10:02:57
 - `docs/archive/historical_reports/ACTIVATION_GATE_DISABLED_BEHAVIOR_AFTER_10K8ZJJ.md` - Activation Gate Disabled Behavior After 10K8ZJJ
 - `docs/archive/historical_reports/ACTIVATION_GATE_REQUIREMENTS_AFTER_10K8ZJJ.md` - Activation Gate Requirements After 10K8ZJJ
 - `docs/archive/historical_reports/ACTIVE_LEGACY_REFERENCE_REDIRECT_MAP.md` - Active Legacy Reference Redirect Map
@@ -176,7 +177,6 @@ This index points readers to the current truth and the durable historical entry 
 - `docs/archive/historical_reports/ANALYTICS_RESEARCH_REFERENCE_REMEDIATION_PLAN_AFTER_10K8ZHZ.md` - Analytics/Research Reference Remediation Plan After 10K8ZHZ
 - `docs/archive/historical_reports/ANALYTICS_RESEARCH_TEST_BLOCKER_STATUS_AFTER_10K8ZI1.md` - Analytics/Research Test Blocker Status After 10K8ZI1
 - `docs/archive/historical_reports/ANALYTICS_RESEARCH_WRAPPER_DELETE_READINESS_AFTER_10K8ZHZ.md` - Analytics/Research Wrapper Delete Readiness After 10K8ZHZ
-- `docs/archive/historical_reports/ANALYTICS_RESEARCH_WRAPPER_DELETION_COMPLETION_STATUS_AFTER_10K8ZI5.md` - Analytics/Research Wrapper Deletion Completion Status After 10K8ZI5
 
 _Additional historical entries are listed in `C:/Users/user/betting-stock-api-code-integration/betting stock api code intergration/docs/DOCUMENT_RETENTION_INDEX.md`._
 

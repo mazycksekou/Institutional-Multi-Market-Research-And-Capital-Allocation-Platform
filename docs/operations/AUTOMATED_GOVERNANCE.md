@@ -21,7 +21,9 @@ The canonical local checks are:
 
 ## Tooling Requirements
 
-The document lifecycle checker scans the repository with `rg` (ripgrep). Install `ripgrep` locally and in CI before running the governance checks so `python scripts/check_document_lifecycle.py` can complete successfully.
+- `python` is required for all governance scripts.
+- `git` is required for repository-aware checks such as branch state, ignored-file validation, and tracked-file inventory.
+- The document lifecycle checker is Python-native and does not require `ripgrep`.
 
 ## Current Governance Checks
 

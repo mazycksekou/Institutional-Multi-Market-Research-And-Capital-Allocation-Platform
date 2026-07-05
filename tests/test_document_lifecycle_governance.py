@@ -33,12 +33,13 @@ class TestDocumentLifecycleGovernance(unittest.TestCase):
         self.assertIn("check_document_lifecycle.py", ops_check)
         self.assertIn("document_lifecycle", ops_check)
 
-    def test_document_lifecycle_checker_requires_ripgrep_and_workflow_installs_it(self):
+    def test_document_lifecycle_checker_is_python_native_and_workflow_does_not_install_ripgrep(self):
         checker = (ROOT / "scripts" / "check_document_lifecycle.py").read_text(encoding="utf-8")
         workflow = (ROOT / ".github" / "workflows" / "repository-validation.yml").read_text(encoding="utf-8")
-        self.assertIn('"rg"', checker)
-        self.assertIn("ripgrep", workflow)
-        self.assertIn("Install ripgrep", workflow)
+        self.assertNotIn("subprocess", checker)
+        self.assertNotIn('"rg"', checker)
+        self.assertNotIn("ripgrep", workflow)
+        self.assertNotIn("Install ripgrep", workflow)
 
     def test_docs_root_contains_only_retention_indexes(self):
         offenders = sorted(
