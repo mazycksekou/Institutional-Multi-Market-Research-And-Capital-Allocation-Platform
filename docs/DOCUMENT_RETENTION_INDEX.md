@@ -2,7 +2,7 @@
 
 This register classifies every tracked document under `docs/` so the repository can keep durable knowledge, archive historical evidence, and identify temporary work products that should eventually be consolidated or deleted.
 
-- scanned_files: 1062
+- scanned_files: 1063
 - working: 6
 - active: 92
 - decision_captured: 14
@@ -1056,6 +1056,7 @@ This register classifies every tracked document under `docs/` so the repository 
 | docs/reports/gap_analysis/COMPLETE_GAP_ANALYSIS.md | Complete Gap Analysis | GAP ANALYSIS | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/reports/gap_analysis/IMPLEMENTATION_READINESS_REPORT.md | Implementation Readiness Report | GAP ANALYSIS | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/reports/inventories/import_scan_PHASE_X.json | Import Scan Phase X | INVENTORY | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
+| docs/reports/inventories/BRANCH_INVENTORY_AND_MERGE_READINESS.md | Branch Inventory And Merge Readiness | INVENTORY | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/reports/inventories/inventory_PHASE_X.json | Inventory Phase X | INVENTORY | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/inventories/orphan_dead_code_inventory.json | Orphan Dead Code Inventory | INVENTORY | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/inventories/PHASE1_LEGACY_INVENTORY.md | PHASE 1 Legacy Inventory | INVENTORY | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |

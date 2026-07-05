@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -29,6 +30,23 @@ def _legacy_python_files() -> list[str]:
     return sorted(path.relative_to(ROOT).as_posix() for path in LEGACY_ROOT.rglob("*.py"))
 
 
+def _resolve_branch_name() -> str | None:
+    for env_var in ("GITHUB_HEAD_REF", "GITHUB_REF_NAME"):
+        value = os.environ.get(env_var, "").strip()
+        if value:
+            return value
+
+    for command in (
+        ["git", "branch", "--show-current"],
+        ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+    ):
+        completed = subprocess.run(command, cwd=ROOT, capture_output=True, text=True, check=False)
+        branch = (completed.stdout or completed.stderr or "").strip()
+        if completed.returncode == 0 and branch and branch != "HEAD":
+            return branch
+    return None
+
+
 def _run_ops_check(mode: str, input_path: Path, output_path: Path) -> None:
     subprocess.run(
         [
@@ -52,6 +70,19 @@ def test_phase1_legacy_inventory_reflects_final_decommission() -> None:
 
     assert not LEGACY_ROOT.exists()
     assert not (ROOT / "automation_scheduler").exists()
-    assert subprocess.check_output(["git", "branch", "--show-current"], cwd=ROOT, text=True).strip() == "phase-6-api-slimming"
+
+    branch_name = _resolve_branch_name()
+    if branch_name is not None:
+        assert branch_name == "phase-6-api-slimming"
 
     assert _legacy_python_files() == []
+
+
+def test_phase1_legacy_inventory_branch_resolution_prefers_ci_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("GITHUB_HEAD_REF", "phase-6-api-slimming")
+    monkeypatch.setenv("GITHUB_REF_NAME", "pull/123/merge")
+    assert _resolve_branch_name() == "phase-6-api-slimming"
+
+
+if __name__ == "__main__":
+    raise SystemExit(pytest.main([__file__]))

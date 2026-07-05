@@ -95,6 +95,9 @@ This index points readers to the current truth and the durable historical entry 
 - `docs/reports/gap_analysis/COMPLETE_GAP_ANALYSIS.md` - Complete Gap Analysis
 - `docs/reports/gap_analysis/IMPLEMENTATION_READINESS_REPORT.md` - Implementation Readiness Report
 
+### INVENTORY
+- `docs/reports/inventories/BRANCH_INVENTORY_AND_MERGE_READINESS.md` - Branch Inventory And Merge Readiness
+
 ### INDEX
 - `docs/DOCUMENT_RETENTION_INDEX.md` - Document Retention Index
 - `docs/MASTER_DOCUMENT_INDEX.md` - Master Document Index
