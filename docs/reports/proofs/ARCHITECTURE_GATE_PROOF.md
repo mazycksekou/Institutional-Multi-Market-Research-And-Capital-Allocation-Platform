@@ -12,7 +12,7 @@ Validation summary:
   - `root_markdown_offenders: 0`
   - `ignored_source_files: 0`
   - `legacy_import_issues: 0`
-  - `archived_tests: 265`
+  - `archived_tests: 266`
 
 Result:
 

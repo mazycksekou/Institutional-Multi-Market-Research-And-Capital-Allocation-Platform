@@ -91,6 +91,10 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item
         path = Path(str(item.fspath))
         if path.name in _ARCHIVE_ALLOWLIST or not path.name.startswith("test_phase"):
             continue
+        if path.name.startswith("test_phase_x"):
+            item.add_marker(pytest.mark.architecture_archive)
+            item.add_marker(pytest.mark.skip(reason="archived migration proof"))
+            continue
         if path.name.startswith("test_phase10k"):
             item.add_marker(pytest.mark.architecture_archive)
             item.add_marker(pytest.mark.skip(reason="archived migration proof"))

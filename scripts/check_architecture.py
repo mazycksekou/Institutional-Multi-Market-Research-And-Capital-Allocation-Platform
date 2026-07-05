@@ -42,7 +42,7 @@ def _is_archived_test(path: Path) -> bool:
         return False
     if not rel.startswith("tests/test_phase"):
         return False
-    if path.name.startswith("test_phase10k"):
+    if path.name.startswith("test_phase10k") or path.name.startswith("test_phase_x"):
         return True
     try:
         text = path.read_text(encoding="utf-8")

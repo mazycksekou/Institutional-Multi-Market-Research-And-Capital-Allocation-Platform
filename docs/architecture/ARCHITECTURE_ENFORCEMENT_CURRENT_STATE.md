@@ -9,7 +9,7 @@ Current state snapshot:
 - Root Markdown offenders: none
 - Ignored `src/**/*.py` files: none
 - Direct legacy executable import targets: none
-- Archived migration-proof tests: 265
+- Archived migration-proof tests: 266
 
 Observed repository shape:
 

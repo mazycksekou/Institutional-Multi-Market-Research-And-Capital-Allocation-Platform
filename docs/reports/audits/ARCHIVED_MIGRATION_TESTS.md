@@ -5,7 +5,7 @@ Archived migration-proof tests are identified by `tests/conftest.py` when they:
 - start with `test_phase`
 - and reference retired legacy paths or root phase documents
 
-Current archived count: `265`
+Current archived count: `266`
 
 Representative archived patterns:
 
