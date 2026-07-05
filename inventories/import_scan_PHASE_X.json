@@ -51,6 +51,21 @@
       "canonical_target": "src.scripts",
       "internal_importer_count": 0,
       "module_candidates": [
+        "scripts.check_root_markdown",
+        "scripts"
+      ],
+      "path": "scripts/check_root_markdown.py",
+      "runtime_importer_count": 0,
+      "runtime_importers": [],
+      "script_importer_count": 1,
+      "script_importers": [],
+      "test_importer_count": 1,
+      "test_importers": []
+    },
+    {
+      "canonical_target": "src.scripts",
+      "internal_importer_count": 0,
+      "module_candidates": [
         "scripts.daily_data_hygiene",
         "scripts"
       ],
@@ -8388,6 +8403,6 @@
       "test_importers": []
     }
   ],
-  "input_count": 555,
+  "input_count": 556,
   "root": "C:\\Users\\user\\betting-stock-api-code-integration\\betting stock api code intergration"
 }

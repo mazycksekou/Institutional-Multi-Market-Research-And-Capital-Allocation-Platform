@@ -183,6 +183,38 @@
       "deletion_risk": "high",
       "imports": [
         "__future__",
+        "pathlib",
+        "sys"
+      ],
+      "internal_importer_count": 0,
+      "internal_legacy_callers": [],
+      "migration_decision": "review",
+      "module_candidates": [
+        "scripts.check_root_markdown",
+        "scripts"
+      ],
+      "path": "scripts/check_root_markdown.py",
+      "public_symbols": [
+        "find_root_markdown",
+        "main",
+        "recommended_destination"
+      ],
+      "responsibility": "Maintenance script",
+      "runtime_callers": [],
+      "runtime_importer_count": 0,
+      "script_importer_count": 1,
+      "test_callers": [],
+      "test_importer_count": 1
+    },
+    {
+      "canonical_target": "src.scripts",
+      "classification": [
+        "COMPATIBILITY_WRAPPER_ONLY",
+        "ACTIVE_TEST_DEPENDENCY"
+      ],
+      "deletion_risk": "high",
+      "imports": [
+        "__future__",
         "argparse",
         "collections",
         "datetime",
@@ -277,6 +309,7 @@
       "imports": [
         "__future__",
         "argparse",
+        "importlib.util",
         "json",
         "pathlib",
         "src.services.ops_workflow",
@@ -297,6 +330,7 @@
         "_line",
         "_load_path_list",
         "_text_summary",
+        "_validate_root_markdown",
         "_write_json_report",
         "main"
       ],
@@ -18824,6 +18858,6 @@
       "test_importer_count": 0
     }
   ],
-  "input_count": 555,
+  "input_count": 556,
   "root": "C:\\Users\\user\\betting-stock-api-code-integration\\betting stock api code intergration"
 }
