@@ -1,6 +1,8 @@
-# DeepSeek Data Pull Check
+# External Model Data Pull Check
 
-This wrapper gives DeepSeek a safe way to inspect compact reports and identify prediction-market outcome candidates without changing production state.
+This wrapper gives the external model review workflow a safe way to inspect compact reports and identify prediction-market outcome candidates without changing production state.
+
+The legacy script name remains DeepSeek-named for compatibility with existing operational commands.
 
 ## Manual Commands
 
@@ -36,7 +38,7 @@ The script resolves the project root, activates `.venv` when present, sets `APP_
 - `.\scripts\check_render.ps1`
 - `.\scripts\check_data_availability_tiers.ps1`
 
-It then writes compact DeepSeek check reports. Compact report persistence is allowed; outcome persistence, source enabling, deploys, imports, migrations, and execution actions are blocked.
+It then writes compact check reports. Compact report persistence is allowed; outcome persistence, source enabling, deploys, imports, migrations, and execution actions are blocked.
 
 ## Provider Calls
 
@@ -129,7 +131,7 @@ Zero-call reasons are compact safe labels:
 
 ## Report Paths
 
-DeepSeek check reports:
+Check reports:
 
 - `data/deepseek_data_checks/latest.json`
 - `data/deepseek_data_checks/latest.md`

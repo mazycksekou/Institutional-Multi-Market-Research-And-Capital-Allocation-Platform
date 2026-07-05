@@ -35,7 +35,7 @@
 - Current recommended version after this hardening pass: `2.2.0`.
 
 ## Vendor Neutrality Recommendations
-- Replace `Custom GPT`, `GPT Actions`, and `ChatGPT` with platform-neutral wording.
+- Replace vendor-specific assistant branding with platform-neutral wording.
 - Preferred public terms:
   - public API
   - platform
@@ -44,6 +44,8 @@
   - analysis API
   - model gateway
 - Avoid vendor names in the public contract unless a compatibility note is strictly necessary.
+- OpenAPI is the specification standard.
+- `openapi.yaml` is the correct checked-in filename for the contract artifact and should remain at repository root unless tooling requirements change.
 
 ## Proprietary IP Exposure Assessment
 - The contract does not expose proprietary algorithms, feature engineering, weights, or internal storage details.
@@ -57,4 +59,3 @@
 3. Add tests for vendor neutrality and schema integrity.
 4. Keep the root `openapi.yaml` as the canonical public artifact.
 5. Revisit schema tightening only after client usage data shows it is safe to do so.
-

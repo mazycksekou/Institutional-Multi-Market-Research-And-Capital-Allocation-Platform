@@ -9,7 +9,7 @@
 
 | Artifact | Current relationship | Reference type | Notes |
 | --- | --- | --- | --- |
-| `openapi.yaml` | Canonical checked-in contract artifact | Public contract | Contains the public OpenAPI contract for the platform. |
+| `openapi.yaml` | Canonical checked-in contract artifact | Public contract | Contains the public OpenAPI contract for the platform; the filename follows the OpenAPI standard. |
 | `main.py` | Generates runtime `/openapi.json` metadata | Active runtime | App title/description feed the live OpenAPI document. |
 | `src/api/performance_routes.py` | Custom OpenAPI generator | Active runtime | Overrides live schema description and server URL. |
 | `src/api/betting_action_routes.py` | Route descriptions for public analysis routes | Active runtime | Public contract wording appears in route docstrings/descriptions. |
@@ -29,12 +29,11 @@
 
 | Risk | Severity | Why it matters | Recommendation |
 | --- | --- | --- | --- |
-| Vendor-specific contract wording | Medium | Public docs still suggest Custom GPT / ChatGPT behavior. | Replace terminology with platform-neutral language. |
+| Vendor-specific contract wording | Medium | Public docs still suggest vendor-specific assistant branding. | Replace terminology with platform-neutral language. |
 | Runtime and checked-in contract drift | Medium | `openapi.yaml` and `/openapi.json` can diverge if descriptions are updated in one place only. | Keep shared wording aligned and validate both surfaces. |
 | Permissive schema shapes | Low to Medium | `additionalProperties: true` preserves compatibility but weakens contract specificity. | Tighten in a future major version only if client usage stabilizes. |
 | Root file location churn | Low | Moving the contract without a concrete consumer benefit could break external references. | Keep `openapi.yaml` at repository root. |
 
 ## Root Location Recommendation
 - Keep `openapi.yaml` at repository root.
-- Reason: it is a stable public contract artifact, it is not loaded as runtime code, and there is no current evidence that moving it would improve safety or maintainability.
-
+- Reason: it is a stable public contract artifact, it is not loaded as runtime code, the filename is the standard OpenAPI filename, and there is no current evidence that moving it would improve safety or maintainability.
