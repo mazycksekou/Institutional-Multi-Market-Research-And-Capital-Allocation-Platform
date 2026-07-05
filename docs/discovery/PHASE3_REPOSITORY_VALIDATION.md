@@ -28,7 +28,7 @@
 - scripts: scripts/
 - data/artifact roots: data/, archives/, inventories/, reports/
 - project config: render.yaml, openapi.yaml, pytest.ini, requirements*.txt, runtime.txt, Dockerfile
-- misc repo artifacts: FULL_REPO_TREE_AFTER_PHASE_6.txt, FAILURE_* reports, legacy_remaining_files_phase10k8zmu.txt, sandbox notes
+- misc repo artifacts: archived under `docs/archive/historical_reports/` and `docs/reports/inventories/`
 
     ### Discovered market families
 

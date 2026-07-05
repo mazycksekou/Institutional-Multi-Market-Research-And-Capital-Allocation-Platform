@@ -9,8 +9,8 @@ from src.services.repo_inventory import tracked_python_files
 
 
 ROOT = Path(__file__).resolve().parents[1]
-INVENTORY = ROOT / "inventories" / "inventory_PHASE_X.json"
-IMPORT_SCAN = ROOT / "inventories" / "import_scan_PHASE_X.json"
+INVENTORY = ROOT / "docs" / "reports" / "inventories" / "inventory_PHASE_X.json"
+IMPORT_SCAN = ROOT / "docs" / "reports" / "inventories" / "import_scan_PHASE_X.json"
 
 pytestmark = pytest.mark.smoke
 

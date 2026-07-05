@@ -8,7 +8,7 @@ from src.services.repo_inventory import tracked_python_files
 
 
 ROOT = Path(__file__).resolve().parents[1]
-INVENTORY_PATH = ROOT / "inventories" / "orphan_dead_code_inventory.json"
+INVENTORY_PATH = ROOT / "docs" / "reports" / "inventories" / "orphan_dead_code_inventory.json"
 EXPECTED_ZERO_IMPORT_SRC = [
     "src/connectors/feeds/__init__.py",
     "src/connectors/web_scraping/__init__.py",
