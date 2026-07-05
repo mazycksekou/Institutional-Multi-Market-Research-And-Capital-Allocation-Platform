@@ -19,4 +19,3 @@ The legacy migration-proof test surface was separated from the active product ga
 - Active behavior tests continue to run
 - Historical migration evidence remains available
 - Deleted file expectations no longer block product development
-

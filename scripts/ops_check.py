@@ -31,6 +31,7 @@ def _text_summary(report: dict[str, Any]) -> str:
     datasources = report.get("datasource_status") or {}
     reconciliation = report.get("outcome_reconciliation_status") or {}
     safety = report.get("safety_status") or {}
+    audit = report.get("audit_lifecycle") or {}
     paths = ((report.get("ops_report_write") or {}).get("paths") or {}) if isinstance(report.get("ops_report_write"), dict) else {}
     lines = [
         _line("mode", report.get("mode")),
@@ -45,6 +46,7 @@ def _text_summary(report: dict[str, Any]) -> str:
         _line("outcome_reconcile", f"{reconciliation.get('status')} local={reconciliation.get('local_package_count')} render={reconciliation.get('render_outcomes_count')} would_insert={reconciliation.get('would_insert_count')} unmatched={reconciliation.get('unmatched_count')}"),
         _line("datasources", f"{datasources.get('status')} sources={datasources.get('total_sources')} enabled={datasources.get('source_enabled_count')}"),
         _line("safety", f"{safety.get('status')} critical={len(safety.get('critical') or [])} warnings={len(safety.get('warnings') or [])}"),
+        _line("audit_lifecycle", f"{audit.get('status')} scanned={audit.get('scanned_count')} warnings={len(audit.get('warnings') or [])} clear_violations={len(audit.get('clear_violations') or [])}"),
         _line("raw_payload_included", report.get("raw_payload_included")),
         _line("secrets_included", report.get("secrets_included")),
     ]
@@ -109,6 +111,16 @@ def _validate_openapi_contract() -> dict[str, Any]:
     return dict(module.collect_openapi_report(ROOT))
 
 
+def _validate_audit_lifecycle() -> dict[str, Any]:
+    script_path = ROOT / "scripts" / "check_audit_lifecycle.py"
+    spec = importlib.util.spec_from_file_location("_check_audit_lifecycle", script_path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"Unable to load audit lifecycle validator from {script_path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return dict(module.collect_audit_lifecycle_report(ROOT))
+
+
 def _exit_code(report: dict[str, Any], fail_on_critical: bool) -> int:
     blocker = report.get("blocker_classification") or {}
     primary = blocker.get("primary")
@@ -169,6 +181,15 @@ def main(argv: list[str] | None = None) -> int:
             print(f"- {item}")
         return 2
 
+    audit_lifecycle = _validate_audit_lifecycle()
+    if audit_lifecycle.get("clear_violations"):
+        print("audit_lifecycle: fail")
+        print(f"register_path: {audit_lifecycle.get('register_path')}")
+        print(f"clear_violations: {len(audit_lifecycle.get('clear_violations') or [])}")
+        for item in audit_lifecycle.get("clear_violations") or []:
+            print(f"- {item}")
+        return 2
+
     if args.mode in {"inventory", "import-scan"}:
         input_paths = _load_path_list(args.input or args.paths)
         if not input_paths:
@@ -198,6 +219,7 @@ def main(argv: list[str] | None = None) -> int:
         skip_network=args.skip_network,
         write_report=args.write_report,
     )
+    report["audit_lifecycle"] = audit_lifecycle
     if args.trigger_cron_check:
         report["trigger_cron_check"] = {
             "ok": False,
