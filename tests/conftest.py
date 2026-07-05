@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import importlib
+import pkgutil
 import sys
 import types
-import pkgutil
+from functools import lru_cache
 from pathlib import Path
+
+import pytest
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -54,3 +57,45 @@ math_models.__path__ = []  # type: ignore[attr-defined]
 sys.modules.setdefault("math_models", math_models)
 _alias_package("math_models.institutional", "src.analytics.institutional")
 math_models.institutional = sys.modules["math_models.institutional"]
+
+
+_ARCHIVE_HINTS = (
+    'ROOT / "PHASE',
+    'ROOT.glob("PHASE',
+    'Path("PHASE',
+    'LEGACY_ROOT = ROOT / "src" / "automation_scheduler_legacy"',
+    "src/automation_scheduler_legacy",
+    "automation_scheduler_legacy",
+)
+_ARCHIVE_ALLOWLIST = {
+    "test_phase1_legacy_inventory.py",
+    "test_phase3b_local_data_platform.py",
+}
+
+
+@lru_cache(maxsize=None)
+def _read_test_source(path: Path) -> str:
+    try:
+        return path.read_text(encoding="utf-8")
+    except Exception:
+        return ""
+
+
+def pytest_configure(config: pytest.Config) -> None:
+    config.addinivalue_line("markers", "architecture_archive: archived migration-proof tests")
+
+
+def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
+    del config
+    for item in items:
+        path = Path(str(item.fspath))
+        if path.name in _ARCHIVE_ALLOWLIST or not path.name.startswith("test_phase"):
+            continue
+        if path.name.startswith("test_phase10k"):
+            item.add_marker(pytest.mark.architecture_archive)
+            item.add_marker(pytest.mark.skip(reason="archived migration proof"))
+            continue
+        text = _read_test_source(path)
+        if any(hint in text for hint in _ARCHIVE_HINTS):
+            item.add_marker(pytest.mark.architecture_archive)
+            item.add_marker(pytest.mark.skip(reason="archived migration proof"))

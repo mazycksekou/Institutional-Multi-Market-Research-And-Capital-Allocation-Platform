@@ -79,6 +79,7 @@ from src.backtesting.strategy_profiles import (
     infer_strategy_profile_key_from_row,
     normalize_strategy_profile_key,
 )
+from src.data.local_platform import build_local_platform_dashboard_snapshot
 from src.research.feature_control import run_calibration_strategy_filter
 from src.research.history import (
     build_experiment_report_export,
@@ -3644,3 +3645,33 @@ def get_source_event_link_resolver_snapshot_for_dashboard(
         "messages": snap.get("messages", []),
         "warnings": snap.get("warnings", []),
     }
+
+
+def get_local_platform_snapshot_for_dashboard(
+    storage_path: str | Path | None = None,
+    *,
+    dataset_id: str | None = None,
+    backend: str = "sqlite",
+) -> dict[str, Any]:
+    """Return a canonical local-platform dashboard snapshot.
+
+    This is a thin adapter over src.data.local_platform so dashboard code can
+    observe the canonical storage/lineage/registry layer without owning it.
+    """
+    try:
+        return build_local_platform_dashboard_snapshot(
+            storage_path=storage_path,
+            dataset_id=dataset_id,
+            backend=backend,
+        )
+    except Exception as exc:
+        return {
+            "ok": False,
+            "status": "local_platform_snapshot_error",
+            "dataset_metadata": None,
+            "dataset_versions": [],
+            "validation_summary": {},
+            "feature_snapshots": [],
+            "lineage_summary": {},
+            "warnings": [str(exc)],
+        }

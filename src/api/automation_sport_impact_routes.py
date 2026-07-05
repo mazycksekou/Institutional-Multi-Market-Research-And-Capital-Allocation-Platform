@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from typing import Any, Optional
 
@@ -20,7 +20,7 @@ from src.api.schemas.automation import (
 def register_automation_sport_impact_routes(
     app: Any,
     *,
-    automation_scheduler_dep: Any,
+    dashboard_facade_dep: Any,
     compact_advanced_red_team_response_dep: Any,
     compact_baseball_impact_diagnostics_response_dep: Any,
     compact_baseball_impact_readiness_response_dep: Any,
@@ -47,7 +47,7 @@ def register_automation_sport_impact_routes(
 
     Canonical owner: src/api/automation_sport_impact_routes.py
     """
-    automation_scheduler = automation_scheduler_dep
+    dashboard_facade = dashboard_facade_dep
     compact_advanced_red_team_response = compact_advanced_red_team_response_dep
     compact_baseball_impact_diagnostics_response = compact_baseball_impact_diagnostics_response_dep
     compact_baseball_impact_readiness_response = compact_baseball_impact_readiness_response_dep
@@ -76,7 +76,7 @@ def register_automation_sport_impact_routes(
         limit: int = Query(default=20),
     ):
         cap = min(max(int(limit), 1), 100 if verbose else 20)
-        payload = automation_scheduler.get_basketball_player_impact_readiness()
+        payload = dashboard_facade.get_basketball_player_impact_readiness()
         compact = compact_basketball_player_impact_readiness_response(payload, limit=cap)
         if verbose or include_debug:
             compact["debug"] = redact_and_limit_payload(payload, limit=cap, verbose=verbose)
@@ -93,7 +93,7 @@ def register_automation_sport_impact_routes(
         if payload.dry_run is not True:
             raise HTTPException(status_code=400, detail="basketball player-impact analysis only supports dry_run=true")
         cap = min(max(int(limit), 1), 100 if verbose else 20)
-        result = automation_scheduler.run_automation_basketball_player_impact(
+        result = dashboard_facade.run_automation_basketball_player_impact(
             candidate=payload.candidate,
             outcome_records=payload.outcome_records,
             red_team_provider=payload.red_team_provider,
@@ -113,7 +113,7 @@ def register_automation_sport_impact_routes(
         limit: int = Query(default=10),
     ):
         cap = min(max(int(limit), 1), 100 if verbose else 10)
-        payload = automation_scheduler.get_automation_advanced_red_team_report(
+        payload = dashboard_facade.get_automation_advanced_red_team_report(
             provider=provider,
             persist_report=persist_report,
             max_items=cap,
@@ -131,7 +131,7 @@ def register_automation_sport_impact_routes(
         limit: int = Query(default=10),
     ):
         cap = min(max(int(limit), 1), 100 if verbose else 10)
-        payload = automation_scheduler.get_extreme_randomness_report()
+        payload = dashboard_facade.get_extreme_randomness_report()
         compact = compact_extreme_randomness_report_response(payload, limit=cap)
         if verbose or include_debug:
             compact["debug"] = redact_and_limit_payload(payload, limit=cap, verbose=verbose)
@@ -145,7 +145,7 @@ def register_automation_sport_impact_routes(
         limit: int = Query(default=10),
     ):
         cap = min(max(int(limit), 1), 100 if verbose else 10)
-        payload = automation_scheduler.get_football_impact_readiness()
+        payload = dashboard_facade.get_football_impact_readiness()
         compact = compact_football_impact_readiness_response(payload, limit=cap)
         if verbose or include_debug:
             compact["debug"] = redact_and_limit_payload(payload, limit=cap, verbose=verbose)
@@ -162,7 +162,7 @@ def register_automation_sport_impact_routes(
         if payload.dry_run is not True:
             raise HTTPException(status_code=400, detail="football impact diagnostics only supports dry_run=true")
         cap = min(max(int(limit), 1), 100 if verbose else 10)
-        result = automation_scheduler.run_football_impact_diagnostics(
+        result = dashboard_facade.run_football_impact_diagnostics(
             sport=payload.sport,
             market_type=payload.market_type,
             team_context=payload.team_context,
@@ -189,7 +189,7 @@ def register_automation_sport_impact_routes(
         limit: int = Query(default=10),
     ):
         cap = min(max(int(limit), 1), 100 if verbose else 10)
-        payload = automation_scheduler.get_soccer_impact_readiness()
+        payload = dashboard_facade.get_soccer_impact_readiness()
         compact = compact_soccer_impact_readiness_response(payload, limit=cap)
         if verbose or include_debug:
             compact["debug"] = redact_and_limit_payload(payload, limit=cap, verbose=verbose)
@@ -206,7 +206,7 @@ def register_automation_sport_impact_routes(
         if payload.dry_run is not True:
             raise HTTPException(status_code=400, detail="soccer impact diagnostics only supports dry_run=true")
         cap = min(max(int(limit), 1), 100 if verbose else 10)
-        result = automation_scheduler.run_soccer_impact_diagnostics(
+        result = dashboard_facade.run_soccer_impact_diagnostics(
             sport=payload.sport,
             market_type=payload.market_type,
             game_context=payload.game_context,
@@ -241,7 +241,7 @@ def register_automation_sport_impact_routes(
         limit: int = Query(default=10),
     ):
         cap = min(max(int(limit), 1), 100 if verbose else 10)
-        payload = automation_scheduler.get_hockey_impact_readiness()
+        payload = dashboard_facade.get_hockey_impact_readiness()
         compact = compact_hockey_impact_readiness_response(payload, limit=cap)
         if verbose or include_debug:
             compact["debug"] = redact_and_limit_payload(payload, limit=cap, verbose=verbose)
@@ -258,7 +258,7 @@ def register_automation_sport_impact_routes(
         if payload.dry_run is not True:
             raise HTTPException(status_code=400, detail="hockey impact diagnostics only supports dry_run=true")
         cap = min(max(int(limit), 1), 100 if verbose else 10)
-        result = automation_scheduler.run_hockey_impact_diagnostics(
+        result = dashboard_facade.run_hockey_impact_diagnostics(
             sport=payload.sport,
             market_type=payload.market_type,
             game_context=payload.game_context,
@@ -290,7 +290,7 @@ def register_automation_sport_impact_routes(
         limit: int = Query(default=50),
     ):
         cap = min(max(int(limit), 1), 100 if verbose else 50)
-        payload = automation_scheduler.get_baseball_impact_readiness()
+        payload = dashboard_facade.get_baseball_impact_readiness()
         compact = compact_baseball_impact_readiness_response(payload, limit=cap)
         if verbose or include_debug:
             compact["debug"] = redact_and_limit_payload(payload, limit=cap, verbose=verbose)
@@ -307,7 +307,7 @@ def register_automation_sport_impact_routes(
         if payload.dry_run is not True:
             raise HTTPException(status_code=400, detail="baseball impact diagnostics only supports dry_run=true")
         cap = min(max(int(limit), 1), 100 if verbose else 10)
-        result = automation_scheduler.run_baseball_impact_diagnostics(
+        result = dashboard_facade.run_baseball_impact_diagnostics(
             sport=payload.sport,
             market_type=payload.market_type,
             game_context=payload.game_context,
@@ -340,7 +340,7 @@ def register_automation_sport_impact_routes(
         limit: int = Query(default=50),
     ):
         cap = min(max(int(limit), 1), 100 if verbose else 50)
-        payload = automation_scheduler.get_golf_impact_readiness()
+        payload = dashboard_facade.get_golf_impact_readiness()
         compact = compact_golf_impact_readiness_response(payload, limit=cap)
         if verbose or include_debug:
             compact["debug"] = redact_and_limit_payload(payload, limit=cap, verbose=verbose)
@@ -357,7 +357,7 @@ def register_automation_sport_impact_routes(
         if payload.dry_run is not True:
             raise HTTPException(status_code=400, detail="golf impact diagnostics only supports dry_run=true")
         cap = min(max(int(limit), 1), 100 if verbose else 10)
-        result = automation_scheduler.run_golf_impact_diagnostics(
+        result = dashboard_facade.run_golf_impact_diagnostics(
             sport=payload.sport,
             market_type=payload.market_type,
             tournament_context=payload.tournament_context,
@@ -392,7 +392,7 @@ def register_automation_sport_impact_routes(
         limit: int = Query(default=50),
     ):
         cap = min(max(int(limit), 1), 100 if verbose else 50)
-        payload = automation_scheduler.get_combat_impact_readiness()
+        payload = dashboard_facade.get_combat_impact_readiness()
         compact = compact_combat_impact_readiness_response(payload, limit=cap)
         if verbose or include_debug:
             compact["debug"] = redact_and_limit_payload(payload, limit=cap, verbose=verbose)
@@ -409,7 +409,7 @@ def register_automation_sport_impact_routes(
         if payload.dry_run is not True:
             raise HTTPException(status_code=400, detail="combat impact diagnostics only supports dry_run=true")
         cap = min(max(int(limit), 1), 100 if verbose else 10)
-        result = automation_scheduler.run_combat_impact_diagnostics(
+        result = dashboard_facade.run_combat_impact_diagnostics(
             sport=payload.sport,
             market_type=payload.market_type,
             bout_context=payload.bout_context,
@@ -442,7 +442,7 @@ def register_automation_sport_impact_routes(
         limit: int = Query(default=50),
     ):
         cap = min(max(int(limit), 1), 100 if verbose else 50)
-        payload = automation_scheduler.get_tennis_impact_readiness()
+        payload = dashboard_facade.get_tennis_impact_readiness()
         compact = compact_tennis_impact_readiness_response(payload, limit=cap)
         if verbose or include_debug:
             compact["debug"] = redact_and_limit_payload(payload, limit=cap, verbose=verbose)
@@ -459,7 +459,7 @@ def register_automation_sport_impact_routes(
         if payload.dry_run is not True:
             raise HTTPException(status_code=400, detail="tennis impact diagnostics only supports dry_run=true")
         cap = min(max(int(limit), 1), 100 if verbose else 10)
-        result = automation_scheduler.run_tennis_impact_diagnostics(
+        result = dashboard_facade.run_tennis_impact_diagnostics(
             sport=payload.sport,
             market_type=payload.market_type,
             match_context=payload.match_context,
@@ -496,7 +496,7 @@ def register_automation_sport_impact_routes(
         if payload.dry_run is not True:
             raise HTTPException(status_code=400, detail="extreme signal diagnostics only supports dry_run=true")
         cap = min(max(int(limit), 1), 100 if verbose else 10)
-        result = automation_scheduler.run_extreme_randomness_diagnostics(
+        result = dashboard_facade.run_extreme_randomness_diagnostics(
             candidate=payload.candidate,
             baseline_values=payload.baseline_values or None,
             matrix_payload=payload.matrix_payload or None,
@@ -517,7 +517,7 @@ def register_automation_sport_impact_routes(
         if payload.dry_run is not True:
             raise HTTPException(status_code=400, detail="advanced shape diagnostics only supports dry_run=true")
         cap = min(max(int(limit), 1), 100 if verbose else 10)
-        result = automation_scheduler.run_automation_advanced_shape_diagnostics(
+        result = dashboard_facade.run_automation_advanced_shape_diagnostics(
             candidate=payload.candidate,
             historical_records=payload.historical_records,
             labeled_records=payload.labeled_records,
@@ -530,3 +530,4 @@ def register_automation_sport_impact_routes(
         if verbose or include_debug:
             compact["debug"] = redact_and_limit_payload(result, limit=cap, verbose=verbose)
         return compact
+

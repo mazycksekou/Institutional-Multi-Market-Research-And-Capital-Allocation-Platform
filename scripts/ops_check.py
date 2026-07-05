@@ -89,6 +89,16 @@ def _validate_root_markdown() -> list[Path]:
     return list(module.find_root_markdown(ROOT))
 
 
+def _validate_architecture() -> dict[str, Any]:
+    script_path = ROOT / "scripts" / "check_architecture.py"
+    spec = importlib.util.spec_from_file_location("_check_architecture", script_path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"Unable to load architecture validator from {script_path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return dict(module.collect_architecture_report(ROOT))
+
+
 def _exit_code(report: dict[str, Any], fail_on_critical: bool) -> int:
     blocker = report.get("blocker_classification") or {}
     primary = blocker.get("primary")
@@ -130,6 +140,14 @@ def main(argv: list[str] | None = None) -> int:
         print("allowed: README.md")
         for path in offenders:
             print(f"- {path.name} -> {module.recommended_destination(path)}")
+        return 2
+
+    architecture = _validate_architecture()
+    if architecture.get("root_markdown_offenders") or architecture.get("ignored_source_files") or architecture.get("legacy_import_issues"):
+        print("architecture: fail")
+        print(f"root_markdown_offenders: {len(architecture.get('root_markdown_offenders') or [])}")
+        print(f"ignored_source_files: {len(architecture.get('ignored_source_files') or [])}")
+        print(f"legacy_import_issues: {len(architecture.get('legacy_import_issues') or [])}")
         return 2
 
     if args.mode in {"inventory", "import-scan"}:

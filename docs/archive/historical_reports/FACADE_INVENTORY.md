@@ -1,0 +1,47 @@
+# Facade Inventory
+
+| path | owner |
+| --- | --- |
+| src/ai/deepseek_data_pull_check.py | src.ai |
+| src/ai/deepseek_disagreement_queue.py | src.ai |
+| src/analytics/calibration_collector.py | src.analytics |
+| src/analytics/report_writer.py | src.analytics |
+| src/analytics/review_queue.py | src.analytics |
+| src/api/provider_status_routes.py | src.api |
+| src/backtesting/backtest_dataset_builder.py | src.backtesting |
+| src/backtesting/engine.py | src.backtesting |
+| src/brokerage/execution.py | src.brokerage |
+| src/brokerage/paper_decision_ledger.py | src.brokerage |
+| src/connectors/market_data/__init__.py | src.connectors |
+| src/connectors/market_data/models.py | src.connectors |
+| src/connectors/odds_data/__init__.py | src.connectors |
+| src/connectors/odds_data/models.py | src.connectors |
+| src/connectors/odds_data/readiness.py | src.connectors |
+| src/connectors/prediction_market_data/__init__.py | src.connectors |
+| src/connectors/prediction_market_data/models.py | src.connectors |
+| src/connectors/prediction_market_data/readiness.py | src.connectors |
+| src/core/budget_gates.py | src.core |
+| src/core/market_pricing.py | src.core |
+| src/core/math_utils.py | src.core |
+| src/core/model_probability.py | src.core |
+| src/core/quant_engine.py | src.core |
+| src/core/risk_engine.py | src.core |
+| src/core/strategy_disagreement.py | src.core |
+| src/market_intelligence/market_feature_packs.py | src.market_intelligence |
+| src/market_intelligence/sports.py | src.market_intelligence |
+| src/providers/nfl_open_data_adapters.py | src.providers |
+| src/providers/policy/write_firewall.py | src.providers |
+| src/providers/provider_router.py | src.providers |
+| src/providers/validation.py | src.providers |
+| src/providers/zero_dte_stocks/provider.py | src.providers |
+| src/services/automation_scheduler_facade.py | src.services |
+| src/services/ledger_service.py | src.services |
+| src/services/odds_runtime_bridge.py | src.services |
+| src/services/ops_workflow.py | src.services |
+| src/services/outcome_store.py | src.services |
+| src/services/repo_inventory.py | src.services |
+| src/services/scheduler_runner.py | src.services |
+| src/services/snapshot_store.py | src.services |
+| src/services/streamlit_dashboard_data.py | src.services |
+| src/services/streamlit_dashboard_facade.py | src.services |
+

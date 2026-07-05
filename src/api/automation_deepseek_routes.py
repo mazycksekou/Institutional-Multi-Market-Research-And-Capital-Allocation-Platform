@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+﻿from typing import Any, Dict, List, Optional
 
 from fastapi import Body, Depends, File, Form, HTTPException, Header, Path, Query, Request, Response, UploadFile
 
@@ -10,7 +10,7 @@ from src.api.schemas.automation import (
 def register_automation_deepseek_routes(
     app: Any,
     *,
-    automation_scheduler_dep: Any,
+    dashboard_facade_dep: Any,
     compact_deepseek_review_response_dep: Any,
     redact_and_limit_payload_dep: Any,
 ) -> None:
@@ -19,13 +19,13 @@ def register_automation_deepseek_routes(
 
     Canonical owner: src/api/automation_deepseek_routes.py
     """
-    automation_scheduler = automation_scheduler_dep
+    dashboard_facade = dashboard_facade_dep
     compact_deepseek_review_response = compact_deepseek_review_response_dep
     redact_and_limit_payload = redact_and_limit_payload_dep
 
     @app.post("/api/automation/deepseek-review", operation_id="reviewAutomationWithDeepSeek")
     async def automation_deepseek_review_endpoint(payload: AutomationDeepSeekReviewRequest, verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=10)):
-        result = automation_scheduler.run_automation_deepseek_review(
+        result = dashboard_facade.run_automation_deepseek_review(
             collector_cycle_report=payload.collector_cycle_report,
             daily_report=payload.daily_report,
             calibration_report=payload.calibration_report,
@@ -56,7 +56,7 @@ def register_automation_deepseek_routes(
 
     @app.post("/api/automation/deepseek-red-team", operation_id="redTeamAutomationWithDeepSeek")
     async def automation_deepseek_red_team_endpoint(payload: AutomationDeepSeekRedTeamRequest, verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=10)):
-        result = automation_scheduler.run_automation_deepseek_red_team(
+        result = dashboard_facade.run_automation_deepseek_red_team(
             candidate=payload.candidate or None,
             candidates=payload.candidates or None,
             enabled=payload.enabled,
@@ -84,7 +84,7 @@ def register_automation_deepseek_routes(
     @app.get("/api/automation/deepseek-disagreements", operation_id="getDeepSeekDisagreements")
     async def automation_deepseek_disagreements_endpoint(verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=100)):
         cap = min(max(int(limit), 1), 500 if verbose else 100)
-        result = automation_scheduler.get_deepseek_disagreements(limit=cap)
+        result = dashboard_facade.get_deepseek_disagreements(limit=cap)
         compact = compact_deepseek_review_response(result)
         if verbose or include_debug:
             compact["debug"] = redact_and_limit_payload(result, limit=cap, verbose=verbose)
@@ -93,7 +93,7 @@ def register_automation_deepseek_routes(
 
     @app.get("/api/automation/deepseek-daily-report", operation_id="getDeepSeekDailyReport")
     async def automation_deepseek_daily_report_endpoint(report_date: Optional[str] = Query(default=None), enabled: Optional[bool] = Query(default=None), persist_report: bool = Query(default=True), verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=10)):
-        result = automation_scheduler.get_deepseek_daily_report(
+        result = dashboard_facade.get_deepseek_daily_report(
             report_date=report_date,
             enabled=enabled,
             persist_report=persist_report,
@@ -103,3 +103,4 @@ def register_automation_deepseek_routes(
         if verbose or include_debug:
             compact["debug"] = redact_and_limit_payload(result, limit=cap, verbose=verbose)
         return compact
+

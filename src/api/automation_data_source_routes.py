@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from typing import Any, Optional
 
@@ -13,7 +13,7 @@ from src.api.schemas.automation import (
 def register_automation_data_source_routes(
     app: FastAPI,
     *,
-    automation_scheduler_dep: Any,
+    dashboard_facade_dep: Any,
     compact_cfbd_adapter_verification_response_dep: Any,
     compact_data_availability_tiers_response_dep: Any,
     compact_data_source_coverage_response_dep: Any,
@@ -30,7 +30,7 @@ def register_automation_data_source_routes(
 
     Canonical owner: src/api/automation_data_source_routes.py
     """
-    automation_scheduler = automation_scheduler_dep
+    dashboard_facade = dashboard_facade_dep
     compact_cfbd_adapter_verification_response = compact_cfbd_adapter_verification_response_dep
     compact_data_availability_tiers_response = compact_data_availability_tiers_response_dep
     compact_data_source_coverage_response = compact_data_source_coverage_response_dep
@@ -49,7 +49,7 @@ def register_automation_data_source_routes(
         include_debug: bool = Query(default=False),
         limit: int = Query(default=100),
     ):
-        payload = automation_scheduler.get_data_source_registry_snapshot(module=module)
+        payload = dashboard_facade.get_data_source_registry_snapshot(module=module)
         cap = min(max(int(limit), 1), 100)
         compact = compact_data_source_registry_response(payload, limit=cap)
         if verbose or include_debug:
@@ -63,7 +63,7 @@ def register_automation_data_source_routes(
         include_debug: bool = Query(default=False),
         limit: int = Query(default=100),
     ):
-        payload = automation_scheduler.get_data_source_coverage_snapshot(module=module)
+        payload = dashboard_facade.get_data_source_coverage_snapshot(module=module)
         cap = min(max(int(limit), 1), 100)
         compact = compact_data_source_coverage_response(payload, limit=cap)
         if verbose or include_debug:
@@ -77,7 +77,7 @@ def register_automation_data_source_routes(
         include_debug: bool = Query(default=False),
         limit: int = Query(default=100),
     ):
-        payload = automation_scheduler.get_data_source_research_lanes_snapshot(module=module)
+        payload = dashboard_facade.get_data_source_research_lanes_snapshot(module=module)
         cap = min(max(int(limit), 1), 100)
         compact = compact_data_source_research_lanes_response(payload, limit=cap)
         if verbose or include_debug:
@@ -89,7 +89,7 @@ def register_automation_data_source_routes(
         module: Optional[str] = Query(default=None),
         limit: int = Query(default=500),
     ):
-        payload = automation_scheduler.get_data_source_env_var_registry(module=module)
+        payload = dashboard_facade.get_data_source_env_var_registry(module=module)
         cap = min(max(int(limit), 1), 500)
         return compact_data_source_env_vars_response(payload, limit=cap)
 
@@ -99,7 +99,7 @@ def register_automation_data_source_routes(
         limit: int = Query(default=50),
     ):
         cap = min(max(int(limit), 1), 100)
-        payload = automation_scheduler.get_data_source_priorities_snapshot(module=module, limit=cap)
+        payload = dashboard_facade.get_data_source_priorities_snapshot(module=module, limit=cap)
         return compact_data_source_priorities_response(payload, limit=cap)
 
     @app.get("/api/automation/data-sources/public-apis-expansion-report", operation_id="getPublicApisExpansionReport")
@@ -109,7 +109,7 @@ def register_automation_data_source_routes(
         limit: int = Query(default=100),
     ):
         cap = min(max(int(limit), 1), 100)
-        payload = automation_scheduler.get_public_apis_expansion_report(module=module, persist_report=persist_report)
+        payload = dashboard_facade.get_public_apis_expansion_report(module=module, persist_report=persist_report)
         return compact_public_apis_expansion_report_response(payload, limit=cap)
 
     @app.get("/api/automation/data-sources/data-availability/tiers", operation_id="getAutomationDataAvailabilityTiers")
@@ -121,7 +121,7 @@ def register_automation_data_source_routes(
         limit: int = Query(default=100),
     ):
         cap = min(max(int(limit), 1), 100)
-        payload = automation_scheduler.get_data_availability_tiers_report(module=module, persist_report=persist_report)
+        payload = dashboard_facade.get_data_availability_tiers_report(module=module, persist_report=persist_report)
         compact = compact_data_availability_tiers_response(payload, limit=cap)
         if verbose or include_debug:
             compact["debug"] = redact_and_limit_payload(payload, limit=cap, verbose=verbose)
@@ -129,7 +129,7 @@ def register_automation_data_source_routes(
 
     @app.get("/api/automation/data-sources/health", operation_id="getAutomationDataSourceHealth")
     async def get_data_source_health_endpoint():
-        payload = automation_scheduler.get_data_source_registry_health()
+        payload = dashboard_facade.get_data_source_registry_health()
         return compact_data_source_health_response(payload)
 
     @app.post(
@@ -142,7 +142,7 @@ def register_automation_data_source_routes(
         include_debug: bool = Query(default=False),
         limit: int = Query(default=10),
     ):
-        result = automation_scheduler.verify_ncaaf_cfbd_adapter(
+        result = dashboard_facade.verify_ncaaf_cfbd_adapter(
             dry_run=payload.dry_run,
             season=payload.season,
             week=payload.week,
@@ -164,9 +164,10 @@ def register_automation_data_source_routes(
 
     @app.post("/api/automation/data-sources/verify", operation_id="verifyAutomationDataSourceRegistry")
     async def verify_data_source_registry_endpoint(payload: DataSourceVerifyRequest, verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=100)):
-        result = automation_scheduler.verify_data_source_registry(module=payload.module, persist_report=payload.persist_report)
+        result = dashboard_facade.verify_data_source_registry(module=payload.module, persist_report=payload.persist_report)
         cap = min(max(int(limit), 1), 100)
         compact = compact_data_source_registry_response(result, limit=cap)
         if verbose or include_debug:
             compact["debug"] = redact_and_limit_payload(result, limit=cap, verbose=verbose)
         return compact
+

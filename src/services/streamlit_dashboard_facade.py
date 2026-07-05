@@ -93,7 +93,7 @@ _CANONICAL_MODULES: tuple[str, ...] = (
     "src.services.ops_workflow",
     "src.services.runtime_shared",
     "src.services.system_health",
-    "src.services.automation_scheduler_facade",
+    "src.services.runtime_facade",
     "src.ai.deepseek_daily_report",
     "src.ai.deepseek_disagreement_queue",
     "src.ai.deepseek_profit_lab",
@@ -417,6 +417,42 @@ def _resolve_symbol(name: str) -> Any:
             globals()[name] = value
             return value
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+def append_audit_record(*args: Any, **kwargs: Any) -> Any:
+    from src.services.audit_log import append_audit_record as _append_audit_record
+
+    return _append_audit_record(*args, **kwargs)
+
+
+def read_audit_records(*args: Any, **kwargs: Any) -> Any:
+    from src.services.audit_log import read_audit_records as _read_audit_records
+
+    return _read_audit_records(*args, **kwargs)
+
+
+def quality_tier(score: Any) -> Any:
+    from src.market_intelligence.institutional_cross_asset_scores import quality_tier as _quality_tier
+
+    return _quality_tier(score)
+
+
+def liquidity_tier(score: Any) -> Any:
+    from src.market_intelligence.institutional_cross_asset_scores import liquidity_tier as _liquidity_tier
+
+    return _liquidity_tier(score)
+
+
+def risk_tier(score: Any) -> Any:
+    from src.market_intelligence.institutional_cross_asset_scores import risk_tier as _risk_tier
+
+    return _risk_tier(score)
+
+
+def execution_readiness_tier(score: Any) -> Any:
+    from src.market_intelligence.institutional_cross_asset_scores import execution_readiness_tier as _execution_readiness_tier
+
+    return _execution_readiness_tier(score)
 
 
 def __getattr__(name: str) -> Any:

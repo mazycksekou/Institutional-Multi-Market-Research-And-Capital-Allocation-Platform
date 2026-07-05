@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from typing import Any, Optional
 
@@ -14,7 +14,7 @@ from src.api.schemas.automation import (
 def register_automation_institutional_lab_routes(
     app: FastAPI,
     *,
-    automation_scheduler_dep: Any,
+    dashboard_facade_dep: Any,
     compact_deepseek_review_response_dep: Any,
     compact_institutional_execution_response_dep: Any,
     compact_institutional_lab_health_response_dep: Any,
@@ -27,7 +27,7 @@ def register_automation_institutional_lab_routes(
 
     Canonical owner: src/api/automation_institutional_lab_routes.py
     """
-    automation_scheduler = automation_scheduler_dep
+    dashboard_facade = dashboard_facade_dep
     compact_deepseek_review_response = compact_deepseek_review_response_dep
     compact_institutional_execution_response = compact_institutional_execution_response_dep
     compact_institutional_lab_health_response = compact_institutional_lab_health_response_dep
@@ -37,7 +37,7 @@ def register_automation_institutional_lab_routes(
 
     @app.get("/api/automation/institutional-lab/health", operation_id="getInstitutionalLabHealth")
     async def get_institutional_lab_health_endpoint():
-        payload = automation_scheduler.get_institutional_lab_health()
+        payload = dashboard_facade.get_institutional_lab_health()
         return compact_institutional_lab_health_response(payload)
 
     @app.post("/api/automation/institutional-lab/run", operation_id="runInstitutionalLab")
@@ -46,7 +46,7 @@ def register_automation_institutional_lab_routes(
             raise HTTPException(status_code=400, detail="institutional lab only supports dry_run=true")
         if payload.read_existing_outputs_only is not True:
             raise HTTPException(status_code=400, detail="institutional lab only supports read_existing_outputs_only=true")
-        result = automation_scheduler.run_institutional_lab(
+        result = dashboard_facade.run_institutional_lab(
             dry_run=payload.dry_run,
             asset_classes=payload.asset_classes,
             read_existing_outputs_only=payload.read_existing_outputs_only,
@@ -63,7 +63,7 @@ def register_automation_institutional_lab_routes(
 
     @app.get("/api/automation/institutional-lab/report", operation_id="getInstitutionalLabReport")
     async def get_institutional_lab_report_endpoint(verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=10)):
-        payload = automation_scheduler.get_institutional_lab_report()
+        payload = dashboard_facade.get_institutional_lab_report()
         compact = compact_institutional_report_response(payload)
         cap = min(max(int(limit), 1), 100 if verbose else 10)
         if verbose or include_debug:
@@ -72,7 +72,7 @@ def register_automation_institutional_lab_routes(
 
     @app.get("/api/automation/institutional-lab/daily-report", operation_id="getInstitutionalLabDailyReport")
     async def get_institutional_lab_daily_report_endpoint(report_date: Optional[str] = Query(default=None), verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=10)):
-        payload = automation_scheduler.get_institutional_lab_daily_report(report_date=report_date)
+        payload = dashboard_facade.get_institutional_lab_daily_report(report_date=report_date)
         compact = compact_institutional_report_response(payload)
         cap = min(max(int(limit), 1), 100 if verbose else 10)
         if verbose or include_debug:
@@ -81,7 +81,7 @@ def register_automation_institutional_lab_routes(
 
     @app.post("/api/automation/institutional-lab/deepseek-review", operation_id="reviewInstitutionalLabWithDeepSeek")
     async def institutional_lab_deepseek_review_endpoint(payload: InstitutionalDeepSeekReviewRequest, verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=10)):
-        result = automation_scheduler.run_institutional_deepseek_review(report=payload.report, enabled=payload.enabled)
+        result = dashboard_facade.run_institutional_deepseek_review(report=payload.report, enabled=payload.enabled)
         cap = min(max(int(limit), 1), 100 if verbose else 10)
         compact = compact_deepseek_review_response(result)
         if verbose or include_debug:
@@ -92,7 +92,7 @@ def register_automation_institutional_lab_routes(
     async def institutional_execution_desk_simulate_endpoint(payload: InstitutionalExecutionSimulationRequest, verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=10)):
         request_payload = payload.model_dump()
         try:
-            result = automation_scheduler.simulate_institutional_execution(request_payload)
+            result = dashboard_facade.simulate_institutional_execution(request_payload)
         except ValueError as exc:
             from src.services.execution_service import rejection_response
 
@@ -107,7 +107,7 @@ def register_automation_institutional_lab_routes(
     @app.get("/api/automation/institutional-lab/audit", operation_id="getInstitutionalLabAudit")
     async def get_institutional_lab_audit_endpoint(verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=10)):
         cap = min(max(int(limit), 1), 100 if verbose else 10)
-        payload = automation_scheduler.get_institutional_lab_audit(limit=cap)
+        payload = dashboard_facade.get_institutional_lab_audit(limit=cap)
         compact = {
             "ok": bool(payload.get("ok", True)),
             "status": payload.get("status", "ok"),
@@ -122,3 +122,4 @@ def register_automation_institutional_lab_routes(
         if verbose or include_debug:
             compact["debug"] = redact_and_limit_payload(payload, limit=cap, verbose=verbose)
         return compact
+

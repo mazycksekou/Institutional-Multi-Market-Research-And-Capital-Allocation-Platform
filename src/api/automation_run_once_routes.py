@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from typing import Any
 
@@ -10,7 +10,7 @@ from src.api.schemas.automation import AutomationRunOnceRequest
 def register_automation_run_once_routes(
     app: FastAPI,
     *,
-    automation_scheduler_dep: Any,
+    dashboard_facade_dep: Any,
     compact_run_once_response_dep: Any,
     redact_and_limit_payload_dep: Any,
 ) -> None:
@@ -19,7 +19,7 @@ def register_automation_run_once_routes(
 
     Canonical owner: src/api/automation_run_once_routes.py
     """
-    automation_scheduler = automation_scheduler_dep
+    dashboard_facade = dashboard_facade_dep
     compact_run_once_response = compact_run_once_response_dep
     redact_and_limit_payload = redact_and_limit_payload_dep
 
@@ -28,7 +28,7 @@ def register_automation_run_once_routes(
         if payload.dry_run is not True:
             raise HTTPException(status_code=400, detail="automation scheduler run-once only supports dry_run=true")
         try:
-            result = automation_scheduler.run_scheduler_once(
+            result = dashboard_facade.run_scheduler_once(
                 injected_data=payload.injected_data,
                 dry_run=payload.dry_run,
                 run_key=payload.run_key,
@@ -40,3 +40,4 @@ def register_automation_run_once_routes(
         if verbose or include_debug:
             compact["debug"] = redact_and_limit_payload(result, limit=cap, verbose=verbose)
         return compact
+

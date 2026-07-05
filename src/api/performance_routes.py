@@ -1,4 +1,4 @@
-from typing import Any, Optional
+﻿from typing import Any, Optional
 
 from fastapi import Body, Depends, HTTPException, Query
 from fastapi.openapi.utils import get_openapi
@@ -11,7 +11,7 @@ def register_performance_routes(
     app: Any,
     *,
     API_BASE_URL_dep: Any,
-    automation_scheduler_dep: Any,
+    dashboard_facade_dep: Any,
     compact_performance_health_dep: Any,
     compact_performance_report_dep: Any,
     redact_and_limit_payload_dep: Any,
@@ -22,14 +22,14 @@ def register_performance_routes(
     Canonical owner: src/api/performance_routes.py
     """
     API_BASE_URL = API_BASE_URL_dep
-    automation_scheduler = automation_scheduler_dep
+    dashboard_facade = dashboard_facade_dep
     compact_performance_health = compact_performance_health_dep
     compact_performance_report = compact_performance_report_dep
     redact_and_limit_payload = redact_and_limit_payload_dep
 
     @app.get("/api/performance/health", operation_id="getPerformanceHealth")
     async def get_performance_health_endpoint(verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=10)):
-        payload = {"ok": True, **automation_scheduler.get_performance_health()}
+        payload = {"ok": True, **dashboard_facade.get_performance_health()}
         compact = compact_performance_health(payload)
         cap = min(max(int(limit), 1), 100 if verbose else 10)
         if verbose or include_debug:
@@ -45,7 +45,7 @@ def register_performance_routes(
         include_debug: bool = Query(default=False),
         limit: int = Query(default=10),
     ):
-        compact_payload = automation_scheduler.get_performance_report(
+        compact_payload = dashboard_facade.get_performance_report(
             model_id=model_id,
             historical_rows_path=historical_rows_path,
         )
@@ -65,7 +65,7 @@ def register_performance_routes(
     ):
         if payload.dry_run is not True:
             raise HTTPException(status_code=400, detail="performance backtest only supports dry_run=true")
-        result = automation_scheduler.run_performance_backtest(
+        result = dashboard_facade.run_performance_backtest(
             model_id=payload.model_id,
             historical_rows_path=payload.historical_rows_path,
             rows=payload.rows,
@@ -79,8 +79,8 @@ def register_performance_routes(
 
     @app.post("/api/performance/paper-summary", operation_id="runPerformancePaperSummary")
     async def run_performance_paper_summary_endpoint(verbose: bool = Query(default=False), include_debug: bool = Query(default=False), limit: int = Query(default=10)):
-        payload = automation_scheduler.get_paper_summary()
-        compact = compact_performance_health({"ok": True, **automation_scheduler.get_performance_health()})
+        payload = dashboard_facade.get_paper_summary()
+        compact = compact_performance_health({"ok": True, **dashboard_facade.get_performance_health()})
         compact["status"] = payload.get("status", "paper_tracking")
         cap = min(max(int(limit), 1), 100 if verbose else 10)
         if verbose or include_debug:
@@ -207,3 +207,4 @@ def register_performance_routes(
 
 
     app.openapi = custom_openapi;
+

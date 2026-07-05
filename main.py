@@ -1,4 +1,4 @@
-import csv
+﻿import csv
 import os
 import secrets
 from datetime import date, datetime, timezone
@@ -64,7 +64,7 @@ from src.api.schemas.quant import BetAnalysisRequest, MarketPricingRequest, Stoc
 from src.api.schemas.performance import PerformanceBacktestRequest
 from src.services.action_betting_service import ActionBettingService
 from src.services.bet_csv_service import BETS_FILE, append_bet, summarize_bets
-import src.services.streamlit_dashboard_facade as automation_scheduler
+import src.services.streamlit_dashboard_facade as dashboard_facade
 import src.services.bet_log as bet_log
 import src.services.bet_decision_engine as bet_decision_engine
 import src.core.market_pricing as market_pricing
@@ -367,7 +367,7 @@ register_governance_routes(
 register_performance_routes(
     app,
     API_BASE_URL_dep=API_BASE_URL,
-    automation_scheduler_dep=automation_scheduler,
+    dashboard_facade_dep=dashboard_facade,
     compact_performance_health_dep=compact_performance_health,
     compact_performance_report_dep=compact_performance_report,
     redact_and_limit_payload_dep=redact_and_limit_payload,
@@ -396,7 +396,7 @@ register_betting_action_routes(
 )
 register_automation_core_routes(
     app,
-    automation_scheduler_dep=automation_scheduler,
+    dashboard_facade_dep=dashboard_facade,
     compact_health_response_dep=compact_health_response,
     compact_intelligence_readiness_response_dep=compact_intelligence_readiness_response,
     compact_strategy_readiness_response_dep=compact_strategy_readiness_response,
@@ -404,7 +404,7 @@ register_automation_core_routes(
 )
 register_automation_sport_impact_routes(
     app,
-    automation_scheduler_dep=automation_scheduler,
+    dashboard_facade_dep=dashboard_facade,
     compact_advanced_red_team_response_dep=compact_advanced_red_team_response,
     compact_baseball_impact_diagnostics_response_dep=compact_baseball_impact_diagnostics_response,
     compact_baseball_impact_readiness_response_dep=compact_baseball_impact_readiness_response,
@@ -428,7 +428,7 @@ register_automation_sport_impact_routes(
 )
 register_automation_review_outcomes_routes(
     app,
-    automation_scheduler_dep=automation_scheduler,
+    dashboard_facade_dep=dashboard_facade,
     compact_calibration_collector_response_dep=compact_calibration_collector_response,
     compact_calibration_response_dep=compact_calibration_response,
     compact_outcome_import_response_dep=compact_outcome_import_response,
@@ -440,20 +440,20 @@ register_automation_review_outcomes_routes(
 )
 register_automation_deepseek_routes(
     app,
-    automation_scheduler_dep=automation_scheduler,
+    dashboard_facade_dep=dashboard_facade,
     compact_deepseek_review_response_dep=compact_deepseek_review_response,
     redact_and_limit_payload_dep=redact_and_limit_payload,
 )
 register_automation_manifold_routes(
     app,
-    automation_scheduler_dep=automation_scheduler,
+    dashboard_facade_dep=dashboard_facade,
     compact_manifold_map_response_dep=compact_manifold_map_response,
     compact_manifold_review_response_dep=compact_manifold_review_response,
     redact_and_limit_payload_dep=redact_and_limit_payload,
 )
 register_automation_small_account_routes(
     app,
-    automation_scheduler_dep=automation_scheduler,
+    dashboard_facade_dep=dashboard_facade,
     compact_balance_sheet_risk_response_dep=compact_balance_sheet_risk_response,
     compact_broker_quality_response_dep=compact_broker_quality_response,
     compact_micro_outcome_calibration_response_dep=compact_micro_outcome_calibration_response,
@@ -465,7 +465,7 @@ register_automation_small_account_routes(
 )
 register_automation_data_source_routes(
     app,
-    automation_scheduler_dep=automation_scheduler,
+    dashboard_facade_dep=dashboard_facade,
     compact_cfbd_adapter_verification_response_dep=compact_cfbd_adapter_verification_response,
     compact_data_availability_tiers_response_dep=compact_data_availability_tiers_response,
     compact_data_source_coverage_response_dep=compact_data_source_coverage_response,
@@ -479,7 +479,7 @@ register_automation_data_source_routes(
 )
 register_automation_institutional_lab_routes(
     app,
-    automation_scheduler_dep=automation_scheduler,
+    dashboard_facade_dep=dashboard_facade,
     compact_deepseek_review_response_dep=compact_deepseek_review_response,
     compact_institutional_execution_response_dep=compact_institutional_execution_response,
     compact_institutional_lab_health_response_dep=compact_institutional_lab_health_response,
@@ -489,7 +489,9 @@ register_automation_institutional_lab_routes(
 )
 register_automation_run_once_routes(
     app,
-    automation_scheduler_dep=automation_scheduler,
+    dashboard_facade_dep=dashboard_facade,
     compact_run_once_response_dep=compact_run_once_response,
     redact_and_limit_payload_dep=redact_and_limit_payload,
 )
+
+
