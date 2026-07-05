@@ -37,7 +37,7 @@ def register_betting_action_routes(
     utc_now_fn: Any,
 ) -> None:
     """
-    Register raw betting and Custom GPT Action betting routes.
+    Register raw betting and platform analysis routes.
 
     Canonical owner: src/api/betting_action_routes.py
     """
@@ -132,7 +132,7 @@ def register_betting_action_routes(
         summary="Analyze Ticket Screenshot",
         description=(
             "Analyze sportsbook ticket fields parsed from a screenshot or OCR text. "
-            "OCR is optional; ChatGPT may send structured parsed fields directly."
+            "OCR is optional; clients may send structured parsed fields directly."
         ),
     )
     async def action_analyze_ticket_screenshot(payload: ScreenshotAnalysisRequest):

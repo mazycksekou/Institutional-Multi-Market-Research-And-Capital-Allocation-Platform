@@ -99,6 +99,16 @@ def _validate_architecture() -> dict[str, Any]:
     return dict(module.collect_architecture_report(ROOT))
 
 
+def _validate_openapi_contract() -> dict[str, Any]:
+    script_path = ROOT / "scripts" / "check_openapi_contract.py"
+    spec = importlib.util.spec_from_file_location("_check_openapi_contract", script_path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"Unable to load openapi validator from {script_path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return dict(module.collect_openapi_report(ROOT))
+
+
 def _exit_code(report: dict[str, Any], fail_on_critical: bool) -> int:
     blocker = report.get("blocker_classification") or {}
     primary = blocker.get("primary")
@@ -148,6 +158,15 @@ def main(argv: list[str] | None = None) -> int:
         print(f"root_markdown_offenders: {len(architecture.get('root_markdown_offenders') or [])}")
         print(f"ignored_source_files: {len(architecture.get('ignored_source_files') or [])}")
         print(f"legacy_import_issues: {len(architecture.get('legacy_import_issues') or [])}")
+        return 2
+
+    openapi = _validate_openapi_contract()
+    if not openapi.get("ok"):
+        print("openapi: fail")
+        print(f"path: {openapi.get('path')}")
+        print(f"errors: {len(openapi.get('errors') or [])}")
+        for item in openapi.get("errors") or []:
+            print(f"- {item}")
         return 2
 
     if args.mode in {"inventory", "import-scan"}:

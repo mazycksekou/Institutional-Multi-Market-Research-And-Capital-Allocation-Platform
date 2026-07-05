@@ -183,8 +183,8 @@ ACTION_BETTING_SERVICE = ActionBettingService(
 
 app = FastAPI(
     title="Betting Stock API",
-    description="Sports odds and stock analysis API for Custom GPT Actions.",
-    version="2.0.0",
+    description="Public API contract for the Betting Stock market intelligence platform.",
+    version="2.2.0",
     servers=[{"url": API_BASE_URL}],
 )
 

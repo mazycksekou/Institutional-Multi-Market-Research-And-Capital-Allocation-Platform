@@ -199,7 +199,7 @@ def register_performance_routes(
             description=app.description or "",
             routes=app.routes,
         )
-        schema["info"]["description"] = "Minimal Custom GPT Action schema for betting event lookup."
+        schema["info"]["description"] = "Public API contract for the Betting Stock market intelligence platform."
         schema["servers"] = [{"url": API_BASE_URL}]
         _attach_api_key_openapi_security(schema)
         app.openapi_schema = schema
