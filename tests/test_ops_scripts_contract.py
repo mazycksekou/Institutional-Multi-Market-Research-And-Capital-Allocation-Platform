@@ -39,6 +39,13 @@ class TestOpsScriptsContract(unittest.TestCase):
         self.assertIn(".\\scripts\\check_local.ps1", text)
         self.assertIn("Codex should use these scripts", text)
 
+    def test_repository_validation_workflow_uses_full_checkout_history(self):
+        workflow = ROOT / ".github/workflows/repository-validation.yml"
+        self.assertTrue(workflow.exists())
+        text = workflow.read_text(encoding="utf-8")
+        self.assertIn("fetch-depth: 0", text)
+        self.assertIn("python scripts/ops_check.py --mode local --output text --skip-network", text)
+
     def test_requirements_and_pytest_config_exist(self):
         self.assertTrue((ROOT / "requirements-dev.txt").exists())
         self.assertTrue((ROOT / "pytest.ini").exists())
