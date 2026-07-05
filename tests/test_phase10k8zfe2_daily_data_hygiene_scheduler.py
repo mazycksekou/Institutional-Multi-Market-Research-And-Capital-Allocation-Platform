@@ -7,10 +7,10 @@ from scripts import daily_data_hygiene as hygiene
 
 
 ROOT = Path(__file__).resolve().parents[1]
-REPORT = ROOT / "PHASE10K8ZFE2_DAILY_DATA_HYGIENE_SCHEDULER_REPORT.md"
+REPORT = ROOT / "docs" / "archive" / "historical_reports" / "PHASE10K8ZFE2_DAILY_DATA_HYGIENE_SCHEDULER_REPORT.md"
 SCRIPT = ROOT / "scripts" / "daily_data_hygiene.py"
 POWERSHELL = ROOT / "scripts" / "run_daily_data_hygiene.ps1"
-DOCS = ROOT / "docs" / "DAILY_DATA_HYGIENE_SCHEDULER.md"
+DOCS = ROOT / "docs" / "operations" / "DAILY_DATA_HYGIENE_SCHEDULER.md"
 README = ROOT / "README.md"
 
 
@@ -160,4 +160,3 @@ def test_phase10k8zfe2_daily_data_hygiene_scheduler_contract(tmp_path: Path) -> 
     assert not any(ROOT.glob("app/pages/*.py"))
     assert not any(ROOT.glob("frontend/*.py"))
     assert not any(ROOT.glob("frontend/pages/*.py"))
-

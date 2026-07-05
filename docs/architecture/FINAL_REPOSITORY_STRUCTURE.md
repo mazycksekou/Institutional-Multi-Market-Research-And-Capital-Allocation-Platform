@@ -32,6 +32,7 @@
 ## Archived Historical Material
 
 - Historical failure and repository-tree artifacts are archived under `docs/archive/historical_reports/`
+- Consolidated milestone summaries are archived under `docs/archive/milestones/`
 - Inventory snapshots are archived under `docs/reports/inventories/`
 - Phase-proof and checkpoint artifacts live under `docs/reports/proofs/`, `docs/reports/checkpoints/`, and related report subfolders
 

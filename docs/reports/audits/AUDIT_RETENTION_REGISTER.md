@@ -3,10 +3,10 @@
 This register classifies audit, checkpoint, proof, and historical report material so the repository can keep useful evidence without letting temporary reports accumulate indefinitely.
 
 - register_path: `docs/reports/audits/AUDIT_RETENTION_REGISTER.md`
-- scanned_files: 971
+- scanned_files: 976
 - active: 3
-- decision_captured: 9
-- archive: 959
+- decision_captured: 5
+- archive: 968
 - delete_candidate: 0
 - delete_approved: 0
 
@@ -129,6 +129,7 @@ This register classifies audit, checkpoint, proof, and historical report materia
 | docs/archive/historical_reports/CONNECTOR_BOUNDARY_MAP_AFTER_10K8ZFX.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/CONNECTOR_CONTRACT_READINESS_AFTER_10K8ZFX.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/CONNECTOR_DISABLED_BEHAVIOR_REPORT_AFTER_10K8ZFY.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
+| docs/archive/historical_reports/CONTRACT_CONSISTENCY_REPORT.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/CONTROLLED_ACTIVATION_BLOCKER_MAP_AFTER_10K8ZJO.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/CONTROLLED_ROLLOUT_PLAN_AFTER_10K8ZK4.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/CORE_ENGINE_COMPATIBILITY_WRAPPER_REPORT_AFTER_10K8ZH9.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
@@ -160,6 +161,7 @@ This register classifies audit, checkpoint, proof, and historical report materia
 | docs/archive/historical_reports/DATA_BACKTESTING_MIGRATION_SEQUENCE_AFTER_10K8ZHL.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/DATA_FOUNDATION_OWNERSHIP_MAP_AFTER_10K8ZHJ.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/DATA_LAYER_OWNERSHIP_MAP_AFTER_10K8ZHI.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
+| docs/archive/historical_reports/DATA_PROVENANCE_MAP.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/DATA_SOURCE_REGISTRY_MAP_AFTER_10K8ZHJ.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/DATA_VALIDATION_REPORT_AFTER_10K8ZHJ.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/DEAD_CODE_PROOF.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
@@ -416,6 +418,7 @@ This register classifies audit, checkpoint, proof, and historical report materia
 | docs/archive/historical_reports/ODDS_RUNTIME_IMPORT_SCAN_AFTER_10K8ZGL.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/ODDS_SHELL_DELETE_READINESS_AFTER_10K8ZGM.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/ODDS_SHELL_IMPORT_SCAN_AFTER_10K8ZGM.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
+| docs/archive/historical_reports/OPENAPI_DEPENDENCY_AND_RISK_REPORT.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/OPERATOR_APPROVAL_DISABLED_BEHAVIOR_AFTER_10K8ZJV.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/OPERATOR_APPROVAL_REQUIREMENTS_AFTER_10K8ZJV.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/OPERATOR_SIGNOFF_CHECKLIST_AFTER_10K8ZK4.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
@@ -725,6 +728,10 @@ This register classifies audit, checkpoint, proof, and historical report materia
 | docs/archive/historical_reports/PHASE1_CLASSIFICATION.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/PHASE1_DELETE_LIST.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/PHASE1_IMPORT_GRAPH.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
+| docs/archive/historical_reports/PHASE2_REPOSITORY_DISCOVERY.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
+| docs/archive/historical_reports/PHASE3_REPOSITORY_VALIDATION.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
+| docs/archive/historical_reports/PHASE3B_OWNERSHIP_DECISION_TABLE.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
+| docs/archive/historical_reports/PHASE3B_REPOSITORY_DISCOVERY.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/PHASE6_CLOSEOUT_REPORT.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/PHASE7_OPERATIONAL_GAP_REPORT.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/PHASE8_PAPER_RUN_REPORT.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
@@ -951,6 +958,7 @@ This register classifies audit, checkpoint, proof, and historical report materia
 | docs/archive/historical_reports/STREAMLIT_DASHBOARD_TEST_REDIRECTION_MAP_AFTER_10K8ZMI.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/STREAMLIT_DASHBOARD_TEST_ZERO_IMPORT_PROOF_AFTER_10K8ZMI.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/TASK_BOARD.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
+| docs/archive/historical_reports/TERMINOLOGY_INVENTORY_AND_CLASSIFICATION.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/TEST_HELPER_KEEP_LIST.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/TEST_SUITE_ARCHITECTURE_CLEANUP.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/TEST_ZERO_IMPORT_PROOF_AFTER_10K8ZMN.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
@@ -962,6 +970,7 @@ This register classifies audit, checkpoint, proof, and historical report materia
 | docs/archive/historical_reports/UNTRACKED_FILE_DECISION_LOG_AFTER_10K8ZMP.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/VENDOR_FUNCTIONALITY_TRANSPORT_MAP_AFTER_10K8ZFQ.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/VENDOR_MODULE_DELETION_CANDIDATES_AFTER_10K8ZFQ.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
+| docs/archive/historical_reports/VENDOR_REFERENCE_CLASSIFICATION.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/WINDOWS_SETUP.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/WRAPPER_DELETION_PROOF_AFTER_10K8ZG3.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/WRAPPER_DELETION_PROOF_AFTER_10K8ZG4.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
@@ -972,11 +981,7 @@ This register classifies audit, checkpoint, proof, and historical report materia
 | docs/archive/historical_reports/ZERO_DTE_STOCKS_PROVIDER_CONNECTOR_BOUNDARY_AFTER_10K8ZG1.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/archive/historical_reports/ZERO_DTE_STOCKS_PROVIDER_MIGRATION_MAP_AFTER_10K8ZG1.md | Historical audit evidence | ARCHIVE | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | historical evidence only | ARCHIVE |
 | docs/reports/audits/AUDIT_RETENTION_REGISTER.md | Lifecycle register for audit, checkpoint, proof, and historical report material | DECISION CAPTURED | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | docs/architecture/AUDIT_LIFECYCLE_POLICY.md | KEEP ACTIVE |
-| docs/reports/audits/CONTRACT_CONSISTENCY_REPORT.md | Contract alignment and consistency assessment | DECISION CAPTURED | docs/contracts/CONTRACT_INDEX.md | docs/contracts/CONTRACT_INDEX.md | KEEP ACTIVE |
 | docs/reports/audits/MISSING_GOVERNANCE_REPORT.md | Open governance gaps and remaining recommendations | ACTIVE | docs/architecture/MASTER_SYSTEM_ARCHITECTURE.md; docs/architecture/PRODUCTION_READINESS.md | docs/architecture/MASTER_SYSTEM_ARCHITECTURE.md; docs/architecture/PRODUCTION_READINESS.md | KEEP ACTIVE |
-| docs/reports/audits/OPENAPI_DEPENDENCY_AND_RISK_REPORT.md | OpenAPI dependency and public contract risk assessment | DECISION CAPTURED | docs/architecture/OPENAPI_CONTRACT_GOVERNANCE.md; docs/architecture/VENDOR_NEUTRALITY_AND_OPENAPI_NAMING.md | docs/reports/audits/VENDOR_REFERENCE_CLASSIFICATION.md; docs/reports/audits/TERMINOLOGY_INVENTORY_AND_CLASSIFICATION.md | KEEP ACTIVE |
-| docs/reports/audits/TERMINOLOGY_INVENTORY_AND_CLASSIFICATION.md | Terminology inventory and classification evidence | DECISION CAPTURED | docs/architecture/TERMINOLOGY_STANDARD.md | docs/reports/audits/VENDOR_REFERENCE_CLASSIFICATION.md | KEEP ACTIVE |
-| docs/reports/audits/VENDOR_REFERENCE_CLASSIFICATION.md | Vendor wording classification for public documentation | DECISION CAPTURED | docs/architecture/VENDOR_NEUTRALITY_AND_OPENAPI_NAMING.md | docs/architecture/VENDOR_NEUTRALITY_AND_OPENAPI_NAMING.md | KEEP ACTIVE |
 | docs/reports/checkpoints/ACTIVE_RUNTIME_TEST_GATE.md | Current active test-gate boundary | ACTIVE | docs/operations/VALIDATION_RUNBOOK.md | tests/test_ops_scripts_contract.py; tests/test_architecture_docs_paths.py | KEEP ACTIVE |
 | docs/reports/checkpoints/QUALITY_GATE_CHECKLIST.md | Current quality-gate checklist | ACTIVE | docs/operations/AUTOMATED_GOVERNANCE.md; docs/operations/VALIDATION_RUNBOOK.md | docs/operations/AUTOMATED_GOVERNANCE.md; docs/operations/VALIDATION_RUNBOOK.md | KEEP ACTIVE |
 | docs/reports/proofs/ARCHITECTURE_GATE_PROOF.md | Proof that architecture checks and gates passed | DECISION CAPTURED | docs/architecture/FINAL_REPOSITORY_STRUCTURE.md; docs/operations/AUTOMATED_GOVERNANCE.md | docs/architecture/FINAL_REPOSITORY_STRUCTURE.md; docs/operations/AUTOMATED_GOVERNANCE.md | KEEP ACTIVE |

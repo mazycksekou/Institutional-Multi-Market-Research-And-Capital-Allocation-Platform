@@ -3,6 +3,7 @@
 | Script | Role | Status | Notes |
 | --- | --- | --- | --- |
 | `scripts/check_root_markdown.py` | Root Markdown policy | ACTIVE | Enforces `README.md` as the only root Markdown file |
+| `scripts/check_repo_preflight.py` | Repository pre-flight safety | ACTIVE | Enforces branch, upstream, and clean-state checks before task handoff |
 | `scripts/check_openapi_contract.py` | OpenAPI contract validation | ACTIVE | Validates syntax and public contract hygiene |
 | `scripts/check_architecture.py` | Repository architecture validation | ACTIVE | Validates root/runtime shape and legacy executable references |
 | `scripts/ops_check.py` | Local ops orchestrator | ACTIVE | Primary local wrapper around the validation stack |

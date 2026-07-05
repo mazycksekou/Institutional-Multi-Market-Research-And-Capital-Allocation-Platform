@@ -32,6 +32,8 @@ def _text_summary(report: dict[str, Any]) -> str:
     reconciliation = report.get("outcome_reconciliation_status") or {}
     safety = report.get("safety_status") or {}
     audit = report.get("audit_lifecycle") or {}
+    document = report.get("document_lifecycle") or {}
+    preflight = report.get("repo_preflight") or {}
     paths = ((report.get("ops_report_write") or {}).get("paths") or {}) if isinstance(report.get("ops_report_write"), dict) else {}
     lines = [
         _line("mode", report.get("mode")),
@@ -47,6 +49,8 @@ def _text_summary(report: dict[str, Any]) -> str:
         _line("datasources", f"{datasources.get('status')} sources={datasources.get('total_sources')} enabled={datasources.get('source_enabled_count')}"),
         _line("safety", f"{safety.get('status')} critical={len(safety.get('critical') or [])} warnings={len(safety.get('warnings') or [])}"),
         _line("audit_lifecycle", f"{audit.get('status')} scanned={audit.get('scanned_count')} warnings={len(audit.get('warnings') or [])} clear_violations={len(audit.get('clear_violations') or [])}"),
+        _line("document_lifecycle", f"{document.get('status')} scanned={document.get('scanned_count')} warnings={len(document.get('warnings') or [])} clear_violations={len(document.get('clear_violations') or [])}"),
+        _line("repo_preflight", f"{preflight.get('status')} branch={preflight.get('branch')} upstream={preflight.get('upstream')} clear_violations={len(preflight.get('clear_violations') or [])}"),
         _line("raw_payload_included", report.get("raw_payload_included")),
         _line("secrets_included", report.get("secrets_included")),
     ]
@@ -121,6 +125,26 @@ def _validate_audit_lifecycle() -> dict[str, Any]:
     return dict(module.collect_audit_lifecycle_report(ROOT))
 
 
+def _validate_document_lifecycle() -> dict[str, Any]:
+    script_path = ROOT / "scripts" / "check_document_lifecycle.py"
+    spec = importlib.util.spec_from_file_location("_check_document_lifecycle", script_path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"Unable to load document lifecycle validator from {script_path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return dict(module.collect_document_lifecycle_report(ROOT))
+
+
+def _validate_repo_preflight() -> dict[str, Any]:
+    script_path = ROOT / "scripts" / "check_repo_preflight.py"
+    spec = importlib.util.spec_from_file_location("_check_repo_preflight", script_path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"Unable to load repository preflight validator from {script_path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return dict(module.collect_repo_preflight_report(ROOT, mode="start-task", include_ops=False))
+
+
 def _exit_code(report: dict[str, Any], fail_on_critical: bool) -> int:
     blocker = report.get("blocker_classification") or {}
     primary = blocker.get("primary")
@@ -190,6 +214,16 @@ def main(argv: list[str] | None = None) -> int:
             print(f"- {item}")
         return 2
 
+    document_lifecycle = _validate_document_lifecycle()
+    repo_preflight = _validate_repo_preflight()
+    if document_lifecycle.get("clear_violations"):
+        print("document_lifecycle: fail")
+        print(f"scanned_count: {document_lifecycle.get('scanned_count')}")
+        print(f"clear_violations: {len(document_lifecycle.get('clear_violations') or [])}")
+        for item in document_lifecycle.get("clear_violations") or []:
+            print(f"- {item}")
+        return 2
+
     if args.mode in {"inventory", "import-scan"}:
         input_paths = _load_path_list(args.input or args.paths)
         if not input_paths:
@@ -220,6 +254,8 @@ def main(argv: list[str] | None = None) -> int:
         write_report=args.write_report,
     )
     report["audit_lifecycle"] = audit_lifecycle
+    report["document_lifecycle"] = document_lifecycle
+    report["repo_preflight"] = repo_preflight
     if args.trigger_cron_check:
         report["trigger_cron_check"] = {
             "ok": False,

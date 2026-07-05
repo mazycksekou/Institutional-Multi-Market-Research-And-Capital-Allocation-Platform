@@ -2,6 +2,8 @@
 
 This policy keeps audit material useful without letting temporary reports accumulate forever.
 
+Audit reports follow the broader [Document Lifecycle Policy](./DOCUMENT_LIFECYCLE_POLICY.md). This policy is the audit-specific subset that tracks reports, proofs, checkpoints, and governance evidence.
+
 ## States
 
 ### ACTIVE
@@ -46,6 +48,8 @@ This policy keeps audit material useful without letting temporary reports accumu
 ## Related References
 
 - [Audit Retention Register](../reports/audits/AUDIT_RETENTION_REGISTER.md)
+- [Document Lifecycle Policy](./DOCUMENT_LIFECYCLE_POLICY.md)
+- [Document Retention Index](../DOCUMENT_RETENTION_INDEX.md)
 - [Master System Architecture](./MASTER_SYSTEM_ARCHITECTURE.md)
 - [Final Repository Structure](./FINAL_REPOSITORY_STRUCTURE.md)
 - [Canonical Ownership Map](./CANONICAL_OWNERSHIP_MAP.md)

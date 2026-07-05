@@ -28,9 +28,15 @@
 - `docs/reports/matrices/`
 - `docs/summaries/`
 - `docs/archive/`
+- `docs/archive/milestones/`
 - `docs/archive/completed_phases/`
 - `docs/archive/historical_reports/`
 - `docs/archive/deprecated_docs/`
+
+The only Markdown files intentionally kept at the `docs/` root are:
+
+- `docs/MASTER_DOCUMENT_INDEX.md`
+- `docs/DOCUMENT_RETENTION_INDEX.md`
 
 ## Enforcement
 
@@ -40,6 +46,7 @@ Before every commit:
 2. Allow only `README.md`.
 3. Move or archive every other Markdown file into the `docs/` hierarchy.
 4. Update active documentation links when a moved document is still referenced.
+5. Keep the document retention index current so temporary work products do not accumulate indefinitely.
 
-The repository validation script `scripts/check_root_markdown.py` and `scripts/ops_check.py` both enforce this rule.
+The repository validation scripts `scripts/check_root_markdown.py`, `scripts/check_document_lifecycle.py`, and `scripts/ops_check.py` enforce these rules.
 GitHub Actions, when present, should call those same local scripts rather than duplicating validation logic.

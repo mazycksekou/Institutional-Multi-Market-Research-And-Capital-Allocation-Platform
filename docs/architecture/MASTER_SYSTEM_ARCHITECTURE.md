@@ -186,7 +186,9 @@ The repository follows a strict documentation policy:
 - `docs/development/` for engineering standards and contributor guidance
 - `docs/operations/` for governance and runbooks
 - `docs/reports/` for audits, inventories, matrices, proofs, and checkpoints
+- `docs/archive/milestones/` for consolidated milestone summaries
 - `docs/archive/` for historical evidence and deprecated material
+- `docs/MASTER_DOCUMENT_INDEX.md` and `docs/DOCUMENT_RETENTION_INDEX.md` for the top-level documentation indexes
 
 The documentation policy is summarized in [Documentation Governance](./DOCUMENTATION_GOVERNANCE.md) and [Documentation Map](./DOCUMENTATION_MAP.md).
 
@@ -213,9 +215,11 @@ The canonical governance checks are documented in [Automated Governance](../oper
 
 The core local checks are:
 
+- `python scripts/check_repo_preflight.py --start-task`
 - `python scripts/check_root_markdown.py`
 - `python scripts/check_openapi_contract.py --output text`
 - `python scripts/check_architecture.py --output text`
+- `python scripts/check_document_lifecycle.py`
 - `python scripts/ops_check.py --mode local --output text --skip-network`
 - `python -m compileall src tests scripts`
 - `pytest -m smoke -q`
@@ -244,6 +248,7 @@ Current ADR topics include:
 The engineering standards and contribution guidance live in:
 
 - [Engineering Standards](../development/ENGINEERING_STANDARDS.md)
+- [Branch Governance Policy](../development/BRANCH_GOVERNANCE_POLICY.md)
 - [Contributing](../development/CONTRIBUTING.md)
 
 These documents describe folder rules, naming rules, import rules, test expectations, archive policy, and how to add new providers, connectors, models, or market lanes safely.
@@ -292,4 +297,3 @@ Known ongoing work includes:
 - tightening schemas or contracts only when the breaking-change cost is justified
 
 If stricter root minimization or additional archive consolidation is desired later, that should be handled as a separate, reviewable cleanup phase.
-

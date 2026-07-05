@@ -7,14 +7,16 @@ Thanks for keeping the repository disciplined and reviewable.
 - Work from `phase-6-api-slimming`
 - Confirm `git status` is clean
 - Read the relevant architecture and contract docs before changing behavior
+- Check the [Branch Governance Policy](./BRANCH_GOVERNANCE_POLICY.md) before deciding whether the work belongs on the current branch
 
 ## Safe Workflow
 
 1. Make a focused change
-2. Run the relevant local validation
-3. Update docs if the contract or ownership changes
-4. Commit once the change is clean
-5. Push to the branch after validation
+2. Run the pre-flight safety check before starting work and again before handoff
+3. Run the relevant local validation
+4. Update docs if the contract or ownership changes
+5. Commit once the change is clean
+6. Push to the branch after validation
 
 ## Required Local Checks
 
@@ -36,6 +38,7 @@ Thanks for keeping the repository disciplined and reviewable.
 - Add new docs directly under `docs/`
 - Keep historical evidence in archive folders when it still matters
 - Avoid root Markdown except for `README.md`
+- Keep branch and task governance guidance in the development docs so it is easy to find during reviews
 
 ## Commit Style
 

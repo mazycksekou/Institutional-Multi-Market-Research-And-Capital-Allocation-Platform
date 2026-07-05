@@ -33,7 +33,7 @@ class TestOpsScriptsContract(unittest.TestCase):
             self.assertIn(arg, script)
 
     def test_docs_file_exists(self):
-        docs = ROOT / "docs/OPS_WORKFLOW.md"
+        docs = ROOT / "docs/operations/OPS_WORKFLOW.md"
         self.assertTrue(docs.exists())
         text = docs.read_text(encoding="utf-8")
         self.assertIn(".\\scripts\\check_local.ps1", text)

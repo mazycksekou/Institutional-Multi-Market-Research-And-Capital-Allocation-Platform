@@ -55,7 +55,7 @@ class TestDeepSeekDataPullCheckContract(unittest.TestCase):
         for relative in (
             "scripts/deepseek_data_pull_check.ps1",
             "src/ai/prompts/deepseek_data_pull_check_prompt.md",
-            "docs/DEEPSEEK_DATA_PULL_CHECK.md",
+            "docs/operations/DEEPSEEK_DATA_PULL_CHECK.md",
         ):
             self.assertTrue((ROOT / relative).exists(), relative)
 
