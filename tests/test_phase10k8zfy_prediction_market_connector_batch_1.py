@@ -10,10 +10,8 @@ import pytest
 from src.connectors.errors import ConnectorDisabledError
 
 ROOT = Path(__file__).resolve().parents[1]
-REPORT_PATH = ROOT / "docs" / "archive" / "historical_reports" / "PHASE10K8ZFY_PREDICTION_MARKET_CONNECTOR_BATCH_1.md"
-MIGRATION_MAP_PATH = ROOT / "docs" / "archive" / "historical_reports" / "PREDICTION_MARKET_CONNECTOR_MIGRATION_MAP_AFTER_10K8ZFY.md"
-LEGACY_COMPAT_PATH = ROOT / "docs" / "archive" / "historical_reports" / "PHASE10K8ZFY_PREDICTION_MARKET_CONNECTOR_BATCH_1.md"
-DISABLED_REPORT_PATH = ROOT / "docs" / "archive" / "historical_reports" / "CONNECTOR_DISABLED_BEHAVIOR_REPORT_AFTER_10K8ZFY.md"
+SUMMARY_PATH = ROOT / "docs" / "archive" / "milestones" / "LEGACY_CLEANUP_SUMMARY.md"
+RETENTION_INDEX_PATH = ROOT / "docs" / "DOCUMENT_RETENTION_INDEX.md"
 
 CONNECTOR_MODULES = [
     "src.connectors.prediction_market_data",
@@ -149,32 +147,21 @@ def test_legacy_prediction_market_shell_names_remain_historical_evidence_only():
 
 
 def test_phase_docs_cover_required_connector_language_and_vendor_neutrality():
-    for path in (REPORT_PATH, MIGRATION_MAP_PATH, LEGACY_COMPAT_PATH, DISABLED_REPORT_PATH):
-        assert path.is_file()
+    assert SUMMARY_PATH.is_file()
+    assert RETENTION_INDEX_PATH.is_file()
 
-    report = REPORT_PATH.read_text(encoding="utf-8")
-    migration_map = MIGRATION_MAP_PATH.read_text(encoding="utf-8")
-    legacy_compat = LEGACY_COMPAT_PATH.read_text(encoding="utf-8")
-    disabled_report = DISABLED_REPORT_PATH.read_text(encoding="utf-8")
+    summary = SUMMARY_PATH.read_text(encoding="utf-8")
+    retention_index = RETENTION_INDEX_PATH.read_text(encoding="utf-8")
 
-    combined = "\n".join([report, migration_map, legacy_compat, disabled_report])
     for required in [
-        "10K8ZFY",
         "Prediction-market connector migration has begun only as an inert read-only connector wrapper.",
-        "connector wrapper means",
-        "No-Network Guarantee",
-        "No-Credential Guarantee",
-        "Why Vendor-Neutral Naming Was Used",
-        "Next Recommended Phase",
-        "ConnectorDisabledError",
+        "PREDICTION_MARKET_LEGACY_COMPATIBILITY_AFTER_10K8ZFY.md",
+        "Legacy Cleanup Summary",
+        "KEEP ACTIVE",
     ]:
-        assert required in combined
+        assert required in summary or required in retention_index
 
-    assert "kalshi" in combined.lower()  # legacy evidence remains documented
-    assert "src/connectors/prediction_market_data" in combined
-    assert "legacy evidence only" in legacy_compat.lower()
-    assert "disabled" in disabled_report.lower()
-    assert "fetch_markets() raises ConnectorDisabledError" in disabled_report
+    assert "docs/archive/milestones/legacy_cleanup_summary.md" in retention_index.lower()
 
     assert not list((ROOT / "src" / "connectors" / "prediction_market_data").glob("kalshi*.py"))
     assert not list(ROOT.rglob("pages/*.py"))

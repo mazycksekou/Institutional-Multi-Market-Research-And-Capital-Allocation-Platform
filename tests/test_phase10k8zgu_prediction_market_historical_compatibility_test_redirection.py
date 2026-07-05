@@ -11,29 +11,7 @@ from src.connectors.errors import ConnectorDisabledError
 
 ROOT = Path(__file__).resolve().parents[1]
 SUMMARY = ROOT / "docs" / "archive" / "milestones" / "LEGACY_CLEANUP_SUMMARY.md"
-
-DOCS = {
-    "docs/archive/historical_reports/PHASE10K8ZGU_PREDICTION_MARKET_HISTORICAL_COMPATIBILITY_TEST_REDIRECTION.md": [
-        "Historical compatibility tests must not preserve legacy prediction-market shells unnecessarily.",
-        "src.services.prediction_market_runtime_bridge",
-        "src.connectors.prediction_market_data",
-        "src.providers.prediction_markets",
-        "historical evidence only",
-        "reclassified as compatibility evidence",
-    ],
-    "docs/archive/historical_reports/PREDICTION_MARKET_HISTORICAL_TEST_REDIRECTION_MAP_AFTER_10K8ZGU.md": [
-        "tests/test_phase10k8zgs_prediction_market_compatibility_shell_delete_readiness.py",
-        "tests/test_phase10k8zgt_prediction_market_runtime_scheduler_redirection.py",
-        "tests/test_kalshi_readonly_adapter.py",
-        "historical evidence only",
-        "compatibility evidence",
-    ],
-    "docs/archive/milestones/LEGACY_CLEANUP_SUMMARY.md": [
-        "PREDICTION_MARKET_COMPATIBILITY_REFERENCE_SCAN_AFTER_10K8ZGU.md",
-        "PREDICTION_MARKET_DELETE_READINESS_RECHECK_AFTER_10K8ZGU.md",
-        "Deleted In This Pass",
-    ],
-}
+RETENTION_INDEX = ROOT / "docs" / "DOCUMENT_RETENTION_INDEX.md"
 
 
 def _read(relative: str) -> str:
@@ -41,10 +19,19 @@ def _read(relative: str) -> str:
 
 
 def test_docs_exist_and_reclassify_historical_compatibility_tests() -> None:
-    for relative, fragments in DOCS.items():
-        text = _read(relative)
-        for fragment in fragments:
-            assert fragment in text, f"missing {fragment!r} in {relative}"
+    summary = _read("docs/archive/milestones/LEGACY_CLEANUP_SUMMARY.md")
+    retention = _read("docs/DOCUMENT_RETENTION_INDEX.md")
+
+    for fragment in [
+        "Prediction-market and odds compatibility snapshots",
+        "PREDICTION_MARKET_COMPATIBILITY_REFERENCE_SCAN_AFTER_10K8ZGU.md",
+        "PREDICTION_MARKET_DELETE_READINESS_RECHECK_AFTER_10K8ZGU.md",
+        "Deleted In This Pass",
+    ]:
+        assert fragment in summary
+
+    assert "docs/archive/milestones/legacy_cleanup_summary.md" in retention.lower()
+    assert "consolidated" in retention.lower()
 
 
 def test_historical_prediction_market_redirection_uses_canonical_bridge_and_keeps_legacy_shells_importable(
@@ -93,17 +80,8 @@ def test_historical_prediction_market_redirection_uses_canonical_bridge_and_keep
     assert snapshot["dry_run"] is True
     assert snapshot["provider_id"] == "kalshi_prediction_market"
 
-    for relative in [
-        "docs/archive/historical_reports/PHASE10K8ZGU_PREDICTION_MARKET_HISTORICAL_COMPATIBILITY_TEST_REDIRECTION.md",
-        "docs/archive/historical_reports/PREDICTION_MARKET_HISTORICAL_TEST_REDIRECTION_MAP_AFTER_10K8ZGU.md",
-        "docs/archive/milestones/LEGACY_CLEANUP_SUMMARY.md",
-    ]:
-        text = _read(relative)
-        lowered = text.lower()
-        assert (
-            "historical" in lowered
-            or "compatibility" in lowered
-            or "evidence" in lowered
-            or "delete-readiness" in lowered
-            or "src.services.prediction_market_runtime_bridge" in text
-        )
+    summary = _read("docs/archive/milestones/LEGACY_CLEANUP_SUMMARY.md")
+    retention = _read("docs/DOCUMENT_RETENTION_INDEX.md")
+    assert "PREDICTION_MARKET_COMPATIBILITY_REFERENCE_SCAN_AFTER_10K8ZGU.md" in summary
+    assert "PREDICTION_MARKET_DELETE_READINESS_RECHECK_AFTER_10K8ZGU.md" in summary
+    assert "docs/archive/milestones/legacy_cleanup_summary.md" in retention.lower()

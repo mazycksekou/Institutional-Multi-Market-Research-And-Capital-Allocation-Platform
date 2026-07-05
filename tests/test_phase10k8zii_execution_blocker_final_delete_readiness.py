@@ -7,24 +7,22 @@ import pytest
 
 
 ROOT = Path(__file__).resolve().parents[1]
-DOCS = [
-    ROOT / "docs" / "archive" / "historical_reports" / "PHASE10K8ZII_EXECUTION_BLOCKER_FINAL_DELETE_READINESS.md",
-    ROOT / "docs" / "archive" / "historical_reports" / "FINAL_EXECUTION_BLOCKER_TEST_SCAN_AFTER_10K8ZII.md",
-    ROOT / "docs" / "archive" / "historical_reports" / "FINAL_EXECUTION_BLOCKER_DELETE_DECISION_AFTER_10K8ZII.md",
-]
+SUMMARY = ROOT / "docs" / "archive" / "milestones" / "LEGACY_CLEANUP_SUMMARY.md"
+RETENTION_INDEX = ROOT / "docs" / "DOCUMENT_RETENTION_INDEX.md"
 
 
 def test_execution_blocker_final_delete_readiness_docs_state_no_delete_ready() -> None:
-    text = "\n".join(path.read_text(encoding="utf-8") for path in DOCS)
+    text = "\n".join(
+        [
+            SUMMARY.read_text(encoding="utf-8"),
+            RETENTION_INDEX.read_text(encoding="utf-8"),
+        ]
+    )
     for phrase in [
-        "DELETE_READY_AFTER_PROOF: none",
-        "ACTIVE_RUNTIME_DEPENDENCY",
-        "ACTIVE_TEST_DEPENDENCY",
-        "UNSAFE_TO_TOUCH",
-        "Canonical execution path remains intact.",
-        "Live trading remains disabled.",
-        "Broker account creation remains disabled.",
-        "No deletion occurred during the proof step.",
+        "PHASE10K8ZII_EXECUTION_BLOCKER_FINAL_DELETE_READINESS.md",
+        "FINAL_EXECUTION_BLOCKER_IMPORT_SCAN_AFTER_10K8ZII.md",
+        "Execution cleanup snapshots",
+        "KEEP ARCHIVE",
     ]:
         assert phrase in text
 

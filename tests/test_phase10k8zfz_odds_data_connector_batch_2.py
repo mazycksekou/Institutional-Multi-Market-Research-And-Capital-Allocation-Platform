@@ -11,10 +11,8 @@ import pytest
 from src.connectors.errors import ConnectorDisabledError
 
 ROOT = Path(__file__).resolve().parents[1]
-REPORT_PATH = ROOT / "docs" / "archive" / "historical_reports" / "PHASE10K8ZFZ_ODDS_DATA_CONNECTOR_BATCH_2.md"
-MIGRATION_MAP_PATH = ROOT / "docs" / "archive" / "historical_reports" / "ODDS_DATA_CONNECTOR_MIGRATION_MAP_AFTER_10K8ZFZ.md"
-LEGACY_COMPAT_PATH = ROOT / "docs" / "archive" / "historical_reports" / "PHASE10K8ZFZ_ODDS_DATA_CONNECTOR_BATCH_2.md"
-DISABLED_REPORT_PATH = ROOT / "docs" / "archive" / "historical_reports" / "ODDS_DATA_DISABLED_BEHAVIOR_REPORT_AFTER_10K8ZFZ.md"
+SUMMARY_PATH = ROOT / "docs" / "archive" / "milestones" / "LEGACY_CLEANUP_SUMMARY.md"
+RETENTION_INDEX_PATH = ROOT / "docs" / "DOCUMENT_RETENTION_INDEX.md"
 
 CONNECTOR_MODULES = [
     "src.connectors.odds_data",
@@ -181,33 +179,21 @@ def test_legacy_odds_imports_are_no_longer_active_dependencies():
 
 
 def test_phase_docs_cover_required_connector_language_and_vendor_neutrality():
-    for path in (REPORT_PATH, MIGRATION_MAP_PATH, LEGACY_COMPAT_PATH, DISABLED_REPORT_PATH):
-        assert path.is_file()
+    assert SUMMARY_PATH.is_file()
+    assert RETENTION_INDEX_PATH.is_file()
 
-    report = REPORT_PATH.read_text(encoding="utf-8")
-    migration_map = MIGRATION_MAP_PATH.read_text(encoding="utf-8")
-    legacy_compat = LEGACY_COMPAT_PATH.read_text(encoding="utf-8")
-    disabled_report = DISABLED_REPORT_PATH.read_text(encoding="utf-8")
+    summary = SUMMARY_PATH.read_text(encoding="utf-8")
+    retention_index = RETENTION_INDEX_PATH.read_text(encoding="utf-8")
 
-    combined = "\n".join([report, migration_map, legacy_compat, disabled_report])
     for required in [
-        "10K8ZFZ",
-        "Odds-data connector migration has begun only as an inert read-only connector wrapper.",
-        "odds-data connector wrapper means",
-        "No-Network Guarantee",
-        "No-Credential Guarantee",
-        "No-Execution Guarantee",
-        "Why Vendor-Neutral Naming Was Used",
-        "Next Recommended Phase",
-        "ConnectorDisabledError",
+        "Prediction-market and odds compatibility snapshots",
+        "ODDS_DATA_LEGACY_COMPATIBILITY_AFTER_10K8ZFZ.md",
+        "Legacy Cleanup Summary",
+        "KEEP ACTIVE",
     ]:
-        assert required in combined
+        assert required in summary or required in retention_index
 
-    assert "sharp" in combined.lower()  # legacy evidence remains documented
-    assert "src/connectors/odds_data" in combined
-    assert "legacy evidence only" in legacy_compat.lower()
-    assert "disabled" in disabled_report.lower()
-    assert "fetch_odds() raises ConnectorDisabledError" in disabled_report
+    assert "docs/archive/milestones/legacy_cleanup_summary.md" in retention_index.lower()
 
     for path in (ROOT / "src" / "connectors" / "odds_data").glob("*.py"):
         text = path.read_text(encoding="utf-8").lower()

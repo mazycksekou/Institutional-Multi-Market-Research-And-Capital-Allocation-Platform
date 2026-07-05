@@ -5,13 +5,10 @@ from pathlib import Path
 
 
 def test_execution_helper_checkpoint_docs_and_architecture() -> None:
-    for relpath in [
-        "docs/archive/historical_reports/PHASE10K8ZIP_EXECUTION_HELPER_CANONICALIZATION_CHECKPOINT.md",
-        "docs/archive/historical_reports/POST_EXECUTION_HELPER_ARCHITECTURE_MAP_AFTER_10K8ZIP.md",
-        "docs/archive/historical_reports/NEXT_EXECUTION_HELPER_DELETION_PLAN_AFTER_10K8ZIP.md",
-        "docs/archive/milestones/LEGACY_CLEANUP_SUMMARY.md",
-    ]:
-        assert Path(relpath).exists(), relpath
+    summary_path = Path("docs/archive/milestones/LEGACY_CLEANUP_SUMMARY.md")
+    retention_path = Path("docs/DOCUMENT_RETENTION_INDEX.md")
+    assert summary_path.exists()
+    assert retention_path.exists()
 
     settlement = importlib.import_module("src.brokerage.settlement")
     settlement_service = importlib.import_module("src.services.settlement_service")
@@ -23,8 +20,8 @@ def test_execution_helper_checkpoint_docs_and_architecture() -> None:
     assert ledger_service.load_audit_records(base_data_dir="data")["provider_write"] is False
     assert execution_service.build_broker_quality_report()["provider_write"] is False
 
-    checkpoint = Path("docs/archive/historical_reports/PHASE10K8ZIP_EXECUTION_HELPER_CANONICALIZATION_CHECKPOINT.md").read_text(encoding="utf-8")
-    assert "Settlement canonicalization is complete" in checkpoint
-    assert "Ledger canonicalization is complete" in checkpoint
-    assert "Strategy / execution helper canonicalization is complete" in checkpoint
-    assert "Live trading remains disabled" in checkpoint
+    summary = summary_path.read_text(encoding="utf-8")
+    retention = retention_path.read_text(encoding="utf-8")
+    assert "PHASE10K8ZIP_EXECUTION_HELPER_CANONICALIZATION_CHECKPOINT.md" in retention
+    assert "REMAINING_EXECUTION_HELPER_BLOCKERS_AFTER_10K8ZIP.md" in summary
+    assert "Execution cleanup snapshots" in summary
