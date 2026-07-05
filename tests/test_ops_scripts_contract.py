@@ -44,6 +44,9 @@ class TestOpsScriptsContract(unittest.TestCase):
         self.assertTrue(workflow.exists())
         text = workflow.read_text(encoding="utf-8")
         self.assertIn("fetch-depth: 0", text)
+        self.assertIn('python-version: "3.12.11"', text)
+        self.assertIn("python -m pip install -r requirements.txt", text)
+        self.assertIn("python -m pip install -r requirements-dev.txt", text)
         self.assertIn("python scripts/ops_check.py --mode local --output text --skip-network", text)
 
     def test_requirements_and_pytest_config_exist(self):

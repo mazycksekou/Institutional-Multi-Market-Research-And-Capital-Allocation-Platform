@@ -45,6 +45,14 @@ These standards keep the repository predictable for engineers, reviewers, and au
 
 - Increment versions only when a contract or behavior boundary changes
 - Treat non-breaking documentation and governance updates as patch-level work
+- Keep runtime version pins, CI version pins, and deployment descriptors synchronized whenever possible
+
+## Reproducibility Guidance
+
+- Document required tooling in `docs/operations/DEPENDENCY_REPRODUCIBILITY.md`
+- Prefer pinned runtime dependencies and explicit environment descriptors
+- Treat optional developer tools as optional unless a script or workflow genuinely requires them
+- Use repo-local validation as the source of truth rather than ad hoc machine state
 
 ## Archive vs Delete
 
@@ -57,6 +65,12 @@ These standards keep the repository predictable for engineers, reviewers, and au
 2. Add connector or adapter code only where needed
 3. Describe field coverage in the provider matrix
 4. Validate the public contract and local architecture rules
+
+## Release And Handoff
+
+- Use repository pre-flight checks before commit and push
+- Record modernization milestones and major governance changes in architecture or operations docs
+- Prefer draft PRs or explicit review-ready PRs depending on the task scope
 
 ## Adding a Connector
 

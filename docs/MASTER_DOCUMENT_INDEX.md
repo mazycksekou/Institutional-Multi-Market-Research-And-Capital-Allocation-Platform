@@ -27,6 +27,7 @@ This index points readers to the current truth and the durable historical entry 
 - `docs/architecture/OPENAPI_CONTRACT_GOVERNANCE.md` - OpenAPI Contract Governance
 - `docs/architecture/PRODUCTION_READINESS.md` - Production Readiness
 - `docs/architecture/PROVIDER_OWNERSHIP_MAP.md` - Provider Ownership Map
+- `docs/architecture/REPOSITORY_MODERNIZATION_COMPLETE_V1.md` - Repository Modernization Complete V1
 - `docs/architecture/RESEARCH_PLATFORM_ARCHITECTURE.md` - Research Platform Architecture
 - `docs/architecture/REVIEWER_GUIDE.md` - Reviewer Guide
 - `docs/architecture/RUNTIME_FLOW_MAP.md` - Runtime Flow Map
@@ -124,16 +125,23 @@ This index points readers to the current truth and the durable historical entry 
 
 ### RUNBOOK
 - `docs/operations/AUTOMATED_GOVERNANCE.md` - Automated Governance
+- `docs/operations/CONFIGURATION_GOVERNANCE.md` - Configuration Governance
 - `docs/operations/DAILY_DATA_HYGIENE_SCHEDULER.md` - Daily Data Hygiene Scheduler
 - `docs/operations/DEEPSEEK_DATA_PULL_CHECK.md` - External Model Data Pull Check
+- `docs/operations/DEPENDENCY_REPRODUCIBILITY.md` - Dependency Reproducibility
+- `docs/operations/DISASTER_RECOVERY.md` - Disaster Recovery
+- `docs/operations/OBSERVABILITY_READINESS.md` - Observability Readiness
 - `docs/operations/OPS_WORKFLOW.md` - Ops Workflow
+- `docs/operations/RELEASE_MANAGEMENT.md` - Release Management
 - `docs/operations/RENDER_PERSISTENT_STORAGE_AND_CRON.md` - Render Persistent Storage And Cron
+- `docs/operations/SECURITY_REVIEW.md` - Security Review
 - `docs/operations/VALIDATION_RUNBOOK.md` - Validation Runbook
 
 ### STANDARD
 - `docs/development/BRANCH_GOVERNANCE_POLICY.md` - Branch Governance Policy
 - `docs/development/CONTRIBUTING.md` - Contributing
 - `docs/development/ENGINEERING_STANDARDS.md` - Engineering Standards
+- `docs/development/ONBOARDING.md` - Developer Onboarding
 
 ## Historical Entry Points
 
