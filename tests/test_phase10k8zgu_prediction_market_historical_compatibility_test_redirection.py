@@ -10,9 +10,10 @@ from src.connectors.errors import ConnectorDisabledError
 
 
 ROOT = Path(__file__).resolve().parents[1]
+SUMMARY = ROOT / "docs" / "archive" / "milestones" / "LEGACY_CLEANUP_SUMMARY.md"
 
 DOCS = {
-    "PHASE10K8ZGU_PREDICTION_MARKET_HISTORICAL_COMPATIBILITY_TEST_REDIRECTION.md": [
+    "docs/archive/historical_reports/PHASE10K8ZGU_PREDICTION_MARKET_HISTORICAL_COMPATIBILITY_TEST_REDIRECTION.md": [
         "Historical compatibility tests must not preserve legacy prediction-market shells unnecessarily.",
         "src.services.prediction_market_runtime_bridge",
         "src.connectors.prediction_market_data",
@@ -20,27 +21,17 @@ DOCS = {
         "historical evidence only",
         "reclassified as compatibility evidence",
     ],
-    "PREDICTION_MARKET_HISTORICAL_TEST_REDIRECTION_MAP_AFTER_10K8ZGU.md": [
+    "docs/archive/historical_reports/PREDICTION_MARKET_HISTORICAL_TEST_REDIRECTION_MAP_AFTER_10K8ZGU.md": [
         "tests/test_phase10k8zgs_prediction_market_compatibility_shell_delete_readiness.py",
         "tests/test_phase10k8zgt_prediction_market_runtime_scheduler_redirection.py",
         "tests/test_kalshi_readonly_adapter.py",
         "historical evidence only",
         "compatibility evidence",
     ],
-    "PREDICTION_MARKET_COMPATIBILITY_REFERENCE_SCAN_AFTER_10K8ZGU.md": [
-        "Redirected Runtime References",
-        "Historical Evidence / Compatibility References",
-        "kalshi_client.py",
-        "automation_scheduler/kalshi_readonly_adapter.py",
-    ],
-    "PREDICTION_MARKET_DELETE_READINESS_RECHECK_AFTER_10K8ZGU.md": [
-        "kalshi_client.py",
-        "providers/kalshi_provider.py",
-        "betting_providers/kalshi_api.py",
-        "automation_scheduler/kalshi_readonly_adapter.py",
-        "automation_scheduler/kalshi_market_provider.py",
-        "test-blocked",
-        "compatibility-blocked",
+    "docs/archive/milestones/LEGACY_CLEANUP_SUMMARY.md": [
+        "PREDICTION_MARKET_COMPATIBILITY_REFERENCE_SCAN_AFTER_10K8ZGU.md",
+        "PREDICTION_MARKET_DELETE_READINESS_RECHECK_AFTER_10K8ZGU.md",
+        "Deleted In This Pass",
     ],
 }
 
@@ -103,10 +94,9 @@ def test_historical_prediction_market_redirection_uses_canonical_bridge_and_keep
     assert snapshot["provider_id"] == "kalshi_prediction_market"
 
     for relative in [
-        "PHASE10K8ZGU_PREDICTION_MARKET_HISTORICAL_COMPATIBILITY_TEST_REDIRECTION.md",
-        "PREDICTION_MARKET_HISTORICAL_TEST_REDIRECTION_MAP_AFTER_10K8ZGU.md",
-        "PREDICTION_MARKET_COMPATIBILITY_REFERENCE_SCAN_AFTER_10K8ZGU.md",
-        "PREDICTION_MARKET_DELETE_READINESS_RECHECK_AFTER_10K8ZGU.md",
+        "docs/archive/historical_reports/PHASE10K8ZGU_PREDICTION_MARKET_HISTORICAL_COMPATIBILITY_TEST_REDIRECTION.md",
+        "docs/archive/historical_reports/PREDICTION_MARKET_HISTORICAL_TEST_REDIRECTION_MAP_AFTER_10K8ZGU.md",
+        "docs/archive/milestones/LEGACY_CLEANUP_SUMMARY.md",
     ]:
         text = _read(relative)
         lowered = text.lower()

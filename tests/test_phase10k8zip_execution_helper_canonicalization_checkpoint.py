@@ -6,10 +6,10 @@ from pathlib import Path
 
 def test_execution_helper_checkpoint_docs_and_architecture() -> None:
     for relpath in [
-        "PHASE10K8ZIP_EXECUTION_HELPER_CANONICALIZATION_CHECKPOINT.md",
-        "POST_EXECUTION_HELPER_ARCHITECTURE_MAP_AFTER_10K8ZIP.md",
-        "REMAINING_EXECUTION_HELPER_BLOCKERS_AFTER_10K8ZIP.md",
-        "NEXT_EXECUTION_HELPER_DELETION_PLAN_AFTER_10K8ZIP.md",
+        "docs/archive/historical_reports/PHASE10K8ZIP_EXECUTION_HELPER_CANONICALIZATION_CHECKPOINT.md",
+        "docs/archive/historical_reports/POST_EXECUTION_HELPER_ARCHITECTURE_MAP_AFTER_10K8ZIP.md",
+        "docs/archive/historical_reports/NEXT_EXECUTION_HELPER_DELETION_PLAN_AFTER_10K8ZIP.md",
+        "docs/archive/milestones/LEGACY_CLEANUP_SUMMARY.md",
     ]:
         assert Path(relpath).exists(), relpath
 
@@ -23,7 +23,7 @@ def test_execution_helper_checkpoint_docs_and_architecture() -> None:
     assert ledger_service.load_audit_records(base_data_dir="data")["provider_write"] is False
     assert execution_service.build_broker_quality_report()["provider_write"] is False
 
-    checkpoint = Path("PHASE10K8ZIP_EXECUTION_HELPER_CANONICALIZATION_CHECKPOINT.md").read_text(encoding="utf-8")
+    checkpoint = Path("docs/archive/historical_reports/PHASE10K8ZIP_EXECUTION_HELPER_CANONICALIZATION_CHECKPOINT.md").read_text(encoding="utf-8")
     assert "Settlement canonicalization is complete" in checkpoint
     assert "Ledger canonicalization is complete" in checkpoint
     assert "Strategy / execution helper canonicalization is complete" in checkpoint

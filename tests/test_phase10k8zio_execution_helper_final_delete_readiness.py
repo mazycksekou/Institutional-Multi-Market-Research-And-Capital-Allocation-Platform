@@ -5,10 +5,8 @@ from pathlib import Path
 
 
 TARGET_DOCS = [
-    "PHASE10K8ZIO_EXECUTION_HELPER_FINAL_DELETE_READINESS.md",
-    "FINAL_EXECUTION_HELPER_IMPORT_SCAN_AFTER_10K8ZIO.md",
-    "FINAL_EXECUTION_HELPER_TEST_SCAN_AFTER_10K8ZIO.md",
-    "FINAL_EXECUTION_HELPER_DELETE_DECISION_AFTER_10K8ZIO.md",
+    "docs/archive/historical_reports/PHASE10K8ZIO_EXECUTION_HELPER_FINAL_DELETE_READINESS.md",
+    "docs/archive/historical_reports/FINAL_EXECUTION_HELPER_DELETE_DECISION_AFTER_10K8ZIO.md",
 ]
 
 
@@ -24,7 +22,7 @@ def test_execution_helper_final_delete_readiness_docs_and_modules() -> None:
     assert canonical_ledger.STRATEGY_PERFORMANCE_SCHEMA_VERSION.endswith("strategy_performance_ledger.v1")
     assert canonical_execution.ExecutionDeskRejected.__module__ == "src.services.execution_service"
 
-    doc_text = Path("PHASE10K8ZIO_EXECUTION_HELPER_FINAL_DELETE_READINESS.md").read_text(encoding="utf-8")
+    doc_text = Path("docs/archive/historical_reports/PHASE10K8ZIO_EXECUTION_HELPER_FINAL_DELETE_READINESS.md").read_text(encoding="utf-8")
     assert "No scheduler execution helper is classified `DELETE_READY_AFTER_PROOF`" in doc_text
     for relpath in [
         "src/brokerage/settlement.py",
@@ -36,7 +34,7 @@ def test_execution_helper_final_delete_readiness_docs_and_modules() -> None:
 
 
 def test_execution_helper_no_delete_ready_queue() -> None:
-    doc_text = Path("FINAL_EXECUTION_HELPER_DELETE_DECISION_AFTER_10K8ZIO.md").read_text(encoding="utf-8")
+    doc_text = Path("docs/archive/historical_reports/FINAL_EXECUTION_HELPER_DELETE_DECISION_AFTER_10K8ZIO.md").read_text(encoding="utf-8")
     assert "No file in the execution-helper batch is approved for deletion" in doc_text
     assert "src.brokerage.settlement" in doc_text
     assert "src.services.execution_service" in doc_text

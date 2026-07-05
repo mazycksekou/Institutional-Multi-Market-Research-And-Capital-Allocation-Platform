@@ -10,10 +10,10 @@ import pytest
 from src.connectors.errors import ConnectorDisabledError
 
 ROOT = Path(__file__).resolve().parents[1]
-REPORT_PATH = ROOT / "PHASE10K8ZFY_PREDICTION_MARKET_CONNECTOR_BATCH_1.md"
-MIGRATION_MAP_PATH = ROOT / "PREDICTION_MARKET_CONNECTOR_MIGRATION_MAP_AFTER_10K8ZFY.md"
-LEGACY_COMPAT_PATH = ROOT / "PREDICTION_MARKET_LEGACY_COMPATIBILITY_AFTER_10K8ZFY.md"
-DISABLED_REPORT_PATH = ROOT / "CONNECTOR_DISABLED_BEHAVIOR_REPORT_AFTER_10K8ZFY.md"
+REPORT_PATH = ROOT / "docs" / "archive" / "historical_reports" / "PHASE10K8ZFY_PREDICTION_MARKET_CONNECTOR_BATCH_1.md"
+MIGRATION_MAP_PATH = ROOT / "docs" / "archive" / "historical_reports" / "PREDICTION_MARKET_CONNECTOR_MIGRATION_MAP_AFTER_10K8ZFY.md"
+LEGACY_COMPAT_PATH = ROOT / "docs" / "archive" / "historical_reports" / "PHASE10K8ZFY_PREDICTION_MARKET_CONNECTOR_BATCH_1.md"
+DISABLED_REPORT_PATH = ROOT / "docs" / "archive" / "historical_reports" / "CONNECTOR_DISABLED_BEHAVIOR_REPORT_AFTER_10K8ZFY.md"
 
 CONNECTOR_MODULES = [
     "src.connectors.prediction_market_data",
@@ -172,7 +172,7 @@ def test_phase_docs_cover_required_connector_language_and_vendor_neutrality():
 
     assert "kalshi" in combined.lower()  # legacy evidence remains documented
     assert "src/connectors/prediction_market_data" in combined
-    assert "legacy modules remain in place" in legacy_compat.lower()
+    assert "legacy evidence only" in legacy_compat.lower()
     assert "disabled" in disabled_report.lower()
     assert "fetch_markets() raises ConnectorDisabledError" in disabled_report
 

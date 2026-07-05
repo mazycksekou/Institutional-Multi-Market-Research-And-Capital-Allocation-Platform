@@ -9,14 +9,14 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def test_execution_cleanup_checkpoint_docs_exist_and_state() -> None:
     for path in [
-        ROOT / "PHASE10K8ZJ1_EXECUTION_CLEANUP_CHECKPOINT.md",
-        ROOT / "POST_EXECUTION_CLEANUP_ARCHITECTURE_MAP_AFTER_10K8ZJ1.md",
-        ROOT / "REMAINING_EXECUTION_BLOCKERS_AFTER_10K8ZJ1.md",
-        ROOT / "NEXT_LIVE_TRADING_READINESS_PLAN_AFTER_10K8ZJ1.md",
+        ROOT / "docs" / "archive" / "historical_reports" / "PHASE10K8ZJ1_EXECUTION_CLEANUP_CHECKPOINT.md",
+        ROOT / "docs" / "archive" / "historical_reports" / "POST_EXECUTION_CLEANUP_ARCHITECTURE_MAP_AFTER_10K8ZJ1.md",
+        ROOT / "docs" / "archive" / "historical_reports" / "REMAINING_EXECUTION_BLOCKERS_AFTER_10K8ZJ1.md",
+        ROOT / "docs" / "archive" / "historical_reports" / "NEXT_LIVE_TRADING_READINESS_PLAN_AFTER_10K8ZJ1.md",
     ]:
         assert path.is_file(), path
 
-    text = (ROOT / "PHASE10K8ZJ1_EXECUTION_CLEANUP_CHECKPOINT.md").read_text(encoding="utf-8")
+    text = (ROOT / "docs" / "archive" / "historical_reports" / "PHASE10K8ZJ1_EXECUTION_CLEANUP_CHECKPOINT.md").read_text(encoding="utf-8")
     for phrase in [
         "automation_scheduler/execution_gatekeeper.py: deleted",
         "automation_scheduler/execution_authorization.py: deleted",

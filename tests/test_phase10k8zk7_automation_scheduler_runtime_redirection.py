@@ -7,10 +7,10 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def test_phase10k8zk7_runtime_redirection_docs_exist() -> None:
     docs = [
-        ROOT / 'PHASE10K8ZK7_AUTOMATION_SCHEDULER_RUNTIME_REDIRECTION.md',
-        ROOT / 'AUTOMATION_SCHEDULER_RUNTIME_IMPORTS_AFTER_10K8ZK7.md',
-        ROOT / 'AUTOMATION_SCHEDULER_RUNTIME_REDIRECTION_MAP_AFTER_10K8ZK7.md',
-        ROOT / 'AUTOMATION_SCHEDULER_RUNTIME_DELETE_READINESS_AFTER_10K8ZK7.md',
+        ROOT / "docs" / "archive" / "historical_reports" / "PHASE10K8ZK7_AUTOMATION_SCHEDULER_RUNTIME_REDIRECTION.md",
+        ROOT / "docs" / "archive" / "historical_reports" / "AUTOMATION_SCHEDULER_RUNTIME_IMPORTS_AFTER_10K8ZK7.md",
+        ROOT / "docs" / "archive" / "historical_reports" / "AUTOMATION_SCHEDULER_RUNTIME_DELETE_READINESS_AFTER_10K8ZK7.md",
+        ROOT / "docs" / "archive" / "historical_reports" / "AUTOMATION_SCHEDULER_RUNTIME_REDIRECTION_MAP_AFTER_10K8ZL9A.md",
     ]
     for path in docs:
         assert path.is_file(), path

@@ -11,10 +11,10 @@ import pytest
 from src.connectors.errors import ConnectorDisabledError
 
 ROOT = Path(__file__).resolve().parents[1]
-REPORT_PATH = ROOT / "PHASE10K8ZFZ_ODDS_DATA_CONNECTOR_BATCH_2.md"
-MIGRATION_MAP_PATH = ROOT / "ODDS_DATA_CONNECTOR_MIGRATION_MAP_AFTER_10K8ZFZ.md"
-LEGACY_COMPAT_PATH = ROOT / "ODDS_DATA_LEGACY_COMPATIBILITY_AFTER_10K8ZFZ.md"
-DISABLED_REPORT_PATH = ROOT / "ODDS_DATA_DISABLED_BEHAVIOR_REPORT_AFTER_10K8ZFZ.md"
+REPORT_PATH = ROOT / "docs" / "archive" / "historical_reports" / "PHASE10K8ZFZ_ODDS_DATA_CONNECTOR_BATCH_2.md"
+MIGRATION_MAP_PATH = ROOT / "docs" / "archive" / "historical_reports" / "ODDS_DATA_CONNECTOR_MIGRATION_MAP_AFTER_10K8ZFZ.md"
+LEGACY_COMPAT_PATH = ROOT / "docs" / "archive" / "historical_reports" / "PHASE10K8ZFZ_ODDS_DATA_CONNECTOR_BATCH_2.md"
+DISABLED_REPORT_PATH = ROOT / "docs" / "archive" / "historical_reports" / "ODDS_DATA_DISABLED_BEHAVIOR_REPORT_AFTER_10K8ZFZ.md"
 
 CONNECTOR_MODULES = [
     "src.connectors.odds_data",
@@ -205,7 +205,7 @@ def test_phase_docs_cover_required_connector_language_and_vendor_neutrality():
 
     assert "sharp" in combined.lower()  # legacy evidence remains documented
     assert "src/connectors/odds_data" in combined
-    assert "legacy modules remain in place" in legacy_compat.lower()
+    assert "legacy evidence only" in legacy_compat.lower()
     assert "disabled" in disabled_report.lower()
     assert "fetch_odds() raises ConnectorDisabledError" in disabled_report
 
