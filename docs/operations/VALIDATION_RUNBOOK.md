@@ -19,6 +19,7 @@ Use this runbook when you need to verify repository health locally.
 - `git` for repository-state checks
 - `python` for the governance scripts and validation commands
 - `ripgrep` is not required; `python scripts/check_document_lifecycle.py` is now Python-native
+- PowerShell is optional and only needed for Windows convenience wrappers or live smoke helpers; it is not required for the canonical validation workflow
 - Match the pinned runtime Python version from `runtime.txt` when you want deployment parity
 
 ## When to Use Full Regression

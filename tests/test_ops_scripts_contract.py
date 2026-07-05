@@ -37,7 +37,8 @@ class TestOpsScriptsContract(unittest.TestCase):
         self.assertTrue(docs.exists())
         text = docs.read_text(encoding="utf-8")
         self.assertIn(".\\scripts\\check_local.ps1", text)
-        self.assertIn("Codex should use these scripts", text)
+        self.assertIn("canonical workflow is Python-first", text)
+        self.assertIn("PowerShell scripts remain as optional Windows convenience wrappers", text)
 
     def test_repository_validation_workflow_uses_full_checkout_history(self):
         workflow = ROOT / ".github/workflows/repository-validation.yml"

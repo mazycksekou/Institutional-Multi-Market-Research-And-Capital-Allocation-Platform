@@ -1,6 +1,24 @@
 # Ops Workflow
 
-This project uses one verification layer for local, Codex, PowerShell, and Render-facing checks. Codex should use these scripts before raw `unittest` or manual `curl` commands.
+This project uses one verification layer for local, Codex, PowerShell, and Render-facing checks. The canonical workflow is Python-first; PowerShell scripts remain as optional Windows convenience wrappers.
+
+## Canonical Python Validation
+
+Use these commands on macOS, Linux, Windows, GitHub Actions, or Render-adjacent shells when you want the portable path:
+
+```bash
+python scripts/check_repo_preflight.py --start-task --include-ops
+python scripts/check_root_markdown.py
+python scripts/check_openapi_contract.py --output text
+python scripts/check_architecture.py --output text
+python scripts/check_audit_lifecycle.py
+python scripts/check_document_lifecycle.py
+python scripts/ops_check.py --mode local --output text --skip-network
+python -m compileall src tests scripts
+pytest -m smoke -q
+```
+
+Use the PowerShell wrappers below only when you want the Windows convenience layer.
 
 ## One-Time Setup
 
@@ -81,4 +99,3 @@ ops_checks/daily/<YYYY-MM-DD>.md
 If `AUTOMATION_DATA_DIR` is unset locally, reports use `data/ops_checks/`.
 
 Reports never include API keys, tokens, authorization headers, `.env` content, signed URLs, raw provider payloads, or secret values. They only report whether keys are configured.
-

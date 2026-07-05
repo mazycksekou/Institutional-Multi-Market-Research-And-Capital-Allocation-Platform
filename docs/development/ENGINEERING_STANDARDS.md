@@ -53,6 +53,8 @@ These standards keep the repository predictable for engineers, reviewers, and au
 - Prefer pinned runtime dependencies and explicit environment descriptors
 - Treat optional developer tools as optional unless a script or workflow genuinely requires them
 - Use repo-local validation as the source of truth rather than ad hoc machine state
+- Keep the canonical validation workflow Python-first so macOS, Linux, Windows, and CI can share the same commands
+- Allow PowerShell wrappers only as optional convenience layers for Windows-specific workflows
 
 ## Archive vs Delete
 

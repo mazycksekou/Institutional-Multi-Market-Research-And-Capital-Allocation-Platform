@@ -97,22 +97,22 @@ the intended end state is R2 transfer verified and eligible local raw/generated 
 credentials must remain in local environment variables or ignored local config
 
 Example dry-run command:
-```powershell
+```bash
 python scripts/r2_archive_pipeline.py --input-dir data --output-dir . --environment local --source example-source --market example-market --trading-date 2026-01-31 --dry-run
 ```
 
 Example bundle command:
-```powershell
+```bash
 python scripts/r2_archive_pipeline.py --input-dir data --output-dir . --environment local --source example-source --market example-market --trading-date 2026-01-31 --bundle
 ```
 
 Example upload and verify command with placeholders only:
-```powershell
+```bash
 python scripts/r2_archive_pipeline.py --input-dir data --output-dir . --environment local --source example-source --market example-market --trading-date 2026-01-31 --bundle --upload --verify
 ```
 
 Example verified cleanup command with placeholders only:
-```powershell
+```bash
 python scripts/r2_archive_pipeline.py --input-dir data --output-dir . --manifest-path reports/archive_manifests/example-manifest.json --cleanup --allow-delete-local-raw
 ```
 

@@ -17,9 +17,17 @@ This repository uses a deterministic daily data hygiene workflow to let generate
 - Archive before delete.
 - No blind delete.
 
+## Canonical Runner
+
+Run from the repo root with the portable Python implementation:
+
+```bash
+python scripts/daily_data_hygiene.py --dry-run
+```
+
 ## PowerShell runner
 
-Run from the repo root:
+The PowerShell wrapper remains available as a Windows convenience layer:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\run_daily_data_hygiene.ps1 -Execute
@@ -33,7 +41,7 @@ Register manually only when you are ready:
 schtasks /Create /TN "BettingRepoDailyDataHygiene" /SC DAILY /ST 22:00 /TR "powershell.exe -ExecutionPolicy Bypass -File '<repo>\scripts\run_daily_data_hygiene.ps1' -Execute" /F
 ```
 
-This command is documented for manual use. The repository does not auto-register the task in tests or normal runs.
+This command is documented for manual use on Windows. The repository does not auto-register the task in tests or normal runs.
 
 ## Safety
 
@@ -42,4 +50,3 @@ This command is documented for manual use. The repository does not auto-register
 - deletion_eligible must be true
 - deletion_performed must remain false until cleanup runs
 - manifest-listed files only
-

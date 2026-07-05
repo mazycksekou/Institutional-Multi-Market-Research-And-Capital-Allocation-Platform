@@ -26,6 +26,8 @@ This guide helps a new contributor get from a fresh clone to a safe, validated c
    python -m pip install streamlit
    ```
 
+PowerShell is optional. The canonical validation workflow uses `python` commands and works from macOS Terminal, Linux shells, and Windows shells without needing the wrapper scripts.
+
 ## Validate Your Environment
 
 Run the local repository safety checks before and after making changes:
