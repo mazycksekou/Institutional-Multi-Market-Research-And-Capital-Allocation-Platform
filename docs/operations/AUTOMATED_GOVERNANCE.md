@@ -19,6 +19,10 @@ The canonical local checks are:
 8. `python -m compileall src tests scripts`
 9. `pytest -m smoke -q`
 
+## Tooling Requirements
+
+The document lifecycle checker scans the repository with `rg` (ripgrep). Install `ripgrep` locally and in CI before running the governance checks so `python scripts/check_document_lifecycle.py` can complete successfully.
+
 ## Current Governance Checks
 
 | Check | Purpose | Authoritative source |
