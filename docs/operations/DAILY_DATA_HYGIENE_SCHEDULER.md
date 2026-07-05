@@ -25,6 +25,12 @@ Run from the repo root with the portable Python implementation:
 python scripts/daily_data_hygiene.py --dry-run
 ```
 
+For an execution run:
+
+```bash
+python scripts/daily_data_hygiene.py --execute --upload --verify --cleanup --allow-delete-local-raw
+```
+
 ## PowerShell runner
 
 The PowerShell wrapper remains available as a Windows convenience layer:
@@ -38,10 +44,39 @@ powershell -ExecutionPolicy Bypass -File .\scripts\run_daily_data_hygiene.ps1 -E
 Register manually only when you are ready:
 
 ```powershell
-schtasks /Create /TN "BettingRepoDailyDataHygiene" /SC DAILY /ST 22:00 /TR "powershell.exe -ExecutionPolicy Bypass -File '<repo>\scripts\run_daily_data_hygiene.ps1' -Execute" /F
+schtasks /Create /TN "BettingRepoDailyDataHygiene" /SC DAILY /ST 22:00 /TR "python '<repo>\scripts\daily_data_hygiene.py' --execute --upload --verify --cleanup --allow-delete-local-raw" /F
 ```
 
 This command is documented for manual use on Windows. The repository does not auto-register the task in tests or normal runs.
+
+## macOS/Linux cron
+
+```cron
+0 22 * * * cd <repo> && python scripts/daily_data_hygiene.py --execute --upload --verify --cleanup --allow-delete-local-raw
+```
+
+## GitHub Actions scheduled workflow
+
+```yaml
+on:
+  schedule:
+    - cron: "0 22 * * *"
+jobs:
+  daily-data-hygiene:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python scripts/daily_data_hygiene.py --execute --upload --verify --cleanup --allow-delete-local-raw
+```
+
+## Render scheduled/background job
+
+```yaml
+startCommand: python scripts/daily_data_hygiene.py --execute --upload --verify --cleanup --allow-delete-local-raw
+```
 
 ## Safety
 

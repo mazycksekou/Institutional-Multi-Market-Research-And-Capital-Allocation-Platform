@@ -5,7 +5,7 @@ param(
 )
 
 # Example dry run:
-# powershell -ExecutionPolicy Bypass -File .\scripts\run_daily_data_hygiene.ps1 -DryRun
+# python scripts/daily_data_hygiene.py --dry-run
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -36,7 +36,7 @@ if ($Execute) {
 }
 
 if ($AtTenPmSetup) {
-    $TaskCommand = "schtasks /Create /TN `"BettingRepoDailyDataHygiene`" /SC DAILY /ST 22:00 /TR `"powershell.exe -ExecutionPolicy Bypass -File '$RepoRoot\scripts\run_daily_data_hygiene.ps1' -Execute`" /F"
+    $TaskCommand = "schtasks /Create /TN `"BettingRepoDailyDataHygiene`" /SC DAILY /ST 22:00 /TR `"python `"$RepoRoot\scripts\daily_data_hygiene.py`" --execute --upload --verify --cleanup --allow-delete-local-raw`" /F"
     Write-Host $TaskCommand
     exit 0
 }
