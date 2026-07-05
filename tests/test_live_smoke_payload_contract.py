@@ -1,9 +1,10 @@
 import json
 import subprocess
 import unittest
+import shutil
 from copy import deepcopy
 
-import multi_sport_model_registry as registry
+import src.market_intelligence.multi_sport_model_registry as registry
 
 
 LIVE_SCRIPT_SPORTS = [
@@ -79,6 +80,11 @@ def analysis_payload_from_ticket(ticket):
 
 
 def load_script_payloads():
+    shell = shutil.which("powershell") or shutil.which("pwsh")
+    if shell is None:
+        raise unittest.SkipTest(
+            "PowerShell is optional for Windows live smoke wrapper checks; use the Python validation workflow on macOS/Linux."
+        )
     script = (
         ". .\\scripts\\live_payloads.ps1; "
         "$payloads=[ordered]@{}; "
@@ -87,7 +93,7 @@ def load_script_payloads():
         "$payloads | ConvertTo-Json -Depth 80 -Compress"
     )
     result = subprocess.run(
-        ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", script],
+        [shell, "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", script],
         capture_output=True,
         text=True,
         check=True,

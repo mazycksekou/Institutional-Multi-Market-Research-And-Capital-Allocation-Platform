@@ -1,6 +1,6 @@
 import unittest
 
-from automation_scheduler.provider_contracts import PROVIDER_TYPES, get_default_provider_contracts
+from src.providers.contracts import PROVIDER_TYPES, get_default_provider_contracts
 
 
 class TestProviderContracts(unittest.TestCase):
@@ -34,4 +34,3 @@ class TestProviderContracts(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

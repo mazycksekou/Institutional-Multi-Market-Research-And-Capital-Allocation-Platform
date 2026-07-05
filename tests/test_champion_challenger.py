@@ -1,5 +1,5 @@
 import unittest
-from model_governance.champion_challenger import compare_champion_challenger
+from src.analytics.model_governance.champion_challenger import compare_champion_challenger
 
 class TestChampionChallenger(unittest.TestCase):
     def test_outcomes(self):

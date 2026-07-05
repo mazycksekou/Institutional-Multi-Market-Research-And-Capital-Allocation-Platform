@@ -1,12 +1,7 @@
 import tempfile
 import unittest
 
-from automation_scheduler.pattern_review_queue import (
-    build_pattern_review_item,
-    load_pattern_review_queue,
-    persist_pattern_review_queue,
-    queue_status_for_score,
-)
+from src.services.streamlit_dashboard_facade import build_pattern_review_item, load_pattern_review_queue, persist_pattern_review_queue, queue_status_for_score
 
 
 class TestPatternReviewQueue(unittest.TestCase):

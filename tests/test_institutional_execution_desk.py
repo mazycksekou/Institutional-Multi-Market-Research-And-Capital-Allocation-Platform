@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from unittest.mock import Mock
 
-from automation_scheduler.institutional_execution_desk import ExecutionDeskRejected, simulate_execution, validate_simulation_request
+from src.services.execution_service import ExecutionDeskRejected, simulate_execution, validate_simulation_request
 
 
 class TestInstitutionalExecutionDesk(unittest.TestCase):

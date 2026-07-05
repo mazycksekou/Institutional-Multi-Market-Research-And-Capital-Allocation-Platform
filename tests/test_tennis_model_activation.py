@@ -2,13 +2,8 @@ import asyncio
 import unittest
 from unittest.mock import patch
 
-import screenshot_intake
-from main import (
-    ScreenshotAnalysisRequest,
-    SportAnalysisRequest,
-    action_analyze_sport_model,
-    action_analyze_ticket_screenshot,
-)
+import src.services.screenshot_intake as screenshot_intake
+from tests.support.action_imports import ScreenshotAnalysisRequest, SportAnalysisRequest, action_analyze_sport_model, action_analyze_ticket_screenshot
 
 
 TENNIS_MISSING_INPUTS = [

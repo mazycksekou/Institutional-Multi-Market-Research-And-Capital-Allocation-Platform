@@ -1,6 +1,6 @@
 import unittest
 
-from automation_scheduler.middles.key_number_middle import detect_key_number_middle
+from src.services.streamlit_dashboard_facade import detect_key_number_middle
 
 
 class TestMiddleKeyNumber(unittest.TestCase):

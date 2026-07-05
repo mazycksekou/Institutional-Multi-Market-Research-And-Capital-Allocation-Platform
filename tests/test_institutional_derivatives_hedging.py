@@ -1,6 +1,6 @@
 import unittest
 
-from math_models.institutional.derivatives_hedging import OUTPUT_FIELDS, get_models, run_model
+from src.analytics.institutional.derivatives_hedging import OUTPUT_FIELDS, get_models, run_model
 
 
 class TestInstitutionalDerivativesHedging(unittest.TestCase):

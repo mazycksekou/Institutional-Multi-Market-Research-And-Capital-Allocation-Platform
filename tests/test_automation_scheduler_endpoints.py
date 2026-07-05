@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
-from main import app
+from tests.support.action_imports import app
 
 
 class TestAutomationSchedulerEndpoints(unittest.TestCase):
@@ -166,7 +166,7 @@ class TestAutomationSchedulerEndpoints(unittest.TestCase):
 
     def test_calibration_collector_endpoint_compact_default(self):
         with patch(
-            "automation_scheduler.run_automation_calibration_collector",
+            "src.services.streamlit_dashboard_facade.run_automation_calibration_collector",
             return_value={
                 "ok": True,
                 "status": "collector_cycle_complete",
@@ -215,7 +215,7 @@ class TestAutomationSchedulerEndpoints(unittest.TestCase):
 
     def test_calibration_collector_endpoint_accepts_adaptive_throughput_request(self):
         with patch(
-            "automation_scheduler.run_automation_calibration_collector",
+            "src.services.streamlit_dashboard_facade.run_automation_calibration_collector",
             return_value={
                 "ok": True,
                 "status": "collector_cycle_complete",
@@ -250,7 +250,7 @@ class TestAutomationSchedulerEndpoints(unittest.TestCase):
 
     def test_calibration_collector_endpoint_rejects_unsafe_cap(self):
         with patch(
-            "automation_scheduler.run_automation_calibration_collector",
+            "src.services.streamlit_dashboard_facade.run_automation_calibration_collector",
             return_value={
                 "ok": False,
                 "status": "invalid_request",
@@ -289,7 +289,7 @@ class TestAutomationSchedulerEndpoints(unittest.TestCase):
 
     def test_deepseek_review_endpoint_compact_default(self):
         with patch(
-            "automation_scheduler.run_automation_deepseek_review",
+            "src.services.streamlit_dashboard_facade.run_automation_deepseek_review",
             return_value={
                 "ok": True,
                 "status": "disabled",
@@ -327,7 +327,7 @@ class TestAutomationSchedulerEndpoints(unittest.TestCase):
 
     def test_deepseek_red_team_endpoint_compact_default(self):
         with patch(
-            "automation_scheduler.run_automation_deepseek_red_team",
+            "src.services.streamlit_dashboard_facade.run_automation_deepseek_red_team",
             return_value={
                 "ok": True,
                 "status": "red_team_local_only",
@@ -383,7 +383,7 @@ class TestAutomationSchedulerEndpoints(unittest.TestCase):
 
     def test_deepseek_disagreements_endpoint_compact_default(self):
         with patch(
-            "automation_scheduler.get_deepseek_disagreements",
+            "src.services.streamlit_dashboard_facade.get_deepseek_disagreements",
             return_value={
                 "ok": True,
                 "status": "ok",
@@ -418,7 +418,7 @@ class TestAutomationSchedulerEndpoints(unittest.TestCase):
 
     def test_deepseek_daily_report_endpoint_compact_default(self):
         with patch(
-            "automation_scheduler.get_deepseek_daily_report",
+            "src.services.streamlit_dashboard_facade.get_deepseek_daily_report",
             return_value={
                 "ok": True,
                 "status": "disabled",
@@ -490,7 +490,7 @@ class TestAutomationSchedulerEndpoints(unittest.TestCase):
 
     def test_institutional_lab_run_endpoint_compact_default(self):
         with patch(
-            "automation_scheduler.run_institutional_lab",
+            "src.services.streamlit_dashboard_facade.run_institutional_lab",
             return_value={
                 "ok": True,
                 "status": "completed",
@@ -528,7 +528,7 @@ class TestAutomationSchedulerEndpoints(unittest.TestCase):
 
     def test_institutional_execution_simulation_endpoint_accepts_simulation_only(self):
         with patch(
-            "automation_scheduler.simulate_institutional_execution",
+            "src.services.streamlit_dashboard_facade.simulate_institutional_execution",
             return_value={
                 "ok": True,
                 "status": "simulated",
@@ -582,7 +582,7 @@ class TestAutomationSchedulerEndpoints(unittest.TestCase):
 
     def test_institutional_deepseek_endpoint_disabled_does_not_crash(self):
         with patch(
-            "automation_scheduler.run_institutional_deepseek_review",
+            "src.services.streamlit_dashboard_facade.run_institutional_deepseek_review",
             return_value={
                 "ok": True,
                 "status": "disabled",
@@ -612,12 +612,12 @@ class TestAutomationSchedulerEndpoints(unittest.TestCase):
         self.assertEqual(payload["reviewer_side_effects"], "none")
 
     def test_institutional_report_and_audit_endpoints_compact(self):
-        with patch("automation_scheduler.get_institutional_lab_report", return_value={"ok": True, "status": "not_run"}):
+        with patch("src.services.streamlit_dashboard_facade.get_institutional_lab_report", return_value={"ok": True, "status": "not_run"}):
             report = self.client.get("/api/automation/institutional-lab/report")
         self.assertEqual(report.status_code, 200)
         self.assertFalse(report.json()["provider_write"])
         with patch(
-            "automation_scheduler.get_institutional_lab_audit",
+            "src.services.streamlit_dashboard_facade.get_institutional_lab_audit",
             return_value={"ok": True, "status": "ok", "total_count": 1, "count": 1, "items": [{"audit_id": "a1"}]},
         ):
             audit = self.client.get("/api/automation/institutional-lab/audit")

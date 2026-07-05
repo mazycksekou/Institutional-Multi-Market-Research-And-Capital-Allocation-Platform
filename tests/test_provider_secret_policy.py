@@ -1,7 +1,7 @@
 import os
 import unittest
 
-from automation_scheduler.provider_secret_policy import (
+from src.providers.policy.secret_policy import (
     assert_no_secret_leak,
     credential_status_from_env,
     list_required_secret_names,

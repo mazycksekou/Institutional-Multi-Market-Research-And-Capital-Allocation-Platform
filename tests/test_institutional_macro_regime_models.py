@@ -1,6 +1,6 @@
 import unittest
 
-from math_models.institutional.macro_regime_models import OUTPUT_FIELDS, get_models, run_model
+from src.analytics.institutional.macro_regime_models import OUTPUT_FIELDS, get_models, run_model
 
 
 class TestInstitutionalMacroRegimeModels(unittest.TestCase):

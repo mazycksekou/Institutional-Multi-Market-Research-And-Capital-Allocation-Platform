@@ -1,7 +1,7 @@
 import unittest
 
-from automation_scheduler.news_event_monitor import monitor_news_events
-from automation_scheduler.scheduler_config import get_default_scheduler_config
+from src.market_intelligence.news_event_monitor import monitor_news_events
+from src.services.streamlit_dashboard_facade import get_default_scheduler_config
 
 
 class TestNewsEventMonitor(unittest.TestCase):

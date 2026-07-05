@@ -1,7 +1,9 @@
 # Environment variables
 .env
+.env.*
 .env.local
 .env.*.local
+!.env.example
 
 # Virtual environments
 .venv/
@@ -55,39 +57,62 @@ htmlcov/
 .ipynb_checkpoints/
 
 # Local data outputs
-data/
+/data/
 data/*.jsonl
 data/*.csv
 data/*.db
+*.jsonl
+*.parquet
+*.feather
+*.sqlite
+*.sqlite3
+*.db
 *.csv
 *.xlsx
 *.json
-*data
+# R2 / object storage local credentials
+.r2.env
+r2.env
+.r2/
+r2_credentials.json
+cloudflare_credentials.json
+credentials.json
+token.json
+*.pem
+*.key
 # Logs
 *.log
 
 # Generated local reports
-reports/
+/reports/
+/exports/
+/artifacts/
+/archive/
+/archives/
+*.csv.gz
+*.json.gz
+*.tar.gz
+*.zip
 
 # Generated script backup files
 *.bak_*
 # Runtime/generated data artifacts
-data/backtests/
-data/calibration/
-data/calibration_reports/
-data/clv/
-data/data_sources/
-data/reports/
-data/review_queue/
-data/snapshots/
-data/paper_ledger/
-data/ops_checks/
-data/deepseek_profit_lab/
-data/deepseek_data_checks/
-data/manifold/
-data/prediction_market_outcome_candidates/
-data/institutional_lab/
-data/collector_scheduler/
+/data/backtests/
+/data/calibration/
+/data/calibration_reports/
+/data/clv/
+/data/data_sources/
+/data/reports/
+/data/review_queue/
+/data/snapshots/
+/data/paper_ledger/
+/data/ops_checks/
+/data/deepseek_profit_lab/
+/data/deepseek_data_checks/
+/data/manifold/
+/data/prediction_market_outcome_candidates/
+/data/institutional_lab/
+/data/collector_scheduler/
 
 # Heavy runtime/model/database artifacts
 data/**/*.db
@@ -114,3 +139,4 @@ venv/
 
 # Expired local handoff/context files
 PHASE4_CONTEXT_FOR_CHATGPT.txt
+.aider*

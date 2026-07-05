@@ -1,16 +1,9 @@
 import unittest
 from tempfile import TemporaryDirectory
 
-from automation_scheduler.ev_line_shopper import (
-    alt_line_ev,
-    consensus_market_ev,
-    model_ev,
-    no_vig_market_ev,
-    shop_ev_lines,
-    stale_line_ev,
-)
-from automation_scheduler.review_queue import build_review_item, upsert_review_item
-from automation_scheduler.scheduler_config import get_default_scheduler_config
+from src.services.streamlit_dashboard_facade import alt_line_ev, consensus_market_ev, model_ev, no_vig_market_ev, shop_ev_lines, stale_line_ev
+from src.services.streamlit_dashboard_facade import build_review_item, upsert_review_item
+from src.services.streamlit_dashboard_facade import get_default_scheduler_config
 
 
 class TestEvLineShopper(unittest.TestCase):

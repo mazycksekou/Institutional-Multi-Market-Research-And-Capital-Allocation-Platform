@@ -3,7 +3,7 @@ import unittest
 from copy import deepcopy
 from unittest.mock import patch
 
-from main import ScreenshotAnalysisRequest, SportAnalysisRequest, action_analyze_sport_model, action_analyze_ticket_screenshot
+from tests.support.action_imports import ScreenshotAnalysisRequest, SportAnalysisRequest, action_analyze_sport_model, action_analyze_ticket_screenshot
 
 
 def wnba_inputs(**extra):
@@ -130,7 +130,7 @@ class TestWnbaModelActivation(unittest.TestCase):
         self.assertLess(results[100]["edge_percent"], results[120]["edge_percent"])
 
     def test_provider_failure_safety(self):
-        with patch("providers.odds_provider_router.enrich_ticket", side_effect=RuntimeError("boom")):
+        with patch("screenshot_intake.enrich_ticket", side_effect=RuntimeError("boom")):
             self.assertTrue(self._screenshot()["ok"])
 
     def test_officiating_only_safety_cannot_create_bets(self):

@@ -1,6 +1,6 @@
 import unittest
 
-from automation_scheduler.arbitrage_detector import detect_arbitrage
+from src.services.streamlit_dashboard_facade import detect_arbitrage
 
 
 class TestArbitrageDetector(unittest.TestCase):

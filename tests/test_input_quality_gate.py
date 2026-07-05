@@ -1,5 +1,5 @@
 import unittest
-from model_governance.input_quality_gate import evaluate_input_quality
+from src.analytics.model_governance.input_quality_gate import evaluate_input_quality
 
 class TestInputQualityGate(unittest.TestCase):
     def test_blocks_missing(self):

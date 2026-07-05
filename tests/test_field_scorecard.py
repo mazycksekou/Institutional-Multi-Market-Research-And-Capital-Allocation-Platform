@@ -1,6 +1,6 @@
 import unittest
 
-from automation_scheduler.field_scorecard import build_field_scorecard
+from src.analytics.field_scorecard import build_field_scorecard
 
 
 class TestFieldScorecard(unittest.TestCase):

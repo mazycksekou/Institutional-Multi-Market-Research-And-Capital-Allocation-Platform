@@ -1,5 +1,5 @@
 import unittest
-from model_governance.activation_tiers import default_activation_tier, can_promote_one_tier, tier_allows_active_scoring
+from src.analytics.model_governance.activation_tiers import default_activation_tier, can_promote_one_tier, tier_allows_active_scoring
 
 class TestActivationTiers(unittest.TestCase):
     def test_tier_logic(self):

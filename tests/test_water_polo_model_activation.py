@@ -2,8 +2,8 @@ import asyncio
 import unittest
 from copy import deepcopy
 
-import multi_sport_model_registry as registry
-from main import ScreenshotAnalysisRequest, SportAnalysisRequest, action_analyze_sport_model, action_analyze_ticket_screenshot
+import src.market_intelligence.multi_sport_model_registry as registry
+from tests.support.action_imports import ScreenshotAnalysisRequest, SportAnalysisRequest, action_analyze_sport_model, action_analyze_ticket_screenshot
 
 MODEL_NAME = "water_polo_goalkeeper_power_play_shot_quality_monte_carlo_model"
 ALIASES = ("water_polo", "waterpolo", "olympic_water_polo", "ncaa_water_polo", "world_aquatics_water_polo", "fina_water_polo", "mens_water_polo", "womens_water_polo")

@@ -1,0 +1,213 @@
+from pathlib import Path
+import re
+
+
+ROOT = Path(__file__).resolve().parents[1]
+REPORT = ROOT / "PHASE10K8ZB0_PRODUCT_CONTRACT_RESET.md"
+STREAMLIT_APP = ROOT / "streamlit_app.py"
+
+
+def read_text(path: Path) -> str:
+    return path.read_text(encoding="utf-8")
+
+
+def test_phase10k8zb0_product_contract_reset() -> None:
+    assert REPORT.is_file(), "Expected the 10K8ZB0 product contract report to exist."
+    assert STREAMLIT_APP.is_file(), "Expected streamlit_app.py to exist."
+
+    report_text = read_text(REPORT)
+    streamlit_text = read_text(STREAMLIT_APP)
+
+    required_report_strings = [
+        "Product Contract Reset",
+        "10K8ZB0",
+        "Paper-to-Research Backtest Migration",
+        "product contract supersedes obsolete public-copy assertions",
+        "Sports",
+        "Stocks / 0DTE",
+        "Predictions",
+        "PRODUCT_MARKET_LANES",
+        "internal_model_mode_for_product_lane",
+        "LEGACY_INTERNAL_MODE_ALIASES",
+        "Data",
+        "Validation",
+        "Strategy Research",
+        "Backtest",
+        "Results / Metrics",
+        "Research Mode",
+        "Local Data",
+        "Research/backtest mode only. No broker orders, live connectors, API calls, or database writes.",
+        "Footprint + Opening Range Backtest Workflow Contract",
+        "Footprint + Opening Range Research",
+        "Large-flow activity is a market-state variable, not an automatic buy or sell signal.",
+        "Pre-run market-state features",
+        "During-run execution-state metrics",
+        "Post-run evaluation metrics",
+        "Comparison experiments",
+        "With footprint filter",
+        "Without footprint filter",
+        "Footprint confirms opening range",
+        "Footprint disagrees with opening range",
+        "Avoid when footprint appears",
+        "Avoid when footprint is absent",
+        "Edge With Large-Flow",
+        "Edge Without Large-Flow",
+        "Edge With Whale Flow",
+        "Edge Without Whale Flow",
+        "Edge With RLM",
+        "Edge Without RLM",
+        "Deflated Sharpe",
+        "Probability of Backtest Overfitting",
+        "implementation reviewed in 10K8ZB0",
+    ]
+    for needle in required_report_strings:
+        assert needle in report_text, f"Missing report string: {needle}"
+
+    required_streamlit_strings = [
+        "PRODUCT_MARKET_LANES",
+        "Sports",
+        "Stocks / 0DTE",
+        "Predictions",
+        "internal_model_mode_for_product_lane",
+        "LEGACY_INTERNAL_MODE_ALIASES",
+        "Data",
+        "Validation",
+        "Strategy Research",
+        "Backtest",
+        "Results / Metrics",
+        "Research Mode",
+        "Local Data",
+        "Research/backtest mode only. No broker orders, live connectors, API calls, or database writes.",
+        "Footprint + Opening Range Research",
+        "Large-flow activity is a market-state variable, not an automatic buy or sell signal.",
+        "Pre-run market-state features",
+        "During-run execution-state metrics",
+        "Post-run evaluation metrics",
+        "Comparison experiments",
+        "With footprint filter",
+        "Without footprint filter",
+        "Footprint confirms opening range",
+        "Footprint disagrees with opening range",
+        "Avoid when footprint appears",
+        "Avoid when footprint is absent",
+        "Opening Range Metrics",
+        "Large-Flow Metrics",
+        "Liquidity Metrics",
+        "Volatility / News Regime",
+        "Signal Count",
+        "Expected Trade Count",
+        "Estimated Costs",
+        "Entry Price",
+        "Fill Probability",
+        "Slippage",
+        "Spread Paid",
+        "Position Size",
+        "Time in Trade",
+        "Mark-to-Market PnL",
+        "Intraday Drawdown",
+        "Time Under Water",
+        "Stop/Exit Trigger",
+        "Net PnL",
+        "Profit Factor",
+        "Sharpe",
+        "Sortino",
+        "Max Drawdown",
+        "Win Rate",
+        "Expectancy",
+        "Edge by Regime",
+        "False Positive Rate",
+        "Signal Decay Curve",
+        "Out-of-Sample Stability",
+        "Deflated Sharpe",
+        "Probability of Backtest Overfitting",
+        "Opening Range Return",
+        "OR Break Direction",
+        "Large Premium Trade Flag",
+        "Sweep/Block Flag",
+        "Volume / Average Volume",
+        "Volume / Open Interest",
+        "Delta Notional",
+        "Gamma Exposure Estimate",
+        "IV/RV Spread",
+        "Spread Width %",
+        "Time to Expiration",
+        "Fill Price vs Mid",
+        "Slippage per Contract",
+        "Greeks at Entry",
+        "Gamma PnL",
+        "Theta Burn",
+        "Underlying Drift After Flow",
+        "Hedge Pressure Direction",
+        "Edge With Large-Flow",
+        "Edge Without Large-Flow",
+        "OR + Flow Interaction",
+        "Post-Flow Forward Return",
+        "Tail Loss Frequency",
+        "Fill-Adjusted Win Rate",
+        "Market Probability",
+        "Large Trade Flag",
+        "Trade Size / Market Volume",
+        "Order Book Imbalance",
+        "Price Impact per $1,000",
+        "Liquidity Sweep %",
+        "Cross-Market Spread",
+        "Probability Zone",
+        "Liquidity Refill Speed",
+        "Exposure by Outcome",
+        "Hedge Availability",
+        "Settlement PnL",
+        "Brier Score",
+        "Log Loss",
+        "Calibration Error",
+        "Edge With Whale Flow",
+        "Edge Without Whale Flow",
+        "Post-Whale Price Drift",
+        "Liquidity-Adjusted ROI",
+        "Opening Line",
+        "Current Line",
+        "Closing Line Estimate",
+        "Public Bet %",
+        "Money %",
+        "Bet/Money Divergence",
+        "Reverse Line Movement Flag",
+        "Steam Move Flag",
+        "Sharp Book Lead Flag",
+        "Liquidity/Limit Level",
+        "Injury/News Flag",
+        "Bet Price",
+        "Available Limit",
+        "Odds Slippage",
+        "Book Spread/Vig",
+        "Kelly Fraction",
+        "Exposure by Event",
+        "Line Movement After Bet",
+        "ROI",
+        "CLV",
+        "Win Rate by Odds Bucket",
+        "Expected Value",
+        "Risk of Ruin",
+        "Edge With RLM",
+        "Edge Without RLM",
+        "CLV Persistence",
+        "Closing Edge by Book",
+        "show_footprint_opening_range_research_copy",
+    ]
+    for needle in required_streamlit_strings:
+        assert needle in streamlit_text, f"Missing streamlit_app.py string: {needle}"
+
+    lane_match = re.search(r"PRODUCT_MARKET_LANES\s*=\s*\((.*?)\)", streamlit_text, re.S)
+    assert lane_match, "Expected PRODUCT_MARKET_LANES to be defined."
+    lane_body = lane_match.group(1)
+    lane_labels = re.findall(r'"([^\"]+)"', lane_body)
+    assert lane_labels == ["Sports", "Stocks / 0DTE", "Predictions"]
+    for legacy_label in [
+        "One Sport",
+        "One Stock Market",
+        "One Crypto Market",
+        "One Prediction Market",
+        "One 0DTE Options Trade",
+    ]:
+        assert legacy_label not in lane_body, f"Legacy label leaked into PRODUCT_MARKET_LANES: {legacy_label}"
+
+    assert "LEGACY_INTERNAL_MODE_ALIASES" in streamlit_text
+    assert "internal_model_mode_for_product_lane" in streamlit_text

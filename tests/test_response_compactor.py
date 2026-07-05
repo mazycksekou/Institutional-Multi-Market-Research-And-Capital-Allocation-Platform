@@ -1,27 +1,5 @@
 import unittest
-from automation_scheduler.response_compactor import (
-    compact_calibration_collector_response,
-    compact_calibration_response,
-    compact_cfbd_adapter_verification_response,
-    compact_data_availability_tiers_response,
-    compact_data_source_coverage_response,
-    compact_data_source_health_response,
-    compact_data_source_registry_response,
-    compact_data_source_research_lanes_response,
-    compact_deepseek_review_response,
-    compact_institutional_execution_response,
-    compact_institutional_lab_health_response,
-    compact_institutional_lab_run_response,
-    compact_institutional_report_response,
-    compact_outcome_ingest_response,
-    compact_outcome_import_response,
-    compact_outcomes_response,
-    compact_settlement_discovery_response,
-    compact_health_response, compact_review_queue_response, compact_run_once_response,
-    compact_governance_inventory, compact_governance_report, compact_validation_response,
-    compact_provider_health_response, compact_provider_registry_response, compact_provider_status,
-    redact_and_limit_payload,
-)
+from src.services.streamlit_dashboard_facade import compact_calibration_collector_response, compact_calibration_response, compact_cfbd_adapter_verification_response, compact_data_availability_tiers_response, compact_data_source_coverage_response, compact_data_source_health_response, compact_data_source_registry_response, compact_data_source_research_lanes_response, compact_deepseek_review_response, compact_institutional_execution_response, compact_institutional_lab_health_response, compact_institutional_lab_run_response, compact_institutional_report_response, compact_outcome_ingest_response, compact_outcome_import_response, compact_outcomes_response, compact_settlement_discovery_response, compact_health_response, compact_review_queue_response, compact_run_once_response, compact_governance_inventory, compact_governance_report, compact_validation_response, compact_provider_health_response, compact_provider_registry_response, compact_provider_status, redact_and_limit_payload
 
 
 class TestResponseCompactor(unittest.TestCase):

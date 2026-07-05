@@ -1,6 +1,6 @@
 import unittest
 
-from math_models.institutional.tax_aware_models import OUTPUT_FIELDS, get_models, run_model
+from src.analytics.institutional.tax_aware_models import OUTPUT_FIELDS, get_models, run_model
 
 
 class TestInstitutionalTaxAwareModels(unittest.TestCase):

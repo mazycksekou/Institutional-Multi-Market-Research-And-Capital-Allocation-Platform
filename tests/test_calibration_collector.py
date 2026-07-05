@@ -5,11 +5,11 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest.mock import patch
 
-from automation_scheduler.calibration import build_calibration_report
-from automation_scheduler.calibration_collector import _normalize_records, _select_candidates, collector_policy_from_env, run_collector_cycle, write_daily_report
-from automation_scheduler.kalshi_readonly_adapter import KalshiReadonlyAdapter
-from automation_scheduler.outcome_store import ingest_outcome_records, load_outcome_records
-from automation_scheduler.paper_decision_ledger import persist_paper_decisions_for_review_items
+from src.services.streamlit_dashboard_facade import build_calibration_report
+from src.services.streamlit_dashboard_facade import _normalize_records, _select_candidates, collector_policy_from_env, run_collector_cycle, write_daily_report
+from src.services.streamlit_dashboard_facade import ingest_outcome_records, load_outcome_records
+from src.services.streamlit_dashboard_facade import persist_paper_decisions_for_review_items
+from src.services.prediction_market_runtime_bridge import KalshiReadonlyAdapter
 
 
 def _market(ticker, close_time, *, price="0.5000", status="active"):
@@ -137,7 +137,7 @@ class TestCalibrationCollector(unittest.TestCase):
                     "settlement_time": self._past(minutes=5),
                 },
             }
-            with patch("automation_scheduler.calibration_collector._fetch_public_market_by_ticker", return_value=fetched):
+            with patch('src.analytics.calibration_collector._fetch_public_market_by_ticker', return_value=fetched):
                 result = run_collector_cycle(
                     dry_run=False,
                     persist_outcomes=True,
@@ -285,7 +285,7 @@ class TestCalibrationCollector(unittest.TestCase):
                     "settlement_time": self._past(minutes=5),
                 },
             }
-            with patch("automation_scheduler.calibration_collector._fetch_public_market_by_ticker", return_value=fetched):
+            with patch('src.analytics.calibration_collector._fetch_public_market_by_ticker', return_value=fetched):
                 result = run_collector_cycle(
                     dry_run=False,
                     persist_outcomes=True,
@@ -325,7 +325,7 @@ class TestCalibrationCollector(unittest.TestCase):
                     "close_time": self._past(hours=1),
                 },
             }
-            with patch("automation_scheduler.calibration_collector._fetch_public_market_by_ticker", return_value=fetched):
+            with patch('src.analytics.calibration_collector._fetch_public_market_by_ticker', return_value=fetched):
                 result = run_collector_cycle(
                     dry_run=False,
                     persist_outcomes=True,
@@ -388,7 +388,7 @@ class TestCalibrationCollector(unittest.TestCase):
     def test_provider_rate_limit_triggers_adaptive_throttle(self):
         with tempfile.TemporaryDirectory() as tmp:
             scan = {"status": "provider_error", "markets_scanned": 1, "records": [_market("KXRATE", self._future(hours=2))], "blockers": ["http_429"]}
-            with patch("automation_scheduler.calibration_collector._fetch_public_markets", return_value=scan):
+            with patch('src.analytics.calibration_collector._fetch_public_markets', return_value=scan):
                 result = run_collector_cycle(
                     dry_run=True,
                     max_new_contracts=50,
@@ -402,7 +402,7 @@ class TestCalibrationCollector(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             records = _normalize_records([_market(f"KXPARTIAL{i}", self._future(hours=2)) for i in range(50)], KalshiReadonlyAdapter({}))
             scan = {"status": "provider_error", "markets_scanned": 50, "records": records, "blockers": ["read_timeout"]}
-            with patch("automation_scheduler.calibration_collector._fetch_public_markets", return_value=scan):
+            with patch('src.analytics.calibration_collector._fetch_public_markets', return_value=scan):
                 result = run_collector_cycle(
                     dry_run=True,
                     max_new_contracts=50,

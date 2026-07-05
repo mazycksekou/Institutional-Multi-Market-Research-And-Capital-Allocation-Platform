@@ -2,18 +2,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from automation_scheduler.nfl_open_data_source_exhaustion import (
-    CANDIDATE_SOURCE_FAMILIES,
-    build_nfl_source_exhaustion_report,
-    classify_candidate_source,
-    nfl_candidate_sources,
-    write_nfl_source_exhaustion_report,
-)
-from automation_scheduler.nfl_open_data_field_catalog import (
-    build_existing_nfl_field_index,
-    build_source_field_diff_report,
-    classify_candidate_field_novelty,
-)
+from src.services.streamlit_dashboard_facade import CANDIDATE_SOURCE_FAMILIES, build_nfl_source_exhaustion_report, classify_candidate_source, nfl_candidate_sources, write_nfl_source_exhaustion_report
+from src.data.nfl_open_data_field_catalog import build_existing_nfl_field_index, build_source_field_diff_report, classify_candidate_field_novelty
 
 
 class TestNflSourceExhaustion(unittest.TestCase):

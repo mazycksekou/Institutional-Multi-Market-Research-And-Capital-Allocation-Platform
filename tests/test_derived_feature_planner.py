@@ -1,6 +1,6 @@
 import unittest
 
-from automation_scheduler.derived_feature_planner import plan_derived_features
+from src.services.streamlit_dashboard_facade import plan_derived_features
 
 
 class TestDerivedFeaturePlanner(unittest.TestCase):

@@ -1,6 +1,6 @@
 import unittest
 
-from automation_scheduler.middle_opportunity_detector import detect_middle_opportunity
+from src.services.streamlit_dashboard_facade import detect_middle_opportunity
 
 
 class TestMiddleOpportunityDetector(unittest.TestCase):

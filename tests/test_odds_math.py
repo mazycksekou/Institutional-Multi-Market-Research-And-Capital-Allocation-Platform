@@ -1,20 +1,6 @@
 import unittest
 
-from automation_scheduler.odds_math import (
-    american_to_decimal,
-    american_to_implied_probability,
-    calculate_ev,
-    calculate_ev_percent,
-    calculate_payout,
-    calculate_profit_loss,
-    calculate_roi,
-    decimal_to_implied_probability,
-    decimal_to_american,
-    normalize_probability,
-    remove_two_way_vig,
-    validate_probability,
-    validate_odds,
-)
+from src.services.streamlit_dashboard_facade import american_to_decimal, american_to_implied_probability, calculate_ev, calculate_ev_percent, calculate_payout, calculate_profit_loss, calculate_roi, decimal_to_implied_probability, decimal_to_american, normalize_probability, remove_two_way_vig, validate_probability, validate_odds
 
 
 class TestOddsMath(unittest.TestCase):

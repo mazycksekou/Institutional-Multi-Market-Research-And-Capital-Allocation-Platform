@@ -1,5 +1,5 @@
 import unittest
-from model_governance.model_drift_monitor import evaluate_model_drift
+from src.analytics.model_governance.model_drift_monitor import evaluate_model_drift
 
 class TestModelDriftMonitor(unittest.TestCase):
     def test_detect(self):

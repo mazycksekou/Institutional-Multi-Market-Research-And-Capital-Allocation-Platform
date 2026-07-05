@@ -1,6 +1,6 @@
 import unittest
 
-from automation_scheduler.middles.spread_middle import detect_spread_middle
+from src.services.streamlit_dashboard_facade import detect_spread_middle
 
 
 class TestMiddleSpread(unittest.TestCase):

@@ -3,9 +3,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from automation_scheduler.institutional_cross_asset_lab import get_institutional_lab_health, run_institutional_lab
-from automation_scheduler.scheduler_config import get_default_scheduler_config
-from automation_scheduler.stake_sizing_simulator import simulate_stake_plan
+from src.services.streamlit_dashboard_facade import get_institutional_lab_health, run_institutional_lab
+from src.services.streamlit_dashboard_facade import get_default_scheduler_config
+from src.core.stake_sizing_simulator import simulate_stake_plan
 
 
 class TestInstitutionalCrossAssetLab(unittest.TestCase):

@@ -3,11 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from automation_scheduler.open_sports_history_sources import (
-    build_open_sports_history_source_report,
-    open_sports_history_sources,
-    write_open_sports_history_source_report,
-)
+from src.data.open_sports_history_sources import build_open_sports_history_source_report, open_sports_history_sources, write_open_sports_history_source_report
 
 
 class TestOpenSportsHistorySources(unittest.TestCase):

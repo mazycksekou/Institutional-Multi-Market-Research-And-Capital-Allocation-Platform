@@ -27,15 +27,28 @@ class TestOpsScriptsContract(unittest.TestCase):
 
     def test_ops_check_exposes_required_modes(self):
         script = (ROOT / "scripts/ops_check.py").read_text(encoding="utf-8")
-        for mode in ("local", "render", "cron", "calibration", "datasources", "safety", "full"):
+        for mode in ("local", "render", "cron", "calibration", "datasources", "safety", "full", "inventory", "import-scan"):
             self.assertIn(f'"{mode}"', script)
+        for arg in ("--input", "--paths"):
+            self.assertIn(arg, script)
 
     def test_docs_file_exists(self):
-        docs = ROOT / "docs/OPS_WORKFLOW.md"
+        docs = ROOT / "docs/operations/OPS_WORKFLOW.md"
         self.assertTrue(docs.exists())
         text = docs.read_text(encoding="utf-8")
         self.assertIn(".\\scripts\\check_local.ps1", text)
-        self.assertIn("Codex should use these scripts", text)
+        self.assertIn("canonical workflow is Python-first", text)
+        self.assertIn("PowerShell scripts remain as optional Windows convenience wrappers", text)
+
+    def test_repository_validation_workflow_uses_full_checkout_history(self):
+        workflow = ROOT / ".github/workflows/repository-validation.yml"
+        self.assertTrue(workflow.exists())
+        text = workflow.read_text(encoding="utf-8")
+        self.assertIn("fetch-depth: 0", text)
+        self.assertIn('python-version: "3.12.11"', text)
+        self.assertIn("python -m pip install -r requirements.txt", text)
+        self.assertIn("python -m pip install -r requirements-dev.txt", text)
+        self.assertIn("python scripts/ops_check.py --mode local --output text --skip-network", text)
 
     def test_requirements_and_pytest_config_exist(self):
         self.assertTrue((ROOT / "requirements-dev.txt").exists())
@@ -44,4 +57,3 @@ class TestOpsScriptsContract(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

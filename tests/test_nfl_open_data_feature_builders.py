@@ -3,16 +3,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from automation_scheduler.nfl_open_data_feature_builders import (
-    FEATURE_BUILDER_SPECS,
-    build_expanded_feature_readiness,
-    build_nfl_feature_builder_report,
-    nfl_feature_availability_flags,
-)
-from automation_scheduler.nfl_open_data_feature_readiness import (
-    build_nfl_feature_readiness_report,
-    write_nfl_feature_readiness_report,
-)
+from src.services.streamlit_dashboard_facade import FEATURE_BUILDER_SPECS, build_expanded_feature_readiness, build_nfl_feature_builder_report, nfl_feature_availability_flags
+from src.providers.nfl_open_data_feature_readiness import build_nfl_feature_readiness_report, write_nfl_feature_readiness_report
 
 
 def _write_validated(base, source_id, *, fields, records=100, seasons=("2023", "2024")):
@@ -162,10 +154,7 @@ class TestNflOpenDataFeatureBuilders(unittest.TestCase):
             _full_data(tmp)
             first = build_nfl_feature_readiness_report(base_data_dir=tmp)
             write_nfl_feature_readiness_report(first, base_data_dir=tmp)
-            from automation_scheduler.nfl_open_data_field_catalog import (
-                build_nfl_open_data_field_catalog,
-                write_nfl_open_data_field_catalog,
-            )
+            from src.services.streamlit_dashboard_facade import build_nfl_open_data_field_catalog, write_nfl_open_data_field_catalog
 
             catalog = build_nfl_open_data_field_catalog(base_data_dir=tmp)
             write_nfl_open_data_field_catalog(catalog, base_data_dir=tmp)

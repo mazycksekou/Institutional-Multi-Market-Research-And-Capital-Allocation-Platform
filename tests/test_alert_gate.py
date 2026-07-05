@@ -1,5 +1,5 @@
 import unittest
-from model_governance.alert_gate import evaluate_alert_gate
+from src.analytics.model_governance.alert_gate import evaluate_alert_gate
 
 class TestAlertGate(unittest.TestCase):
     def test_block_research(self):

@@ -1,6 +1,6 @@
 import unittest
 
-from model_governance.model_router_registry import route_registered_models
+from src.analytics.model_governance.model_router_registry import route_registered_models
 
 
 class TestModelRouterRegistry(unittest.TestCase):

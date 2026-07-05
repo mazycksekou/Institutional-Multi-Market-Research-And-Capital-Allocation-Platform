@@ -4,13 +4,8 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
-import automation_scheduler
-from automation_scheduler.collector_scheduled_runner import (
-    build_scheduled_collector_config,
-    run_scheduled_collector_cycle,
-    validate_cron_token,
-)
-from main import app
+from src.services.streamlit_dashboard_facade import build_scheduled_collector_config, run_scheduled_collector_cycle, validate_cron_token
+from tests.support.action_imports import app
 
 
 class TestCollectorScheduledRunner(unittest.TestCase):
@@ -45,7 +40,7 @@ class TestCollectorScheduledRunner(unittest.TestCase):
     def test_endpoint_accepts_correct_token_and_returns_compact_report(self):
         with patch.dict(os.environ, {"COLLECTOR_CRON_TOKEN": "secret"}, clear=False):
             with patch(
-                "automation_scheduler.run_automation_calibration_collector_scheduled",
+                "src.services.streamlit_dashboard_facade.run_automation_calibration_collector_scheduled",
                 return_value={
                     "ok": True,
                     "status": "collector_cycle_complete",
@@ -118,7 +113,7 @@ class TestCollectorScheduledRunner(unittest.TestCase):
 
     def test_runner_maps_safe_defaults_to_collector(self):
         with patch(
-            "automation_scheduler.collector_scheduled_runner.run_collector_cycle",
+            'src.services.collector_scheduled_runner.run_collector_cycle',
             return_value={
                 "ok": True,
                 "status": "collector_cycle_complete",

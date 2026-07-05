@@ -1,6 +1,6 @@
 import unittest
 
-from automation_scheduler.candlestick_pattern_detector import detect_candlestick_patterns, get_pattern_catalog
+from src.services.streamlit_dashboard_facade import detect_candlestick_patterns, get_pattern_catalog
 
 
 class TestCandlestickPatternDetector(unittest.TestCase):

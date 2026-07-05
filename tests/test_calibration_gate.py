@@ -1,5 +1,5 @@
 import unittest
-from model_governance.calibration_gate import evaluate_calibration_gate
+from src.analytics.model_governance.calibration_gate import evaluate_calibration_gate
 
 
 class TestCalibrationGate(unittest.TestCase):

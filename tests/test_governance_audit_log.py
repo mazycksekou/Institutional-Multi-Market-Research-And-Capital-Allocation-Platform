@@ -1,5 +1,5 @@
 import unittest
-from model_governance.governance_audit_log import write_governance_audit_record
+from src.analytics.model_governance.governance_audit_log import write_governance_audit_record
 
 class TestGovernanceAuditLog(unittest.TestCase):
     def test_writes_json(self):

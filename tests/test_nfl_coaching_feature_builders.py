@@ -3,16 +3,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from automation_scheduler.nfl_coaching_adapters import ManualCsvCoachingImportAdapter
-from automation_scheduler.nfl_coaching_sources import coaching_source_by_id
-from automation_scheduler.nfl_coaching_feature_builders import (
-    COACHING_FEATURE_BUILDERS,
-    build_coordinator_continuity_candidates,
-    build_nfl_coaching_feature_report,
-    build_nfl_coaching_acquisition_report,
-    build_nfl_coaching_features,
-    write_nfl_coaching_acquisition_report,
-)
+from src.providers.nfl_coaching_adapters import ManualCsvCoachingImportAdapter
+from src.services.streamlit_dashboard_facade import coaching_source_by_id
+from src.market_intelligence.nfl_coaching_feature_builders import COACHING_FEATURE_BUILDERS, build_coordinator_continuity_candidates, build_nfl_coaching_feature_report, build_nfl_coaching_acquisition_report, build_nfl_coaching_features, write_nfl_coaching_acquisition_report
 
 
 def _seed_rows(tmp, rows):
@@ -87,7 +80,7 @@ class TestNflCoachingFeatureBuilders(unittest.TestCase):
         self.assertEqual(names, set(COACHING_FEATURE_BUILDERS))
 
     def test_feature_builders_activate_from_wikidata_seed(self):
-        from automation_scheduler.nfl_coaching_adapters import adapter_by_id
+        from src.services.streamlit_dashboard_facade import adapter_by_id
 
         def fake(query):
             return {

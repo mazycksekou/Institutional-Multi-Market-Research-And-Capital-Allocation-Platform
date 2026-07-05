@@ -1,6 +1,6 @@
 import unittest
 
-from automation_scheduler.market_structure import kalshi_market_structure_signals, sportsbook_market_structure_signals
+from src.services.streamlit_dashboard_facade import kalshi_market_structure_signals, sportsbook_market_structure_signals
 
 
 class TestMarketStructure(unittest.TestCase):

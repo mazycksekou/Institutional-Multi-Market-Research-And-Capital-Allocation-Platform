@@ -1,11 +1,6 @@
 import unittest
 
-from automation_scheduler.arbitrage.two_way_arbitrage import (
-    detect_cross_book_moneyline_arbitrage,
-    detect_cross_book_spread_arbitrage,
-    detect_cross_book_total_arbitrage,
-    detect_two_way_arbitrage,
-)
+from src.services.streamlit_dashboard_facade import detect_cross_book_moneyline_arbitrage, detect_cross_book_spread_arbitrage, detect_cross_book_total_arbitrage, detect_two_way_arbitrage
 
 
 class TestArbitrageTwoWay(unittest.TestCase):

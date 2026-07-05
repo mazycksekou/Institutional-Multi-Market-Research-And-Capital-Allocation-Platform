@@ -1,6 +1,6 @@
 import unittest
 
-from math_models.institutional.alternative_investments import OUTPUT_FIELDS, get_models, run_model
+from src.analytics.institutional.alternative_investments import OUTPUT_FIELDS, get_models, run_model
 
 
 class TestInstitutionalAlternativeInvestments(unittest.TestCase):

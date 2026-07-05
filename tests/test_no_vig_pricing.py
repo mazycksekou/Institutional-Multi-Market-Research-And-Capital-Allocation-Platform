@@ -1,13 +1,6 @@
 import unittest
 
-from automation_scheduler.no_vig_pricing import (
-    calculate_consensus_probability,
-    calculate_fair_odds,
-    calculate_fair_probability,
-    calculate_market_hold,
-    remove_three_way_vig,
-    remove_two_way_vig,
-)
+from src.services.streamlit_dashboard_facade import calculate_consensus_probability, calculate_fair_odds, calculate_fair_probability, calculate_market_hold, remove_three_way_vig, remove_two_way_vig
 
 
 class TestNoVigPricing(unittest.TestCase):

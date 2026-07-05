@@ -1,8 +1,8 @@
 import unittest
 import re
 
-from automation_scheduler.provider_contracts import get_default_provider_contracts
-from automation_scheduler.provider_health import compact_provider_health, summarize_provider_health
+from src.providers.contracts import get_default_provider_contracts
+from src.providers.health import compact_provider_health, summarize_provider_health
 
 
 class TestProviderHealth(unittest.TestCase):

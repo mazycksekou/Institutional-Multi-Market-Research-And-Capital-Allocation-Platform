@@ -1,5 +1,5 @@
 import unittest
-from model_governance.backtest_gate import evaluate_backtest_gate
+from src.analytics.model_governance.backtest_gate import evaluate_backtest_gate
 
 
 class TestBacktestGate(unittest.TestCase):

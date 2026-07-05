@@ -1,6 +1,6 @@
 import unittest
 
-from math_models.institutional.fixed_income_rates import OUTPUT_FIELDS, get_models, run_model
+from src.analytics.institutional.fixed_income_rates import OUTPUT_FIELDS, get_models, run_model
 
 
 class TestInstitutionalFixedIncomeRates(unittest.TestCase):

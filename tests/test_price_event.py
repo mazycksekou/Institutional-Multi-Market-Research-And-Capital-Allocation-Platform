@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import unittest
 
-import market_pricing
+import src.core.market_pricing as market_pricing
 
 
 class TestMarketPricing(unittest.TestCase):
@@ -164,7 +164,7 @@ class TestMarketPricing(unittest.TestCase):
 class TestPriceEventEndpoint(unittest.TestCase):
     def test_price_event_request_model_validation(self):
         """Test that PriceEventRequest can be instantiated with valid data."""
-        from main import PriceEventRequest
+        from tests.support.action_imports import PriceEventRequest
         
         # Basic request
         request = PriceEventRequest(

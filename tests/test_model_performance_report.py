@@ -2,7 +2,7 @@ import json
 import unittest
 from tempfile import TemporaryDirectory
 
-from automation_scheduler.model_performance_report import write_model_performance_report
+from src.services.streamlit_dashboard_facade import write_model_performance_report
 
 
 class TestModelPerformanceReport(unittest.TestCase):

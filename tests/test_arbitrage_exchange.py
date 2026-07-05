@@ -1,6 +1,6 @@
 import unittest
 
-from automation_scheduler.arbitrage.exchange_arbitrage import detect_exchange_back_lay_arbitrage
+from src.services.streamlit_dashboard_facade import detect_exchange_back_lay_arbitrage
 
 
 class TestArbitrageExchange(unittest.TestCase):

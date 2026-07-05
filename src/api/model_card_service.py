@@ -4,7 +4,25 @@ from typing import Any
 
 from fastapi.responses import JSONResponse
 
-from betting_providers.provider_router import ProviderRouter
+from src.providers.provider_router import ProviderRouter
+
+
+LIVE_CARD_STATUSES = {
+    "NO_MODEL",
+    "MODEL_METADATA_MISMATCH",
+    "INSUFFICIENT_HISTORY",
+    "NO_BET",
+    "WATCHLIST",
+    "MODEL_VALUE",
+    "CONFIRMED_BACKTESTED_EDGE",
+}
+
+
+def _predict_model_probabilities(model: Any, matrix: list[list[float]]) -> list[float]:
+    raw = model.predict_proba(matrix)
+    if isinstance(raw, list):
+        return [float(value) for value in raw]
+    return [float(value) for value in raw[:, 1]]
 
 
 class ModelCardService:

@@ -3,13 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from automation_scheduler.institutional_cross_asset_adapters import (
-    normalize_major_asset_record,
-    normalize_prediction_market_record,
-    normalize_sportsbook_record,
-    normalize_stock_record,
-    read_existing_outputs,
-)
+from src.services.streamlit_dashboard_facade import normalize_major_asset_record, normalize_prediction_market_record, normalize_sportsbook_record, normalize_stock_record, read_existing_outputs
 
 
 class TestInstitutionalCrossAssetAdapters(unittest.TestCase):

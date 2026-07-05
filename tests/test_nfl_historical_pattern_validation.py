@@ -4,22 +4,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from automation_scheduler.nfl_historical_pattern_lab import (
-    HOLDOUT_ALLOWED_SIMILARITY_FEATURES,
-    build_holdout_leakage_guard,
-    build_historical_holdout_validation_scorecard,
-    build_regular_season_snapshot_profiles,
-    build_team_game_profiles,
-    build_validation_guard_summary,
-    derive_postseason_target_labels,
-    evaluate_comps_against_targets,
-    find_prior_season_comps,
-    write_nfl_historical_holdout_validation_report,
-)
-from automation_scheduler.open_sports_history_import import (
-    build_open_sports_history_import_report,
-    write_open_sports_history_import_report,
-)
+from src.services.streamlit_dashboard_facade import HOLDOUT_ALLOWED_SIMILARITY_FEATURES, build_holdout_leakage_guard, build_historical_holdout_validation_scorecard, build_regular_season_snapshot_profiles, build_team_game_profiles, build_validation_guard_summary, derive_postseason_target_labels, evaluate_comps_against_targets, find_prior_season_comps, write_nfl_historical_holdout_validation_report
+from src.services.streamlit_dashboard_facade import build_open_sports_history_import_report, write_open_sports_history_import_report
 
 
 class TestNflHistoricalPatternValidation(unittest.TestCase):

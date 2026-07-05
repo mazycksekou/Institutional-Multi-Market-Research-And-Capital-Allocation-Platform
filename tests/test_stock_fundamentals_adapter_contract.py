@@ -1,6 +1,6 @@
 import unittest
 
-from automation_scheduler.stock_fundamentals_adapter_contract import SAMPLE_DRY_RUN_PAYLOAD, normalize_payload, validate_payload
+from src.services.streamlit_dashboard_facade import SAMPLE_DRY_RUN_PAYLOAD, normalize_payload, validate_payload
 
 
 class TestStockFundamentalsAdapterContract(unittest.TestCase):

@@ -1,7 +1,7 @@
 import unittest
 
-from automation_scheduler.budget_gates import build_budget_gate
-from automation_scheduler.data_source_registry import build_registry
+from src.services.streamlit_dashboard_facade import build_budget_gate
+from src.services.streamlit_dashboard_facade import build_registry
 
 
 class TestBudgetGates(unittest.TestCase):

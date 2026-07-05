@@ -1,5 +1,5 @@
 import unittest
-from model_governance.data_quality_monitor import evaluate_data_quality
+from src.analytics.model_governance.data_quality_monitor import evaluate_data_quality
 
 class TestDataQualityMonitor(unittest.TestCase):
     def test_detects(self):

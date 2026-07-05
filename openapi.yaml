@@ -1,8 +1,8 @@
 openapi: 3.1.0
 info:
-  title: Betting Stock API Custom GPT Actions
-  description: Custom GPT Action schema for sport-model analysis and sportsbook screenshot ticket analysis.
-  version: 2.1.0
+  title: Betting Stock API
+  description: Public API contract for the Betting Stock market intelligence platform.
+  version: 2.2.0
 servers:
   - url: https://betting-stock-api-code-integration.onrender.com
 components:
@@ -97,7 +97,7 @@ components:
       additionalProperties: true
       properties:
         source_type:
-          description: Source mode, such as chatgpt_parsed, parsed_fields, screenshot_text, ocr_text, or image_metadata.
+          description: Source mode, such as parsed_fields, screenshot_text, ocr_text, or image_metadata.
           type:
             - string
             - "null"
@@ -160,7 +160,7 @@ components:
             - string
             - "null"
         screenshot_text:
-          description: Text read from the screenshot by ChatGPT or OCR. OCR is optional.
+          description: Text read from the screenshot by OCR or another text extraction tool.
           type:
             - string
             - "null"
@@ -256,7 +256,7 @@ paths:
     post:
       operationId: analyzeTicketScreenshot
       summary: Analyze Ticket Screenshot
-      description: Analyze sportsbook ticket fields parsed from a screenshot or OCR text. OCR is optional; ChatGPT may send structured parsed fields directly.
+      description: Analyze sportsbook ticket fields parsed from a screenshot or OCR text. OCR is optional; clients may send structured parsed fields directly.
       security:
         - ApiKeyAuth: []
       requestBody:
@@ -267,7 +267,7 @@ paths:
               $ref: "#/components/schemas/ScreenshotAnalysisRequest"
       responses:
         "200":
-          description: Screenshot ticket analysis response. The object is intentionally flexible for Custom GPT compatibility.
+          description: Screenshot ticket analysis response. The object is intentionally flexible for broad client compatibility.
           content:
             application/json:
               schema:

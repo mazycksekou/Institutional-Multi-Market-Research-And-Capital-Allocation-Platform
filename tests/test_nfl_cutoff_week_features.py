@@ -3,15 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from automation_scheduler.nfl_cutoff_week_features import (
-    CutoffContextError,
-    build_cutoff_feature_report,
-    build_cutoff_week_context,
-    compute_cutoff_feature_values,
-    filter_records_by_cutoff,
-    validate_no_future_data_used,
-    write_cutoff_feature_report,
-)
+from src.market_intelligence.nfl_cutoff_week_features import CutoffContextError, build_cutoff_feature_report, build_cutoff_week_context, compute_cutoff_feature_values, filter_records_by_cutoff, validate_no_future_data_used, write_cutoff_feature_report
 
 
 def _seed(tmp, source_id, rows, *, season="2024"):

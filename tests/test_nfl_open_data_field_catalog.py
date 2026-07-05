@@ -3,11 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from automation_scheduler.nfl_open_data_field_catalog import (
-    FEATURE_FAMILIES,
-    build_nfl_open_data_field_catalog,
-    write_nfl_open_data_field_catalog,
-)
+from src.services.streamlit_dashboard_facade import FEATURE_FAMILIES, build_nfl_open_data_field_catalog, write_nfl_open_data_field_catalog
 
 
 class TestNflOpenDataFieldCatalog(unittest.TestCase):

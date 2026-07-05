@@ -1,6 +1,6 @@
 import unittest
 
-from automation_scheduler.data_source_registry import STOCK_ANALYST_SCORING_DIMENSIONS, build_env_var_registry, build_registry, build_source_priorities
+from src.services.streamlit_dashboard_facade import STOCK_ANALYST_SCORING_DIMENSIONS, build_env_var_registry, build_registry, build_source_priorities
 
 
 class TestInstitutionalStockProAnalystRegistry(unittest.TestCase):

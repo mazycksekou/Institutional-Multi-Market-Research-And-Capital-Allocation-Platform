@@ -1,7 +1,7 @@
 import unittest
 
-from automation_scheduler.data_source_registry import _default_coverage, _source
-from automation_scheduler.source_quality_scoring import score_lane, score_source
+from src.services.streamlit_dashboard_facade import _default_coverage, _source
+from src.services.streamlit_dashboard_facade import score_lane, score_source
 
 
 class TestSourceQualityScoring(unittest.TestCase):

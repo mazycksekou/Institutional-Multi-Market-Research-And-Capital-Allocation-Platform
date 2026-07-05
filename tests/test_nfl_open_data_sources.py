@@ -3,12 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from automation_scheduler.nfl_open_data_sources import (
-    REQUIRED_DATA_CATEGORIES,
-    build_nfl_open_data_source_report,
-    nfl_open_data_sources,
-    write_nfl_open_data_source_report,
-)
+from src.services.streamlit_dashboard_facade import REQUIRED_DATA_CATEGORIES, build_nfl_open_data_source_report, nfl_open_data_sources, write_nfl_open_data_source_report
 
 
 class TestNflOpenDataSources(unittest.TestCase):

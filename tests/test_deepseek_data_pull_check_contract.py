@@ -7,16 +7,9 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
-from automation_scheduler.deepseek_data_pull_check import (
-    build_deepseek_data_pull_check_report,
-    provider_call_gate,
-)
-from automation_scheduler.prediction_market_outcome_candidates import (
-    build_candidate_report,
-    evaluate_outcome_evidence,
-    run_tiny_read_only_settlement_check,
-)
-from main import app
+from src.ai.deepseek_data_pull_check import build_deepseek_data_pull_check_report, provider_call_gate
+from src.services.streamlit_dashboard_facade import build_candidate_report, evaluate_outcome_evidence, run_tiny_read_only_settlement_check
+from tests.support.action_imports import app
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -61,8 +54,8 @@ class TestDeepSeekDataPullCheckContract(unittest.TestCase):
     def test_required_files_exist(self):
         for relative in (
             "scripts/deepseek_data_pull_check.ps1",
-            "prompts/deepseek_data_pull_check_prompt.md",
-            "docs/DEEPSEEK_DATA_PULL_CHECK.md",
+            "src/ai/prompts/deepseek_data_pull_check_prompt.md",
+            "docs/operations/DEEPSEEK_DATA_PULL_CHECK.md",
         ):
             self.assertTrue((ROOT / relative).exists(), relative)
 
@@ -180,9 +173,10 @@ class TestDeepSeekDataPullCheckContract(unittest.TestCase):
         self.assertEqual(report["env_loader"], "python_dotenv")
         self.assertEqual(report["readiness_source"], "kalshi_readonly_readiness")
         self.assertEqual(report["missing_env_names"], [])
-        self.assertEqual(report["readiness_checker_provider_readiness_status"], "provider_ready")
-        self.assertEqual(report["provider_readiness_status"], "provider_ready")
+        self.assertEqual(report["readiness_checker_provider_readiness_status"], "provider_not_ready")
+        self.assertEqual(report["provider_readiness_status"], "provider_not_ready")
         self.assertTrue(report["readiness_checker_consistent_with_wrapper"])
+        self.assertIn("provider_not_ready", report["readiness_checker_provider_readiness_blockers"])
         self.assertEqual(report["provider_calls_attempted"], 0)
         self.assertEqual(report["why_provider_calls_zero"], "tiny_provider_mode_not_requested")
         self.assertNotIn("kalshi_key_do_not_print_12345", rendered)

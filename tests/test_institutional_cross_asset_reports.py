@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from automation_scheduler.institutional_cross_asset_reports import build_daily_report_payload, render_markdown_report, write_daily_report
+from src.services.streamlit_dashboard_facade import build_daily_report_payload, render_markdown_report, write_daily_report
 
 
 class TestInstitutionalCrossAssetReports(unittest.TestCase):

@@ -1,7 +1,7 @@
 import unittest
 
-from automation_scheduler.provider_adapter_base import ProviderAdapterBase
-from automation_scheduler.provider_contracts import get_default_provider_contracts
+from src.providers.base import ProviderAdapterBase
+from src.providers.contracts import get_default_provider_contracts
 
 
 class TestProviderAdapterBase(unittest.TestCase):
@@ -27,4 +27,3 @@ class TestProviderAdapterBase(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

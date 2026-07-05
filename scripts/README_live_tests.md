@@ -4,6 +4,8 @@ These scripts run compact live checks against:
 
 `https://betting-stock-api-code-integration.onrender.com/api/actions/ticket/screenshot-analysis`
 
+The PowerShell wrappers below are optional convenience scripts. The repository's canonical validation and development workflow is Python-first, so macOS and Linux developers can continue using the repo without requiring PowerShell unless they want to run these wrappers directly.
+
 Set the API key before running:
 
 ```powershell

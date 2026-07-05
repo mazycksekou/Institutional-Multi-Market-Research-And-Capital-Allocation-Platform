@@ -6,23 +6,18 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
-import automation_scheduler
-from automation_scheduler.ai_provider_security import evaluate_ai_provider
-from automation_scheduler.audit_ledger import load_security_audit_records
-from automation_scheduler.execution_authorization import evaluate_execution_authorization
-from automation_scheduler.owner_approval_gate import evaluate_owner_approval, sign_owner_approval
-from automation_scheduler.provider_write_firewall import check_provider_write_attempt
-from automation_scheduler.response_compactor import redact_and_limit_payload
-from automation_scheduler.risk_limit_guard import evaluate_risk_limits
-from automation_scheduler.secret_safety import assert_no_secret_leak, contains_secret_like_content, redact_sensitive
-from automation_scheduler.security_event_types import (
-    EXECUTION_ATTEMPT_BLOCKED,
-    FORBIDDEN_PROVIDER_REJECTED,
-    OWNER_APPROVAL_MISSING,
-    PROVIDER_WRITE_BLOCKED,
-)
-from automation_scheduler.security_policy import enforce_ai_capability_boundary, kill_switch_state
-from main import app
+from src.services.streamlit_dashboard_facade import evaluate_ai_provider
+from src.services.streamlit_dashboard_facade import evaluate_owner_approval, sign_owner_approval
+from src.services.streamlit_dashboard_facade import get_security_readiness
+from src.services.streamlit_dashboard_facade import redact_and_limit_payload
+from src.services.streamlit_dashboard_facade import evaluate_risk_limits
+from src.services.streamlit_dashboard_facade import assert_no_secret_leak, contains_secret_like_content, redact_sensitive
+from src.services.streamlit_dashboard_facade import EXECUTION_ATTEMPT_BLOCKED, FORBIDDEN_PROVIDER_REJECTED, OWNER_APPROVAL_MISSING, PROVIDER_WRITE_BLOCKED
+from src.services.streamlit_dashboard_facade import enforce_ai_capability_boundary, kill_switch_state
+from src.brokerage.readiness import evaluate_execution_authorization
+from src.providers.policy.write_firewall import check_provider_write_attempt
+from src.services.ledger_service import load_security_audit_records
+from tests.support.action_imports import app
 
 
 def _future_approval(scope=None, *, nonce="nonce-1", signing_secret="owner-secret"):
@@ -297,11 +292,11 @@ class TestSecurityFramework(unittest.TestCase):
         self.assertFalse(payload["raw_payload_exposed"])
 
     def test_scheduler_wrappers_preserve_no_execution(self):
-        readiness = automation_scheduler.get_security_readiness()
-        ai = automation_scheduler.evaluate_ai_analyst_provider("deepseek", persist_audit=False)
-        boundary = automation_scheduler.enforce_ai_analysis_boundaries({"action": "request_more_data"}, actor_provider="deepseek")
-        write = automation_scheduler.check_provider_write_firewall(provider="paper", action="review_only", persist_audit=False)
-        auth = automation_scheduler.evaluate_execution_security_authorization({"provider": "paper", "action": "review_only"}, persist_audit=False)
+        readiness = get_security_readiness()
+        ai = evaluate_ai_provider("deepseek", persist_audit=False)
+        boundary = enforce_ai_capability_boundary({"action": "request_more_data"}, actor_provider="deepseek")
+        write = check_provider_write_attempt(provider="paper", action="review_only", request_payload={"provider": "paper", "action": "review_only"}, persist_audit=False)
+        auth = evaluate_execution_authorization({"provider": "paper", "action": "review_only"}, persist_audit=False)
         for payload in (readiness, ai, boundary, write, auth):
             self.assertFalse(payload["provider_write"])
             self.assertFalse(payload["execution_allowed"])

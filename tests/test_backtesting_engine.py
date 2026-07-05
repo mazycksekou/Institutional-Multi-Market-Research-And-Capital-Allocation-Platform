@@ -3,7 +3,7 @@ import re
 import unittest
 from tempfile import TemporaryDirectory
 
-from automation_scheduler.backtesting_engine import generate_backtest_report, run_backtest
+from src.services.streamlit_dashboard_facade import generate_backtest_report, run_backtest
 
 
 class TestBacktestingEngine(unittest.TestCase):

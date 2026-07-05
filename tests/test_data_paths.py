@@ -4,19 +4,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from automation_scheduler.data_paths import (
-    AUTOMATION_DATA_DIR_ENV,
-    get_automation_data_dir,
-    get_calibration_reports_dir,
-    get_collector_scheduler_dir,
-    get_data_sources_dir,
-    get_institutional_lab_dir,
-    get_outcomes_dir,
-    get_paper_ledger_dir,
-    get_review_queue_dir,
-    get_runtime_data_path,
-    get_storage_health,
-)
+from src.services.streamlit_dashboard_facade import AUTOMATION_DATA_DIR_ENV, get_automation_data_dir, get_calibration_reports_dir, get_collector_scheduler_dir, get_data_sources_dir, get_institutional_lab_dir, get_outcomes_dir, get_paper_ledger_dir, get_review_queue_dir, get_runtime_data_path, get_storage_health
 
 
 class TestDataPaths(unittest.TestCase):

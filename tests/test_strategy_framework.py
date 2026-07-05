@@ -2,14 +2,14 @@ import json
 import tempfile
 import unittest
 
-from automation_scheduler.execution_gatekeeper import evaluate_future_execution_eligibility
-from automation_scheduler.hard_gate_policy import evaluate_hard_gates
-from automation_scheduler.strategy_disagreement import load_strategy_disagreements
-from automation_scheduler.strategy_maturity import evaluate_strategy_maturity
-from automation_scheduler.strategy_promotion import evaluate_strategy_promotion
-from automation_scheduler.strategy_registry import get_strategy_registry
-from automation_scheduler.strategy_router import route_strategies
-from automation_scheduler.strategy_score_aggregator import aggregate_strategy_scores
+from src.services.streamlit_dashboard_facade import evaluate_hard_gates
+from src.core.strategy_disagreement import load_strategy_disagreements
+from src.services.streamlit_dashboard_facade import evaluate_strategy_maturity
+from src.core.strategy_promotion import evaluate_strategy_promotion
+from src.services.streamlit_dashboard_facade import get_strategy_registry
+from src.services.streamlit_dashboard_facade import route_strategies
+from src.core.strategy_score_aggregator import aggregate_strategy_scores
+from src.brokerage.readiness import evaluate_future_execution_eligibility
 
 
 def _stock_candidate(**extra):

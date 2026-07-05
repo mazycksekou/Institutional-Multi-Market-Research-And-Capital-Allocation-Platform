@@ -1,6 +1,6 @@
 import unittest
 
-from math_models.institutional.execution_cost_models import OUTPUT_FIELDS, get_models, run_model
+from src.analytics.institutional.execution_cost_models import OUTPUT_FIELDS, get_models, run_model
 
 
 class TestInstitutionalExecutionCostModels(unittest.TestCase):

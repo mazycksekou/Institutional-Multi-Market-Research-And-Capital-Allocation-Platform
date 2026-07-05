@@ -5,8 +5,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-import bet_log
-from main import ActionBetLogRequest
+import src.services.bet_log as bet_log
+from tests.support.action_imports import ActionBetLogRequest
 
 
 def _entry(**extra):

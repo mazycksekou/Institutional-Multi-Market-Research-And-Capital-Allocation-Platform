@@ -1,5 +1,5 @@
 import unittest
-from model_governance.model_inventory import get_model_inventory, GROUPS
+from src.analytics.model_governance.model_inventory import get_model_inventory, GROUPS
 
 class TestModelInventory(unittest.TestCase):
     def test_groups_registered(self):

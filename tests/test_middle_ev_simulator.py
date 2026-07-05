@@ -1,6 +1,6 @@
 import unittest
 
-from automation_scheduler.middles.middle_ev_simulator import simulate_middle_ev
+from src.services.streamlit_dashboard_facade import simulate_middle_ev
 
 
 class TestMiddleEvSimulator(unittest.TestCase):

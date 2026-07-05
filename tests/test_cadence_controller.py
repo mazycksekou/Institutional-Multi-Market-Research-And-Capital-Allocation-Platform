@@ -1,6 +1,6 @@
 import unittest
-from automation_scheduler.cadence_controller import choose_next_check_seconds
-from automation_scheduler.scheduler_config import get_default_scheduler_config
+from src.services.streamlit_dashboard_facade import choose_next_check_seconds
+from src.services.streamlit_dashboard_facade import get_default_scheduler_config
 
 
 class TestCadenceController(unittest.TestCase):

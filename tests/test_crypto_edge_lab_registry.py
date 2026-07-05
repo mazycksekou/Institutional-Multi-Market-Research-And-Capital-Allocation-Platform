@@ -1,6 +1,6 @@
 import unittest
 
-from automation_scheduler.data_source_registry import CRYPTO_EDGE_SCORING_DIMENSIONS, CRYPTO_FORBIDDEN_ACTIONS, build_registry, build_source_priorities
+from src.services.streamlit_dashboard_facade import CRYPTO_EDGE_SCORING_DIMENSIONS, CRYPTO_FORBIDDEN_ACTIONS, build_registry, build_source_priorities
 
 
 class TestCryptoEdgeLabRegistry(unittest.TestCase):

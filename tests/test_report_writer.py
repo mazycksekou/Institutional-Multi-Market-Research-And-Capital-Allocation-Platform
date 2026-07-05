@@ -1,8 +1,8 @@
 import json
 import unittest
 from tempfile import TemporaryDirectory
-from automation_scheduler.scheduler_config import get_default_scheduler_config
-from automation_scheduler.report_writer import write_report
+from src.services.streamlit_dashboard_facade import get_default_scheduler_config
+from src.services.streamlit_dashboard_facade import write_report
 
 
 class TestReportWriter(unittest.TestCase):

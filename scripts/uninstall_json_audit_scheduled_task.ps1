@@ -4,11 +4,5 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$Task = Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
-if ($Task) {
-    Unregister-ScheduledTask -TaskName $TaskName -Confirm:$false
-    Write-Host "Scheduled task removed: $TaskName"
-}
-else {
-    Write-Host "Scheduled task not found: $TaskName"
-}
+python scripts/uninstall_json_audit_scheduled_task.py --task-name $TaskName
+exit $LASTEXITCODE

@@ -1,7 +1,7 @@
 import unittest
 
-from automation_scheduler.opportunity_scoring import calculate_opportunity_score, classify_opportunity
-from automation_scheduler.scheduler_config import get_default_scheduler_config
+from src.services.streamlit_dashboard_facade import calculate_opportunity_score, classify_opportunity
+from src.services.streamlit_dashboard_facade import get_default_scheduler_config
 
 
 class TestOpportunityScoring(unittest.TestCase):

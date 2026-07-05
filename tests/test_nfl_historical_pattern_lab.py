@@ -4,19 +4,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from automation_scheduler.nfl_historical_pattern_lab import (
-    build_historical_team_profiles,
-    build_nfl_historical_pattern_lab_report,
-    build_pattern_validation_scorecard,
-    build_similarity_feature_catalog,
-    compute_team_profile_similarity,
-    find_historical_team_comps,
-    write_nfl_historical_pattern_lab_report,
-)
-from automation_scheduler.open_sports_history_import import (
-    build_open_sports_history_import_report,
-    write_open_sports_history_import_report,
-)
+from src.data.nfl_historical_pattern_lab import build_historical_team_profiles, build_nfl_historical_pattern_lab_report, build_pattern_validation_scorecard, build_similarity_feature_catalog, compute_team_profile_similarity, find_historical_team_comps, write_nfl_historical_pattern_lab_report
+from src.services.streamlit_dashboard_facade import build_open_sports_history_import_report, write_open_sports_history_import_report
 
 
 class TestNflHistoricalPatternLab(unittest.TestCase):

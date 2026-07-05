@@ -1,5 +1,5 @@
 import unittest
-from model_governance.walk_forward_gate import evaluate_walk_forward_gate
+from src.analytics.model_governance.walk_forward_gate import evaluate_walk_forward_gate
 
 class TestWalkForwardGate(unittest.TestCase):
     def test_decay(self):

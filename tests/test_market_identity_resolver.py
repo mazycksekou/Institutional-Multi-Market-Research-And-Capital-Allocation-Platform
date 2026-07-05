@@ -1,6 +1,6 @@
 import unittest
 
-from automation_scheduler.market_identity_resolver import resolve_market_identity
+from src.services.streamlit_dashboard_facade import resolve_market_identity
 
 
 class TestMarketIdentityResolver(unittest.TestCase):

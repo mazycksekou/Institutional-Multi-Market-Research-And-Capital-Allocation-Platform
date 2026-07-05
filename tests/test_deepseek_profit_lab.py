@@ -6,9 +6,9 @@ from unittest.mock import patch
 
 import httpx
 
-from automation_scheduler.ai_provider_security import evaluate_ai_provider
-from automation_scheduler.deepseek_disagreement_queue import load_disagreement_queue
-from automation_scheduler.deepseek_profit_lab import run_candidate_review, run_daily_report, run_red_team_review
+from src.services.streamlit_dashboard_facade import evaluate_ai_provider
+from src.services.streamlit_dashboard_facade import load_disagreement_queue
+from src.ai.deepseek_profit_lab import run_candidate_review, run_daily_report, run_red_team_review
 
 
 class _FakeResponse:
@@ -166,7 +166,7 @@ class TestDeepSeekProfitLab(unittest.TestCase):
             {"DEEPSEEK_ENABLED": "true", "DEEPSEEK_API_KEY": "sk-test-secret-1234567890", "DEEPSEEK_BASE_URL": "https://api.deepseek.com"},
             clear=True,
         ):
-            with patch("automation_scheduler.deepseek_profit_lab.httpx.Client", return_value=_FakeClient(response=fake_response)):
+            with patch('src.ai.deepseek_profit_lab.httpx.Client', return_value=_FakeClient(response=fake_response)):
                 result = run_candidate_review(
                     candidate=_candidate(
                         raw_payload={"provider": "drop"},
@@ -190,7 +190,7 @@ class TestDeepSeekProfitLab(unittest.TestCase):
     def test_valid_review_returns_strict_candidate_json(self):
         fake_response = _FakeResponse({"choices": [{"message": {"content": json.dumps(_valid_review())}}]})
         with patch.dict(os.environ, {"DEEPSEEK_ENABLED": "true", "DEEPSEEK_API_KEY": "sk-test-secret-1234567890"}, clear=True):
-            with patch("automation_scheduler.deepseek_profit_lab.httpx.Client", return_value=_FakeClient(response=fake_response)):
+            with patch('src.ai.deepseek_profit_lab.httpx.Client', return_value=_FakeClient(response=fake_response)):
                 result = run_candidate_review(candidate=_candidate())
         review = result["candidate_review"]
         self.assertEqual(result["status"], "review_complete")
@@ -203,7 +203,7 @@ class TestDeepSeekProfitLab(unittest.TestCase):
     def test_invalid_json_safely_rejected(self):
         fake_response = _FakeResponse({"choices": [{"message": {"content": "not json"}}]})
         with patch.dict(os.environ, {"DEEPSEEK_ENABLED": "true", "DEEPSEEK_API_KEY": "sk-test-secret-1234567890"}, clear=True):
-            with patch("automation_scheduler.deepseek_profit_lab.httpx.Client", return_value=_FakeClient(response=fake_response)):
+            with patch('src.ai.deepseek_profit_lab.httpx.Client', return_value=_FakeClient(response=fake_response)):
                 result = run_candidate_review(candidate=_candidate())
         self.assertEqual(result["status"], "invalid_json")
         self.assertFalse(result["json_schema_valid"])
@@ -211,7 +211,7 @@ class TestDeepSeekProfitLab(unittest.TestCase):
 
     def test_timeout_returns_safe_provider_timeout(self):
         with patch.dict(os.environ, {"DEEPSEEK_ENABLED": "true", "DEEPSEEK_API_KEY": "sk-test-secret-1234567890"}, clear=True):
-            with patch("automation_scheduler.deepseek_profit_lab.httpx.Client", return_value=_FakeClient(exc=httpx.TimeoutException("timeout"))):
+            with patch('src.ai.deepseek_profit_lab.httpx.Client', return_value=_FakeClient(exc=httpx.TimeoutException("timeout"))):
                 result = run_candidate_review(candidate=_candidate())
         self.assertEqual(result["status"], "provider_timeout")
         self.assertFalse(result["deepseek_used"])
@@ -222,7 +222,7 @@ class TestDeepSeekProfitLab(unittest.TestCase):
             payload = _valid_review(**{field: True})
             fake_response = _FakeResponse({"choices": [{"message": {"content": json.dumps(payload)}}]})
             with patch.dict(os.environ, {"DEEPSEEK_ENABLED": "true", "DEEPSEEK_API_KEY": "sk-test-secret-1234567890"}, clear=True):
-                with patch("automation_scheduler.deepseek_profit_lab.httpx.Client", return_value=_FakeClient(response=fake_response)):
+                with patch('src.ai.deepseek_profit_lab.httpx.Client', return_value=_FakeClient(response=fake_response)):
                     result = run_candidate_review(candidate=_candidate())
             self.assertEqual(result["status"], "review_rejected")
             self.assertFalse(result["provider_write"])
@@ -238,7 +238,7 @@ class TestDeepSeekProfitLab(unittest.TestCase):
         for payload in blocked_payloads:
             fake_response = _FakeResponse({"choices": [{"message": {"content": json.dumps(payload)}}]})
             with patch.dict(os.environ, {"DEEPSEEK_ENABLED": "true", "DEEPSEEK_API_KEY": "sk-test-secret-1234567890"}, clear=True):
-                with patch("automation_scheduler.deepseek_profit_lab.httpx.Client", return_value=_FakeClient(response=fake_response)):
+                with patch('src.ai.deepseek_profit_lab.httpx.Client', return_value=_FakeClient(response=fake_response)):
                     result = run_candidate_review(candidate=_candidate())
             self.assertEqual(result["status"], "review_rejected")
             self.assertFalse(result["provider_write"])
@@ -253,7 +253,7 @@ class TestDeepSeekProfitLab(unittest.TestCase):
         fake_response = _FakeResponse({"choices": [{"message": {"content": json.dumps(review)}}]})
         with tempfile.TemporaryDirectory() as tmp:
             with patch.dict(os.environ, {"DEEPSEEK_ENABLED": "true", "DEEPSEEK_API_KEY": "sk-test-secret-1234567890"}, clear=True):
-                with patch("automation_scheduler.deepseek_profit_lab.httpx.Client", return_value=_FakeClient(response=fake_response)):
+                with patch('src.ai.deepseek_profit_lab.httpx.Client', return_value=_FakeClient(response=fake_response)):
                     result = run_candidate_review(
                         candidate=_candidate(api_key="sk-should-not-persist-1234567890"),
                         core_model_action="ACTIVE_REVIEW",
@@ -288,7 +288,7 @@ class TestDeepSeekProfitLab(unittest.TestCase):
         fake_response = _FakeResponse({"choices": [{"message": {"content": json.dumps(_valid_daily())}}]})
         with tempfile.TemporaryDirectory() as tmp:
             with patch.dict(os.environ, {"DEEPSEEK_ENABLED": "true", "DEEPSEEK_API_KEY": "sk-test-secret-1234567890"}, clear=True):
-                with patch("automation_scheduler.deepseek_profit_lab.httpx.Client", return_value=_FakeClient(response=fake_response)):
+                with patch('src.ai.deepseek_profit_lab.httpx.Client', return_value=_FakeClient(response=fake_response)):
                     result = run_daily_report(report_date="2026-06-02", base_data_dir=tmp, summaries={})
         self.assertEqual(result["status"], "daily_report_complete")
         self.assertTrue(result["report"]["deepseek_used"])

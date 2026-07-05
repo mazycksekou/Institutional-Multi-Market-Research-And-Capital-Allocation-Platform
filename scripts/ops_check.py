@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import sys
 from pathlib import Path
@@ -11,7 +12,8 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from automation_scheduler.ops_workflow import DEFAULT_APP_BASE_URL, run_ops_check  # noqa: E402
+from src.services.ops_workflow import DEFAULT_APP_BASE_URL, run_ops_check  # noqa: E402
+from src.services.repo_inventory import build_import_scan_report, build_inventory_report, tracked_python_files  # noqa: E402
 
 
 def _line(label: str, value: Any) -> str:
@@ -29,6 +31,9 @@ def _text_summary(report: dict[str, Any]) -> str:
     datasources = report.get("datasource_status") or {}
     reconciliation = report.get("outcome_reconciliation_status") or {}
     safety = report.get("safety_status") or {}
+    audit = report.get("audit_lifecycle") or {}
+    document = report.get("document_lifecycle") or {}
+    preflight = report.get("repo_preflight") or {}
     paths = ((report.get("ops_report_write") or {}).get("paths") or {}) if isinstance(report.get("ops_report_write"), dict) else {}
     lines = [
         _line("mode", report.get("mode")),
@@ -43,12 +48,101 @@ def _text_summary(report: dict[str, Any]) -> str:
         _line("outcome_reconcile", f"{reconciliation.get('status')} local={reconciliation.get('local_package_count')} render={reconciliation.get('render_outcomes_count')} would_insert={reconciliation.get('would_insert_count')} unmatched={reconciliation.get('unmatched_count')}"),
         _line("datasources", f"{datasources.get('status')} sources={datasources.get('total_sources')} enabled={datasources.get('source_enabled_count')}"),
         _line("safety", f"{safety.get('status')} critical={len(safety.get('critical') or [])} warnings={len(safety.get('warnings') or [])}"),
+        _line("audit_lifecycle", f"{audit.get('status')} scanned={audit.get('scanned_count')} warnings={len(audit.get('warnings') or [])} clear_violations={len(audit.get('clear_violations') or [])}"),
+        _line("document_lifecycle", f"{document.get('status')} scanned={document.get('scanned_count')} warnings={len(document.get('warnings') or [])} clear_violations={len(document.get('clear_violations') or [])}"),
+        _line("repo_preflight", f"{preflight.get('status')} branch={preflight.get('branch')} upstream={preflight.get('upstream')} clear_violations={len(preflight.get('clear_violations') or [])}"),
         _line("raw_payload_included", report.get("raw_payload_included")),
         _line("secrets_included", report.get("secrets_included")),
     ]
     if paths:
         lines.append(_line("report_latest", paths.get("latest")))
     return "\n".join(lines)
+
+
+def _load_path_list(value: str | None) -> list[Path]:
+    if not value:
+        return []
+    candidate = Path(value)
+    if candidate.exists() and candidate.is_file():
+        resolved: list[Path] = []
+        for raw in candidate.read_text(encoding="utf-8").splitlines():
+            text = raw.strip()
+            if not text:
+                continue
+            path = Path(text)
+            resolved.append(path if path.is_absolute() else ROOT / path)
+        return resolved
+    path = Path(value)
+    return [path if path.is_absolute() else ROOT / path]
+
+
+def _write_json_report(output: str, report: dict[str, Any]) -> Path:
+    path = Path(output)
+    if not path.is_absolute():
+        path = ROOT / path
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(report, indent=2, sort_keys=True), encoding="utf-8")
+    return path
+
+
+def _validate_root_markdown() -> list[Path]:
+    script_path = ROOT / "scripts" / "check_root_markdown.py"
+    spec = importlib.util.spec_from_file_location("_check_root_markdown", script_path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"Unable to load root markdown validator from {script_path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return list(module.find_root_markdown(ROOT))
+
+
+def _validate_architecture() -> dict[str, Any]:
+    script_path = ROOT / "scripts" / "check_architecture.py"
+    spec = importlib.util.spec_from_file_location("_check_architecture", script_path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"Unable to load architecture validator from {script_path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return dict(module.collect_architecture_report(ROOT))
+
+
+def _validate_openapi_contract() -> dict[str, Any]:
+    script_path = ROOT / "scripts" / "check_openapi_contract.py"
+    spec = importlib.util.spec_from_file_location("_check_openapi_contract", script_path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"Unable to load openapi validator from {script_path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return dict(module.collect_openapi_report(ROOT))
+
+
+def _validate_audit_lifecycle() -> dict[str, Any]:
+    script_path = ROOT / "scripts" / "check_audit_lifecycle.py"
+    spec = importlib.util.spec_from_file_location("_check_audit_lifecycle", script_path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"Unable to load audit lifecycle validator from {script_path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return dict(module.collect_audit_lifecycle_report(ROOT))
+
+
+def _validate_document_lifecycle() -> dict[str, Any]:
+    script_path = ROOT / "scripts" / "check_document_lifecycle.py"
+    spec = importlib.util.spec_from_file_location("_check_document_lifecycle", script_path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"Unable to load document lifecycle validator from {script_path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return dict(module.collect_document_lifecycle_report(ROOT))
+
+
+def _validate_repo_preflight() -> dict[str, Any]:
+    script_path = ROOT / "scripts" / "check_repo_preflight.py"
+    spec = importlib.util.spec_from_file_location("_check_repo_preflight", script_path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"Unable to load repository preflight validator from {script_path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return dict(module.collect_repo_preflight_report(ROOT, mode="start-task", include_ops=False))
 
 
 def _exit_code(report: dict[str, Any], fail_on_critical: bool) -> int:
@@ -63,9 +157,11 @@ def _exit_code(report: dict[str, Any], fail_on_critical: bool) -> int:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Run unified betting-stock-api ops checks.")
-    parser.add_argument("--mode", choices=["local", "render", "cron", "calibration", "datasources", "safety", "outcome-reconcile", "full"], default="local")
+    parser.add_argument("--mode", choices=["local", "render", "cron", "calibration", "datasources", "safety", "outcome-reconcile", "full", "inventory", "import-scan"], default="local")
     parser.add_argument("--base-url", default=None)
-    parser.add_argument("--output", choices=["json", "text"], default="text")
+    parser.add_argument("--output", default="text")
+    parser.add_argument("--input", default=None)
+    parser.add_argument("--paths", default=None)
     parser.add_argument("--write-report", action="store_true")
     parser.add_argument("--timeout", type=int, default=20)
     parser.add_argument("--skip-network", action="store_true")
@@ -79,6 +175,77 @@ def main(argv: list[str] | None = None) -> int:
     if not base_url and args.use_default_render_url and args.mode in {"render", "full"}:
         base_url = DEFAULT_APP_BASE_URL
 
+    offenders = _validate_root_markdown()
+    if offenders:
+        script_path = ROOT / "scripts" / "check_root_markdown.py"
+        spec = importlib.util.spec_from_file_location("_check_root_markdown", script_path)
+        assert spec is not None and spec.loader is not None
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        print("root_markdown: fail")
+        print("allowed: README.md")
+        for path in offenders:
+            print(f"- {path.name} -> {module.recommended_destination(path)}")
+        return 2
+
+    architecture = _validate_architecture()
+    if architecture.get("root_markdown_offenders") or architecture.get("ignored_source_files") or architecture.get("legacy_import_issues"):
+        print("architecture: fail")
+        print(f"root_markdown_offenders: {len(architecture.get('root_markdown_offenders') or [])}")
+        print(f"ignored_source_files: {len(architecture.get('ignored_source_files') or [])}")
+        print(f"legacy_import_issues: {len(architecture.get('legacy_import_issues') or [])}")
+        return 2
+
+    openapi = _validate_openapi_contract()
+    if not openapi.get("ok"):
+        print("openapi: fail")
+        print(f"path: {openapi.get('path')}")
+        print(f"errors: {len(openapi.get('errors') or [])}")
+        for item in openapi.get("errors") or []:
+            print(f"- {item}")
+        return 2
+
+    audit_lifecycle = _validate_audit_lifecycle()
+    if audit_lifecycle.get("clear_violations"):
+        print("audit_lifecycle: fail")
+        print(f"register_path: {audit_lifecycle.get('register_path')}")
+        print(f"clear_violations: {len(audit_lifecycle.get('clear_violations') or [])}")
+        for item in audit_lifecycle.get("clear_violations") or []:
+            print(f"- {item}")
+        return 2
+
+    document_lifecycle = _validate_document_lifecycle()
+    repo_preflight = _validate_repo_preflight()
+    if document_lifecycle.get("clear_violations"):
+        print("document_lifecycle: fail")
+        print(f"scanned_count: {document_lifecycle.get('scanned_count')}")
+        print(f"clear_violations: {len(document_lifecycle.get('clear_violations') or [])}")
+        for item in document_lifecycle.get("clear_violations") or []:
+            print(f"- {item}")
+        return 2
+
+    if args.mode in {"inventory", "import-scan"}:
+        input_paths = _load_path_list(args.input or args.paths)
+        if not input_paths:
+            input_paths = [path for path in tracked_python_files(ROOT) if not path.relative_to(ROOT).as_posix().startswith("src/")]
+        if args.mode == "inventory":
+            report = build_inventory_report(input_paths, root=ROOT)
+        else:
+            report = build_import_scan_report(input_paths, root=ROOT)
+        if args.output in {"json", "text"}:
+            if args.output == "json":
+                print(json.dumps(report, indent=2, sort_keys=True))
+            else:
+                print(f"mode: {args.mode}")
+                print(f"input_count: {report.get('input_count', 0)}")
+                print(f"file_count: {len(report.get('files') or [])}")
+                for row in (report.get("files") or [])[:10]:
+                    print(f"- {row.get('path')}: runtime={row.get('runtime_importer_count', row.get('runtime_importers', []))} test={row.get('test_importer_count', row.get('test_importers', []))}")
+        else:
+            written = _write_json_report(args.output, report)
+            print(str(written))
+        return 0
+
     report = run_ops_check(
         mode=args.mode,
         base_url=base_url,
@@ -86,6 +253,9 @@ def main(argv: list[str] | None = None) -> int:
         skip_network=args.skip_network,
         write_report=args.write_report,
     )
+    report["audit_lifecycle"] = audit_lifecycle
+    report["document_lifecycle"] = document_lifecycle
+    report["repo_preflight"] = repo_preflight
     if args.trigger_cron_check:
         report["trigger_cron_check"] = {
             "ok": False,

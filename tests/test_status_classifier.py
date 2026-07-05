@@ -1,5 +1,5 @@
 import unittest
-from model_governance.status_classifier import classify_model_status
+from src.analytics.model_governance.status_classifier import classify_model_status
 
 class TestStatusClassifier(unittest.TestCase):
     def test_verified_sport_model_active(self):

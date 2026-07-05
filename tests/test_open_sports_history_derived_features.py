@@ -3,11 +3,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from automation_scheduler.derived_feature_backfill_report import build_derived_feature_backfill_report
-from automation_scheduler.open_sports_history_import import (
-    build_open_sports_history_import_report,
-    write_open_sports_history_import_report,
-)
+from src.analytics.derived_feature_backfill_report import build_derived_feature_backfill_report
+from src.services.streamlit_dashboard_facade import build_open_sports_history_import_report, write_open_sports_history_import_report
 
 
 class TestOpenSportsHistoryDerivedFeatures(unittest.TestCase):

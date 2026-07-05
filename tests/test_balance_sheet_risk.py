@@ -1,6 +1,6 @@
 import unittest
 
-from automation_scheduler.balance_sheet_risk import evaluate_balance_sheet
+from src.services.streamlit_dashboard_facade import evaluate_balance_sheet
 
 
 class TestBalanceSheetRisk(unittest.TestCase):

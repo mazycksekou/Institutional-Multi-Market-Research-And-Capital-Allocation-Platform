@@ -1,6 +1,6 @@
 import unittest
 
-from automation_scheduler.performance_metrics import calculate_performance_metrics
+from src.services.streamlit_dashboard_facade import calculate_performance_metrics
 
 
 class TestPerformanceMetrics(unittest.TestCase):

@@ -2,8 +2,8 @@ import asyncio
 import unittest
 from copy import deepcopy
 
-import multi_sport_model_registry as registry
-from main import ScreenshotAnalysisRequest, SportAnalysisRequest, action_analyze_sport_model, action_analyze_ticket_screenshot
+import src.market_intelligence.multi_sport_model_registry as registry
+from tests.support.action_imports import ScreenshotAnalysisRequest, SportAnalysisRequest, action_analyze_sport_model, action_analyze_ticket_screenshot
 
 
 MODEL_NAME = "snooker_frame_break_safety_potting_monte_carlo_model"

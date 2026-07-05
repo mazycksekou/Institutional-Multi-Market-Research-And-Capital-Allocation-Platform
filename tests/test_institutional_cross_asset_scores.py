@@ -1,12 +1,6 @@
 import unittest
 
-from automation_scheduler.institutional_cross_asset_scores import (
-    complete_institutional_scores,
-    execution_readiness_tier,
-    liquidity_tier,
-    quality_tier,
-    risk_tier,
-)
+from src.services.streamlit_dashboard_facade import complete_institutional_scores, execution_readiness_tier, liquidity_tier, quality_tier, risk_tier
 
 
 class TestInstitutionalCrossAssetScores(unittest.TestCase):
