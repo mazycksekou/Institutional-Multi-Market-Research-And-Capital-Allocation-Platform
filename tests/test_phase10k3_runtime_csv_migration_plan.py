@@ -8,7 +8,7 @@ import pytest
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-REPORT_PATH = REPO_ROOT / "PHASE10K3_RUNTIME_CSV_MIGRATION_PLAN.md"
+REPORT_PATH = REPO_ROOT / "docs" / "reports" / "migrations" / "PHASE10K3_RUNTIME_CSV_MIGRATION_PLAN.md"
 
 pytestmark = pytest.mark.smoke
 

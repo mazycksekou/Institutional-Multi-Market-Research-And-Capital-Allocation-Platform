@@ -136,6 +136,10 @@ python scripts/r2_archive_pipeline.py --input-dir data --output-dir . --manifest
 The repo has been inventoried for asset-grade cleanup.
 `data/` and `reports/` are local-only ignored trees and must be reviewed before any controlled backtest/data-loader work starts.
 
+## Documentation Governance
+`README.md` is the only Markdown file permitted at repository root.
+All other documentation must live under `docs/`; see `docs/architecture/DOCUMENTATION_GOVERNANCE.md`.
+
 ## Pre-Backtest Cleanup Requirement
 Pre-backtest cleanup must finish before controlled data loader or backtest runner.
 

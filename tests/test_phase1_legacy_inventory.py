@@ -11,10 +11,10 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 LEGACY_ROOT = ROOT / "src" / "automation_scheduler_legacy"
 DOCS = [
-    ROOT / "PHASE1_LEGACY_INVENTORY.md",
-    ROOT / "PHASE1_CLASSIFICATION.md",
-    ROOT / "PHASE1_DELETE_LIST.md",
-    ROOT / "PHASE1_IMPORT_GRAPH.md",
+    ROOT / "docs" / "reports" / "inventories" / "PHASE1_LEGACY_INVENTORY.md",
+    ROOT / "docs" / "archive" / "historical_reports" / "PHASE1_CLASSIFICATION.md",
+    ROOT / "docs" / "archive" / "historical_reports" / "PHASE1_DELETE_LIST.md",
+    ROOT / "docs" / "archive" / "historical_reports" / "PHASE1_IMPORT_GRAPH.md",
 ]
 
 pytestmark = pytest.mark.smoke

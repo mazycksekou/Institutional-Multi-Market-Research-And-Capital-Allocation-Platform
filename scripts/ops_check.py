@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import sys
 from pathlib import Path
@@ -78,6 +79,16 @@ def _write_json_report(output: str, report: dict[str, Any]) -> Path:
     return path
 
 
+def _validate_root_markdown() -> list[Path]:
+    script_path = ROOT / "scripts" / "check_root_markdown.py"
+    spec = importlib.util.spec_from_file_location("_check_root_markdown", script_path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"Unable to load root markdown validator from {script_path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return list(module.find_root_markdown(ROOT))
+
+
 def _exit_code(report: dict[str, Any], fail_on_critical: bool) -> int:
     blocker = report.get("blocker_classification") or {}
     primary = blocker.get("primary")
@@ -107,6 +118,19 @@ def main(argv: list[str] | None = None) -> int:
     base_url = args.base_url
     if not base_url and args.use_default_render_url and args.mode in {"render", "full"}:
         base_url = DEFAULT_APP_BASE_URL
+
+    offenders = _validate_root_markdown()
+    if offenders:
+        script_path = ROOT / "scripts" / "check_root_markdown.py"
+        spec = importlib.util.spec_from_file_location("_check_root_markdown", script_path)
+        assert spec is not None and spec.loader is not None
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        print("root_markdown: fail")
+        print("allowed: README.md")
+        for path in offenders:
+            print(f"- {path.name} -> {module.recommended_destination(path)}")
+        return 2
 
     if args.mode in {"inventory", "import-scan"}:
         input_paths = _load_path_list(args.input or args.paths)
