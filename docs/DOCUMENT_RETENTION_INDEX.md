@@ -2,9 +2,9 @@
 
 This register classifies every tracked document under `docs/` so the repository can keep durable knowledge, archive historical evidence, and identify temporary work products that should eventually be consolidated or deleted.
 
-- scanned_files: 1061
+- scanned_files: 1062
 - working: 6
-- active: 91
+- active: 92
 - decision_captured: 14
 - consolidated: 6
 - archived: 944
@@ -46,6 +46,7 @@ This register classifies every tracked document under `docs/` so the repository 
 | docs/architecture/PRODUCTION_READINESS.md | Production Readiness | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/reports/audits/AUDIT_RETENTION_REGISTER.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/architecture/PROVIDER_OWNERSHIP_MAP.md | Provider Ownership Map | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/architecture/REPOSITORY_MODERNIZATION_COMPLETE_V1.md | Repository Modernization Complete V1 | ARCHITECTURE DOCUMENT | ACTIVE | unreferenced | Current authoritative documentation | KEEP ACTIVE |
+| docs/architecture/REPOSITORY_INDEPENDENCE_SCORECARD.md | Repository Independence Scorecard | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/architecture/RESEARCH_PLATFORM_ARCHITECTURE.md | Research Platform Architecture | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/architecture/REVIEWER_GUIDE.md | Reviewer Guide | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/architecture/RUNTIME_FLOW_MAP.md | Runtime Flow Map | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |

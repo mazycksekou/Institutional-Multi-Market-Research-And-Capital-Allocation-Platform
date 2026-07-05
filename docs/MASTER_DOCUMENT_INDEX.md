@@ -28,6 +28,7 @@ This index points readers to the current truth and the durable historical entry 
 - `docs/architecture/PRODUCTION_READINESS.md` - Production Readiness
 - `docs/architecture/PROVIDER_OWNERSHIP_MAP.md` - Provider Ownership Map
 - `docs/architecture/REPOSITORY_MODERNIZATION_COMPLETE_V1.md` - Repository Modernization Complete V1
+- `docs/architecture/REPOSITORY_INDEPENDENCE_SCORECARD.md` - Repository Independence Scorecard
 - `docs/architecture/RESEARCH_PLATFORM_ARCHITECTURE.md` - Research Platform Architecture
 - `docs/architecture/REVIEWER_GUIDE.md` - Reviewer Guide
 - `docs/architecture/RUNTIME_FLOW_MAP.md` - Runtime Flow Map
