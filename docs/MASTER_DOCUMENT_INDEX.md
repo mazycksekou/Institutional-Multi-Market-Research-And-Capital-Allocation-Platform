@@ -208,4 +208,4 @@ _Additional historical entries are listed in `C:/Users/user/betting-stock-api-co
 - `docs/reports/git/PRESERVED_BRANCHES.md` - Preserved Branches
 - `docs/reports/git/WORKTREE_REMOVAL_REPORT.md` - Worktree Removal Report
 - `docs/reports/git/LOCAL_BRANCH_DELETION_REPORT.md` - Local Branch Deletion Report
-
+- Historical backup artifact trees under `docs/reports/git/dirty_worktree_backups/` and `docs/reports/git/preserved_branch_patches/` were removed in the cleanup pass and are intentionally not retained.

@@ -1,7 +1,0 @@
-branch=render-native-runtime-endpoint-live-proof-certification
-worktree=C:/Users/user/betting-stock-api-code-integration/render-native-runtime-smoke-evidence-certification
-head=156f87f29c709be8281897fe39d4fbef3fd719d3
-status=DIRTY
-patch=C:\Users\user\betting-stock-api-code-integration\betting stock api code intergration\docs\reports\git\dirty_worktree_backups\render-native-runtime-endpoint-live-proof-certification\render-native-runtime-endpoint-live-proof-certification.patch
-untracked_list=C:\Users\user\betting-stock-api-code-integration\betting stock api code intergration\docs\reports\git\dirty_worktree_backups\render-native-runtime-endpoint-live-proof-certification\render-native-runtime-endpoint-live-proof-certification_untracked.txt
-copied_untracked=(none)
