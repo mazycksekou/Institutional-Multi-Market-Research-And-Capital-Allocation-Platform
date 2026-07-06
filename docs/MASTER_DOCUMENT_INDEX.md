@@ -200,3 +200,12 @@ _Additional historical entries are listed in `C:/Users/user/betting-stock-api-co
 - Use the contract index for current schema and API truth.
 - Use the retention index to understand lifecycle state and archive policy.
 - Use archived milestones and historical reports only when tracing how a decision was made.
+
+## Local Git Cleanup Artifacts
+- `docs/reports/git/LOCAL_CLEANUP_INVENTORY.md` - Local Cleanup Inventory
+- `docs/reports/git/DIRTY_WORKTREE_BACKUP_REPORT.md` - Dirty Worktree Backup Report
+- `docs/reports/git/PRESERVED_BRANCH_PATCH_REPORT.md` - Preserved Branch Patch Report
+- `docs/reports/git/PRESERVED_BRANCHES.md` - Preserved Branches
+- `docs/reports/git/WORKTREE_REMOVAL_REPORT.md` - Worktree Removal Report
+- `docs/reports/git/LOCAL_BRANCH_DELETION_REPORT.md` - Local Branch Deletion Report
+

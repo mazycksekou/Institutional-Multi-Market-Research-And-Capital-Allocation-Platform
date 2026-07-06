@@ -1,0 +1,7 @@
+branch=phase-6-api-slimming-clean
+worktree=C:/Users/user/betting-stock-api-code-integration/phase-6-api-slimming-clean
+head=2bcb284dad20d2a396ce56fd32d28e037d5f2c2d
+status=DIRTY
+patch=C:\Users\user\betting-stock-api-code-integration\betting stock api code intergration\docs\reports\git\dirty_worktree_backups\phase-6-api-slimming-clean\phase-6-api-slimming-clean.patch
+untracked_list=C:\Users\user\betting-stock-api-code-integration\betting stock api code intergration\docs\reports\git\dirty_worktree_backups\phase-6-api-slimming-clean\phase-6-api-slimming-clean_untracked.txt
+copied_untracked=src/providers/aliases.py
