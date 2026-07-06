@@ -19,6 +19,8 @@ The canonical local checks are:
 8. `python -m compileall src tests scripts`
 9. `pytest -m smoke -q`
 
+The repository pre-flight checker is branch-aware: it accepts the active task branch during development and `main` after merge/handoff, as long as the branch is synchronized with its upstream and otherwise clean.
+
 ## Tooling Requirements
 
 - `python` is required for all governance scripts.

@@ -8,17 +8,17 @@ from scripts import check_repo_preflight as preflight
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def _clean_git_state() -> dict[str, object]:
+def _clean_git_state(*, branch: str = "phase-6-api-slimming") -> dict[str, object]:
     return {
-        "branch": "phase-6-api-slimming",
+        "branch": branch,
         "head": "deadbeef1234567890",
-        "upstream": "origin/phase-6-api-slimming",
+        "upstream": f"origin/{branch}",
         "ahead": 0,
         "behind": 0,
         "staged_files": [],
         "modified_files": [],
         "untracked_files": [],
-        "status_summary": "## phase-6-api-slimming...origin/phase-6-api-slimming",
+        "status_summary": f"## {branch}...origin/{branch}",
     }
 
 
@@ -47,6 +47,21 @@ class TestRepoPreflightGovernance(unittest.TestCase):
         self.assertEqual(report["branch"], "phase-6-api-slimming")
         self.assertEqual(report["upstream"], "origin/phase-6-api-slimming")
         self.assertEqual(report["checks"]["root_markdown"]["status"], "ok")
+
+    def test_clean_state_report_accepts_main_after_merge(self) -> None:
+        with (
+            patch.object(preflight, "_git_state", return_value=_clean_git_state(branch="main")),
+            patch.object(preflight, "_check_root_markdown", return_value={"status": "ok", "offenders": []}),
+            patch.object(preflight, "_check_openapi", return_value={"ok": True, "errors": []}),
+            patch.object(preflight, "_check_architecture", return_value={"root_markdown_offenders": [], "ignored_source_files": [], "legacy_import_issues": []}),
+            patch.object(preflight, "_check_audit_lifecycle", return_value={"clear_violations": []}),
+            patch.object(preflight, "_check_document_lifecycle", return_value={"clear_violations": []}),
+        ):
+            report = preflight.collect_repo_preflight_report(ROOT, mode="start-task", include_ops=False)
+
+        self.assertTrue(report["ok"])
+        self.assertEqual(report["branch"], "main")
+        self.assertEqual(report["upstream"], "origin/main")
 
     def test_dirty_state_is_reported_as_clear_violation(self) -> None:
         dirty_state = _clean_git_state()

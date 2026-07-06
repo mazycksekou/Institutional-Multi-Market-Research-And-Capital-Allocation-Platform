@@ -47,6 +47,7 @@ Use this runbook when you need to verify repository health locally.
 - If a request is unrelated, recommend a new task-focused branch instead of changing branches automatically
 - Run `python scripts/check_repo_preflight.py --before-commit` and `python scripts/check_repo_preflight.py --before-push` before the corresponding handoff points
 - Use `python scripts/check_repo_preflight.py --start-task --include-ops` at the beginning of a task when you need a full safety snapshot
+- The pre-flight checker accepts the active task branch during development and `main` after merge/handoff, provided each branch is synchronized with its upstream and otherwise clean
 
 ## Reviewer Use
 

@@ -97,6 +97,7 @@ This index points readers to the current truth and the durable historical entry 
 
 ### INVENTORY
 - `docs/reports/inventories/BRANCH_INVENTORY_AND_MERGE_READINESS.md` - Branch Inventory And Merge Readiness
+- `docs/reports/inventories/OLD_BRANCH_CONTENT_DOSSIER.md` - Old Branch Content Dossier
 
 ### INDEX
 - `docs/DOCUMENT_RETENTION_INDEX.md` - Document Retention Index

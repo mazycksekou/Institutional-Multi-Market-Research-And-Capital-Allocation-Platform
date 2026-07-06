@@ -17,6 +17,7 @@ DOCS = [
     ROOT / "docs" / "archive" / "historical_reports" / "PHASE1_DELETE_LIST.md",
     ROOT / "docs" / "archive" / "historical_reports" / "PHASE1_IMPORT_GRAPH.md",
 ]
+ALLOWED_BRANCHES = {"phase-6-api-slimming", "main"}
 
 pytestmark = pytest.mark.smoke
 
@@ -73,7 +74,7 @@ def test_phase1_legacy_inventory_reflects_final_decommission() -> None:
 
     branch_name = _resolve_branch_name()
     if branch_name is not None:
-        assert branch_name == "phase-6-api-slimming"
+        assert branch_name in ALLOWED_BRANCHES
 
     assert _legacy_python_files() == []
 
@@ -82,6 +83,12 @@ def test_phase1_legacy_inventory_branch_resolution_prefers_ci_env(monkeypatch: p
     monkeypatch.setenv("GITHUB_HEAD_REF", "phase-6-api-slimming")
     monkeypatch.setenv("GITHUB_REF_NAME", "pull/123/merge")
     assert _resolve_branch_name() == "phase-6-api-slimming"
+
+
+def test_phase1_legacy_inventory_accepts_main_branch(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("GITHUB_HEAD_REF", raising=False)
+    monkeypatch.setenv("GITHUB_REF_NAME", "main")
+    assert _resolve_branch_name() == "main"
 
 
 if __name__ == "__main__":

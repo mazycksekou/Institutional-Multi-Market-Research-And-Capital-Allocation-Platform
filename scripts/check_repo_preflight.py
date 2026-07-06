@@ -9,8 +9,7 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[1]
-EXPECTED_BRANCH = "phase-6-api-slimming"
-EXPECTED_UPSTREAM = f"origin/{EXPECTED_BRANCH}"
+ACCEPTED_BRANCHES = {"phase-6-api-slimming", "main"}
 ALLOWED_MODES = {"start-task", "end-task", "before-commit", "before-push"}
 
 if str(ROOT) not in sys.path:
@@ -156,14 +155,18 @@ def collect_repo_preflight_report(
     ahead = git["ahead"]
     behind = git["behind"]
 
-    if branch != EXPECTED_BRANCH:
-        clear_violations.append(f"branch mismatch: expected {EXPECTED_BRANCH!r}, found {branch!r}")
+    expected_branch = branch if branch in ACCEPTED_BRANCHES else "phase-6-api-slimming"
+    expected_upstream = f"origin/{expected_branch}"
+
+    if branch not in ACCEPTED_BRANCHES:
+        allowed = ", ".join(sorted(repr(item) for item in ACCEPTED_BRANCHES))
+        clear_violations.append(f"branch mismatch: expected one of [{allowed}], found {branch!r}")
     if not head:
         clear_violations.append("HEAD could not be resolved")
     if not upstream:
         clear_violations.append(f"upstream is not configured for {branch!r}")
-    elif upstream != EXPECTED_UPSTREAM:
-        clear_violations.append(f"upstream mismatch: expected {EXPECTED_UPSTREAM!r}, found {upstream!r}")
+    elif upstream != expected_upstream:
+        clear_violations.append(f"upstream mismatch: expected {expected_upstream!r}, found {upstream!r}")
     if ahead is None or behind is None:
         if upstream:
             clear_violations.append(f"branch divergence could not be determined for upstream {upstream!r}")
@@ -214,8 +217,9 @@ def collect_repo_preflight_report(
     report: dict[str, Any] = {
         "mode": mode,
         "root": str(root),
-        "expected_branch": EXPECTED_BRANCH,
-        "expected_upstream": EXPECTED_UPSTREAM,
+        "expected_branch": expected_branch,
+        "expected_upstream": expected_upstream,
+        "accepted_branches": sorted(ACCEPTED_BRANCHES),
         "branch": branch,
         "head": head,
         "upstream": upstream,

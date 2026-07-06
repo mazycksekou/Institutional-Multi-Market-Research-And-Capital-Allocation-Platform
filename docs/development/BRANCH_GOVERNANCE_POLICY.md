@@ -47,6 +47,10 @@ Never automatically:
 
 Only perform those actions when explicitly instructed.
 
+## Mainline Handoff
+
+When a task branch has been merged and validated, `main` becomes the accepted clean-state branch for release and post-merge verification.
+
 ## Reporting Expectations
 
 When evaluating branch fit, record:
@@ -55,4 +59,3 @@ When evaluating branch fit, record:
 - why the branch is appropriate
 - whether a new branch was recommended
 - whether branch creation was requested
-

@@ -1,0 +1,376 @@
+# Old Branch Content Dossier
+
+## Executive Summary
+
+- 13 older remote branches were audited from the current fetch.
+- None of the 13 older branches adds `src/` runtime files when compared against the merged local `main`.
+- Each branch carries unique commits, but the overlap with current architecture is high and the safe extraction boundary is not proven yet.
+- Recommendation across the set: hold for manual review and selective extraction, not wholesale merge.
+- `phase-6-api-slimming` is separate from this older set and should be deleted only after `main` is pushed and validated upstream.
+
+## Branch-by-Branch Notes
+
+## final-product-verification-gap-fill-formula-audit
+- Latest commit: `f12cd90`
+- Latest commit date: `2026-06-06 13:55:25 -0400`
+- Commit count unique to branch vs main: `28`
+- Commit count unique to main vs branch: `391`
+- File changes unique to branch vs main: `1148` files, `0` deleted
+- Docs added/changed: `68`
+- Tests added/changed: `362`
+- Source files under `src/`: `0`
+- Scripts added/changed: `55`
+- Root Markdown introduced: `0`
+- Likely purpose: Audit/report pack for final product verification and formula gap-filling.
+- Useful unique functionality: Potentially useful unique docs/tests; no `src/` runtime additions were found.
+- Duplicate functionality found: Heavy overlap with the current merged mainline and older scheduler-era ownership.
+- Obsolete functionality found: Legacy root scheduler/runtime layout and pre-modernization audit scaffolding.
+- Conflict risk: medium
+- Security risk: medium
+- Architecture compatibility: `Not compatible for wholesale merge; requires selective extraction only.`
+- Violates current `src/docs/tests/scripts` ownership: `Yes, via legacy root runtime and old repository-layout assumptions.`
+- Introduces root markdown: `No`
+- Duplicates existing governance: `Yes`
+- Changes runtime behavior: `Unknown from branch-level audit; not safe to merge wholesale.`
+- Depends on paid/private/external data: `maybe`
+- Supports free/open-source data goals: `no`
+- Recommended action: `HOLD FOR MANUAL REVIEW`
+- Reason: The branch contains unique historical work, but the current analysis only proves overlap and risk, not a safe extraction boundary.
+- Validation required: `Manual file-by-file diff review against main; extract only after proving a safe, non-duplicative boundary.`
+
+## free-open-normalized-loaders
+- Latest commit: `efd7b65`
+- Latest commit date: `2026-06-06 17:17:32 -0400`
+- Commit count unique to branch vs main: `37`
+- Commit count unique to main vs branch: `391`
+- File changes unique to branch vs main: `1414` files, `0` deleted
+- Docs added/changed: `86`
+- Tests added/changed: `433`
+- Source files under `src/`: `0`
+- Scripts added/changed: `61`
+- Root Markdown introduced: `0`
+- Likely purpose: Free/open-source loader normalization and ingest planning.
+- Useful unique functionality: Potentially useful free/open loader work and normalization guidance; likely the strongest candidate for selective extraction later.
+- Duplicate functionality found: Heavy overlap with the current merged mainline and older scheduler-era ownership.
+- Obsolete functionality found: Legacy root scheduler/runtime layout and pre-modernization audit scaffolding.
+- Conflict risk: medium
+- Security risk: medium
+- Architecture compatibility: `Not compatible for wholesale merge; requires selective extraction only.`
+- Violates current `src/docs/tests/scripts` ownership: `Yes, via legacy root runtime and old repository-layout assumptions.`
+- Introduces root markdown: `No`
+- Duplicates existing governance: `Yes`
+- Changes runtime behavior: `Unknown from branch-level audit; not safe to merge wholesale.`
+- Depends on paid/private/external data: `maybe`
+- Supports free/open-source data goals: `yes`
+- Recommended action: `HOLD FOR MANUAL REVIEW`
+- Reason: The branch contains unique historical work, but the current analysis only proves overlap and risk, not a safe extraction boundary.
+- Validation required: `Manual file-by-file diff review against main; extract only after proving a safe, non-duplicative boundary.`
+
+## live-arbitrage-edge-standard
+- Latest commit: `eefde5b`
+- Latest commit date: `2026-06-05 22:52:53 -0400`
+- Commit count unique to branch vs main: `22`
+- Commit count unique to main vs branch: `391`
+- File changes unique to branch vs main: `700` files, `0` deleted
+- Docs added/changed: `23`
+- Tests added/changed: `266`
+- Source files under `src/`: `0`
+- Scripts added/changed: `19`
+- Root Markdown introduced: `0`
+- Likely purpose: Live arbitrage edge and read-only market edge standardization.
+- Useful unique functionality: Unique live-edge notes may exist, but they conflict with the current no-live-trading posture.
+- Duplicate functionality found: Heavy overlap with the current merged mainline and older scheduler-era ownership.
+- Obsolete functionality found: Legacy root scheduler/runtime layout and pre-modernization audit scaffolding.
+- Conflict risk: high
+- Security risk: high
+- Architecture compatibility: `Not compatible for wholesale merge; requires selective extraction only.`
+- Violates current `src/docs/tests/scripts` ownership: `Yes, via legacy root runtime and old repository-layout assumptions.`
+- Introduces root markdown: `No`
+- Duplicates existing governance: `Yes`
+- Changes runtime behavior: `Unknown from branch-level audit; not safe to merge wholesale.`
+- Depends on paid/private/external data: `yes`
+- Supports free/open-source data goals: `no`
+- Recommended action: `HOLD FOR MANUAL REVIEW`
+- Reason: The branch contains unique historical work, but the current analysis only proves overlap and risk, not a safe extraction boundary.
+- Validation required: `Manual file-by-file diff review against main; extract only after proving a safe, non-duplicative boundary.`
+
+## ncaaf-final-oxylabs-source-policy-free-open-exhaustion
+- Latest commit: `ed204a8`
+- Latest commit date: `2026-06-05 19:24:18 -0400`
+- Commit count unique to branch vs main: `21`
+- Commit count unique to main vs branch: `391`
+- File changes unique to branch vs main: `557` files, `0` deleted
+- Docs added/changed: `17`
+- Tests added/changed: `234`
+- Source files under `src/`: `0`
+- Scripts added/changed: `19`
+- Root Markdown introduced: `0`
+- Likely purpose: NCAAF plus Oxylabs source policy and exhaustion notes.
+- Useful unique functionality: Potentially useful unique docs/tests; no `src/` runtime additions were found.
+- Duplicate functionality found: Heavy overlap with the current merged mainline and older scheduler-era ownership.
+- Obsolete functionality found: Legacy root scheduler/runtime layout and pre-modernization audit scaffolding.
+- Conflict risk: high
+- Security risk: high
+- Architecture compatibility: `Not compatible for wholesale merge; requires selective extraction only.`
+- Violates current `src/docs/tests/scripts` ownership: `Yes, via legacy root runtime and old repository-layout assumptions.`
+- Introduces root markdown: `No`
+- Duplicates existing governance: `Yes`
+- Changes runtime behavior: `Unknown from branch-level audit; not safe to merge wholesale.`
+- Depends on paid/private/external data: `yes`
+- Supports free/open-source data goals: `no`
+- Recommended action: `HOLD FOR MANUAL REVIEW`
+- Reason: The branch contains unique historical work, but the current analysis only proves overlap and risk, not a safe extraction boundary.
+- Validation required: `Manual file-by-file diff review against main; extract only after proving a safe, non-duplicative boundary.`
+
+## oxylabs-retrieval-repair-source-classification-validation
+- Latest commit: `49b999a`
+- Latest commit date: `2026-06-06 15:50:22 -0400`
+- Commit count unique to branch vs main: `31`
+- Commit count unique to main vs branch: `391`
+- File changes unique to branch vs main: `1274` files, `0` deleted
+- Docs added/changed: `74`
+- Tests added/changed: `394`
+- Source files under `src/`: `0`
+- Scripts added/changed: `57`
+- Root Markdown introduced: `0`
+- Likely purpose: Oxylabs retrieval repair and source-classification validation.
+- Useful unique functionality: Potentially useful unique docs/tests; no `src/` runtime additions were found.
+- Duplicate functionality found: Heavy overlap with the current merged mainline and older scheduler-era ownership.
+- Obsolete functionality found: Legacy root scheduler/runtime layout and pre-modernization audit scaffolding.
+- Conflict risk: high
+- Security risk: high
+- Architecture compatibility: `Not compatible for wholesale merge; requires selective extraction only.`
+- Violates current `src/docs/tests/scripts` ownership: `Yes, via legacy root runtime and old repository-layout assumptions.`
+- Introduces root markdown: `No`
+- Duplicates existing governance: `Yes`
+- Changes runtime behavior: `Unknown from branch-level audit; not safe to merge wholesale.`
+- Depends on paid/private/external data: `yes`
+- Supports free/open-source data goals: `no`
+- Recommended action: `HOLD FOR MANUAL REVIEW`
+- Reason: The branch contains unique historical work, but the current analysis only proves overlap and risk, not a safe extraction boundary.
+- Validation required: `Manual file-by-file diff review against main; extract only after proving a safe, non-duplicative boundary.`
+
+## oxylabs-unresolved-data-field-source-discovery-audit
+- Latest commit: `ed3b434`
+- Latest commit date: `2026-06-06 15:08:46 -0400`
+- Commit count unique to branch vs main: `30`
+- Commit count unique to main vs branch: `391`
+- File changes unique to branch vs main: `1235` files, `0` deleted
+- Docs added/changed: `74`
+- Tests added/changed: `382`
+- Source files under `src/`: `0`
+- Scripts added/changed: `56`
+- Root Markdown introduced: `0`
+- Likely purpose: Oxylabs unresolved field discovery audit.
+- Useful unique functionality: Potentially useful unique docs/tests; no `src/` runtime additions were found.
+- Duplicate functionality found: Heavy overlap with the current merged mainline and older scheduler-era ownership.
+- Obsolete functionality found: Legacy root scheduler/runtime layout and pre-modernization audit scaffolding.
+- Conflict risk: high
+- Security risk: high
+- Architecture compatibility: `Not compatible for wholesale merge; requires selective extraction only.`
+- Violates current `src/docs/tests/scripts` ownership: `Yes, via legacy root runtime and old repository-layout assumptions.`
+- Introduces root markdown: `No`
+- Duplicates existing governance: `Yes`
+- Changes runtime behavior: `Unknown from branch-level audit; not safe to merge wholesale.`
+- Depends on paid/private/external data: `yes`
+- Supports free/open-source data goals: `no`
+- Recommended action: `HOLD FOR MANUAL REVIEW`
+- Reason: The branch contains unique historical work, but the current analysis only proves overlap and risk, not a safe extraction boundary.
+- Validation required: `Manual file-by-file diff review against main; extract only after proving a safe, non-duplicative boundary.`
+
+## practical-horse-racing-quant-lineage
+- Latest commit: `a284b8c`
+- Latest commit date: `2026-06-06 14:43:58 -0400`
+- Commit count unique to branch vs main: `29`
+- Commit count unique to main vs branch: `391`
+- File changes unique to branch vs main: `1201` files, `0` deleted
+- Docs added/changed: `74`
+- Tests added/changed: `373`
+- Source files under `src/`: `0`
+- Scripts added/changed: `55`
+- Root Markdown introduced: `0`
+- Likely purpose: Practical horse-racing quant lineage and traceability work.
+- Useful unique functionality: Potentially useful unique docs/tests; no `src/` runtime additions were found.
+- Duplicate functionality found: Heavy overlap with the current merged mainline and older scheduler-era ownership.
+- Obsolete functionality found: Legacy root scheduler/runtime layout and pre-modernization audit scaffolding.
+- Conflict risk: medium
+- Security risk: medium
+- Architecture compatibility: `Not compatible for wholesale merge; requires selective extraction only.`
+- Violates current `src/docs/tests/scripts` ownership: `Yes, via legacy root runtime and old repository-layout assumptions.`
+- Introduces root markdown: `No`
+- Duplicates existing governance: `Yes`
+- Changes runtime behavior: `Unknown from branch-level audit; not safe to merge wholesale.`
+- Depends on paid/private/external data: `maybe`
+- Supports free/open-source data goals: `no`
+- Recommended action: `HOLD FOR MANUAL REVIEW`
+- Reason: The branch contains unique historical work, but the current analysis only proves overlap and risk, not a safe extraction boundary.
+- Validation required: `Manual file-by-file diff review against main; extract only after proving a safe, non-duplicative boundary.`
+
+## product-architecture-multi-asset-sweep
+- Latest commit: `55f49aa`
+- Latest commit date: `2026-06-06 10:16:11 -0400`
+- Commit count unique to branch vs main: `25`
+- Commit count unique to main vs branch: `391`
+- File changes unique to branch vs main: `834` files, `0` deleted
+- Docs added/changed: `48`
+- Tests added/changed: `299`
+- Source files under `src/`: `0`
+- Scripts added/changed: `21`
+- Root Markdown introduced: `0`
+- Likely purpose: Multi-asset architecture sweep and product review docs.
+- Useful unique functionality: Potentially useful unique docs/tests; no `src/` runtime additions were found.
+- Duplicate functionality found: Heavy overlap with the current merged mainline and older scheduler-era ownership.
+- Obsolete functionality found: Legacy root scheduler/runtime layout and pre-modernization audit scaffolding.
+- Conflict risk: medium
+- Security risk: medium
+- Architecture compatibility: `Not compatible for wholesale merge; requires selective extraction only.`
+- Violates current `src/docs/tests/scripts` ownership: `Yes, via legacy root runtime and old repository-layout assumptions.`
+- Introduces root markdown: `No`
+- Duplicates existing governance: `Yes`
+- Changes runtime behavior: `Unknown from branch-level audit; not safe to merge wholesale.`
+- Depends on paid/private/external data: `maybe`
+- Supports free/open-source data goals: `no`
+- Recommended action: `HOLD FOR MANUAL REVIEW`
+- Reason: The branch contains unique historical work, but the current analysis only proves overlap and risk, not a safe extraction boundary.
+- Validation required: `Manual file-by-file diff review against main; extract only after proving a safe, non-duplicative boundary.`
+
+## provider-selection-replay-quality-validation
+- Latest commit: `2516ad1`
+- Latest commit date: `2026-06-06 01:18:47 -0400`
+- Commit count unique to branch vs main: `24`
+- Commit count unique to main vs branch: `391`
+- File changes unique to branch vs main: `775` files, `0` deleted
+- Docs added/changed: `28`
+- Tests added/changed: `284`
+- Source files under `src/`: `0`
+- Scripts added/changed: `20`
+- Root Markdown introduced: `0`
+- Likely purpose: Provider selection replay and replay-quality validation.
+- Useful unique functionality: Potentially useful provider-selection and replay-quality validation ideas.
+- Duplicate functionality found: Heavy overlap with the current merged mainline and older scheduler-era ownership.
+- Obsolete functionality found: Legacy root scheduler/runtime layout and pre-modernization audit scaffolding.
+- Conflict risk: medium
+- Security risk: medium
+- Architecture compatibility: `Not compatible for wholesale merge; requires selective extraction only.`
+- Violates current `src/docs/tests/scripts` ownership: `Yes, via legacy root runtime and old repository-layout assumptions.`
+- Introduces root markdown: `No`
+- Duplicates existing governance: `Yes`
+- Changes runtime behavior: `Unknown from branch-level audit; not safe to merge wholesale.`
+- Depends on paid/private/external data: `maybe`
+- Supports free/open-source data goals: `no`
+- Recommended action: `HOLD FOR MANUAL REVIEW`
+- Reason: The branch contains unique historical work, but the current analysis only proves overlap and risk, not a safe extraction boundary.
+- Validation required: `Manual file-by-file diff review against main; extract only after proving a safe, non-duplicative boundary.`
+
+## regression-quantitative-modeling-layer
+- Latest commit: `da43f38`
+- Latest commit date: `2026-06-06 16:11:50 -0400`
+- Commit count unique to branch vs main: `32`
+- Commit count unique to main vs branch: `391`
+- File changes unique to branch vs main: `1315` files, `0` deleted
+- Docs added/changed: `74`
+- Tests added/changed: `407`
+- Source files under `src/`: `0`
+- Scripts added/changed: `57`
+- Root Markdown introduced: `0`
+- Likely purpose: Regression modeling-layer architecture and validation scaffolding.
+- Useful unique functionality: Potentially useful unique docs/tests; no `src/` runtime additions were found.
+- Duplicate functionality found: Heavy overlap with the current merged mainline and older scheduler-era ownership.
+- Obsolete functionality found: Legacy root scheduler/runtime layout and pre-modernization audit scaffolding.
+- Conflict risk: medium
+- Security risk: medium
+- Architecture compatibility: `Not compatible for wholesale merge; requires selective extraction only.`
+- Violates current `src/docs/tests/scripts` ownership: `Yes, via legacy root runtime and old repository-layout assumptions.`
+- Introduces root markdown: `No`
+- Duplicates existing governance: `Yes`
+- Changes runtime behavior: `Unknown from branch-level audit; not safe to merge wholesale.`
+- Depends on paid/private/external data: `maybe`
+- Supports free/open-source data goals: `no`
+- Recommended action: `HOLD FOR MANUAL REVIEW`
+- Reason: The branch contains unique historical work, but the current analysis only proves overlap and risk, not a safe extraction boundary.
+- Validation required: `Manual file-by-file diff review against main; extract only after proving a safe, non-duplicative boundary.`
+
+## repo-cleanliness-commit-discipline-enforcement-fix
+- Latest commit: `0fbe016`
+- Latest commit date: `2026-06-06 16:26:43 -0400`
+- Commit count unique to branch vs main: `33`
+- Commit count unique to main vs branch: `391`
+- File changes unique to branch vs main: `1333` files, `0` deleted
+- Docs added/changed: `76`
+- Tests added/changed: `412`
+- Source files under `src/`: `0`
+- Scripts added/changed: `60`
+- Root Markdown introduced: `0`
+- Likely purpose: Repository cleanliness and commit-discipline governance.
+- Useful unique functionality: Potentially useful repository-governance discipline notes and enforcement patterns.
+- Duplicate functionality found: Heavy overlap with the current merged mainline and older scheduler-era ownership.
+- Obsolete functionality found: Legacy root scheduler/runtime layout and pre-modernization audit scaffolding.
+- Conflict risk: medium
+- Security risk: medium
+- Architecture compatibility: `Not compatible for wholesale merge; requires selective extraction only.`
+- Violates current `src/docs/tests/scripts` ownership: `Yes, via legacy root runtime and old repository-layout assumptions.`
+- Introduces root markdown: `No`
+- Duplicates existing governance: `Yes`
+- Changes runtime behavior: `Unknown from branch-level audit; not safe to merge wholesale.`
+- Depends on paid/private/external data: `maybe`
+- Supports free/open-source data goals: `no`
+- Recommended action: `HOLD FOR MANUAL REVIEW`
+- Reason: The branch contains unique historical work, but the current analysis only proves overlap and risk, not a safe extraction boundary.
+- Validation required: `Manual file-by-file diff review against main; extract only after proving a safe, non-duplicative boundary.`
+
+## source-access-execution-plan-master-ledger
+- Latest commit: `4eef0f7`
+- Latest commit date: `2026-06-06 16:46:47 -0400`
+- Commit count unique to branch vs main: `35`
+- Commit count unique to main vs branch: `391`
+- File changes unique to branch vs main: `1380` files, `0` deleted
+- Docs added/changed: `84`
+- Tests added/changed: `424`
+- Source files under `src/`: `0`
+- Scripts added/changed: `61`
+- Root Markdown introduced: `0`
+- Likely purpose: Source-access execution plan and master ledger.
+- Useful unique functionality: Potentially useful unique docs/tests; no `src/` runtime additions were found.
+- Duplicate functionality found: Heavy overlap with the current merged mainline and older scheduler-era ownership.
+- Obsolete functionality found: Legacy root scheduler/runtime layout and pre-modernization audit scaffolding.
+- Conflict risk: medium
+- Security risk: medium
+- Architecture compatibility: `Not compatible for wholesale merge; requires selective extraction only.`
+- Violates current `src/docs/tests/scripts` ownership: `Yes, via legacy root runtime and old repository-layout assumptions.`
+- Introduces root markdown: `No`
+- Duplicates existing governance: `Yes`
+- Changes runtime behavior: `Unknown from branch-level audit; not safe to merge wholesale.`
+- Depends on paid/private/external data: `maybe`
+- Supports free/open-source data goals: `no`
+- Recommended action: `HOLD FOR MANUAL REVIEW`
+- Reason: The branch contains unique historical work, but the current analysis only proves overlap and risk, not a safe extraction boundary.
+- Validation required: `Manual file-by-file diff review against main; extract only after proving a safe, non-duplicative boundary.`
+
+## system-canonical-ownership-audit
+- Latest commit: `707702a`
+- Latest commit date: `2026-06-06 12:01:38 -0400`
+- Commit count unique to branch vs main: `26`
+- Commit count unique to main vs branch: `391`
+- File changes unique to branch vs main: `966` files, `0` deleted
+- Docs added/changed: `54`
+- Tests added/changed: `332`
+- Source files under `src/`: `0`
+- Scripts added/changed: `51`
+- Root Markdown introduced: `0`
+- Likely purpose: Canonical ownership audit and reconciliation.
+- Useful unique functionality: Potentially useful unique docs/tests; no `src/` runtime additions were found.
+- Duplicate functionality found: Heavy overlap with the current merged mainline and older scheduler-era ownership.
+- Obsolete functionality found: Legacy root scheduler/runtime layout and pre-modernization audit scaffolding.
+- Conflict risk: medium
+- Security risk: medium
+- Architecture compatibility: `Not compatible for wholesale merge; requires selective extraction only.`
+- Violates current `src/docs/tests/scripts` ownership: `Yes, via legacy root runtime and old repository-layout assumptions.`
+- Introduces root markdown: `No`
+- Duplicates existing governance: `Yes`
+- Changes runtime behavior: `Unknown from branch-level audit; not safe to merge wholesale.`
+- Depends on paid/private/external data: `maybe`
+- Supports free/open-source data goals: `no`
+- Recommended action: `HOLD FOR MANUAL REVIEW`
+- Reason: The branch contains unique historical work, but the current analysis only proves overlap and risk, not a safe extraction boundary.
+- Validation required: `Manual file-by-file diff review against main; extract only after proving a safe, non-duplicative boundary.`
+
