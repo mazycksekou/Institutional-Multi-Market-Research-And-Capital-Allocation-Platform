@@ -3,7 +3,7 @@
 ## Current State
 
 - Current integration branch: `main`
-- Current merged main commit: `1666f2759ad18330537de513673818479025b938`
+- Current merged main branch: `main`
 - Modernization source branch: `phase-6-api-slimming` (merged into `main` and deleted locally/remotely)
 - Remote branches discovered in the current fetch: `2` (`origin/HEAD -> origin/main`, `origin/main`)
 - Older stale-but-unique remote branches audited in this pass: `13`
