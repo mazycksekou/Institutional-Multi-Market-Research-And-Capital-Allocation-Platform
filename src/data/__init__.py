@@ -44,6 +44,15 @@ from .validation import (
     validate_dataset_rows,
     validate_local_source_descriptor,
 )
+from .market_profile_contracts import MarketProfileContract, build_market_profile_contract, validate_market_profile_contract
+from .market_profile_registry import (
+    DEFAULT_MARKET_PROFILE_REGISTRY,
+    MarketProfileRegistry,
+    get_market_profile,
+    list_market_profiles,
+    register_market_profile,
+    reset_market_profile_registry,
+)
 
 __all__ = [
     "DataSourceDescriptor",
@@ -61,6 +70,9 @@ __all__ = [
     "DEFAULT_LOCAL_PLATFORM_UPDATE_FREQUENCY",
     "LocalSourceRegistry",
     "DEFAULT_LOCAL_SOURCE_REGISTRY",
+    "MarketProfileContract",
+    "MarketProfileRegistry",
+    "DEFAULT_MARKET_PROFILE_REGISTRY",
     "create_dataset_metadata",
     "describe_dataset_metadata",
     "DatasetContract",
@@ -71,15 +83,21 @@ __all__ = [
     "build_local_platform_dashboard_snapshot",
     "build_synthetic_local_dataset",
     "get_local_source",
+    "get_market_profile",
     "list_local_sources",
+    "list_market_profiles",
     "load_local_dataset",
     "load_rows_from_source",
     "normalize_dataset_rows",
     "register_local_source",
+    "register_market_profile",
     "reset_local_source_registry",
+    "reset_market_profile_registry",
     "create_local_platform",
     "validate_dataset_metadata",
     "validate_dataset_rows",
     "validate_local_source_descriptor",
+    "build_market_profile_contract",
+    "validate_market_profile_contract",
     "validate_rows_against_contract",
 ]

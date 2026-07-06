@@ -61,6 +61,17 @@ from .sports import (
     safe_flags,
 )
 from .targets import build_market_targets, build_targets
+from .market_profiles import (
+    DEFAULT_MARKET_PROFILE_CATALOG,
+    NFL_AS_SPORTS_PROFILE_INSTANCE,
+    OPTIONS_0DTE_PROFILE,
+    PREDICTION_MARKET_PROFILE,
+    SPORTS_PROFILE,
+    build_market_profile_catalog,
+    get_market_profile_catalog_entry,
+    register_default_market_profiles,
+    validate_market_profile_catalog,
+)
 
 __all__ = [
     "STANDARD_REPORT_FIELDS",
@@ -122,4 +133,13 @@ __all__ = [
     "route_cross_asset_embedding",
     "FEATURE_VECTOR_VERSION",
     "build_impact_report",
+    "DEFAULT_MARKET_PROFILE_CATALOG",
+    "NFL_AS_SPORTS_PROFILE_INSTANCE",
+    "OPTIONS_0DTE_PROFILE",
+    "PREDICTION_MARKET_PROFILE",
+    "SPORTS_PROFILE",
+    "build_market_profile_catalog",
+    "get_market_profile_catalog_entry",
+    "register_default_market_profiles",
+    "validate_market_profile_catalog",
 ]

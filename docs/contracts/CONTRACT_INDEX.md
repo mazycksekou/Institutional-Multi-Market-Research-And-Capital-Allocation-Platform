@@ -12,6 +12,11 @@ This index points reviewers and contributors to the active contracts that define
 | Backtest contract | `src.backtesting` | Historical replay and evaluation payloads | Preserve payload shape for compatibility | Documented and tested |
 | Model input contract | `src.market_intelligence` / `src.research` | Inputs consumed by model or analysis runtime | Keep private feature details out of public docs | Documented |
 | Model output contract | `src.analytics` / `src.services` | Public or internal output shape | Keep outputs stable across consumers | Documented |
+| Market profile contract | `src.data` / `src.market_intelligence` | Canonical profile shape for each reusable market family | Keep profiles reusable and point-in-time aware | Documented and tested |
+| Sports market profile | `src.market_intelligence` | Reusable sports-family contract | NFL is the first sports instance, not a separate architecture | Documented |
+| Prediction market profile | `src.market_intelligence` | Reusable prediction-market contract | Preserve settlement and order book semantics | Documented |
+| Options / 0DTE market profile | `src.market_intelligence` | Reusable short-dated options contract | Preserve expiry-aware and chain-aware behavior | Documented |
+| NFL sports profile instance | `src.market_intelligence` | NFL configuration of the sports profile family | Keep NFL inside the sports architecture | Documented |
 | Provider field matrix | `src.providers` / `src.data` | Which provider can supply each field | No single provider is assumed for all fields | Documented |
 | Sport-specific field contracts | `src.market_intelligence` | Sport-by-sport required and optional fields | Do not invent sports or merge different sports | Documented |
 | Streamlit contract | `src.services` | Dashboard presentation and adapter expectations | Keep presentation separate from storage | Documented |

@@ -2,9 +2,9 @@
 
 This register classifies every tracked document under `docs/` so the repository can keep durable knowledge, archive historical evidence, and identify temporary work products that should eventually be consolidated or deleted.
 
-- scanned_files: 1099
-- working: 33
-- active: 102
+- scanned_files: 1108
+- working: 36
+- active: 108
 - decision_captured: 14
 - consolidated: 6
 - archived: 944
@@ -38,6 +38,7 @@ This register classifies every tracked document under `docs/` so the repository 
 | docs/architecture/DOCUMENTATION_MAP.md | Documentation Map | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/architecture/FEATURE_STORE_ARCHITECTURE.md | Feature Store Architecture | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/architecture/FINAL_REPOSITORY_STRUCTURE.md | Final Repository Structure | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/architecture/DOCUMENTATION_MAP.md | Current authoritative documentation | KEEP ACTIVE |
+| docs/architecture/MARKET_PROFILE_FRAMEWORK.md | Market Profile Framework | ARCHITECTURE DOCUMENT | ACTIVE | docs/architecture/DOCUMENTATION_MAP.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/architecture/MARKET_VERTICAL_LIFECYCLE.md | Market Vertical Lifecycle | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/architecture/MASTER_SYSTEM_ARCHITECTURE.md | Master System Architecture | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/architecture/REPOSITORY_INDEPENDENCE_SCORECARD.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/architecture/MODEL_FLOW_MAP.md | Model Flow Map | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
@@ -1025,7 +1026,9 @@ This register classifies every tracked document under `docs/` so the repository 
 | docs/contracts/DATASET_REGISTRY.md | Dataset Registry | CONTRACT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/contracts/FEATURE_SNAPSHOT_CONTRACT.md | Feature Snapshot Contract | CONTRACT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/contracts/IMPORT_INTERFACE_SPECIFICATION.md | Import Interface Specification | CONTRACT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
+| docs/contracts/MARKET_PROFILE_CONTRACT.md | Market Profile Contract | CONTRACT | ACTIVE | unreferenced | Current authoritative documentation | KEEP ACTIVE |
 | docs/contracts/MODEL_VERSION_CONTRACT.md | Model Version Contract | CONTRACT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
+| docs/contracts/NFL_AS_SPORTS_PROFILE_INSTANCE.md | NFL as a Sports Profile Instance | CONTRACT | ACTIVE | unreferenced | Current authoritative documentation | KEEP ACTIVE |
 | docs/contracts/NFL_ATOMIC_FEATURE_CONTRACT.md | NFL Atomic Feature Contract | CONTRACT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/discovery/NFL_REPOSITORY_DISCOVERY.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/contracts/NFL_BACKTEST_CONTRACT.md | NFL Backtest Contract | CONTRACT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/discovery/NFL_CAPABILITY_MATRIX.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/contracts/NFL_CANONICAL_DATA_CONTRACT.md | NFL Canonical Data Contract | CONTRACT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/discovery/NFL_REPOSITORY_DISCOVERY.md | Current authoritative documentation | KEEP ACTIVE |
@@ -1034,9 +1037,12 @@ This register classifies every tracked document under `docs/` so the repository 
 | docs/contracts/NFL_POSITION_GROUP_FEATURE_CONTRACT.md | NFL Position Group Feature Contract | CONTRACT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/discovery/NFL_REPOSITORY_DISCOVERY.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/contracts/NFL_PROVIDER_CONTRACT.md | NFL Provider Contract | CONTRACT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/discovery/NFL_REPOSITORY_DISCOVERY.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/contracts/NFL_STREAMLIT_CONTRACT.md | NFL Streamlit Contract | CONTRACT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/discovery/NFL_REPOSITORY_DISCOVERY.md | Current authoritative documentation | KEEP ACTIVE |
+| docs/contracts/OPTIONS_0DTE_MARKET_PROFILE.md | Options / 0DTE Market Profile | CONTRACT | ACTIVE | unreferenced | Current authoritative documentation | KEEP ACTIVE |
+| docs/contracts/PREDICTION_MARKET_PROFILE.md | Prediction Market Profile | CONTRACT | ACTIVE | unreferenced | Current authoritative documentation | KEEP ACTIVE |
 | docs/contracts/PROVIDER_ADAPTER_CONTRACTS_V1.md | Provider Adapter Contracts v1 | CONTRACT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/contracts/SPORT_SPECIFIC_FIELD_CONTRACTS.md | Sport Specific Field Contracts | CONTRACT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/contracts/SPORT_STREAMLIT_DISPLAY_CONTRACT.md | Sport Streamlit Display Contract | CONTRACT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
+| docs/contracts/SPORTS_MARKET_PROFILE.md | Sports Market Profile | CONTRACT | ACTIVE | unreferenced | Current authoritative documentation | KEEP ACTIVE |
 | docs/contracts/VALIDATION_FRAMEWORK.md | Validation Framework | CONTRACT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/contracts/VERSIONING_STRATEGY.md | Versioning Strategy | CONTRACT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/development/BRANCH_GOVERNANCE_POLICY.md | Branch Governance Policy | STANDARD | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
@@ -1085,6 +1091,7 @@ This register classifies every tracked document under `docs/` so the repository 
 | docs/reports/inventories/orphan_dead_code_inventory.json | Orphan Dead Code Inventory | INVENTORY | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/inventories/PHASE1_LEGACY_INVENTORY.md | PHASE 1 Legacy Inventory | INVENTORY | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/inventories/VALIDATION_SCRIPT_INVENTORY.md | Validation Script Inventory | INVENTORY | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
+| docs/reports/MARKET_PROFILE_IMPLEMENTATION_PLAN.md | Market Profile Implementation Plan | DOCUMENT | WORKING | unreferenced | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/matrices/ASSET_CLASS_CAPABILITY_MATRIX.md | Asset Class Capability Matrix | MATRIX | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/reports/matrices/GOVERNANCE_COVERAGE_MATRIX.md | Governance Coverage Matrix | MATRIX | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/reports/matrices/IMPLEMENTATION_MATURITY_MATRIX.md | Implementation Maturity Matrix | MATRIX | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/discovery/NFL_REPOSITORY_DISCOVERY.md | Current authoritative documentation | KEEP ACTIVE |
@@ -1108,6 +1115,8 @@ This register classifies every tracked document under `docs/` so the repository 
 | docs/reports/NFL_STREAMLIT_REPORTING_BLUEPRINT.md | NFL Streamlit Reporting Blueprint | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/NFL_VERTICAL_SLICE_RECOMMENDATION.md | NFL Vertical Slice Recommendation | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; docs/discovery/NFL_REPOSITORY_DISCOVERY.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/NFL_WORLDVIEW_READINESS.md | NFL Worldview Readiness | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
+| docs/reports/PHASE4_2_5_ENGINEERING_REVIEW.md | Phase 4.2.5 Engineering Review | DOCUMENT | WORKING | unreferenced | Temporary work product or active discovery artifact | KEEP ACTIVE |
+| docs/reports/PHASE4_2_5_WORLDVIEW_REVIEW.md | Phase 4.2.5 Worldview Review | DOCUMENT | WORKING | unreferenced | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/proofs/ARCHITECTURE_GATE_PROOF.md | Architecture Gate Proof | PROOF | DECISION CAPTURED | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/reports/audits/AUDIT_RETENTION_REGISTER.md | Decision captured elsewhere; retained as evidence | ARCHIVE |
 | docs/reports/proofs/GITIGNORE_SOURCE_SAFETY_PROOF.md | `.gitignore` Source Safety Proof | PROOF | DECISION CAPTURED | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/reports/audits/AUDIT_RETENTION_REGISTER.md | Decision captured elsewhere; retained as evidence | ARCHIVE |
 | docs/reports/proofs/OPENAPI_VALIDATION_PROOF.md | OpenAPI Validation Proof | PROOF | DECISION CAPTURED | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/reports/audits/AUDIT_RETENTION_REGISTER.md | Decision captured elsewhere; retained as evidence | ARCHIVE |

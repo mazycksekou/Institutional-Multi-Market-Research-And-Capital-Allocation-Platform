@@ -21,6 +21,7 @@ This index points readers to the current truth and the durable historical entry 
 - `docs/architecture/DOCUMENT_LIFECYCLE_POLICY.md` - Document Lifecycle Policy
 - `docs/architecture/FEATURE_STORE_ARCHITECTURE.md` - Feature Store Architecture
 - `docs/architecture/FINAL_REPOSITORY_STRUCTURE.md` - Final Repository Structure
+- `docs/architecture/MARKET_PROFILE_FRAMEWORK.md` - Market Profile Framework
 - `docs/architecture/MARKET_VERTICAL_LIFECYCLE.md` - Market Vertical Lifecycle
 - `docs/architecture/MASTER_SYSTEM_ARCHITECTURE.md` - Master System Architecture
 - `docs/architecture/MODEL_FLOW_MAP.md` - Model Flow Map
@@ -71,7 +72,9 @@ This index points readers to the current truth and the durable historical entry 
 - `docs/contracts/DATA_LINEAGE_CONTRACT.md` - Data Lineage Contract
 - `docs/contracts/FEATURE_SNAPSHOT_CONTRACT.md` - Feature Snapshot Contract
 - `docs/contracts/IMPORT_INTERFACE_SPECIFICATION.md` - Import Interface Specification
+- `docs/contracts/MARKET_PROFILE_CONTRACT.md` - Market Profile Contract
 - `docs/contracts/MODEL_VERSION_CONTRACT.md` - Model Version Contract
+- `docs/contracts/NFL_AS_SPORTS_PROFILE_INSTANCE.md` - NFL as a Sports Profile Instance
 - `docs/contracts/NFL_ATOMIC_FEATURE_CONTRACT.md` - NFL Atomic Feature Contract
 - `docs/contracts/NFL_BACKTEST_CONTRACT.md` - NFL Backtest Contract
 - `docs/contracts/NFL_CANONICAL_DATA_CONTRACT.md` - NFL Canonical Data Contract
@@ -80,7 +83,10 @@ This index points readers to the current truth and the durable historical entry 
 - `docs/contracts/NFL_POSITION_GROUP_FEATURE_CONTRACT.md` - NFL Position Group Feature Contract
 - `docs/contracts/NFL_PROVIDER_CONTRACT.md` - NFL Provider Contract
 - `docs/contracts/NFL_STREAMLIT_CONTRACT.md` - NFL Streamlit Contract
+- `docs/contracts/OPTIONS_0DTE_MARKET_PROFILE.md` - Options / 0DTE Market Profile
+- `docs/contracts/PREDICTION_MARKET_PROFILE.md` - Prediction Market Profile
 - `docs/contracts/PROVIDER_ADAPTER_CONTRACTS_V1.md` - Provider Adapter Contracts v1
+- `docs/contracts/SPORTS_MARKET_PROFILE.md` - Sports Market Profile
 - `docs/contracts/SPORT_SPECIFIC_FIELD_CONTRACTS.md` - Sport Specific Field Contracts
 - `docs/contracts/SPORT_STREAMLIT_DISPLAY_CONTRACT.md` - Sport Streamlit Display Contract
 - `docs/contracts/VALIDATION_FRAMEWORK.md` - Validation Framework

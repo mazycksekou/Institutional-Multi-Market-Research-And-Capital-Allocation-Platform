@@ -25,4 +25,5 @@
 - `docs/architecture/CANONICAL_OWNERSHIP_MAP.md`
 - `docs/architecture/DEPENDENCY_FLOW_MAP.md`
 - `docs/architecture/TERMINOLOGY_STANDARD.md`
+- `docs/architecture/MARKET_PROFILE_FRAMEWORK.md`
 - `docs/architecture/OPENAPI_CONTRACT_GOVERNANCE.md`
