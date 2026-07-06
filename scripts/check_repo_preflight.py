@@ -9,7 +9,7 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[1]
-ACCEPTED_BRANCHES = {"phase-6-api-slimming", "main"}
+ACCEPTED_BRANCHES = {"phase-6-api-slimming", "feature/nfl-backtesting", "main"}
 ALLOWED_MODES = {"start-task", "end-task", "before-commit", "before-push"}
 
 if str(ROOT) not in sys.path:

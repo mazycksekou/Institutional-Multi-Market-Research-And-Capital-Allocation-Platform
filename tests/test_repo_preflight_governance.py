@@ -63,6 +63,21 @@ class TestRepoPreflightGovernance(unittest.TestCase):
         self.assertEqual(report["branch"], "main")
         self.assertEqual(report["upstream"], "origin/main")
 
+    def test_clean_state_report_accepts_feature_nfl_branch(self) -> None:
+        with (
+            patch.object(preflight, "_git_state", return_value=_clean_git_state(branch="feature/nfl-backtesting")),
+            patch.object(preflight, "_check_root_markdown", return_value={"status": "ok", "offenders": []}),
+            patch.object(preflight, "_check_openapi", return_value={"ok": True, "errors": []}),
+            patch.object(preflight, "_check_architecture", return_value={"root_markdown_offenders": [], "ignored_source_files": [], "legacy_import_issues": []}),
+            patch.object(preflight, "_check_audit_lifecycle", return_value={"clear_violations": []}),
+            patch.object(preflight, "_check_document_lifecycle", return_value={"clear_violations": []}),
+        ):
+            report = preflight.collect_repo_preflight_report(ROOT, mode="start-task", include_ops=False)
+
+        self.assertTrue(report["ok"])
+        self.assertEqual(report["branch"], "feature/nfl-backtesting")
+        self.assertEqual(report["upstream"], "origin/feature/nfl-backtesting")
+
     def test_dirty_state_is_reported_as_clear_violation(self) -> None:
         dirty_state = _clean_git_state()
         dirty_state["modified_files"] = ["docs/architecture/MASTER_SYSTEM_ARCHITECTURE.md"]
