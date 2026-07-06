@@ -4,8 +4,8 @@
 
 - Current integration branch: `main`
 - Current merged main commit: `831f3405c45ae7d5d5ca0b91c93d6231703c13a0`
-- Modernization source branch: `phase-6-api-slimming` (merged locally into `main`, pending upstream push and branch cleanup)
-- Remote branches discovered in the current fetch: `15`
+- Modernization source branch: `phase-6-api-slimming` (merged into `main` and deleted locally/remotely)
+- Remote branches discovered in the current fetch: `14`
 - Older stale-but-unique remote branches audited in this pass: `13`
 
 ## Real Flow
@@ -20,7 +20,6 @@
 | Branch | Latest Commit | Date | Unique Commits vs `main` | File Changes | Docs | Tests | Src | Scripts | Risk | Recommended Action |
 | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |
 | `origin/main` | `ab6f41c` | `2026-06-18 14:11:30 -0400` | n/a | n/a | n/a | n/a | n/a | n/a | low | KEEP ACTIVE |
-| `origin/phase-6-api-slimming` | `1d7a856` | `2026-07-05 19:31:34 -0400` | `0` | `0` | `0` | `0` | `0` | `0` | low | DELETE CANDIDATE AFTER PUSH |
 | `origin/final-product-verification-gap-fill-formula-audit` | `f12cd90` | `2026-06-06 13:55:25 -0400` | `28` | `1148` | `68` | `362` | `0` | `55` | `medium` | `HOLD FOR MANUAL REVIEW` |
 | `origin/free-open-normalized-loaders` | `efd7b65` | `2026-06-06 17:17:32 -0400` | `37` | `1414` | `86` | `433` | `0` | `61` | `medium` | `HOLD FOR MANUAL REVIEW` |
 | `origin/live-arbitrage-edge-standard` | `eefde5b` | `2026-06-05 22:52:53 -0400` | `22` | `700` | `23` | `266` | `0` | `19` | `high` | `HOLD FOR MANUAL REVIEW` |
