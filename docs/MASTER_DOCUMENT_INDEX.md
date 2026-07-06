@@ -5,6 +5,7 @@ This index points readers to the current truth and the durable historical entry 
 ## Current Truth
 
 ### ARCHITECTURE DOCUMENT
+- `docs/MASTER_ROADMAP.md` - Master Roadmap
 - `docs/architecture/ARCHITECTURE_ENFORCEMENT_CURRENT_STATE.md` - Architecture Enforcement Current State
 - `docs/architecture/ARCHITECTURE_IMPORT_RULES.md` - Architecture Import Rules
 - `docs/architecture/ARCHITECTURE_RULES.md` - Architecture Rules
@@ -20,6 +21,7 @@ This index points readers to the current truth and the durable historical entry 
 - `docs/architecture/DOCUMENT_LIFECYCLE_POLICY.md` - Document Lifecycle Policy
 - `docs/architecture/FEATURE_STORE_ARCHITECTURE.md` - Feature Store Architecture
 - `docs/architecture/FINAL_REPOSITORY_STRUCTURE.md` - Final Repository Structure
+- `docs/architecture/MARKET_VERTICAL_LIFECYCLE.md` - Market Vertical Lifecycle
 - `docs/architecture/MASTER_SYSTEM_ARCHITECTURE.md` - Master System Architecture
 - `docs/architecture/MODEL_FLOW_MAP.md` - Model Flow Map
 - `docs/architecture/MODEL_REGISTRY_ARCHITECTURE.md` - Model Registry Architecture
@@ -27,8 +29,8 @@ This index points readers to the current truth and the durable historical entry 
 - `docs/architecture/OPENAPI_CONTRACT_GOVERNANCE.md` - OpenAPI Contract Governance
 - `docs/architecture/PRODUCTION_READINESS.md` - Production Readiness
 - `docs/architecture/PROVIDER_OWNERSHIP_MAP.md` - Provider Ownership Map
-- `docs/architecture/REPOSITORY_MODERNIZATION_COMPLETE_V1.md` - Repository Modernization Complete V1
 - `docs/architecture/REPOSITORY_INDEPENDENCE_SCORECARD.md` - Repository Independence Scorecard
+- `docs/architecture/REPOSITORY_MODERNIZATION_COMPLETE_V1.md` - Repository Modernization Complete V1
 - `docs/architecture/RESEARCH_PLATFORM_ARCHITECTURE.md` - Research Platform Architecture
 - `docs/architecture/REVIEWER_GUIDE.md` - Reviewer Guide
 - `docs/architecture/RUNTIME_FLOW_MAP.md` - Runtime Flow Map
@@ -70,6 +72,14 @@ This index points readers to the current truth and the durable historical entry 
 - `docs/contracts/FEATURE_SNAPSHOT_CONTRACT.md` - Feature Snapshot Contract
 - `docs/contracts/IMPORT_INTERFACE_SPECIFICATION.md` - Import Interface Specification
 - `docs/contracts/MODEL_VERSION_CONTRACT.md` - Model Version Contract
+- `docs/contracts/NFL_ATOMIC_FEATURE_CONTRACT.md` - NFL Atomic Feature Contract
+- `docs/contracts/NFL_BACKTEST_CONTRACT.md` - NFL Backtest Contract
+- `docs/contracts/NFL_CANONICAL_DATA_CONTRACT.md` - NFL Canonical Data Contract
+- `docs/contracts/NFL_COMPOSITE_FEATURE_CONTRACT.md` - NFL Composite Feature Contract
+- `docs/contracts/NFL_FEATURE_STORE_CONTRACT.md` - NFL Feature Store Contract
+- `docs/contracts/NFL_POSITION_GROUP_FEATURE_CONTRACT.md` - NFL Position Group Feature Contract
+- `docs/contracts/NFL_PROVIDER_CONTRACT.md` - NFL Provider Contract
+- `docs/contracts/NFL_STREAMLIT_CONTRACT.md` - NFL Streamlit Contract
 - `docs/contracts/PROVIDER_ADAPTER_CONTRACTS_V1.md` - Provider Adapter Contracts v1
 - `docs/contracts/SPORT_SPECIFIC_FIELD_CONTRACTS.md` - Sport Specific Field Contracts
 - `docs/contracts/SPORT_STREAMLIT_DISPLAY_CONTRACT.md` - Sport Streamlit Display Contract
@@ -90,27 +100,10 @@ This index points readers to the current truth and the durable historical entry 
 
 ### DISCOVERY REPORT
 - `docs/discovery/COMPLETE_DATA_PLATFORM_DISCOVERY.md` - Complete Data Platform Discovery
-- `docs/discovery/NFL_REPOSITORY_DISCOVERY.md` - NFL Repository Discovery
-
-### INVENTORY
-- `docs/discovery/NFL_FEATURE_INVENTORY.md` - NFL Feature Inventory
-- `docs/discovery/NFL_METRIC_INVENTORY.md` - NFL Metric Inventory
-- `docs/discovery/NFL_PROVIDER_INVENTORY.md` - NFL Provider Inventory
-- `docs/discovery/NFL_POSITION_GROUP_FEATURE_INVENTORY.md` - NFL Position Group Feature Inventory
-
-### MATRIX
-- `docs/discovery/NFL_CAPABILITY_MATRIX.md` - NFL Capability Matrix
 
 ### GAP ANALYSIS
 - `docs/reports/gap_analysis/COMPLETE_GAP_ANALYSIS.md` - Complete Gap Analysis
 - `docs/reports/gap_analysis/IMPLEMENTATION_READINESS_REPORT.md` - Implementation Readiness Report
-- `docs/reports/NFL_GAP_ANALYSIS.md` - NFL Gap Analysis
-- `docs/reports/NFL_VERTICAL_SLICE_RECOMMENDATION.md` - NFL Vertical Slice Recommendation
-
-### INVENTORY
-- `docs/reports/inventories/BRANCH_INVENTORY_AND_MERGE_READINESS.md` - Branch Inventory And Merge Readiness
-- `docs/reports/inventories/FINAL_REMOTE_BRANCH_CLEANUP_REPORT.md` - Final Remote Branch Cleanup Report
-- `docs/reports/inventories/OLD_BRANCH_CONTENT_DOSSIER.md` - Old Branch Content Dossier
 
 ### INDEX
 - `docs/DOCUMENT_RETENTION_INDEX.md` - Document Retention Index
@@ -212,12 +205,3 @@ _Additional historical entries are listed in `C:/Users/user/betting-stock-api-co
 - Use the contract index for current schema and API truth.
 - Use the retention index to understand lifecycle state and archive policy.
 - Use archived milestones and historical reports only when tracing how a decision was made.
-
-## Local Git Cleanup Artifacts
-- `docs/reports/git/LOCAL_CLEANUP_INVENTORY.md` - Local Cleanup Inventory
-- `docs/reports/git/DIRTY_WORKTREE_BACKUP_REPORT.md` - Dirty Worktree Backup Report
-- `docs/reports/git/PRESERVED_BRANCH_PATCH_REPORT.md` - Preserved Branch Patch Report
-- `docs/reports/git/PRESERVED_BRANCHES.md` - Preserved Branches
-- `docs/reports/git/WORKTREE_REMOVAL_REPORT.md` - Worktree Removal Report
-- `docs/reports/git/LOCAL_BRANCH_DELETION_REPORT.md` - Local Branch Deletion Report
-- Historical backup artifact trees under `docs/reports/git/dirty_worktree_backups/` and `docs/reports/git/preserved_branch_patches/` were removed in the cleanup pass and are intentionally not retained.

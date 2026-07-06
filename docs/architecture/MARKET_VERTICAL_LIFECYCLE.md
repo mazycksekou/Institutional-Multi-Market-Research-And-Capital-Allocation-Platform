@@ -1,0 +1,59 @@
+# Market Vertical Lifecycle
+
+This document is the canonical lifecycle contract for every market vertical in the repository.
+It complements `docs/MASTER_ROADMAP.md` and makes the lifecycle easier to apply consistently in implementation planning.
+
+## Canonical Sequence
+
+1. Discovery
+2. Research Blueprint
+3. Data Sources
+4. Canonical Storage
+5. Feature Engineering
+6. Historical Dataset
+7. Backtesting
+8. Walk-Forward Validation
+9. Paper Trading
+10. Controlled Live Deployment
+
+## Lifecycle Principles
+
+- The same lifecycle applies to NFL, NBA, MLB, NHL, soccer, tennis, MMA, prediction markets, stocks, ETFs, options, crypto, futures, macro, and future markets.
+- Discovery comes before implementation.
+- Blueprinting comes before ingestion.
+- Data validation comes before feature engineering.
+- Historical datasets come before backtests.
+- Walk-forward validation comes before paper trading promotion.
+- Paper trading comes before live deployment.
+- No market is allowed to jump ahead because the source is familiar or the path feels obvious.
+
+## Required Artifacts by Stage
+
+| Stage | Required output |
+| --- | --- |
+| Discovery | Capability inventories, source inventories, contract inventories, gap analysis |
+| Research Blueprint | Baseline market scope, feature priority matrix, leakage review, source mapping |
+| Data Sources | Source approvals, timing rules, provenance categories |
+| Canonical Storage | Table families, join keys, snapshot rules, lineage rules |
+| Feature Engineering | Feature definitions, point-in-time guards, reuse plan |
+| Historical Dataset | Versioned rows, frozen inputs, settled outcomes |
+| Backtesting | Replayable rows, test harness, result metrics |
+| Walk-Forward Validation | Chronological folds, out-of-sample evaluation |
+| Paper Trading | Simulation controls, no-live-money safeguards |
+| Controlled Live Deployment | Approval gate, observability, rollback plan |
+
+## Worldview Integration Rule
+
+The Worldview Intelligence Layer may only request experiments against a market once the repository can prove:
+
+- the market has a clear data contract,
+- the data is point-in-time safe,
+- the feature lineage is explicit,
+- the backtest evidence is reproducible,
+- and the requested experiment can be evaluated objectively.
+
+## Practical Use
+
+When a new market starts, the first question is not "what model do we train?"
+The first question is "what is the smallest reproducible data slice that supports trustworthy research?"
+

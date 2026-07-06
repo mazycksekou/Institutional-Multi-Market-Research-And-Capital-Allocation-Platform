@@ -19,6 +19,7 @@ MASTER_INDEX_PATH = DOC_ROOT / "MASTER_DOCUMENT_INDEX.md"
 ALLOWED_DOC_ROOT_MARKDOWN = {
     "DOCUMENT_RETENTION_INDEX.md",
     "MASTER_DOCUMENT_INDEX.md",
+    "MASTER_ROADMAP.md",
 }
 SEARCHABLE_TEXT_EXTENSIONS = {
     ".py",
@@ -82,6 +83,8 @@ def _title(path: Path) -> str:
 
 def _category(path: Path) -> str:
     rel = _relative(path)
+    if rel == "docs/MASTER_ROADMAP.md":
+        return "ARCHITECTURE DOCUMENT"
     if rel in {"docs/MASTER_DOCUMENT_INDEX.md", "docs/DOCUMENT_RETENTION_INDEX.md"}:
         return "INDEX"
     if rel.startswith("docs/architecture/adr/"):
@@ -140,6 +143,8 @@ def _knowledge_classification(category: str) -> str:
 def _lifecycle_state(path: Path, category: str) -> str:
     rel = _relative(path)
     name = path.name
+    if rel == "docs/MASTER_ROADMAP.md":
+        return "ACTIVE"
     if rel in {"docs/MASTER_DOCUMENT_INDEX.md", "docs/DOCUMENT_RETENTION_INDEX.md"}:
         return "ACTIVE"
     if rel.startswith("docs/archive/historical_reports/"):

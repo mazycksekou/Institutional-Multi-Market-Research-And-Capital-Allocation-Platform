@@ -23,6 +23,9 @@ class TestDocumentLifecycleGovernance(unittest.TestCase):
         self.assertTrue(report["ok"])
         self.assertEqual(report["clear_violations"], [])
         self.assertEqual(report["root_markdown_offenders"], [])
+        self.assertIn("docs/MASTER_ROADMAP.md", report["register_entries"])
+        self.assertEqual(report["register_entries"]["docs/MASTER_ROADMAP.md"]["category"], "ARCHITECTURE DOCUMENT")
+        self.assertEqual(report["register_entries"]["docs/MASTER_ROADMAP.md"]["lifecycle_state"], "ACTIVE")
         self.assertIn("docs/archive/historical_reports/CONTRACT_CONSISTENCY_REPORT.md", report["register_entries"])
         self.assertEqual(report["register_entries"]["docs/archive/historical_reports/CONTRACT_CONSISTENCY_REPORT.md"]["lifecycle_state"], "ARCHIVED")
         self.assertIn("docs/archive/milestones/REPOSITORY_MODERNIZATION_SUMMARY.md", report["register_entries"])
@@ -45,7 +48,7 @@ class TestDocumentLifecycleGovernance(unittest.TestCase):
         offenders = sorted(
             path.name
             for path in (ROOT / "docs").iterdir()
-            if path.is_file() and path.suffix.lower() == ".md" and path.name not in {"DOCUMENT_RETENTION_INDEX.md", "MASTER_DOCUMENT_INDEX.md"}
+            if path.is_file() and path.suffix.lower() == ".md" and path.name not in {"DOCUMENT_RETENTION_INDEX.md", "MASTER_DOCUMENT_INDEX.md", "MASTER_ROADMAP.md"}
         )
         self.assertEqual(offenders, [])
 

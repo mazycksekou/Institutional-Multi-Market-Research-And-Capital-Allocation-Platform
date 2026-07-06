@@ -17,7 +17,7 @@ DOCS = [
     ROOT / "docs" / "archive" / "historical_reports" / "PHASE1_DELETE_LIST.md",
     ROOT / "docs" / "archive" / "historical_reports" / "PHASE1_IMPORT_GRAPH.md",
 ]
-ALLOWED_BRANCHES = {"phase-6-api-slimming", "main"}
+ALLOWED_BRANCHES = {"feature/nfl-backtesting", "phase-6-api-slimming", "main"}
 
 pytestmark = pytest.mark.smoke
 

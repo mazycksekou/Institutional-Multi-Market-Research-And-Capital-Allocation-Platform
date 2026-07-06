@@ -19,6 +19,7 @@
 
 ## Active Documentation Anchors
 
+- `docs/MASTER_ROADMAP.md`
 - `docs/architecture/FINAL_REPOSITORY_STRUCTURE.md`
 - `docs/architecture/SYSTEM_OVERVIEW.md`
 - `docs/architecture/CANONICAL_OWNERSHIP_MAP.md`
