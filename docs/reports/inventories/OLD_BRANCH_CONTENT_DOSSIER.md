@@ -4,11 +4,18 @@
 
 - 13 older remote branches were audited from the current fetch.
 - None of the 13 older branches adds `src/` runtime files when compared against the merged local `main`.
-- Each branch carries unique commits, but the overlap with current architecture is high and the safe extraction boundary is not proven yet.
-- Recommendation across the set: hold for manual review and selective extraction, not wholesale merge.
-- `phase-6-api-slimming` is separate from this older set and should be deleted only after `main` is pushed and validated upstream.
+- Each branch carried unique commits, but the overlap with current architecture was high and the safe extraction boundary was not proven in this cleanup pass.
+- Final recommendation across the set: reject the branches for wholesale merge, do not extract anything from this pass, and delete the remote branches after retaining this dossier as the audit record.
+- `phase-6-api-slimming` was already merged into `main` and is no longer present on the remote; this dossier covers only the remaining older branches that were later deleted.
 
-## Branch-by-Branch Notes
+## Final Cleanup Outcome
+
+- All 13 audited older remote branches were deleted after review.
+- No branch was held for manual review in the final cleanup state.
+- No useful `src/` runtime work was discovered that justified extraction into `main`.
+- The branch-by-branch notes below remain as the pre-deletion audit snapshot for historical traceability.
+
+## Branch-by-Branch Audit Snapshot
 
 ## final-product-verification-gap-fill-formula-audit
 - Latest commit: `f12cd90`

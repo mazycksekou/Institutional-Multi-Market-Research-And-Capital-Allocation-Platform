@@ -3,17 +3,18 @@
 ## Current State
 
 - Current integration branch: `main`
-- Current merged main commit: `831f3405c45ae7d5d5ca0b91c93d6231703c13a0`
+- Current merged main commit: `1666f2759ad18330537de513673818479025b938`
 - Modernization source branch: `phase-6-api-slimming` (merged into `main` and deleted locally/remotely)
-- Remote branches discovered in the current fetch: `14`
+- Remote branches discovered in the current fetch: `2` (`origin/HEAD -> origin/main`, `origin/main`)
 - Older stale-but-unique remote branches audited in this pass: `13`
+- Older stale branches deleted after audit: `13`
 
 ## Real Flow
 
 1. `main` is now the integration branch for the repository.
-2. `phase-6-api-slimming` has been merged into local `main` and should only be deleted after `main` is pushed and validated upstream.
-3. The 13 older remote branches are stale snapshots with unique commits, but none were proven safe for wholesale merge in this pass.
-4. Current policy is selective extraction only: preserve useful work, reject duplicate legacy runtime surfaces, and do not merge old branch snapshots blindly.
+2. `phase-6-api-slimming` was merged into `main` and then deleted after the merged `main` validated upstream.
+3. The 13 older remote branches were audited, judged non-mergeable for this pass, and deleted from the remote after review.
+4. Current policy is now the normal post-modernization branch discipline: task-focused branches off `main`, short-lived review branches when needed, and deletion only after safe extraction or explicit rejection.
 
 ## Branch Status Summary
 
@@ -36,11 +37,11 @@
 
 ## Recommendation
 
-- Merge `phase-6-api-slimming` into `main` before deleting the source branch.
-- Keep the 13 older branches available until a branch-by-branch manual review or selective extraction plan is approved.
-- Do not delete any of the older branches in this pass; they still require decision capture and/or selective extraction proof.
-- The next clean branch strategy should be: task-focused branches off `main`, short-lived review branches, and deletion only after safe extraction or explicit rejection.
+- `main` is the only live remote branch remaining and is the correct starting point for the next product-development phase.
+- The 13 older remote branches were reviewed and deleted after their content was documented in the inventory dossier.
+- No branch is currently held for manual review.
+- The next clean branch strategy is: task-focused branches off `main`, short-lived review branches only when necessary, and deletion only after safe extraction or explicit rejection.
 
 ## Detailed Dossier
 
-See [OLD_BRANCH_CONTENT_DOSSIER.md](./OLD_BRANCH_CONTENT_DOSSIER.md) for per-branch analysis.
+See [OLD_BRANCH_CONTENT_DOSSIER.md](./OLD_BRANCH_CONTENT_DOSSIER.md) for the pre-deletion audit snapshot and final branch-by-branch decisions.
