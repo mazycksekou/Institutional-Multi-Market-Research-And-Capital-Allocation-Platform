@@ -90,10 +90,22 @@ This index points readers to the current truth and the durable historical entry 
 
 ### DISCOVERY REPORT
 - `docs/discovery/COMPLETE_DATA_PLATFORM_DISCOVERY.md` - Complete Data Platform Discovery
+- `docs/discovery/NFL_REPOSITORY_DISCOVERY.md` - NFL Repository Discovery
+
+### INVENTORY
+- `docs/discovery/NFL_FEATURE_INVENTORY.md` - NFL Feature Inventory
+- `docs/discovery/NFL_METRIC_INVENTORY.md` - NFL Metric Inventory
+- `docs/discovery/NFL_PROVIDER_INVENTORY.md` - NFL Provider Inventory
+- `docs/discovery/NFL_POSITION_GROUP_FEATURE_INVENTORY.md` - NFL Position Group Feature Inventory
+
+### MATRIX
+- `docs/discovery/NFL_CAPABILITY_MATRIX.md` - NFL Capability Matrix
 
 ### GAP ANALYSIS
 - `docs/reports/gap_analysis/COMPLETE_GAP_ANALYSIS.md` - Complete Gap Analysis
 - `docs/reports/gap_analysis/IMPLEMENTATION_READINESS_REPORT.md` - Implementation Readiness Report
+- `docs/reports/NFL_GAP_ANALYSIS.md` - NFL Gap Analysis
+- `docs/reports/NFL_VERTICAL_SLICE_RECOMMENDATION.md` - NFL Vertical Slice Recommendation
 
 ### INVENTORY
 - `docs/reports/inventories/BRANCH_INVENTORY_AND_MERGE_READINESS.md` - Branch Inventory And Merge Readiness
