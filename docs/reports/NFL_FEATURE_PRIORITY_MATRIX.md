@@ -40,6 +40,7 @@ Legend:
 | turnover luck / turnover rate trend | P2 | COMPOSITE_FEATURE | Play-by-play / results | Yes if cutoff before game | Medium | Medium | Optional context | Advanced panel | Future experiment |
 | route participation / target share | DEFER | COMPOSITE_FEATURE | Player tracking / participation | Often not safely available yet | High | High later | Deferred | Deferred | Future experiment |
 | tracking data | DEFER | COMPOSITE_FEATURE | Tracking / paid charting | Usually not available in the current slice | High | High later | Deferred | Deferred | Future experiment |
+| player props inputs | DEFER | COMPOSITE_FEATURE | PAID_OR_DEFERRED / UNKNOWN | Not yet proven data-ready for the baseline slice | High | High later | Deferred | Deferred | Future experiment |
 
 ## Notes
 
@@ -47,4 +48,3 @@ Legend:
 - Composite features should be computed from versioned, point-in-time-safe inputs.
 - Anything that depends on postgame outcomes stays out of the pregame feature set.
 - The first baseline model should prefer stable team/game features over player-level complexity.
-
