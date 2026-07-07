@@ -81,6 +81,7 @@ from src.backtesting.strategy_profiles import (
 )
 from src.data.local_platform import build_local_platform_dashboard_snapshot
 from src.data.nfl_p0_foundation import build_nfl_p0_dashboard_snapshot
+from src.data.historical_research_database import build_historical_research_dashboard_snapshot
 from src.research.feature_control import run_calibration_strategy_filter
 from src.research.history import (
     build_experiment_report_export,
@@ -3690,6 +3691,36 @@ def get_nfl_p0_snapshot_for_dashboard(
         return {
             "ok": False,
             "status": "nfl_p0_snapshot_error",
+            "storage": {},
+            "table_readiness": {},
+            "ready_tables": [],
+            "missing_tables": [],
+            "blocked_tables": [],
+            "dataset_readiness": {},
+            "readiness_summary": {},
+            "warnings": [str(exc)],
+        }
+
+
+def get_historical_research_snapshot_for_dashboard(
+    storage_path: str | Path | None = None,
+    *,
+    backend: str = "sqlite",
+    profile_id: str = "sports:nfl",
+    game_count: int = 4,
+) -> dict[str, Any]:
+    """Return a canonical historical research readiness snapshot."""
+    try:
+        return build_historical_research_dashboard_snapshot(
+            storage_path=storage_path,
+            backend=backend,
+            profile_id=profile_id,
+            game_count=game_count,
+        )
+    except Exception as exc:
+        return {
+            "ok": False,
+            "status": "historical_research_snapshot_error",
             "storage": {},
             "table_readiness": {},
             "ready_tables": [],

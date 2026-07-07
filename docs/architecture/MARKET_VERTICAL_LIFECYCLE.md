@@ -23,6 +23,13 @@ It complements `docs/MASTER_ROADMAP.md` and makes the lifecycle easier to apply 
 - Blueprinting comes before ingestion.
 - Data validation comes before feature engineering.
 - Historical datasets come before backtests.
+- Historical datasets are permanent repository assets once certified.
+- Providers are acquisition mechanisms only.
+- Backtests never read directly from providers.
+- Events own shared context.
+- Markets belong to events.
+- Selections belong to markets.
+- Decision rows are derived later and are not the storage primitive.
 - Walk-forward validation comes before paper trading promotion.
 - Paper trading comes before live deployment.
 - No market is allowed to jump ahead because the source is familiar or the path feels obvious.
@@ -42,6 +49,16 @@ It complements `docs/MASTER_ROADMAP.md` and makes the lifecycle easier to apply 
 | Paper Trading | Simulation controls, no-live-money safeguards |
 | Controlled Live Deployment | Approval gate, observability, rollback plan |
 
+## Historical Research Shape
+
+The repository now treats the historical dataset phase as event-centric:
+
+Provider -> Acquisition -> Archive -> Normalization -> Certification -> Event -> Feature Snapshot -> Markets -> Selections -> Decision Rows -> Backtesting
+
+Decision rows are generated research primitives.
+Events are the shared historical ownership unit.
+Markets and selections inherit the event context.
+
 ## Worldview Integration Rule
 
 The Worldview Intelligence Layer may only request experiments against a market once the repository can prove:
@@ -56,4 +73,3 @@ The Worldview Intelligence Layer may only request experiments against a market o
 
 When a new market starts, the first question is not "what model do we train?"
 The first question is "what is the smallest reproducible data slice that supports trustworthy research?"
-

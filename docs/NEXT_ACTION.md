@@ -2,38 +2,37 @@
 
 ## Next Phase
 
-`Phase 4.4 — NFL Open Data Integration`
+`Phase 4.5 — Historical Feature Population`
 
 ## Objective
 
-Integrate the first free / open NFL data source against the minimum backtest row contract.
+Populate certified historical events, markets, selections, and event context with the first reusable feature snapshots.
 
 ## Allowed Actions
 
-- Reuse existing canonical contracts, storage, validation, and lineage owners.
-- Integrate the first open-data provider against the canonical minimum backtest row contract.
+- Reuse the canonical event-centric historical database, storage, validation, and lineage owners.
+- Populate feature snapshots only from certified historical events and their markets / selections.
+- Extend the shared readiness and lineage reporting for historical feature population.
 - Update the project status and document indexes when this phase completes.
 
 ## Forbidden Actions
 
 - Do not ingest paid or live data.
-- Do not build features beyond the contract.
+- Do not build decision rows yet.
 - Do not backtest.
 - Do not build models.
-- Do not change runtime behavior unless required to clarify the integration contract.
+- Do not add provider-specific runtime ownership.
 
 ## Expected Deliverables
 
-- Open-data provider mapping for NFL.
-- Minimum backtest row contract implementation references.
-- Storage, validation, and readiness updates for the first open-data lane.
+- Historical feature population plan for the certified event database.
+- Feature snapshot mappings for event-owned context and market-owned selections.
+- Readiness, lineage, and validation updates for historical feature population.
 - Updated project status and index entries.
 
 ## Validation Commands
 
 - `python -m compileall src tests scripts`
-- `pytest tests/test_minimum_backtest_row_contract_docs.py -q`
-- `pytest tests/test_project_status_governance.py -q`
 - `pytest -m smoke -q`
 - `python scripts/check_architecture.py --output text`
 - `python scripts/check_document_lifecycle.py --output text`

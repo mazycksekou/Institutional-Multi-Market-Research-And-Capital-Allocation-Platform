@@ -2,12 +2,14 @@
 
 The NFL P0 data foundation is the first reusable, point-in-time-safe data layer for the NFL vertical slice.
 It extends the existing canonical `src.data` / `src.storage` architecture rather than introducing a parallel system.
+It now feeds the event-centric historical research database described in `docs/architecture/HISTORICAL_RESEARCH_DATABASE.md`.
 
 ## Canonical ownership
 
 - `src/storage/local_store.py` owns the physical SQLite/DuckDB table definitions.
 - `src/data/nfl_p0_foundation.py` owns NFL P0 row contracts, fixture generation, normalization, validation, and readiness reporting.
 - `src/services/streamlit_dashboard_data.py` owns the dashboard-facing adapter for readiness reporting.
+- `src/data/historical_research_database.py` owns the event-centric historical acquisition and readiness orchestration that reuses the NFL P0 foundation.
 
 ## Tables
 
@@ -77,6 +79,7 @@ The following remain intentionally deferred:
 
 The foundation is structurally ready, but the repository still needs future phases to:
 
-- connect live/open historical source ingestion into the new tables
-- build the first baseline backtest on top of the stored rows
+- populate reusable historical feature snapshots in Phase 4.5
+- build decision rows in Phase 4.6
+- build the first baseline backtest on top of certified historical rows
 - expand beyond the P0 team/game foundation when the data layer is proven stable

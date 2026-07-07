@@ -119,11 +119,13 @@ Prompt and AI-related assets should not be used to expose or enable live AI beha
 
 ## 11. Data Flow
 
-The intended data flow is:
+The intended data flow is event-centric and certified before downstream research uses it:
 
-source -> normalize -> store -> snapshot -> consume
+source -> acquisition -> archive -> normalize -> certify -> event -> market -> selection -> feature snapshot -> decision row -> backtest -> consume
 
-The canonical data flow and storage expectations are described in [Data Flow Map](./DATA_FLOW_MAP.md), [Storage Directory Map](./STORAGE_DIRECTORY_MAP.md), [Storage Layer Documentation](./STORAGE_LAYER_DOCUMENTATION.md), and the data contracts in `docs/contracts/`.
+Decision rows are generated research artifacts, not the storage primitive.
+
+The canonical data flow and storage expectations are described in [Data Flow Map](./DATA_FLOW_MAP.md), [Historical Research Database](./HISTORICAL_RESEARCH_DATABASE.md), [Storage Directory Map](./STORAGE_DIRECTORY_MAP.md), [Storage Layer Documentation](./STORAGE_LAYER_DOCUMENTATION.md), and the data contracts in `docs/contracts/`.
 
 ## 12. Request Flow
 
@@ -135,7 +137,8 @@ For the intended dependency shape, see [Dependency Flow Map](./DEPENDENCY_FLOW_M
 ## 13. Backtesting Flow
 
 Backtesting and replay logic lives under `src.backtesting`.
-It consumes canonical historical data and feature snapshots rather than creating a parallel data system.
+It consumes canonical historical events, markets, selections, and feature snapshots rather than creating a parallel data system.
+Decision rows are derived from certified historical data and are not read directly from provider sources.
 
 The backtest contract and related storage expectations are indexed in `docs/contracts/CONTRACT_INDEX.md`.
 
@@ -156,9 +159,11 @@ The intended pipeline is documented in [Streamlit Data Pipeline](./STREAMLIT_DAT
 ## 16. Storage and Artifact Ownership
 
 Canonical storage and local data helpers live under `src.data` and `src.storage`.
+The event-centric historical research database is a shared repository asset, not a market-specific storage fork.
 
 The intended storage hierarchy and local artifact expectations are documented in:
 
+- [Historical Research Database](./HISTORICAL_RESEARCH_DATABASE.md)
 - [Storage Directory Map](./STORAGE_DIRECTORY_MAP.md)
 - [Storage Layer Documentation](./STORAGE_LAYER_DOCUMENTATION.md)
 - [Dataset Registry](../contracts/DATASET_REGISTRY.md)

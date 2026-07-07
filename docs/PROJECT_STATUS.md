@@ -7,23 +7,18 @@ Canonical live status for the repository and the required starting document for 
 - current branch: `feature/nfl-backtesting`
 - current HEAD: live branch tip (exact hash is reported in the task final report)
 - remote tracking branch: `origin/feature/nfl-backtesting`
-- active phase: `Phase 4.4 — NFL Open Data Integration`
+- active phase: `Phase 4.4 — Event-Centric Historical Data Acquisition`
 - active market profile: `sports:nfl`
-- active implementation lane: `NFL P0 profile-aware foundation`
+- active implementation lane: `NFL P0 profile-aware foundation + event-centric historical research database`
 - completed phases:
   - `Phase 4.3.6 — Profile-Aware NFL P0 Validation`
   - `Phase 4.3.7 — Minimum Backtest Row Contract`
-- current phase objective: Integrate the first free / open NFL data source against the minimum backtest row contract.
-- next phase: `Phase 4.4 — NFL Open Data Integration`
+- current phase objective: Build the permanent event-centric historical research database that stores certified NFL events, markets, selections, and acquisition bundles before decision rows are generated.
+- next phase: `Phase 4.5 — Historical Feature Population`
 - current blockers: None
 - latest validation status:
-  - `python -m compileall src tests scripts` passed
-  - `pytest tests/test_minimum_backtest_row_contract_docs.py -q` passed
-  - `pytest tests/test_project_status_governance.py -q` passed
-  - `pytest -m smoke -q` passed
-  - `python scripts/check_architecture.py --output text` passed
-  - `python scripts/check_document_lifecycle.py --output text` passed
-  - `python scripts/ops_check.py --mode local --output text --skip-network` passed
+  - `python -m compileall src tests scripts` passed on the last completed green checkpoint
+  - Phase 4.4 event-centric historical acquisition changes are pending revalidation
 - latest full gate result: `3753 passed, 670 skipped, 519 subtests passed`
 - latest pushed commit: live branch tip (exact hash is reported in the task final report)
 
@@ -35,7 +30,14 @@ Canonical live status for the repository and the required starting document for 
 - Scripts belong under `scripts/`.
 - The repository root should remain minimal; only approved entry files belong there.
 - Reuse canonical owners before introducing new modules.
-- Do not move to provider ingestion until the minimum decision-row readiness contract exists.
+- Historical datasets are permanent repository assets.
+- Providers are acquisition mechanisms only.
+- The repository owns certified datasets after acquisition and certification.
+- Events own shared context.
+- Markets belong to events.
+- Selections belong to markets.
+- Decision rows are generated later and are not the storage primitive.
+- Backtests never read directly from providers.
 
 ## Required Supporting Docs
 
@@ -47,9 +49,11 @@ Read these only when you need more detail than the project status page provides:
 - `docs/STATUS_UPDATE_POLICY.md`
 - `docs/DOCUMENT_RETENTION_INDEX.md`
 - `docs/MASTER_SYSTEM_ARCHITECTURE.md`
+- `docs/architecture/HISTORICAL_RESEARCH_DATABASE.md`
 - `docs/contracts/MINIMUM_BACKTEST_ROW_CONTRACT.md`
 - `docs/contracts/NFL_MINIMUM_BACKTEST_ROW_CONTRACT.md`
 - `docs/contracts/NFL_BACKTEST_CONTRACT.md`
+- `docs/reports/PHASE4_4_EVENT_CENTRIC_HISTORICAL_ACQUISITION.md`
 - `docs/reports/NFL_BACKTEST_ROW_READINESS_CHECKLIST.md`
 - `docs/reports/NFL_DECISION_TIME_ALIGNMENT_RULES.md`
 - `docs/reports/NFL_BACKTEST_ROW_EXCLUSION_RULES.md`
@@ -63,4 +67,4 @@ Read these only when you need more detail than the project status page provides:
 
 ## Next Recommended Codex Task
 
-`Phase 4.4 — NFL Open Data Integration`
+`Phase 4.5 — Historical Feature Population`

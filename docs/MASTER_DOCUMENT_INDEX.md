@@ -23,6 +23,7 @@ This index points readers to the current truth and the durable historical entry 
 - `docs/architecture/DOCUMENT_LIFECYCLE_POLICY.md` - Document Lifecycle Policy
 - `docs/architecture/FEATURE_STORE_ARCHITECTURE.md` - Feature Store Architecture
 - `docs/architecture/FINAL_REPOSITORY_STRUCTURE.md` - Final Repository Structure
+- `docs/architecture/HISTORICAL_RESEARCH_DATABASE.md` - Historical Research Database
 - `docs/architecture/MARKET_PROFILE_FRAMEWORK.md` - Market Profile Framework
 - `docs/architecture/MARKET_VERTICAL_LIFECYCLE.md` - Market Vertical Lifecycle
 - `docs/architecture/MASTER_SYSTEM_ARCHITECTURE.md` - Master System Architecture

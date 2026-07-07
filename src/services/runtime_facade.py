@@ -26,6 +26,7 @@ _CANONICAL_MODULES: tuple[str, ...] = (
     "src.backtesting.strategy_profiles",
     "src.brokerage.readiness_support",
     "src.data.historical_odds",
+    "src.data.historical_research_database",
     "src.data.historical_sources",
     "src.data.line_movement",
     "src.data.source_event_links",

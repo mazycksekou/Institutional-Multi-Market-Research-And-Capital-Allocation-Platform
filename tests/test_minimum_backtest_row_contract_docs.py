@@ -97,10 +97,11 @@ def test_minimum_backtest_row_contract_docs_exist_and_cover_required_topics() ->
 
     # Project status / next action wiring
     assert "Phase 4.4" in project_status_text
+    assert "historical research database" in project_status_text.lower()
     assert "Phase 4.3.7" in project_status_text
     assert "minimum backtest row contract" in project_status_text.lower()
-    assert "Phase 4.4" in next_action_text
-    assert "minimum backtest row contract" in next_action_text.lower()
+    assert "Phase 4.5" in next_action_text
+    assert "historical feature population" in next_action_text.lower()
     assert "validation commands" in next_action_text.lower()
 
 

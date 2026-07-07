@@ -30,7 +30,26 @@ The repository does **not** skip discovery, blueprinting, validation, or reprodu
 - No market skips walk-forward validation.
 - No market skips paper trading before live deployment.
 - Market work must remain reproducible and point-in-time safe.
+- Historical datasets are permanent repository assets.
+- Providers are acquisition mechanisms only.
+- The repository owns the certified dataset after acquisition and certification.
+- Multiple providers may contribute to one dataset.
+- Events own shared information such as weather, officials, injuries, coaching, kickoff, stadium, rest, and travel.
+- Markets belong to events.
+- Selections belong to markets.
+- Decision rows are generated later from event + market + selection + feature snapshot; they are not the storage primitive.
 - The Worldview Intelligence Layer may request experiments only after the market has enough lifecycle maturity to support objective testing.
+
+## Historical Research Sequence
+
+The historical research database now follows a shared chain that future markets can reuse:
+
+Provider -> Acquisition -> Archive -> Normalization -> Certification -> Event -> Feature Snapshot -> Markets -> Selections -> Decision Rows -> Backtesting
+
+Phase 4.4 establishes the event-centric historical acquisition foundation.
+Phase 4.5 populates reusable historical features on top of certified events.
+Phase 4.6 constructs decision rows from events, markets, selections, and feature snapshots.
+Later phases continue with backtesting, walk-forward validation, paper trading, and controlled live deployment.
 
 ## Current Phase Focus
 
@@ -38,10 +57,12 @@ Current NFL work is in Phase 4:
 
 - Phase 4.1 established the NFL discovery and capability audit.
 - Phase 4.2 defines the NFL research blueprint and the permanent roadmap rule.
-- Phase 4.3 should implement the smallest reusable NFL slice only after the blueprint is fixed.
+- Phase 4.3 implemented the smallest reusable NFL slice after the blueprint was fixed.
 - Phase 4.3.6 completed the profile-aware NFL P0 validation.
 - Phase 4.3.7 defined the minimum backtest row contract.
-- Phase 4.4 is the next recommended phase and should begin NFL open data integration against the minimum backtest row contract.
+- Phase 4.4 is the current phase and builds the event-centric historical acquisition foundation.
+- Phase 4.5 is the next recommended phase and should populate historical features from certified events.
+- Phase 4.6 will construct generated decision rows from events, markets, selections, and feature snapshots.
 
 ## Current Project Status
 
@@ -52,7 +73,7 @@ Current NFL work is in Phase 4:
 - Canonical status policy: `docs/STATUS_UPDATE_POLICY.md`
 - Canonical minimum backtest row contract: `docs/contracts/MINIMUM_BACKTEST_ROW_CONTRACT.md`
 - Canonical NFL minimum backtest row contract: `docs/contracts/NFL_MINIMUM_BACKTEST_ROW_CONTRACT.md`
-- Do not move to provider ingestion until the minimum decision-row readiness contract exists.
+- Canonical historical research database: `docs/architecture/HISTORICAL_RESEARCH_DATABASE.md`
 
 ## Worldview Constraint
 
