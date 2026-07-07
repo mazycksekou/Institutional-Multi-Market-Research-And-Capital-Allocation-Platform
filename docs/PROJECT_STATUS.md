@@ -17,8 +17,11 @@ Canonical live status for the repository and the required starting document for 
 - next phase: `Phase 4.5 — Historical Feature Population`
 - current blockers: None
 - latest validation status:
-  - `python -m compileall src tests scripts` passed on the last completed green checkpoint
-  - Phase 4.4 event-centric historical acquisition changes are pending revalidation
+  - `python -m compileall src tests scripts` passed on the current commit
+  - `pytest -m smoke -q` passed on the current commit
+  - `python scripts/check_repo_preflight.py --end-task --include-ops` passed on the current commit
+  - `python scripts/ops_check.py --mode local --output text --skip-network` passed on the current commit
+  - Phase 4.4 event-centric historical acquisition changes are validated on the current commit
 - latest full gate result: `3753 passed, 670 skipped, 519 subtests passed`
 - latest pushed commit: live branch tip (exact hash is reported in the task final report)
 
