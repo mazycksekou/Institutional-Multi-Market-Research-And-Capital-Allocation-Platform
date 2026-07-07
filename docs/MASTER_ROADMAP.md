@@ -40,7 +40,8 @@ Current NFL work is in Phase 4:
 - Phase 4.2 defines the NFL research blueprint and the permanent roadmap rule.
 - Phase 4.3 should implement the smallest reusable NFL slice only after the blueprint is fixed.
 - Phase 4.3.6 completed the profile-aware NFL P0 validation.
-- Phase 4.3.7 is the next recommended phase and should define the minimum backtest row contract before any provider ingestion work begins.
+- Phase 4.3.7 defined the minimum backtest row contract.
+- Phase 4.4 is the next recommended phase and should begin NFL open data integration against the minimum backtest row contract.
 
 ## Current Project Status
 
@@ -49,6 +50,8 @@ Current NFL work is in Phase 4:
 - Canonical project status: `docs/PROJECT_STATUS.md`
 - Canonical next action: `docs/NEXT_ACTION.md`
 - Canonical status policy: `docs/STATUS_UPDATE_POLICY.md`
+- Canonical minimum backtest row contract: `docs/contracts/MINIMUM_BACKTEST_ROW_CONTRACT.md`
+- Canonical NFL minimum backtest row contract: `docs/contracts/NFL_MINIMUM_BACKTEST_ROW_CONTRACT.md`
 - Do not move to provider ingestion until the minimum decision-row readiness contract exists.
 
 ## Worldview Constraint

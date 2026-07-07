@@ -13,6 +13,8 @@ Pass only if:
 - all required snapshot timestamps are present
 - no row mixes pregame inputs with postgame truth
 
+This gate assumes the minimum backtest row contract already exists and that the row under review satisfies the required identifiers, timestamps, lineage, and exclusion rules.
+
 ## Gate 2: Validation Structure
 
 Pass only if:
@@ -73,4 +75,3 @@ The system should record a no-trade reason when:
 
 The first model should not be promoted just because it is "better than random."
 It should be promoted only if it is reproducible, point-in-time safe, and clearly better than the baseline across multiple forward folds.
-

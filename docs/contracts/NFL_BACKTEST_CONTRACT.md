@@ -87,3 +87,11 @@ So the contract is:
 - usable for planning
 - not yet fully instantiated by data
 
+## Related Minimum Contract
+
+The minimum reusable decision-row shape is defined in:
+
+- `docs/contracts/MINIMUM_BACKTEST_ROW_CONTRACT.md`
+- `docs/contracts/NFL_MINIMUM_BACKTEST_ROW_CONTRACT.md`
+
+Those documents define when a row is eligible to become backtest-ready.

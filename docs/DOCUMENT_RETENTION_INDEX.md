@@ -2,9 +2,9 @@
 
 This register classifies every tracked document under `docs/` so the repository can keep durable knowledge, archive historical evidence, and identify temporary work products that should eventually be consolidated or deleted.
 
-- scanned_files: 1132
-- working: 56
-- active: 112
+- scanned_files: 1139
+- working: 61
+- active: 114
 - decision_captured: 14
 - consolidated: 6
 - archived: 944
@@ -1028,13 +1028,15 @@ This register classifies every tracked document under `docs/` so the repository 
 | docs/contracts/FEATURE_SNAPSHOT_CONTRACT.md | Feature Snapshot Contract | CONTRACT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/contracts/IMPORT_INTERFACE_SPECIFICATION.md | Import Interface Specification | CONTRACT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/contracts/MARKET_PROFILE_CONTRACT.md | Market Profile Contract | CONTRACT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
+| docs/contracts/MINIMUM_BACKTEST_ROW_CONTRACT.md | Minimum Backtest Row Contract | CONTRACT | ACTIVE | docs/MASTER_DOCUMENT_INDEX.md; docs/MASTER_ROADMAP.md; docs/PROJECT_STATUS.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/contracts/MODEL_VERSION_CONTRACT.md | Model Version Contract | CONTRACT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/contracts/NFL_AS_SPORTS_PROFILE_INSTANCE.md | NFL as a Sports Profile Instance | CONTRACT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/contracts/NFL_ATOMIC_FEATURE_CONTRACT.md | NFL Atomic Feature Contract | CONTRACT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/discovery/NFL_REPOSITORY_DISCOVERY.md | Current authoritative documentation | KEEP ACTIVE |
-| docs/contracts/NFL_BACKTEST_CONTRACT.md | NFL Backtest Contract | CONTRACT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/discovery/NFL_CAPABILITY_MATRIX.md | Current authoritative documentation | KEEP ACTIVE |
+| docs/contracts/NFL_BACKTEST_CONTRACT.md | NFL Backtest Contract | CONTRACT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/PROJECT_STATUS.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/contracts/NFL_CANONICAL_DATA_CONTRACT.md | NFL Canonical Data Contract | CONTRACT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/discovery/NFL_REPOSITORY_DISCOVERY.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/contracts/NFL_COMPOSITE_FEATURE_CONTRACT.md | NFL Composite Feature Contract | CONTRACT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/discovery/NFL_REPOSITORY_DISCOVERY.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/contracts/NFL_FEATURE_STORE_CONTRACT.md | NFL Feature Store Contract | CONTRACT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/discovery/NFL_REPOSITORY_DISCOVERY.md | Current authoritative documentation | KEEP ACTIVE |
+| docs/contracts/NFL_MINIMUM_BACKTEST_ROW_CONTRACT.md | NFL Minimum Backtest Row Contract | CONTRACT | ACTIVE | docs/MASTER_DOCUMENT_INDEX.md; docs/MASTER_ROADMAP.md; docs/PROJECT_STATUS.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/contracts/NFL_POSITION_GROUP_FEATURE_CONTRACT.md | NFL Position Group Feature Contract | CONTRACT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/discovery/NFL_REPOSITORY_DISCOVERY.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/contracts/NFL_PROVIDER_CONTRACT.md | NFL Provider Contract | CONTRACT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/discovery/NFL_REPOSITORY_DISCOVERY.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/contracts/NFL_STREAMLIT_CONTRACT.md | NFL Streamlit Contract | CONTRACT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/discovery/NFL_REPOSITORY_DISCOVERY.md | Current authoritative documentation | KEEP ACTIVE |
@@ -1108,9 +1110,12 @@ This register classifies every tracked document under `docs/` so the repository 
 | docs/reports/matrices/TABLE_OWNERSHIP_MATRIX.md | Table Ownership Matrix | MATRIX | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/reports/migrations/PHASE10K3_RUNTIME_CSV_MIGRATION_PLAN.md | Phase 10K3: Runtime/CSV Migration Plan and Storage Owner Validation | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/NFL_ATOMIC_FEATURES.md | NFL Atomic Features | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
-| docs/reports/NFL_BACKTEST_PASS_FAIL_CRITERIA.md | NFL Backtest Pass / Fail Criteria | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
+| docs/reports/NFL_BACKTEST_PASS_FAIL_CRITERIA.md | NFL Backtest Pass / Fail Criteria | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; docs/PROJECT_STATUS.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
+| docs/reports/NFL_BACKTEST_ROW_EXCLUSION_RULES.md | NFL Backtest Row Exclusion Rules | DOCUMENT | WORKING | docs/PROJECT_STATUS.md; tests/test_project_status_governance.py | Temporary work product or active discovery artifact | KEEP ACTIVE |
+| docs/reports/NFL_BACKTEST_ROW_READINESS_CHECKLIST.md | NFL Backtest Row Readiness Checklist | DOCUMENT | WORKING | docs/PROJECT_STATUS.md; tests/test_project_status_governance.py | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/NFL_BASELINE_MODEL_SCOPE.md | NFL Baseline Model Scope | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/NFL_COMPOSITE_FEATURES.md | NFL Composite Features | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
+| docs/reports/NFL_DECISION_TIME_ALIGNMENT_RULES.md | NFL Decision-Time Alignment Rules | DOCUMENT | WORKING | docs/PROJECT_STATUS.md; tests/test_project_status_governance.py | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/NFL_FEATURE_DEPENDENCY_GRAPH.md | NFL Feature Dependency Graph | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/NFL_FEATURE_PRIORITY_MATRIX.md | NFL Feature Priority Matrix | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; docs/reports/NFL_FEATURE_REGISTRY.md; docs/reports/NFL_RESEARCH_BLUEPRINT.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/NFL_FEATURE_QUALITY_MATRIX.md | NFL Feature Quality Matrix | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
@@ -1129,16 +1134,18 @@ This register classifies every tracked document under `docs/` so the repository 
 | docs/reports/NFL_RESEARCH_FEATURE_MATRIX.md | NFL Research Feature Matrix | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/NFL_STORAGE_FEATURE_MATRIX.md | NFL Storage Feature Matrix | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/NFL_STORAGE_JOIN_KEY_BLUEPRINT.md | NFL Storage and Join Key Blueprint | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; docs/reports/NFL_FEATURE_REGISTRY.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
+| docs/reports/NFL_STREAMLIT_BACKTEST_READINESS_SPEC.md | NFL Streamlit Backtest Readiness Spec | DOCUMENT | WORKING | docs/PROJECT_STATUS.md; tests/test_project_status_governance.py | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/NFL_STREAMLIT_FEATURE_MATRIX.md | NFL Streamlit Feature Matrix | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/NFL_STREAMLIT_REPORTING_BLUEPRINT.md | NFL Streamlit Reporting Blueprint | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/NFL_VERTICAL_SLICE_RECOMMENDATION.md | NFL Vertical Slice Recommendation | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; docs/discovery/NFL_REPOSITORY_DISCOVERY.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
+| docs/reports/NFL_WORLDVIEW_BACKTEST_READINESS_SPEC.md | NFL Worldview Backtest Readiness Spec | DOCUMENT | WORKING | docs/PROJECT_STATUS.md; tests/test_project_status_governance.py | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/NFL_WORLDVIEW_READINESS.md | NFL Worldview Readiness | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/PHASE4_2_5_ENGINEERING_REVIEW.md | Phase 4.2.5 Engineering Review | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/PHASE4_2_5_WORLDVIEW_REVIEW.md | Phase 4.2.5 Worldview Review | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/PHASE4_2_6_ENGINEERING_REVIEW.md | Phase 4.2.6 Engineering Review | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/PHASE4_2_6_WORLDVIEW_REVIEW.md | Phase 4.2.6 Worldview Review | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/PROFILE_AWARE_NFL_P0_VALIDATION.md | Profile-Aware NFL P0 Validation | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; tests/test_project_status_governance.py | Temporary work product or active discovery artifact | KEEP ACTIVE |
-| docs/reports/PROJECT_ENTRYPOINT_AUDIT.md | Project Entrypoint Audit | DOCUMENT | WORKING | tests/test_project_status_governance.py | Temporary work product or active discovery artifact | KEEP ACTIVE |
+| docs/reports/PROJECT_ENTRYPOINT_AUDIT.md | Project Entrypoint Audit | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; tests/test_project_status_governance.py | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/PROJECT_STATUS_GOVERNANCE_DISCOVERY.md | Project Status Governance Discovery | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; docs/reports/MASTER_DOC_CONSOLIDATION_AUDIT.md; tests/test_project_status_governance.py | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/proofs/ARCHITECTURE_GATE_PROOF.md | Architecture Gate Proof | PROOF | DECISION CAPTURED | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/reports/audits/AUDIT_RETENTION_REGISTER.md | Decision captured elsewhere; retained as evidence | ARCHIVE |
 | docs/reports/proofs/GITIGNORE_SOURCE_SAFETY_PROOF.md | `.gitignore` Source Safety Proof | PROOF | DECISION CAPTURED | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/reports/audits/AUDIT_RETENTION_REGISTER.md | Decision captured elsewhere; retained as evidence | ARCHIVE |

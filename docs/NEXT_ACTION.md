@@ -2,46 +2,45 @@
 
 ## Next Phase
 
-`Phase 4.3.7 — Minimum Backtest Row Contract`
+`Phase 4.4 — NFL Open Data Integration`
 
 ## Objective
 
-Define exactly when an event row becomes backtest-ready.
+Integrate the first free / open NFL data source against the minimum backtest row contract.
 
 ## Allowed Actions
 
-- Update or create documentation for the minimum decision-row readiness contract.
 - Reuse existing canonical contracts, storage, validation, and lineage owners.
-- Add lightweight tests that prove the contract is understood by the repository.
+- Integrate the first open-data provider against the canonical minimum backtest row contract.
 - Update the project status and document indexes when this phase completes.
 
 ## Forbidden Actions
 
-- Do not ingest data.
-- Do not implement providers.
-- Do not build features.
+- Do not ingest paid or live data.
+- Do not build features beyond the contract.
 - Do not backtest.
 - Do not build models.
-- Do not change runtime behavior unless required to clarify the contract.
+- Do not change runtime behavior unless required to clarify the integration contract.
 
 ## Expected Deliverables
 
-- Minimum backtest row contract documentation.
-- Decision-row readiness rules.
-- Point-in-time safety criteria for a backtest-ready event row.
-- Validation guidance for row acceptance.
+- Open-data provider mapping for NFL.
+- Minimum backtest row contract implementation references.
+- Storage, validation, and readiness updates for the first open-data lane.
 - Updated project status and index entries.
 
 ## Validation Commands
 
 - `python -m compileall src tests scripts`
+- `pytest tests/test_minimum_backtest_row_contract_docs.py -q`
+- `pytest tests/test_project_status_governance.py -q`
 - `pytest -m smoke -q`
-- `python scripts/ops_check.py --mode local --output text --skip-network`
 - `python scripts/check_architecture.py --output text`
+- `python scripts/check_document_lifecycle.py --output text`
+- `python scripts/ops_check.py --mode local --output text --skip-network`
 
 ## Commit Policy
 
 - Commit only when the phase deliverables are documented and validation passes.
 - Keep runtime changes out of scope unless a shared canonical contract must be clarified.
 - Push to `origin/feature/nfl-backtesting` after the commit is clean and validated.
-

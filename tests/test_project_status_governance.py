@@ -42,6 +42,7 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "repository homepage" in project_status_text.lower()
     assert "feature/nfl-backtesting" in project_status_text
     assert "sports:nfl" in project_status_text
+    assert "Phase 4.4 — NFL Open Data Integration" in project_status_text
     assert "Phase 4.3.6 — Profile-Aware NFL P0 Validation" in project_status_text
     assert "Phase 4.3.7 — Minimum Backtest Row Contract" in project_status_text
     assert "latest validation status" in project_status_text
@@ -51,9 +52,10 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "docs/MASTER_DOCUMENT_INDEX.md" in project_status_text
     assert "docs/DOCUMENT_RETENTION_INDEX.md" in project_status_text
 
-    assert "Phase 4.3.7 — Minimum Backtest Row Contract" in next_action_text
-    assert "Do not ingest data." in next_action_text
-    assert "Do not implement providers." in next_action_text
+    assert "Phase 4.4 — NFL Open Data Integration" in next_action_text
+    assert "Integrate the first free / open NFL data source against the minimum backtest row contract." in next_action_text
+    assert "Do not ingest paid or live data." in next_action_text
+    assert "Do not build features beyond the contract." in next_action_text
     assert "validation commands" in next_action_text.lower()
 
     assert "Every new session begins with `docs/PROJECT_STATUS.md`." in status_policy_text
@@ -69,19 +71,29 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "recommendations" in entrypoint_audit_text.lower()
 
     assert "Phase 4.3.6 completed the profile-aware NFL P0 validation." in roadmap_text
-    assert "Phase 4.3.7 is the next recommended phase" in roadmap_text
+    assert "Phase 4.3.7 defined the minimum backtest row contract." in roadmap_text
+    assert "Phase 4.4 is the next recommended phase" in roadmap_text
     assert "docs/PROJECT_STATUS.md" in roadmap_text
     assert "docs/NEXT_ACTION.md" in roadmap_text
     assert "docs/STATUS_UPDATE_POLICY.md" in roadmap_text
+    assert "docs/contracts/MINIMUM_BACKTEST_ROW_CONTRACT.md" in roadmap_text
+    assert "docs/contracts/NFL_MINIMUM_BACKTEST_ROW_CONTRACT.md" in roadmap_text
 
     assert "docs/PROJECT_STATUS.md" in master_index_text
     assert "docs/NEXT_ACTION.md" in master_index_text
     assert "docs/STATUS_UPDATE_POLICY.md" in master_index_text
+    assert "docs/contracts/MINIMUM_BACKTEST_ROW_CONTRACT.md" in master_index_text
+    assert "docs/contracts/NFL_MINIMUM_BACKTEST_ROW_CONTRACT.md" in master_index_text
 
     assert "docs/reports/PROJECT_ENTRYPOINT_AUDIT.md" in retention_index_text
     assert "docs/reports/PROJECT_STATUS_GOVERNANCE_DISCOVERY.md" in retention_index_text
     assert "docs/reports/PROFILE_AWARE_NFL_P0_VALIDATION.md" in retention_index_text
     assert "docs/reports/NFL_P0_ARCHITECTURE_REUSE_AUDIT.md" in retention_index_text
+    assert "docs/reports/NFL_BACKTEST_ROW_READINESS_CHECKLIST.md" in retention_index_text
+    assert "docs/reports/NFL_DECISION_TIME_ALIGNMENT_RULES.md" in retention_index_text
+    assert "docs/reports/NFL_BACKTEST_ROW_EXCLUSION_RULES.md" in retention_index_text
+    assert "docs/reports/NFL_STREAMLIT_BACKTEST_READINESS_SPEC.md" in retention_index_text
+    assert "docs/reports/NFL_WORLDVIEW_BACKTEST_READINESS_SPEC.md" in retention_index_text
 
 
 def test_project_status_governance_has_no_duplicate_status_files() -> None:

@@ -76,6 +76,7 @@ This index points readers to the current truth and the durable historical entry 
 - `docs/contracts/FEATURE_SNAPSHOT_CONTRACT.md` - Feature Snapshot Contract
 - `docs/contracts/IMPORT_INTERFACE_SPECIFICATION.md` - Import Interface Specification
 - `docs/contracts/MARKET_PROFILE_CONTRACT.md` - Market Profile Contract
+- `docs/contracts/MINIMUM_BACKTEST_ROW_CONTRACT.md` - Minimum Backtest Row Contract
 - `docs/contracts/MODEL_VERSION_CONTRACT.md` - Model Version Contract
 - `docs/contracts/NFL_AS_SPORTS_PROFILE_INSTANCE.md` - NFL as a Sports Profile Instance
 - `docs/contracts/NFL_ATOMIC_FEATURE_CONTRACT.md` - NFL Atomic Feature Contract
@@ -83,6 +84,7 @@ This index points readers to the current truth and the durable historical entry 
 - `docs/contracts/NFL_CANONICAL_DATA_CONTRACT.md` - NFL Canonical Data Contract
 - `docs/contracts/NFL_COMPOSITE_FEATURE_CONTRACT.md` - NFL Composite Feature Contract
 - `docs/contracts/NFL_FEATURE_STORE_CONTRACT.md` - NFL Feature Store Contract
+- `docs/contracts/NFL_MINIMUM_BACKTEST_ROW_CONTRACT.md` - NFL Minimum Backtest Row Contract
 - `docs/contracts/NFL_POSITION_GROUP_FEATURE_CONTRACT.md` - NFL Position Group Feature Contract
 - `docs/contracts/NFL_PROVIDER_CONTRACT.md` - NFL Provider Contract
 - `docs/contracts/NFL_STREAMLIT_CONTRACT.md` - NFL Streamlit Contract
