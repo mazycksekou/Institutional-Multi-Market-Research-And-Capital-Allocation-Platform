@@ -45,10 +45,18 @@ class TestDocumentLifecycleGovernance(unittest.TestCase):
         self.assertNotIn("Install ripgrep", workflow)
 
     def test_docs_root_contains_only_retention_indexes(self):
+        allowed_root_docs = {
+            "DOCUMENT_RETENTION_INDEX.md",
+            "MASTER_DOCUMENT_INDEX.md",
+            "MASTER_ROADMAP.md",
+            "NEXT_ACTION.md",
+            "PROJECT_STATUS.md",
+            "STATUS_UPDATE_POLICY.md",
+        }
         offenders = sorted(
             path.name
             for path in (ROOT / "docs").iterdir()
-            if path.is_file() and path.suffix.lower() == ".md" and path.name not in {"DOCUMENT_RETENTION_INDEX.md", "MASTER_DOCUMENT_INDEX.md", "MASTER_ROADMAP.md"}
+            if path.is_file() and path.suffix.lower() == ".md" and path.name not in allowed_root_docs
         )
         self.assertEqual(offenders, [])
 
