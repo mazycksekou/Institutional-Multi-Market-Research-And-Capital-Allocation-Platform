@@ -2,9 +2,9 @@
 
 This register classifies every tracked document under `docs/` so the repository can keep durable knowledge, archive historical evidence, and identify temporary work products that should eventually be consolidated or deleted.
 
-- scanned_files: 1122
-- working: 50
-- active: 108
+- scanned_files: 1124
+- working: 51
+- active: 109
 - decision_captured: 14
 - consolidated: 6
 - archived: 944
@@ -44,6 +44,7 @@ This register classifies every tracked document under `docs/` so the repository 
 | docs/architecture/MODEL_FLOW_MAP.md | Model Flow Map | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/architecture/MODEL_REGISTRY_ARCHITECTURE.md | Model Registry Architecture | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/architecture/MODULE_DEPENDENCY_MAP.md | Module Dependency Map | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
+| docs/architecture/NFL_P0_DATA_FOUNDATION.md | NFL P0 Data Foundation | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/architecture/OPENAPI_CONTRACT_GOVERNANCE.md | OpenAPI Contract Governance | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/architecture/DOCUMENTATION_MAP.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/architecture/PRODUCTION_READINESS.md | Production Readiness | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/reports/audits/AUDIT_RETENTION_REGISTER.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/architecture/PROVIDER_OWNERSHIP_MAP.md | Provider Ownership Map | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
@@ -1103,34 +1104,35 @@ This register classifies every tracked document under `docs/` so the repository 
 | docs/reports/matrices/STREAMLIT_MARKET_LAYOUT.md | Streamlit Market Layout | MATRIX | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/reports/matrices/TABLE_OWNERSHIP_MATRIX.md | Table Ownership Matrix | MATRIX | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/reports/migrations/PHASE10K3_RUNTIME_CSV_MIGRATION_PLAN.md | Phase 10K3: Runtime/CSV Migration Plan and Storage Owner Validation | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
-| docs/reports/NFL_ATOMIC_FEATURES.md | NFL Atomic Features | DOCUMENT | WORKING | unreferenced | Temporary work product or active discovery artifact | KEEP ACTIVE |
+| docs/reports/NFL_ATOMIC_FEATURES.md | NFL Atomic Features | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/NFL_BACKTEST_PASS_FAIL_CRITERIA.md | NFL Backtest Pass / Fail Criteria | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/NFL_BASELINE_MODEL_SCOPE.md | NFL Baseline Model Scope | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
-| docs/reports/NFL_COMPOSITE_FEATURES.md | NFL Composite Features | DOCUMENT | WORKING | unreferenced | Temporary work product or active discovery artifact | KEEP ACTIVE |
-| docs/reports/NFL_FEATURE_DEPENDENCY_GRAPH.md | NFL Feature Dependency Graph | DOCUMENT | WORKING | unreferenced | Temporary work product or active discovery artifact | KEEP ACTIVE |
+| docs/reports/NFL_COMPOSITE_FEATURES.md | NFL Composite Features | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
+| docs/reports/NFL_FEATURE_DEPENDENCY_GRAPH.md | NFL Feature Dependency Graph | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/NFL_FEATURE_PRIORITY_MATRIX.md | NFL Feature Priority Matrix | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; docs/reports/NFL_FEATURE_REGISTRY.md; docs/reports/NFL_RESEARCH_BLUEPRINT.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
-| docs/reports/NFL_FEATURE_QUALITY_MATRIX.md | NFL Feature Quality Matrix | DOCUMENT | WORKING | unreferenced | Temporary work product or active discovery artifact | KEEP ACTIVE |
-| docs/reports/NFL_FEATURE_READINESS_MATRIX.md | NFL Feature Readiness Matrix | DOCUMENT | WORKING | unreferenced | Temporary work product or active discovery artifact | KEEP ACTIVE |
-| docs/reports/NFL_FEATURE_REGISTRY.md | NFL Feature Registry | DOCUMENT | WORKING | unreferenced | Temporary work product or active discovery artifact | KEEP ACTIVE |
+| docs/reports/NFL_FEATURE_QUALITY_MATRIX.md | NFL Feature Quality Matrix | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
+| docs/reports/NFL_FEATURE_READINESS_MATRIX.md | NFL Feature Readiness Matrix | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
+| docs/reports/NFL_FEATURE_REGISTRY.md | NFL Feature Registry | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/NFL_GAP_ANALYSIS.md | NFL Gap Analysis | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; docs/discovery/NFL_REPOSITORY_DISCOVERY.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
-| docs/reports/NFL_IMPLEMENTATION_PRIORITY.md | NFL Implementation Priority | DOCUMENT | WORKING | unreferenced | Temporary work product or active discovery artifact | KEEP ACTIVE |
+| docs/reports/NFL_IMPLEMENTATION_PRIORITY.md | NFL Implementation Priority | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
+| docs/reports/NFL_P0_IMPLEMENTATION_DECISIONS.md | NFL P0 Implementation Decisions | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/NFL_PHASE4_3_IMPLEMENTATION_PLAN.md | NFL Phase 4.3 Implementation Plan | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/NFL_POINT_IN_TIME_LEAKAGE_REVIEW.md | NFL Point-in-Time Leakage Review | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
-| docs/reports/NFL_POSITION_GROUP_FEATURE_MATRIX.md | NFL Position Group Feature Matrix | DOCUMENT | WORKING | unreferenced | Temporary work product or active discovery artifact | KEEP ACTIVE |
+| docs/reports/NFL_POSITION_GROUP_FEATURE_MATRIX.md | NFL Position Group Feature Matrix | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/NFL_PROVIDER_SOURCE_MAPPING.md | NFL Provider / Source Mapping | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; docs/reports/NFL_FEATURE_REGISTRY.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
-| docs/reports/NFL_PROVIDER_SOURCE_MATRIX.md | NFL Provider Source Matrix | DOCUMENT | WORKING | unreferenced | Temporary work product or active discovery artifact | KEEP ACTIVE |
+| docs/reports/NFL_PROVIDER_SOURCE_MATRIX.md | NFL Provider Source Matrix | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/NFL_RESEARCH_BLUEPRINT.md | NFL Research Blueprint | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
-| docs/reports/NFL_RESEARCH_FEATURE_MATRIX.md | NFL Research Feature Matrix | DOCUMENT | WORKING | unreferenced | Temporary work product or active discovery artifact | KEEP ACTIVE |
-| docs/reports/NFL_STORAGE_FEATURE_MATRIX.md | NFL Storage Feature Matrix | DOCUMENT | WORKING | unreferenced | Temporary work product or active discovery artifact | KEEP ACTIVE |
+| docs/reports/NFL_RESEARCH_FEATURE_MATRIX.md | NFL Research Feature Matrix | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
+| docs/reports/NFL_STORAGE_FEATURE_MATRIX.md | NFL Storage Feature Matrix | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/NFL_STORAGE_JOIN_KEY_BLUEPRINT.md | NFL Storage and Join Key Blueprint | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; docs/reports/NFL_FEATURE_REGISTRY.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
-| docs/reports/NFL_STREAMLIT_FEATURE_MATRIX.md | NFL Streamlit Feature Matrix | DOCUMENT | WORKING | unreferenced | Temporary work product or active discovery artifact | KEEP ACTIVE |
+| docs/reports/NFL_STREAMLIT_FEATURE_MATRIX.md | NFL Streamlit Feature Matrix | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/NFL_STREAMLIT_REPORTING_BLUEPRINT.md | NFL Streamlit Reporting Blueprint | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/NFL_VERTICAL_SLICE_RECOMMENDATION.md | NFL Vertical Slice Recommendation | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; docs/discovery/NFL_REPOSITORY_DISCOVERY.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/NFL_WORLDVIEW_READINESS.md | NFL Worldview Readiness | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/PHASE4_2_5_ENGINEERING_REVIEW.md | Phase 4.2.5 Engineering Review | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/PHASE4_2_5_WORLDVIEW_REVIEW.md | Phase 4.2.5 Worldview Review | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
-| docs/reports/PHASE4_2_6_ENGINEERING_REVIEW.md | Phase 4.2.6 Engineering Review | DOCUMENT | WORKING | unreferenced | Temporary work product or active discovery artifact | KEEP ACTIVE |
-| docs/reports/PHASE4_2_6_WORLDVIEW_REVIEW.md | Phase 4.2.6 Worldview Review | DOCUMENT | WORKING | unreferenced | Temporary work product or active discovery artifact | KEEP ACTIVE |
+| docs/reports/PHASE4_2_6_ENGINEERING_REVIEW.md | Phase 4.2.6 Engineering Review | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
+| docs/reports/PHASE4_2_6_WORLDVIEW_REVIEW.md | Phase 4.2.6 Worldview Review | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/proofs/ARCHITECTURE_GATE_PROOF.md | Architecture Gate Proof | PROOF | DECISION CAPTURED | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/reports/audits/AUDIT_RETENTION_REGISTER.md | Decision captured elsewhere; retained as evidence | ARCHIVE |
 | docs/reports/proofs/GITIGNORE_SOURCE_SAFETY_PROOF.md | `.gitignore` Source Safety Proof | PROOF | DECISION CAPTURED | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/reports/audits/AUDIT_RETENTION_REGISTER.md | Decision captured elsewhere; retained as evidence | ARCHIVE |
 | docs/reports/proofs/OPENAPI_VALIDATION_PROOF.md | OpenAPI Validation Proof | PROOF | DECISION CAPTURED | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/reports/audits/AUDIT_RETENTION_REGISTER.md | Decision captured elsewhere; retained as evidence | ARCHIVE |

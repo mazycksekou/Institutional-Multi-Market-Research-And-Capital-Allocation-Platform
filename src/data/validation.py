@@ -14,13 +14,23 @@ def _mapping(value: Any) -> dict[str, Any]:
     raise TypeError("value must be a mapping or canonical descriptor")
 
 
+def _is_missing_value(value: Any) -> bool:
+    if value is None:
+        return True
+    if isinstance(value, str):
+        return not value.strip()
+    if isinstance(value, (list, tuple, set, dict)):
+        return len(value) == 0
+    return False
+
+
 def validate_dataset_metadata(
     metadata: DatasetMetadata | Mapping[str, Any],
     *,
     required_fields: Sequence[str] = ("dataset_name", "source_name", "source_type"),
 ) -> dict[str, Any]:
     payload = _mapping(metadata)
-    missing_fields = [field for field in required_fields if not payload.get(field)]
+    missing_fields = [field for field in required_fields if _is_missing_value(payload.get(field))]
     return {
         "ok": not missing_fields,
         "status": "accepted" if not missing_fields else "rejected",
@@ -34,7 +44,7 @@ def validate_local_source_descriptor(
     source: DataSourceDescriptor | Mapping[str, Any],
 ) -> dict[str, Any]:
     payload = _mapping(source)
-    missing_fields = [field for field in ("name", "source_type") if not payload.get(field)]
+    missing_fields = [field for field in ("name", "source_type") if _is_missing_value(payload.get(field))]
     is_local = bool(payload.get("local_only", True)) and str(payload.get("source_type", "")).lower() not in {
         "http",
         "https",
@@ -65,7 +75,7 @@ def validate_dataset_rows(
     missing_rows: list[dict[str, Any]] = []
     for index, row in enumerate(rows):
         payload = _mapping(row)
-        missing_fields = [field for field in required_fields if not payload.get(field)]
+        missing_fields = [field for field in required_fields if _is_missing_value(payload.get(field))]
         if missing_fields:
             missing_rows.append({"index": index, "missing_fields": missing_fields})
     return {

@@ -27,6 +27,7 @@ This index points readers to the current truth and the durable historical entry 
 - `docs/architecture/MODEL_FLOW_MAP.md` - Model Flow Map
 - `docs/architecture/MODEL_REGISTRY_ARCHITECTURE.md` - Model Registry Architecture
 - `docs/architecture/MODULE_DEPENDENCY_MAP.md` - Module Dependency Map
+- `docs/architecture/NFL_P0_DATA_FOUNDATION.md` - NFL P0 Data Foundation
 - `docs/architecture/OPENAPI_CONTRACT_GOVERNANCE.md` - OpenAPI Contract Governance
 - `docs/architecture/PRODUCTION_READINESS.md` - Production Readiness
 - `docs/architecture/PROVIDER_OWNERSHIP_MAP.md` - Provider Ownership Map

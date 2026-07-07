@@ -80,6 +80,7 @@ from src.backtesting.strategy_profiles import (
     normalize_strategy_profile_key,
 )
 from src.data.local_platform import build_local_platform_dashboard_snapshot
+from src.data.nfl_p0_foundation import build_nfl_p0_dashboard_snapshot
 from src.research.feature_control import run_calibration_strategy_filter
 from src.research.history import (
     build_experiment_report_export,
@@ -3673,5 +3674,28 @@ def get_local_platform_snapshot_for_dashboard(
             "validation_summary": {},
             "feature_snapshots": [],
             "lineage_summary": {},
+            "warnings": [str(exc)],
+        }
+
+
+def get_nfl_p0_snapshot_for_dashboard(
+    storage_path: str | Path | None = None,
+    *,
+    backend: str = "sqlite",
+) -> dict[str, Any]:
+    """Return a canonical NFL P0 data-foundation readiness snapshot."""
+    try:
+        return build_nfl_p0_dashboard_snapshot(storage_path=storage_path, backend=backend)
+    except Exception as exc:
+        return {
+            "ok": False,
+            "status": "nfl_p0_snapshot_error",
+            "storage": {},
+            "table_readiness": {},
+            "ready_tables": [],
+            "missing_tables": [],
+            "blocked_tables": [],
+            "dataset_readiness": {},
+            "readiness_summary": {},
             "warnings": [str(exc)],
         }
