@@ -16,7 +16,7 @@ from src.services.repo_inventory import build_import_index, tracked_python_files
 
 
 ALLOWED_ROOT_MARKDOWN = {"README.md"}
-ALLOWED_ROOT_PYTHON = {"api_server.py", "main.py", "streamlit_app.py"}
+ALLOWED_ROOT_PYTHON = {"api_server.py", "main.py", "orb_backtest.py", "streamlit_app.py", "zero_dte_orb.py"}
 ARCHIVE_HINTS = (
     'ROOT / "PHASE',
     'ROOT.glob("PHASE',

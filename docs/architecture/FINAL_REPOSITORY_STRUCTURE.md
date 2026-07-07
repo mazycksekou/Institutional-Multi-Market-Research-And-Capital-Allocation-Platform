@@ -9,7 +9,9 @@
 - Approved root entrypoints remain:
   - `api_server.py`
   - `main.py`
+  - `orb_backtest.py`
   - `streamlit_app.py`
+  - `zero_dte_orb.py`
 - The repository root still contains a small number of non-runtime support artifacts from earlier phases; they are treated as repository material, not as runtime ownership
 - GitHub Actions, when present, is an automation wrapper and not a runtime location
 
@@ -49,5 +51,5 @@
 - No runtime package remains outside `src/`
 - No active legacy scheduler executable surface remains
 - Root Markdown remains restricted to `README.md`
-- Remaining root files are approved project files or thin entrypoints only
+- Remaining root files are approved project files, approved analysis tools, or thin entrypoints only
 - The repository is ready for production maintenance and future data/backtesting work

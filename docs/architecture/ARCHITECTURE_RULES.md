@@ -15,7 +15,9 @@ Permanent repository rules:
 - `pytest.ini`
 - `main.py`
 - `api_server.py`
+- `orb_backtest.py`
 - `streamlit_app.py`
+- `zero_dte_orb.py`
 - other explicitly approved project configuration files
 
 ## Allowed Top-Level Areas

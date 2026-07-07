@@ -47,14 +47,16 @@ The major runtime packages are:
 
 ## 4. Thin Root Entrypoints
 
-The repository root still includes thin entrypoints for developer and deployment convenience:
+The repository root still includes approved entrypoints and local analysis tools for developer and deployment convenience:
 
 - `main.py`
 - `api_server.py`
+- `orb_backtest.py`
 - `streamlit_app.py`
+- `zero_dte_orb.py`
 
-These files should stay thin and delegate into canonical `src.*` modules.
-They are not the place for feature ownership.
+These files should delegate into canonical `src.*` modules or remain scoped to their current analysis role.
+They are not the place for new feature ownership.
 
 ## 5. Major Runtime Modules
 

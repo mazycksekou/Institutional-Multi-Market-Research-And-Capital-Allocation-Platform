@@ -4,8 +4,8 @@ Branch: `phase-6-api-slimming`
 
 Current state snapshot:
 
-- Root runtime Python files: `api_server.py`, `main.py`, `streamlit_app.py`
-- Approved entrypoints: `api_server.py`, `main.py`, `streamlit_app.py`
+- Root runtime Python files: `api_server.py`, `main.py`, `orb_backtest.py`, `streamlit_app.py`, `zero_dte_orb.py`
+- Approved entrypoints: `api_server.py`, `main.py`, `orb_backtest.py`, `streamlit_app.py`, `zero_dte_orb.py`
 - Root Markdown offenders: none
 - Ignored `src/**/*.py` files: none
 - Direct legacy executable import targets: none
