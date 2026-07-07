@@ -3,7 +3,7 @@
 Canonical live status for the repository.
 
 - current branch: `feature/nfl-backtesting`
-- current HEAD: `530ab2e149a3c171da7dee4ad06a1a72f8528b4a`
+- current HEAD: live branch tip (exact hash is reported in the task final report)
 - remote tracking branch: `origin/feature/nfl-backtesting`
 - active phase: `Phase 4.3.7 — Minimum Backtest Row Contract`
 - active market profile: `sports:nfl`
@@ -19,7 +19,7 @@ Canonical live status for the repository.
   - `python scripts/ops_check.py --mode local --output text --skip-network` passed
   - `python scripts/check_architecture.py --output text` passed
 - latest full gate result: `3753 passed, 670 skipped, 519 subtests passed`
-- latest pushed commit: `530ab2e149a3c171da7dee4ad06a1a72f8528b4a`
+- latest pushed commit: live branch tip (exact hash is reported in the task final report)
 
 ## Active Canonical Rules
 
