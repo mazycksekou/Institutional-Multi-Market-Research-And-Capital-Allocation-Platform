@@ -2,8 +2,8 @@
 
 This register classifies every tracked document under `docs/` so the repository can keep durable knowledge, archive historical evidence, and identify temporary work products that should eventually be consolidated or deleted.
 
-- scanned_files: 1124
-- working: 51
+- scanned_files: 1125
+- working: 52
 - active: 109
 - decision_captured: 14
 - consolidated: 6
@@ -1115,6 +1115,7 @@ This register classifies every tracked document under `docs/` so the repository 
 | docs/reports/NFL_FEATURE_REGISTRY.md | NFL Feature Registry | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/NFL_GAP_ANALYSIS.md | NFL Gap Analysis | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; docs/discovery/NFL_REPOSITORY_DISCOVERY.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/NFL_IMPLEMENTATION_PRIORITY.md | NFL Implementation Priority | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
+| docs/reports/NFL_P0_ARCHITECTURE_REUSE_AUDIT.md | NFL P0 Architecture Reuse Audit | DOCUMENT | WORKING | unreferenced | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/NFL_P0_IMPLEMENTATION_DECISIONS.md | NFL P0 Implementation Decisions | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/NFL_PHASE4_3_IMPLEMENTATION_PLAN.md | NFL Phase 4.3 Implementation Plan | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/NFL_POINT_IN_TIME_LEAKAGE_REVIEW.md | NFL Point-in-Time Leakage Review | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
