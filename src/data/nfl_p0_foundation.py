@@ -9,6 +9,8 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from src.data.data_paths import get_runtime_data_path
+from src.data.market_profile_contracts import MarketProfileContract, validate_market_profile_contract
+from src.data.market_profile_registry import get_market_profile, register_market_profile
 from src.data.validation import validate_dataset_rows
 from src.storage.local_store import LocalStorageEngine, backend_available, create_local_storage_engine
 
@@ -25,6 +27,9 @@ NFL_P0_ASSET_CLASS = "sports"
 NFL_P0_OWNER = "src.data"
 DEFAULT_NFL_P0_STORAGE_PATH = get_runtime_data_path("nfl_p0", "canonical_data.sqlite")
 DEFAULT_NFL_P0_GAME_COUNT = 4
+NFL_P0_PROFILE_ID = "sports:nfl"
+NFL_P0_PROFILE_FAMILY = "sports"
+NFL_P0_PROFILE_MARKET_SCOPE = "americanfootball_nfl"
 
 
 def _normalize_text(value: Any, default: str = "") -> str:
@@ -93,6 +98,73 @@ def _as_json(value: Any) -> str:
 
 def _source_signature(source_name: str, source_snapshot_time: str) -> str:
     return f"{source_name}:{source_snapshot_time}"
+
+
+def get_nfl_p0_market_profile() -> MarketProfileContract:
+    from src.market_intelligence.market_profiles import NFL_AS_SPORTS_PROFILE_INSTANCE
+
+    profile = get_market_profile(NFL_P0_PROFILE_ID)
+    if profile is None:
+        try:
+            register_market_profile(NFL_AS_SPORTS_PROFILE_INSTANCE)
+        except ValueError:
+            pass
+        profile = get_market_profile(NFL_P0_PROFILE_ID) or NFL_AS_SPORTS_PROFILE_INSTANCE
+    return profile
+
+
+def validate_nfl_p0_market_profile(profile: MarketProfileContract | None = None) -> dict[str, Any]:
+    from src.market_intelligence.market_profiles import NFL_AS_SPORTS_PROFILE_INSTANCE
+
+    resolved = profile or get_nfl_p0_market_profile()
+    validation = validate_market_profile_contract(resolved)
+    expected = NFL_AS_SPORTS_PROFILE_INSTANCE
+    errors = list(validation.get("errors", []))
+    warnings = list(validation.get("warnings", []))
+
+    comparisons = (
+        ("profile_id", resolved.profile_id, expected.profile_id),
+        ("profile_family", resolved.profile_family, expected.profile_family),
+        ("market_scope", resolved.market_scope, expected.market_scope),
+        ("canonical_identifiers", resolved.canonical_identifiers, expected.canonical_identifiers),
+        ("required_timestamps", resolved.required_timestamps, expected.required_timestamps),
+        ("canonical_fields", resolved.canonical_fields, expected.canonical_fields),
+        ("atomic_feature_groups", resolved.atomic_feature_groups, expected.atomic_feature_groups),
+        ("composite_feature_groups", resolved.composite_feature_groups, expected.composite_feature_groups),
+        ("validation_rules", resolved.validation_rules, expected.validation_rules),
+        ("leakage_rules", resolved.leakage_rules, expected.leakage_rules),
+        ("storage_requirements", resolved.storage_requirements, expected.storage_requirements),
+        ("feature_store_requirements", resolved.feature_store_requirements, expected.feature_store_requirements),
+        ("backtest_requirements", resolved.backtest_requirements, expected.backtest_requirements),
+        ("streamlit_requirements", resolved.streamlit_requirements, expected.streamlit_requirements),
+        ("research_requirements", resolved.research_requirements, expected.research_requirements),
+        ("worldview_permissions", resolved.worldview_permissions, expected.worldview_permissions),
+        ("paper_trading_requirements", resolved.paper_trading_requirements, expected.paper_trading_requirements),
+        ("live_execution_gates", resolved.live_execution_gates, expected.live_execution_gates),
+    )
+    for field_name, actual, expected_value in comparisons:
+        if actual != expected_value:
+            errors.append(f"{field_name}: expected {expected_value!r}, got {actual!r}")
+
+    profile_status = "ready" if not errors else "blocked"
+    return {
+        "ok": not errors,
+        "status": profile_status,
+        "profile_id": resolved.profile_id,
+        "profile_family": resolved.profile_family,
+        "market_scope": resolved.market_scope,
+        "profile": resolved.as_dict(),
+        "expected_profile": expected.as_dict(),
+        "validation": {
+            "ok": bool(validation.get("ok")),
+            "profile_id": validation.get("profile_id"),
+            "profile_family": validation.get("profile_family"),
+            "errors": list(validation.get("errors", [])),
+            "warnings": list(validation.get("warnings", [])),
+        },
+        "errors": list(dict.fromkeys(errors)),
+        "warnings": warnings,
+    }
 
 
 def _fixture_market_label(market: str) -> str:
@@ -968,6 +1040,9 @@ def bootstrap_nfl_p0_foundation(
     backend: str = "sqlite",
     fixture: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    profile_validation = validate_nfl_p0_market_profile()
+    if not profile_validation["ok"]:
+        raise ValueError(f"NFL market profile validation failed: {', '.join(profile_validation['errors']) or 'unknown error'}")
     storage = create_nfl_p0_storage_engine(storage_path, backend=backend)
     try:
         if fixture is None:
@@ -989,6 +1064,7 @@ def bootstrap_nfl_p0_foundation(
             "game_count": fixture["game_count"],
             "table_results": table_results,
         }
+        readiness["market_profile"] = profile_validation
         return readiness
     finally:
         storage.close()
@@ -1002,6 +1078,7 @@ def build_nfl_p0_readiness_snapshot(
     precomputed_results: Mapping[str, Mapping[str, Any]] | None = None,
     fixture: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
+    profile_validation = validate_nfl_p0_market_profile()
     close_storage = False
     if storage is None:
         storage = create_nfl_p0_storage_engine(storage_path, backend=backend)
@@ -1033,13 +1110,14 @@ def build_nfl_p0_readiness_snapshot(
                 missing_tables.append(table_name)
             else:
                 blocked_tables.append(table_name)
-        overall_status = "ready" if len(ready_tables) == len(NFL_P0_TABLE_CONTRACTS) else "partial" if ready_tables else "missing"
+        overall_status = "ready" if profile_validation["ok"] and len(ready_tables) == len(NFL_P0_TABLE_CONTRACTS) else "partial" if ready_tables and profile_validation["ok"] else "blocked" if not profile_validation["ok"] else "missing"
         return {
             "ok": overall_status == "ready",
             "status": overall_status,
             "dataset_name": NFL_P0_DATASET_NAME,
             "dataset_version": (fixture or {}).get("dataset_version", NFL_P0_DATASET_VERSION),
             "storage": storage.health(),
+            "market_profile": profile_validation,
             "table_readiness": table_readiness,
             "ready_tables": ready_tables,
             "missing_tables": missing_tables,
@@ -1049,6 +1127,7 @@ def build_nfl_p0_readiness_snapshot(
                 "ready_table_count": len(ready_tables),
                 "missing_table_count": len(missing_tables),
                 "blocked_table_count": len(blocked_tables),
+                "market_profile_status": profile_validation["status"],
                 "row_counts": {name: details.get("row_count", 0) for name, details in table_readiness.items()},
             },
             "fixture_summary": {
@@ -1091,6 +1170,9 @@ __all__ = [
     "NFL_P0_DATASET_NAME",
     "NFL_P0_DATASET_VERSION",
     "NFL_P0_MARKET",
+    "NFL_P0_PROFILE_FAMILY",
+    "NFL_P0_PROFILE_ID",
+    "NFL_P0_PROFILE_MARKET_SCOPE",
     "NFL_P0_MARKET_TYPE",
     "NFL_P0_OWNER",
     "NFL_P0_PROVIDER",
@@ -1103,7 +1185,9 @@ __all__ = [
     "bootstrap_nfl_p0_foundation",
     "build_nfl_p0_dashboard_snapshot",
     "build_nfl_p0_fixture",
+    "get_nfl_p0_market_profile",
     "create_nfl_p0_storage_engine",
     "normalize_nfl_p0_rows",
+    "validate_nfl_p0_market_profile",
     "validate_nfl_p0_rows",
 ]

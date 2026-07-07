@@ -2,8 +2,8 @@
 
 This register classifies every tracked document under `docs/` so the repository can keep durable knowledge, archive historical evidence, and identify temporary work products that should eventually be consolidated or deleted.
 
-- scanned_files: 1125
-- working: 52
+- scanned_files: 1126
+- working: 53
 - active: 109
 - decision_captured: 14
 - consolidated: 6
@@ -1115,7 +1115,7 @@ This register classifies every tracked document under `docs/` so the repository 
 | docs/reports/NFL_FEATURE_REGISTRY.md | NFL Feature Registry | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/NFL_GAP_ANALYSIS.md | NFL Gap Analysis | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; docs/discovery/NFL_REPOSITORY_DISCOVERY.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/NFL_IMPLEMENTATION_PRIORITY.md | NFL Implementation Priority | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
-| docs/reports/NFL_P0_ARCHITECTURE_REUSE_AUDIT.md | NFL P0 Architecture Reuse Audit | DOCUMENT | WORKING | unreferenced | Temporary work product or active discovery artifact | KEEP ACTIVE |
+| docs/reports/NFL_P0_ARCHITECTURE_REUSE_AUDIT.md | NFL P0 Architecture Reuse Audit | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/NFL_P0_IMPLEMENTATION_DECISIONS.md | NFL P0 Implementation Decisions | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/NFL_PHASE4_3_IMPLEMENTATION_PLAN.md | NFL Phase 4.3 Implementation Plan | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/NFL_POINT_IN_TIME_LEAKAGE_REVIEW.md | NFL Point-in-Time Leakage Review | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
@@ -1134,6 +1134,7 @@ This register classifies every tracked document under `docs/` so the repository 
 | docs/reports/PHASE4_2_5_WORLDVIEW_REVIEW.md | Phase 4.2.5 Worldview Review | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/PHASE4_2_6_ENGINEERING_REVIEW.md | Phase 4.2.6 Engineering Review | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/PHASE4_2_6_WORLDVIEW_REVIEW.md | Phase 4.2.6 Worldview Review | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
+| docs/reports/PROFILE_AWARE_NFL_P0_VALIDATION.md | Profile-Aware NFL P0 Validation | DOCUMENT | WORKING | unreferenced | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/proofs/ARCHITECTURE_GATE_PROOF.md | Architecture Gate Proof | PROOF | DECISION CAPTURED | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/reports/audits/AUDIT_RETENTION_REGISTER.md | Decision captured elsewhere; retained as evidence | ARCHIVE |
 | docs/reports/proofs/GITIGNORE_SOURCE_SAFETY_PROOF.md | `.gitignore` Source Safety Proof | PROOF | DECISION CAPTURED | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/reports/audits/AUDIT_RETENTION_REGISTER.md | Decision captured elsewhere; retained as evidence | ARCHIVE |
 | docs/reports/proofs/OPENAPI_VALIDATION_PROOF.md | OpenAPI Validation Proof | PROOF | DECISION CAPTURED | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/reports/audits/AUDIT_RETENTION_REGISTER.md | Decision captured elsewhere; retained as evidence | ARCHIVE |

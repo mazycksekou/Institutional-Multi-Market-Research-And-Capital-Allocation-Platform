@@ -9,9 +9,11 @@ from src.data.nfl_p0_foundation import (
     build_nfl_p0_fixture,
     bootstrap_nfl_p0_foundation,
     create_nfl_p0_storage_engine,
+    get_nfl_p0_market_profile,
     normalize_nfl_p0_rows,
     validate_nfl_p0_rows,
 )
+from src.data.market_profile_registry import get_market_profile, reset_market_profile_registry
 from src.data.validation import validate_dataset_rows
 
 
@@ -33,17 +35,36 @@ def test_nfl_p0_storage_tables_exist_and_bootstrap(tmp_path: Path) -> None:
 
     assert result["ok"] is True
     assert result["status"] == "ready"
+    assert result["market_profile"]["ok"] is True
+    assert result["market_profile"]["profile_id"] == "sports:nfl"
+    assert result["market_profile"]["profile_family"] == "sports"
+    assert result["market_profile"]["market_scope"] == "americanfootball_nfl"
     assert result["dataset_version"] == fixture["dataset_version"]
     assert result["summary"]["ready_table_count"] == len(NFL_P0_TABLE_CONTRACTS)
     assert result["summary"]["table_count"] == len(NFL_P0_TABLE_CONTRACTS)
+    assert result["summary"]["market_profile_status"] == "ready"
     assert set(result["ready_tables"]) == set(NFL_P0_TABLE_CONTRACTS)
 
     snapshot = build_nfl_p0_dashboard_snapshot(storage_path)
     assert snapshot["ok"] is True
     assert snapshot["status"] == "ready"
+    assert snapshot["market_profile"]["ok"] is True
+    assert snapshot["market_profile"]["profile_id"] == "sports:nfl"
     assert snapshot["dataset_readiness"]["ready_table_count"] == len(NFL_P0_TABLE_CONTRACTS)
     assert snapshot["table_counts"]["nfl_odds_snapshots"] >= 1
     assert snapshot["table_counts"]["nfl_team_stats_snapshots"] >= 1
+
+
+def test_nfl_p0_resolves_market_profile_through_registry() -> None:
+    reset_market_profile_registry()
+
+    profile = get_nfl_p0_market_profile()
+
+    assert profile.profile_id == "sports:nfl"
+    assert profile.profile_family == "sports"
+    assert profile.market_scope == "americanfootball_nfl"
+    assert get_market_profile("sports:nfl") is not None
+    assert get_market_profile("sports:nfl").profile_id == "sports:nfl"
 
 
 def test_nfl_p0_validation_rejects_pregame_leakage() -> None:
