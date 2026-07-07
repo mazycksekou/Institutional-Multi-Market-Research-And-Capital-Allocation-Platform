@@ -2,8 +2,8 @@
 
 This register classifies every tracked document under `docs/` so the repository can keep durable knowledge, archive historical evidence, and identify temporary work products that should eventually be consolidated or deleted.
 
-- scanned_files: 1131
-- working: 55
+- scanned_files: 1132
+- working: 56
 - active: 112
 - decision_captured: 14
 - consolidated: 6
@@ -1057,8 +1057,8 @@ This register classifies every tracked document under `docs/` so the repository 
 | docs/discovery/NFL_POSITION_GROUP_FEATURE_INVENTORY.md | NFL Position Group Feature Inventory | DISCOVERY REPORT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; docs/discovery/NFL_REPOSITORY_DISCOVERY.md | Temporary work product or active discovery artifact | ARCHIVE |
 | docs/discovery/NFL_PROVIDER_INVENTORY.md | NFL Provider Inventory | DISCOVERY REPORT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; docs/discovery/NFL_REPOSITORY_DISCOVERY.md | Temporary work product or active discovery artifact | ARCHIVE |
 | docs/discovery/NFL_REPOSITORY_DISCOVERY.md | NFL Repository Discovery | DISCOVERY REPORT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | ARCHIVE |
-| docs/DOCUMENT_RETENTION_INDEX.md | Document Retention Index | INDEX | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/STATUS_UPDATE_POLICY.md | Current authoritative documentation | KEEP ACTIVE |
-| docs/MASTER_DOCUMENT_INDEX.md | Master Document Index | INDEX | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/STATUS_UPDATE_POLICY.md | Current authoritative documentation | KEEP ACTIVE |
+| docs/DOCUMENT_RETENTION_INDEX.md | Document Retention Index | INDEX | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/PROJECT_STATUS.md | Current authoritative documentation | KEEP ACTIVE |
+| docs/MASTER_DOCUMENT_INDEX.md | Master Document Index | INDEX | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/PROJECT_STATUS.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/MASTER_ROADMAP.md | Master Roadmap | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/PROJECT_STATUS.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/NEXT_ACTION.md | Next Action | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/MASTER_ROADMAP.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/operations/AUTOMATED_GOVERNANCE.md | Automated Governance | RUNBOOK | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/development/ONBOARDING.md | Current authoritative documentation | KEEP ACTIVE |
@@ -1095,7 +1095,7 @@ This register classifies every tracked document under `docs/` so the repository 
 | docs/reports/inventories/PHASE1_LEGACY_INVENTORY.md | PHASE 1 Legacy Inventory | INVENTORY | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/inventories/VALIDATION_SCRIPT_INVENTORY.md | Validation Script Inventory | INVENTORY | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/MARKET_PROFILE_IMPLEMENTATION_PLAN.md | Market Profile Implementation Plan | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
-| docs/reports/MASTER_DOC_CONSOLIDATION_AUDIT.md | Master Doc Consolidation Audit | DOCUMENT | WORKING | unreferenced | Temporary work product or active discovery artifact | KEEP ACTIVE |
+| docs/reports/MASTER_DOC_CONSOLIDATION_AUDIT.md | Master Doc Consolidation Audit | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/matrices/ASSET_CLASS_CAPABILITY_MATRIX.md | Asset Class Capability Matrix | MATRIX | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/reports/matrices/GOVERNANCE_COVERAGE_MATRIX.md | Governance Coverage Matrix | MATRIX | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/reports/matrices/IMPLEMENTATION_MATURITY_MATRIX.md | Implementation Maturity Matrix | MATRIX | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/discovery/NFL_REPOSITORY_DISCOVERY.md | Current authoritative documentation | KEEP ACTIVE |
@@ -1138,6 +1138,7 @@ This register classifies every tracked document under `docs/` so the repository 
 | docs/reports/PHASE4_2_6_ENGINEERING_REVIEW.md | Phase 4.2.6 Engineering Review | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/PHASE4_2_6_WORLDVIEW_REVIEW.md | Phase 4.2.6 Worldview Review | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/PROFILE_AWARE_NFL_P0_VALIDATION.md | Profile-Aware NFL P0 Validation | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; tests/test_project_status_governance.py | Temporary work product or active discovery artifact | KEEP ACTIVE |
+| docs/reports/PROJECT_ENTRYPOINT_AUDIT.md | Project Entrypoint Audit | DOCUMENT | WORKING | tests/test_project_status_governance.py | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/PROJECT_STATUS_GOVERNANCE_DISCOVERY.md | Project Status Governance Discovery | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; docs/reports/MASTER_DOC_CONSOLIDATION_AUDIT.md; tests/test_project_status_governance.py | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/proofs/ARCHITECTURE_GATE_PROOF.md | Architecture Gate Proof | PROOF | DECISION CAPTURED | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/reports/audits/AUDIT_RETENTION_REGISTER.md | Decision captured elsewhere; retained as evidence | ARCHIVE |
 | docs/reports/proofs/GITIGNORE_SOURCE_SAFETY_PROOF.md | `.gitignore` Source Safety Proof | PROOF | DECISION CAPTURED | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/reports/audits/AUDIT_RETENTION_REGISTER.md | Decision captured elsewhere; retained as evidence | ARCHIVE |

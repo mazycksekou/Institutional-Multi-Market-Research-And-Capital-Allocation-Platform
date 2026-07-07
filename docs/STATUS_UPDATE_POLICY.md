@@ -6,6 +6,10 @@ This policy defines how Codex and future contributors keep the repository's live
 
 ## Rules
 
+- Every new session begins with `docs/PROJECT_STATUS.md`.
+- `docs/PROJECT_STATUS.md` is the single required repository entrypoint.
+- Supporting documents are consulted only as needed.
+- No future prompt should direct contributors to multiple master documents first.
 - Every Codex task must update the canonical project status.
 - Every Codex task must update the canonical next-action file.
 - Current-truth documents belong in `docs/MASTER_DOCUMENT_INDEX.md`.
@@ -33,4 +37,3 @@ When a status task completes:
 3. Regenerate the document lifecycle indexes if new docs were added.
 4. Keep the master index focused on current truth.
 5. Keep the retention index focused on historical evidence and working reports.
-
