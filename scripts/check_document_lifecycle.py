@@ -20,6 +20,9 @@ ALLOWED_DOC_ROOT_MARKDOWN = {
     "DOCUMENT_RETENTION_INDEX.md",
     "MASTER_DOCUMENT_INDEX.md",
     "MASTER_ROADMAP.md",
+    "NEXT_ACTION.md",
+    "PROJECT_STATUS.md",
+    "STATUS_UPDATE_POLICY.md",
 }
 SEARCHABLE_TEXT_EXTENSIONS = {
     ".py",
@@ -85,6 +88,10 @@ def _category(path: Path) -> str:
     rel = _relative(path)
     if rel == "docs/MASTER_ROADMAP.md":
         return "ARCHITECTURE DOCUMENT"
+    if rel in {"docs/PROJECT_STATUS.md", "docs/NEXT_ACTION.md"}:
+        return "ARCHITECTURE DOCUMENT"
+    if rel == "docs/STATUS_UPDATE_POLICY.md":
+        return "STANDARD"
     if rel in {"docs/MASTER_DOCUMENT_INDEX.md", "docs/DOCUMENT_RETENTION_INDEX.md"}:
         return "INDEX"
     if rel.startswith("docs/architecture/adr/"):
@@ -145,6 +152,8 @@ def _lifecycle_state(path: Path, category: str) -> str:
     name = path.name
     if rel == "docs/MASTER_ROADMAP.md":
         return "ACTIVE"
+    if rel in {"docs/PROJECT_STATUS.md", "docs/NEXT_ACTION.md", "docs/STATUS_UPDATE_POLICY.md"}:
+        return "ACTIVE"
     if rel in {"docs/MASTER_DOCUMENT_INDEX.md", "docs/DOCUMENT_RETENTION_INDEX.md"}:
         return "ACTIVE"
     if rel.startswith("docs/archive/historical_reports/"):
@@ -201,10 +210,16 @@ def _purpose(path: Path, category: str) -> str:
     if category == "INDEX":
         return "Authoritative document index"
     if category == "ARCHITECTURE DOCUMENT":
+        if name == "PROJECT_STATUS.md":
+            return "Canonical project status snapshot"
+        if name == "NEXT_ACTION.md":
+            return "Canonical next action handoff"
         return "Current architecture guidance"
     if category == "CONTRACT":
         return "Canonical contract surface"
     if category == "STANDARD":
+        if name == "STATUS_UPDATE_POLICY.md":
+            return "Canonical status update policy"
         return "Engineering standard or contributor guidance"
     if category == "RUNBOOK":
         return "Operational runbook or workflow"

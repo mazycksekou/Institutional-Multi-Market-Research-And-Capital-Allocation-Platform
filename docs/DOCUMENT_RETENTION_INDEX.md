@@ -2,9 +2,9 @@
 
 This register classifies every tracked document under `docs/` so the repository can keep durable knowledge, archive historical evidence, and identify temporary work products that should eventually be consolidated or deleted.
 
-- scanned_files: 1126
-- working: 53
-- active: 109
+- scanned_files: 1130
+- working: 54
+- active: 112
 - decision_captured: 14
 - consolidated: 6
 - archived: 944
@@ -38,20 +38,20 @@ This register classifies every tracked document under `docs/` so the repository 
 | docs/architecture/DOCUMENTATION_MAP.md | Documentation Map | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/architecture/FEATURE_STORE_ARCHITECTURE.md | Feature Store Architecture | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/architecture/FINAL_REPOSITORY_STRUCTURE.md | Final Repository Structure | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/architecture/DOCUMENTATION_MAP.md | Current authoritative documentation | KEEP ACTIVE |
-| docs/architecture/MARKET_PROFILE_FRAMEWORK.md | Market Profile Framework | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/architecture/DOCUMENTATION_MAP.md | Current authoritative documentation | KEEP ACTIVE |
+| docs/architecture/MARKET_PROFILE_FRAMEWORK.md | Market Profile Framework | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/PROJECT_STATUS.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/architecture/MARKET_VERTICAL_LIFECYCLE.md | Market Vertical Lifecycle | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/architecture/MASTER_SYSTEM_ARCHITECTURE.md | Master System Architecture | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/architecture/REPOSITORY_INDEPENDENCE_SCORECARD.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/architecture/MODEL_FLOW_MAP.md | Model Flow Map | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/architecture/MODEL_REGISTRY_ARCHITECTURE.md | Model Registry Architecture | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/architecture/MODULE_DEPENDENCY_MAP.md | Module Dependency Map | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
-| docs/architecture/NFL_P0_DATA_FOUNDATION.md | NFL P0 Data Foundation | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
+| docs/architecture/NFL_P0_DATA_FOUNDATION.md | NFL P0 Data Foundation | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/PROJECT_STATUS.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/architecture/OPENAPI_CONTRACT_GOVERNANCE.md | OpenAPI Contract Governance | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/architecture/DOCUMENTATION_MAP.md | Current authoritative documentation | KEEP ACTIVE |
-| docs/architecture/PRODUCTION_READINESS.md | Production Readiness | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/reports/audits/AUDIT_RETENTION_REGISTER.md | Current authoritative documentation | KEEP ACTIVE |
+| docs/architecture/PRODUCTION_READINESS.md | Production Readiness | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/PROJECT_STATUS.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/architecture/PROVIDER_OWNERSHIP_MAP.md | Provider Ownership Map | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
-| docs/architecture/REPOSITORY_INDEPENDENCE_SCORECARD.md | Repository Independence Scorecard | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
-| docs/architecture/REPOSITORY_MODERNIZATION_COMPLETE_V1.md | Repository Modernization Complete V1 | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
+| docs/architecture/REPOSITORY_INDEPENDENCE_SCORECARD.md | Repository Independence Scorecard | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/PROJECT_STATUS.md | Current authoritative documentation | KEEP ACTIVE |
+| docs/architecture/REPOSITORY_MODERNIZATION_COMPLETE_V1.md | Repository Modernization Complete V1 | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/reports/PROJECT_STATUS_GOVERNANCE_DISCOVERY.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/architecture/RESEARCH_PLATFORM_ARCHITECTURE.md | Research Platform Architecture | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
-| docs/architecture/REVIEWER_GUIDE.md | Reviewer Guide | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
+| docs/architecture/REVIEWER_GUIDE.md | Reviewer Guide | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/reports/PROJECT_STATUS_GOVERNANCE_DISCOVERY.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/architecture/RUNTIME_FLOW_MAP.md | Runtime Flow Map | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/architecture/SCHEDULER_NAME_RETIREMENT_MAP.md | Scheduler Name Retirement Map | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/architecture/STORAGE_DIRECTORY_MAP.md | Storage Directory Map | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
@@ -1057,9 +1057,10 @@ This register classifies every tracked document under `docs/` so the repository 
 | docs/discovery/NFL_POSITION_GROUP_FEATURE_INVENTORY.md | NFL Position Group Feature Inventory | DISCOVERY REPORT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; docs/discovery/NFL_REPOSITORY_DISCOVERY.md | Temporary work product or active discovery artifact | ARCHIVE |
 | docs/discovery/NFL_PROVIDER_INVENTORY.md | NFL Provider Inventory | DISCOVERY REPORT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; docs/discovery/NFL_REPOSITORY_DISCOVERY.md | Temporary work product or active discovery artifact | ARCHIVE |
 | docs/discovery/NFL_REPOSITORY_DISCOVERY.md | NFL Repository Discovery | DISCOVERY REPORT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | ARCHIVE |
-| docs/DOCUMENT_RETENTION_INDEX.md | Document Retention Index | INDEX | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/architecture/DOCUMENTATION_GOVERNANCE.md | Current authoritative documentation | KEEP ACTIVE |
-| docs/MASTER_DOCUMENT_INDEX.md | Master Document Index | INDEX | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/architecture/DOCUMENTATION_GOVERNANCE.md | Current authoritative documentation | KEEP ACTIVE |
-| docs/MASTER_ROADMAP.md | Master Roadmap | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/architecture/DOCUMENTATION_MAP.md | Current authoritative documentation | KEEP ACTIVE |
+| docs/DOCUMENT_RETENTION_INDEX.md | Document Retention Index | INDEX | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/STATUS_UPDATE_POLICY.md | Current authoritative documentation | KEEP ACTIVE |
+| docs/MASTER_DOCUMENT_INDEX.md | Master Document Index | INDEX | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/STATUS_UPDATE_POLICY.md | Current authoritative documentation | KEEP ACTIVE |
+| docs/MASTER_ROADMAP.md | Master Roadmap | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/PROJECT_STATUS.md | Current authoritative documentation | KEEP ACTIVE |
+| docs/NEXT_ACTION.md | Next Action | ARCHITECTURE DOCUMENT | ACTIVE | docs/MASTER_ROADMAP.md; docs/PROJECT_STATUS.md; docs/STATUS_UPDATE_POLICY.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/operations/AUTOMATED_GOVERNANCE.md | Automated Governance | RUNBOOK | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/development/ONBOARDING.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/operations/CONFIGURATION_GOVERNANCE.md | Configuration Governance | RUNBOOK | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/operations/DAILY_DATA_HYGIENE_SCHEDULER.md | Daily Data Hygiene Scheduler | RUNBOOK | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; scripts/daily_data_hygiene.py | Current authoritative documentation | KEEP ACTIVE |
@@ -1072,6 +1073,7 @@ This register classifies every tracked document under `docs/` so the repository 
 | docs/operations/RENDER_PERSISTENT_STORAGE_AND_CRON.md | Render Persistent Storage And Cron | RUNBOOK | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/operations/SECURITY_REVIEW.md | Security Review | RUNBOOK | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/operations/VALIDATION_RUNBOOK.md | Validation Runbook | RUNBOOK | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/architecture/REPOSITORY_INDEPENDENCE_SCORECARD.md | Current authoritative documentation | KEEP ACTIVE |
+| docs/PROJECT_STATUS.md | Project Status | ARCHITECTURE DOCUMENT | ACTIVE | docs/MASTER_ROADMAP.md; docs/STATUS_UPDATE_POLICY.md; docs/reports/PROJECT_STATUS_GOVERNANCE_DISCOVERY.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/reports/audits/AUDIT_RETENTION_REGISTER.md | Audit Retention Register | AUDIT REPORT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/reports/audits/AUDIT_RETENTION_REGISTER.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/reports/audits/MISSING_GOVERNANCE_REPORT.md | Missing Governance Report | AUDIT REPORT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/reports/audits/AUDIT_RETENTION_REGISTER.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/reports/checkpoints/ACTIVE_RUNTIME_TEST_GATE.md | Active Runtime Test Gate | CHECKPOINT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/reports/audits/AUDIT_RETENTION_REGISTER.md | Current authoritative documentation | KEEP ACTIVE |
@@ -1115,7 +1117,7 @@ This register classifies every tracked document under `docs/` so the repository 
 | docs/reports/NFL_FEATURE_REGISTRY.md | NFL Feature Registry | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/NFL_GAP_ANALYSIS.md | NFL Gap Analysis | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; docs/discovery/NFL_REPOSITORY_DISCOVERY.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/NFL_IMPLEMENTATION_PRIORITY.md | NFL Implementation Priority | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
-| docs/reports/NFL_P0_ARCHITECTURE_REUSE_AUDIT.md | NFL P0 Architecture Reuse Audit | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
+| docs/reports/NFL_P0_ARCHITECTURE_REUSE_AUDIT.md | NFL P0 Architecture Reuse Audit | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; tests/test_project_status_governance.py | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/NFL_P0_IMPLEMENTATION_DECISIONS.md | NFL P0 Implementation Decisions | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/NFL_PHASE4_3_IMPLEMENTATION_PLAN.md | NFL Phase 4.3 Implementation Plan | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/NFL_POINT_IN_TIME_LEAKAGE_REVIEW.md | NFL Point-in-Time Leakage Review | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
@@ -1134,11 +1136,13 @@ This register classifies every tracked document under `docs/` so the repository 
 | docs/reports/PHASE4_2_5_WORLDVIEW_REVIEW.md | Phase 4.2.5 Worldview Review | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/PHASE4_2_6_ENGINEERING_REVIEW.md | Phase 4.2.6 Engineering Review | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/PHASE4_2_6_WORLDVIEW_REVIEW.md | Phase 4.2.6 Worldview Review | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
-| docs/reports/PROFILE_AWARE_NFL_P0_VALIDATION.md | Profile-Aware NFL P0 Validation | DOCUMENT | WORKING | unreferenced | Temporary work product or active discovery artifact | KEEP ACTIVE |
+| docs/reports/PROFILE_AWARE_NFL_P0_VALIDATION.md | Profile-Aware NFL P0 Validation | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; tests/test_project_status_governance.py | Temporary work product or active discovery artifact | KEEP ACTIVE |
+| docs/reports/PROJECT_STATUS_GOVERNANCE_DISCOVERY.md | Project Status Governance Discovery | DOCUMENT | WORKING | tests/test_project_status_governance.py | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/proofs/ARCHITECTURE_GATE_PROOF.md | Architecture Gate Proof | PROOF | DECISION CAPTURED | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/reports/audits/AUDIT_RETENTION_REGISTER.md | Decision captured elsewhere; retained as evidence | ARCHIVE |
 | docs/reports/proofs/GITIGNORE_SOURCE_SAFETY_PROOF.md | `.gitignore` Source Safety Proof | PROOF | DECISION CAPTURED | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/reports/audits/AUDIT_RETENTION_REGISTER.md | Decision captured elsewhere; retained as evidence | ARCHIVE |
 | docs/reports/proofs/OPENAPI_VALIDATION_PROOF.md | OpenAPI Validation Proof | PROOF | DECISION CAPTURED | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/reports/audits/AUDIT_RETENTION_REGISTER.md | Decision captured elsewhere; retained as evidence | ARCHIVE |
 | docs/reports/proofs/PHASE10K8ZGA_PROVIDER_REGISTRY_RUNTIME_BLOCKER_PROOF.md | PHASE10K8ZGA Provider Registry Runtime Blocker Proof | PROOF | DECISION CAPTURED | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/reports/audits/AUDIT_RETENTION_REGISTER.md | Decision captured elsewhere; retained as evidence | ARCHIVE |
+| docs/STATUS_UPDATE_POLICY.md | Status Update Policy | STANDARD | ACTIVE | docs/MASTER_ROADMAP.md; docs/PROJECT_STATUS.md; docs/STATUS_UPDATE_POLICY.md | Current authoritative documentation | KEEP ACTIVE |
 
 ## Policy Note
 

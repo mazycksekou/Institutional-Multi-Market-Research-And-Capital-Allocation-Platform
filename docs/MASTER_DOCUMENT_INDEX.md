@@ -6,6 +6,8 @@ This index points readers to the current truth and the durable historical entry 
 
 ### ARCHITECTURE DOCUMENT
 - `docs/MASTER_ROADMAP.md` - Master Roadmap
+- `docs/NEXT_ACTION.md` - Next Action
+- `docs/PROJECT_STATUS.md` - Project Status
 - `docs/architecture/ARCHITECTURE_ENFORCEMENT_CURRENT_STATE.md` - Architecture Enforcement Current State
 - `docs/architecture/ARCHITECTURE_IMPORT_RULES.md` - Architecture Import Rules
 - `docs/architecture/ARCHITECTURE_RULES.md` - Architecture Rules
@@ -156,6 +158,7 @@ This index points readers to the current truth and the durable historical entry 
 - `docs/operations/VALIDATION_RUNBOOK.md` - Validation Runbook
 
 ### STANDARD
+- `docs/STATUS_UPDATE_POLICY.md` - Status Update Policy
 - `docs/development/BRANCH_GOVERNANCE_POLICY.md` - Branch Governance Policy
 - `docs/development/CONTRIBUTING.md` - Contributing
 - `docs/development/ENGINEERING_STANDARDS.md` - Engineering Standards

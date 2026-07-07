@@ -39,10 +39,20 @@ Current NFL work is in Phase 4:
 - Phase 4.1 established the NFL discovery and capability audit.
 - Phase 4.2 defines the NFL research blueprint and the permanent roadmap rule.
 - Phase 4.3 should implement the smallest reusable NFL slice only after the blueprint is fixed.
+- Phase 4.3.6 completed the profile-aware NFL P0 validation.
+- Phase 4.3.7 is the next recommended phase and should define the minimum backtest row contract before any provider ingestion work begins.
+
+## Current Project Status
+
+- Active branch: `feature/nfl-backtesting`
+- Active market profile: `sports:nfl`
+- Canonical project status: `docs/PROJECT_STATUS.md`
+- Canonical next action: `docs/NEXT_ACTION.md`
+- Canonical status policy: `docs/STATUS_UPDATE_POLICY.md`
+- Do not move to provider ingestion until the minimum decision-row readiness contract exists.
 
 ## Worldview Constraint
 
 The Worldview Intelligence Layer is a research scientist, not a trader.
 It can propose hypotheses and experiments.
 It cannot bypass this lifecycle or request live experimentation before the evidence chain is mature enough.
-
