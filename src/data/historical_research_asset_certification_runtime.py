@@ -850,7 +850,7 @@ class HistoricalResearchAssetCertificationRuntime:
         source_tables = self._source_tables(fixture_payload)
         source_bundle = dict(fixture_payload.get("source_bundle") or {})
         dataset_version = _normalize_text(dataset_version, _normalize_text(fixture_payload.get("dataset_version"), "historical.research.v1"))
-        created_at = _normalize_text(created_at, _normalize_text(fixture_payload.get("created_at"), _utc_now_iso()))
+        created_at = _normalize_text(created_at, _utc_now_iso())
         batch_id = _normalize_text(batch_id, f"{dataset_version}.batch.001")
         source_bundle.setdefault("source_name", fixture_payload.get("source_name"))
         source_bundle.setdefault("source_type", fixture_payload.get("source_type"))
@@ -1007,7 +1007,7 @@ class HistoricalResearchAssetCertificationRuntime:
         if not rows:
             return "discovered", "asset discovered but not yet acquired", "coverage_failure"
         if validation.get("ok"):
-            return "certified", "asset validated with point-in-time-safe rows", ""
+            return "certified", "asset validated with point-in-time-safe rows", "not_applicable"
         if valid_count > 0:
             reason = _classify_failure_reason(validation, rows)
             return "partially_certified", "asset partially certified; review the validation output", reason

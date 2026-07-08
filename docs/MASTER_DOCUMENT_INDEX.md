@@ -126,6 +126,11 @@ This index points readers to the current truth and the durable historical entry 
 - `docs/reports/gap_analysis/COMPLETE_GAP_ANALYSIS.md` - Complete Gap Analysis
 - `docs/reports/gap_analysis/IMPLEMENTATION_READINESS_REPORT.md` - Implementation Readiness Report
 
+### PHASE REPORT
+- `docs/reports/PHASE4_7A_RESEARCH_ASSET_SOURCE_DISCOVERY_AND_CONNECTOR_MAPPING.md` - Phase 4.7A Research Asset Source Discovery And Connector Mapping
+- `docs/reports/PHASE4_7B_HISTORICAL_DATASET_ACQUISITION_RUNTIME.md` - Phase 4.7B Historical Dataset Acquisition Runtime
+- `docs/reports/PHASE4_7C_HISTORICAL_RESEARCH_ASSET_CERTIFICATION_RUNTIME.md` - Phase 4.7C Historical Research Asset Certification Runtime
+
 ### INDEX
 - `docs/DOCUMENT_RETENTION_INDEX.md` - Policy Note
 - `docs/MASTER_DOCUMENT_INDEX.md` - Current Truth

@@ -1555,7 +1555,7 @@ class HistoricalResearchDatabase:
             raise ValueError("; ".join(profile_validation["errors"]) or "historical research profile validation failed")
         fixture_payload = dict(fixture or build_historical_research_fixture(game_count=game_count, profile_id=profile_id))
         version = _normalize_text(fixture_payload.get("dataset_version"), "historical.research.v1")
-        created_at = _normalize_text(fixture_payload.get("created_at"), _utc_now_iso())
+        created_at = _utc_now_iso()
         source_bundle = dict(fixture_payload.get("source_bundle") or {})
         source_name = _normalize_text(source_bundle.get("source_name"), DEFAULT_HISTORICAL_RESEARCH_SOURCE_NAME)
         source_type = _normalize_text(source_bundle.get("source_type"), DEFAULT_HISTORICAL_RESEARCH_SOURCE_TYPE)

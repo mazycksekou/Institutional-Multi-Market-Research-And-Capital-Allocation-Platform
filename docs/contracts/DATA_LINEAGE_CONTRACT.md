@@ -48,6 +48,7 @@ Historical dataset acquisition must also preserve the dataset versioning and cer
 Rules:
 
 - lineage must connect provider source -> acquisition job -> raw acquisition cache -> integrity validation -> normalization -> research asset certification -> dataset certification -> certified dataset version
+- lineage must connect provider source -> acquisition job -> raw acquisition cache -> integrity validation -> normalization -> certification -> certified dataset version
 - the raw acquisition cache preserves the original payload for audit and replay without redownloading source data
 - one certified dataset version may combine multiple provider contributions
 - the repository must be able to trace a certified version back to the source bundle and the versioned dataset registry entry
