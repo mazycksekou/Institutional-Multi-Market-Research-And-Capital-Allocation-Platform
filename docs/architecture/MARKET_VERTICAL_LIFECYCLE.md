@@ -55,7 +55,7 @@ It complements `docs/MASTER_ROADMAP.md` and makes the lifecycle easier to apply 
 
 The repository now treats the historical research path as event-centric and phase-aware:
 
-Provider -> Acquisition -> Archive -> Normalization -> Certification -> Master Research Engine Specification -> Universal Feature Registry -> Universal Math Engine Contracts -> Research Asset Runtime Framework -> Historical Dataset Acquisition -> Historical Dataset Certification -> Feature Population -> Mathematical Engine Implementation -> Decision Rows -> Backtesting
+Provider -> Acquisition -> Archive -> Normalization -> Certification -> Master Research Engine Specification -> Universal Feature Registry -> Universal Math Engine Contracts -> Research Asset Runtime Framework -> Historical Dataset Acquisition Framework -> Historical Dataset Acquisition and Certification -> Feature Population -> Mathematical Engine Implementation -> Decision Rows -> Backtesting
 
 Decision rows are generated research primitives.
 Events are the shared historical ownership unit.
@@ -67,8 +67,8 @@ Phase 4.5A -> Master Research Engine Specification
 Phase 4.5B -> Universal Feature Registry
 Phase 4.5C -> Universal Math Engine Contracts
 Phase 4.5D -> Research Asset Runtime Framework
-Phase 4.6 -> Historical Dataset Acquisition
-Phase 4.7 -> Historical Dataset Certification
+Phase 4.6 -> Minimum Certified Historical Dataset Acquisition Framework
+Phase 4.7 -> Historical Dataset Acquisition and Certification
 Phase 4.8 -> Historical Feature Population
 Phase 4.9 -> Mathematical Engine Implementation
 Phase 5.0 -> Decision Row Generation

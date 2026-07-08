@@ -110,6 +110,7 @@ Model-like concerns are split by purpose:
 - `src.analytics` for readiness and governance summaries
 
 The reusable math-contract layer is documented in [Universal Mathematical Engine Contracts](./UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md).
+The dataset acquisition framework is documented in [Historical Dataset Acquisition Framework](./HISTORICAL_DATASET_ACQUISITION_FRAMEWORK.md).
 The runtime-facing research asset relationship layer is documented in [Research Asset Runtime Framework](./RESEARCH_ASSET_RUNTIME_FRAMEWORK.md).
 
 The boundary is described in [Model Flow Map](./MODEL_FLOW_MAP.md).
@@ -203,7 +204,7 @@ The repository follows a strict documentation policy:
 
 The documentation policy is summarized in [Documentation Governance](./DOCUMENTATION_GOVERNANCE.md) and [Documentation Map](./DOCUMENTATION_MAP.md).
 
-The research-engine governing specification is documented in [Master Research Engine Specification](./MASTER_RESEARCH_ENGINE_SPECIFICATION.md), the cross-market feature registry lives in [Universal Feature Registry](./UNIVERSAL_FEATURE_REGISTRY.md), the cross-market math engine contracts live in [Universal Mathematical Engine Contracts](./UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md), and the research asset runtime framework lives in [Research Asset Runtime Framework](./RESEARCH_ASSET_RUNTIME_FRAMEWORK.md).
+The research-engine governing specification is documented in [Master Research Engine Specification](./MASTER_RESEARCH_ENGINE_SPECIFICATION.md), the dataset acquisition framework is documented in [Historical Dataset Acquisition Framework](./HISTORICAL_DATASET_ACQUISITION_FRAMEWORK.md), the cross-market feature registry lives in [Universal Feature Registry](./UNIVERSAL_FEATURE_REGISTRY.md), the cross-market math engine contracts live in [Universal Mathematical Engine Contracts](./UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md), and the research asset runtime framework lives in [Research Asset Runtime Framework](./RESEARCH_ASSET_RUNTIME_FRAMEWORK.md).
 
 ## 19. Contract Hierarchy
 

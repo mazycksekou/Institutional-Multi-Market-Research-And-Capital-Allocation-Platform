@@ -2,16 +2,16 @@
 
 ## Next Phase
 
-`Phase 4.6 - Historical Dataset Acquisition (minimum certified schema first)`
+`Phase 4.7 - Historical Dataset Acquisition and Certification (minimum certified schema first)`
 
 ## Objective
 
-Acquire the minimum certified historical schema as a repository-owned asset first, then certify it so future datasets can mature without introducing parallel ownership.
+Acquire and certify the minimum certified historical schema as a repository-owned asset, using the canonical acquisition framework so future datasets can mature without introducing parallel ownership.
 
 ## Allowed Actions
 
 - Reuse the canonical market profile framework, research engine specification, storage, validation, lineage, and research asset runtime framework owners.
-- Extend the historical dataset acquisition layer on top of the research asset runtime framework instead of creating market-specific pipelines.
+- Extend the historical dataset acquisition and certification layer on top of the research asset runtime framework instead of creating market-specific pipelines.
 - Keep the minimum-certified-schema path reusable for sports, prediction markets, and options / 0DTE.
 - Update the project status and document indexes when this phase completes.
 
@@ -27,8 +27,8 @@ Acquire the minimum certified historical schema as a repository-owned asset firs
 
 ## Expected Deliverables
 
-- Minimum certified schema acquisition plan built on top of the research asset runtime framework.
-- Dataset, lineage, validation, and readiness mappings for the minimum certified schema.
+- Minimum certified schema acquisition and certification plan built on top of the research asset runtime framework.
+- Dataset, lineage, validation, certification, and readiness mappings for the minimum certified schema.
 - Historical acquisition and certification path updates for the research-asset layer.
 - Updated project status and index entries.
 

@@ -25,6 +25,7 @@ The research workspace supports:
 ## Runtime Asset Framework
 
 The runtime-facing research asset runtime framework lives in [Research Asset Runtime Framework](./RESEARCH_ASSET_RUNTIME_FRAMEWORK.md).
+The dataset acquisition framework lives in [Historical Dataset Acquisition Framework](./HISTORICAL_DATASET_ACQUISITION_FRAMEWORK.md) and prepares repository-owned historical inputs for the runtime framework.
 
 The research workspace remains the place for experiment and evidence artifacts.
 It does not own the canonical runtime registry, which stays with the shared `src.*` owners and the governing architecture docs.

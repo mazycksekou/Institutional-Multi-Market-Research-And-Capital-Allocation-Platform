@@ -47,16 +47,16 @@ The repository does **not** skip discovery, blueprinting, validation, or reprodu
 
 The historical research database now follows a shared chain that future markets can reuse:
 
-Provider -> Acquisition -> Archive -> Normalization -> Certification -> Master Research Engine Specification -> Universal Feature Registry -> Universal Math Engine Contracts -> Research Asset Runtime Framework -> Historical Dataset Acquisition -> Historical Dataset Certification -> Feature Population -> Mathematical Engine Implementation -> Decision Rows -> Backtesting
+Provider -> Acquisition -> Archive -> Normalization -> Certification -> Master Research Engine Specification -> Universal Feature Registry -> Universal Math Engine Contracts -> Research Asset Runtime Framework -> Historical Dataset Acquisition Framework -> Historical Dataset Acquisition and Certification -> Feature Population -> Mathematical Engine Implementation -> Decision Rows -> Backtesting
 
 Phase 4.4 established the event-centric historical acquisition foundation.
 Phase 4.5A defined the master research engine specification.
 Phase 4.5B built the universal feature registry.
 Phase 4.5C defines the universal math engine contracts.
 Phase 4.5D established the research asset runtime framework.
-Phase 4.5E renames the master research engine specification and the research asset runtime framework to reflect the broader runtime ownership model.
-Phase 4.6 acquires the minimum certified historical dataset.
-Phase 4.7 certifies historical datasets against the governed inputs.
+Phase 4.5E renamed the master research engine specification and the research asset runtime framework to reflect the broader runtime ownership model.
+Phase 4.6 defines the minimum certified historical dataset acquisition framework.
+Phase 4.7 acquires and certifies the minimum certified historical dataset against the governed inputs.
 Phase 4.8 populates reusable historical features on top of certified events.
 Phase 4.9 implements reusable mathematical engines.
 Phase 5.0 generates decision rows from events, markets, selections, and feature snapshots.
@@ -78,9 +78,9 @@ Current NFL work is in Phase 4:
 - Phase 4.5B built the universal feature registry.
 - Phase 4.5C completed the universal math engine contracts.
 - Phase 4.5D established the research asset runtime framework.
-- Phase 4.5E is the current phase and renames the canonical engineering specification and the research asset runtime framework so their names reflect the broader runtime ownership model.
-- Phase 4.6 will acquire the minimum certified historical dataset.
-- Phase 4.7 will certify historical datasets against the governed inputs.
+- Phase 4.5E completed the rename of the canonical engineering specification and the research asset runtime framework so their names reflect the broader runtime ownership model.
+- Phase 4.6 defines the minimum certified historical dataset acquisition framework.
+- Phase 4.7 will acquire and certify the minimum certified historical dataset against the governed inputs.
 - Phase 4.8 will populate generated historical features from events.
 - Phase 4.9 will implement reusable mathematical engines.
 - Phase 5.0 will generate decision rows from events, markets, selections, and feature snapshots.
@@ -98,6 +98,7 @@ The master research engine specification is already the canonical name for the b
 - Canonical status policy: `docs/STATUS_UPDATE_POLICY.md`
 - Canonical research engine specification: `docs/architecture/MASTER_RESEARCH_ENGINE_SPECIFICATION.md`
 - Canonical research asset runtime framework: `docs/architecture/RESEARCH_ASSET_RUNTIME_FRAMEWORK.md`
+- Canonical historical dataset acquisition framework: `docs/architecture/HISTORICAL_DATASET_ACQUISITION_FRAMEWORK.md`
 - Canonical research asset contract: `docs/contracts/RESEARCH_ASSET_CONTRACT.md`
 - Canonical minimum backtest row contract: `docs/contracts/MINIMUM_BACKTEST_ROW_CONTRACT.md`
 - Canonical NFL minimum backtest row contract: `docs/contracts/NFL_MINIMUM_BACKTEST_ROW_CONTRACT.md`

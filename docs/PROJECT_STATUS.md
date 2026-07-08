@@ -7,9 +7,9 @@ Canonical live status for the repository and the required starting document for 
 - current branch: `feature/nfl-backtesting`
 - current HEAD: live branch tip (exact hash is reported in the task final report)
 - remote tracking branch: `origin/feature/nfl-backtesting`
-- active phase: `Phase 4.5E - Canonical Engineering Specification Rename & Research Asset Runtime Framework`
+- active phase: `Phase 4.6 - Minimum Certified Historical Dataset Acquisition Framework`
 - active market profile: `sports:nfl`
-- active implementation lane: `NFL P0 profile-aware foundation + event-centric historical research database + master research engine specification + universal feature registry + universal math engine contracts + research asset runtime framework`
+- active implementation lane: `NFL P0 profile-aware foundation + event-centric historical research database + master research engine specification + universal feature registry + universal math engine contracts + research asset runtime framework + historical dataset acquisition framework`
 - completed phases:
   - `Phase 4.3.6 - Profile-Aware NFL P0 Validation`
   - `Phase 4.3.7 - Minimum Backtest Row Contract`
@@ -18,11 +18,12 @@ Canonical live status for the repository and the required starting document for 
   - `Phase 4.5B - Universal Feature Registry`
   - `Phase 4.5C - Universal Math Engine Contracts`
   - `Phase 4.5D - Research Asset Runtime Framework`
-- current phase objective: Rename the canonical research-engine specification and the research asset runtime framework so their names match the broader runtime ownership model, while preserving the single-entrypoint, reuse-first governance rules before historical dataset acquisition begins.
-- next phase: `Phase 4.6 - Historical Dataset Acquisition (minimum certified schema first)`
+  - `Phase 4.5E - Canonical Engineering Specification Rename & Research Asset Runtime Framework`
+- current phase objective: Define the canonical historical dataset acquisition framework, versioning contract, and certification boundaries so the minimum certified historical dataset can be acquired and certified in the next phase without duplicating ownership.
+- next phase: `Phase 4.7 - Historical Dataset Acquisition and Certification (minimum certified schema first)`
 - current blockers: None
 - latest validation status:
-  - Phase 4.5E validation passed in the active worktree: compileall, targeted docs tests, smoke tests, architecture check, document lifecycle check, and advisory ops check all completed successfully.
+  - Phase 4.6 validation pending in the active worktree.
 - latest full gate result: `not run for this docs-only phase`
 - latest pushed commit: live branch tip (exact hash is reported in the task final report)
 
@@ -59,10 +60,14 @@ Read these only when you need more detail than the project status page provides:
 - `docs/architecture/UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md`
 - `docs/architecture/RESEARCH_ASSET_RUNTIME_FRAMEWORK.md`
 - `docs/architecture/HISTORICAL_RESEARCH_DATABASE.md`
+- `docs/architecture/HISTORICAL_DATASET_ACQUISITION_FRAMEWORK.md`
 - `docs/contracts/RESEARCH_ASSET_CONTRACT.md`
+- `docs/contracts/DATASET_REGISTRY.md`
+- `docs/contracts/DATA_LINEAGE_CONTRACT.md`
 - `docs/reports/PHASE4_5B_UNIVERSAL_FEATURE_REGISTRY.md`
 - `docs/reports/PHASE4_5C_UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md`
 - `docs/reports/PHASE4_5D_RESEARCH_ASSET_RUNTIME_FRAMEWORK.md`
+- `docs/reports/PHASE4_6_MINIMUM_CERTIFIED_HISTORICAL_DATASET_ACQUISITION_FRAMEWORK.md`
 - `docs/contracts/MINIMUM_BACKTEST_ROW_CONTRACT.md`
 - `docs/contracts/NFL_MINIMUM_BACKTEST_ROW_CONTRACT.md`
 - `docs/contracts/NFL_BACKTEST_CONTRACT.md`
@@ -81,4 +86,4 @@ Read these only when you need more detail than the project status page provides:
 
 ## Next Recommended Codex Task
 
-`Phase 4.6 - Historical Dataset Acquisition (minimum certified schema first)`
+`Phase 4.7 - Historical Dataset Acquisition and Certification (minimum certified schema first)`

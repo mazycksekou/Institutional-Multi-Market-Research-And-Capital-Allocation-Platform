@@ -9,7 +9,8 @@ It now feeds the event-centric historical research database described in `docs/a
 - `src/storage/local_store.py` owns the physical SQLite/DuckDB table definitions.
 - `src/data/nfl_p0_foundation.py` owns NFL P0 row contracts, fixture generation, normalization, validation, and readiness reporting.
 - `src/services/streamlit_dashboard_data.py` owns the dashboard-facing adapter for readiness reporting.
-- `src/data/historical_research_database.py` owns the event-centric historical acquisition and readiness orchestration that reuses the NFL P0 foundation.
+- `src/data/local_platform.py` owns the reusable dataset registry, versioning, and dataset-level readiness contracts that the acquisition framework reuses.
+- `src/data/historical_research_database.py` owns the event-centric historical acquisition, certification, and readiness orchestration that reuses the NFL P0 foundation.
 
 ## Tables
 
@@ -79,8 +80,8 @@ The following remain intentionally deferred:
 
 The foundation is structurally ready, but the repository still needs future phases to:
 
-- acquire the minimum certified historical dataset in Phase 4.6
-- certify historical datasets in Phase 4.7
+- define the minimum certified historical dataset acquisition framework in Phase 4.6
+- acquire and certify the minimum certified historical dataset in Phase 4.7
 - populate reusable historical feature snapshots in Phase 4.8
 - implement reusable mathematical engines in Phase 4.9
 - build decision rows in Phase 5.0

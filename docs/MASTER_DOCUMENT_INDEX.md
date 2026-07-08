@@ -24,6 +24,7 @@ This index points readers to the current truth and the durable historical entry 
 - `docs/architecture/FEATURE_STORE_ARCHITECTURE.md` - Feature Store Architecture
 - `docs/architecture/FINAL_REPOSITORY_STRUCTURE.md` - Final Repository Structure
 - `docs/architecture/HISTORICAL_RESEARCH_DATABASE.md` - Historical Research Database
+- `docs/architecture/HISTORICAL_DATASET_ACQUISITION_FRAMEWORK.md` - Historical Dataset Acquisition Framework
 - `docs/architecture/MARKET_PROFILE_FRAMEWORK.md` - Market Profile Framework
 - `docs/architecture/MARKET_VERTICAL_LIFECYCLE.md` - Market Vertical Lifecycle
 - `docs/architecture/MASTER_RESEARCH_ENGINE_SPECIFICATION.md` - Master Research Engine Specification

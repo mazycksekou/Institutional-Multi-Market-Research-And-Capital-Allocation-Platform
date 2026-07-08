@@ -12,6 +12,7 @@ Decision rows are derived later from the certified event data and are not the st
 ## Canonical Ownership
 
 - `src/storage/local_store.py` owns the physical tables.
+- `src/data/local_platform.py` owns the reusable dataset contract, dataset registry, dataset versioning, raw/normalized record lifecycle, validation handoff, and dataset-level readiness reporting.
 - `src/data/historical_research_database.py` owns event-centric historical acquisition, normalization, certification, bootstrap, and readiness orchestration.
 - `src/data/source_event_links.py` owns source-to-event reconciliation.
 - `src.data.validation` owns reusable row validation.
@@ -76,8 +77,8 @@ Phase 4.5B defines the universal feature registry.
 Phase 4.5C defines the universal math engine contracts.
 Phase 4.5D establishes the research asset runtime framework.
 Phase 4.5E completes the canonical engineering specification rename and keeps the runtime framework aligned with the broader research-engine ownership model.
-Phase 4.6 acquires the minimum certified historical dataset.
-Phase 4.7 certifies historical datasets against the governed inputs.
+Phase 4.6 defines the minimum certified historical dataset acquisition framework.
+Phase 4.7 acquires and certifies the minimum certified historical dataset against the governed inputs.
 Phase 4.8 populates reusable historical feature snapshots.
 Phase 4.9 implements reusable mathematical engines.
 Phase 5.0 constructs decision rows from certified historical data.

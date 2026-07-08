@@ -54,6 +54,7 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "docs/MASTER_DOCUMENT_INDEX.md" in project_status_text
     assert "docs/DOCUMENT_RETENTION_INDEX.md" in project_status_text
     assert "docs/architecture/MASTER_RESEARCH_ENGINE_SPECIFICATION.md" in project_status_text
+    assert "docs/architecture/HISTORICAL_DATASET_ACQUISITION_FRAMEWORK.md" in project_status_text
     assert "docs/architecture/UNIVERSAL_FEATURE_REGISTRY.md" in project_status_text
     assert "docs/architecture/UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md" in project_status_text
     assert "docs/architecture/RESEARCH_ASSET_RUNTIME_FRAMEWORK.md" in project_status_text
@@ -63,7 +64,7 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "docs/reports/PHASE4_5C_UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md" in project_status_text
     assert "docs/reports/PHASE4_5D_RESEARCH_ASSET_RUNTIME_FRAMEWORK.md" in project_status_text
 
-    assert "Phase 4.6 - Historical Dataset Acquisition (minimum certified schema first)" in next_action_text
+    assert "Phase 4.7 - Historical Dataset Acquisition and Certification (minimum certified schema first)" in next_action_text
     assert "minimum certified schema first" in next_action_text.lower()
     assert "Do not ingest paid or live data." in next_action_text
     assert "Do not populate features yet." in next_action_text
@@ -87,9 +88,9 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "Phase 4.5B built the universal feature registry." in roadmap_text
     assert "Phase 4.5C defines the universal math engine contracts." in roadmap_text
     assert "Phase 4.5D established the research asset runtime framework." in roadmap_text
-    assert "Phase 4.5E is the current phase and renames the canonical engineering specification and the research asset runtime framework so their names reflect the broader runtime ownership model." in roadmap_text
-    assert "Phase 4.6 acquires the minimum certified historical dataset." in roadmap_text
-    assert "Phase 4.7 certifies historical datasets against the governed inputs." in roadmap_text
+    assert "Phase 4.5E renamed the master research engine specification and the research asset runtime framework to reflect the broader runtime ownership model." in roadmap_text
+    assert "Phase 4.6 defines the minimum certified historical dataset acquisition framework." in roadmap_text
+    assert "Phase 4.7 acquires and certifies the minimum certified historical dataset against the governed inputs." in roadmap_text
     assert "Phase 4.8 populates reusable historical features" in roadmap_text
     assert "Phase 4.9 implements reusable mathematical engines." in roadmap_text
     assert "Phase 5.0 generates decision rows" in roadmap_text
@@ -99,6 +100,7 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "docs/NEXT_ACTION.md" in roadmap_text
     assert "docs/STATUS_UPDATE_POLICY.md" in roadmap_text
     assert "docs/architecture/MASTER_RESEARCH_ENGINE_SPECIFICATION.md" in roadmap_text
+    assert "docs/architecture/HISTORICAL_DATASET_ACQUISITION_FRAMEWORK.md" in roadmap_text
     assert "docs/architecture/UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md" in roadmap_text
     assert "docs/architecture/RESEARCH_ASSET_RUNTIME_FRAMEWORK.md" in roadmap_text
     assert "docs/contracts/RESEARCH_ASSET_CONTRACT.md" in roadmap_text

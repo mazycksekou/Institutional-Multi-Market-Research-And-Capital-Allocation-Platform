@@ -124,11 +124,12 @@ def test_research_asset_runtime_framework_docs_exist_and_cover_required_topics()
     assert "Senior Systems Engineer Review" in report_text
     assert "Worldview Intelligence Review" in report_text
     assert "MASTER_RESEARCH_ENGINE_SPECIFICATION" in report_text
-    assert "Readiness for Phase 4.6" in report_text
+    assert "Readiness for Phase 4.7" in report_text
 
     assert "Phase 4.5E - Canonical Engineering Specification Rename & Research Asset Runtime Framework" in project_status_text
-    assert "Phase 4.6 - Historical Dataset Acquisition (minimum certified schema first)" in next_action_text
+    assert "Phase 4.7 - Historical Dataset Acquisition and Certification (minimum certified schema first)" in next_action_text
     assert "docs/architecture/RESEARCH_ASSET_RUNTIME_FRAMEWORK.md" in project_status_text
+    assert "docs/architecture/HISTORICAL_DATASET_ACQUISITION_FRAMEWORK.md" in project_status_text
     assert "docs/contracts/RESEARCH_ASSET_CONTRACT.md" in project_status_text
     assert "docs/reports/PHASE4_5D_RESEARCH_ASSET_RUNTIME_FRAMEWORK.md" in project_status_text
     assert "minimum certified schema first" in next_action_text.lower()
@@ -136,8 +137,9 @@ def test_research_asset_runtime_framework_docs_exist_and_cover_required_topics()
     assert "do not add provider-specific runtime ownership" in next_action_text.lower()
 
     assert "Phase 4.5D established the research asset runtime framework." in roadmap_text
-    assert "Phase 4.6 acquires the minimum certified historical dataset." in roadmap_text
-    assert "Phase 4.7 certifies historical datasets against the governed inputs." in roadmap_text
+    assert "Phase 4.5E renamed the master research engine specification and the research asset runtime framework" in roadmap_text
+    assert "Phase 4.6 defines the minimum certified historical dataset acquisition framework." in roadmap_text
+    assert "Phase 4.7 acquires and certifies the minimum certified historical dataset against the governed inputs." in roadmap_text
     assert "Phase 4.8 populates reusable historical features" in roadmap_text
     assert "Phase 4.9 implements reusable mathematical engines" in roadmap_text
     assert "Phase 5.0 generates decision rows" in roadmap_text
@@ -146,6 +148,7 @@ def test_research_asset_runtime_framework_docs_exist_and_cover_required_topics()
     assert "research asset runtime framework" in roadmap_text.lower()
 
     assert "docs/architecture/RESEARCH_ASSET_RUNTIME_FRAMEWORK.md" in master_index_text
+    assert "docs/architecture/HISTORICAL_DATASET_ACQUISITION_FRAMEWORK.md" in master_index_text
     assert "docs/contracts/RESEARCH_ASSET_CONTRACT.md" in master_index_text
     assert "Research asset contract" in contract_index_text
     assert "docs/architecture/RESEARCH_ASSET_RUNTIME_FRAMEWORK.md" in retention_index_text

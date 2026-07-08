@@ -184,6 +184,6 @@ yes
 
 yes
 
-## Readiness for Phase 4.6
+## Readiness for Phase 4.7
 
-The repository is ready for the next phase to focus on historical dataset acquisition for the certified minimum schema first.
+The repository is ready for the next phase to acquire and certify the minimum certified historical dataset using the canonical acquisition framework.
