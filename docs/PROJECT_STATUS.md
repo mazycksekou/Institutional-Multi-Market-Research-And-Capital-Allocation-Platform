@@ -23,7 +23,7 @@ Canonical live status for the repository and the required starting document for 
 - next phase: `Phase 4.7 - Historical Dataset Acquisition and Certification (minimum certified schema first)`
 - current blockers: None
 - latest validation status:
-  - Phase 4.6 validation pending in the active worktree.
+  - Phase 4.6 validation passed: compileall, targeted docs tests, smoke, architecture, document lifecycle, preflight, and ops checks are green.
 - latest full gate result: `not run for this docs-only phase`
 - latest pushed commit: live branch tip (exact hash is reported in the task final report)
 
