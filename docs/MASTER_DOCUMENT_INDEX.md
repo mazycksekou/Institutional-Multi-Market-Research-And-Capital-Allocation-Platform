@@ -50,6 +50,7 @@ This index points readers to the current truth and the durable historical entry 
 - `docs/architecture/UNIVERSAL_FEATURE_REGISTRY.md` - Universal Feature Registry
 - `docs/architecture/UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md` - Universal Mathematical Engine Contracts
 - `docs/architecture/RESEARCH_ASSET_RUNTIME_FRAMEWORK.md` - Research Asset Runtime Framework
+- `docs/architecture/RESEARCH_ASSET_SOURCE_DISCOVERY_AND_CONNECTOR_MAPPING.md` - Research Asset Source Discovery And Connector Mapping
 - `docs/architecture/VENDOR_NEUTRALITY_AND_OPENAPI_NAMING.md` - Vendor Neutrality And OpenAPI Naming
 
 ### AUDIT REPORT
@@ -118,6 +119,7 @@ This index points readers to the current truth and the durable historical entry 
 
 ### DISCOVERY REPORT
 - `docs/discovery/COMPLETE_DATA_PLATFORM_DISCOVERY.md` - Complete Data Platform Discovery
+- `docs/reports/PHASE4_7A_RESEARCH_ASSET_SOURCE_DISCOVERY_AND_CONNECTOR_MAPPING.md` - Phase 4.7A Research Asset Source Discovery And Connector Mapping
 
 ### GAP ANALYSIS
 - `docs/reports/gap_analysis/COMPLETE_GAP_ANALYSIS.md` - Complete Gap Analysis

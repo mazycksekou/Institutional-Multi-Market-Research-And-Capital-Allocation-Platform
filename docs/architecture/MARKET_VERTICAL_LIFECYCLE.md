@@ -40,7 +40,7 @@ It complements `docs/MASTER_ROADMAP.md` and makes the lifecycle easier to apply 
 
 | Stage | Required output |
 | --- | --- |
-| Discovery | Capability inventories, source inventories, contract inventories, gap analysis |
+| Discovery | Capability inventories, source inventories, contract inventories, connector mapping, gap analysis |
 | Research Blueprint | Baseline market scope, feature priority matrix, leakage review, source mapping |
 | Data Sources | Source approvals, timing rules, provenance categories |
 | Canonical Storage | Table families, join keys, snapshot rules, lineage rules |
@@ -55,7 +55,7 @@ It complements `docs/MASTER_ROADMAP.md` and makes the lifecycle easier to apply 
 
 The repository now treats the historical research path as event-centric and phase-aware:
 
-Provider -> Acquisition -> Archive -> Normalization -> Certification -> Master Research Engine Specification -> Universal Feature Registry -> Universal Math Engine Contracts -> Research Asset Runtime Framework -> Historical Dataset Acquisition Framework -> Historical Dataset Acquisition and Certification -> Feature Population -> Mathematical Engine Implementation -> Decision Rows -> Backtesting
+Provider -> Acquisition -> Archive -> Normalization -> Certification -> Master Research Engine Specification -> Universal Feature Registry -> Universal Math Engine Contracts -> Research Asset Runtime Framework -> Historical Dataset Acquisition Framework -> Research Asset Source Discovery And Connector Mapping -> Historical Dataset Acquisition -> Historical Dataset Acquisition and Certification -> Feature Population -> Mathematical Engine Implementation -> Decision Rows -> Backtesting
 
 Decision rows are generated research primitives.
 Events are the shared historical ownership unit.
@@ -68,6 +68,8 @@ Phase 4.5B -> Universal Feature Registry
 Phase 4.5C -> Universal Math Engine Contracts
 Phase 4.5D -> Research Asset Runtime Framework
 Phase 4.6 -> Minimum Certified Historical Dataset Acquisition Framework
+Phase 4.7A -> Research Asset Source Discovery & Connector Mapping
+Phase 4.7B -> Historical Dataset Acquisition
 Phase 4.7 -> Historical Dataset Acquisition and Certification
 Phase 4.8 -> Historical Feature Population
 Phase 4.9 -> Mathematical Engine Implementation

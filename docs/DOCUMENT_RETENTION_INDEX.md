@@ -2,9 +2,9 @@
 
 This register classifies every tracked document under `docs/` so the repository can keep durable knowledge, archive historical evidence, and identify temporary work products that should eventually be consolidated or deleted.
 
-- scanned_files: 1152
-- working: 67
-- active: 121
+- scanned_files: 1154
+- working: 68
+- active: 122
 - decision_captured: 14
 - consolidated: 6
 - archived: 944
@@ -55,6 +55,7 @@ This register classifies every tracked document under `docs/` so the repository 
 | docs/architecture/PROVIDER_OWNERSHIP_MAP.md | Provider Ownership Map | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/architecture/REPOSITORY_INDEPENDENCE_SCORECARD.md | Repository Independence Scorecard | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/PROJECT_STATUS.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/architecture/REPOSITORY_MODERNIZATION_COMPLETE_V1.md | Repository Modernization Complete V1 | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/reports/PROJECT_STATUS_GOVERNANCE_DISCOVERY.md | Current authoritative documentation | KEEP ACTIVE |
+| docs/architecture/RESEARCH_ASSET_SOURCE_DISCOVERY_AND_CONNECTOR_MAPPING.md | Research Asset Source Discovery And Connector Mapping | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/PROJECT_STATUS.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/architecture/RESEARCH_PLATFORM_ARCHITECTURE.md | Research Platform Architecture | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/architecture/REVIEWER_GUIDE.md | Reviewer Guide | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/reports/PROJECT_STATUS_GOVERNANCE_DISCOVERY.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/architecture/RUNTIME_FLOW_MAP.md | Runtime Flow Map | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
@@ -1157,6 +1158,7 @@ This register classifies every tracked document under `docs/` so the repository 
 | docs/reports/PHASE4_5C_UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md | Phase 4.5C - Universal Mathematical Engine Contracts | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; docs/PROJECT_STATUS.md; tests/test_project_status_governance.py; tests/test_universal_mathematical_engine_contracts_docs.py | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/PHASE4_5D_RESEARCH_ASSET_RUNTIME_FRAMEWORK.md | Phase 4.5D - Research Asset Runtime Framework | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; docs/PROJECT_STATUS.md; tests/test_project_status_governance.py; tests/test_research_asset_runtime_framework_docs.py | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/PHASE4_6_MINIMUM_CERTIFIED_HISTORICAL_DATASET_ACQUISITION_FRAMEWORK.md | Phase 4.6 Minimum Certified Historical Dataset Acquisition Framework | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; docs/PROJECT_STATUS.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
+| docs/reports/PHASE4_7A_RESEARCH_ASSET_SOURCE_DISCOVERY_AND_CONNECTOR_MAPPING.md | Phase 4.7A Research Asset Source Discovery And Connector Mapping | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; docs/PROJECT_STATUS.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/PROFILE_AWARE_NFL_P0_VALIDATION.md | Profile-Aware NFL P0 Validation | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/PROJECT_ENTRYPOINT_AUDIT.md | Project Entrypoint Audit | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; tests/test_project_status_governance.py | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/PROJECT_STATUS_GOVERNANCE_DISCOVERY.md | Project Status Governance Discovery | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; docs/reports/MASTER_DOC_CONSOLIDATION_AUDIT.md; tests/test_project_status_governance.py | Temporary work product or active discovery artifact | KEEP ACTIVE |

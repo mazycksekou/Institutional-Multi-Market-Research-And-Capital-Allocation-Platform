@@ -42,6 +42,7 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "repository homepage" in project_status_text.lower()
     assert "feature/nfl-backtesting" in project_status_text
     assert "sports:nfl" in project_status_text
+    assert "Phase 4.7A - Research Asset Source Discovery & Connector Mapping" in project_status_text
     assert "Phase 4.5E - Canonical Engineering Specification Rename & Research Asset Runtime Framework" in project_status_text
     assert "Phase 4.5C - Universal Math Engine Contracts" in project_status_text
     assert "Phase 4.3.6" in project_status_text
@@ -55,6 +56,7 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "docs/DOCUMENT_RETENTION_INDEX.md" in project_status_text
     assert "docs/architecture/MASTER_RESEARCH_ENGINE_SPECIFICATION.md" in project_status_text
     assert "docs/architecture/HISTORICAL_DATASET_ACQUISITION_FRAMEWORK.md" in project_status_text
+    assert "docs/architecture/RESEARCH_ASSET_SOURCE_DISCOVERY_AND_CONNECTOR_MAPPING.md" in project_status_text
     assert "docs/architecture/UNIVERSAL_FEATURE_REGISTRY.md" in project_status_text
     assert "docs/architecture/UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md" in project_status_text
     assert "docs/architecture/RESEARCH_ASSET_RUNTIME_FRAMEWORK.md" in project_status_text
@@ -63,10 +65,10 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "docs/reports/PHASE4_5B_UNIVERSAL_FEATURE_REGISTRY.md" in project_status_text
     assert "docs/reports/PHASE4_5C_UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md" in project_status_text
     assert "docs/reports/PHASE4_5D_RESEARCH_ASSET_RUNTIME_FRAMEWORK.md" in project_status_text
+    assert "docs/reports/PHASE4_7A_RESEARCH_ASSET_SOURCE_DISCOVERY_AND_CONNECTOR_MAPPING.md" in project_status_text
 
-    assert "Phase 4.7 - Historical Dataset Acquisition and Certification (minimum certified schema first)" in next_action_text
-    assert "minimum certified schema first" in next_action_text.lower()
-    assert "Do not ingest paid or live data." in next_action_text
+    assert "Phase 4.7B - Historical Dataset Acquisition" in next_action_text
+    assert "minimum certified historical dataset" in next_action_text.lower()
     assert "Do not populate features yet." in next_action_text
     assert "Do not implement mathematical engines yet." in next_action_text
     assert "Do not generate decision rows yet." in next_action_text
@@ -90,6 +92,8 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "Phase 4.5D established the research asset runtime framework." in roadmap_text
     assert "Phase 4.5E renamed the master research engine specification and the research asset runtime framework to reflect the broader runtime ownership model." in roadmap_text
     assert "Phase 4.6 defines the minimum certified historical dataset acquisition framework." in roadmap_text
+    assert "Phase 4.7A discovers and maps research asset sources and connector families" in roadmap_text
+    assert "Phase 4.7B acquires the minimum certified historical dataset from the canonical source map." in roadmap_text
     assert "Phase 4.7 acquires and certifies the minimum certified historical dataset against the governed inputs." in roadmap_text
     assert "Phase 4.8 populates reusable historical features" in roadmap_text
     assert "Phase 4.9 implements reusable mathematical engines." in roadmap_text
@@ -100,6 +104,7 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "docs/NEXT_ACTION.md" in roadmap_text
     assert "docs/STATUS_UPDATE_POLICY.md" in roadmap_text
     assert "docs/architecture/MASTER_RESEARCH_ENGINE_SPECIFICATION.md" in roadmap_text
+    assert "docs/architecture/RESEARCH_ASSET_SOURCE_DISCOVERY_AND_CONNECTOR_MAPPING.md" in roadmap_text
     assert "docs/architecture/HISTORICAL_DATASET_ACQUISITION_FRAMEWORK.md" in roadmap_text
     assert "docs/architecture/UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md" in roadmap_text
     assert "docs/architecture/RESEARCH_ASSET_RUNTIME_FRAMEWORK.md" in roadmap_text
@@ -111,6 +116,7 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "docs/NEXT_ACTION.md" in master_index_text
     assert "docs/STATUS_UPDATE_POLICY.md" in master_index_text
     assert "docs/architecture/MASTER_RESEARCH_ENGINE_SPECIFICATION.md" in master_index_text
+    assert "docs/architecture/RESEARCH_ASSET_SOURCE_DISCOVERY_AND_CONNECTOR_MAPPING.md" in master_index_text
     assert "docs/architecture/UNIVERSAL_FEATURE_REGISTRY.md" in master_index_text
     assert "docs/architecture/UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md" in master_index_text
     assert "docs/architecture/RESEARCH_ASSET_RUNTIME_FRAMEWORK.md" in master_index_text
@@ -119,6 +125,7 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
 
     assert "docs/reports/PROJECT_ENTRYPOINT_AUDIT.md" in retention_index_text
     assert "docs/reports/PROJECT_STATUS_GOVERNANCE_DISCOVERY.md" in retention_index_text
+    assert "docs/reports/PHASE4_7A_RESEARCH_ASSET_SOURCE_DISCOVERY_AND_CONNECTOR_MAPPING.md" in retention_index_text
     assert "docs/reports/PHASE4_5A_MASTER_RESEARCH_ENGINE_SPECIFICATION.md" in retention_index_text
     assert "docs/reports/PHASE4_5B_UNIVERSAL_FEATURE_REGISTRY.md" in retention_index_text
     assert "docs/reports/PHASE4_5C_UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md" in retention_index_text

@@ -56,6 +56,8 @@ Phase 4.5C defines the universal math engine contracts.
 Phase 4.5D established the research asset runtime framework.
 Phase 4.5E renamed the master research engine specification and the research asset runtime framework to reflect the broader runtime ownership model.
 Phase 4.6 defines the minimum certified historical dataset acquisition framework.
+Phase 4.7A discovers and maps research asset sources and connector families for the minimum certified historical schema.
+Phase 4.7B acquires the minimum certified historical dataset from the canonical source map.
 Phase 4.7 acquires and certifies the minimum certified historical dataset against the governed inputs.
 Phase 4.8 populates reusable historical features on top of certified events.
 Phase 4.9 implements reusable mathematical engines.
@@ -80,6 +82,8 @@ Current NFL work is in Phase 4:
 - Phase 4.5D established the research asset runtime framework.
 - Phase 4.5E completed the rename of the canonical engineering specification and the research asset runtime framework so their names reflect the broader runtime ownership model.
 - Phase 4.6 defines the minimum certified historical dataset acquisition framework.
+- Phase 4.7A will discover and map research asset sources and connector families for the minimum certified historical schema.
+- Phase 4.7B will acquire the minimum certified historical dataset from the canonical source map.
 - Phase 4.7 will acquire and certify the minimum certified historical dataset against the governed inputs.
 - Phase 4.8 will populate generated historical features from events.
 - Phase 4.9 will implement reusable mathematical engines.
@@ -98,6 +102,7 @@ The master research engine specification is already the canonical name for the b
 - Canonical status policy: `docs/STATUS_UPDATE_POLICY.md`
 - Canonical research engine specification: `docs/architecture/MASTER_RESEARCH_ENGINE_SPECIFICATION.md`
 - Canonical research asset runtime framework: `docs/architecture/RESEARCH_ASSET_RUNTIME_FRAMEWORK.md`
+- Canonical research asset source discovery and connector mapping framework: `docs/architecture/RESEARCH_ASSET_SOURCE_DISCOVERY_AND_CONNECTOR_MAPPING.md`
 - Canonical historical dataset acquisition framework: `docs/architecture/HISTORICAL_DATASET_ACQUISITION_FRAMEWORK.md`
 - Canonical research asset contract: `docs/contracts/RESEARCH_ASSET_CONTRACT.md`
 - Canonical minimum backtest row contract: `docs/contracts/MINIMUM_BACKTEST_ROW_CONTRACT.md`

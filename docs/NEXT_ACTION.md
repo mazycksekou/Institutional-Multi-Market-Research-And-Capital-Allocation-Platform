@@ -2,16 +2,16 @@
 
 ## Next Phase
 
-`Phase 4.7 - Historical Dataset Acquisition and Certification (minimum certified schema first)`
+`Phase 4.7B - Historical Dataset Acquisition`
 
 ## Objective
 
-Acquire and certify the minimum certified historical schema as a repository-owned asset, using the canonical acquisition framework so future datasets can mature without introducing parallel ownership.
+Acquire the minimum certified historical dataset from the discovered source map using the canonical acquisition framework so future datasets can mature without introducing parallel ownership. This remains a minimum certified schema first phase.
 
 ## Allowed Actions
 
-- Reuse the canonical market profile framework, research engine specification, storage, validation, lineage, and research asset runtime framework owners.
-- Extend the historical dataset acquisition and certification layer on top of the research asset runtime framework instead of creating market-specific pipelines.
+- Reuse the canonical market profile framework, research engine specification, storage, validation, lineage, source discovery, connector mapping, and research asset runtime framework owners.
+- Extend the historical dataset acquisition layer on top of the research asset runtime framework instead of creating market-specific pipelines.
 - Keep the minimum-certified-schema path reusable for sports, prediction markets, and options / 0DTE.
 - Update the project status and document indexes when this phase completes.
 
@@ -27,9 +27,9 @@ Acquire and certify the minimum certified historical schema as a repository-owne
 
 ## Expected Deliverables
 
-- Minimum certified schema acquisition and certification plan built on top of the research asset runtime framework.
+- Minimum certified schema acquisition plan built on top of the research asset runtime framework.
 - Dataset, lineage, validation, certification, and readiness mappings for the minimum certified schema.
-- Historical acquisition and certification path updates for the research-asset layer.
+- Historical acquisition path updates for the research-asset layer.
 - Updated project status and index entries.
 
 ## Validation Commands

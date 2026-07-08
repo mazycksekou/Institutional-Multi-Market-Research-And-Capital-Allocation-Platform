@@ -78,8 +78,8 @@ def test_historical_dataset_acquisition_framework_docs_exist_and_cover_required_
     assert "Duplicate Logic Avoided" in report_text
     assert "Readiness for Phase 4.7" in report_text
 
-    assert "Phase 4.6 - Minimum Certified Historical Dataset Acquisition Framework" in project_status_text
-    assert "Phase 4.7 - Historical Dataset Acquisition and Certification (minimum certified schema first)" in next_action_text
+    assert "Phase 4.7A - Research Asset Source Discovery & Connector Mapping" in project_status_text
+    assert "Phase 4.7B - Historical Dataset Acquisition" in next_action_text
     assert "docs/architecture/HISTORICAL_DATASET_ACQUISITION_FRAMEWORK.md" in project_status_text
     assert "docs/reports/PHASE4_6_MINIMUM_CERTIFIED_HISTORICAL_DATASET_ACQUISITION_FRAMEWORK.md" in project_status_text
     assert "minimum certified schema first" in next_action_text.lower()

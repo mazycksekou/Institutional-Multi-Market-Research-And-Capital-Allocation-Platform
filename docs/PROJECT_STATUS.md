@@ -7,9 +7,9 @@ Canonical live status for the repository and the required starting document for 
 - current branch: `feature/nfl-backtesting`
 - current HEAD: live branch tip (exact hash is reported in the task final report)
 - remote tracking branch: `origin/feature/nfl-backtesting`
-- active phase: `Phase 4.6 - Minimum Certified Historical Dataset Acquisition Framework`
+- active phase: `Phase 4.7A - Research Asset Source Discovery & Connector Mapping`
 - active market profile: `sports:nfl`
-- active implementation lane: `NFL P0 profile-aware foundation + event-centric historical research database + master research engine specification + universal feature registry + universal math engine contracts + research asset runtime framework + historical dataset acquisition framework`
+- active implementation lane: `NFL P0 profile-aware foundation + event-centric historical research database + master research engine specification + universal feature registry + universal math engine contracts + research asset runtime framework + historical dataset acquisition framework + research asset source discovery and connector mapping framework`
 - completed phases:
   - `Phase 4.3.6 - Profile-Aware NFL P0 Validation`
   - `Phase 4.3.7 - Minimum Backtest Row Contract`
@@ -19,11 +19,11 @@ Canonical live status for the repository and the required starting document for 
   - `Phase 4.5C - Universal Math Engine Contracts`
   - `Phase 4.5D - Research Asset Runtime Framework`
   - `Phase 4.5E - Canonical Engineering Specification Rename & Research Asset Runtime Framework`
-- current phase objective: Define the canonical historical dataset acquisition framework, versioning contract, and certification boundaries so the minimum certified historical dataset can be acquired and certified in the next phase without duplicating ownership.
-- next phase: `Phase 4.7 - Historical Dataset Acquisition and Certification (minimum certified schema first)`
+- current phase objective: Discover the canonical research assets, candidate providers, connector families, coverage, licensing, and certification readiness for the minimum NFL schema so Phase 4.7B can acquire the dataset from a canonical source map.
+- next phase: `Phase 4.7B - Historical Dataset Acquisition`
 - current blockers: None
 - latest validation status:
-  - Phase 4.6 validation passed: compileall, targeted docs tests, smoke, architecture, document lifecycle, preflight, and ops checks are green.
+  - Phase 4.7A validation passed: compileall, targeted docs tests, smoke, architecture, document lifecycle, and ops checks are green.
 - latest full gate result: `not run for this docs-only phase`
 - latest pushed commit: live branch tip (exact hash is reported in the task final report)
 
@@ -59,6 +59,7 @@ Read these only when you need more detail than the project status page provides:
 - `docs/architecture/UNIVERSAL_FEATURE_REGISTRY.md`
 - `docs/architecture/UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md`
 - `docs/architecture/RESEARCH_ASSET_RUNTIME_FRAMEWORK.md`
+- `docs/architecture/RESEARCH_ASSET_SOURCE_DISCOVERY_AND_CONNECTOR_MAPPING.md`
 - `docs/architecture/HISTORICAL_RESEARCH_DATABASE.md`
 - `docs/architecture/HISTORICAL_DATASET_ACQUISITION_FRAMEWORK.md`
 - `docs/contracts/RESEARCH_ASSET_CONTRACT.md`
@@ -68,6 +69,7 @@ Read these only when you need more detail than the project status page provides:
 - `docs/reports/PHASE4_5C_UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md`
 - `docs/reports/PHASE4_5D_RESEARCH_ASSET_RUNTIME_FRAMEWORK.md`
 - `docs/reports/PHASE4_6_MINIMUM_CERTIFIED_HISTORICAL_DATASET_ACQUISITION_FRAMEWORK.md`
+- `docs/reports/PHASE4_7A_RESEARCH_ASSET_SOURCE_DISCOVERY_AND_CONNECTOR_MAPPING.md`
 - `docs/contracts/MINIMUM_BACKTEST_ROW_CONTRACT.md`
 - `docs/contracts/NFL_MINIMUM_BACKTEST_ROW_CONTRACT.md`
 - `docs/contracts/NFL_BACKTEST_CONTRACT.md`
@@ -86,4 +88,4 @@ Read these only when you need more detail than the project status page provides:
 
 ## Next Recommended Codex Task
 
-`Phase 4.7 - Historical Dataset Acquisition and Certification (minimum certified schema first)`
+`Phase 4.7B - Historical Dataset Acquisition`
