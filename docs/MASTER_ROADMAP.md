@@ -47,7 +47,7 @@ The repository does **not** skip discovery, blueprinting, validation, or reprodu
 
 The historical research database now follows a shared chain that future markets can reuse:
 
-Provider -> Raw Acquisition Cache -> Integrity Validation -> Normalization -> Certification -> Historical Research Database -> Master Research Engine Specification -> Universal Feature Registry -> Universal Math Engine Contracts -> Research Asset Runtime Framework -> Historical Dataset Acquisition Framework -> Historical Dataset Certification -> Feature Population -> Mathematical Engine Implementation -> Decision Rows -> Backtesting
+Provider -> Raw Acquisition Cache -> Integrity Validation -> Normalization -> Research Asset Certification -> Dataset Certification -> Historical Research Database -> Master Research Engine Specification -> Universal Feature Registry -> Universal Math Engine Contracts -> Research Asset Runtime Framework -> Historical Dataset Acquisition Framework -> Historical Feature Population -> Mathematical Engine Implementation -> Decision Rows -> Backtesting
 
 Phase 4.4 established the event-centric historical acquisition foundation.
 Phase 4.5A defined the master research engine specification.
@@ -58,8 +58,8 @@ Phase 4.5E renamed the master research engine specification and the research ass
 Phase 4.6 defines the minimum certified historical dataset acquisition framework.
 Phase 4.7A discovers and maps research asset sources and connector families for the minimum certified historical schema.
 Phase 4.7B builds the reusable historical dataset acquisition runtime with raw acquisition cache and integrity validation.
-Phase 4.7C certifies the minimum certified historical dataset against the governed inputs using the reusable acquisition runtime.
-Phase 4.8 populates reusable historical features on top of certified events.
+Phase 4.7C certifies the individual research assets required by the minimum certified historical dataset and then certifies the dataset once every required asset passes.
+Phase 4.8 populates reusable historical features on top of certified assets and certified events.
 Phase 4.9 implements reusable mathematical engines.
 Phase 5.0 generates decision rows from events, markets, selections, and feature snapshots.
 Phase 5.1 begins baseline backtesting from frozen, certified inputs.
@@ -84,8 +84,8 @@ Current NFL work is in Phase 4:
 - Phase 4.6 defines the minimum certified historical dataset acquisition framework.
 - Phase 4.7A will discover and map research asset sources and connector families for the minimum certified historical schema.
 - Phase 4.7B will build the reusable historical dataset acquisition runtime with raw acquisition cache and integrity validation.
-- Phase 4.7C will certify the minimum certified historical dataset against the governed inputs using the reusable acquisition runtime.
-- Phase 4.8 will populate generated historical features from events.
+- Phase 4.7C completed the historical research asset certification runtime and gated dataset certification on asset-level evidence.
+- Phase 4.8 will populate generated historical features from certified events and assets.
 - Phase 4.9 will implement reusable mathematical engines.
 - Phase 5.0 will generate decision rows from events, markets, selections, and feature snapshots.
 - Phase 5.1 will begin baseline backtesting against the minimum certified schema.

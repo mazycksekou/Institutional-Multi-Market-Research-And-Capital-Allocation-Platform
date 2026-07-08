@@ -11,6 +11,7 @@ from typing import Any
 
 from src.analytics.model_governance.data_lineage import create_lineage_record
 from src.data.data_paths import get_runtime_data_path
+from src.data.historical_research_asset_certification_runtime import HistoricalResearchAssetCertificationRuntime
 from src.data.historical_dataset_acquisition_runtime import HistoricalDatasetAcquisitionRuntime
 from src.data.market_profile_contracts import MarketProfileContract, validate_market_profile_contract
 from src.data.market_profile_registry import get_market_profile, register_market_profile
@@ -379,6 +380,47 @@ HISTORICAL_STAGE_CONTRACTS: dict[str, HistoricalStageContract] = {
         time_anchor_field="event_start_time",
         metadata={"stage": "selection"},
     ),
+    "historical_research_asset_certifications": HistoricalStageContract(
+        table_name="historical_research_asset_certifications",
+        row_id_field="certification_id",
+        required_fields=HISTORICAL_SHARED_REQUIRED_FIELDS
+        + (
+            "certification_id",
+            "research_asset_id",
+            "research_asset_name",
+            "asset_category",
+            "asset_type",
+            "asset_version",
+            "certification_version",
+            "certification_state",
+            "certification_reason",
+            "failure_reason",
+            "coverage_score",
+            "certification_score",
+            "required_fields_json",
+            "required_timestamps_json",
+            "point_in_time_rules_json",
+            "validation_json",
+            "lineage_json",
+            "provenance_json",
+            "certification_notes_json",
+            "missing_fields_json",
+            "duplicate_keys_json",
+            "join_keys_json",
+            "valid_row_count",
+            "invalid_row_count",
+            "warning_count",
+            "source_row_count",
+            "checksum",
+        ),
+        required_timestamps=HISTORICAL_SHARED_REQUIRED_TIMESTAMPS,
+        join_keys=("certification_id", "research_asset_id", "batch_id"),
+        point_in_time_rules=("certified_at >= snapshot_time",),
+        numeric_fields=("coverage_score", "certification_score", "valid_row_count", "invalid_row_count", "warning_count", "source_row_count", "quality_score", "completeness_score"),
+        description="Certification ledger for individual research assets composed into the historical dataset.",
+        time_anchor_field="certified_at",
+        metadata={"stage": "research_asset_certification"},
+    ),
     "historical_certifications": HistoricalStageContract(
         table_name="historical_certifications",
         row_id_field="certification_id",
@@ -400,7 +442,7 @@ HISTORICAL_STAGE_CONTRACTS: dict[str, HistoricalStageContract] = {
         join_keys=("certification_id", "batch_id", "stage_name"),
         point_in_time_rules=("certified_at >= snapshot_time",),
         numeric_fields=("row_count", "valid_row_count", "invalid_row_count", "warning_count", "quality_score", "completeness_score"),
-        description="Validation / certification summary for a historical stage.",
+        description="Dataset certification summary for the historical research database.",
         time_anchor_field="certified_at",
         metadata={"stage": "certification"},
     ),
@@ -1497,6 +1539,9 @@ class HistoricalResearchDatabase:
     def list_certifications(self) -> list[dict[str, Any]]:
         return self.list_rows("historical_certifications")
 
+    def list_research_asset_certifications(self) -> list[dict[str, Any]]:
+        return self.list_rows("historical_research_asset_certifications")
+
     def bootstrap(
         self,
         *,
@@ -1538,18 +1583,21 @@ class HistoricalResearchDatabase:
                 **validation,
                 "stored_row_count": self.store.count(stage_name),
             }
-            certification_row = _build_certification_row(
-                profile=profile,
-                batch_id=batch_rows[0]["batch_id"] if batch_rows else f"{version}.batch.001",
-                dataset_version=version,
-                stage_name=stage_name,
-                validation=validation,
-                source_name=source_name,
-                source_type=source_type,
-                source_key=source_key,
-                created_at=created_at,
-            )
-            self.store.upsert("historical_certifications", certification_row, key_columns=("certification_id",))
+
+        certification_runtime = HistoricalResearchAssetCertificationRuntime(
+            self.storage_path,
+            backend=self.backend,
+            dataset_owner=self.dataset_owner,
+            store=self.store,
+        )
+        certification_result = certification_runtime.certify(
+            fixture=fixture_payload,
+            profile_id=profile_id,
+            raw_acquisition_result=raw_acquisition_result,
+            dataset_version=version,
+            created_at=created_at,
+            batch_id=batch_rows[0]["batch_id"] if batch_rows else f"{version}.batch.001",
+        )
 
         readiness = self.build_readiness_snapshot(
             profile=profile,
@@ -1567,6 +1615,7 @@ class HistoricalResearchDatabase:
                 "dataset_id": (raw_acquisition_result.get("contract") or {}).get("dataset_id"),
             },
             "stage_results": stage_results,
+            "certification_result": certification_result,
         }
         return readiness
 
@@ -1588,6 +1637,17 @@ class HistoricalResearchDatabase:
                     profile_id=resolved_profile.profile_id,
                     source_bundle=(fixture or {}).get("source_bundle") or fixture or {},
                 )
+        certification_runtime = HistoricalResearchAssetCertificationRuntime(
+            self.storage_path,
+            backend=self.backend,
+            dataset_owner=self.dataset_owner,
+            store=self.store,
+        )
+        certification_snapshot = certification_runtime.build_readiness_snapshot(
+            profile_id=resolved_profile.profile_id,
+            fixture=fixture,
+            raw_acquisition_result=raw_acquisition_result,
+        )
         stage_readiness: dict[str, dict[str, Any]] = {}
         ready_stages: list[str] = []
         missing_stages: list[str] = []
@@ -1616,13 +1676,14 @@ class HistoricalResearchDatabase:
             else:
                 blocked_stages.append(contract.table_name)
         raw_cache_ok = bool(raw_acquisition_snapshot.get("ok"))
+        certification_ok = bool(certification_snapshot.get("ok"))
         overall_status = (
             "ready"
-            if profile_validation["ok"] and raw_cache_ok and len(ready_stages) == len(HISTORICAL_STAGE_CONTRACTS)
+            if profile_validation["ok"] and raw_cache_ok and certification_ok and len(ready_stages) == len(HISTORICAL_STAGE_CONTRACTS)
             else "partial"
             if ready_stages and profile_validation["ok"]
             else "blocked"
-            if not profile_validation["ok"] or (raw_acquisition_snapshot and not raw_cache_ok)
+            if not profile_validation["ok"] or (raw_acquisition_snapshot and not raw_cache_ok) or not certification_ok
             else "missing"
         )
         return {
@@ -1633,6 +1694,7 @@ class HistoricalResearchDatabase:
             "storage": self.store.health(),
             "market_profile": profile_validation,
             "raw_acquisition_cache": raw_acquisition_snapshot.get("raw_acquisition_cache") if raw_acquisition_snapshot else {},
+            "research_asset_certification": certification_snapshot,
             "table_readiness": stage_readiness,
             "ready_tables": ready_stages,
             "missing_tables": missing_stages,
@@ -1645,6 +1707,8 @@ class HistoricalResearchDatabase:
                 "market_profile_status": profile_status,
                 "raw_acquisition_cache_status": raw_acquisition_snapshot.get("status"),
                 "raw_acquisition_cache_ready": raw_cache_ok,
+                "research_asset_certification_status": certification_snapshot.get("status"),
+                "research_asset_certification_ready": certification_ok,
                 "row_counts": {name: details.get("row_count", 0) for name, details in stage_readiness.items()},
             },
             "fixture_summary": {
@@ -1677,11 +1741,13 @@ class HistoricalResearchDatabase:
             "blocked_tables": snapshot.get("blocked_tables", []),
             "raw_acquisition_cache": snapshot.get("raw_acquisition_cache", {}),
         }
+        snapshot["research_asset_certification_readiness"] = dict(snapshot.get("research_asset_certification") or {})
         snapshot["readiness_summary"] = {
             "table_readiness_ready": len(snapshot.get("ready_tables", [])),
             "table_readiness_missing": len(snapshot.get("missing_tables", [])),
             "table_readiness_blocked": len(snapshot.get("blocked_tables", [])),
             "raw_acquisition_cache_status": (snapshot.get("raw_acquisition_cache") or {}).get("status"),
+            "research_asset_certification_status": (snapshot.get("research_asset_certification") or {}).get("status"),
         }
         return snapshot
 

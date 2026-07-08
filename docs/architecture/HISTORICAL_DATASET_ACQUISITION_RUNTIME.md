@@ -19,7 +19,8 @@ It keeps the following responsibilities on one canonical path:
 - checksum generation
 - integrity validation handoff
 - normalization handoff
-- certification handoff
+- research asset certification handoff
+- dataset certification handoff
 - dataset registry integration
 - dataset versioning integration
 - lineage capture
@@ -33,7 +34,8 @@ The runtime reuses the existing canonical owners rather than introducing a new a
 - `src.data.historical_dataset_acquisition_runtime.py` owns raw acquisition cache staging, integrity validation, and the normalization/certification handoff interface.
 - `src.storage.local_store.py` owns the physical table families used by the dataset registry, versioning, raw records, normalized records, lineage edges, and validation results.
 - `src.data.validation.py` owns reusable row-level validation helpers.
-- `src.data.historical_research_database.py` owns certification and the event-centric historical research database that consumes the handoff bundles.
+- `src.data.historical_research_asset_certification_runtime.py` owns research asset certification, certification scoring, and the asset-level handoff into dataset certification.
+- `src.data.historical_research_database.py` owns dataset certification and the event-centric historical research database that consumes the handoff bundles.
 - `src.services.streamlit_dashboard_data.py` owns the dashboard-facing readiness adapter.
 
 The runtime does not own provider integrations.
@@ -43,7 +45,7 @@ Providers remain acquisition mechanisms only.
 
 The reusable acquisition lifecycle is:
 
-Provider -> Raw Acquisition Cache -> Integrity Validation -> Normalization -> Certification -> Historical Research Database
+Provider -> Raw Acquisition Cache -> Integrity Validation -> Normalization -> Research Asset Certification -> Dataset Certification -> Historical Research Database
 
 The runtime is the stage that makes the first two transitions concrete.
 
@@ -114,9 +116,11 @@ The runtime also prepares a certification handoff bundle with:
 - validation results
 - raw record counts
 - lineage identifiers
+- research asset certification results
 - certification scope
 
-Certification remains owned by the historical research database.
+Research asset certification remains owned by `src.data.historical_research_asset_certification_runtime`.
+Dataset certification remains owned by the historical research database.
 
 ## Multi-Provider Support
 
@@ -148,7 +152,8 @@ provider -> raw acquisition cache -> integrity validation -> normalization -> ce
 ## Phase Boundary
 
 Phase 4.7B builds the reusable historical dataset acquisition runtime with raw acquisition cache and integrity validation.
-Phase 4.7C certifies the minimum certified historical dataset against the governed inputs using the reusable acquisition runtime.
+Phase 4.7C completes the historical research asset certification runtime and gates dataset certification on the required research assets.
+Phase 4.8 populates reusable historical feature snapshots.
 
 ## Out Of Scope
 

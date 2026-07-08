@@ -118,6 +118,37 @@ The lifecycle gate meaning is:
 - Backtested: the asset has been evaluated where backtesting applies
 - Production Ready: the asset can be consumed in the canonical workflow
 
+## Certification States
+
+Research asset certification reuses the canonical certification states that the runtime exposes:
+
+- UNKNOWN
+- DISCOVERED
+- ACQUIRED
+- VALIDATED
+- PARTIALLY_CERTIFIED
+- CERTIFIED
+- REJECTED
+- SUPERSEDED
+- REVOKED
+
+## Certification Failure Reasons
+
+Certification failures must be explainable and machine-readable.
+
+Accepted failure reasons:
+
+- Missing Fields
+- Coverage Failure
+- Schema Failure
+- Timestamp Failure
+- Duplicate Records
+- Corrupted Payload
+- Failed Checksum
+- Lineage Failure
+- Provider Conflict
+- Point-In-Time Violation
+
 ## Ownership Rules
 
 Every asset must have exactly one canonical owner.

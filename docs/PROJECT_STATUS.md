@@ -7,9 +7,9 @@ Canonical live status for the repository and the required starting document for 
 - current branch: `feature/nfl-backtesting`
 - current HEAD: live branch tip (exact hash is reported in the task final report)
 - remote tracking branch: `origin/feature/nfl-backtesting`
-- active phase: `Phase 4.7C - Historical Dataset Certification`
+- active phase: `Phase 4.8 - Historical Feature Population`
 - active market profile: `sports:nfl`
-- active implementation lane: `NFL P0 profile-aware foundation + event-centric historical research database + master research engine specification + universal feature registry + universal math engine contracts + research asset runtime framework + historical dataset acquisition framework + historical dataset acquisition runtime + research asset source discovery and connector mapping framework`
+- active implementation lane: `NFL P0 profile-aware foundation + event-centric historical research database + master research engine specification + universal feature registry + universal math engine contracts + research asset runtime framework + historical dataset acquisition framework + historical dataset acquisition runtime + research asset source discovery and connector mapping framework + historical research asset certification runtime`
 - completed phases:
   - `Phase 4.3.6 - Profile-Aware NFL P0 Validation`
   - `Phase 4.3.7 - Minimum Backtest Row Contract`
@@ -20,11 +20,12 @@ Canonical live status for the repository and the required starting document for 
   - `Phase 4.5D - Research Asset Runtime Framework`
   - `Phase 4.5E - Canonical Engineering Specification Rename & Research Asset Runtime Framework`
   - `Phase 4.7B - Historical Dataset Acquisition Runtime`
-- current phase objective: Certify the minimum historical NFL dataset using the reusable acquisition runtime, preserving the raw acquisition cache, integrity checks, normalization handoff, lineage, and point-in-time safety so future markets can reuse the same certified path.
-- next phase: `Phase 4.7C - Historical Dataset Certification`
+  - `Phase 4.7C - Historical Research Asset Certification Runtime`
+- current phase objective: Populate reusable historical features on top of certified research assets and certified datasets while preserving the same raw acquisition cache, integrity checks, lineage, and point-in-time safety.
+- next phase: `Phase 4.9 - Historical Mathematical Engine Implementation`
 - current blockers: None
 - latest validation status:
-  - Phase 4.7B runtime validation passed: compileall, targeted docs tests, smoke, architecture, document lifecycle, and ops checks are green.
+  - Phase 4.7C runtime validation passed: compileall, certification runtime tests, smoke, architecture, document lifecycle, and ops checks are green.
 - latest full gate result: `not run for this docs-only phase`
 - latest pushed commit: live branch tip (exact hash is reported in the task final report)
 
@@ -39,6 +40,8 @@ Canonical live status for the repository and the required starting document for 
 - Historical datasets are permanent repository assets.
 - Providers are acquisition mechanisms only.
 - The repository owns certified datasets after acquisition and certification.
+- Research assets are certified individually before dataset certification completes.
+- Dataset certification is gated on the required research assets passing first.
 - Events own shared context.
 - Markets belong to events.
 - Selections belong to markets.
@@ -60,6 +63,7 @@ Read these only when you need more detail than the project status page provides:
 - `docs/architecture/UNIVERSAL_FEATURE_REGISTRY.md`
 - `docs/architecture/UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md`
 - `docs/architecture/RESEARCH_ASSET_RUNTIME_FRAMEWORK.md`
+- `docs/architecture/HISTORICAL_RESEARCH_ASSET_CERTIFICATION_RUNTIME.md`
 - `docs/architecture/RESEARCH_ASSET_SOURCE_DISCOVERY_AND_CONNECTOR_MAPPING.md`
 - `docs/architecture/HISTORICAL_RESEARCH_DATABASE.md`
 - `docs/architecture/HISTORICAL_DATASET_ACQUISITION_FRAMEWORK.md`
@@ -72,6 +76,7 @@ Read these only when you need more detail than the project status page provides:
 - `docs/reports/PHASE4_5D_RESEARCH_ASSET_RUNTIME_FRAMEWORK.md`
 - `docs/reports/PHASE4_6_MINIMUM_CERTIFIED_HISTORICAL_DATASET_ACQUISITION_FRAMEWORK.md`
 - `docs/reports/PHASE4_7B_HISTORICAL_DATASET_ACQUISITION_RUNTIME.md`
+- `docs/reports/PHASE4_7C_HISTORICAL_RESEARCH_ASSET_CERTIFICATION_RUNTIME.md`
 - `docs/reports/PHASE4_7A_RESEARCH_ASSET_SOURCE_DISCOVERY_AND_CONNECTOR_MAPPING.md`
 - `docs/contracts/MINIMUM_BACKTEST_ROW_CONTRACT.md`
 - `docs/contracts/NFL_MINIMUM_BACKTEST_ROW_CONTRACT.md`
@@ -91,4 +96,4 @@ Read these only when you need more detail than the project status page provides:
 
 ## Next Recommended Codex Task
 
-`Phase 4.7C - Historical Dataset Certification`
+`Phase 4.8 - Historical Feature Population`

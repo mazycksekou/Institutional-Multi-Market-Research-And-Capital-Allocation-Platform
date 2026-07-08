@@ -142,7 +142,7 @@ Lifecycle meaning:
 
 The framework connects research assets through one canonical sequence:
 
-Provider -> Raw Acquisition Cache -> Integrity Validation -> Normalization -> Certification -> Historical Research Database -> Historical Dataset Acquisition Framework -> Research Asset Runtime Framework -> Datasets -> Features -> Mathematical Engines -> Signals -> Targets -> Confidence -> Decision Rows -> Backtesting -> Experiments -> Evidence Packages
+Provider -> Raw Acquisition Cache -> Integrity Validation -> Normalization -> Research Asset Certification -> Dataset Certification -> Historical Research Database -> Historical Dataset Acquisition Framework -> Research Asset Runtime Framework -> Datasets -> Features -> Mathematical Engines -> Signals -> Targets -> Confidence -> Decision Rows -> Backtesting -> Experiments -> Evidence Packages
 
 The repository may define the complete research universe, but the first production backtests must still use only the certified minimum schema.
 Advanced assets remain inactive until their data, math, and validation maturity are proven.

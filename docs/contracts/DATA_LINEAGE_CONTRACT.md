@@ -39,13 +39,15 @@ Historical dataset acquisition must also preserve the dataset versioning and cer
 | `dataset_version` | Certified dataset version string. |
 | `dataset_revision` | Revision marker for corrections or enrichment. |
 | `acquisition_timestamp` | When the acquisition job materialized the dataset. |
+| `research_asset_certification_id` | Certification record key for the individual research asset. |
+| `research_asset_id` | Permanent identifier for the research asset being certified. |
 | `certification_timestamp` | When the repository certified the dataset version. |
 | `certification_status` | Repository certification state for the version. |
 | `coverage_score` | Repository-owned coverage signal for the version. |
 
 Rules:
 
-- lineage must connect provider source -> acquisition job -> raw acquisition cache -> integrity validation -> normalization -> certification -> certified dataset version
+- lineage must connect provider source -> acquisition job -> raw acquisition cache -> integrity validation -> normalization -> research asset certification -> dataset certification -> certified dataset version
 - the raw acquisition cache preserves the original payload for audit and replay without redownloading source data
 - one certified dataset version may combine multiple provider contributions
 - the repository must be able to trace a certified version back to the source bundle and the versioned dataset registry entry

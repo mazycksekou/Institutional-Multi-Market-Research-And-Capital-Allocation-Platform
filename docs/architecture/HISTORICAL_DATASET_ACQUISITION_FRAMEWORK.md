@@ -44,7 +44,7 @@ Providers remain acquisition mechanisms only.
 
 The reusable acquisition lifecycle is:
 
-Provider -> Raw Acquisition Cache -> Integrity Validation -> Normalization -> Certification -> Historical Research Database -> Events -> Markets -> Selections -> Feature Snapshots -> Decision Rows
+Provider -> Raw Acquisition Cache -> Integrity Validation -> Normalization -> Research Asset Certification -> Dataset Certification -> Historical Research Database -> Events -> Markets -> Selections -> Feature Snapshots -> Decision Rows
 
 The lifecycle is reusable for sports, prediction markets, options / 0DTE, and future market families.
 
@@ -59,7 +59,8 @@ Each boundary has one owner:
 | Integrity Validation | `src.data.historical_dataset_acquisition_runtime` and `src.data.validation` |
 | Archive | `src.storage` |
 | Normalization | `src.data.historical_dataset_acquisition_runtime` handoff plus domain-specific dataset owners |
-| Certification | `src.data.historical_research_database` |
+| Research Asset Certification | `src.data.historical_research_asset_certification_runtime` |
+| Dataset Certification | `src.data.historical_research_database` |
 | Storage | `src.storage.local_store` |
 | Validation | `src.data.validation` and `scripts` |
 | Dataset versioning | `src.data.local_platform` |
@@ -218,7 +219,7 @@ provider -> raw acquisition cache -> integrity validation -> normalization -> ce
 
 Phase 4.6 defines the minimum certified historical dataset acquisition framework.
 Phase 4.7B builds the reusable historical dataset acquisition runtime with raw acquisition cache and integrity validation.
-Phase 4.7C certifies the minimum certified historical dataset against the governed inputs using the reusable acquisition runtime.
+Phase 4.7C completes the historical research asset certification runtime and gates dataset certification on the required research assets.
 Phase 4.8 populates reusable historical feature snapshots.
 Phase 4.9 implements reusable mathematical engines.
 Phase 5.0 constructs decision rows from certified historical data.

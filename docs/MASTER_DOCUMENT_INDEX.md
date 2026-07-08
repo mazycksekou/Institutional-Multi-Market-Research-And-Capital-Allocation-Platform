@@ -1,13 +1,13 @@
-﻿# Master Document Index
+# Master Document Index
 
 This index points readers to the current truth and the durable historical entry points.
 
 ## Current Truth
 
 ### ARCHITECTURE DOCUMENT
-- `docs/MASTER_ROADMAP.md` - Master Roadmap
-- `docs/NEXT_ACTION.md` - Next Action
-- `docs/PROJECT_STATUS.md` - Project Status
+- `docs/MASTER_ROADMAP.md` - Universal Market Lifecycle
+- `docs/NEXT_ACTION.md` - Next Phase
+- `docs/PROJECT_STATUS.md` - Active Canonical Rules
 - `docs/architecture/ARCHITECTURE_ENFORCEMENT_CURRENT_STATE.md` - Architecture Enforcement Current State
 - `docs/architecture/ARCHITECTURE_IMPORT_RULES.md` - Architecture Import Rules
 - `docs/architecture/ARCHITECTURE_RULES.md` - Architecture Rules
@@ -23,22 +23,25 @@ This index points readers to the current truth and the durable historical entry 
 - `docs/architecture/DOCUMENT_LIFECYCLE_POLICY.md` - Document Lifecycle Policy
 - `docs/architecture/FEATURE_STORE_ARCHITECTURE.md` - Feature Store Architecture
 - `docs/architecture/FINAL_REPOSITORY_STRUCTURE.md` - Final Repository Structure
-- `docs/architecture/HISTORICAL_RESEARCH_DATABASE.md` - Historical Research Database
 - `docs/architecture/HISTORICAL_DATASET_ACQUISITION_FRAMEWORK.md` - Historical Dataset Acquisition Framework
 - `docs/architecture/HISTORICAL_DATASET_ACQUISITION_RUNTIME.md` - Historical Dataset Acquisition Runtime
-- `docs/architecture/MARKET_PROFILE_FRAMEWORK.md` - Market Profile Framework
-- `docs/architecture/MARKET_VERTICAL_LIFECYCLE.md` - Market Vertical Lifecycle
-- `docs/architecture/MASTER_RESEARCH_ENGINE_SPECIFICATION.md` - Master Research Engine Specification
-- `docs/architecture/MASTER_SYSTEM_ARCHITECTURE.md` - Master System Architecture
+- `docs/architecture/HISTORICAL_RESEARCH_ASSET_CERTIFICATION_RUNTIME.md` - Historical Research Asset Certification Runtime
+- `docs/architecture/HISTORICAL_RESEARCH_DATABASE.md` - Purpose
+- `docs/architecture/MARKET_PROFILE_FRAMEWORK.md` - Purpose
+- `docs/architecture/MARKET_VERTICAL_LIFECYCLE.md` - Canonical Sequence
+- `docs/architecture/MASTER_RESEARCH_ENGINE_SPECIFICATION.md` - What This Spec Owns
+- `docs/architecture/MASTER_SYSTEM_ARCHITECTURE.md` - 1. Platform Purpose
 - `docs/architecture/MODEL_FLOW_MAP.md` - Model Flow Map
 - `docs/architecture/MODEL_REGISTRY_ARCHITECTURE.md` - Model Registry Architecture
 - `docs/architecture/MODULE_DEPENDENCY_MAP.md` - Module Dependency Map
-- `docs/architecture/NFL_P0_DATA_FOUNDATION.md` - NFL P0 Data Foundation
+- `docs/architecture/NFL_P0_DATA_FOUNDATION.md` - Canonical ownership
 - `docs/architecture/OPENAPI_CONTRACT_GOVERNANCE.md` - OpenAPI Contract Governance
 - `docs/architecture/PRODUCTION_READINESS.md` - Production Readiness
 - `docs/architecture/PROVIDER_OWNERSHIP_MAP.md` - Provider Ownership Map
 - `docs/architecture/REPOSITORY_INDEPENDENCE_SCORECARD.md` - Repository Independence Scorecard
 - `docs/architecture/REPOSITORY_MODERNIZATION_COMPLETE_V1.md` - Repository Modernization Complete V1
+- `docs/architecture/RESEARCH_ASSET_RUNTIME_FRAMEWORK.md` - Purpose
+- `docs/architecture/RESEARCH_ASSET_SOURCE_DISCOVERY_AND_CONNECTOR_MAPPING.md` - Research Asset Source Discovery And Connector Mapping
 - `docs/architecture/RESEARCH_PLATFORM_ARCHITECTURE.md` - Research Platform Architecture
 - `docs/architecture/REVIEWER_GUIDE.md` - Reviewer Guide
 - `docs/architecture/RUNTIME_FLOW_MAP.md` - Runtime Flow Map
@@ -48,10 +51,8 @@ This index points readers to the current truth and the durable historical entry 
 - `docs/architecture/STREAMLIT_DATA_PIPELINE.md` - Streamlit Data Pipeline
 - `docs/architecture/SYSTEM_OVERVIEW.md` - System Overview
 - `docs/architecture/TERMINOLOGY_STANDARD.md` - Terminology Standard
-- `docs/architecture/UNIVERSAL_FEATURE_REGISTRY.md` - Universal Feature Registry
-- `docs/architecture/UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md` - Universal Mathematical Engine Contracts
-- `docs/architecture/RESEARCH_ASSET_RUNTIME_FRAMEWORK.md` - Research Asset Runtime Framework
-- `docs/architecture/RESEARCH_ASSET_SOURCE_DISCOVERY_AND_CONNECTOR_MAPPING.md` - Research Asset Source Discovery And Connector Mapping
+- `docs/architecture/UNIVERSAL_FEATURE_REGISTRY.md` - Canonical Owners Reused
+- `docs/architecture/UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md` - Canonical Owners Reused
 - `docs/architecture/VENDOR_NEUTRALITY_AND_OPENAPI_NAMING.md` - Vendor Neutrality And OpenAPI Naming
 
 ### AUDIT REPORT
@@ -85,7 +86,6 @@ This index points readers to the current truth and the durable historical entry 
 - `docs/contracts/IMPORT_INTERFACE_SPECIFICATION.md` - Import Interface Specification
 - `docs/contracts/MARKET_PROFILE_CONTRACT.md` - Market Profile Contract
 - `docs/contracts/MINIMUM_BACKTEST_ROW_CONTRACT.md` - Minimum Backtest Row Contract
-- `docs/contracts/RESEARCH_ASSET_CONTRACT.md` - Research Asset Contract
 - `docs/contracts/MODEL_VERSION_CONTRACT.md` - Model Version Contract
 - `docs/contracts/NFL_AS_SPORTS_PROFILE_INSTANCE.md` - NFL as a Sports Profile Instance
 - `docs/contracts/NFL_ATOMIC_FEATURE_CONTRACT.md` - NFL Atomic Feature Contract
@@ -100,6 +100,7 @@ This index points readers to the current truth and the durable historical entry 
 - `docs/contracts/OPTIONS_0DTE_MARKET_PROFILE.md` - Options / 0DTE Market Profile
 - `docs/contracts/PREDICTION_MARKET_PROFILE.md` - Prediction Market Profile
 - `docs/contracts/PROVIDER_ADAPTER_CONTRACTS_V1.md` - Provider Adapter Contracts v1
+- `docs/contracts/RESEARCH_ASSET_CONTRACT.md` - Research Asset Contract
 - `docs/contracts/SPORTS_MARKET_PROFILE.md` - Sports Market Profile
 - `docs/contracts/SPORT_SPECIFIC_FIELD_CONTRACTS.md` - Sport Specific Field Contracts
 - `docs/contracts/SPORT_STREAMLIT_DISPLAY_CONTRACT.md` - Sport Streamlit Display Contract
@@ -120,15 +121,14 @@ This index points readers to the current truth and the durable historical entry 
 
 ### DISCOVERY REPORT
 - `docs/discovery/COMPLETE_DATA_PLATFORM_DISCOVERY.md` - Complete Data Platform Discovery
-- `docs/reports/PHASE4_7A_RESEARCH_ASSET_SOURCE_DISCOVERY_AND_CONNECTOR_MAPPING.md` - Phase 4.7A Research Asset Source Discovery And Connector Mapping
 
 ### GAP ANALYSIS
 - `docs/reports/gap_analysis/COMPLETE_GAP_ANALYSIS.md` - Complete Gap Analysis
 - `docs/reports/gap_analysis/IMPLEMENTATION_READINESS_REPORT.md` - Implementation Readiness Report
 
 ### INDEX
-- `docs/DOCUMENT_RETENTION_INDEX.md` - Document Retention Index
-- `docs/MASTER_DOCUMENT_INDEX.md` - Master Document Index
+- `docs/DOCUMENT_RETENTION_INDEX.md` - Policy Note
+- `docs/MASTER_DOCUMENT_INDEX.md` - Current Truth
 
 ### MATRIX
 - `docs/reports/matrices/ASSET_CLASS_CAPABILITY_MATRIX.md` - Asset Class Capability Matrix

@@ -43,7 +43,8 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "feature/nfl-backtesting" in project_status_text
     assert "sports:nfl" in project_status_text
     assert "Phase 4.7B - Historical Dataset Acquisition Runtime" in project_status_text
-    assert "Phase 4.7C - Historical Dataset Certification" in project_status_text
+    assert "Phase 4.7C - Historical Research Asset Certification Runtime" in project_status_text
+    assert "Phase 4.8 - Historical Feature Population" in project_status_text
     assert "Phase 4.5E - Canonical Engineering Specification Rename & Research Asset Runtime Framework" in project_status_text
     assert "Phase 4.5C - Universal Math Engine Contracts" in project_status_text
     assert "Phase 4.3.6" in project_status_text
@@ -58,6 +59,7 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "docs/architecture/MASTER_RESEARCH_ENGINE_SPECIFICATION.md" in project_status_text
     assert "docs/architecture/HISTORICAL_DATASET_ACQUISITION_FRAMEWORK.md" in project_status_text
     assert "docs/architecture/HISTORICAL_DATASET_ACQUISITION_RUNTIME.md" in project_status_text
+    assert "docs/architecture/HISTORICAL_RESEARCH_ASSET_CERTIFICATION_RUNTIME.md" in project_status_text
     assert "docs/architecture/RESEARCH_ASSET_SOURCE_DISCOVERY_AND_CONNECTOR_MAPPING.md" in project_status_text
     assert "docs/architecture/UNIVERSAL_FEATURE_REGISTRY.md" in project_status_text
     assert "docs/architecture/UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md" in project_status_text
@@ -69,10 +71,10 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "docs/reports/PHASE4_5D_RESEARCH_ASSET_RUNTIME_FRAMEWORK.md" in project_status_text
     assert "docs/reports/PHASE4_7A_RESEARCH_ASSET_SOURCE_DISCOVERY_AND_CONNECTOR_MAPPING.md" in project_status_text
     assert "docs/reports/PHASE4_7B_HISTORICAL_DATASET_ACQUISITION_RUNTIME.md" in project_status_text
+    assert "docs/reports/PHASE4_7C_HISTORICAL_RESEARCH_ASSET_CERTIFICATION_RUNTIME.md" in project_status_text
 
-    assert "Phase 4.7C - Historical Dataset Certification" in next_action_text
-    assert "minimum certified historical dataset" in next_action_text.lower()
-    assert "Do not populate features yet." in next_action_text
+    assert "Phase 4.8 - Historical Feature Population" in next_action_text
+    assert "historical feature population" in next_action_text.lower()
     assert "Do not implement mathematical engines yet." in next_action_text
     assert "Do not generate decision rows yet." in next_action_text
     assert "validation commands" in next_action_text.lower()
@@ -97,8 +99,8 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "Phase 4.6 defines the minimum certified historical dataset acquisition framework." in roadmap_text
     assert "Phase 4.7A discovers and maps research asset sources and connector families" in roadmap_text
     assert "Phase 4.7B builds the reusable historical dataset acquisition runtime with raw acquisition cache and integrity validation." in roadmap_text
-    assert "Phase 4.7C certifies the minimum certified historical dataset against the governed inputs using the reusable acquisition runtime." in roadmap_text
-    assert "Phase 4.8 populates reusable historical features" in roadmap_text
+    assert "Phase 4.7C completed the historical research asset certification runtime and gated dataset certification on asset-level evidence." in roadmap_text
+    assert "Phase 4.8 populates reusable historical features on top of certified assets and certified events." in roadmap_text
     assert "Phase 4.9 implements reusable mathematical engines." in roadmap_text
     assert "Phase 5.0 generates decision rows" in roadmap_text
     assert "Phase 5.1 begins baseline backtesting" in roadmap_text

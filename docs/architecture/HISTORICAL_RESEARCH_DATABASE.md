@@ -15,6 +15,7 @@ Decision rows are derived later from the certified event data and are not the st
 - `src/storage/local_store.py` owns the physical tables.
 - `src/data/local_platform.py` owns the reusable dataset contract, dataset registry, dataset versioning, raw/normalized record lifecycle, validation handoff, and dataset-level readiness reporting.
 - `src/data/historical_dataset_acquisition_runtime.py` owns raw acquisition cache staging, integrity validation, and the normalization/certification handoff into this database.
+- `src.data.historical_research_asset_certification_runtime.py` owns research asset certification and the asset-level gate before dataset certification.
 - `src/data/historical_research_database.py` owns event-centric historical acquisition, normalization, certification, bootstrap, and readiness orchestration.
 - `src/data/source_event_links.py` owns source-to-event reconciliation.
 - `src.data.validation` owns reusable row validation.
@@ -28,7 +29,8 @@ The canonical historical research database is organized around these stages:
 2. `historical_events`
 3. `historical_markets`
 4. `historical_selections`
-5. `historical_certifications`
+5. `historical_research_asset_certifications`
+6. `historical_certifications`
 
 The stages live in the shared local storage engine and can be reused by future sports, prediction markets, and options / 0DTE implementations.
 
@@ -69,7 +71,7 @@ This architecture should remain reusable for:
 
 The reuse contract is:
 
-provider -> raw acquisition cache -> integrity validation -> normalization -> certification -> event -> market -> selection -> feature snapshot -> decision row
+provider -> raw acquisition cache -> integrity validation -> normalization -> research asset certification -> dataset certification -> event -> market -> selection -> feature snapshot -> decision row
 
 ## Phase Boundary
 
@@ -81,7 +83,7 @@ Phase 4.5D establishes the research asset runtime framework.
 Phase 4.5E completes the canonical engineering specification rename and keeps the runtime framework aligned with the broader research-engine ownership model.
 Phase 4.6 defines the minimum certified historical dataset acquisition framework.
 Phase 4.7B builds the reusable historical dataset acquisition runtime with raw acquisition cache and integrity validation.
-Phase 4.7C certifies the minimum certified historical dataset against the governed inputs using the reusable acquisition runtime.
+Phase 4.7C completes the historical research asset certification runtime and gates dataset certification on the required research assets.
 Phase 4.8 populates reusable historical feature snapshots.
 Phase 4.9 implements reusable mathematical engines.
 Phase 5.0 constructs decision rows from certified historical data.
