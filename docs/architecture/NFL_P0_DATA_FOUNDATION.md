@@ -79,7 +79,10 @@ The following remain intentionally deferred:
 
 The foundation is structurally ready, but the repository still needs future phases to:
 
-- populate reusable historical feature snapshots in Phase 4.5
-- build decision rows in Phase 4.6
-- build the first baseline backtest on top of certified historical rows
+- define the master market input specification in Phase 4.5A
+- build the universal feature registry in Phase 4.5B
+- define the universal math engine contracts in Phase 4.5C
+- perform governed historical data acquisition in Phase 4.5D
+- populate reusable historical feature snapshots in Phase 4.6
+- build decision rows in Phase 4.7
 - expand beyond the P0 team/game foundation when the data layer is proven stable

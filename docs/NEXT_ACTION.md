@@ -2,17 +2,17 @@
 
 ## Next Phase
 
-`Phase 4.5 — Historical Feature Population`
+`Phase 4.5B - Universal Feature Registry`
 
 ## Objective
 
-Populate certified historical events, markets, selections, and event context with the first reusable feature snapshots.
+Turn the master market input specification into the universal feature registry so every future feature family has one canonical owner, lifecycle state, and reuse path.
 
 ## Allowed Actions
 
-- Reuse the canonical event-centric historical database, storage, validation, and lineage owners.
-- Populate feature snapshots only from certified historical events and their markets / selections.
-- Extend the shared readiness and lineage reporting for historical feature population.
+- Reuse the canonical market profile framework, market-input specification, storage, validation, and lineage owners.
+- Extend the universal feature registry instead of creating market-specific registries.
+- Keep the registry architecture reusable for sports, prediction markets, and options / 0DTE.
 - Update the project status and document indexes when this phase completes.
 
 ## Forbidden Actions
@@ -25,9 +25,9 @@ Populate certified historical events, markets, selections, and event context wit
 
 ## Expected Deliverables
 
-- Historical feature population plan for the certified event database.
-- Feature snapshot mappings for event-owned context and market-owned selections.
-- Readiness, lineage, and validation updates for historical feature population.
+- Universal feature registry plan built from the master market input specification.
+- Feature lifecycle mappings for market inputs, signals, targets, confidence metrics, and validation metrics.
+- Readiness, lineage, and validation updates for the feature registry layer.
 - Updated project status and index entries.
 
 ## Validation Commands

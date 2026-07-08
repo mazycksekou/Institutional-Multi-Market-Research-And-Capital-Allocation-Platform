@@ -26,6 +26,7 @@ This index points readers to the current truth and the durable historical entry 
 - `docs/architecture/HISTORICAL_RESEARCH_DATABASE.md` - Historical Research Database
 - `docs/architecture/MARKET_PROFILE_FRAMEWORK.md` - Market Profile Framework
 - `docs/architecture/MARKET_VERTICAL_LIFECYCLE.md` - Market Vertical Lifecycle
+- `docs/architecture/MASTER_MARKET_INPUT_SPECIFICATION.md` - Master Market Input Specification
 - `docs/architecture/MASTER_SYSTEM_ARCHITECTURE.md` - Master System Architecture
 - `docs/architecture/MODEL_FLOW_MAP.md` - Model Flow Map
 - `docs/architecture/MODEL_REGISTRY_ARCHITECTURE.md` - Model Registry Architecture

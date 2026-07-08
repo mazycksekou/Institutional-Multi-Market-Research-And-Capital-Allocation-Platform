@@ -7,22 +7,26 @@ Canonical live status for the repository and the required starting document for 
 - current branch: `feature/nfl-backtesting`
 - current HEAD: live branch tip (exact hash is reported in the task final report)
 - remote tracking branch: `origin/feature/nfl-backtesting`
-- active phase: `Phase 4.4 — Event-Centric Historical Data Acquisition`
+- active phase: `Phase 4.5A - Master Market Input Specification`
 - active market profile: `sports:nfl`
-- active implementation lane: `NFL P0 profile-aware foundation + event-centric historical research database`
+- active implementation lane: `NFL P0 profile-aware foundation + event-centric historical research database + master market input specification`
 - completed phases:
-  - `Phase 4.3.6 — Profile-Aware NFL P0 Validation`
-  - `Phase 4.3.7 — Minimum Backtest Row Contract`
-- current phase objective: Build the permanent event-centric historical research database that stores certified NFL events, markets, selections, and acquisition bundles before decision rows are generated.
-- next phase: `Phase 4.5 — Historical Feature Population`
+  - `Phase 4.3.6 - Profile-Aware NFL P0 Validation`
+  - `Phase 4.3.7 - Minimum Backtest Row Contract`
+  - `Phase 4.4 - Event-Centric Historical Data Acquisition`
+- current phase objective: Build the repository's master market input specification so every future input, feature, signal, target, confidence metric, validation metric, connector, and engine traces back to one canonical owner before new implementation phases begin.
+- next phase: `Phase 4.5B - Universal Feature Registry`
 - current blockers: None
 - latest validation status:
   - `python -m compileall src tests scripts` passed on the current commit
+  - `pytest tests/test_master_market_input_specification_docs.py -q` passed on the current commit
+  - `pytest tests/test_project_status_governance.py -q` passed on the current commit
+  - `pytest tests/test_minimum_backtest_row_contract_docs.py -q` passed on the current commit
   - `pytest -m smoke -q` passed on the current commit
-  - `python scripts/check_repo_preflight.py --end-task --include-ops` passed on the current commit
-  - `python scripts/ops_check.py --mode local --output text --skip-network` passed on the current commit
-  - Phase 4.4 event-centric historical acquisition changes are validated on the current commit
-- latest full gate result: `3753 passed, 670 skipped, 519 subtests passed`
+  - `python scripts/check_architecture.py --output text` passed on the current commit
+  - `python scripts/check_document_lifecycle.py --output text` passed on the current commit
+  - `python scripts/ops_check.py --mode local --output text --skip-network` passed with repo-preflight blocked only by the uncommitted docs/test changes
+- latest full gate result: `not run for this docs-only phase`
 - latest pushed commit: live branch tip (exact hash is reported in the task final report)
 
 ## Active Canonical Rules
@@ -41,6 +45,7 @@ Canonical live status for the repository and the required starting document for 
 - Selections belong to markets.
 - Decision rows are generated later and are not the storage primitive.
 - Backtests never read directly from providers.
+- The master market input specification is the next governing layer above the market-profile framework.
 
 ## Required Supporting Docs
 
@@ -52,10 +57,12 @@ Read these only when you need more detail than the project status page provides:
 - `docs/STATUS_UPDATE_POLICY.md`
 - `docs/DOCUMENT_RETENTION_INDEX.md`
 - `docs/MASTER_SYSTEM_ARCHITECTURE.md`
+- `docs/architecture/MASTER_MARKET_INPUT_SPECIFICATION.md`
 - `docs/architecture/HISTORICAL_RESEARCH_DATABASE.md`
 - `docs/contracts/MINIMUM_BACKTEST_ROW_CONTRACT.md`
 - `docs/contracts/NFL_MINIMUM_BACKTEST_ROW_CONTRACT.md`
 - `docs/contracts/NFL_BACKTEST_CONTRACT.md`
+- `docs/reports/PHASE4_5A_MASTER_MARKET_INPUT_SPECIFICATION.md`
 - `docs/reports/PHASE4_4_EVENT_CENTRIC_HISTORICAL_ACQUISITION.md`
 - `docs/reports/NFL_BACKTEST_ROW_READINESS_CHECKLIST.md`
 - `docs/reports/NFL_DECISION_TIME_ALIGNMENT_RULES.md`
@@ -70,4 +77,4 @@ Read these only when you need more detail than the project status page provides:
 
 ## Next Recommended Codex Task
 
-`Phase 4.5 — Historical Feature Population`
+`Phase 4.5B - Universal Feature Registry`

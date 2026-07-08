@@ -51,13 +51,22 @@ It complements `docs/MASTER_ROADMAP.md` and makes the lifecycle easier to apply 
 
 ## Historical Research Shape
 
-The repository now treats the historical dataset phase as event-centric:
+The repository now treats the historical research path as event-centric and phase-aware:
 
-Provider -> Acquisition -> Archive -> Normalization -> Certification -> Event -> Feature Snapshot -> Markets -> Selections -> Decision Rows -> Backtesting
+Provider -> Acquisition -> Archive -> Normalization -> Certification -> Master Market Input Specification -> Universal Feature Registry -> Universal Math Engine Contracts -> Historical Data Acquisition -> Historical Research Database -> Historical Feature Population -> Decision Rows -> Backtesting
 
 Decision rows are generated research primitives.
 Events are the shared historical ownership unit.
 Markets and selections inherit the event context.
+
+The phase-aware planning path is:
+
+Phase 4.5A -> Master Market Input Specification
+Phase 4.5B -> Universal Feature Registry
+Phase 4.5C -> Universal Math Engine Contracts
+Phase 4.5D -> Historical Data Acquisition
+Phase 4.6 -> Historical Feature Population
+Phase 4.7 -> Decision Row Generation
 
 ## Worldview Integration Rule
 

@@ -38,17 +38,22 @@ The repository does **not** skip discovery, blueprinting, validation, or reprodu
 - Markets belong to events.
 - Selections belong to markets.
 - Decision rows are generated later from event + market + selection + feature snapshot; they are not the storage primitive.
+- The master market input specification governs the lifecycle of market inputs, signals, targets, confidence metrics, validation metrics, connectors, and engines.
 - The Worldview Intelligence Layer may request experiments only after the market has enough lifecycle maturity to support objective testing.
 
 ## Historical Research Sequence
 
 The historical research database now follows a shared chain that future markets can reuse:
 
-Provider -> Acquisition -> Archive -> Normalization -> Certification -> Event -> Feature Snapshot -> Markets -> Selections -> Decision Rows -> Backtesting
+Provider -> Acquisition -> Archive -> Normalization -> Certification -> Master Market Input Specification -> Universal Feature Registry -> Universal Math Engine Contracts -> Historical Data Acquisition -> Historical Research Database -> Historical Feature Population -> Decision Rows -> Backtesting
 
-Phase 4.4 establishes the event-centric historical acquisition foundation.
-Phase 4.5 populates reusable historical features on top of certified events.
-Phase 4.6 constructs decision rows from events, markets, selections, and feature snapshots.
+Phase 4.4 established the event-centric historical acquisition foundation.
+Phase 4.5A defines the master market input specification.
+Phase 4.5B builds the universal feature registry.
+Phase 4.5C defines the universal math engine contracts.
+Phase 4.5D performs historical data acquisition against the governed inputs.
+Phase 4.6 populates reusable historical features on top of certified events.
+Phase 4.7 constructs decision rows from events, markets, selections, and feature snapshots.
 Later phases continue with backtesting, walk-forward validation, paper trading, and controlled live deployment.
 
 ## Current Phase Focus
@@ -60,9 +65,13 @@ Current NFL work is in Phase 4:
 - Phase 4.3 implemented the smallest reusable NFL slice after the blueprint was fixed.
 - Phase 4.3.6 completed the profile-aware NFL P0 validation.
 - Phase 4.3.7 defined the minimum backtest row contract.
-- Phase 4.4 is the current phase and builds the event-centric historical acquisition foundation.
-- Phase 4.5 is the next recommended phase and should populate historical features from certified events.
-- Phase 4.6 will construct generated decision rows from events, markets, selections, and feature snapshots.
+- Phase 4.4 established the event-centric historical acquisition foundation.
+- Phase 4.5A is the current phase and defines the master market input specification.
+- Phase 4.5B is the next recommended phase and should build the universal feature registry.
+- Phase 4.5C should define the universal math engine contracts.
+- Phase 4.5D should perform historical data acquisition against the governed inputs.
+- Phase 4.6 will populate generated historical features from certified events.
+- Phase 4.7 will construct decision rows from events, markets, selections, and feature snapshots.
 
 ## Current Project Status
 
@@ -71,6 +80,7 @@ Current NFL work is in Phase 4:
 - Canonical project status: `docs/PROJECT_STATUS.md`
 - Canonical next action: `docs/NEXT_ACTION.md`
 - Canonical status policy: `docs/STATUS_UPDATE_POLICY.md`
+- Canonical market input specification: `docs/architecture/MASTER_MARKET_INPUT_SPECIFICATION.md`
 - Canonical minimum backtest row contract: `docs/contracts/MINIMUM_BACKTEST_ROW_CONTRACT.md`
 - Canonical NFL minimum backtest row contract: `docs/contracts/NFL_MINIMUM_BACKTEST_ROW_CONTRACT.md`
 - Canonical historical research database: `docs/architecture/HISTORICAL_RESEARCH_DATABASE.md`

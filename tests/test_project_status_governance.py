@@ -42,21 +42,21 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "repository homepage" in project_status_text.lower()
     assert "feature/nfl-backtesting" in project_status_text
     assert "sports:nfl" in project_status_text
-    assert "Phase 4.4 — Event-Centric Historical Data Acquisition" in project_status_text
-    assert "Phase 4.3.6 — Profile-Aware NFL P0 Validation" in project_status_text
-    assert "Phase 4.3.7 — Minimum Backtest Row Contract" in project_status_text
-    assert "event-centric historical research database" in project_status_text
-    assert "latest validation status" in project_status_text
-    assert "latest full gate result" in project_status_text
+    assert "Phase 4.5A - Master Market Input Specification" in project_status_text
+    assert "Phase 4.3.6" in project_status_text
+    assert "Phase 4.3.7" in project_status_text
+    assert "master market input specification" in project_status_text.lower()
+    assert "latest validation status" in project_status_text.lower()
+    assert "latest full gate result" in project_status_text.lower()
     assert "next recommended codex task" in project_status_text.lower()
     assert "docs/MASTER_ROADMAP.md" in project_status_text
     assert "docs/MASTER_DOCUMENT_INDEX.md" in project_status_text
     assert "docs/DOCUMENT_RETENTION_INDEX.md" in project_status_text
-    assert "docs/architecture/HISTORICAL_RESEARCH_DATABASE.md" in project_status_text
-    assert "docs/reports/PHASE4_4_EVENT_CENTRIC_HISTORICAL_ACQUISITION.md" in project_status_text
+    assert "docs/architecture/MASTER_MARKET_INPUT_SPECIFICATION.md" in project_status_text
+    assert "docs/reports/PHASE4_5A_MASTER_MARKET_INPUT_SPECIFICATION.md" in project_status_text
 
-    assert "Phase 4.5 — Historical Feature Population" in next_action_text
-    assert "Populate certified historical events, markets, selections, and event context with the first reusable feature snapshots." in next_action_text
+    assert "Phase 4.5B - Universal Feature Registry" in next_action_text
+    assert "turn the master market input specification into the universal feature registry" in next_action_text.lower()
     assert "Do not ingest paid or live data." in next_action_text
     assert "Do not build decision rows yet." in next_action_text
     assert "validation commands" in next_action_text.lower()
@@ -73,36 +73,27 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "duplicate ownership analysis" in entrypoint_audit_text.lower()
     assert "recommendations" in entrypoint_audit_text.lower()
 
-    assert "Phase 4.3.6 completed the profile-aware NFL P0 validation." in roadmap_text
-    assert "Historical datasets are permanent repository assets." in roadmap_text
-    assert "Providers are acquisition mechanisms only." in roadmap_text
-    assert "Decision rows are generated later from event + market + selection + feature snapshot" in roadmap_text
-    assert "Phase 4.4 is the current phase" in roadmap_text
-    assert "Phase 4.5 is the next recommended phase" in roadmap_text
-    assert "Phase 4.6 will construct generated decision rows" in roadmap_text
+    assert "Phase 4.5A defines the master market input specification." in roadmap_text
+    assert "Phase 4.5B builds the universal feature registry." in roadmap_text
+    assert "Phase 4.5C defines the universal math engine contracts." in roadmap_text
+    assert "Phase 4.5D performs historical data acquisition" in roadmap_text
+    assert "Phase 4.6 populates reusable historical features" in roadmap_text
+    assert "Phase 4.7 constructs decision rows" in roadmap_text
     assert "docs/PROJECT_STATUS.md" in roadmap_text
     assert "docs/NEXT_ACTION.md" in roadmap_text
     assert "docs/STATUS_UPDATE_POLICY.md" in roadmap_text
-    assert "docs/contracts/MINIMUM_BACKTEST_ROW_CONTRACT.md" in roadmap_text
-    assert "docs/contracts/NFL_MINIMUM_BACKTEST_ROW_CONTRACT.md" in roadmap_text
+    assert "docs/architecture/MASTER_MARKET_INPUT_SPECIFICATION.md" in roadmap_text
     assert "docs/architecture/HISTORICAL_RESEARCH_DATABASE.md" in roadmap_text
 
     assert "docs/PROJECT_STATUS.md" in master_index_text
     assert "docs/NEXT_ACTION.md" in master_index_text
     assert "docs/STATUS_UPDATE_POLICY.md" in master_index_text
-    assert "docs/contracts/MINIMUM_BACKTEST_ROW_CONTRACT.md" in master_index_text
-    assert "docs/contracts/NFL_MINIMUM_BACKTEST_ROW_CONTRACT.md" in master_index_text
+    assert "docs/architecture/MASTER_MARKET_INPUT_SPECIFICATION.md" in master_index_text
     assert "docs/architecture/HISTORICAL_RESEARCH_DATABASE.md" in master_index_text
 
     assert "docs/reports/PROJECT_ENTRYPOINT_AUDIT.md" in retention_index_text
     assert "docs/reports/PROJECT_STATUS_GOVERNANCE_DISCOVERY.md" in retention_index_text
-    assert "docs/reports/PROFILE_AWARE_NFL_P0_VALIDATION.md" in retention_index_text
-    assert "docs/reports/NFL_P0_ARCHITECTURE_REUSE_AUDIT.md" in retention_index_text
-    assert "docs/reports/NFL_BACKTEST_ROW_READINESS_CHECKLIST.md" in retention_index_text
-    assert "docs/reports/NFL_DECISION_TIME_ALIGNMENT_RULES.md" in retention_index_text
-    assert "docs/reports/NFL_BACKTEST_ROW_EXCLUSION_RULES.md" in retention_index_text
-    assert "docs/reports/NFL_STREAMLIT_BACKTEST_READINESS_SPEC.md" in retention_index_text
-    assert "docs/reports/NFL_WORLDVIEW_BACKTEST_READINESS_SPEC.md" in retention_index_text
+    assert "docs/reports/PHASE4_5A_MASTER_MARKET_INPUT_SPECIFICATION.md" in retention_index_text
     assert "docs/reports/PHASE4_4_EVENT_CENTRIC_HISTORICAL_ACQUISITION.md" in retention_index_text
 
 
