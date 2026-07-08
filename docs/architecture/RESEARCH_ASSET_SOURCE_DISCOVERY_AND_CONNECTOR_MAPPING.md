@@ -138,7 +138,8 @@ research asset -> supported providers -> connector type -> coverage -> historica
 ## Phase Boundary
 
 Phase 4.7A defines research asset source discovery and connector mapping.
-Phase 4.7B acquires the minimum certified historical dataset using the discovered source map.
+Phase 4.7B builds the reusable historical dataset acquisition runtime using the discovered source map.
+Phase 4.7C certifies the minimum certified historical dataset against the governed inputs using that runtime.
 Phase 4.8 populates reusable historical features.
 Phase 4.9 implements reusable mathematical engines.
 Phase 5.0 constructs decision rows from certified historical data.

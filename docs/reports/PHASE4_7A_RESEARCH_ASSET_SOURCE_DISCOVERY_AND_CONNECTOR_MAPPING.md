@@ -135,6 +135,6 @@ Worldview can now ask:
 - which sources are blocked or deferred
 - which acquisition lane supports the next experiment
 
-## Readiness For Phase 4.7B
+## Readiness For Phase 4.7B - Historical Dataset Acquisition Runtime
 
-The repository is ready for Phase 4.7B to begin historical dataset acquisition from the discovered minimum-schema source map.
+The repository is ready for Phase 4.7B - Historical Dataset Acquisition Runtime to begin from the discovered minimum-schema source map.

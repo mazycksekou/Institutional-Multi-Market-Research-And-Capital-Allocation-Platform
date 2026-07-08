@@ -74,7 +74,7 @@ def test_universal_feature_registry_docs_exist_and_cover_required_topics() -> No
     assert "Phase 4.5C - Universal Math Engine Contracts" in report_text
 
     assert "Phase 4.5E - Canonical Engineering Specification Rename & Research Asset Runtime Framework" in project_status_text
-    assert "Phase 4.7B - Historical Dataset Acquisition" in next_action_text
+    assert "Phase 4.7C - Historical Dataset Certification" in next_action_text
     assert "docs/architecture/UNIVERSAL_FEATURE_REGISTRY.md" in project_status_text
     assert "docs/reports/PHASE4_5B_UNIVERSAL_FEATURE_REGISTRY.md" in project_status_text
     assert "minimum certified schema" in next_action_text.lower()

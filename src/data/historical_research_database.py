@@ -11,6 +11,7 @@ from typing import Any
 
 from src.analytics.model_governance.data_lineage import create_lineage_record
 from src.data.data_paths import get_runtime_data_path
+from src.data.historical_dataset_acquisition_runtime import HistoricalDatasetAcquisitionRuntime
 from src.data.market_profile_contracts import MarketProfileContract, validate_market_profile_contract
 from src.data.market_profile_registry import get_market_profile, register_market_profile
 from src.data.source_event_links import build_event_link_index, resolve_source_event_links
@@ -910,6 +911,8 @@ def build_historical_research_fixture(
         }
     ]
 
+    source_tables = {name: [dict(row) for row in rows] for name, rows in tables.items()}
+
     certifications = [
         {
             "dataset_id": "historical_certifications",
@@ -967,12 +970,17 @@ def build_historical_research_fixture(
         "markets": market_rows,
         "selections": selection_rows,
         "certifications": certifications,
+        "source_tables": source_tables,
         "source_bundle": {
             "source_name": DEFAULT_HISTORICAL_RESEARCH_SOURCE_NAME,
             "source_type": DEFAULT_HISTORICAL_RESEARCH_SOURCE_TYPE,
             "source_key": DEFAULT_HISTORICAL_RESEARCH_SOURCE_KEY,
             "provider": DEFAULT_HISTORICAL_RESEARCH_PROVIDER,
             "source_count": 1,
+            "provider_sources": [DEFAULT_HISTORICAL_RESEARCH_SOURCE_NAME],
+            "provider_versions": [version],
+            "acquisition_timestamp": created_at,
+            "source_tables": source_tables,
         },
         "event_index": event_index,
     }
@@ -1507,6 +1515,11 @@ class HistoricalResearchDatabase:
         source_name = _normalize_text(source_bundle.get("source_name"), DEFAULT_HISTORICAL_RESEARCH_SOURCE_NAME)
         source_type = _normalize_text(source_bundle.get("source_type"), DEFAULT_HISTORICAL_RESEARCH_SOURCE_TYPE)
         source_key = _normalize_text(source_bundle.get("source_key"), DEFAULT_HISTORICAL_RESEARCH_SOURCE_KEY)
+        with HistoricalDatasetAcquisitionRuntime(self.storage_path, backend=self.backend, dataset_owner=self.dataset_owner) as acquisition_runtime:
+            raw_acquisition_result = acquisition_runtime.stage_raw_acquisition_cache(
+                fixture_payload,
+                profile_id=profile_id,
+            )
         batch_rows = [dict(row) for row in fixture_payload.get("acquisition_batches", [])]
         event_rows = [dict(row) for row in fixture_payload.get("events", [])]
         market_rows = [dict(row) for row in fixture_payload.get("markets", [])]
@@ -1538,10 +1551,21 @@ class HistoricalResearchDatabase:
             )
             self.store.upsert("historical_certifications", certification_row, key_columns=("certification_id",))
 
-        readiness = self.build_readiness_snapshot(profile=profile, fixture=fixture_payload, precomputed_results=stage_results)
+        readiness = self.build_readiness_snapshot(
+            profile=profile,
+            fixture=fixture_payload,
+            precomputed_results=stage_results,
+            raw_acquisition_result=raw_acquisition_result,
+        )
         readiness["bootstrap"] = {
             "dataset_version": version,
             "source_bundle": source_bundle,
+            "raw_acquisition_result": {
+                "ok": raw_acquisition_result.get("ok"),
+                "status": raw_acquisition_result.get("status"),
+                "raw_record_count": raw_acquisition_result.get("raw_record_count"),
+                "dataset_id": (raw_acquisition_result.get("contract") or {}).get("dataset_id"),
+            },
             "stage_results": stage_results,
         }
         return readiness
@@ -1552,9 +1576,18 @@ class HistoricalResearchDatabase:
         profile: MarketProfileContract | Mapping[str, Any] | None = None,
         fixture: Mapping[str, Any] | None = None,
         precomputed_results: Mapping[str, Mapping[str, Any]] | None = None,
+        raw_acquisition_result: Mapping[str, Any] | None = None,
     ) -> dict[str, Any]:
         resolved_profile = _ensure_profile(profile)
         profile_validation = validate_historical_research_profile(resolved_profile)
+        raw_acquisition_result = dict(raw_acquisition_result or {})
+        raw_acquisition_snapshot = dict(raw_acquisition_result.get("readiness_snapshot") or raw_acquisition_result)
+        if not raw_acquisition_snapshot:
+            with HistoricalDatasetAcquisitionRuntime(self.storage_path, backend=self.backend, dataset_owner=self.dataset_owner) as acquisition_runtime:
+                raw_acquisition_snapshot = acquisition_runtime.build_readiness_snapshot(
+                    profile_id=resolved_profile.profile_id,
+                    source_bundle=(fixture or {}).get("source_bundle") or fixture or {},
+                )
         stage_readiness: dict[str, dict[str, Any]] = {}
         ready_stages: list[str] = []
         missing_stages: list[str] = []
@@ -1582,7 +1615,16 @@ class HistoricalResearchDatabase:
                 missing_stages.append(contract.table_name)
             else:
                 blocked_stages.append(contract.table_name)
-        overall_status = "ready" if profile_validation["ok"] and len(ready_stages) == len(HISTORICAL_STAGE_CONTRACTS) else "partial" if ready_stages and profile_validation["ok"] else "blocked" if not profile_validation["ok"] else "missing"
+        raw_cache_ok = bool(raw_acquisition_snapshot.get("ok"))
+        overall_status = (
+            "ready"
+            if profile_validation["ok"] and raw_cache_ok and len(ready_stages) == len(HISTORICAL_STAGE_CONTRACTS)
+            else "partial"
+            if ready_stages and profile_validation["ok"]
+            else "blocked"
+            if not profile_validation["ok"] or (raw_acquisition_snapshot and not raw_cache_ok)
+            else "missing"
+        )
         return {
             "ok": overall_status == "ready",
             "status": overall_status,
@@ -1590,6 +1632,7 @@ class HistoricalResearchDatabase:
             "dataset_version": _normalize_text((fixture or {}).get("dataset_version"), "historical.research.v1"),
             "storage": self.store.health(),
             "market_profile": profile_validation,
+            "raw_acquisition_cache": raw_acquisition_snapshot.get("raw_acquisition_cache") if raw_acquisition_snapshot else {},
             "table_readiness": stage_readiness,
             "ready_tables": ready_stages,
             "missing_tables": missing_stages,
@@ -1600,6 +1643,8 @@ class HistoricalResearchDatabase:
                 "missing_table_count": len(missing_stages),
                 "blocked_table_count": len(blocked_stages),
                 "market_profile_status": profile_status,
+                "raw_acquisition_cache_status": raw_acquisition_snapshot.get("status"),
+                "raw_acquisition_cache_ready": raw_cache_ok,
                 "row_counts": {name: details.get("row_count", 0) for name, details in stage_readiness.items()},
             },
             "fixture_summary": {
@@ -1615,11 +1660,13 @@ class HistoricalResearchDatabase:
         profile: MarketProfileContract | Mapping[str, Any] | None = None,
         fixture: Mapping[str, Any] | None = None,
         precomputed_results: Mapping[str, Mapping[str, Any]] | None = None,
+        raw_acquisition_result: Mapping[str, Any] | None = None,
     ) -> dict[str, Any]:
         snapshot = self.build_readiness_snapshot(
             profile=profile,
             fixture=fixture,
             precomputed_results=precomputed_results,
+            raw_acquisition_result=raw_acquisition_result,
         )
         snapshot["table_counts"] = {name: details.get("row_count", 0) for name, details in snapshot.get("table_readiness", {}).items()}
         snapshot["dataset_readiness"] = {
@@ -1628,11 +1675,13 @@ class HistoricalResearchDatabase:
             "total_table_count": len(HISTORICAL_STAGE_CONTRACTS),
             "missing_tables": snapshot.get("missing_tables", []),
             "blocked_tables": snapshot.get("blocked_tables", []),
+            "raw_acquisition_cache": snapshot.get("raw_acquisition_cache", {}),
         }
         snapshot["readiness_summary"] = {
             "table_readiness_ready": len(snapshot.get("ready_tables", [])),
             "table_readiness_missing": len(snapshot.get("missing_tables", [])),
             "table_readiness_blocked": len(snapshot.get("blocked_tables", [])),
+            "raw_acquisition_cache_status": (snapshot.get("raw_acquisition_cache") or {}).get("status"),
         }
         return snapshot
 

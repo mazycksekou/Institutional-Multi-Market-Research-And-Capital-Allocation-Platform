@@ -127,7 +127,7 @@ def test_research_asset_runtime_framework_docs_exist_and_cover_required_topics()
     assert "Readiness for Phase 4.7" in report_text
 
     assert "Phase 4.5E - Canonical Engineering Specification Rename & Research Asset Runtime Framework" in project_status_text
-    assert "Phase 4.7B - Historical Dataset Acquisition" in next_action_text
+    assert "Phase 4.7C - Historical Dataset Certification" in next_action_text
     assert "docs/architecture/RESEARCH_ASSET_RUNTIME_FRAMEWORK.md" in project_status_text
     assert "docs/architecture/HISTORICAL_DATASET_ACQUISITION_FRAMEWORK.md" in project_status_text
     assert "docs/contracts/RESEARCH_ASSET_CONTRACT.md" in project_status_text
@@ -139,7 +139,8 @@ def test_research_asset_runtime_framework_docs_exist_and_cover_required_topics()
     assert "Phase 4.5D established the research asset runtime framework." in roadmap_text
     assert "Phase 4.5E renamed the master research engine specification and the research asset runtime framework" in roadmap_text
     assert "Phase 4.6 defines the minimum certified historical dataset acquisition framework." in roadmap_text
-    assert "Phase 4.7 acquires and certifies the minimum certified historical dataset against the governed inputs." in roadmap_text
+    assert "Phase 4.7B builds the reusable historical dataset acquisition runtime with raw acquisition cache and integrity validation." in roadmap_text
+    assert "Phase 4.7C certifies the minimum certified historical dataset against the governed inputs using the reusable acquisition runtime." in roadmap_text
     assert "Phase 4.8 populates reusable historical features" in roadmap_text
     assert "Phase 4.9 implements reusable mathematical engines" in roadmap_text
     assert "Phase 5.0 generates decision rows" in roadmap_text

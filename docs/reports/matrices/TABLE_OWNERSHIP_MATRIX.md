@@ -5,7 +5,7 @@
 | --- | --- | --- | --- |
 | `dataset_registry` | `src.data` | read/write | Canonical registry for all datasets. |
 | `dataset_versions` | `src.data` | read/write | Version history and compatibility. |
-| `raw_records` | `src.data` | write-once | Immutable source payloads. |
+| `raw_records` | `src.data` | write-once | Immutable raw acquisition cache payloads. |
 | `normalized_records` | `src.data` | write-once per version | Canonical normalized data. |
 | `feature_snapshots` | `src.data` / `src.market_intelligence` | read/write | Feature materialization is owned by the data platform, computed by domain code. |
 | `lineage_edges` | `src.data` | append-only | Provenance graph. |

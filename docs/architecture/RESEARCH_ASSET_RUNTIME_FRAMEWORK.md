@@ -38,6 +38,7 @@ The framework is built on top of these existing layers:
 - [Universal Mathematical Engine Contracts](./UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md)
 - [Historical Research Database](./HISTORICAL_RESEARCH_DATABASE.md)
 - [Historical Dataset Acquisition Framework](./HISTORICAL_DATASET_ACQUISITION_FRAMEWORK.md)
+- [Historical Dataset Acquisition Runtime](./HISTORICAL_DATASET_ACQUISITION_RUNTIME.md)
 - [Research Platform Architecture](./RESEARCH_PLATFORM_ARCHITECTURE.md)
 
 Those documents own market shape, governing inputs, feature lifecycle, math contract lifecycle, event-centric storage, and research workspace boundaries.
@@ -48,6 +49,7 @@ This framework owns the runtime relationship between those assets.
 | Asset category | Canonical runtime owner | Notes |
 | --- | --- | --- |
 | Dataset | `src.data` and `src.storage` | Owns certified historical rows, versioning, lineage, and local storage shape. |
+| Acquisition runtime | `src.data` and `src.storage` | Owns raw acquisition cache staging, integrity validation, and normalization/certification handoff. |
 | Feature | `src.data`, `src.market_intelligence`, and `src.core` | Owns reusable feature definitions and feature-ready runtime paths. |
 | Mathematical engine | `src.core` | Owns reusable math, pricing, sizing, calibration, and probability primitives. |
 | Signal | `src.market_intelligence` and `src.analytics` | Owns reusable signal derivation and signal-quality summaries. |
@@ -140,7 +142,7 @@ Lifecycle meaning:
 
 The framework connects research assets through one canonical sequence:
 
-Provider -> Acquisition -> Archive -> Normalization -> Certification -> Historical Research Database -> Historical Dataset Acquisition Framework -> Research Asset Runtime Framework -> Datasets -> Features -> Mathematical Engines -> Signals -> Targets -> Confidence -> Decision Rows -> Backtesting -> Experiments -> Evidence Packages
+Provider -> Raw Acquisition Cache -> Integrity Validation -> Normalization -> Certification -> Historical Research Database -> Historical Dataset Acquisition Framework -> Research Asset Runtime Framework -> Datasets -> Features -> Mathematical Engines -> Signals -> Targets -> Confidence -> Decision Rows -> Backtesting -> Experiments -> Evidence Packages
 
 The repository may define the complete research universe, but the first production backtests must still use only the certified minimum schema.
 Advanced assets remain inactive until their data, math, and validation maturity are proven.

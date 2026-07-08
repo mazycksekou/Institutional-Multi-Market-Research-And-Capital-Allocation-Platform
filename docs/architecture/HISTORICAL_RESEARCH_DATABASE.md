@@ -2,6 +2,7 @@
 
 This document describes the canonical event-centric historical research database that Phase 4.4 establishes.
 It is a reusable repository asset for NFL first and future markets later.
+The raw acquisition cache and integrity validation stages are handled by the reusable historical dataset acquisition runtime before certification reaches this database.
 
 ## Purpose
 
@@ -13,6 +14,7 @@ Decision rows are derived later from the certified event data and are not the st
 
 - `src/storage/local_store.py` owns the physical tables.
 - `src/data/local_platform.py` owns the reusable dataset contract, dataset registry, dataset versioning, raw/normalized record lifecycle, validation handoff, and dataset-level readiness reporting.
+- `src/data/historical_dataset_acquisition_runtime.py` owns raw acquisition cache staging, integrity validation, and the normalization/certification handoff into this database.
 - `src/data/historical_research_database.py` owns event-centric historical acquisition, normalization, certification, bootstrap, and readiness orchestration.
 - `src/data/source_event_links.py` owns source-to-event reconciliation.
 - `src.data.validation` owns reusable row validation.
@@ -67,7 +69,7 @@ This architecture should remain reusable for:
 
 The reuse contract is:
 
-provider -> acquisition -> archive -> normalization -> certification -> event -> market -> selection -> feature snapshot -> decision row
+provider -> raw acquisition cache -> integrity validation -> normalization -> certification -> event -> market -> selection -> feature snapshot -> decision row
 
 ## Phase Boundary
 
@@ -78,7 +80,8 @@ Phase 4.5C defines the universal math engine contracts.
 Phase 4.5D establishes the research asset runtime framework.
 Phase 4.5E completes the canonical engineering specification rename and keeps the runtime framework aligned with the broader research-engine ownership model.
 Phase 4.6 defines the minimum certified historical dataset acquisition framework.
-Phase 4.7 acquires and certifies the minimum certified historical dataset against the governed inputs.
+Phase 4.7B builds the reusable historical dataset acquisition runtime with raw acquisition cache and integrity validation.
+Phase 4.7C certifies the minimum certified historical dataset against the governed inputs using the reusable acquisition runtime.
 Phase 4.8 populates reusable historical feature snapshots.
 Phase 4.9 implements reusable mathematical engines.
 Phase 5.0 constructs decision rows from certified historical data.

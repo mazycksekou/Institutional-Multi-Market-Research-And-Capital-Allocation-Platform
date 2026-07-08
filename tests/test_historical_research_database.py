@@ -28,9 +28,15 @@ def test_historical_research_database_bootstrap_uses_shared_storage_and_profile(
         assert bootstrap["ok"]
         assert bootstrap["status"] == "ready"
         assert bootstrap["market_profile"]["ok"]
+        assert bootstrap["bootstrap"]["raw_acquisition_result"]["ok"]
+        assert bootstrap["bootstrap"]["raw_acquisition_result"]["status"] == "raw_cache_ready"
+        assert bootstrap["bootstrap"]["raw_acquisition_result"]["raw_record_count"] > 0
         assert bootstrap["dataset_name"] == "historical_research_database"
         assert bootstrap["ready_tables"]
         assert set(bootstrap["ready_tables"]) == set(HISTORICAL_STAGE_CONTRACTS)
+        assert bootstrap["raw_acquisition_cache"]["status"] == "ready"
+        assert bootstrap["summary"]["raw_acquisition_cache_ready"]
+        assert bootstrap["summary"]["raw_acquisition_cache_status"] == "ready"
 
         for stage_name, contract in HISTORICAL_STAGE_CONTRACTS.items():
             assert database.store.table_exists(contract.table_name)

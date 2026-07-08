@@ -86,7 +86,7 @@ The framework now explicitly documents the following categories:
 
 The phase documents how the runtime chain works:
 
-Provider -> Acquisition -> Archive -> Normalization -> Certification -> Historical Research Database -> Research Asset Runtime Framework -> Datasets -> Features -> Mathematical Engines -> Signals -> Targets -> Confidence -> Decision Rows -> Backtesting -> Experiments -> Evidence Packages
+Provider -> Raw Acquisition Cache -> Integrity Validation -> Normalization -> Certification -> Historical Research Database -> Research Asset Runtime Framework -> Datasets -> Features -> Mathematical Engines -> Signals -> Targets -> Confidence -> Decision Rows -> Backtesting -> Experiments -> Evidence Packages
 
 ## Research Asset ID Standard Documented
 

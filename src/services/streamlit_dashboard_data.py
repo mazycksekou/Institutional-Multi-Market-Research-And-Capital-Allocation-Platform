@@ -80,6 +80,7 @@ from src.backtesting.strategy_profiles import (
     normalize_strategy_profile_key,
 )
 from src.data.local_platform import build_local_platform_dashboard_snapshot
+from src.data.historical_dataset_acquisition_runtime import build_historical_dataset_acquisition_runtime_dashboard_snapshot
 from src.data.nfl_p0_foundation import build_nfl_p0_dashboard_snapshot
 from src.data.historical_research_database import build_historical_research_dashboard_snapshot
 from src.research.feature_control import run_calibration_strategy_filter
@@ -3727,6 +3728,35 @@ def get_historical_research_snapshot_for_dashboard(
             "missing_tables": [],
             "blocked_tables": [],
             "dataset_readiness": {},
+            "readiness_summary": {},
+            "warnings": [str(exc)],
+        }
+
+
+def get_historical_dataset_acquisition_runtime_snapshot_for_dashboard(
+    storage_path: str | Path | None = None,
+    *,
+    backend: str = "sqlite",
+    profile_id: str = "sports:nfl",
+    dataset_id: str | None = None,
+    source_bundle: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Return a canonical historical acquisition runtime readiness snapshot."""
+    try:
+        return build_historical_dataset_acquisition_runtime_dashboard_snapshot(
+            storage_path=storage_path,
+            backend=backend,
+            profile_id=profile_id,
+            dataset_id=dataset_id,
+            source_bundle=source_bundle,
+        )
+    except Exception as exc:
+        return {
+            "ok": False,
+            "status": "historical_dataset_acquisition_runtime_snapshot_error",
+            "storage": {},
+            "dataset_snapshot": {},
+            "raw_acquisition_cache": {},
             "readiness_summary": {},
             "warnings": [str(exc)],
         }

@@ -78,14 +78,15 @@ def test_historical_dataset_acquisition_framework_docs_exist_and_cover_required_
     assert "Duplicate Logic Avoided" in report_text
     assert "Readiness for Phase 4.7" in report_text
 
-    assert "Phase 4.7A - Research Asset Source Discovery & Connector Mapping" in project_status_text
-    assert "Phase 4.7B - Historical Dataset Acquisition" in next_action_text
+    assert "Phase 4.7B - Historical Dataset Acquisition Runtime" in project_status_text
+    assert "Phase 4.7C - Historical Dataset Certification" in next_action_text
     assert "docs/architecture/HISTORICAL_DATASET_ACQUISITION_FRAMEWORK.md" in project_status_text
     assert "docs/reports/PHASE4_6_MINIMUM_CERTIFIED_HISTORICAL_DATASET_ACQUISITION_FRAMEWORK.md" in project_status_text
     assert "minimum certified schema first" in next_action_text.lower()
 
     assert "Phase 4.6 defines the minimum certified historical dataset acquisition framework." in roadmap_text
-    assert "Phase 4.7 acquires and certifies the minimum certified historical dataset against the governed inputs." in roadmap_text
+    assert "Phase 4.7B builds the reusable historical dataset acquisition runtime with raw acquisition cache and integrity validation." in roadmap_text
+    assert "Phase 4.7C certifies the minimum certified historical dataset against the governed inputs using the reusable acquisition runtime." in roadmap_text
     assert "Historical Dataset Acquisition Framework" in roadmap_text
 
     assert "docs/architecture/HISTORICAL_DATASET_ACQUISITION_FRAMEWORK.md" in master_index_text
@@ -111,7 +112,7 @@ def test_historical_dataset_acquisition_framework_docs_exist_and_cover_required_
     assert "certification_timestamp" in lineage_contract_text
     assert "certification_status" in lineage_contract_text
     assert "coverage_score" in lineage_contract_text
-    assert "provider source -> acquisition job -> raw archive -> normalization -> certification -> certified dataset version" in lineage_contract_text.lower()
+    assert "provider source -> acquisition job -> raw acquisition cache -> integrity validation -> normalization -> certification -> certified dataset version" in lineage_contract_text.lower()
 
 
 def test_historical_dataset_acquisition_framework_docs_do_not_depend_on_runtime_code() -> None:

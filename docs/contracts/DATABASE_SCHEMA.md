@@ -34,7 +34,7 @@ Every canonical table must include the following fields where the table is row-o
 | --- | --- | --- |
 | `dataset_registry` | Canonical dataset index. | One row per registered dataset. |
 | `dataset_versions` | Version history for datasets. | Preserves lineage and compatibility. |
-| `raw_records` | Raw imported records. | Append-only. |
+| `raw_records` | Raw acquisition cache records. | Append-only. |
 | `normalized_records` | Canonical normalized records. | Preferred downstream read layer. |
 | `feature_snapshots` | Materialized feature outputs. | Versioned by feature pack. |
 | `lineage_edges` | Parent/child provenance edges. | Graph-friendly storage. |

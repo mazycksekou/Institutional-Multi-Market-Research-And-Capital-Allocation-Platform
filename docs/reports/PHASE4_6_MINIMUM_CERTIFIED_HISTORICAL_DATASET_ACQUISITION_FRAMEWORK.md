@@ -153,6 +153,6 @@ That improves:
 - future feature generation
 - future mathematical implementation
 
-## Readiness for Phase 4.7
+## Readiness for Phase 4.7B - Historical Dataset Acquisition Runtime
 
-The repository is ready for Phase 4.7 to acquire and certify the minimum certified historical dataset using the canonical acquisition framework.
+The repository is ready for Phase 4.7B - Historical Dataset Acquisition Runtime to acquire and stage the minimum certified historical dataset using the canonical acquisition framework.

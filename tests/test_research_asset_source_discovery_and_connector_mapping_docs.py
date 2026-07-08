@@ -51,14 +51,14 @@ def test_research_asset_source_discovery_and_connector_mapping_docs_exist_and_co
     assert "Sources Selected For The Minimum NFL Schema" in report_text
     assert "Optional Enrichment Sources" in report_text
     assert "Connector Mapping Summary" in report_text
-    assert "Readiness For Phase 4.7B" in report_text
+    assert "Readiness For Phase 4.7B - Historical Dataset Acquisition Runtime" in report_text
 
-    assert "Phase 4.7A - Research Asset Source Discovery & Connector Mapping" in project_status_text
-    assert "Phase 4.7B - Historical Dataset Acquisition" in next_action_text
+    assert "Phase 4.7B - Historical Dataset Acquisition Runtime" in project_status_text
+    assert "Phase 4.7C - Historical Dataset Certification" in next_action_text
     assert "docs/architecture/RESEARCH_ASSET_SOURCE_DISCOVERY_AND_CONNECTOR_MAPPING.md" in project_status_text
     assert "docs/reports/PHASE4_7A_RESEARCH_ASSET_SOURCE_DISCOVERY_AND_CONNECTOR_MAPPING.md" in project_status_text
     assert "Phase 4.7A" in roadmap_text
-    assert "Phase 4.7B" in roadmap_text
+    assert "Phase 4.7B builds the reusable historical dataset acquisition runtime" in roadmap_text
     assert "docs/architecture/RESEARCH_ASSET_SOURCE_DISCOVERY_AND_CONNECTOR_MAPPING.md" in master_index_text
     assert "docs/reports/PHASE4_7A_RESEARCH_ASSET_SOURCE_DISCOVERY_AND_CONNECTOR_MAPPING.md" in master_index_text
     assert "docs/architecture/RESEARCH_ASSET_SOURCE_DISCOVERY_AND_CONNECTOR_MAPPING.md" in retention_index_text

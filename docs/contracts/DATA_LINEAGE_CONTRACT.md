@@ -45,7 +45,8 @@ Historical dataset acquisition must also preserve the dataset versioning and cer
 
 Rules:
 
-- lineage must connect provider source -> acquisition job -> raw archive -> normalization -> certification -> certified dataset version
+- lineage must connect provider source -> acquisition job -> raw acquisition cache -> integrity validation -> normalization -> certification -> certified dataset version
+- the raw acquisition cache preserves the original payload for audit and replay without redownloading source data
 - one certified dataset version may combine multiple provider contributions
 - the repository must be able to trace a certified version back to the source bundle and the versioned dataset registry entry
 - acquisition and certification timestamps must be stable enough to support replay and audit
@@ -54,7 +55,9 @@ Rules:
 
 ```mermaid
 flowchart LR
-  raw["Raw source"] --> normalized["Normalized source"]
+  raw["Raw source"] --> raw_cache["Raw acquisition cache"]
+  raw_cache --> validation["Integrity validation"]
+  validation --> normalized["Normalized source"]
   normalized --> features["Feature generation"]
   features --> model["Model usage"]
   features --> backtest["Backtest usage"]
