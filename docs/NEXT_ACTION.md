@@ -2,32 +2,34 @@
 
 ## Next Phase
 
-`Phase 4.5D - Research Asset Population Framework`
+`Phase 4.6 - Historical Dataset Acquisition (minimum certified schema first)`
 
 ## Objective
 
-Define the governed research-asset population framework that will mature certified datasets, features, mathematical engines, connectors, and evidence without introducing parallel ownership.
+Acquire the minimum certified historical schema as a repository-owned asset first, then certify it so future datasets can mature without introducing parallel ownership.
 
 ## Allowed Actions
 
-- Reuse the canonical market profile framework, market-input specification, storage, validation, and lineage owners.
-- Extend the research-asset population framework on top of the universal math engine contracts instead of creating market-specific pipelines.
-- Keep the research-asset architecture reusable for sports, prediction markets, and options / 0DTE.
+- Reuse the canonical market profile framework, market-input specification, storage, validation, lineage, and research-asset implementation owners.
+- Extend the historical dataset acquisition layer on top of the research asset implementation framework instead of creating market-specific pipelines.
+- Keep the minimum-certified-schema path reusable for sports, prediction markets, and options / 0DTE.
 - Update the project status and document indexes when this phase completes.
 
 ## Forbidden Actions
 
 - Do not ingest paid or live data.
-- Do not build decision rows yet.
+- Do not populate features yet.
+- Do not implement mathematical engines yet.
+- Do not generate decision rows yet.
 - Do not backtest.
 - Do not build models.
 - Do not add provider-specific runtime ownership.
 
 ## Expected Deliverables
 
-- Research asset maturity plan built on top of the universal math engine contracts.
-- Feature, dataset, engine, and evidence lifecycle mappings.
-- Readiness, lineage, validation, and population-path updates for the research-asset layer.
+- Minimum certified schema acquisition plan built on top of the research asset implementation framework.
+- Dataset, lineage, validation, and readiness mappings for the minimum certified schema.
+- Historical acquisition and certification path updates for the research-asset layer.
 - Updated project status and index entries.
 
 ## Validation Commands

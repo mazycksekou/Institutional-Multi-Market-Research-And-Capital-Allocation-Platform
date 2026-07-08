@@ -48,6 +48,7 @@ This index points readers to the current truth and the durable historical entry 
 - `docs/architecture/TERMINOLOGY_STANDARD.md` - Terminology Standard
 - `docs/architecture/UNIVERSAL_FEATURE_REGISTRY.md` - Universal Feature Registry
 - `docs/architecture/UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md` - Universal Mathematical Engine Contracts
+- `docs/architecture/RESEARCH_ASSET_IMPLEMENTATION_FRAMEWORK.md` - Research Asset Implementation Framework
 - `docs/architecture/VENDOR_NEUTRALITY_AND_OPENAPI_NAMING.md` - Vendor Neutrality And OpenAPI Naming
 
 ### AUDIT REPORT
@@ -81,6 +82,7 @@ This index points readers to the current truth and the durable historical entry 
 - `docs/contracts/IMPORT_INTERFACE_SPECIFICATION.md` - Import Interface Specification
 - `docs/contracts/MARKET_PROFILE_CONTRACT.md` - Market Profile Contract
 - `docs/contracts/MINIMUM_BACKTEST_ROW_CONTRACT.md` - Minimum Backtest Row Contract
+- `docs/contracts/RESEARCH_ASSET_CONTRACT.md` - Research Asset Contract
 - `docs/contracts/MODEL_VERSION_CONTRACT.md` - Model Version Contract
 - `docs/contracts/NFL_AS_SPORTS_PROFILE_INSTANCE.md` - NFL as a Sports Profile Instance
 - `docs/contracts/NFL_ATOMIC_FEATURE_CONTRACT.md` - NFL Atomic Feature Contract

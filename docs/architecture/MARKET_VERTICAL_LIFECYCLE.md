@@ -26,6 +26,8 @@ It complements `docs/MASTER_ROADMAP.md` and makes the lifecycle easier to apply 
 - Historical datasets are permanent repository assets once certified.
 - Providers are acquisition mechanisms only.
 - Backtests never read directly from providers.
+- The first production backtests use only the certified minimum schema.
+- Advanced assets remain inactive until their data, math, and validation maturity are proven.
 - Events own shared context.
 - Markets belong to events.
 - Selections belong to markets.
@@ -53,7 +55,7 @@ It complements `docs/MASTER_ROADMAP.md` and makes the lifecycle easier to apply 
 
 The repository now treats the historical research path as event-centric and phase-aware:
 
-Provider -> Acquisition -> Archive -> Normalization -> Certification -> Master Market Input Specification -> Universal Feature Registry -> Universal Math Engine Contracts -> Research Asset Population Framework -> Historical Dataset Certification -> Historical Feature Population -> Decision Rows -> Backtesting
+Provider -> Acquisition -> Archive -> Normalization -> Certification -> Master Market Input Specification -> Universal Feature Registry -> Universal Math Engine Contracts -> Research Asset Implementation Framework -> Historical Dataset Acquisition -> Historical Dataset Certification -> Feature Population -> Mathematical Engine Implementation -> Decision Rows -> Backtesting
 
 Decision rows are generated research primitives.
 Events are the shared historical ownership unit.
@@ -64,11 +66,14 @@ The phase-aware planning path is:
 Phase 4.5A -> Master Market Input Specification
 Phase 4.5B -> Universal Feature Registry
 Phase 4.5C -> Universal Math Engine Contracts
-Phase 4.5D -> Research Asset Population Framework
-Phase 4.6 -> Historical Dataset Certification
-Phase 4.7 -> Historical Feature Population
-Phase 4.8 -> Decision Row Generation
-Phase 4.9 -> Baseline Backtesting
+Phase 4.5D -> Research Asset Implementation Framework
+Phase 4.6 -> Historical Dataset Acquisition
+Phase 4.7 -> Historical Dataset Certification
+Phase 4.8 -> Historical Feature Population
+Phase 4.9 -> Mathematical Engine Implementation
+Phase 5.0 -> Decision Row Generation
+Phase 5.1 -> Baseline Backtesting
+Phase 5.2 -> Walk-Forward Validation
 
 ## Worldview Integration Rule
 

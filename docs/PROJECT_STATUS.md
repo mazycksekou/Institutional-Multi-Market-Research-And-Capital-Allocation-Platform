@@ -7,20 +7,21 @@ Canonical live status for the repository and the required starting document for 
 - current branch: `feature/nfl-backtesting`
 - current HEAD: live branch tip (exact hash is reported in the task final report)
 - remote tracking branch: `origin/feature/nfl-backtesting`
-- active phase: `Phase 4.5C - Universal Math Engine Contracts`
+- active phase: `Phase 4.5D - Research Asset Implementation Framework`
 - active market profile: `sports:nfl`
-- active implementation lane: `NFL P0 profile-aware foundation + event-centric historical research database + master market input specification + universal feature registry + universal math engine contracts`
+- active implementation lane: `NFL P0 profile-aware foundation + event-centric historical research database + master market input specification + universal feature registry + universal math engine contracts + research asset implementation framework`
 - completed phases:
   - `Phase 4.3.6 - Profile-Aware NFL P0 Validation`
   - `Phase 4.3.7 - Minimum Backtest Row Contract`
   - `Phase 4.4 - Event-Centric Historical Data Acquisition`
   - `Phase 4.5A - Master Market Input Specification`
   - `Phase 4.5B - Universal Feature Registry`
-- current phase objective: Define the repository's universal math engine contracts on top of the universal feature registry so every future calculation path has one canonical owner, lifecycle state, dependency chain, and reuse path before the research asset population framework begins.
-- next phase: `Phase 4.5D - Research Asset Population Framework`
+  - `Phase 4.5C - Universal Math Engine Contracts`
+- current phase objective: Define the repository's research asset implementation framework so every governed dataset, feature, mathematical engine, signal, target, confidence measure, decision row, backtest, experiment, evidence package, and connector has one canonical runtime owner, one lifecycle, one dependency chain, and one reusable path before historical dataset acquisition begins.
+- next phase: `Phase 4.6 - Historical Dataset Acquisition (minimum certified schema first)`
 - current blockers: None
 - latest validation status:
-  - Phase 4.5C validation passed in the active worktree: compileall, targeted docs tests, smoke tests, architecture check, document lifecycle check, and advisory ops check all completed successfully; repo preflight remains expected to report dirty until these changes are committed.
+  - Phase 4.5D validation passed in the active worktree: compileall, targeted docs tests, smoke tests, architecture check, document lifecycle check, and advisory ops check all completed successfully.
 - latest full gate result: `not run for this docs-only phase`
 - latest pushed commit: live branch tip (exact hash is reported in the task final report)
 
@@ -55,9 +56,12 @@ Read these only when you need more detail than the project status page provides:
 - `docs/architecture/MASTER_MARKET_INPUT_SPECIFICATION.md`
 - `docs/architecture/UNIVERSAL_FEATURE_REGISTRY.md`
 - `docs/architecture/UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md`
+- `docs/architecture/RESEARCH_ASSET_IMPLEMENTATION_FRAMEWORK.md`
 - `docs/architecture/HISTORICAL_RESEARCH_DATABASE.md`
+- `docs/contracts/RESEARCH_ASSET_CONTRACT.md`
 - `docs/reports/PHASE4_5B_UNIVERSAL_FEATURE_REGISTRY.md`
 - `docs/reports/PHASE4_5C_UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md`
+- `docs/reports/PHASE4_5D_RESEARCH_ASSET_IMPLEMENTATION_FRAMEWORK.md`
 - `docs/contracts/MINIMUM_BACKTEST_ROW_CONTRACT.md`
 - `docs/contracts/NFL_MINIMUM_BACKTEST_ROW_CONTRACT.md`
 - `docs/contracts/NFL_BACKTEST_CONTRACT.md`
@@ -76,4 +80,4 @@ Read these only when you need more detail than the project status page provides:
 
 ## Next Recommended Codex Task
 
-`Phase 4.5D - Research Asset Population Framework`
+`Phase 4.6 - Historical Dataset Acquisition (minimum certified schema first)`

@@ -34,6 +34,8 @@ The repository does **not** skip discovery, blueprinting, validation, or reprodu
 - Providers are acquisition mechanisms only.
 - The repository owns the certified dataset after acquisition and certification.
 - Multiple providers may contribute to one dataset.
+- The first production backtests use only the certified minimum schema.
+- Advanced metrics remain inactive until their data, math, and validation maturity are proven.
 - Events own shared information such as weather, officials, injuries, coaching, kickoff, stadium, rest, and travel.
 - Markets belong to events.
 - Selections belong to markets.
@@ -45,18 +47,21 @@ The repository does **not** skip discovery, blueprinting, validation, or reprodu
 
 The historical research database now follows a shared chain that future markets can reuse:
 
-Provider -> Acquisition -> Archive -> Normalization -> Certification -> Master Market Input Specification -> Universal Feature Registry -> Universal Math Engine Contracts -> Research Asset Population Framework -> Historical Dataset Certification -> Historical Feature Population -> Decision Rows -> Backtesting
+Provider -> Acquisition -> Archive -> Normalization -> Certification -> Master Market Input Specification -> Universal Feature Registry -> Universal Math Engine Contracts -> Research Asset Implementation Framework -> Historical Dataset Acquisition -> Historical Dataset Certification -> Feature Population -> Mathematical Engine Implementation -> Decision Rows -> Backtesting
 
 Phase 4.4 established the event-centric historical acquisition foundation.
 Phase 4.5A defined the master market input specification.
 Phase 4.5B built the universal feature registry.
 Phase 4.5C defines the universal math engine contracts.
-Phase 4.5D establishes the research asset population framework.
-Phase 4.6 certifies historical datasets.
-Phase 4.7 populates reusable historical features on top of certified events.
-Phase 4.8 constructs decision rows from events, markets, selections, and feature snapshots.
-Phase 4.9 begins baseline backtesting from frozen, certified inputs.
-Later phases continue with backtesting, walk-forward validation, paper trading, and controlled live deployment.
+Phase 4.5D defines the research asset implementation framework.
+Phase 4.6 acquires the minimum certified historical dataset.
+Phase 4.7 certifies historical datasets against the governed inputs.
+Phase 4.8 populates reusable historical features on top of certified events.
+Phase 4.9 implements reusable mathematical engines.
+Phase 5.0 generates decision rows from events, markets, selections, and feature snapshots.
+Phase 5.1 begins baseline backtesting from frozen, certified inputs.
+Phase 5.2 performs walk-forward validation on the baseline schema.
+Later phases continue with paper trading, incremental live updates, Worldview Intelligence, and controlled production deployment.
 
 ## Current Phase Focus
 
@@ -70,12 +75,15 @@ Current NFL work is in Phase 4:
 - Phase 4.4 established the event-centric historical acquisition foundation.
 - Phase 4.5A defined the master market input specification.
 - Phase 4.5B built the universal feature registry.
-- Phase 4.5C is the current phase and defines the universal math engine contracts.
-- Phase 4.5D establishes the research asset population framework.
-- Phase 4.6 certifies historical datasets.
-- Phase 4.7 will populate generated historical features from events.
-- Phase 4.8 will construct decision rows from events, markets, selections, and feature snapshots.
-- Phase 4.9 will begin baseline backtesting against the minimum certified schema.
+- Phase 4.5C completed the universal math engine contracts.
+- Phase 4.5D is the current phase and defines the research asset implementation framework.
+- Phase 4.6 will acquire the minimum certified historical dataset.
+- Phase 4.7 will certify historical datasets against the governed inputs.
+- Phase 4.8 will populate generated historical features from events.
+- Phase 4.9 will implement reusable mathematical engines.
+- Phase 5.0 will generate decision rows from events, markets, selections, and feature snapshots.
+- Phase 5.1 will begin baseline backtesting against the minimum certified schema.
+- Phase 5.2 will perform walk-forward validation on the baseline schema.
 
 If the master market input specification is judged to have expanded beyond market inputs and into the complete research-engine specification, the Phase 4.5B review should recommend a future rename to `MASTER_RESEARCH_ENGINE_SPECIFICATION.md` without performing the rename during this phase.
 
@@ -87,6 +95,8 @@ If the master market input specification is judged to have expanded beyond marke
 - Canonical next action: `docs/NEXT_ACTION.md`
 - Canonical status policy: `docs/STATUS_UPDATE_POLICY.md`
 - Canonical market input specification: `docs/architecture/MASTER_MARKET_INPUT_SPECIFICATION.md`
+- Canonical research asset implementation framework: `docs/architecture/RESEARCH_ASSET_IMPLEMENTATION_FRAMEWORK.md`
+- Canonical research asset contract: `docs/contracts/RESEARCH_ASSET_CONTRACT.md`
 - Canonical minimum backtest row contract: `docs/contracts/MINIMUM_BACKTEST_ROW_CONTRACT.md`
 - Canonical NFL minimum backtest row contract: `docs/contracts/NFL_MINIMUM_BACKTEST_ROW_CONTRACT.md`
 - Canonical mathematical engine contracts: `docs/architecture/UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md`

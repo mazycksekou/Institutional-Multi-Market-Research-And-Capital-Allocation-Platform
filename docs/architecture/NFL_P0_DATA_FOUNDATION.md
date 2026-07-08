@@ -82,7 +82,10 @@ The foundation is structurally ready, but the repository still needs future phas
 - define the master market input specification in Phase 4.5A
 - build the universal feature registry in Phase 4.5B
 - define the universal math engine contracts in Phase 4.5C
-- establish the research asset population framework in Phase 4.5D
-- populate reusable historical feature snapshots in Phase 4.6
-- build decision rows in Phase 4.7
+- establish the research asset implementation framework in Phase 4.5D
+- acquire the minimum certified historical dataset in Phase 4.6
+- certify historical datasets in Phase 4.7
+- populate reusable historical feature snapshots in Phase 4.8
+- implement reusable mathematical engines in Phase 4.9
+- build decision rows in Phase 5.0
 - expand beyond the P0 team/game foundation when the data layer is proven stable

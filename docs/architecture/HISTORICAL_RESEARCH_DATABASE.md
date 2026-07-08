@@ -74,11 +74,13 @@ Phase 4.4 creates the historical acquisition foundation.
 Phase 4.5A defines the master market input specification.
 Phase 4.5B defines the universal feature registry.
 Phase 4.5C defines the universal math engine contracts.
-Phase 4.5D establishes the research asset population framework.
-Phase 4.6 certifies historical datasets against the governed inputs.
-Phase 4.7 populates reusable historical feature snapshots.
-Phase 4.8 constructs decision rows from certified historical data.
-Phase 4.9 begins baseline backtesting from frozen historical rows.
+Phase 4.5D establishes the research asset implementation framework.
+Phase 4.6 acquires the minimum certified historical dataset.
+Phase 4.7 certifies historical datasets against the governed inputs.
+Phase 4.8 populates reusable historical feature snapshots.
+Phase 4.9 implements reusable mathematical engines.
+Phase 5.0 constructs decision rows from certified historical data.
+Phase 5.1 begins baseline backtesting from frozen historical rows.
 
 ## Readiness Contract
 

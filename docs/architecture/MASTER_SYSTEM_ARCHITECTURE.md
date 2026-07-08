@@ -110,6 +110,7 @@ Model-like concerns are split by purpose:
 - `src.analytics` for readiness and governance summaries
 
 The reusable math-contract layer is documented in [Universal Mathematical Engine Contracts](./UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md).
+The runtime-facing research asset relationship layer is documented in [Research Asset Implementation Framework](./RESEARCH_ASSET_IMPLEMENTATION_FRAMEWORK.md).
 
 The boundary is described in [Model Flow Map](./MODEL_FLOW_MAP.md).
 
@@ -202,7 +203,7 @@ The repository follows a strict documentation policy:
 
 The documentation policy is summarized in [Documentation Governance](./DOCUMENTATION_GOVERNANCE.md) and [Documentation Map](./DOCUMENTATION_MAP.md).
 
-The market-input governing specification is documented in [Master Market Input Specification](./MASTER_MARKET_INPUT_SPECIFICATION.md), the cross-market feature registry lives in [Universal Feature Registry](./UNIVERSAL_FEATURE_REGISTRY.md), and the cross-market math engine contracts live in [Universal Mathematical Engine Contracts](./UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md).
+The market-input governing specification is documented in [Master Market Input Specification](./MASTER_MARKET_INPUT_SPECIFICATION.md), the cross-market feature registry lives in [Universal Feature Registry](./UNIVERSAL_FEATURE_REGISTRY.md), the cross-market math engine contracts live in [Universal Mathematical Engine Contracts](./UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md), and the research asset implementation framework lives in [Research Asset Implementation Framework](./RESEARCH_ASSET_IMPLEMENTATION_FRAMEWORK.md).
 
 ## 19. Contract Hierarchy
 
@@ -216,8 +217,9 @@ In practical terms:
 4. backtest contracts
 5. storage contracts
 6. feature snapshot and versioning contracts
-7. mathematical engine contracts
-8. dashboard / Streamlit contracts
+7. research asset contracts
+8. mathematical engine contracts
+9. dashboard / Streamlit contracts
 
 Contract quality and validation expectations are described in [OpenAPI Contract Governance](./OPENAPI_CONTRACT_GOVERNANCE.md).
 
