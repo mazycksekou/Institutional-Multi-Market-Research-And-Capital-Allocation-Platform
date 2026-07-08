@@ -2,17 +2,17 @@
 
 ## Next Phase
 
-`Phase 4.5B - Universal Feature Registry`
+`Phase 4.5C - Universal Math Engine Contracts`
 
 ## Objective
 
-Turn the master market input specification into the universal feature registry so every future feature family has one canonical owner, lifecycle state, and reuse path.
+Define the canonical math engine contracts on top of the universal feature registry so every future calculation path has one owner, lifecycle state, and reuse path.
 
 ## Allowed Actions
 
 - Reuse the canonical market profile framework, market-input specification, storage, validation, and lineage owners.
-- Extend the universal feature registry instead of creating market-specific registries.
-- Keep the registry architecture reusable for sports, prediction markets, and options / 0DTE.
+- Extend the universal math engine contracts instead of creating market-specific math engines.
+- Keep the math-contract architecture reusable for sports, prediction markets, and options / 0DTE.
 - Update the project status and document indexes when this phase completes.
 
 ## Forbidden Actions
@@ -25,9 +25,9 @@ Turn the master market input specification into the universal feature registry s
 
 ## Expected Deliverables
 
-- Universal feature registry plan built from the master market input specification.
-- Feature lifecycle mappings for market inputs, signals, targets, confidence metrics, and validation metrics.
-- Readiness, lineage, and validation updates for the feature registry layer.
+- Universal math engine contract plan built from the universal feature registry.
+- Feature lifecycle mappings for inputs, features, signals, targets, confidence metrics, and validation metrics.
+- Readiness, lineage, validation, and engine-owner updates for the math-contract layer.
 - Updated project status and index entries.
 
 ## Validation Commands

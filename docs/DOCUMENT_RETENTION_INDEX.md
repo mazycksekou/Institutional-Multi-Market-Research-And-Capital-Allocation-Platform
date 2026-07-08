@@ -2,9 +2,9 @@
 
 This register classifies every tracked document under `docs/` so the repository can keep durable knowledge, archive historical evidence, and identify temporary work products that should eventually be consolidated or deleted.
 
-- scanned_files: 1143
-- working: 63
-- active: 116
+- scanned_files: 1145
+- working: 64
+- active: 117
 - decision_captured: 14
 - consolidated: 6
 - archived: 944
@@ -41,7 +41,7 @@ This register classifies every tracked document under `docs/` so the repository 
 | docs/architecture/HISTORICAL_RESEARCH_DATABASE.md | Historical Research Database | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/MASTER_ROADMAP.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/architecture/MARKET_PROFILE_FRAMEWORK.md | Market Profile Framework | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/PROJECT_STATUS.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/architecture/MARKET_VERTICAL_LIFECYCLE.md | Market Vertical Lifecycle | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
-| docs/architecture/MASTER_MARKET_INPUT_SPECIFICATION.md | Master Market Input Specification | ARCHITECTURE DOCUMENT | ACTIVE | docs/MASTER_ROADMAP.md; docs/PROJECT_STATUS.md; docs/reports/PHASE4_5A_MASTER_MARKET_INPUT_SPECIFICATION.md | Current authoritative documentation | KEEP ACTIVE |
+| docs/architecture/MASTER_MARKET_INPUT_SPECIFICATION.md | Master Market Input Specification | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/MASTER_ROADMAP.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/architecture/MASTER_SYSTEM_ARCHITECTURE.md | Master System Architecture | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/architecture/MASTER_MARKET_INPUT_SPECIFICATION.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/architecture/MODEL_FLOW_MAP.md | Model Flow Map | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/architecture/MODEL_REGISTRY_ARCHITECTURE.md | Model Registry Architecture | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
@@ -61,6 +61,7 @@ This register classifies every tracked document under `docs/` so the repository 
 | docs/architecture/STREAMLIT_DATA_PIPELINE.md | Streamlit Data Pipeline | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/architecture/SYSTEM_OVERVIEW.md | System Overview | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/architecture/DOCUMENTATION_MAP.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/architecture/TERMINOLOGY_STANDARD.md | Terminology Standard | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/architecture/DOCUMENTATION_MAP.md | Current authoritative documentation | KEEP ACTIVE |
+| docs/architecture/UNIVERSAL_FEATURE_REGISTRY.md | Universal Feature Registry | ARCHITECTURE DOCUMENT | ACTIVE | docs/PROJECT_STATUS.md; docs/reports/PHASE4_5B_UNIVERSAL_FEATURE_REGISTRY.md; tests/test_master_market_input_specification_docs.py | Current authoritative documentation | KEEP ACTIVE |
 | docs/architecture/VENDOR_NEUTRALITY_AND_OPENAPI_NAMING.md | Vendor Neutrality And OpenAPI Naming | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; scripts/check_audit_lifecycle.py | Current authoritative documentation | KEEP ACTIVE |
 | docs/archive/historical_reports/.aider.chat.history.md | aider chat started at 2026-06-13 10:02:57 | HISTORICAL REPORT | ARCHIVED | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/reports/audits/AUDIT_RETENTION_REGISTER.md | Historical evidence preserved for review | KEEP ARCHIVE |
 | docs/archive/historical_reports/ACTIVATION_GATE_DISABLED_BEHAVIOR_AFTER_10K8ZJJ.md | Activation Gate Disabled Behavior After 10K8ZJJ | HISTORICAL REPORT | ARCHIVED | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/reports/audits/AUDIT_RETENTION_REGISTER.md | Historical evidence preserved for review | KEEP ARCHIVE |
@@ -1015,7 +1016,7 @@ This register classifies every tracked document under `docs/` so the repository 
 | docs/catalogs/COMPLETE_METRIC_CATALOG.md | Complete Metric Catalog | CATALOG | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/architecture/MASTER_MARKET_INPUT_SPECIFICATION.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/catalogs/COMPLETE_PROVIDER_CATALOG.md | Complete Provider Catalog | CATALOG | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/architecture/MASTER_MARKET_INPUT_SPECIFICATION.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/catalogs/FEATURE_DEPENDENCY_GRAPH.md | Feature Dependency Graph | CATALOG | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/architecture/MASTER_MARKET_INPUT_SPECIFICATION.md | Current authoritative documentation | KEEP ACTIVE |
-| docs/catalogs/FEATURE_OWNERSHIP_MATRIX.md | Feature Ownership Matrix | CATALOG | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
+| docs/catalogs/FEATURE_OWNERSHIP_MATRIX.md | Feature Ownership Matrix | CATALOG | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/architecture/UNIVERSAL_FEATURE_REGISTRY.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/catalogs/FEATURE_PIPELINE_GRAPH.md | Feature Pipeline Graph | CATALOG | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/catalogs/FEATURE_USAGE_BY_MARKET.md | Feature Usage By Market | CATALOG | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/architecture/MASTER_MARKET_INPUT_SPECIFICATION.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/contracts/BACKTEST_DATA_CONTRACT.md | Backtest Data Contract | CONTRACT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
@@ -1122,7 +1123,7 @@ This register classifies every tracked document under `docs/` so the repository 
 | docs/reports/NFL_FEATURE_PRIORITY_MATRIX.md | NFL Feature Priority Matrix | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; docs/reports/NFL_FEATURE_REGISTRY.md; docs/reports/NFL_RESEARCH_BLUEPRINT.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/NFL_FEATURE_QUALITY_MATRIX.md | NFL Feature Quality Matrix | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/NFL_FEATURE_READINESS_MATRIX.md | NFL Feature Readiness Matrix | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
-| docs/reports/NFL_FEATURE_REGISTRY.md | NFL Feature Registry | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
+| docs/reports/NFL_FEATURE_REGISTRY.md | NFL Feature Registry | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; docs/architecture/UNIVERSAL_FEATURE_REGISTRY.md; docs/reports/PHASE4_5B_UNIVERSAL_FEATURE_REGISTRY.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/NFL_GAP_ANALYSIS.md | NFL Gap Analysis | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; docs/discovery/NFL_REPOSITORY_DISCOVERY.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/NFL_IMPLEMENTATION_PRIORITY.md | NFL Implementation Priority | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/NFL_P0_ARCHITECTURE_REUSE_AUDIT.md | NFL P0 Architecture Reuse Audit | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
@@ -1147,7 +1148,8 @@ This register classifies every tracked document under `docs/` so the repository 
 | docs/reports/PHASE4_2_6_ENGINEERING_REVIEW.md | Phase 4.2.6 Engineering Review | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/PHASE4_2_6_WORLDVIEW_REVIEW.md | Phase 4.2.6 Worldview Review | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/PHASE4_4_EVENT_CENTRIC_HISTORICAL_ACQUISITION.md | Phase 4.4 Event-Centric Historical Acquisition | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; docs/PROJECT_STATUS.md; tests/test_project_status_governance.py | Temporary work product or active discovery artifact | KEEP ACTIVE |
-| docs/reports/PHASE4_5A_MASTER_MARKET_INPUT_SPECIFICATION.md | Phase 4.5A Master Market Input Specification | DOCUMENT | WORKING | docs/PROJECT_STATUS.md; tests/test_project_status_governance.py | Temporary work product or active discovery artifact | KEEP ACTIVE |
+| docs/reports/PHASE4_5A_MASTER_MARKET_INPUT_SPECIFICATION.md | Phase 4.5A Master Market Input Specification | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; docs/PROJECT_STATUS.md; tests/test_project_status_governance.py | Temporary work product or active discovery artifact | KEEP ACTIVE |
+| docs/reports/PHASE4_5B_UNIVERSAL_FEATURE_REGISTRY.md | Phase 4.5B - Universal Feature Registry | DOCUMENT | WORKING | docs/PROJECT_STATUS.md; tests/test_project_status_governance.py; tests/test_universal_feature_registry_docs.py | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/PROFILE_AWARE_NFL_P0_VALIDATION.md | Profile-Aware NFL P0 Validation | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/PROJECT_ENTRYPOINT_AUDIT.md | Project Entrypoint Audit | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; tests/test_project_status_governance.py | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/PROJECT_STATUS_GOVERNANCE_DISCOVERY.md | Project Status Governance Discovery | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; docs/reports/MASTER_DOC_CONSOLIDATION_AUDIT.md; tests/test_project_status_governance.py | Temporary work product or active discovery artifact | KEEP ACTIVE |

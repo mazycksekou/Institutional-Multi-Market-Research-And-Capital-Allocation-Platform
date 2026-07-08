@@ -199,7 +199,7 @@ The repository follows a strict documentation policy:
 
 The documentation policy is summarized in [Documentation Governance](./DOCUMENTATION_GOVERNANCE.md) and [Documentation Map](./DOCUMENTATION_MAP.md).
 
-The market-input governing specification is documented in [Master Market Input Specification](./MASTER_MARKET_INPUT_SPECIFICATION.md).
+The market-input governing specification is documented in [Master Market Input Specification](./MASTER_MARKET_INPUT_SPECIFICATION.md), and the cross-market feature registry lives in [Universal Feature Registry](./UNIVERSAL_FEATURE_REGISTRY.md).
 
 ## 19. Contract Hierarchy
 

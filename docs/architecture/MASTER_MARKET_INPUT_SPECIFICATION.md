@@ -116,3 +116,9 @@ This specification does not:
 - build dashboards
 
 It only defines the canonical inventory and lifecycle that later phases must follow.
+
+## Naming Review
+
+This document still uses the historical name `MASTER_MARKET_INPUT_SPECIFICATION.md`, but its scope now spans inputs, features, signals, targets, confidence metrics, validation metrics, connectors, and engines.
+If later phases continue to broaden the scope, a future rename to `MASTER_RESEARCH_ENGINE_SPECIFICATION.md` may be appropriate.
+Do not perform that rename during Phase 4.5B.

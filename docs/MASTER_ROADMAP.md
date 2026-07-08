@@ -48,7 +48,7 @@ The historical research database now follows a shared chain that future markets 
 Provider -> Acquisition -> Archive -> Normalization -> Certification -> Master Market Input Specification -> Universal Feature Registry -> Universal Math Engine Contracts -> Historical Data Acquisition -> Historical Research Database -> Historical Feature Population -> Decision Rows -> Backtesting
 
 Phase 4.4 established the event-centric historical acquisition foundation.
-Phase 4.5A defines the master market input specification.
+Phase 4.5A defined the master market input specification.
 Phase 4.5B builds the universal feature registry.
 Phase 4.5C defines the universal math engine contracts.
 Phase 4.5D performs historical data acquisition against the governed inputs.
@@ -66,12 +66,14 @@ Current NFL work is in Phase 4:
 - Phase 4.3.6 completed the profile-aware NFL P0 validation.
 - Phase 4.3.7 defined the minimum backtest row contract.
 - Phase 4.4 established the event-centric historical acquisition foundation.
-- Phase 4.5A is the current phase and defines the master market input specification.
-- Phase 4.5B is the next recommended phase and should build the universal feature registry.
+- Phase 4.5A defined the master market input specification.
+- Phase 4.5B is the current phase and builds the universal feature registry.
 - Phase 4.5C should define the universal math engine contracts.
 - Phase 4.5D should perform historical data acquisition against the governed inputs.
 - Phase 4.6 will populate generated historical features from certified events.
 - Phase 4.7 will construct decision rows from events, markets, selections, and feature snapshots.
+
+If the master market input specification is judged to have expanded beyond market inputs and into the complete research-engine specification, the Phase 4.5B review should recommend a future rename to `MASTER_RESEARCH_ENGINE_SPECIFICATION.md` without performing the rename during this phase.
 
 ## Current Project Status
 

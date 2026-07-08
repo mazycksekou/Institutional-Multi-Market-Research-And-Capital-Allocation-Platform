@@ -94,3 +94,10 @@ The important design win is that Worldview will be able to ask which metric fami
 
 Phase 4.5B should define the universal feature registry on top of this specification.
 That registry will translate the abstract market-input inventory into canonical feature ownership.
+
+## Naming Review
+
+This specification now governs more than raw market inputs.
+It also governs features, signals, targets, confidence metrics, validation metrics, connectors, and engines.
+If later phases continue to broaden the scope, a future rename to `MASTER_RESEARCH_ENGINE_SPECIFICATION.md` may be appropriate.
+Do not perform that rename during Phase 4.5B.

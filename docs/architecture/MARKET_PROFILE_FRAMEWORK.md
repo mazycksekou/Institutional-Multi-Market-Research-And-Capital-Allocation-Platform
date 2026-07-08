@@ -54,7 +54,7 @@ That means:
 
 NFL is the first sports-profile instance because it is the first market slice being planned in this repository, but the framework itself is not NFL-specific.
 
-The next layer above this framework is the [Master Market Input Specification](./MASTER_MARKET_INPUT_SPECIFICATION.md), which turns reusable profiles into the governed inventory of inputs, metrics, signals, targets, confidence values, validation rules, connectors, and engines.
+The next layers above this framework are the [Master Market Input Specification](./MASTER_MARKET_INPUT_SPECIFICATION.md) and the [Universal Feature Registry](./UNIVERSAL_FEATURE_REGISTRY.md), which turn reusable profiles into the governed inventory of inputs, features, metrics, signals, targets, confidence values, validation rules, connectors, and engines.
 
 ## Required contract dimensions
 
