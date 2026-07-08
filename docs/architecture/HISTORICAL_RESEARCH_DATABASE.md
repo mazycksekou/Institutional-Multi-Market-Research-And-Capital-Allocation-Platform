@@ -1,4 +1,4 @@
-# Historical Research Database
+﻿# Historical Research Database
 
 This document describes the canonical event-centric historical research database that Phase 4.4 establishes.
 It is a reusable repository asset for NFL first and future markets later.
@@ -71,10 +71,11 @@ provider -> acquisition -> archive -> normalization -> certification -> event ->
 ## Phase Boundary
 
 Phase 4.4 creates the historical acquisition foundation.
-Phase 4.5A defines the master market input specification.
+Phase 4.5A defines the master research engine specification.
 Phase 4.5B defines the universal feature registry.
 Phase 4.5C defines the universal math engine contracts.
-Phase 4.5D establishes the research asset implementation framework.
+Phase 4.5D establishes the research asset runtime framework.
+Phase 4.5E completes the canonical engineering specification rename and keeps the runtime framework aligned with the broader research-engine ownership model.
 Phase 4.6 acquires the minimum certified historical dataset.
 Phase 4.7 certifies historical datasets against the governed inputs.
 Phase 4.8 populates reusable historical feature snapshots.

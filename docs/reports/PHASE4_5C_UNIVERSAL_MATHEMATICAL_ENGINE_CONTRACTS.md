@@ -1,8 +1,8 @@
-# Phase 4.5C - Universal Mathematical Engine Contracts
+﻿# Phase 4.5C - Universal Mathematical Engine Contracts
 
 ## Summary
 
-Phase 4.5C defines the universal mathematical engine contract layer on top of the master market input specification and the universal feature registry.
+Phase 4.5C defines the universal mathematical engine contract layer on top of the master research engine specification and the universal feature registry.
 It does not implement formulas, calculations, or runtime behavior.
 
 The point of this phase is to make every future mathematical engine a governed research asset with one owner, one dependency chain, one lifecycle, and one validation path.
@@ -28,7 +28,7 @@ These modules are the natural runtime homes for the numerical behavior that the 
 
 ## Existing Abstractions Reused
 
-- `docs/architecture/MASTER_MARKET_INPUT_SPECIFICATION.md`
+- `docs/architecture/MASTER_RESEARCH_ENGINE_SPECIFICATION.md`
 - `docs/architecture/UNIVERSAL_FEATURE_REGISTRY.md`
 - `docs/architecture/HISTORICAL_RESEARCH_DATABASE.md`
 - `docs/architecture/MARKET_PROFILE_FRAMEWORK.md`

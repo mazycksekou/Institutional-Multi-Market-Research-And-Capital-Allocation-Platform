@@ -1,4 +1,4 @@
-# Project Status
+﻿# Project Status
 
 Canonical live status for the repository and the required starting document for every human, Codex, ChatGPT, or future AI session.
 
@@ -7,21 +7,22 @@ Canonical live status for the repository and the required starting document for 
 - current branch: `feature/nfl-backtesting`
 - current HEAD: live branch tip (exact hash is reported in the task final report)
 - remote tracking branch: `origin/feature/nfl-backtesting`
-- active phase: `Phase 4.5D - Research Asset Implementation Framework`
+- active phase: `Phase 4.5E - Canonical Engineering Specification Rename & Research Asset Runtime Framework`
 - active market profile: `sports:nfl`
-- active implementation lane: `NFL P0 profile-aware foundation + event-centric historical research database + master market input specification + universal feature registry + universal math engine contracts + research asset implementation framework`
+- active implementation lane: `NFL P0 profile-aware foundation + event-centric historical research database + master research engine specification + universal feature registry + universal math engine contracts + research asset runtime framework`
 - completed phases:
   - `Phase 4.3.6 - Profile-Aware NFL P0 Validation`
   - `Phase 4.3.7 - Minimum Backtest Row Contract`
   - `Phase 4.4 - Event-Centric Historical Data Acquisition`
-  - `Phase 4.5A - Master Market Input Specification`
+  - `Phase 4.5A - Master Research Engine Specification`
   - `Phase 4.5B - Universal Feature Registry`
   - `Phase 4.5C - Universal Math Engine Contracts`
-- current phase objective: Define the repository's research asset implementation framework so every governed dataset, feature, mathematical engine, signal, target, confidence measure, decision row, backtest, experiment, evidence package, and connector has one canonical runtime owner, one lifecycle, one dependency chain, and one reusable path before historical dataset acquisition begins.
+  - `Phase 4.5D - Research Asset Runtime Framework`
+- current phase objective: Rename the canonical research-engine specification and the research asset runtime framework so their names match the broader runtime ownership model, while preserving the single-entrypoint, reuse-first governance rules before historical dataset acquisition begins.
 - next phase: `Phase 4.6 - Historical Dataset Acquisition (minimum certified schema first)`
 - current blockers: None
 - latest validation status:
-  - Phase 4.5D validation passed in the active worktree: compileall, targeted docs tests, smoke tests, architecture check, document lifecycle check, and advisory ops check all completed successfully.
+  - Phase 4.5E validation passed in the active worktree: compileall, targeted docs tests, smoke tests, architecture check, document lifecycle check, and advisory ops check all completed successfully.
 - latest full gate result: `not run for this docs-only phase`
 - latest pushed commit: live branch tip (exact hash is reported in the task final report)
 
@@ -41,7 +42,7 @@ Canonical live status for the repository and the required starting document for 
 - Selections belong to markets.
 - Decision rows are generated later and are not the storage primitive.
 - Backtests never read directly from providers.
-- The master market input specification is the next governing layer above the market-profile framework.
+- The master research engine specification is the next governing layer above the market-profile framework.
 
 ## Required Supporting Docs
 
@@ -53,19 +54,19 @@ Read these only when you need more detail than the project status page provides:
 - `docs/STATUS_UPDATE_POLICY.md`
 - `docs/DOCUMENT_RETENTION_INDEX.md`
 - `docs/MASTER_SYSTEM_ARCHITECTURE.md`
-- `docs/architecture/MASTER_MARKET_INPUT_SPECIFICATION.md`
+- `docs/architecture/MASTER_RESEARCH_ENGINE_SPECIFICATION.md`
 - `docs/architecture/UNIVERSAL_FEATURE_REGISTRY.md`
 - `docs/architecture/UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md`
-- `docs/architecture/RESEARCH_ASSET_IMPLEMENTATION_FRAMEWORK.md`
+- `docs/architecture/RESEARCH_ASSET_RUNTIME_FRAMEWORK.md`
 - `docs/architecture/HISTORICAL_RESEARCH_DATABASE.md`
 - `docs/contracts/RESEARCH_ASSET_CONTRACT.md`
 - `docs/reports/PHASE4_5B_UNIVERSAL_FEATURE_REGISTRY.md`
 - `docs/reports/PHASE4_5C_UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md`
-- `docs/reports/PHASE4_5D_RESEARCH_ASSET_IMPLEMENTATION_FRAMEWORK.md`
+- `docs/reports/PHASE4_5D_RESEARCH_ASSET_RUNTIME_FRAMEWORK.md`
 - `docs/contracts/MINIMUM_BACKTEST_ROW_CONTRACT.md`
 - `docs/contracts/NFL_MINIMUM_BACKTEST_ROW_CONTRACT.md`
 - `docs/contracts/NFL_BACKTEST_CONTRACT.md`
-- `docs/reports/PHASE4_5A_MASTER_MARKET_INPUT_SPECIFICATION.md`
+- `docs/reports/PHASE4_5A_MASTER_RESEARCH_ENGINE_SPECIFICATION.md`
 - `docs/reports/PHASE4_4_EVENT_CENTRIC_HISTORICAL_ACQUISITION.md`
 - `docs/reports/NFL_BACKTEST_ROW_READINESS_CHECKLIST.md`
 - `docs/reports/NFL_DECISION_TIME_ALIGNMENT_RULES.md`

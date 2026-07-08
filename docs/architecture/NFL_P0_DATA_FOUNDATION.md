@@ -1,4 +1,4 @@
-# NFL P0 Data Foundation
+﻿# NFL P0 Data Foundation
 
 The NFL P0 data foundation is the first reusable, point-in-time-safe data layer for the NFL vertical slice.
 It extends the existing canonical `src.data` / `src.storage` architecture rather than introducing a parallel system.
@@ -79,10 +79,6 @@ The following remain intentionally deferred:
 
 The foundation is structurally ready, but the repository still needs future phases to:
 
-- define the master market input specification in Phase 4.5A
-- build the universal feature registry in Phase 4.5B
-- define the universal math engine contracts in Phase 4.5C
-- establish the research asset implementation framework in Phase 4.5D
 - acquire the minimum certified historical dataset in Phase 4.6
 - certify historical datasets in Phase 4.7
 - populate reusable historical feature snapshots in Phase 4.8

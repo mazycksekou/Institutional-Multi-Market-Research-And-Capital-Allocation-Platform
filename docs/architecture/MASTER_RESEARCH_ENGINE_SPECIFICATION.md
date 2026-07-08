@@ -1,15 +1,15 @@
-# Master Market Input Specification
+﻿# Master Research Engine Specification
 
-This document is the governing specification for the repository's market-input layer.
-It defines the canonical inventory of inputs, features, signals, targets, confidence metrics, validation metrics, connectors, and engines that future implementations must trace back to.
+This document is the governing specification for the repository's research-engine layer.
+It defines the canonical inventory of inputs, features, signals, targets, confidence metrics, validation metrics, connectors, engines, and research assets that future implementations must trace back to.
 
-It sits above the supporting catalogs in `docs/catalogs/` and below the reusable market-profile framework.
+It sits above the supporting catalogs in `docs/catalogs/` and below the reusable market-profile framework and runtime research-asset framework.
 The purpose is to keep every future market moving through one canonical specification instead of inventing a separate planning path for each market.
 
 ## What This Spec Owns
 
 The repository already has reusable catalog and runtime owners.
-This specification explains how they fit together and what lifecycle each market-input family must follow.
+This specification explains how they fit together and what lifecycle each research-engine family must follow.
 
 The canonical supporting owners are:
 
@@ -34,14 +34,14 @@ It defines the relationship between them and the lifecycle rules they must satis
 
 | Domain | What it covers | Current state | Recommended canonical owner | Recommended storage location | Tests | Priority |
 | --- | --- | --- | --- | --- | --- | --- |
-| Market input catalog | Event, market, selection, decision, and lineage inputs | Exists partially | `src.data.model_data_field_catalog` | `docs/contracts/` plus `src.data` runtime contracts | `tests/test_project_status_governance.py`, `tests/test_minimum_backtest_row_contract_docs.py`, `tests/test_master_market_input_specification_docs.py` | High |
-| Feature catalog | Canonical feature families and pack definitions | Exists partially | `src.market_intelligence.feature_packs` | `docs/catalogs/` plus `src.market_intelligence` runtime packs | `tests/test_master_market_input_specification_docs.py` | High |
-| Signal catalog | Probability, edge, CLV, EV, calibration, and movement signals | Exists partially | `src.market_intelligence` and `src.analytics` | `docs/catalogs/COMPLETE_METRIC_CATALOG.md` | `tests/test_master_market_input_specification_docs.py` | High |
-| Target catalog | Outcome, settlement, result, win/loss/push, and profit/loss targets | Exists partially | `src.backtesting` and `src.data` | `docs/contracts/MINIMUM_BACKTEST_ROW_CONTRACT.md` | `tests/test_minimum_backtest_row_contract_docs.py`, `tests/test_master_market_input_specification_docs.py` | High |
-| Confidence catalog | Calibration, uncertainty, and confidence measures | Exists partially | `src.analytics` and `src.research` | `docs/catalogs/COMPLETE_METRIC_CATALOG.md` | `tests/test_master_market_input_specification_docs.py` | Medium |
-| Validation catalog | Point-in-time safety, leakage, schema, and lineage checks | Production ready | `src.data.validation` and `scripts/check_document_lifecycle.py` | `docs/contracts/VALIDATION_FRAMEWORK.md` | `tests/test_document_lifecycle_governance.py`, `tests/test_master_market_input_specification_docs.py` | High |
-| Connector catalog | Provider adapters, fixture loaders, and source reconciliation | Exists partially | `src.providers`, `src.connectors`, `src.data.source_event_links` | `docs/contracts/PROVIDER_ADAPTER_CONTRACTS_V1.md` | `tests/test_master_market_input_specification_docs.py` | High |
-| Engine catalog | Storage, certification, feature, backtest, research, dashboard, and analytics engines | Exists partially | `src.storage`, `src.data`, `src.backtesting`, `src.research`, `src.services`, `src.analytics` | `docs/architecture/MASTER_SYSTEM_ARCHITECTURE.md` | `tests/test_master_market_input_specification_docs.py` | High |
+| Market input catalog | Event, market, selection, decision, and lineage inputs | Exists partially | `src.data.model_data_field_catalog` | `docs/contracts/` plus `src.data` runtime contracts | `tests/test_project_status_governance.py`, `tests/test_minimum_backtest_row_contract_docs.py`, `tests/test_master_research_engine_specification_docs.py` | High |
+| Feature catalog | Canonical feature families and pack definitions | Exists partially | `src.market_intelligence.feature_packs` | `docs/catalogs/` plus `src.market_intelligence` runtime packs | `tests/test_master_research_engine_specification_docs.py` | High |
+| Signal catalog | Probability, edge, CLV, EV, calibration, and movement signals | Exists partially | `src.market_intelligence` and `src.analytics` | `docs/catalogs/COMPLETE_METRIC_CATALOG.md` | `tests/test_master_research_engine_specification_docs.py` | High |
+| Target catalog | Outcome, settlement, result, win/loss/push, and profit/loss targets | Exists partially | `src.backtesting` and `src.data` | `docs/contracts/MINIMUM_BACKTEST_ROW_CONTRACT.md` | `tests/test_minimum_backtest_row_contract_docs.py`, `tests/test_master_research_engine_specification_docs.py` | High |
+| Confidence catalog | Calibration, uncertainty, and confidence measures | Exists partially | `src.analytics` and `src.research` | `docs/catalogs/COMPLETE_METRIC_CATALOG.md` | `tests/test_master_research_engine_specification_docs.py` | Medium |
+| Validation catalog | Point-in-time safety, leakage, schema, and lineage checks | Production ready | `src.data.validation` and `scripts/check_document_lifecycle.py` | `docs/contracts/VALIDATION_FRAMEWORK.md` | `tests/test_document_lifecycle_governance.py`, `tests/test_master_research_engine_specification_docs.py` | High |
+| Connector catalog | Provider adapters, fixture loaders, and source reconciliation | Exists partially | `src.providers`, `src.connectors`, `src.data.source_event_links` | `docs/contracts/PROVIDER_ADAPTER_CONTRACTS_V1.md` | `tests/test_master_research_engine_specification_docs.py` | High |
+| Engine catalog | Storage, certification, feature, backtest, research, dashboard, and analytics engines | Exists partially | `src.storage`, `src.data`, `src.backtesting`, `src.research`, `src.services`, `src.analytics` | `docs/architecture/MASTER_SYSTEM_ARCHITECTURE.md` | `tests/test_master_research_engine_specification_docs.py` | High |
 
 ## Metric Lifecycle Tracking
 
@@ -119,6 +119,5 @@ It only defines the canonical inventory and lifecycle that later phases must fol
 
 ## Naming Review
 
-This document still uses the historical name `MASTER_MARKET_INPUT_SPECIFICATION.md`, but its scope now spans inputs, features, signals, targets, confidence metrics, validation metrics, connectors, and engines.
-If later phases continue to broaden the scope, a future rename to `MASTER_RESEARCH_ENGINE_SPECIFICATION.md` may be appropriate.
-Do not perform that rename during Phase 4.5B.
+This document now uses the broader `MASTER_RESEARCH_ENGINE_SPECIFICATION.md` name because its scope spans inputs, features, signals, targets, confidence metrics, validation metrics, connectors, engines, and research assets.
+If the repository later needs an even broader top-level research asset registry, that should be handled as a separate future phase rather than another rename of this specification.

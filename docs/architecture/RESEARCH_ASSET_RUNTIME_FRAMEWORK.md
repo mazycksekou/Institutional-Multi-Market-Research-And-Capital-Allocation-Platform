@@ -1,4 +1,4 @@
-# Research Asset Implementation Framework
+﻿# Research Asset Runtime Framework
 
 This document defines the runtime-facing framework that connects governed research assets together across the repository.
 It is architecture only. It does not implement data ingestion, calculations, feature engineering, backtests, or live behavior.
@@ -33,7 +33,7 @@ It connects them.
 The framework is built on top of these existing layers:
 
 - [Market Profile Framework](./MARKET_PROFILE_FRAMEWORK.md)
-- [Master Market Input Specification](./MASTER_MARKET_INPUT_SPECIFICATION.md)
+- [Master Research Engine Specification](./MASTER_RESEARCH_ENGINE_SPECIFICATION.md)
 - [Universal Feature Registry](./UNIVERSAL_FEATURE_REGISTRY.md)
 - [Universal Mathematical Engine Contracts](./UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md)
 - [Historical Research Database](./HISTORICAL_RESEARCH_DATABASE.md)
@@ -139,7 +139,7 @@ Lifecycle meaning:
 
 The framework connects research assets through one canonical sequence:
 
-Provider -> Acquisition -> Archive -> Normalization -> Certification -> Historical Research Database -> Research Asset Implementation Framework -> Datasets -> Features -> Mathematical Engines -> Signals -> Targets -> Confidence -> Decision Rows -> Backtesting -> Experiments -> Evidence Packages
+Provider -> Acquisition -> Archive -> Normalization -> Certification -> Historical Research Database -> Research Asset Runtime Framework -> Datasets -> Features -> Mathematical Engines -> Signals -> Targets -> Confidence -> Decision Rows -> Backtesting -> Experiments -> Evidence Packages
 
 The repository may define the complete research universe, but the first production backtests must still use only the certified minimum schema.
 Advanced assets remain inactive until their data, math, and validation maturity are proven.

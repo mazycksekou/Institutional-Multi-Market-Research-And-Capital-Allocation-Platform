@@ -1,4 +1,4 @@
-# Master Document Index
+﻿# Master Document Index
 
 This index points readers to the current truth and the durable historical entry points.
 
@@ -26,7 +26,7 @@ This index points readers to the current truth and the durable historical entry 
 - `docs/architecture/HISTORICAL_RESEARCH_DATABASE.md` - Historical Research Database
 - `docs/architecture/MARKET_PROFILE_FRAMEWORK.md` - Market Profile Framework
 - `docs/architecture/MARKET_VERTICAL_LIFECYCLE.md` - Market Vertical Lifecycle
-- `docs/architecture/MASTER_MARKET_INPUT_SPECIFICATION.md` - Master Market Input Specification
+- `docs/architecture/MASTER_RESEARCH_ENGINE_SPECIFICATION.md` - Master Research Engine Specification
 - `docs/architecture/MASTER_SYSTEM_ARCHITECTURE.md` - Master System Architecture
 - `docs/architecture/MODEL_FLOW_MAP.md` - Model Flow Map
 - `docs/architecture/MODEL_REGISTRY_ARCHITECTURE.md` - Model Registry Architecture
@@ -48,7 +48,7 @@ This index points readers to the current truth and the durable historical entry 
 - `docs/architecture/TERMINOLOGY_STANDARD.md` - Terminology Standard
 - `docs/architecture/UNIVERSAL_FEATURE_REGISTRY.md` - Universal Feature Registry
 - `docs/architecture/UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md` - Universal Mathematical Engine Contracts
-- `docs/architecture/RESEARCH_ASSET_IMPLEMENTATION_FRAMEWORK.md` - Research Asset Implementation Framework
+- `docs/architecture/RESEARCH_ASSET_RUNTIME_FRAMEWORK.md` - Research Asset Runtime Framework
 - `docs/architecture/VENDOR_NEUTRALITY_AND_OPENAPI_NAMING.md` - Vendor Neutrality And OpenAPI Naming
 
 ### AUDIT REPORT

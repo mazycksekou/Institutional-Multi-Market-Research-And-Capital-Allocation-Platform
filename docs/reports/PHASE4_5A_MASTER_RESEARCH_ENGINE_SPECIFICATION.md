@@ -1,4 +1,4 @@
-# Phase 4.5A Master Market Input Specification
+﻿# Phase 4.5A Master Research Engine Specification
 
 ## Summary
 
@@ -44,16 +44,16 @@ This phase fills that gap by defining:
 
 | File or owner | Tests | Recommended canonical owner | Priority | Current status |
 | --- | --- | --- | --- | --- |
-| `docs/architecture/MASTER_MARKET_INPUT_SPECIFICATION.md` | `tests/test_master_market_input_specification_docs.py` | `docs/architecture` | High | Current truth |
-| `docs/catalogs/COMPLETE_METRIC_CATALOG.md` | `tests/test_master_market_input_specification_docs.py` | `src.data.model_data_field_catalog` | High | Documentation only |
-| `docs/catalogs/COMPLETE_FEATURE_CATALOG.md` | `tests/test_master_market_input_specification_docs.py` | `src.market_intelligence.feature_packs` | High | Documentation only |
-| `docs/catalogs/FEATURE_DEPENDENCY_GRAPH.md` | `tests/test_master_market_input_specification_docs.py` | `src.data.model_data_field_catalog` and `src.market_intelligence.feature_packs` | Medium | Documentation only |
+| `docs/architecture/MASTER_RESEARCH_ENGINE_SPECIFICATION.md` | `tests/test_master_research_engine_specification_docs.py` | `docs/architecture` | High | Current truth |
+| `docs/catalogs/COMPLETE_METRIC_CATALOG.md` | `tests/test_master_research_engine_specification_docs.py` | `src.data.model_data_field_catalog` | High | Documentation only |
+| `docs/catalogs/COMPLETE_FEATURE_CATALOG.md` | `tests/test_master_research_engine_specification_docs.py` | `src.market_intelligence.feature_packs` | High | Documentation only |
+| `docs/catalogs/FEATURE_DEPENDENCY_GRAPH.md` | `tests/test_master_research_engine_specification_docs.py` | `src.data.model_data_field_catalog` and `src.market_intelligence.feature_packs` | Medium | Documentation only |
 | `src.data.model_data_field_catalog` | `tests/test_project_status_governance.py`, `tests/test_minimum_backtest_row_contract_docs.py` | `src.data` | High | Exists partially |
-| `src.market_intelligence.feature_packs` | `tests/test_master_market_input_specification_docs.py` | `src.market_intelligence` | High | Exists partially |
+| `src.market_intelligence.feature_packs` | `tests/test_master_research_engine_specification_docs.py` | `src.market_intelligence` | High | Exists partially |
 | `src.data.validation` | `tests/test_document_lifecycle_governance.py` | `src.data` | High | Production ready |
 | `src.services.streamlit_dashboard_data` | `tests/test_historical_research_database.py` | `src.services` | Medium | Production ready |
 | `src.storage.local_store` | `tests/test_historical_research_database.py` | `src.storage` | High | Production ready |
-| `src.providers` and `src.connectors` | `tests/test_master_market_input_specification_docs.py` | `src.providers` and `src.connectors` | High | Exists partially |
+| `src.providers` and `src.connectors` | `tests/test_master_research_engine_specification_docs.py` | `src.providers` and `src.connectors` | High | Exists partially |
 | `src.backtesting.backtest_schema` | `docs/contracts/MINIMUM_BACKTEST_ROW_CONTRACT.md` | `src.backtesting` | High | Exists partially |
 
 ## Metric Lifecycle Summary

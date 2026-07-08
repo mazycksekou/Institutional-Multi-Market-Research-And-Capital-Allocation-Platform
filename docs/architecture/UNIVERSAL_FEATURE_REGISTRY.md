@@ -1,15 +1,15 @@
-# Universal Feature Registry
+﻿# Universal Feature Registry
 
 This document is the canonical registry layer for reusable research features across every market family in the repository.
 
-It sits above the [Master Market Input Specification](./MASTER_MARKET_INPUT_SPECIFICATION.md) and below the detailed catalogs in `docs/catalogs/`.
+It sits above the [Master Research Engine Specification](./MASTER_RESEARCH_ENGINE_SPECIFICATION.md) and below the detailed catalogs in `docs/catalogs/`.
 It does not implement feature engineering, signals, targets, providers, or backtests.
 Do not implement providers, feature engineering, or backtests in this layer.
 It defines the reusable feature ownership model and lifecycle rules that all future markets share.
 
 ## Canonical Owners Reused
 
-- `docs/architecture/MASTER_MARKET_INPUT_SPECIFICATION.md`
+- `docs/architecture/MASTER_RESEARCH_ENGINE_SPECIFICATION.md`
 - `docs/catalogs/COMPLETE_FEATURE_CATALOG.md`
 - `docs/catalogs/COMPLETE_METRIC_CATALOG.md`
 - `docs/catalogs/FEATURE_DEPENDENCY_GRAPH.md`
@@ -30,7 +30,7 @@ This registry standardizes the cross-market schema and lifecycle that those inve
 
 | Feature family | Canonical role | Current state | Detailed inventory owner |
 | --- | --- | --- | --- |
-| Universal | Cross-market governing layer | Exists partially | This doc + `docs/architecture/MASTER_MARKET_INPUT_SPECIFICATION.md` |
+| Universal | Cross-market governing layer | Exists partially | This doc + `docs/architecture/MASTER_RESEARCH_ENGINE_SPECIFICATION.md` |
 | Sports | Event-based sports features | Exists partially | `docs/reports/NFL_FEATURE_REGISTRY.md` and sport feature packs |
 | Prediction Markets | Event / contract features | Scaffold only | `src.market_intelligence.feature_packs` and related catalogs |
 | Options / 0DTE | Short-dated derivatives features | Scaffold only | `src.data.model_data_field_catalog` and related catalogs |
@@ -94,10 +94,9 @@ Defined -> Schema Ready -> Source Identified -> Connector Ready -> Historical Da
 
 ## Naming Review
 
-The [Master Market Input Specification](./MASTER_MARKET_INPUT_SPECIFICATION.md) now governs more than raw market inputs.
-Its scope includes inputs, features, signals, targets, confidence metrics, validation metrics, connectors, and engines.
-If later phases continue to broaden that scope, a future rename to `MASTER_RESEARCH_ENGINE_SPECIFICATION.md` may be appropriate.
-Do not perform that rename during Phase 4.5B.
+The [Master Research Engine Specification](./MASTER_RESEARCH_ENGINE_SPECIFICATION.md) now governs more than raw market inputs.
+Its scope includes inputs, features, signals, targets, confidence metrics, validation metrics, connectors, engines, and research assets.
+If the repository later needs an even broader top-level research asset registry, that should be handled as a separate future phase rather than another rename of this specification.
 
 ## Out Of Scope
 

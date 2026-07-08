@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from pathlib import Path
 
@@ -16,7 +16,7 @@ def test_universal_feature_registry_docs_exist_and_cover_required_topics() -> No
     report = DOCS / "reports" / "PHASE4_5B_UNIVERSAL_FEATURE_REGISTRY.md"
     project_status = DOCS / "PROJECT_STATUS.md"
     next_action = DOCS / "NEXT_ACTION.md"
-    master_spec = DOCS / "architecture" / "MASTER_MARKET_INPUT_SPECIFICATION.md"
+    master_spec = DOCS / "architecture" / "MASTER_RESEARCH_ENGINE_SPECIFICATION.md"
 
     assert registry.exists()
     assert report.exists()
@@ -73,7 +73,7 @@ def test_universal_feature_registry_docs_exist_and_cover_required_topics() -> No
     assert "Worldview Intelligence Review" in report_text
     assert "Phase 4.5C - Universal Math Engine Contracts" in report_text
 
-    assert "Phase 4.5D - Research Asset Implementation Framework" in project_status_text
+    assert "Phase 4.5E - Canonical Engineering Specification Rename & Research Asset Runtime Framework" in project_status_text
     assert "Phase 4.6 - Historical Dataset Acquisition (minimum certified schema first)" in next_action_text
     assert "docs/architecture/UNIVERSAL_FEATURE_REGISTRY.md" in project_status_text
     assert "docs/reports/PHASE4_5B_UNIVERSAL_FEATURE_REGISTRY.md" in project_status_text

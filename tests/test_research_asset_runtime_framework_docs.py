@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from pathlib import Path
 
@@ -11,10 +11,10 @@ def _read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
-def test_research_asset_implementation_framework_docs_exist_and_cover_required_topics() -> None:
-    architecture_doc = DOCS / "architecture" / "RESEARCH_ASSET_IMPLEMENTATION_FRAMEWORK.md"
+def test_research_asset_runtime_framework_docs_exist_and_cover_required_topics() -> None:
+    architecture_doc = DOCS / "architecture" / "RESEARCH_ASSET_RUNTIME_FRAMEWORK.md"
     contract_doc = DOCS / "contracts" / "RESEARCH_ASSET_CONTRACT.md"
-    report = DOCS / "reports" / "PHASE4_5D_RESEARCH_ASSET_IMPLEMENTATION_FRAMEWORK.md"
+    report = DOCS / "reports" / "PHASE4_5D_RESEARCH_ASSET_RUNTIME_FRAMEWORK.md"
     project_status = DOCS / "PROJECT_STATUS.md"
     next_action = DOCS / "NEXT_ACTION.md"
     master_roadmap = DOCS / "MASTER_ROADMAP.md"
@@ -35,9 +35,9 @@ def test_research_asset_implementation_framework_docs_exist_and_cover_required_t
     ]:
         assert path.exists(), f"missing document: {path}"
 
-    architecture_matches = sorted(path.resolve() for path in DOCS.rglob("RESEARCH_ASSET_IMPLEMENTATION_FRAMEWORK.md"))
+    architecture_matches = sorted(path.resolve() for path in DOCS.rglob("RESEARCH_ASSET_RUNTIME_FRAMEWORK.md"))
     contract_matches = sorted(path.resolve() for path in DOCS.rglob("RESEARCH_ASSET_CONTRACT.md"))
-    report_matches = sorted(path.resolve() for path in DOCS.rglob("PHASE4_5D_RESEARCH_ASSET_IMPLEMENTATION_FRAMEWORK.md"))
+    report_matches = sorted(path.resolve() for path in DOCS.rglob("PHASE4_5D_RESEARCH_ASSET_RUNTIME_FRAMEWORK.md"))
     assert architecture_matches == [architecture_doc.resolve()]
     assert contract_matches == [contract_doc.resolve()]
     assert report_matches == [report.resolve()]
@@ -52,7 +52,7 @@ def test_research_asset_implementation_framework_docs_exist_and_cover_required_t
     contract_index_text = _read(contract_index)
     retention_index_text = _read(retention_index)
 
-    assert "Research Asset Implementation Framework" in architecture_text
+    assert "Research Asset Runtime Framework" in architecture_text
     assert "datasets" in architecture_text.lower()
     assert "features" in architecture_text.lower()
     assert "mathematical engines" in architecture_text.lower()
@@ -110,10 +110,10 @@ def test_research_asset_implementation_framework_docs_exist_and_cover_required_t
     assert "connector.theoddsapi" in contract_text
     assert "decision row" in contract_text.lower()
 
-    assert "Phase 4.5D - Research Asset Implementation Framework" in report_text
+    assert "Phase 4.5D - Research Asset Runtime Framework" in report_text
     assert "Existing Research Asset Abstractions Discovered" in report_text
     assert "Existing Abstractions Reused" in report_text
-    assert "Research Asset Implementation Framework Created Or Extended" in report_text
+    assert "Research Asset Runtime Framework Created Or Extended" in report_text
     assert "Research Asset Categories Documented" in report_text
     assert "Runtime Dependency Framework Documented" in report_text
     assert "Research Asset ID Standard Documented" in report_text
@@ -126,16 +126,16 @@ def test_research_asset_implementation_framework_docs_exist_and_cover_required_t
     assert "MASTER_RESEARCH_ENGINE_SPECIFICATION" in report_text
     assert "Readiness for Phase 4.6" in report_text
 
-    assert "Phase 4.5D - Research Asset Implementation Framework" in project_status_text
+    assert "Phase 4.5E - Canonical Engineering Specification Rename & Research Asset Runtime Framework" in project_status_text
     assert "Phase 4.6 - Historical Dataset Acquisition (minimum certified schema first)" in next_action_text
-    assert "docs/architecture/RESEARCH_ASSET_IMPLEMENTATION_FRAMEWORK.md" in project_status_text
+    assert "docs/architecture/RESEARCH_ASSET_RUNTIME_FRAMEWORK.md" in project_status_text
     assert "docs/contracts/RESEARCH_ASSET_CONTRACT.md" in project_status_text
-    assert "docs/reports/PHASE4_5D_RESEARCH_ASSET_IMPLEMENTATION_FRAMEWORK.md" in project_status_text
+    assert "docs/reports/PHASE4_5D_RESEARCH_ASSET_RUNTIME_FRAMEWORK.md" in project_status_text
     assert "minimum certified schema first" in next_action_text.lower()
     assert "do not backtest" in next_action_text.lower()
     assert "do not add provider-specific runtime ownership" in next_action_text.lower()
 
-    assert "Phase 4.5D defines the research asset implementation framework." in roadmap_text
+    assert "Phase 4.5D established the research asset runtime framework." in roadmap_text
     assert "Phase 4.6 acquires the minimum certified historical dataset." in roadmap_text
     assert "Phase 4.7 certifies historical datasets against the governed inputs." in roadmap_text
     assert "Phase 4.8 populates reusable historical features" in roadmap_text
@@ -143,20 +143,20 @@ def test_research_asset_implementation_framework_docs_exist_and_cover_required_t
     assert "Phase 5.0 generates decision rows" in roadmap_text
     assert "Phase 5.1 begins baseline backtesting" in roadmap_text
     assert "minimum certified schema" in roadmap_text.lower()
-    assert "research asset implementation framework" in roadmap_text.lower()
+    assert "research asset runtime framework" in roadmap_text.lower()
 
-    assert "docs/architecture/RESEARCH_ASSET_IMPLEMENTATION_FRAMEWORK.md" in master_index_text
+    assert "docs/architecture/RESEARCH_ASSET_RUNTIME_FRAMEWORK.md" in master_index_text
     assert "docs/contracts/RESEARCH_ASSET_CONTRACT.md" in master_index_text
     assert "Research asset contract" in contract_index_text
-    assert "docs/architecture/RESEARCH_ASSET_IMPLEMENTATION_FRAMEWORK.md" in retention_index_text
+    assert "docs/architecture/RESEARCH_ASSET_RUNTIME_FRAMEWORK.md" in retention_index_text
     assert "docs/contracts/RESEARCH_ASSET_CONTRACT.md" in retention_index_text
-    assert "docs/reports/PHASE4_5D_RESEARCH_ASSET_IMPLEMENTATION_FRAMEWORK.md" in retention_index_text
+    assert "docs/reports/PHASE4_5D_RESEARCH_ASSET_RUNTIME_FRAMEWORK.md" in retention_index_text
 
 
-def test_research_asset_implementation_framework_docs_do_not_depend_on_runtime_code() -> None:
-    architecture_doc = DOCS / "architecture" / "RESEARCH_ASSET_IMPLEMENTATION_FRAMEWORK.md"
+def test_research_asset_runtime_framework_docs_do_not_depend_on_runtime_code() -> None:
+    architecture_doc = DOCS / "architecture" / "RESEARCH_ASSET_RUNTIME_FRAMEWORK.md"
     contract_doc = DOCS / "contracts" / "RESEARCH_ASSET_CONTRACT.md"
-    report = DOCS / "reports" / "PHASE4_5D_RESEARCH_ASSET_IMPLEMENTATION_FRAMEWORK.md"
+    report = DOCS / "reports" / "PHASE4_5D_RESEARCH_ASSET_RUNTIME_FRAMEWORK.md"
 
     for text in (_read(architecture_doc), _read(contract_doc), _read(report)):
         assert "import " not in text.lower()

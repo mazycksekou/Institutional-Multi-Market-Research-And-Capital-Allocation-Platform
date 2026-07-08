@@ -1,17 +1,17 @@
-# Phase 4.5B - Universal Feature Registry
+﻿# Phase 4.5B - Universal Feature Registry
 
 ## Summary
 
-Phase 4.5B turns the master market input specification into the universal feature registry.
+Phase 4.5B turns the master research engine specification into the universal feature registry.
 It stays architecture only.
 It does not ingest data, implement providers, build feature engineering, or create backtests.
 
-Existing registries discovered: NFL feature registry, complete feature catalog, complete metric catalog, feature dependency graph, feature usage by market, market profile framework, and the master market input specification.
-Existing abstractions reused: the master market input specification, the market profile framework, the catalog docs, `src.data.model_data_field_catalog`, `src.market_intelligence.feature_packs`, `src.services.streamlit_dashboard_data`, `src.backtesting.backtest_schema`, `src.data.validation`, `src.providers`, and `src.connectors`.
+Existing registries discovered: NFL feature registry, complete feature catalog, complete metric catalog, feature dependency graph, feature usage by market, market profile framework, and the master research engine specification.
+Existing abstractions reused: the master research engine specification, the market profile framework, the catalog docs, `src.data.model_data_field_catalog`, `src.market_intelligence.feature_packs`, `src.services.streamlit_dashboard_data`, `src.backtesting.backtest_schema`, `src.data.validation`, `src.providers`, and `src.connectors`.
 Feature families documented: 7.
 Lifecycle framework implemented: Defined -> Schema Ready -> Source Identified -> Connector Ready -> Historical Dataset Ready -> Math Ready -> Signal Ready -> Validated -> Production Ready.
 Duplicate systems avoided: yes.
-Naming review: the master market input specification now reads broader than raw market inputs, so a future rename to `MASTER_RESEARCH_ENGINE_SPECIFICATION.md` is recommended if the scope continues to expand.
+Naming review: the master research engine specification now reads broader than raw market inputs, so any future expansion should happen through a separate top-level research asset registry rather than another rename.
 
 ## Existing Registries Discovered
 
@@ -21,11 +21,11 @@ Naming review: the master market input specification now reads broader than raw 
 - `docs/catalogs/FEATURE_DEPENDENCY_GRAPH.md`
 - `docs/catalogs/FEATURE_USAGE_BY_MARKET.md`
 - `docs/architecture/MARKET_PROFILE_FRAMEWORK.md`
-- `docs/architecture/MASTER_MARKET_INPUT_SPECIFICATION.md`
+- `docs/architecture/MASTER_RESEARCH_ENGINE_SPECIFICATION.md`
 
 ## Existing Abstractions Reused
 
-- `docs/architecture/MASTER_MARKET_INPUT_SPECIFICATION.md`
+- `docs/architecture/MASTER_RESEARCH_ENGINE_SPECIFICATION.md`
 - `docs/architecture/MARKET_PROFILE_FRAMEWORK.md`
 - `docs/catalogs/COMPLETE_FEATURE_CATALOG.md`
 - `docs/catalogs/COMPLETE_METRIC_CATALOG.md`
@@ -70,9 +70,9 @@ Defined -> Schema Ready -> Source Identified -> Connector Ready -> Historical Da
 
 ## Naming Review
 
-`docs/architecture/MASTER_MARKET_INPUT_SPECIFICATION.md` now reads broader than raw market inputs.
+`docs/architecture/MASTER_RESEARCH_ENGINE_SPECIFICATION.md` now reads broader than raw market inputs and fully reflects the broader research-engine scope.
 It governs inputs, features, signals, targets, confidence metrics, validation metrics, connectors, and engines.
-A future rename to `MASTER_RESEARCH_ENGINE_SPECIFICATION.md` is recommended if the scope continues to expand, but the rename is not performed in this phase.
+If the repository later needs an even broader top-level research asset registry, that should be handled as a separate future phase rather than another rename.
 
 ## Senior Systems Engineer Review
 

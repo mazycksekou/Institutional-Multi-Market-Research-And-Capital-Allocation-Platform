@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from pathlib import Path
 
@@ -92,7 +92,7 @@ def test_universal_math_engine_contract_docs_exist_and_cover_required_topics() -
     assert "Worldview Intelligence Review" in report_text
     assert "Readiness for Phase 4.5D" in report_text
 
-    assert "Phase 4.5D - Research Asset Implementation Framework" in project_status_text
+    assert "Phase 4.5E - Canonical Engineering Specification Rename & Research Asset Runtime Framework" in project_status_text
     assert "Phase 4.6 - Historical Dataset Acquisition (minimum certified schema first)" in next_action_text
     assert "docs/architecture/UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md" in project_status_text
     assert "docs/reports/PHASE4_5C_UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md" in project_status_text

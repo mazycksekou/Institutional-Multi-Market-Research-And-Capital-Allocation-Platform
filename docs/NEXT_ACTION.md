@@ -1,4 +1,4 @@
-# Next Action
+﻿# Next Action
 
 ## Next Phase
 
@@ -10,8 +10,8 @@ Acquire the minimum certified historical schema as a repository-owned asset firs
 
 ## Allowed Actions
 
-- Reuse the canonical market profile framework, market-input specification, storage, validation, lineage, and research-asset implementation owners.
-- Extend the historical dataset acquisition layer on top of the research asset implementation framework instead of creating market-specific pipelines.
+- Reuse the canonical market profile framework, research engine specification, storage, validation, lineage, and research asset runtime framework owners.
+- Extend the historical dataset acquisition layer on top of the research asset runtime framework instead of creating market-specific pipelines.
 - Keep the minimum-certified-schema path reusable for sports, prediction markets, and options / 0DTE.
 - Update the project status and document indexes when this phase completes.
 
@@ -27,7 +27,7 @@ Acquire the minimum certified historical schema as a repository-owned asset firs
 
 ## Expected Deliverables
 
-- Minimum certified schema acquisition plan built on top of the research asset implementation framework.
+- Minimum certified schema acquisition plan built on top of the research asset runtime framework.
 - Dataset, lineage, validation, and readiness mappings for the minimum certified schema.
 - Historical acquisition and certification path updates for the research-asset layer.
 - Updated project status and index entries.

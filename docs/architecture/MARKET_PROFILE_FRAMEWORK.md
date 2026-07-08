@@ -1,4 +1,4 @@
-# Market Profile Framework
+﻿# Market Profile Framework
 
 The Market Profile Framework is the reusable contract layer that defines how this repository describes a market before any provider, ingestion, feature, backtesting, or dashboard work happens.
 
@@ -54,7 +54,7 @@ That means:
 
 NFL is the first sports-profile instance because it is the first market slice being planned in this repository, but the framework itself is not NFL-specific.
 
-The next layers above this framework are the [Master Market Input Specification](./MASTER_MARKET_INPUT_SPECIFICATION.md) and the [Universal Feature Registry](./UNIVERSAL_FEATURE_REGISTRY.md), which turn reusable profiles into the governed inventory of inputs, features, metrics, signals, targets, confidence values, validation rules, connectors, and engines.
+The next layers above this framework are the [Master Research Engine Specification](./MASTER_RESEARCH_ENGINE_SPECIFICATION.md) and the [Universal Feature Registry](./UNIVERSAL_FEATURE_REGISTRY.md), which turn reusable profiles into the governed inventory of inputs, features, metrics, signals, targets, confidence values, validation rules, connectors, and engines.
 
 ## Required contract dimensions
 

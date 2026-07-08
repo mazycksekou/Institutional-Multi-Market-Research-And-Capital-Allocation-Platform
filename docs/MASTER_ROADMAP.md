@@ -1,4 +1,4 @@
-# Master Roadmap
+﻿# Master Roadmap
 
 This roadmap is the permanent market lifecycle rule for the repository.
 Every market uses the same progression, regardless of domain, provider mix, or future AI usage.
@@ -40,20 +40,21 @@ The repository does **not** skip discovery, blueprinting, validation, or reprodu
 - Markets belong to events.
 - Selections belong to markets.
 - Decision rows are generated later from event + market + selection + feature snapshot; they are not the storage primitive.
-- The master market input specification governs the lifecycle of market inputs, signals, targets, confidence metrics, validation metrics, connectors, and engines.
+- The master research engine specification governs the lifecycle of market inputs, signals, targets, confidence metrics, validation metrics, connectors, engines, and research assets.
 - The Worldview Intelligence Layer may request experiments only after the market has enough lifecycle maturity to support objective testing.
 
 ## Historical Research Sequence
 
 The historical research database now follows a shared chain that future markets can reuse:
 
-Provider -> Acquisition -> Archive -> Normalization -> Certification -> Master Market Input Specification -> Universal Feature Registry -> Universal Math Engine Contracts -> Research Asset Implementation Framework -> Historical Dataset Acquisition -> Historical Dataset Certification -> Feature Population -> Mathematical Engine Implementation -> Decision Rows -> Backtesting
+Provider -> Acquisition -> Archive -> Normalization -> Certification -> Master Research Engine Specification -> Universal Feature Registry -> Universal Math Engine Contracts -> Research Asset Runtime Framework -> Historical Dataset Acquisition -> Historical Dataset Certification -> Feature Population -> Mathematical Engine Implementation -> Decision Rows -> Backtesting
 
 Phase 4.4 established the event-centric historical acquisition foundation.
-Phase 4.5A defined the master market input specification.
+Phase 4.5A defined the master research engine specification.
 Phase 4.5B built the universal feature registry.
 Phase 4.5C defines the universal math engine contracts.
-Phase 4.5D defines the research asset implementation framework.
+Phase 4.5D established the research asset runtime framework.
+Phase 4.5E renames the master research engine specification and the research asset runtime framework to reflect the broader runtime ownership model.
 Phase 4.6 acquires the minimum certified historical dataset.
 Phase 4.7 certifies historical datasets against the governed inputs.
 Phase 4.8 populates reusable historical features on top of certified events.
@@ -73,10 +74,11 @@ Current NFL work is in Phase 4:
 - Phase 4.3.6 completed the profile-aware NFL P0 validation.
 - Phase 4.3.7 defined the minimum backtest row contract.
 - Phase 4.4 established the event-centric historical acquisition foundation.
-- Phase 4.5A defined the master market input specification.
+- Phase 4.5A defined the master research engine specification.
 - Phase 4.5B built the universal feature registry.
 - Phase 4.5C completed the universal math engine contracts.
-- Phase 4.5D is the current phase and defines the research asset implementation framework.
+- Phase 4.5D established the research asset runtime framework.
+- Phase 4.5E is the current phase and renames the canonical engineering specification and the research asset runtime framework so their names reflect the broader runtime ownership model.
 - Phase 4.6 will acquire the minimum certified historical dataset.
 - Phase 4.7 will certify historical datasets against the governed inputs.
 - Phase 4.8 will populate generated historical features from events.
@@ -85,7 +87,7 @@ Current NFL work is in Phase 4:
 - Phase 5.1 will begin baseline backtesting against the minimum certified schema.
 - Phase 5.2 will perform walk-forward validation on the baseline schema.
 
-If the master market input specification is judged to have expanded beyond market inputs and into the complete research-engine specification, the Phase 4.5B review should recommend a future rename to `MASTER_RESEARCH_ENGINE_SPECIFICATION.md` without performing the rename during this phase.
+The master research engine specification is already the canonical name for the broader research-engine scope. If the repository later needs an even broader top-level research asset registry, that should be treated as a separate future phase rather than another rename of this specification.
 
 ## Current Project Status
 
@@ -94,8 +96,8 @@ If the master market input specification is judged to have expanded beyond marke
 - Canonical project status: `docs/PROJECT_STATUS.md`
 - Canonical next action: `docs/NEXT_ACTION.md`
 - Canonical status policy: `docs/STATUS_UPDATE_POLICY.md`
-- Canonical market input specification: `docs/architecture/MASTER_MARKET_INPUT_SPECIFICATION.md`
-- Canonical research asset implementation framework: `docs/architecture/RESEARCH_ASSET_IMPLEMENTATION_FRAMEWORK.md`
+- Canonical research engine specification: `docs/architecture/MASTER_RESEARCH_ENGINE_SPECIFICATION.md`
+- Canonical research asset runtime framework: `docs/architecture/RESEARCH_ASSET_RUNTIME_FRAMEWORK.md`
 - Canonical research asset contract: `docs/contracts/RESEARCH_ASSET_CONTRACT.md`
 - Canonical minimum backtest row contract: `docs/contracts/MINIMUM_BACKTEST_ROW_CONTRACT.md`
 - Canonical NFL minimum backtest row contract: `docs/contracts/NFL_MINIMUM_BACKTEST_ROW_CONTRACT.md`

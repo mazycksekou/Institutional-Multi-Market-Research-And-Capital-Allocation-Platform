@@ -1,8 +1,8 @@
-# Phase 4.5D - Research Asset Implementation Framework
+﻿# Phase 4.5D - Research Asset Runtime Framework
 
 ## Summary
 
-Phase 4.5D defines the runtime-facing research asset implementation framework.
+Phase 4.5D defines the runtime-facing research asset runtime framework.
 It connects governed datasets, features, mathematical engines, signals, targets, confidence measures, decision rows, backtests, experiments, evidence packages, connectors, and validation results without creating a parallel runtime architecture.
 
 The phase does not implement calculations or ingestion.
@@ -13,7 +13,7 @@ It standardizes how research assets relate to each other so future phases can re
 The repository already had the following reusable abstractions before this phase:
 
 - `docs/architecture/MARKET_PROFILE_FRAMEWORK.md`
-- `docs/architecture/MASTER_MARKET_INPUT_SPECIFICATION.md`
+- `docs/architecture/MASTER_RESEARCH_ENGINE_SPECIFICATION.md`
 - `docs/architecture/UNIVERSAL_FEATURE_REGISTRY.md`
 - `docs/architecture/UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md`
 - `docs/architecture/HISTORICAL_RESEARCH_DATABASE.md`
@@ -40,7 +40,7 @@ This phase reuses the canonical owners above instead of inventing a parallel res
 The reused pieces are:
 
 - the market profile registry
-- the master market input specification
+- the master research engine specification
 - the universal feature registry
 - the universal mathematical engine contracts
 - the event-centric historical research database
@@ -48,9 +48,9 @@ The reused pieces are:
 - the shared storage layer
 - the shared research workspace
 
-## Research Asset Implementation Framework Created Or Extended
+## Research Asset Runtime Framework Created Or Extended
 
-The new architecture doc defines the runtime-facing research asset implementation framework and the canonical dependency chain between:
+The new architecture doc defines the runtime-facing research asset runtime framework and the canonical dependency chain between:
 
 - datasets
 - features
@@ -86,7 +86,7 @@ The framework now explicitly documents the following categories:
 
 The phase documents how the runtime chain works:
 
-Provider -> Acquisition -> Archive -> Normalization -> Certification -> Historical Research Database -> Research Asset Implementation Framework -> Datasets -> Features -> Mathematical Engines -> Signals -> Targets -> Confidence -> Decision Rows -> Backtesting -> Experiments -> Evidence Packages
+Provider -> Acquisition -> Archive -> Normalization -> Certification -> Historical Research Database -> Research Asset Runtime Framework -> Datasets -> Features -> Mathematical Engines -> Signals -> Targets -> Confidence -> Decision Rows -> Backtesting -> Experiments -> Evidence Packages
 
 ## Research Asset ID Standard Documented
 
@@ -170,14 +170,11 @@ Worldview can now ask:
 - which evidence package corresponds to an asset state
 - which assets are limited by missing data, math, or validation
 
-## Recommendation Regarding Future MASTER_RESEARCH_ENGINE_SPECIFICATION Rename
+## Naming Review
 
-The current `docs/architecture/MASTER_MARKET_INPUT_SPECIFICATION.md` has continued to expand beyond raw market inputs and now reads more like the repository's broader research-engine specification.
+The current `docs/architecture/MASTER_RESEARCH_ENGINE_SPECIFICATION.md` is now the canonical broader research-engine specification.
 
-Recommendation:
-
-- future rename recommended: `docs/architecture/MASTER_RESEARCH_ENGINE_SPECIFICATION.md`
-- do not perform the rename during Phase 4.5D
+If the repository later needs an even broader top-level research asset registry, that should be handled as a separate future phase rather than another rename of this specification.
 
 ## PROJECT_STATUS updated
 

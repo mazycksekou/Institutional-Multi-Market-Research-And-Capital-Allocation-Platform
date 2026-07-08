@@ -1,4 +1,4 @@
-
+﻿
 # Research Platform Architecture
 
 ## Workspace Scope
@@ -24,7 +24,7 @@ The research workspace supports:
 
 ## Runtime Asset Framework
 
-The runtime-facing research asset implementation framework lives in [Research Asset Implementation Framework](./RESEARCH_ASSET_IMPLEMENTATION_FRAMEWORK.md).
+The runtime-facing research asset runtime framework lives in [Research Asset Runtime Framework](./RESEARCH_ASSET_RUNTIME_FRAMEWORK.md).
 
 The research workspace remains the place for experiment and evidence artifacts.
 It does not own the canonical runtime registry, which stays with the shared `src.*` owners and the governing architecture docs.

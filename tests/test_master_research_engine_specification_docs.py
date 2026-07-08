@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from pathlib import Path
 
@@ -11,9 +11,9 @@ def _read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
-def test_master_market_input_specification_docs_exist_and_cover_required_topics() -> None:
-    spec = DOCS / "architecture" / "MASTER_MARKET_INPUT_SPECIFICATION.md"
-    report = DOCS / "reports" / "PHASE4_5A_MASTER_MARKET_INPUT_SPECIFICATION.md"
+def test_master_research_engine_specification_docs_exist_and_cover_required_topics() -> None:
+    spec = DOCS / "architecture" / "MASTER_RESEARCH_ENGINE_SPECIFICATION.md"
+    report = DOCS / "reports" / "PHASE4_5A_MASTER_RESEARCH_ENGINE_SPECIFICATION.md"
     project_status = DOCS / "PROJECT_STATUS.md"
     next_action = DOCS / "NEXT_ACTION.md"
 
@@ -25,7 +25,7 @@ def test_master_market_input_specification_docs_exist_and_cover_required_topics(
     project_status_text = _read(project_status)
     next_action_text = _read(next_action)
 
-    assert "Master Market Input Specification" in spec_text
+    assert "Master Research Engine Specification" in spec_text
     assert "Universal Market Input Domains" in spec_text
     assert "Metric Lifecycle Tracking" in spec_text
     assert "Defined -> Schema Ready" in spec_text
@@ -50,7 +50,7 @@ def test_master_market_input_specification_docs_exist_and_cover_required_topics(
     assert "Reuse Rule" in spec_text
     assert "Out Of Scope" in spec_text
 
-    assert "Phase 4.5A Master Market Input Specification" in report_text
+    assert "Phase 4.5A Master Research Engine Specification" in report_text
     assert "Audit Matrix" in report_text
     assert "Metric Lifecycle Summary" in report_text
     assert "Senior Systems Engineer Review" in report_text
@@ -58,15 +58,15 @@ def test_master_market_input_specification_docs_exist_and_cover_required_topics(
     assert "universal feature registry" in report_text.lower()
     assert "MASTER_RESEARCH_ENGINE_SPECIFICATION" in report_text or "rename" in report_text.lower()
 
-    assert "Phase 4.5D - Research Asset Implementation Framework" in project_status_text
+    assert "Phase 4.5E - Canonical Engineering Specification Rename & Research Asset Runtime Framework" in project_status_text
     assert "docs/architecture/UNIVERSAL_FEATURE_REGISTRY.md" in project_status_text
     assert "docs/architecture/UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md" in project_status_text
     assert "Phase 4.6 - Historical Dataset Acquisition (minimum certified schema first)" in next_action_text
 
 
-def test_master_market_input_specification_docs_do_not_depend_on_runtime_code() -> None:
-    spec = DOCS / "architecture" / "MASTER_MARKET_INPUT_SPECIFICATION.md"
-    report = DOCS / "reports" / "PHASE4_5A_MASTER_MARKET_INPUT_SPECIFICATION.md"
+def test_master_research_engine_specification_docs_do_not_depend_on_runtime_code() -> None:
+    spec = DOCS / "architecture" / "MASTER_RESEARCH_ENGINE_SPECIFICATION.md"
+    report = DOCS / "reports" / "PHASE4_5A_MASTER_RESEARCH_ENGINE_SPECIFICATION.md"
 
     for text in (_read(spec), _read(report)):
         assert "import " not in text.lower()

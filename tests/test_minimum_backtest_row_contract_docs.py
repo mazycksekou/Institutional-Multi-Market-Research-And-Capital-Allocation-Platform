@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from pathlib import Path
 
@@ -96,8 +96,8 @@ def test_minimum_backtest_row_contract_docs_exist_and_cover_required_topics() ->
     assert "evidence package" in worldview_spec_text.lower()
 
     # Project status / next action wiring
-    assert "Phase 4.5D - Research Asset Implementation Framework" in project_status_text
-    assert "master market input specification" in project_status_text.lower()
+    assert "Phase 4.5E - Canonical Engineering Specification Rename & Research Asset Runtime Framework" in project_status_text
+    assert "master research engine specification" in project_status_text.lower()
     assert "Phase 4.6 - Historical Dataset Acquisition (minimum certified schema first)" in next_action_text
     assert "minimum certified schema first" in next_action_text.lower()
     assert "validation commands" in next_action_text.lower()

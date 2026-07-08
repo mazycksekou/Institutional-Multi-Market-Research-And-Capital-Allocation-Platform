@@ -1,13 +1,13 @@
-# Universal Mathematical Engine Contracts
+﻿# Universal Mathematical Engine Contracts
 
 This document defines the canonical contract layer for reusable mathematical engines across every supported market family in the repository.
 
-It sits above the [Master Market Input Specification](./MASTER_MARKET_INPUT_SPECIFICATION.md) and the [Universal Feature Registry](./UNIVERSAL_FEATURE_REGISTRY.md), and below the runtime owners in `src.core`.
+It sits above the [Master Research Engine Specification](./MASTER_RESEARCH_ENGINE_SPECIFICATION.md) and the [Universal Feature Registry](./UNIVERSAL_FEATURE_REGISTRY.md), and below the runtime owners in `src.core`.
 It does not implement formulas, data ingestion, feature engineering, signals, targets, models, or backtests.
 
 ## Canonical Owners Reused
 
-- `docs/architecture/MASTER_MARKET_INPUT_SPECIFICATION.md`
+- `docs/architecture/MASTER_RESEARCH_ENGINE_SPECIFICATION.md`
 - `docs/architecture/UNIVERSAL_FEATURE_REGISTRY.md`
 - `docs/architecture/HISTORICAL_RESEARCH_DATABASE.md`
 - `src.core`
