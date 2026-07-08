@@ -9,6 +9,7 @@ This index points reviewers and contributors to the active contracts that define
 | Data lineage contract | `src.data` | Source-to-consumer traceability | Preserve lineage for reproducibility | Documented |
 | Database schema | `src.storage` / `src.data` | Local storage and table ownership | Keep backend-neutral where possible | Documented |
 | Feature snapshot contract | `src.data` / `src.backtesting` | Persisted feature values and versioning | Avoid leakage between training and evaluation | Documented |
+| Mathematical engine contracts | `src.core` / `src.data` | Canonical math-engine inputs, outputs, lifecycle, and validation rules | Keep engine dependencies limited to features in the universal feature registry | Documented |
 | Backtest contract | `src.backtesting` | Historical replay and evaluation payloads | Preserve payload shape for compatibility | Documented and tested |
 | Model input contract | `src.market_intelligence` / `src.research` | Inputs consumed by model or analysis runtime | Keep private feature details out of public docs | Documented |
 | Model output contract | `src.analytics` / `src.services` | Public or internal output shape | Keep outputs stable across consumers | Documented |

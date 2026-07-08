@@ -47,6 +47,7 @@ This index points readers to the current truth and the durable historical entry 
 - `docs/architecture/SYSTEM_OVERVIEW.md` - System Overview
 - `docs/architecture/TERMINOLOGY_STANDARD.md` - Terminology Standard
 - `docs/architecture/UNIVERSAL_FEATURE_REGISTRY.md` - Universal Feature Registry
+- `docs/architecture/UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md` - Universal Mathematical Engine Contracts
 - `docs/architecture/VENDOR_NEUTRALITY_AND_OPENAPI_NAMING.md` - Vendor Neutrality And OpenAPI Naming
 
 ### AUDIT REPORT

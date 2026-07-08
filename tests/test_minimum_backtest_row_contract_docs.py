@@ -96,10 +96,10 @@ def test_minimum_backtest_row_contract_docs_exist_and_cover_required_topics() ->
     assert "evidence package" in worldview_spec_text.lower()
 
     # Project status / next action wiring
-    assert "Phase 4.5B - Universal Feature Registry" in project_status_text
+    assert "Phase 4.5C - Universal Math Engine Contracts" in project_status_text
     assert "master market input specification" in project_status_text.lower()
-    assert "Phase 4.5C - Universal Math Engine Contracts" in next_action_text
-    assert "universal math engine contracts" in next_action_text.lower()
+    assert "Phase 4.5D - Research Asset Population Framework" in next_action_text
+    assert "research-asset population framework" in next_action_text.lower()
     assert "validation commands" in next_action_text.lower()
 
 

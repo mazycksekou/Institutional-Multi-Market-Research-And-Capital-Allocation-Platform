@@ -42,7 +42,7 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "repository homepage" in project_status_text.lower()
     assert "feature/nfl-backtesting" in project_status_text
     assert "sports:nfl" in project_status_text
-    assert "Phase 4.5B - Universal Feature Registry" in project_status_text
+    assert "Phase 4.5C - Universal Math Engine Contracts" in project_status_text
     assert "Phase 4.3.6" in project_status_text
     assert "Phase 4.3.7" in project_status_text
     assert "master market input specification" in project_status_text.lower()
@@ -54,11 +54,13 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "docs/DOCUMENT_RETENTION_INDEX.md" in project_status_text
     assert "docs/architecture/MASTER_MARKET_INPUT_SPECIFICATION.md" in project_status_text
     assert "docs/architecture/UNIVERSAL_FEATURE_REGISTRY.md" in project_status_text
+    assert "docs/architecture/UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md" in project_status_text
     assert "docs/reports/PHASE4_5A_MASTER_MARKET_INPUT_SPECIFICATION.md" in project_status_text
     assert "docs/reports/PHASE4_5B_UNIVERSAL_FEATURE_REGISTRY.md" in project_status_text
+    assert "docs/reports/PHASE4_5C_UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md" in project_status_text
 
-    assert "Phase 4.5C - Universal Math Engine Contracts" in next_action_text
-    assert "define the canonical math engine contracts on top of the universal feature registry" in next_action_text.lower()
+    assert "Phase 4.5D - Research Asset Population Framework" in next_action_text
+    assert "define the governed research-asset population framework" in next_action_text.lower()
     assert "Do not ingest paid or live data." in next_action_text
     assert "Do not build decision rows yet." in next_action_text
     assert "validation commands" in next_action_text.lower()
@@ -76,15 +78,18 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "recommendations" in entrypoint_audit_text.lower()
 
     assert "Phase 4.5A defined the master market input specification." in roadmap_text
-    assert "Phase 4.5B is the current phase and builds the universal feature registry." in roadmap_text
-    assert "Phase 4.5C defines the universal math engine contracts." in roadmap_text
-    assert "Phase 4.5D performs historical data acquisition" in roadmap_text
-    assert "Phase 4.6 populates reusable historical features" in roadmap_text
-    assert "Phase 4.7 constructs decision rows" in roadmap_text
+    assert "Phase 4.5B built the universal feature registry." in roadmap_text
+    assert "Phase 4.5C is the current phase and defines the universal math engine contracts." in roadmap_text
+    assert "Phase 4.5D establishes the research asset population framework." in roadmap_text
+    assert "Phase 4.6 certifies historical datasets." in roadmap_text
+    assert "Phase 4.7 populates reusable historical features" in roadmap_text
+    assert "Phase 4.8 constructs decision rows" in roadmap_text
+    assert "Phase 4.9 begins baseline backtesting" in roadmap_text
     assert "docs/PROJECT_STATUS.md" in roadmap_text
     assert "docs/NEXT_ACTION.md" in roadmap_text
     assert "docs/STATUS_UPDATE_POLICY.md" in roadmap_text
     assert "docs/architecture/MASTER_MARKET_INPUT_SPECIFICATION.md" in roadmap_text
+    assert "docs/architecture/UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md" in roadmap_text
     assert "MASTER_RESEARCH_ENGINE_SPECIFICATION.md" in roadmap_text
     assert "docs/architecture/HISTORICAL_RESEARCH_DATABASE.md" in roadmap_text
 
@@ -93,12 +98,14 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "docs/STATUS_UPDATE_POLICY.md" in master_index_text
     assert "docs/architecture/MASTER_MARKET_INPUT_SPECIFICATION.md" in master_index_text
     assert "docs/architecture/UNIVERSAL_FEATURE_REGISTRY.md" in master_index_text
+    assert "docs/architecture/UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md" in master_index_text
     assert "docs/architecture/HISTORICAL_RESEARCH_DATABASE.md" in master_index_text
 
     assert "docs/reports/PROJECT_ENTRYPOINT_AUDIT.md" in retention_index_text
     assert "docs/reports/PROJECT_STATUS_GOVERNANCE_DISCOVERY.md" in retention_index_text
     assert "docs/reports/PHASE4_5A_MASTER_MARKET_INPUT_SPECIFICATION.md" in retention_index_text
     assert "docs/reports/PHASE4_5B_UNIVERSAL_FEATURE_REGISTRY.md" in retention_index_text
+    assert "docs/reports/PHASE4_5C_UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md" in retention_index_text
     assert "docs/reports/PHASE4_4_EVENT_CENTRIC_HISTORICAL_ACQUISITION.md" in retention_index_text
 
 

@@ -58,9 +58,10 @@ def test_master_market_input_specification_docs_exist_and_cover_required_topics(
     assert "universal feature registry" in report_text.lower()
     assert "MASTER_RESEARCH_ENGINE_SPECIFICATION" in report_text or "rename" in report_text.lower()
 
-    assert "Phase 4.5B - Universal Feature Registry" in project_status_text
+    assert "Phase 4.5C - Universal Math Engine Contracts" in project_status_text
     assert "docs/architecture/UNIVERSAL_FEATURE_REGISTRY.md" in project_status_text
-    assert "Phase 4.5C - Universal Math Engine Contracts" in next_action_text
+    assert "docs/architecture/UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md" in project_status_text
+    assert "Phase 4.5D - Research Asset Population Framework" in next_action_text
 
 
 def test_master_market_input_specification_docs_do_not_depend_on_runtime_code() -> None:

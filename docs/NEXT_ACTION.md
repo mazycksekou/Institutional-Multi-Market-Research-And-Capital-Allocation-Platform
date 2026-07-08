@@ -2,17 +2,17 @@
 
 ## Next Phase
 
-`Phase 4.5C - Universal Math Engine Contracts`
+`Phase 4.5D - Research Asset Population Framework`
 
 ## Objective
 
-Define the canonical math engine contracts on top of the universal feature registry so every future calculation path has one owner, lifecycle state, and reuse path.
+Define the governed research-asset population framework that will mature certified datasets, features, mathematical engines, connectors, and evidence without introducing parallel ownership.
 
 ## Allowed Actions
 
 - Reuse the canonical market profile framework, market-input specification, storage, validation, and lineage owners.
-- Extend the universal math engine contracts instead of creating market-specific math engines.
-- Keep the math-contract architecture reusable for sports, prediction markets, and options / 0DTE.
+- Extend the research-asset population framework on top of the universal math engine contracts instead of creating market-specific pipelines.
+- Keep the research-asset architecture reusable for sports, prediction markets, and options / 0DTE.
 - Update the project status and document indexes when this phase completes.
 
 ## Forbidden Actions
@@ -25,9 +25,9 @@ Define the canonical math engine contracts on top of the universal feature regis
 
 ## Expected Deliverables
 
-- Universal math engine contract plan built from the universal feature registry.
-- Feature lifecycle mappings for inputs, features, signals, targets, confidence metrics, and validation metrics.
-- Readiness, lineage, validation, and engine-owner updates for the math-contract layer.
+- Research asset maturity plan built on top of the universal math engine contracts.
+- Feature, dataset, engine, and evidence lifecycle mappings.
+- Readiness, lineage, validation, and population-path updates for the research-asset layer.
 - Updated project status and index entries.
 
 ## Validation Commands

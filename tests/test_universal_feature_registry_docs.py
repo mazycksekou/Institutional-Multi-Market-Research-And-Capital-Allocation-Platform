@@ -73,11 +73,11 @@ def test_universal_feature_registry_docs_exist_and_cover_required_topics() -> No
     assert "Worldview Intelligence Review" in report_text
     assert "Phase 4.5C - Universal Math Engine Contracts" in report_text
 
-    assert "Phase 4.5B - Universal Feature Registry" in project_status_text
-    assert "Phase 4.5C - Universal Math Engine Contracts" in next_action_text
+    assert "Phase 4.5C - Universal Math Engine Contracts" in project_status_text
+    assert "Phase 4.5D - Research Asset Population Framework" in next_action_text
     assert "docs/architecture/UNIVERSAL_FEATURE_REGISTRY.md" in project_status_text
     assert "docs/reports/PHASE4_5B_UNIVERSAL_FEATURE_REGISTRY.md" in project_status_text
-    assert "define the canonical math engine contracts on top of the universal feature registry" in next_action_text.lower()
+    assert "define the governed research-asset population framework" in next_action_text.lower()
     assert "MASTER_RESEARCH_ENGINE_SPECIFICATION" in master_spec_text
 
 

@@ -7,27 +7,20 @@ Canonical live status for the repository and the required starting document for 
 - current branch: `feature/nfl-backtesting`
 - current HEAD: live branch tip (exact hash is reported in the task final report)
 - remote tracking branch: `origin/feature/nfl-backtesting`
-- active phase: `Phase 4.5B - Universal Feature Registry`
+- active phase: `Phase 4.5C - Universal Math Engine Contracts`
 - active market profile: `sports:nfl`
-- active implementation lane: `NFL P0 profile-aware foundation + event-centric historical research database + master market input specification + universal feature registry`
+- active implementation lane: `NFL P0 profile-aware foundation + event-centric historical research database + master market input specification + universal feature registry + universal math engine contracts`
 - completed phases:
   - `Phase 4.3.6 - Profile-Aware NFL P0 Validation`
   - `Phase 4.3.7 - Minimum Backtest Row Contract`
   - `Phase 4.4 - Event-Centric Historical Data Acquisition`
   - `Phase 4.5A - Master Market Input Specification`
-- current phase objective: Build the repository's universal feature registry on top of the master market input specification so every future feature family has one canonical owner, lifecycle state, and reuse path before new implementation phases begin.
-- next phase: `Phase 4.5C - Universal Math Engine Contracts`
+  - `Phase 4.5B - Universal Feature Registry`
+- current phase objective: Define the repository's universal math engine contracts on top of the universal feature registry so every future calculation path has one canonical owner, lifecycle state, dependency chain, and reuse path before the research asset population framework begins.
+- next phase: `Phase 4.5D - Research Asset Population Framework`
 - current blockers: None
 - latest validation status:
-  - `python -m compileall src tests scripts` passed during this task
-  - `pytest tests/test_master_market_input_specification_docs.py -q` passed during this task
-  - `pytest tests/test_project_status_governance.py -q` passed during this task
-  - `pytest tests/test_minimum_backtest_row_contract_docs.py -q` passed during this task
-  - `pytest tests/test_universal_feature_registry_docs.py -q` passed during this task
-  - `pytest -m smoke -q` passed during this task
-  - `python scripts/check_architecture.py --output text` passed during this task
-  - `python scripts/check_document_lifecycle.py --output text` passed during this task
-  - `python scripts/ops_check.py --mode local --output text --skip-network` passed during this task, with repo-preflight blocked only while the docs/test edits were still uncommitted
+  - Phase 4.5C validation passed in the active worktree: compileall, targeted docs tests, smoke tests, architecture check, document lifecycle check, and advisory ops check all completed successfully; repo preflight remains expected to report dirty until these changes are committed.
 - latest full gate result: `not run for this docs-only phase`
 - latest pushed commit: live branch tip (exact hash is reported in the task final report)
 
@@ -61,8 +54,10 @@ Read these only when you need more detail than the project status page provides:
 - `docs/MASTER_SYSTEM_ARCHITECTURE.md`
 - `docs/architecture/MASTER_MARKET_INPUT_SPECIFICATION.md`
 - `docs/architecture/UNIVERSAL_FEATURE_REGISTRY.md`
+- `docs/architecture/UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md`
 - `docs/architecture/HISTORICAL_RESEARCH_DATABASE.md`
 - `docs/reports/PHASE4_5B_UNIVERSAL_FEATURE_REGISTRY.md`
+- `docs/reports/PHASE4_5C_UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md`
 - `docs/contracts/MINIMUM_BACKTEST_ROW_CONTRACT.md`
 - `docs/contracts/NFL_MINIMUM_BACKTEST_ROW_CONTRACT.md`
 - `docs/contracts/NFL_BACKTEST_CONTRACT.md`
@@ -81,4 +76,4 @@ Read these only when you need more detail than the project status page provides:
 
 ## Next Recommended Codex Task
 
-`Phase 4.5C - Universal Math Engine Contracts`
+`Phase 4.5D - Research Asset Population Framework`
