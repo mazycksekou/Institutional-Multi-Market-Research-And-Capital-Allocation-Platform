@@ -75,13 +75,34 @@ Each mapping includes provider, original field, acquisition timestamp, raw paylo
 
 ## Senior Systems Engineer Review
 
-The implementation correctly reuses the connector, storage, validation, certification, lifecycle, coverage, and readiness owners. The schedule join is a certification gate rather than a display-only warning, which prevents orphaned or identity-conflicting results from becoming trusted evidence. The same pattern is portable to NBA, MLB, and NHL because the orchestration depends on Sports Profile identity and shared runtimes rather than NFL-only persistence.
+The implementation correctly reuses the connector, storage, validation, certification, lifecycle, coverage, and readiness owners.
+The schedule join is a certification gate rather than a display-only warning, which prevents orphaned or identity-conflicting results from becoming trusted evidence.
+The same pattern is portable to NBA, MLB, and NHL because the orchestration depends on Sports Profile identity and shared runtimes rather than NFL-only persistence.
+
+Key review points:
+
+- canonical owners are reused instead of duplicated
+- schedule/results join correctness is enforced before certification
+- certification quality is high because the raw cache and lineage are preserved
+- lifecycle state progression is monotonic and stops on blocked joins
+- the pattern is portable to future sports because it depends on shared runtime owners, not NFL-specific storage
+- odds readiness is the next safe step because results now provide the settled outcome backbone
 
 The main deferred risk is lifecycle identity granularity. The current immutable identity runtime stores one lifecycle row per asset id while event fields are part of that identity. This is sufficient for the one-event deterministic proof but must be resolved with an explicit asset-instance or version identity before bulk multi-event population. Prediction markets and options can reuse the pipeline, but their contract/expiration identities will need profile-specific join fields.
 
-## Worldview And Research Query Review
+## Worldview / Research Query Engine Review
 
-The results asset is query-ready at the metadata level. A future query engine can trace event identity, schedule agreement, source payload, field provenance, certification decision, lifecycle state, and provider capability. This is enough to explain what evidence exists and why an event remains blocked from backtesting. No Worldview or AI runtime was implemented.
+The results asset is query-ready at the metadata level.
+A future query engine can trace event identity, schedule agreement, source payload, field provenance, certification decision, lifecycle state, and provider capability.
+That is enough to explain what evidence exists and why an event remains blocked from backtesting.
+
+Key review points:
+
+- results remain queryable later through canonical metadata
+- evidence packages remain complete because lineage and provenance are preserved
+- future joins to odds, weather, injuries, and team statistics remain clean because event identity is shared
+- metadata supports future experiment generation because the decision context is reproducible
+- no Worldview or AI runtime was implemented, which keeps the repository the source of evidence rather than the consumer
 
 ## Validation Record
 
@@ -90,4 +111,3 @@ Focused runtime tests cover the successful joined path, the missing-schedule rej
 ## Readiness For Phase 4.9E
 
 Phase 4.9E may begin with the NFL odds research asset, provided it preserves decision-time snapshots, never treats closing odds as pre-decision evidence, and reuses the same raw-cache, certification, lifecycle, schedule/result join, coverage, and readiness owners.
-
