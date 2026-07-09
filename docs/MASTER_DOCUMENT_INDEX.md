@@ -43,6 +43,7 @@ This index points readers to the current truth and the durable historical entry 
 - `docs/architecture/RESEARCH_ASSET_LIFECYCLE_RUNTIME.md` - Research Asset Lifecycle Runtime
 - `docs/architecture/RESEARCH_ASSET_RUNTIME_FRAMEWORK.md` - Purpose
 - `docs/architecture/NFL_SCHEDULE_RESEARCH_ASSET.md` - NFL Schedule Research Asset
+- `docs/architecture/NFL_SCHEDULE_CONNECTOR.md` - NFL Schedule Connector
 - `docs/architecture/RESEARCH_ASSET_SOURCE_DISCOVERY_AND_CONNECTOR_MAPPING.md` - Research Asset Source Discovery And Connector Mapping
 - `docs/architecture/RESEARCH_ASSET_COVERAGE_AND_PROVIDER_SELECTION_FRAMEWORK.md` - Research Asset Coverage And Provider Selection Framework
 - `docs/architecture/RESEARCH_PLATFORM_ARCHITECTURE.md` - Research Platform Architecture
@@ -136,6 +137,7 @@ This index points readers to the current truth and the durable historical entry 
 - `docs/reports/PHASE4_8_RESEARCH_ASSET_LIFECYCLE_RUNTIME_AND_TIME_ENTITY_ALIGNMENT_CERTIFICATION.md` - Phase 4.8 Research Asset Lifecycle Runtime And Time & Entity Alignment Certification
 - `docs/reports/PHASE4_9A_NFL_SCHEDULE_RESEARCH_ASSET_POPULATION.md` - Phase 4.9A NFL Schedule Research Asset Population
 - `docs/reports/PHASE4_9B_RESEARCH_ASSET_COVERAGE_PLANNER_AND_PROVIDER_SELECTION_FRAMEWORK.md` - Phase 4.9B Research Asset Coverage Planner And Provider Selection Framework
+- `docs/reports/PHASE4_9C_FIRST_PRODUCTION_NFL_SCHEDULE_CONNECTOR.md` - Phase 4.9C First Production NFL Schedule Connector
 
 ### INDEX
 - `docs/DOCUMENT_RETENTION_INDEX.md` - Policy Note

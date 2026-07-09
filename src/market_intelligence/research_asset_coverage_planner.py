@@ -1391,23 +1391,27 @@ def _build_coverage_gap_engine(
     missing_assets = [asset for asset in required_assets if _normalize_text(asset.get("readiness_state")) in {"missing", "partial"}]
     future_assets = [asset for asset in asset_catalog if bool(asset.get("future_asset"))]
     completion_percentage = round(100.0 * len(certified_assets) / max(len(required_assets), 1), 2)
-    next_acquisition_targets = [
-        {
-            "target_type": "connector_upgrade",
-            "priority_rank": 0,
-            "research_asset_ids": [asset["research_asset_id"] for asset in connector_upgrade_assets] or [asset["research_asset_id"] for asset in certified_assets[:1]],
-            "recommended_primary_provider": connector_upgrade_assets[0]["recommended_primary_provider"] if connector_upgrade_assets else (certified_assets[0]["recommended_primary_provider"] if certified_assets else ""),
-            "recommended_verification_provider": connector_upgrade_assets[0]["recommended_verification_provider"] if connector_upgrade_assets else (certified_assets[0]["recommended_verification_provider"] if certified_assets else ""),
-            "recommended_fallback_provider": connector_upgrade_assets[0]["recommended_fallback_provider"] if connector_upgrade_assets else (certified_assets[0]["recommended_fallback_provider"] if certified_assets else ""),
-            "provider_bundle": connector_upgrade_assets[0]["provider_bundle"] if connector_upgrade_assets else (certified_assets[0]["provider_bundle"] if certified_assets else {}),
-            "coverage_before": connector_upgrade_assets[0]["completion_percentage"] if connector_upgrade_assets else (certified_assets[0]["completion_percentage"] if certified_assets else 0.0),
-            "coverage_after": 100.0,
-            "reason": "replace the deterministic fixture with the canonical production connector and preserve the same event-centric join keys",
-        },
-        *[
+    next_acquisition_targets: list[dict[str, Any]] = []
+    if connector_upgrade_assets:
+        next_acquisition_targets.append(
+            {
+                "target_type": "connector_upgrade",
+                "priority_rank": 0,
+                "research_asset_ids": [asset["research_asset_id"] for asset in connector_upgrade_assets],
+                "recommended_primary_provider": connector_upgrade_assets[0]["recommended_primary_provider"],
+                "recommended_verification_provider": connector_upgrade_assets[0]["recommended_verification_provider"],
+                "recommended_fallback_provider": connector_upgrade_assets[0]["recommended_fallback_provider"],
+                "provider_bundle": connector_upgrade_assets[0]["provider_bundle"],
+                "coverage_before": connector_upgrade_assets[0]["completion_percentage"],
+                "coverage_after": 100.0,
+                "reason": "replace the deterministic fixture with the canonical production connector and preserve the same event-centric join keys",
+            }
+        )
+    next_acquisition_targets.extend(
+        [
             {
                 "target_type": "missing_required_asset",
-                "priority_rank": index + 1,
+                "priority_rank": len(next_acquisition_targets) + index + 1,
                 "research_asset_ids": [asset["research_asset_id"]],
                 "recommended_primary_provider": asset["recommended_primary_provider"],
                 "recommended_verification_provider": asset["recommended_verification_provider"],
@@ -1417,9 +1421,9 @@ def _build_coverage_gap_engine(
                 "coverage_after": 100.0 if asset["provider_bundle"].get("primary_provider_id") else asset["completion_percentage"],
                 "reason": "minimum-schema asset is still missing and must become certified before later markets can depend on it",
             }
-            for index, asset in enumerate(sorted(missing_assets, key=lambda row: (-float(row.get("provider_selection_score") or 0.0), _normalize_text(row.get("research_asset_id")))))
-        ],
-    ]
+            for index, asset in enumerate(missing_assets)
+        ]
+    )
     future_needs = [
         {
             "target_type": "future_enrichment",
@@ -1436,7 +1440,7 @@ def _build_coverage_gap_engine(
         for index, asset in enumerate(sorted(future_assets, key=lambda row: (-float(row.get("provider_selection_score") or 0.0), _normalize_text(row.get("research_asset_id")))))
     ]
     next_acquisition_targets.extend(future_needs)
-    first_production_connector_target = "dataset.sports.nfl.schedule"
+    first_production_connector_target = _normalize_text(next_acquisition_targets[0]["research_asset_ids"][0]) if next_acquisition_targets else ""
     return {
         "profile_id": profile_id,
         "required_asset_count": len(required_assets),

@@ -79,7 +79,7 @@ def test_historical_dataset_acquisition_framework_docs_exist_and_cover_required_
     assert "Readiness for Phase 4.7" in report_text
 
     assert "Phase 4.7B - Historical Dataset Acquisition Runtime" in project_status_text
-    assert "Phase 4.9C - First Production Connector (NFL Schedule)" in next_action_text
+    assert "Phase 4.9D - NFL Results Research Asset Population" in next_action_text
     assert "docs/architecture/HISTORICAL_DATASET_ACQUISITION_FRAMEWORK.md" in project_status_text
     assert "docs/reports/PHASE4_6_MINIMUM_CERTIFIED_HISTORICAL_DATASET_ACQUISITION_FRAMEWORK.md" in project_status_text
     assert "minimum certified schema first" in next_action_text.lower()

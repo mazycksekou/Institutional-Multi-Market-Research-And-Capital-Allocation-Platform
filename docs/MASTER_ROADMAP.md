@@ -100,8 +100,8 @@ Current NFL work is in Phase 4:
 - Phase 4.7C completed the historical research asset certification runtime and gated dataset certification on asset-level evidence.
 - Phase 4.8 will implement the research asset lifecycle runtime and time/entity alignment certification.
 - Phase 4.9A completed the NFL schedule research asset population.
-- Phase 4.9B is building the research asset coverage planner and provider selection framework.
-- Phase 4.9C will implement the first production connector for the NFL schedule research asset.
+- Phase 4.9B completed the research asset coverage planner and provider selection framework.
+- Phase 4.9C completed the first production connector for the NFL schedule research asset.
 - Phase 4.9D will populate the NFL results research asset.
 - Phase 4.9E will populate the NFL team statistics research asset.
 - Phase 4.9F will populate the NFL odds research asset.

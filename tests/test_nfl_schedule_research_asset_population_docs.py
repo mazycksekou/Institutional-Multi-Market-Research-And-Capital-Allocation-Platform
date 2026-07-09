@@ -47,10 +47,12 @@ def test_nfl_schedule_research_asset_population_docs_exist_and_cover_required_to
 
     assert "Phase 4.9A - NFL Schedule Research Asset Population" in project_status_text
     assert "Phase 4.9B - Research Asset Coverage Planner & Provider Selection Framework" in project_status_text
+    assert "Phase 4.9C - First Production Connector (NFL Schedule)" in project_status_text
+    assert "Phase 4.9D - NFL Results Research Asset Population" in project_status_text
     assert "docs/architecture/NFL_SCHEDULE_RESEARCH_ASSET.md" in project_status_text
     assert "docs/reports/PHASE4_9A_NFL_SCHEDULE_RESEARCH_ASSET_POPULATION.md" in project_status_text
 
-    assert "Phase 4.9C - First Production Connector (NFL Schedule)" in next_action_text
+    assert "Phase 4.9D - NFL Results Research Asset Population" in next_action_text
     assert "first production connector" in next_action_text.lower()
     assert "canonical open-provider acquisition path" in next_action_text.lower()
 

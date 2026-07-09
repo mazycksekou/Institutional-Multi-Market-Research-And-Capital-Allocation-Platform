@@ -85,9 +85,11 @@ It emits acquisition plans only.
 
 For the current NFL lane, the first production connector target remains:
 
-- `dataset.sports.nfl.schedule`
+- `dataset.nfl.results`
 
-This is intentionally the first connector target because the schedule asset is already certified through deterministic local workflow and is the natural upgrade path from fixture-backed readiness to canonical open-provider coverage.
+The schedule asset is now serviced by the first production connector path, so the coverage planner advances to the first remaining missing asset rather than keeping schedule as the active gap. This keeps the planner coverage-driven and ensures the next connector decision is based on the remaining certified gap.
+
+That first connector path served `dataset.sports.nfl.schedule`, which is why the planner can now advance beyond the schedule asset without losing the canonical open-provider acquisition pattern.
 
 ## Worldview And Query Readiness
 
@@ -108,6 +110,8 @@ The future query layer should read this planner output rather than infer coverag
 - Phase 4.9A populates the NFL schedule research asset.
 - Phase 4.9B builds this coverage planner and provider selection framework.
 - Phase 4.9C will implement the first production connector for the NFL schedule asset.
+- Phase 4.9C completed the first production connector for the NFL schedule asset.
+- Phase 4.9D now focuses on the NFL results research asset population.
 
 ## Reusability
 

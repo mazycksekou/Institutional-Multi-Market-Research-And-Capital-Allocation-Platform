@@ -22,20 +22,20 @@ def test_research_asset_coverage_planner_prioritizes_the_certified_schedule_asse
     assert snapshot["profile"]["profile_id"] == "sports:nfl"
 
     gap_engine = snapshot["coverage_gap_engine"]
-    assert gap_engine["first_production_connector_target"] == "dataset.sports.nfl.schedule"
-    assert gap_engine["connector_upgrade_asset_count"] >= 1
+    assert gap_engine["first_production_connector_target"] == "dataset.nfl.results"
+    assert gap_engine["missing_asset_count"] >= 1
     assert gap_engine["minimum_schema_completion_percentage"] < 100.0
-    assert "dataset.sports.nfl.schedule" in gap_engine["connector_upgrade_asset_ids"]
-    assert gap_engine["next_acquisition_targets"][0]["target_type"] == "connector_upgrade"
-    assert gap_engine["next_acquisition_targets"][0]["research_asset_ids"] == ["dataset.sports.nfl.schedule"]
+    assert "dataset.nfl.results" in gap_engine["missing_required_asset_ids"]
+    assert gap_engine["next_acquisition_targets"][0]["target_type"] == "missing_required_asset"
+    assert gap_engine["next_acquisition_targets"][0]["research_asset_ids"] == ["dataset.nfl.results"]
 
     asset_registry = snapshot["research_asset_coverage_registry"]
     schedule_rows = [row for row in asset_registry if row["research_asset_id"] == "dataset.sports.nfl.schedule"]
     assert len(schedule_rows) == 1
     schedule_row = schedule_rows[0]
     assert schedule_row["certification_state"] == "certified"
-    assert schedule_row["readiness_state"] == "connector_upgrade_required"
-    assert schedule_row["current_source_role"] == "local_fixture"
+    assert schedule_row["readiness_state"] == "ready"
+    assert schedule_row["current_source_role"] == "nflverse"
     assert schedule_row["recommended_primary_provider"] in {"nflverse", "nflreadr", "nflfastr", "manual_schedule_import"}
     assert schedule_row["completion_percentage"] >= 100.0
     assert "nflverse" in schedule_row["provider_bundle"]["selected_provider_ids"]
@@ -54,9 +54,9 @@ def test_research_asset_coverage_planner_prioritizes_the_certified_schedule_asse
 
     planner_readiness = snapshot["planner_readiness"]
     assert planner_readiness["status"] == "partial"
-    assert planner_readiness["first_production_connector_target"] == "dataset.sports.nfl.schedule"
+    assert planner_readiness["first_production_connector_target"] == "dataset.nfl.results"
 
     dashboard_snapshot = get_research_asset_coverage_planner_snapshot_for_dashboard(storage_path=storage_path)
     assert dashboard_snapshot["ok"]
     assert dashboard_snapshot["dashboard_ready"]
-    assert dashboard_snapshot["coverage_planner_readiness"]["first_production_connector_target"] == "dataset.sports.nfl.schedule"
+    assert dashboard_snapshot["coverage_planner_readiness"]["first_production_connector_target"] == "dataset.nfl.results"

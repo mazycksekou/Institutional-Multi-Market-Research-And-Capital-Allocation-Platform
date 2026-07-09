@@ -61,9 +61,11 @@ def test_research_asset_lifecycle_runtime_docs_exist_and_cover_required_topics()
 
     assert "Phase 4.9A - NFL Schedule Research Asset Population" in project_status_text
     assert "Phase 4.9B - Research Asset Coverage Planner & Provider Selection Framework" in project_status_text
+    assert "Phase 4.9C - First Production Connector (NFL Schedule)" in project_status_text
+    assert "Phase 4.9D - NFL Results Research Asset Population" in project_status_text
     assert "docs/architecture/RESEARCH_ASSET_LIFECYCLE_RUNTIME.md" in project_status_text
     assert "docs/reports/PHASE4_8_RESEARCH_ASSET_LIFECYCLE_RUNTIME_AND_TIME_ENTITY_ALIGNMENT_CERTIFICATION.md" in project_status_text
-    assert "Phase 4.9C - First Production Connector (NFL Schedule)" in next_action_text
+    assert "Phase 4.9D - NFL Results Research Asset Population" in next_action_text
     assert "Do not implement connectors." in next_action_text
     assert "first production connector" in next_action_text.lower()
 

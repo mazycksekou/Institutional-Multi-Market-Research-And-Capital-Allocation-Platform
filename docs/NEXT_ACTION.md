@@ -2,17 +2,16 @@
 
 ## Next Phase
 
-`Phase 4.9C - First Production Connector (NFL Schedule)`
+`Phase 4.9D - NFL Results Research Asset Population`
 
 ## Objective
 
-Implement the first production connector path for the certified NFL schedule research asset.
-Keep the minimum certified schema first, preserve the same shared runtime path used by the schedule asset, and replace the deterministic fixture-backed readiness path with the canonical open-provider acquisition path without introducing provider-driven ownership.
+Populate the NFL results research asset using the same canonical runtime path introduced by the first production connector in Phase 4.9C. Keep the minimum certified schema first, preserve the same shared runtime path used by the schedule asset, and extend the event-centric research-asset pipeline without introducing provider-driven ownership. Preserve the canonical open-provider acquisition path shape for later live use.
 
 ## Allowed Actions
 
 - Reuse the canonical market profile framework, research engine specification, storage, validation, lineage, acquisition runtime, certification runtime, and lifecycle runtime owners.
-- Extend the same schedule-population path into the first production connector without building a parallel NFL-specific pipeline.
+- Extend the same shared runtime path that powered the first production connector without building a parallel NFL-specific pipeline.
 - Keep the minimum-certified-schema path reusable for sports, prediction markets, and options / 0DTE.
 - Update the project status and document indexes when this phase completes.
 
@@ -20,7 +19,6 @@ Keep the minimum certified schema first, preserve the same shared runtime path u
 
 - Do not ingest paid or live data.
 - Do not implement connectors.
-- Do not implement connectors beyond the shared runtime contracts.
 - Do not implement mathematical engines yet.
 - Do not generate decision rows yet.
 - Do not backtest.
@@ -29,9 +27,9 @@ Keep the minimum certified schema first, preserve the same shared runtime path u
 
 ## Expected Deliverables
 
-- First production connector implementation for the NFL schedule research asset.
-- Identity, lifecycle, alignment, lineage, validation, certification, and readiness mappings for the minimum certified schema schedule connector path.
-- Lifecycle path updates for the research-asset layer and planner-driven acquisition selection.
+- NFL results research asset population implementation.
+- Identity, lifecycle, alignment, lineage, validation, certification, and readiness mappings for the minimum certified schema results asset path.
+- Lifecycle path updates for the research-asset layer and planner-driven acquisition selection, preserving the first production connector architecture introduced in Phase 4.9C.
 - Updated project status and index entries.
 
 ## Validation Commands

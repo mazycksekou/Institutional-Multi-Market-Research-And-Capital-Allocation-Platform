@@ -94,6 +94,20 @@ def _bundle_tables(source_bundle: Mapping[str, Any]) -> dict[str, list[dict[str,
     return {str(name): [dict(row) for row in rows if isinstance(row, Mapping)] for name, rows in tables.items()}
 
 
+def _bundle_metadata(source_bundle: Mapping[str, Any]) -> dict[str, Any]:
+    return {
+        "connector_id": _normalize_text(source_bundle.get("connector_id")),
+        "connector_name": _normalize_text(source_bundle.get("connector_name")),
+        "connector_role": _normalize_text(source_bundle.get("connector_role")),
+        "execution_mode": _normalize_text(source_bundle.get("execution_mode")),
+        "provider_role": _normalize_text(source_bundle.get("provider_role")),
+        "source_family": _normalize_text(source_bundle.get("source_family")),
+        "source_access_type": _normalize_text(source_bundle.get("source_access_type")),
+        "provider_capability": dict(source_bundle.get("provider_capability") or {}),
+        "field_provenance": dict(source_bundle.get("field_provenance") or {}),
+    }
+
+
 def _row_identifier(table_name: str, row: Mapping[str, Any], index: int) -> str:
     for key in (
         "record_id",
@@ -156,6 +170,13 @@ def _build_raw_record(
         "source_row_id": source_row_id,
         "source_snapshot_time": source_snapshot_time,
         "acquisition_timestamp": acquisition_timestamp,
+        "connector_id": _normalize_text(contract.metadata.get("connector_id")),
+        "connector_name": _normalize_text(contract.metadata.get("connector_name")),
+        "connector_role": _normalize_text(contract.metadata.get("connector_role")),
+        "execution_mode": _normalize_text(contract.metadata.get("execution_mode")),
+        "provider_role": _normalize_text(contract.metadata.get("provider_role")),
+        "provider_capability": dict(contract.metadata.get("provider_capability") or {}),
+        "field_provenance": dict(contract.metadata.get("field_provenance") or {}),
     }
     lineage_payload = create_lineage_record(
         provider_id=contract.provider,
@@ -316,6 +337,7 @@ class RawAcquisitionCacheContract:
             "market_profile": profile.profile_id,
             "profile_id": profile.profile_id,
             "profile_family": profile.profile_family,
+            **_bundle_metadata(source_bundle),
         }
         sport = _normalize_text(profile.metadata.get("sport") or profile.profile_family)
         return cls(
@@ -558,6 +580,9 @@ class HistoricalDatasetAcquisitionRuntime:
             created_at=created_at,
             updated_at=created_at,
         )
+        provider_row = self._provider_metadata_row(contract, source_bundle, created_at=created_at, version_id=version_id, snapshot_id=snapshot_id, lineage_id=lineage_id)
+        if provider_row:
+            self.platform.store.upsert("provider_metadata", provider_row, key_columns=("provider_id",))
         checksum = hashlib.sha256(_as_json(staged_raw_rows).encode("utf-8")).hexdigest()
         version_row = self.platform.version_dataset(
             validation_contract,
@@ -641,7 +666,65 @@ class HistoricalDatasetAcquisitionRuntime:
             "normalization_request": normalization_request,
             "certification_request": certification_request,
             "source_bundle": dict(source_bundle),
+            "provider_metadata": provider_row,
             "readiness_snapshot": readiness_snapshot,
+        }
+
+    def _provider_metadata_row(
+        self,
+        contract: RawAcquisitionCacheContract,
+        source_bundle: Mapping[str, Any],
+        *,
+        created_at: str,
+        version_id: str,
+        snapshot_id: str,
+        lineage_id: str,
+    ) -> dict[str, Any]:
+        provider_capability = dict(source_bundle.get("provider_capability") or contract.metadata.get("provider_capability") or {})
+        if not provider_capability and not _normalize_text(source_bundle.get("provider") or contract.provider):
+            return {}
+        provider_id = _normalize_text(provider_capability.get("provider_id") or source_bundle.get("provider") or contract.provider)
+        provider_name = _normalize_text(provider_capability.get("provider_name") or source_bundle.get("source_name") or contract.source_name)
+        provider_type = _normalize_text(
+            provider_capability.get("provider_type")
+            or provider_capability.get("provider_role")
+            or source_bundle.get("source_type")
+            or contract.source_type,
+            DEFAULT_HISTORICAL_DATASET_ACQUISITION_RUNTIME_SOURCE_TYPE,
+        )
+        metadata = {
+            "connector_id": _normalize_text(source_bundle.get("connector_id") or contract.metadata.get("connector_id")),
+            "connector_name": _normalize_text(source_bundle.get("connector_name") or contract.metadata.get("connector_name")),
+            "connector_role": _normalize_text(source_bundle.get("connector_role") or contract.metadata.get("connector_role")),
+            "execution_mode": _normalize_text(source_bundle.get("execution_mode") or contract.metadata.get("execution_mode")),
+            "provider_role": _normalize_text(provider_capability.get("provider_role") or source_bundle.get("provider_role") or contract.metadata.get("provider_role")),
+            "provider_capability": provider_capability,
+            "field_provenance": dict(source_bundle.get("field_provenance") or contract.metadata.get("field_provenance") or {}),
+            "source_family": _normalize_text(source_bundle.get("source_family") or contract.metadata.get("source_family")),
+            "source_access_type": _normalize_text(source_bundle.get("source_access_type") or contract.metadata.get("source_access_type")),
+            "source_bundle_id": contract.source_bundle_id,
+            "provider_sources": list(contract.provider_sources),
+            "provider_versions": list(contract.provider_versions),
+            "acquisition_timestamp": contract.acquisition_timestamp,
+        }
+        return {
+            "schema_version": contract.schema_version,
+            "created_at": created_at,
+            "updated_at": created_at,
+            "source": contract.source_name,
+            "provider": provider_id,
+            "market": contract.market_profile,
+            "market_type": contract.market_type,
+            "asset_class": contract.asset_class,
+            "snapshot_id": snapshot_id,
+            "lineage_id": lineage_id,
+            "version_id": version_id,
+            "quality_score": float(provider_capability.get("quality_score") or 1.0),
+            "provider_id": provider_id,
+            "provider_name": provider_name,
+            "provider_type": provider_type,
+            "contract_version": _normalize_text(provider_capability.get("contract_version") or contract.schema_version),
+            "metadata_json": _as_json(metadata),
         }
 
     def build_normalization_request(

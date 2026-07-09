@@ -22,21 +22,22 @@ The phase does not download data and does not implement connectors.
 
 ## Key Coverage Result
 
-The planner identifies the certified NFL schedule asset as the first connector-upgrade target:
+The planner now identifies the first remaining NFL connector-upgrade target as:
 
-- `dataset.sports.nfl.schedule`
+- `dataset.nfl.results`
+
+The NFL schedule asset is already serviced by the first production connector path, so it is no longer the active coverage gap. The planner advances to the next missing asset while keeping the schedule connector pattern reusable for future markets.
 
 First production connector target:
 
-- `dataset.sports.nfl.schedule`
-
-That asset is certified through the deterministic local schedule path, but it still needs the canonical production connector path to replace fixture-backed readiness.
+- `dataset.nfl.results`
 
 ## Provider Selection Result
 
 The planner ranks the source families that can close the minimum-schema gap:
 
 - schedule / games: `nflverse`, `nflreadr`, `nflfastr`, `manual_schedule_import`
+- results / outcomes: `nflverse`, `nflreadr`, `nflfastr`, `official_gamebook_import`
 - odds: `the_odds_api`, `sportsgameodds`, `odds_api_io`, `oddsmagnet`
 - weather: `open_meteo`, `national_weather_service`, `noaa_public_datasets`, `weatherapi`, `weatherstack`
 - injuries: `nflverse_injuries`, official team reporting lanes
@@ -62,4 +63,4 @@ The phase preserves the metadata needed for future query and evidence packages:
 
 ## Next Phase
 
-Phase 4.9C should implement the first production connector for the NFL schedule asset using the same canonical runtime path.
+Phase 4.9C completed the first production connector for the NFL schedule asset. Phase 4.9D should now populate the NFL results asset using the same canonical runtime path.

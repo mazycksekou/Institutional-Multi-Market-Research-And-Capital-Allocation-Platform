@@ -1,6 +1,6 @@
 # NFL Schedule Research Asset
 
-This document defines the first minimum-schema research asset populated in Phase 4.9A.
+This document defines the first minimum-schema research asset populated in Phase 4.9A and now serviced by the first production connector path in Phase 4.9C.
 The canonical asset is `dataset.sports.nfl.schedule`.
 
 ## Purpose
@@ -11,6 +11,7 @@ It establishes the reusable join backbone for later research assets such as resu
 ## Canonical Ownership
 
 - runtime owner: `src.data.nfl_schedule_research_asset_population`
+- connector owner: `src.connectors.feeds.nfl_schedule`
 - acquisition owner: `src.data.historical_dataset_acquisition_runtime`
 - certification owner: `src.data.historical_research_asset_certification_runtime`
 - lifecycle owner: `src.data.research_asset_lifecycle_runtime`
@@ -76,7 +77,20 @@ The asset may not skip states, and the previous state must be persisted before p
 ## Raw Acquisition Cache
 
 The schedule asset must pass through the shared raw acquisition cache before it can be normalized or certified.
-The raw payload, provider/source metadata, acquisition timestamp, checksum, and lineage id remain available for auditability.
+The first production connector path uses `src.connectors.feeds.nfl_schedule` and may still fall back to deterministic local fixture mode for offline tests.
+The raw payload, provider/source metadata, acquisition timestamp, checksum, connector metadata, and lineage id remain available for auditability.
+
+## Connector Path
+
+The canonical schedule connector path is read-only and reusable:
+
+- connector id: `connector.feeds.nfl_schedule`
+- provider id: `nflverse`
+- provider role: `primary_acquisition`
+- source access type: `open_github_release`
+- execution mode: `deterministic_fixture` for offline verification and production-ready adapter shape for later live use
+
+The connector feeds the shared acquisition runtime rather than writing directly to certified tables.
 
 ## Time And Entity Alignment
 

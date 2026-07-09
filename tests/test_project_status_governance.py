@@ -43,6 +43,8 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "feature/nfl-backtesting" in project_status_text
     assert "sports:nfl" in project_status_text
     assert "Phase 4.9A - NFL Schedule Research Asset Population" in project_status_text
+    assert "Phase 4.9C - First Production Connector (NFL Schedule)" in project_status_text
+    assert "Phase 4.9D - NFL Results Research Asset Population" in project_status_text
     assert "Phase 4.7B - Historical Dataset Acquisition Runtime" in project_status_text
     assert "Phase 4.7C - Historical Research Asset Certification Runtime" in project_status_text
     assert "Phase 4.8 - Research Asset Lifecycle Runtime & Time & Entity Alignment Certification" in project_status_text
@@ -76,7 +78,7 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "docs/reports/PHASE4_7C_HISTORICAL_RESEARCH_ASSET_CERTIFICATION_RUNTIME.md" in project_status_text
     assert "docs/reports/PHASE4_9A_NFL_SCHEDULE_RESEARCH_ASSET_POPULATION.md" in project_status_text
 
-    assert "Phase 4.9C - First Production Connector (NFL Schedule)" in next_action_text
+    assert "Phase 4.9D - NFL Results Research Asset Population" in next_action_text
     assert "first production connector" in next_action_text.lower()
     assert "Do not implement mathematical engines yet." in next_action_text
     assert "Do not generate decision rows yet." in next_action_text
