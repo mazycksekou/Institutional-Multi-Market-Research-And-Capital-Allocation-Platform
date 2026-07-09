@@ -145,7 +145,7 @@ provider -> raw acquisition cache -> integrity validation -> research asset cert
 ## Phase Boundary
 
 Phase 4.7C completes the historical research asset certification runtime and promotes the individual research assets required by the minimum certified historical dataset.
-Phase 4.8 populates reusable historical features on top of certified assets and certified datasets.
+Phase 4.8 implements the research asset lifecycle runtime and time/entity alignment certification on top of certified assets and certified datasets.
 
 ## Out Of Scope
 

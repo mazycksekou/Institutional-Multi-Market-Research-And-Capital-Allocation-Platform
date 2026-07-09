@@ -40,6 +40,7 @@ This index points readers to the current truth and the durable historical entry 
 - `docs/architecture/PROVIDER_OWNERSHIP_MAP.md` - Provider Ownership Map
 - `docs/architecture/REPOSITORY_INDEPENDENCE_SCORECARD.md` - Repository Independence Scorecard
 - `docs/architecture/REPOSITORY_MODERNIZATION_COMPLETE_V1.md` - Repository Modernization Complete V1
+- `docs/architecture/RESEARCH_ASSET_LIFECYCLE_RUNTIME.md` - Research Asset Lifecycle Runtime
 - `docs/architecture/RESEARCH_ASSET_RUNTIME_FRAMEWORK.md` - Purpose
 - `docs/architecture/RESEARCH_ASSET_SOURCE_DISCOVERY_AND_CONNECTOR_MAPPING.md` - Research Asset Source Discovery And Connector Mapping
 - `docs/architecture/RESEARCH_PLATFORM_ARCHITECTURE.md` - Research Platform Architecture
@@ -130,6 +131,7 @@ This index points readers to the current truth and the durable historical entry 
 - `docs/reports/PHASE4_7A_RESEARCH_ASSET_SOURCE_DISCOVERY_AND_CONNECTOR_MAPPING.md` - Phase 4.7A Research Asset Source Discovery And Connector Mapping
 - `docs/reports/PHASE4_7B_HISTORICAL_DATASET_ACQUISITION_RUNTIME.md` - Phase 4.7B Historical Dataset Acquisition Runtime
 - `docs/reports/PHASE4_7C_HISTORICAL_RESEARCH_ASSET_CERTIFICATION_RUNTIME.md` - Phase 4.7C Historical Research Asset Certification Runtime
+- `docs/reports/PHASE4_8_RESEARCH_ASSET_LIFECYCLE_RUNTIME_AND_TIME_ENTITY_ALIGNMENT_CERTIFICATION.md` - Phase 4.8 Research Asset Lifecycle Runtime And Time & Entity Alignment Certification
 
 ### INDEX
 - `docs/DOCUMENT_RETENTION_INDEX.md` - Policy Note

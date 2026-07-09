@@ -39,6 +39,7 @@ The framework is built on top of these existing layers:
 - [Historical Research Database](./HISTORICAL_RESEARCH_DATABASE.md)
 - [Historical Dataset Acquisition Framework](./HISTORICAL_DATASET_ACQUISITION_FRAMEWORK.md)
 - [Historical Dataset Acquisition Runtime](./HISTORICAL_DATASET_ACQUISITION_RUNTIME.md)
+- [Research Asset Lifecycle Runtime](./RESEARCH_ASSET_LIFECYCLE_RUNTIME.md)
 - [Research Platform Architecture](./RESEARCH_PLATFORM_ARCHITECTURE.md)
 
 Those documents own market shape, governing inputs, feature lifecycle, math contract lifecycle, event-centric storage, and research workspace boundaries.
@@ -50,6 +51,7 @@ This framework owns the runtime relationship between those assets.
 | --- | --- | --- |
 | Dataset | `src.data` and `src.storage` | Owns certified historical rows, versioning, lineage, and local storage shape. |
 | Acquisition runtime | `src.data` and `src.storage` | Owns raw acquisition cache staging, integrity validation, and normalization/certification handoff. |
+| Lifecycle runtime | `src.data` and `src.storage` | Owns immutable research asset identity, lifecycle state management, and time/entity alignment certification. |
 | Feature | `src.data`, `src.market_intelligence`, and `src.core` | Owns reusable feature definitions and feature-ready runtime paths. |
 | Mathematical engine | `src.core` | Owns reusable math, pricing, sizing, calibration, and probability primitives. |
 | Signal | `src.market_intelligence` and `src.analytics` | Owns reusable signal derivation and signal-quality summaries. |
@@ -122,27 +124,29 @@ Every research asset entry must be able to report the following canonical fields
 Every research asset must support the same lifecycle state machine.
 The asset may not advance to production without passing the earlier states.
 
-Defined -> Contract Ready -> Schema Ready -> Source Identified -> Connector Ready -> Historical Dataset Ready -> Math Ready -> Signal Ready -> Validated -> Backtested -> Production Ready
+Discovered -> Source Identified -> Connector Mapped -> Raw Acquired -> Integrity Verified -> Normalized -> Research Asset Certified -> Dataset Certified -> Feature Ready -> Math Ready -> Signal Ready -> Backtest Ready -> Production Ready
 
 Lifecycle meaning:
 
-- Defined: the asset has a canonical name and purpose.
-- Contract Ready: the asset has an explicit contract and owner.
-- Schema Ready: the shape, fields, and timing rules are documented.
-- Source Identified: at least one usable source or source family is known.
-- Connector Ready: a canonical acquisition or adapter path exists.
-- Historical Dataset Ready: certified historical inputs can support the asset.
-- Math Ready: the derivation or calculation path is ready in the canonical runtime owner.
-- Signal Ready: the asset can be consumed as a reusable signal or registry asset.
-- Validated: the asset has evidence, lineage, and leakage checks.
-- Backtested: the asset has been evaluated on certified historical rows where applicable.
-- Production Ready: the asset is usable in the current canonical workflow.
+- Discovered: the asset is known and cataloged.
+- Source Identified: at least one usable source family is known.
+- Connector Mapped: a canonical acquisition path exists.
+- Raw Acquired: immutable source payloads have been staged.
+- Integrity Verified: checksum, schema, and timestamp checks passed.
+- Normalized: the raw payload has been normalized into governed shape.
+- Research Asset Certified: the asset passed the asset-level certification gate.
+- Dataset Certified: the dataset built from required assets has been certified.
+- Feature Ready: the asset is ready for feature population.
+- Math Ready: the asset is ready for governed mathematical engines.
+- Signal Ready: the asset is ready for reusable signals.
+- Backtest Ready: the asset is allowed into the minimum certified backtest path.
+- Production Ready: the asset is usable in the canonical production workflow.
 
 ## Runtime Connection Chain
 
 The framework connects research assets through one canonical sequence:
 
-Provider -> Raw Acquisition Cache -> Integrity Validation -> Normalization -> Research Asset Certification -> Dataset Certification -> Historical Research Database -> Historical Dataset Acquisition Framework -> Research Asset Runtime Framework -> Datasets -> Features -> Mathematical Engines -> Signals -> Targets -> Confidence -> Decision Rows -> Backtesting -> Experiments -> Evidence Packages
+Provider -> Raw Acquisition Cache -> Integrity Validation -> Normalization -> Research Asset Certification -> Dataset Certification -> Historical Research Database -> Historical Dataset Acquisition Framework -> Historical Dataset Acquisition Runtime -> Historical Research Asset Certification Runtime -> Research Asset Lifecycle Runtime -> Datasets -> Features -> Mathematical Engines -> Signals -> Targets -> Confidence -> Decision Rows -> Backtesting -> Experiments -> Evidence Packages
 
 The repository may define the complete research universe, but the first production backtests must still use only the certified minimum schema.
 Advanced assets remain inactive until their data, math, and validation maturity are proven.

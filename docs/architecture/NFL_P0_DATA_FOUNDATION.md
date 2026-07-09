@@ -82,7 +82,7 @@ The foundation is structurally ready, but the repository still needs future phas
 
 - define the minimum certified historical dataset acquisition framework in Phase 4.6
 - acquire and certify the minimum certified historical dataset in Phase 4.7
-- populate reusable historical feature snapshots in Phase 4.8
-- implement reusable mathematical engines in Phase 4.9
+- implement the research asset lifecycle runtime and time/entity alignment certification in Phase 4.8
+- implement connector implementation for the minimum NFL schema in Phase 4.9
 - build decision rows in Phase 5.0
 - expand beyond the P0 team/game foundation when the data layer is proven stable

@@ -37,7 +37,7 @@ def test_historical_research_asset_certification_runtime_docs_exist_and_cover_re
     assert "Multi-Provider Support" in architecture_text
     assert "Readiness Reporting" in architecture_text
     assert "Phase 4.7C completes the historical research asset certification runtime" in architecture_text
-    assert "Phase 4.8 populates reusable historical features" in architecture_text
+    assert "Phase 4.8 implements the research asset lifecycle runtime and time/entity alignment certification" in architecture_text
 
     assert "Phase 4.7C Historical Research Asset Certification Runtime" in report_text
     assert "Existing Certification Abstractions Discovered" in report_text
@@ -53,10 +53,10 @@ def test_historical_research_asset_certification_runtime_docs_exist_and_cover_re
     assert "Readiness for Phase 4.8" in report_text
 
     assert "Phase 4.7C - Historical Research Asset Certification Runtime" in project_status_text
-    assert "Phase 4.8 - Historical Feature Population" in project_status_text
+    assert "Phase 4.8 - Research Asset Lifecycle Runtime & Time & Entity Alignment Certification" in project_status_text
     assert "docs/architecture/HISTORICAL_RESEARCH_ASSET_CERTIFICATION_RUNTIME.md" in project_status_text
     assert "docs/reports/PHASE4_7C_HISTORICAL_RESEARCH_ASSET_CERTIFICATION_RUNTIME.md" in project_status_text
-    assert "Phase 4.8 - Historical Feature Population" in next_action_text
+    assert "Phase 4.8 - Research Asset Lifecycle Runtime & Time & Entity Alignment Certification" in next_action_text
 
     assert "docs/architecture/HISTORICAL_RESEARCH_ASSET_CERTIFICATION_RUNTIME.md" in master_index_text
     assert "docs/reports/PHASE4_7C_HISTORICAL_RESEARCH_ASSET_CERTIFICATION_RUNTIME.md" in retention_index_text

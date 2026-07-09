@@ -82,6 +82,7 @@ from src.backtesting.strategy_profiles import (
 from src.data.local_platform import build_local_platform_dashboard_snapshot
 from src.data.historical_research_asset_certification_runtime import build_historical_research_asset_certification_runtime_dashboard_snapshot
 from src.data.historical_dataset_acquisition_runtime import build_historical_dataset_acquisition_runtime_dashboard_snapshot
+from src.data.research_asset_lifecycle_runtime import build_research_asset_lifecycle_runtime_dashboard_snapshot
 from src.data.nfl_p0_foundation import build_nfl_p0_dashboard_snapshot
 from src.data.historical_research_database import build_historical_research_dashboard_snapshot
 from src.research.feature_control import run_calibration_strategy_filter
@@ -3796,6 +3797,48 @@ def get_historical_research_asset_certification_snapshot_for_dashboard(
             "certification_scores": {},
             "dataset_readiness": {},
             "research_asset_readiness": {},
+            "readiness_summary": {},
+            "storage": {},
+            "warnings": [str(exc)],
+        }
+
+
+def get_research_asset_lifecycle_snapshot_for_dashboard(
+    storage_path: str | Path | None = None,
+    *,
+    backend: str = "sqlite",
+    profile_id: str = "sports:nfl",
+    fixture: Mapping[str, Any] | None = None,
+    raw_acquisition_result: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Return a canonical research asset lifecycle readiness snapshot."""
+    try:
+        return build_research_asset_lifecycle_runtime_dashboard_snapshot(
+            storage_path=storage_path,
+            backend=backend,
+            profile_id=profile_id,
+            fixture=fixture,
+            raw_acquisition_result=raw_acquisition_result,
+        )
+    except Exception as exc:
+        return {
+            "ok": False,
+            "status": "research_asset_lifecycle_snapshot_error",
+            "profile": {},
+            "profile_validation": {},
+            "identity_catalog": [],
+            "research_asset_lifecycles": [],
+            "time_entity_alignment_certifications": [],
+            "state_counts": {},
+            "alignment_status_counts": {},
+            "certified_assets": [],
+            "blocked_assets": [],
+            "missing_assets": [],
+            "alignment_failures": [],
+            "summary": {},
+            "lifecycle_readiness": {},
+            "alignment_readiness": {},
+            "dataset_readiness": {},
             "readiness_summary": {},
             "storage": {},
             "warnings": [str(exc)],

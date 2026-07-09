@@ -101,4 +101,4 @@ This phase improves evidence quality and reproducibility because future experime
 
 ## Readiness for Phase 4.8
 
-The repository is ready for Phase 4.8, which will populate reusable historical features on top of certified assets and certified datasets.
+The repository is ready for Phase 4.8, which will implement the research asset lifecycle runtime and time/entity alignment certification on top of certified assets and certified datasets.

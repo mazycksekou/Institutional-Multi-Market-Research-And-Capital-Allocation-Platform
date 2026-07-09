@@ -79,7 +79,7 @@ def test_historical_dataset_acquisition_framework_docs_exist_and_cover_required_
     assert "Readiness for Phase 4.7" in report_text
 
     assert "Phase 4.7B - Historical Dataset Acquisition Runtime" in project_status_text
-    assert "Phase 4.8 - Historical Feature Population" in next_action_text
+    assert "Phase 4.8 - Research Asset Lifecycle Runtime & Time & Entity Alignment Certification" in next_action_text
     assert "docs/architecture/HISTORICAL_DATASET_ACQUISITION_FRAMEWORK.md" in project_status_text
     assert "docs/reports/PHASE4_6_MINIMUM_CERTIFIED_HISTORICAL_DATASET_ACQUISITION_FRAMEWORK.md" in project_status_text
     assert "minimum certified schema first" in next_action_text.lower()
@@ -112,7 +112,7 @@ def test_historical_dataset_acquisition_framework_docs_exist_and_cover_required_
     assert "certification_timestamp" in lineage_contract_text
     assert "certification_status" in lineage_contract_text
     assert "coverage_score" in lineage_contract_text
-    assert "provider source -> acquisition job -> raw acquisition cache -> integrity validation -> normalization -> certification -> certified dataset version" in lineage_contract_text.lower()
+    assert "provider source -> acquisition job -> raw acquisition cache -> integrity validation -> normalization -> time and entity alignment certification -> research asset certification -> dataset certification -> certified dataset version" in lineage_contract_text.lower()
 
 
 def test_historical_dataset_acquisition_framework_docs_do_not_depend_on_runtime_code() -> None:

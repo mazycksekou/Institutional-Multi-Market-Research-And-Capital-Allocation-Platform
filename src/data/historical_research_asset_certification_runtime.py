@@ -929,6 +929,26 @@ class HistoricalResearchAssetCertificationRuntime:
             source_bundle = {}
         if raw_acquisition_result:
             source_bundle = dict((raw_acquisition_result.get("source_bundle") or source_bundle))
+        try:
+            from src.data.research_asset_lifecycle_runtime import ResearchAssetLifecycleRuntime
+
+            lifecycle_runtime = ResearchAssetLifecycleRuntime(
+                self.storage_path,
+                backend=self.backend,
+                dataset_owner=self.dataset_owner,
+                store=self.store,
+            )
+            lifecycle_snapshot = lifecycle_runtime.build_readiness_snapshot(
+                profile_id=profile.profile_id,
+                fixture=fixture,
+                raw_acquisition_result=raw_acquisition_result,
+            )
+        except Exception as exc:
+            lifecycle_snapshot = {
+                "ok": False,
+                "status": "research_asset_lifecycle_snapshot_error",
+                "warnings": [str(exc)],
+            }
         return {
             "ok": bool(table_ready and asset_summary["dataset_status"] == "certified" and profile_validation["ok"]),
             "status": "ready" if table_ready and asset_summary["dataset_status"] == "certified" and profile_validation["ok"] else "partial" if asset_rows or dataset_rows else "missing",
@@ -943,6 +963,7 @@ class HistoricalResearchAssetCertificationRuntime:
             "failed_research_assets": asset_summary["failed_research_assets"],
             "pending_research_assets": asset_summary["pending_research_assets"],
             "certification_scores": asset_summary["certification_scores"],
+            "lifecycle_readiness": lifecycle_snapshot,
             "source_bundle": source_bundle,
             "raw_acquisition_result": dict(raw_acquisition_result or {}),
             "storage": self.store.health(),
@@ -986,6 +1007,15 @@ class HistoricalResearchAssetCertificationRuntime:
             "certified_asset_count": asset_summary.get("certified_asset_count", 0),
             "missing_asset_count": len(snapshot.get("missing_research_assets", [])),
             "failed_asset_count": len(snapshot.get("failed_research_assets", [])),
+        }
+        lifecycle_snapshot = dict(snapshot.get("lifecycle_readiness") or {})
+        snapshot["lifecycle_readiness"] = lifecycle_snapshot
+        snapshot["time_entity_alignment_readiness"] = {
+            "status": lifecycle_snapshot.get("status", "missing"),
+            "alignment_failures": lifecycle_snapshot.get("alignment_failures", []),
+            "alignment_status_counts": lifecycle_snapshot.get("alignment_status_counts", {}),
+            "blocked_assets": lifecycle_snapshot.get("blocked_assets", []),
+            "missing_assets": lifecycle_snapshot.get("missing_assets", []),
         }
         return snapshot
 

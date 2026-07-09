@@ -7,7 +7,7 @@ Canonical live status for the repository and the required starting document for 
 - current branch: `feature/nfl-backtesting`
 - current HEAD: live branch tip (exact hash is reported in the task final report)
 - remote tracking branch: `origin/feature/nfl-backtesting`
-- active phase: `Phase 4.8 - Historical Feature Population`
+- active phase: `Phase 4.8 - Research Asset Lifecycle Runtime & Time & Entity Alignment Certification`
 - active market profile: `sports:nfl`
 - active implementation lane: `NFL P0 profile-aware foundation + event-centric historical research database + master research engine specification + universal feature registry + universal math engine contracts + research asset runtime framework + historical dataset acquisition framework + historical dataset acquisition runtime + research asset source discovery and connector mapping framework + historical research asset certification runtime`
 - completed phases:
@@ -21,12 +21,13 @@ Canonical live status for the repository and the required starting document for 
   - `Phase 4.5E - Canonical Engineering Specification Rename & Research Asset Runtime Framework`
   - `Phase 4.7B - Historical Dataset Acquisition Runtime`
   - `Phase 4.7C - Historical Research Asset Certification Runtime`
-- current phase objective: Populate reusable historical features on top of certified research assets and certified datasets while preserving the same raw acquisition cache, integrity checks, lineage, and point-in-time safety.
-- next phase: `Phase 4.9 - Historical Mathematical Engine Implementation`
+- current phase objective: Implement canonical research asset lifecycle management, immutable research asset identity, and time/entity alignment certification while preserving the same raw acquisition cache, integrity checks, lineage, and point-in-time safety.
+- next phase: `Phase 4.9 - Connector Implementation (Minimum NFL Schema)`
 - current blockers: None
 - latest validation status:
   - Phase 4.7C runtime validation passed: compileall, certification runtime tests, smoke, architecture, document lifecycle, and ops checks are green.
-- latest full gate result: `not run for this docs-only phase`
+  - Phase 4.8 lifecycle runtime code changes are complete and validated: compileall, focused lifecycle tests, smoke, architecture, document lifecycle, and ops checks are green.
+- latest full gate result: `not run; broader regression gate deferred for this runtime-and-contract phase`
 - latest pushed commit: live branch tip (exact hash is reported in the task final report)
 
 ## Active Canonical Rules
@@ -42,6 +43,7 @@ Canonical live status for the repository and the required starting document for 
 - The repository owns certified datasets after acquisition and certification.
 - Research assets are certified individually before dataset certification completes.
 - Dataset certification is gated on the required research assets passing first.
+- Research assets advance through one canonical lifecycle and must satisfy time/entity alignment before lifecycle promotion.
 - Events own shared context.
 - Markets belong to events.
 - Selections belong to markets.
@@ -71,6 +73,7 @@ Read these only when you need more detail than the project status page provides:
 - `docs/contracts/RESEARCH_ASSET_CONTRACT.md`
 - `docs/contracts/DATASET_REGISTRY.md`
 - `docs/contracts/DATA_LINEAGE_CONTRACT.md`
+- `docs/architecture/RESEARCH_ASSET_LIFECYCLE_RUNTIME.md`
 - `docs/reports/PHASE4_5B_UNIVERSAL_FEATURE_REGISTRY.md`
 - `docs/reports/PHASE4_5C_UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md`
 - `docs/reports/PHASE4_5D_RESEARCH_ASSET_RUNTIME_FRAMEWORK.md`
@@ -78,6 +81,7 @@ Read these only when you need more detail than the project status page provides:
 - `docs/reports/PHASE4_7B_HISTORICAL_DATASET_ACQUISITION_RUNTIME.md`
 - `docs/reports/PHASE4_7C_HISTORICAL_RESEARCH_ASSET_CERTIFICATION_RUNTIME.md`
 - `docs/reports/PHASE4_7A_RESEARCH_ASSET_SOURCE_DISCOVERY_AND_CONNECTOR_MAPPING.md`
+- `docs/reports/PHASE4_8_RESEARCH_ASSET_LIFECYCLE_RUNTIME_AND_TIME_ENTITY_ALIGNMENT_CERTIFICATION.md`
 - `docs/contracts/MINIMUM_BACKTEST_ROW_CONTRACT.md`
 - `docs/contracts/NFL_MINIMUM_BACKTEST_ROW_CONTRACT.md`
 - `docs/contracts/NFL_BACKTEST_CONTRACT.md`
@@ -96,4 +100,4 @@ Read these only when you need more detail than the project status page provides:
 
 ## Next Recommended Codex Task
 
-`Phase 4.8 - Historical Feature Population`
+`Phase 4.8 - Research Asset Lifecycle Runtime & Time & Entity Alignment Certification`

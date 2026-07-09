@@ -6,7 +6,7 @@ It does not implement runtime behavior.
 
 ## Purpose
 
-The contract gives every research asset one stable identity, one owner, one lifecycle, and one lineage chain.
+The contract gives every research asset one stable identity, one owner, one lifecycle, one alignment gate, and one lineage chain.
 It is the shared contract for datasets, features, mathematical engines, signals, targets, confidence measures, decision rows, backtests, experiments, evidence packages, connectors, and validation results.
 
 ## Research Asset ID Standard
@@ -102,21 +102,93 @@ Validation assets report readiness, leakage, schema, and lineage state.
 
 Every research asset must support the same lifecycle progression:
 
-Defined -> Contract Ready -> Schema Ready -> Source Identified -> Connector Ready -> Historical Dataset Ready -> Math Ready -> Signal Ready -> Validated -> Backtested -> Production Ready
+Discovered -> Source Identified -> Connector Ready -> Raw Acquired -> Integrity Verified -> Normalized -> Research Asset Certified -> Dataset Certified -> Feature Ready -> Math Ready -> Signal Ready -> Backtest Ready -> Production Ready
 
 The lifecycle gate meaning is:
 
-- Defined: the asset exists conceptually
-- Contract Ready: the record shape is documented
-- Schema Ready: the fields and types are known
+- Discovered: the asset exists in the discovery catalog
 - Source Identified: at least one usable source family is known
 - Connector Ready: a canonical adapter path exists
-- Historical Dataset Ready: certified historical inputs can support the asset
+- Raw Acquired: the asset has an immutable raw payload in cache
+- Integrity Verified: checksum, schema, and structural checks have passed
+- Normalized: the payload has been normalized into the canonical shape
+- Research Asset Certified: the individual asset has passed certification
+- Dataset Certified: the dataset composed from required assets has passed certification
+- Feature Ready: feature consumers can read the asset through canonical contracts
 - Math Ready: the derivation path is ready in the canonical runtime owner
 - Signal Ready: the asset can be consumed by downstream layers
-- Validated: the asset has evidence, lineage, and leakage checks
-- Backtested: the asset has been evaluated where backtesting applies
+- Backtest Ready: the asset can participate in the certified minimum backtest schema
 - Production Ready: the asset can be consumed in the canonical workflow
+
+## Immutable Identity
+
+Every research asset must expose a permanent identity contract.
+The identity never changes once recorded.
+Only lifecycle state, certification state, and evidence state may advance.
+
+Required immutable identity fields include:
+
+- asset_id
+- asset_family
+- market_profile
+- market
+- league
+- sport
+- season
+- week_or_date
+- event_id
+- market_id
+- selection
+- provider
+- connector
+- schema_version
+- lineage_version
+
+## Time & Entity Alignment Certification
+
+Before a research asset can move into certification, the repository must verify that the row is aligned in both time and entity.
+This gate prevents future-data leakage and mismatched rows.
+
+Required alignment checks include:
+
+- market_profile
+- league
+- season
+- week_or_date
+- event_id
+- game_id
+- team_id
+- participant_id
+- market_type
+- selection
+- decision_time
+- snapshot_time
+- provider_timestamp
+- result_timestamp
+
+Notes:
+
+- `participant_id` is enforced when a participant-scoped asset provides one, but event-scoped assets may leave it blank.
+- `failure_reason` is an output field on blocked certifications and is not required for aligned source rows.
+
+Common failure reasons include:
+
+- ENTITY_MISMATCH
+- TEAM_MISMATCH
+- EVENT_MISMATCH
+- GAME_MISMATCH
+- LEAGUE_MISMATCH
+- MARKET_MISMATCH
+- SELECTION_MISMATCH
+- SEASON_MISMATCH
+- WEEK_MISMATCH
+- DECISION_TIME_MISMATCH
+- SNAPSHOT_AFTER_DECISION
+- RESULT_BEFORE_DECISION
+- SOURCE_TIMESTAMP_MISSING
+- POINT_IN_TIME_VIOLATION
+
+The alignment certification is a required gate before lifecycle promotion and dataset certification.
 
 ## Certification States
 

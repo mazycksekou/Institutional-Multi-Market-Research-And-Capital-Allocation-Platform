@@ -140,8 +140,8 @@ research asset -> supported providers -> connector type -> coverage -> historica
 Phase 4.7A defines research asset source discovery and connector mapping.
 Phase 4.7B builds the reusable historical dataset acquisition runtime using the discovered source map.
 Phase 4.7C completes the historical research asset certification runtime and gates dataset certification on the required research assets.
-Phase 4.8 populates reusable historical features.
-Phase 4.9 implements reusable mathematical engines.
+Phase 4.8 implements the research asset lifecycle runtime and time/entity alignment certification.
+Phase 4.9 implements connector implementation for the minimum NFL schema.
 Phase 5.0 constructs decision rows from certified historical data.
 Phase 5.1 begins baseline backtesting from frozen historical rows.
 

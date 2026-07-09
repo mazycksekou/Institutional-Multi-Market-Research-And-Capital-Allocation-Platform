@@ -55,7 +55,7 @@ It complements `docs/MASTER_ROADMAP.md` and makes the lifecycle easier to apply 
 
 The repository now treats the historical research path as event-centric and phase-aware:
 
-Provider -> Raw Acquisition Cache -> Integrity Validation -> Normalization -> Research Asset Certification -> Dataset Certification -> Historical Research Database -> Master Research Engine Specification -> Universal Feature Registry -> Universal Math Engine Contracts -> Research Asset Runtime Framework -> Historical Dataset Acquisition Framework -> Historical Research Asset Certification Runtime -> Research Asset Source Discovery And Connector Mapping -> Historical Feature Population -> Mathematical Engine Implementation -> Decision Rows -> Backtesting
+Provider -> Raw Acquisition Cache -> Integrity Validation -> Normalization -> Research Asset Certification -> Dataset Certification -> Historical Research Database -> Master Research Engine Specification -> Universal Feature Registry -> Universal Math Engine Contracts -> Research Asset Runtime Framework -> Historical Dataset Acquisition Framework -> Historical Research Asset Certification Runtime -> Research Asset Lifecycle Runtime -> Research Asset Source Discovery And Connector Mapping -> Connector Implementation -> Historical Dataset Population -> Feature Population -> Mathematical Engine Population -> Signal Population -> Decision Rows -> Backtesting
 
 Decision rows are generated research primitives.
 Events are the shared historical ownership unit.
@@ -71,8 +71,8 @@ Phase 4.6 -> Minimum Certified Historical Dataset Acquisition Framework
 Phase 4.7A -> Research Asset Source Discovery & Connector Mapping
 Phase 4.7B -> Historical Dataset Acquisition Runtime
 Phase 4.7C -> Historical Research Asset Certification Runtime
-Phase 4.8 -> Historical Feature Population
-Phase 4.9 -> Mathematical Engine Implementation
+Phase 4.8 -> Research Asset Lifecycle Runtime & Time & Entity Alignment Certification
+Phase 4.9 -> Connector Implementation (Minimum NFL Schema)
 Phase 5.0 -> Decision Row Generation
 Phase 5.1 -> Baseline Backtesting
 Phase 5.2 -> Walk-Forward Validation
