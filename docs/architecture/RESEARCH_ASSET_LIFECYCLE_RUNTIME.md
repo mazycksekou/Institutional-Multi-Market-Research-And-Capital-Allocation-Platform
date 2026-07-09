@@ -195,7 +195,8 @@ provider -> raw acquisition cache -> integrity validation -> normalization -> re
 
 Phase 4.8 implements the research asset lifecycle runtime and time/entity alignment certification.
 Phase 4.9A populates the NFL schedule research asset.
-Phase 4.9B populates the NFL results research asset.
+Phase 4.9B builds the research asset coverage planner and provider selection framework.
+Phase 4.9C implements the first production connector for the NFL schedule research asset.
 
 ## Out Of Scope
 

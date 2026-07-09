@@ -95,6 +95,6 @@ Recommendation: keep the next phase equally narrow and use the same runtime path
 The schedule asset is queryable later because it preserves stable identifiers, lifecycle state, certification state, timestamps, and lineage metadata.
 That is enough for future evidence packages, blocked-asset explanations, and joins to later research assets.
 
-## Readiness for Phase 4.9B
+## Readiness for Phase 4.9B - Research Asset Coverage Planner & Provider Selection Framework
 
-The repository is ready for Phase 4.9B, which should populate the NFL results research asset using the same shared runtime path.
+The repository is ready for Phase 4.9B, which should build the coverage planner and provider selection framework on top of the same shared runtime path.

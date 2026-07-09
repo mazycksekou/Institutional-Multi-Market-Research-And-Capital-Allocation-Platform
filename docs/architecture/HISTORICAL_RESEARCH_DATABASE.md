@@ -86,7 +86,7 @@ Phase 4.7B builds the reusable historical dataset acquisition runtime with raw a
 Phase 4.7C completes the historical research asset certification runtime and gates dataset certification on the required research assets.
 Phase 4.8 implements the research asset lifecycle runtime and time/entity alignment certification.
 Phase 4.9A populates the NFL schedule research asset.
-Phase 4.9B populates the NFL results research asset.
+Phase 4.9B builds the research asset coverage planner and provider selection framework.
 Phase 5.0 constructs decision rows from certified historical data.
 Phase 5.1 begins baseline backtesting from frozen historical rows.
 

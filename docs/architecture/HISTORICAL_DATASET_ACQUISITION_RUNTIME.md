@@ -154,6 +154,7 @@ provider -> raw acquisition cache -> integrity validation -> normalization -> ce
 Phase 4.7B builds the reusable historical dataset acquisition runtime with raw acquisition cache and integrity validation.
 Phase 4.7C completes the historical research asset certification runtime and gates dataset certification on the required research assets.
 Phase 4.9A populates the NFL schedule research asset after acquisition runtime and integrity validation are complete.
+Phase 4.9B builds the research asset coverage planner and provider selection framework before the first production connector is introduced.
 
 ## Out Of Scope
 

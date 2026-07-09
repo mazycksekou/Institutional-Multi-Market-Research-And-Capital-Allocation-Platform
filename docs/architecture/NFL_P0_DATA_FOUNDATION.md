@@ -84,6 +84,7 @@ The foundation is structurally ready, but the repository still needs future phas
 - acquire and certify the minimum certified historical dataset in Phase 4.7
 - implement the research asset lifecycle runtime and time/entity alignment certification in Phase 4.8
 - populate the NFL schedule research asset in Phase 4.9A
-- populate the NFL results research asset in Phase 4.9B
+- use the research asset coverage planner in Phase 4.9B
+- populate the first production connector for the NFL schedule asset in Phase 4.9C
 - build decision rows in Phase 5.0
 - expand beyond the P0 team/game foundation when the data layer is proven stable

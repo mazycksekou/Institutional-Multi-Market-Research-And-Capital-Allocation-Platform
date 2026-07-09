@@ -73,13 +73,15 @@ Phase 4.7B -> Historical Dataset Acquisition Runtime
 Phase 4.7C -> Historical Research Asset Certification Runtime
 Phase 4.8 -> Research Asset Lifecycle Runtime & Time & Entity Alignment Certification
 Phase 4.9A -> NFL Schedule Research Asset Population
-Phase 4.9B -> NFL Results Research Asset Population
-Phase 4.9C -> NFL Team Statistics Research Asset Population
-Phase 4.9D -> NFL Odds Research Asset Population
-Phase 4.9E -> NFL Weather Research Asset Population
-Phase 4.9F -> NFL Injuries Research Asset Population
-Phase 4.9G -> NFL Rest / Travel Research Asset Population
-Phase 4.9H -> NFL Officials / Coaching Research Asset Population
+Phase 4.9B -> Research Asset Coverage Planner & Provider Selection Framework
+Phase 4.9C -> First Production Connector (NFL Schedule)
+Phase 4.9D -> NFL Results Research Asset Population
+Phase 4.9E -> NFL Team Statistics Research Asset Population
+Phase 4.9F -> NFL Odds Research Asset Population
+Phase 4.9G -> NFL Weather Research Asset Population
+Phase 4.9H -> NFL Injuries Research Asset Population
+Phase 4.9I -> NFL Rest / Travel Research Asset Population
+Phase 4.9J -> NFL Officials / Coaching Research Asset Population
 Phase 5.0 -> Decision Row Generation
 Phase 5.1 -> Baseline Backtesting
 Phase 5.2 -> Walk-Forward Validation

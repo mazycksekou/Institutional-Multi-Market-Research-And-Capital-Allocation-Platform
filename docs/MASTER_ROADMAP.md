@@ -61,13 +61,15 @@ Phase 4.7B builds the reusable historical dataset acquisition runtime with raw a
 Phase 4.7C certifies the individual research assets required by the minimum certified historical dataset and then certifies the dataset once every required asset passes.
 Phase 4.8 implements the research asset lifecycle runtime and time/entity alignment certification.
 Phase 4.9A populates the NFL schedule research asset.
-Phase 4.9B populates the NFL results research asset.
-Phase 4.9C populates the NFL team statistics research asset.
-Phase 4.9D populates the NFL odds research asset.
-Phase 4.9E populates the NFL weather research asset.
-Phase 4.9F populates the NFL injuries research asset.
-Phase 4.9G populates the NFL rest/travel research asset.
-Phase 4.9H populates the NFL officials/coaching research asset.
+Phase 4.9B builds the research asset coverage planner and provider selection framework.
+Phase 4.9C implements the first production connector for the NFL schedule research asset.
+Phase 4.9D populates the NFL results research asset.
+Phase 4.9E populates the NFL team statistics research asset.
+Phase 4.9F populates the NFL odds research asset.
+Phase 4.9G populates the NFL weather research asset.
+Phase 4.9H populates the NFL injuries research asset.
+Phase 4.9I populates the NFL rest/travel research asset.
+Phase 4.9J populates the NFL officials/coaching research asset.
 Phase 5.0 materializes the historical dataset population layer.
 Phase 5.1 populates reusable features from certified assets and certified events.
 Phase 5.2 implements reusable mathematical engines.
@@ -97,14 +99,16 @@ Current NFL work is in Phase 4:
 - Phase 4.7B will build the reusable historical dataset acquisition runtime with raw acquisition cache and integrity validation.
 - Phase 4.7C completed the historical research asset certification runtime and gated dataset certification on asset-level evidence.
 - Phase 4.8 will implement the research asset lifecycle runtime and time/entity alignment certification.
-- Phase 4.9A is populating the NFL schedule research asset.
-- Phase 4.9B will populate the NFL results research asset.
-- Phase 4.9C will populate the NFL team statistics research asset.
-- Phase 4.9D will populate the NFL odds research asset.
-- Phase 4.9E will populate the NFL weather research asset.
-- Phase 4.9F will populate the NFL injuries research asset.
-- Phase 4.9G will populate the NFL rest/travel research asset.
-- Phase 4.9H will populate the NFL officials/coaching research asset.
+- Phase 4.9A completed the NFL schedule research asset population.
+- Phase 4.9B is building the research asset coverage planner and provider selection framework.
+- Phase 4.9C will implement the first production connector for the NFL schedule research asset.
+- Phase 4.9D will populate the NFL results research asset.
+- Phase 4.9E will populate the NFL team statistics research asset.
+- Phase 4.9F will populate the NFL odds research asset.
+- Phase 4.9G will populate the NFL weather research asset.
+- Phase 4.9H will populate the NFL injuries research asset.
+- Phase 4.9I will populate the NFL rest/travel research asset.
+- Phase 4.9J will populate the NFL officials/coaching research asset.
 - Phase 5.0 will materialize the historical dataset population layer.
 - Phase 5.1 will populate reusable features from certified assets and certified events.
 - Phase 5.2 will implement reusable mathematical engines.

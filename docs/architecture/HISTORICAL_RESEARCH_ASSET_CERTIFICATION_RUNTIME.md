@@ -146,6 +146,7 @@ provider -> raw acquisition cache -> integrity validation -> research asset cert
 
 Phase 4.7C completes the historical research asset certification runtime and promotes the individual research assets required by the minimum certified historical dataset.
 Phase 4.9A populates the NFL schedule research asset on top of certified assets and certified datasets.
+Phase 4.9B builds the research asset coverage planner and provider selection framework before connector upgrades are promoted.
 
 ## Out Of Scope
 

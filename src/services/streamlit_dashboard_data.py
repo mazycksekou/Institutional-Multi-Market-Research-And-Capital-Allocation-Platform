@@ -86,6 +86,7 @@ from src.data.nfl_schedule_research_asset_population import build_nfl_schedule_r
 from src.data.research_asset_lifecycle_runtime import build_research_asset_lifecycle_runtime_dashboard_snapshot
 from src.data.nfl_p0_foundation import build_nfl_p0_dashboard_snapshot
 from src.data.historical_research_database import build_historical_research_dashboard_snapshot
+from src.market_intelligence.research_asset_coverage_planner import build_research_asset_coverage_planner_dashboard_snapshot
 from src.research.feature_control import run_calibration_strategy_filter
 from src.research.history import (
     build_experiment_report_export,
@@ -3855,6 +3856,51 @@ def get_historical_research_asset_certification_snapshot_for_dashboard(
             "research_asset_readiness": {},
             "readiness_summary": {},
             "storage": {},
+            "warnings": [str(exc)],
+        }
+
+
+def get_research_asset_coverage_planner_snapshot_for_dashboard(
+    storage_path: str | Path | None = None,
+    *,
+    backend: str = "sqlite",
+    profile_id: str = "sports:nfl",
+) -> dict[str, Any]:
+    """Return a canonical research asset coverage planner readiness snapshot."""
+    try:
+        return build_research_asset_coverage_planner_dashboard_snapshot(
+            storage_path=storage_path,
+            backend=backend,
+            profile_id=profile_id,
+        )
+    except Exception as exc:
+        return {
+            "ok": False,
+            "status": "research_asset_coverage_planner_snapshot_error",
+            "schema_version": "src.market_intelligence.research_asset_coverage_planner.v1",
+            "profile": {
+                "profile_id": profile_id,
+                "profile_family": "sports" if profile_id == "sports:nfl" else "unknown",
+            },
+            "research_asset_coverage_registry": [],
+            "provider_coverage_registry": [],
+            "coverage_gap_engine": {},
+            "acquisition_plans": [],
+            "worldview_query_surface": {},
+            "planner_readiness": {},
+            "coverage_planner_readiness": {},
+            "provider_selection_summary": {},
+            "coverage_gap_summary": {},
+            "certification_snapshot": {},
+            "lifecycle_snapshot": {},
+            "identity_catalog": [],
+            "required_asset_catalog": [],
+            "future_asset_catalog": [],
+            "source_registry_report": {},
+            "source_registry_snapshot": {},
+            "recommended_next_adapters": [],
+            "coverage_summary": {},
+            "dashboard_ready": False,
             "warnings": [str(exc)],
         }
 
