@@ -32,7 +32,7 @@ Canonical live status for the repository and the required starting document for 
   - Phase 4.8 lifecycle runtime code changes are complete and validated: compileall, focused lifecycle tests, smoke, architecture, document lifecycle, and ops checks are green.
   - Phase 4.9A schedule research asset population code changes are complete and validated: compileall, focused schedule runtime tests, smoke, architecture, document lifecycle, and ops checks are green.
   - Phase 4.9B coverage planner code changes are complete and validated: compileall, focused planner tests, smoke, architecture, document lifecycle, and ops checks are green.
-  - Phase 4.9C connector code changes are complete and validated through compileall, focused NFL schedule connector tests, smoke, architecture, and document lifecycle checks; the final end-task preflight will be rerun after commit.
+  - Phase 4.9C connector code changes are complete and validated through compileall, focused NFL schedule connector tests, smoke, architecture, document lifecycle, ops checks, and the final end-task preflight; the branch is clean and pushed.
 - latest full gate result: `not run; broader regression gate deferred for this runtime-and-contract phase`
 - latest pushed commit: live branch tip (exact hash is reported in the task final report)
 

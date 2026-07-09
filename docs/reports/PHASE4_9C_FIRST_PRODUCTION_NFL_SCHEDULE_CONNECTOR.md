@@ -90,7 +90,7 @@ That keeps the schedule asset queryable later for joins to results, odds, weathe
 - smoke: passed
 - architecture: passed
 - document lifecycle: passed
-- ops workflow check: passed with the expected dirty-worktree preflight warning before commit; the end-task preflight will be rerun after commit
+- ops workflow check: passed, and the final end-task preflight passed after commit and push
 
 ## Next Phase
 
