@@ -690,7 +690,7 @@ def _build_nfl_asset_blueprints(profile_id: str) -> list[dict[str, Any]]:
             minimum_schema=True,
         ),
         asset(
-            research_asset_id="dataset.nfl.results",
+            research_asset_id="dataset.sports.nfl.results",
             research_asset_name="NFL Results",
             asset_category="dataset",
             asset_type="table_snapshot",
@@ -724,7 +724,7 @@ def _build_nfl_asset_blueprints(profile_id: str) -> list[dict[str, Any]]:
                     "source_aliases": ("manual_schedule_import", "manual_import"),
                 },
             },
-            notes=("Results remain a required minimum schema asset even though they are not yet the first connector target.",),
+            notes=("Results reuse the certified schedule identity and the existing NFL schedule/results connector family.",),
             minimum_schema=True,
         ),
         asset(

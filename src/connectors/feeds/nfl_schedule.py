@@ -28,6 +28,7 @@ NFL_SCHEDULE_PROVIDER_SOURCE_ID = "nflverse_schedules_results"
 NFL_SCHEDULE_PROVIDER_ROLE = "primary_acquisition"
 NFL_SCHEDULE_PROVIDER_SOURCE_TYPE = "deterministic_fixture"
 NFL_SCHEDULE_SOURCE_ACCESS_TYPE = "open_github_release"
+NFL_RESULTS_RESEARCH_ASSET_ID = "dataset.sports.nfl.results"
 
 
 def _normalize_text(value: Any, default: str = "") -> str:
@@ -135,6 +136,56 @@ def _field_provenance_for_row(
             "raw_field_name": field_name,
             "acquisition_timestamp": created_at,
             "raw_payload_reference": f"{source_bundle_id}:{table_name}:{_normalize_text(row.get('game_id') or row.get('schedule_id') or 'row')}:{field_name}",
+            "lineage_id": lineage_id,
+            "confidence": 1.0,
+            "quality": _normalize_text(provider_capability.get("quality_tier"), "high_priority_adapter"),
+        }
+    return provenance
+
+
+def _results_field_provenance_for_row(
+    row: Mapping[str, Any],
+    *,
+    provider_capability: Mapping[str, Any],
+    source_bundle_id: str,
+    created_at: str,
+) -> dict[str, Any]:
+    lineage_id = _stable_id(
+        "nfl_results_field_lineage",
+        source_bundle_id,
+        row.get("game_id") or row.get("result_id") or "row",
+    )
+    fields = (
+        "result_id",
+        "game_id",
+        "season",
+        "season_type",
+        "week",
+        "home_team",
+        "away_team",
+        "game_time",
+        "final_scored_at",
+        "final_score_home",
+        "final_score_away",
+        "winner_team_id",
+        "winner_team",
+        "margin",
+        "total_points",
+        "settlement_status",
+        "finalization_status",
+    )
+    provenance: dict[str, Any] = {}
+    for field_name in fields:
+        provenance[field_name] = {
+            "source_provider": NFL_SCHEDULE_PROVIDER_ID,
+            "source_provider_name": NFL_SCHEDULE_PROVIDER_NAME,
+            "source_field_name": field_name,
+            "raw_field_name": field_name,
+            "acquisition_timestamp": created_at,
+            "raw_payload_reference": (
+                f"{source_bundle_id}:nfl_results:"
+                f"{_normalize_text(row.get('game_id') or row.get('result_id') or 'row')}:{field_name}"
+            ),
             "lineage_id": lineage_id,
             "confidence": 1.0,
             "quality": _normalize_text(provider_capability.get("quality_tier"), "high_priority_adapter"),
@@ -327,6 +378,149 @@ def build_nfl_schedule_connector_bundle(
     }
 
 
+def build_nfl_results_provider_capability(
+    *,
+    dataset_version: str | None = None,
+    game_count: int = 1,
+) -> dict[str, Any]:
+    capability = build_nfl_schedule_provider_capability(
+        dataset_version=dataset_version,
+        game_count=game_count,
+    )
+    fixture = build_nfl_p0_fixture(
+        game_count=max(int(game_count or 1), 1),
+        dataset_version=dataset_version or NFL_P0_DATASET_VERSION,
+    )
+    result_rows = [dict(row) for row in fixture.get("tables", {}).get("nfl_results", [])]
+    if not result_rows:
+        raise ValueError("NFL schedule/results connector did not produce any result rows")
+    capability.update(
+        {
+            "supported_assets": [NFL_RESULTS_RESEARCH_ASSET_ID],
+            "supported_fields": sorted(str(key) for key in result_rows[0]),
+            "supported_markets": ["sports:nfl", "results"],
+            "model_inputs_supported": [
+                "game_id",
+                "season",
+                "week",
+                "home_team",
+                "away_team",
+                "final_score_home",
+                "final_score_away",
+                "final_scored_at",
+            ],
+        }
+    )
+    return capability
+
+
+def build_nfl_results_connector_bundle(
+    *,
+    game_count: int = 1,
+    dataset_version: str | None = None,
+    execution_mode: str = NFL_SCHEDULE_CONNECTOR_EXECUTION_MODE,
+) -> dict[str, Any]:
+    fixture = build_nfl_p0_fixture(
+        game_count=max(int(game_count or 1), 1),
+        dataset_version=dataset_version or NFL_P0_DATASET_VERSION,
+    )
+    raw_results_rows = [dict(row) for row in fixture.get("tables", {}).get("nfl_results", [])]
+    if not raw_results_rows:
+        raise ValueError("NFL schedule/results connector did not produce any result rows")
+
+    created_at = _normalize_text(fixture.get("created_at"), _utc_now_iso())
+    dataset_version = _normalize_text(dataset_version or fixture.get("dataset_version"), NFL_P0_DATASET_VERSION)
+    source_bundle_id = _stable_id(
+        "nfl_results_connector_bundle",
+        dataset_version,
+        raw_results_rows[0].get("game_id"),
+        raw_results_rows[0].get("season"),
+        raw_results_rows[0].get("week"),
+        execution_mode,
+    )
+    provider_capability = build_nfl_results_provider_capability(
+        dataset_version=dataset_version,
+        game_count=max(int(game_count or 1), 1),
+    )
+    results_rows = [
+        _connector_row(
+            row,
+            provider_capability=provider_capability,
+            source_bundle={
+                "source_bundle_id": source_bundle_id,
+                "acquisition_timestamp": created_at,
+            },
+            execution_mode=execution_mode,
+            table_name="nfl_results",
+        )
+        for row in raw_results_rows
+    ]
+    field_provenance = {
+        "nfl_results": _results_field_provenance_for_row(
+            results_rows[0],
+            provider_capability=provider_capability,
+            source_bundle_id=source_bundle_id,
+            created_at=created_at,
+        )
+    }
+    source_bundle = {
+        "dataset_id": f"{NFL_RESULTS_RESEARCH_ASSET_ID}.raw_acquisition_cache",
+        "dataset_name": "nfl_results_raw_acquisition_cache",
+        "source_name": provider_capability["provider_name"],
+        "source_type": NFL_SCHEDULE_PROVIDER_SOURCE_TYPE,
+        "source_key": NFL_SCHEDULE_PROVIDER_SOURCE_ID,
+        "source_family": provider_capability["source_family"],
+        "source_access_type": provider_capability["source_access_type"],
+        "provider": provider_capability["provider_id"],
+        "provider_name": provider_capability["provider_name"],
+        "provider_role": provider_capability["provider_role"],
+        "provider_sources": [NFL_SCHEDULE_PROVIDER_SOURCE_ID],
+        "provider_versions": [dataset_version],
+        "source_bundle_id": source_bundle_id,
+        "acquisition_timestamp": created_at,
+        "source_snapshot_time": _normalize_text(results_rows[0].get("source_snapshot_time"), created_at),
+        "result_timestamp": _normalize_text(results_rows[0].get("final_scored_at"), created_at),
+        "source_market_id": _normalize_text(
+            results_rows[0].get("game_id"),
+            _normalize_text(results_rows[0].get("result_id"), "nfl_results"),
+        ),
+        "source_selection_id": "result",
+        "dataset_version": dataset_version,
+        "schema_version": NFL_P0_SCHEMA_VERSION,
+        "source_tables": {"nfl_results": results_rows},
+        "tables": {"nfl_results": results_rows},
+        "source_file": "nflverse_schedules_results_fixture.csv",
+        "update_frequency": "daily",
+        "connector_id": provider_capability["connector_id"],
+        "connector_name": provider_capability["connector_name"],
+        "connector_family": provider_capability["connector_family"],
+        "connector_role": "production_connector",
+        "execution_mode": execution_mode,
+        "provider_capability": provider_capability,
+        "field_provenance": field_provenance,
+    }
+    return {
+        "ok": True,
+        "status": "connector_ready" if execution_mode == NFL_SCHEDULE_CONNECTOR_EXECUTION_MODE else "connector_live_ready",
+        "execution_mode": execution_mode,
+        "connector_id": provider_capability["connector_id"],
+        "connector_name": provider_capability["connector_name"],
+        "provider_capability": provider_capability,
+        "field_provenance": field_provenance,
+        "fixture": fixture,
+        "results_rows": results_rows,
+        "source_bundle": source_bundle,
+        "created_at": created_at,
+        "dataset_version": dataset_version,
+        "result_row_count": len(results_rows),
+        "notes": [
+            "The existing NFL schedule/results connector family supplies the results asset without a parallel connector.",
+            "The raw acquisition cache remains the first persistent hop before normalization and certification.",
+            "Field-level provenance is preserved for the raw result fields.",
+        ],
+    }
+
+
 __all__ = [
     "NFL_SCHEDULE_CONNECTOR_EXECUTION_MODE",
     "NFL_SCHEDULE_CONNECTOR_FAMILY",
@@ -335,6 +529,9 @@ __all__ = [
     "NFL_SCHEDULE_PROVIDER_ID",
     "NFL_SCHEDULE_PROVIDER_NAME",
     "NFL_SCHEDULE_PROVIDER_ROLE",
+    "NFL_RESULTS_RESEARCH_ASSET_ID",
+    "build_nfl_results_connector_bundle",
+    "build_nfl_results_provider_capability",
     "build_nfl_schedule_connector_bundle",
     "build_nfl_schedule_provider_capability",
 ]

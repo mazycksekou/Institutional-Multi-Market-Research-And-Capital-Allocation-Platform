@@ -59,7 +59,7 @@ def test_nfl_schedule_research_asset_population_docs_exist_and_cover_required_to
     assert "Phase 4.9A populates the NFL schedule research asset." in roadmap_text
     assert "Phase 4.9B builds the research asset coverage planner and provider selection framework." in roadmap_text
     assert "Phase 4.9C implements the first production connector for the NFL schedule research asset." in roadmap_text
-    assert "Phase 4.9J populates the NFL officials/coaching research asset." in roadmap_text
+    assert "Phase 4.9J populates the NFL betting splits research asset." in roadmap_text
 
     assert "docs/architecture/NFL_SCHEDULE_RESEARCH_ASSET.md" in master_index_text
     assert "docs/reports/PHASE4_9A_NFL_SCHEDULE_RESEARCH_ASSET_POPULATION.md" in master_index_text

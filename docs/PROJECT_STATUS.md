@@ -7,9 +7,9 @@ Canonical live status for the repository and the required starting document for 
 - current branch: `feature/nfl-backtesting`
 - current HEAD: live branch tip (exact hash is reported in the task final report)
 - remote tracking branch: `origin/feature/nfl-backtesting`
-- active phase: `Phase 4.9C - First Production Connector (NFL Schedule)`
+- active phase: `Phase 4.9D - NFL Results Research Asset Population (complete)`
 - active market profile: `sports:nfl`
-- active implementation lane: `NFL P0 profile-aware foundation + event-centric historical research database + master research engine specification + universal feature registry + universal math engine contracts + research asset runtime framework + historical dataset acquisition framework + historical dataset acquisition runtime + research asset source discovery and connector mapping framework + historical research asset certification runtime + research asset lifecycle runtime + NFL schedule research asset population + research asset coverage planner and provider selection framework + first production NFL schedule connector`
+- active implementation lane: `NFL P0 profile-aware foundation + event-centric historical research database + master research engine specification + universal feature registry + universal math engine contracts + research asset runtime framework + historical dataset acquisition framework + historical dataset acquisition runtime + research asset source discovery and connector mapping framework + historical research asset certification runtime + research asset lifecycle runtime + NFL schedule research asset population + research asset coverage planner and provider selection framework + first production NFL schedule connector + certified NFL results research asset`
 - completed phases:
   - `Phase 4.3.6 - Profile-Aware NFL P0 Validation`
   - `Phase 4.3.7 - Minimum Backtest Row Contract`
@@ -24,8 +24,10 @@ Canonical live status for the repository and the required starting document for 
   - `Phase 4.8 - Research Asset Lifecycle Runtime & Time & Entity Alignment Certification`
   - `Phase 4.9A - NFL Schedule Research Asset Population`
   - `Phase 4.9B - Research Asset Coverage Planner & Provider Selection Framework`
-- current phase objective: Complete the first production connector path for the NFL schedule research asset using the same shared, local-first, auditable runtime pattern while keeping the minimum certified schema and event-centric ownership model intact.
-- next phase: `Phase 4.9D - NFL Results Research Asset Population`
+  - `Phase 4.9C - First Production Connector (NFL Schedule)`
+  - `Phase 4.9D - NFL Results Research Asset Population`
+- current phase objective: Phase 4.9D is complete; the next objective is to populate the NFL odds research asset through the same canonical connector, raw cache, validation, certification, lifecycle, coverage-planning, and readiness owners without creating parallel infrastructure.
+- next phase: `Phase 4.9E - NFL Odds Research Asset Population`
 - current blockers: None
 - latest validation status:
   - Phase 4.7C runtime validation passed: compileall, certification runtime tests, smoke, architecture, document lifecycle, and ops checks are green.
@@ -33,7 +35,8 @@ Canonical live status for the repository and the required starting document for 
   - Phase 4.9A schedule research asset population code changes are complete and validated: compileall, focused schedule runtime tests, smoke, architecture, document lifecycle, and ops checks are green.
   - Phase 4.9B coverage planner code changes are complete and validated: compileall, focused planner tests, smoke, architecture, document lifecycle, and ops checks are green.
   - Phase 4.9C connector code changes are complete and validated through compileall, focused NFL schedule connector tests, smoke, architecture, document lifecycle, ops checks, and the final end-task preflight; the branch is clean and pushed.
-- latest full gate result: `not run; broader regression gate deferred for this runtime-and-contract phase`
+  - Phase 4.9D results population focused runtime tests pass for the certified schedule/results path, schedule-join rejection path, coverage planner, dashboard readiness, compileall, smoke, architecture, document lifecycle, ops checks, and the full repository test suite.
+- latest full gate result: `passed; compileall, smoke, architecture, document lifecycle, ops checks, and the full repository test suite are green`
 - latest pushed commit: live branch tip (exact hash is reported in the task final report)
 
 ## Active Canonical Rules
@@ -57,6 +60,7 @@ Canonical live status for the repository and the required starting document for 
 - Backtests never read directly from providers.
 - The master research engine specification is the next governing layer above the market-profile framework.
 - The first production NFL schedule connector is the canonical connector-backed pattern for future research asset population phases.
+- NFL results reuse the schedule event identity and cannot certify without a certified games/schedule backbone and a successful event join.
 
 ## Required Supporting Docs
 
@@ -80,6 +84,7 @@ Read these only when you need more detail than the project status page provides:
 - `docs/architecture/HISTORICAL_DATASET_ACQUISITION_FRAMEWORK.md`
 - `docs/architecture/HISTORICAL_DATASET_ACQUISITION_RUNTIME.md`
 - `docs/architecture/NFL_SCHEDULE_CONNECTOR.md`
+- `docs/architecture/NFL_RESULTS_RESEARCH_ASSET.md`
 - `docs/contracts/RESEARCH_ASSET_CONTRACT.md`
 - `docs/contracts/DATASET_REGISTRY.md`
 - `docs/contracts/DATA_LINEAGE_CONTRACT.md`
@@ -95,6 +100,7 @@ Read these only when you need more detail than the project status page provides:
 - `docs/reports/PHASE4_9A_NFL_SCHEDULE_RESEARCH_ASSET_POPULATION.md`
 - `docs/reports/PHASE4_9B_RESEARCH_ASSET_COVERAGE_PLANNER_AND_PROVIDER_SELECTION_FRAMEWORK.md`
 - `docs/reports/PHASE4_9C_FIRST_PRODUCTION_NFL_SCHEDULE_CONNECTOR.md`
+- `docs/reports/PHASE4_9D_NFL_RESULTS_RESEARCH_ASSET_POPULATION.md`
 - `docs/contracts/MINIMUM_BACKTEST_ROW_CONTRACT.md`
 - `docs/contracts/NFL_MINIMUM_BACKTEST_ROW_CONTRACT.md`
 - `docs/contracts/NFL_BACKTEST_CONTRACT.md`
@@ -113,4 +119,4 @@ Read these only when you need more detail than the project status page provides:
 
 ## Next Recommended Codex Task
 
-`Phase 4.9D - NFL Results Research Asset Population`
+`Phase 4.9E - NFL Odds Research Asset Population`

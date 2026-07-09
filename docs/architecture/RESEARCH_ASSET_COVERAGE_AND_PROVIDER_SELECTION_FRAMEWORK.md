@@ -83,11 +83,13 @@ The planner uses these scores to sort acquisition targets and recommend provider
 The planner does not acquire data.
 It emits acquisition plans only.
 
-For the current NFL lane, the first production connector target remains:
+For the current NFL lane, the next missing minimum-schema target is:
 
-- `dataset.nfl.results`
+- `dataset.nfl.odds_snapshots`
 
-The schedule asset is now serviced by the first production connector path, so the coverage planner advances to the first remaining missing asset rather than keeping schedule as the active gap. This keeps the planner coverage-driven and ensures the next connector decision is based on the remaining certified gap.
+This remains the planner's first production connector target concept: the label always points at the highest-priority unresolved certified-coverage gap.
+
+The schedule and results assets now reuse the first production connector family and are certified. The planner therefore advances to odds rather than keeping either completed asset as an active gap.
 
 That first connector path served `dataset.sports.nfl.schedule`, which is why the planner can now advance beyond the schedule asset without losing the canonical open-provider acquisition pattern.
 
@@ -111,7 +113,8 @@ The future query layer should read this planner output rather than infer coverag
 - Phase 4.9B builds this coverage planner and provider selection framework.
 - Phase 4.9C will implement the first production connector for the NFL schedule asset.
 - Phase 4.9C completed the first production connector for the NFL schedule asset.
-- Phase 4.9D now focuses on the NFL results research asset population.
+- Phase 4.9D completed the NFL results research asset population.
+- Phase 4.9E now focuses on the NFL odds research asset population.
 
 ## Reusability
 

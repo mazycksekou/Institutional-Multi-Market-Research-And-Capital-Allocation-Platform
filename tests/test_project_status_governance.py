@@ -109,7 +109,7 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "Phase 4.9A populates the NFL schedule research asset." in roadmap_text
     assert "Phase 4.9B builds the research asset coverage planner and provider selection framework." in roadmap_text
     assert "Phase 4.9C implements the first production connector for the NFL schedule research asset." in roadmap_text
-    assert "Phase 4.9J populates the NFL officials/coaching research asset." in roadmap_text
+    assert "Phase 4.9J populates the NFL betting splits research asset." in roadmap_text
     assert "Phase 5.0 materializes the historical dataset population layer." in roadmap_text
     assert "Phase 5.1 populates reusable features from certified assets and certified events." in roadmap_text
     assert "Phase 5.2 implements reusable mathematical engines." in roadmap_text

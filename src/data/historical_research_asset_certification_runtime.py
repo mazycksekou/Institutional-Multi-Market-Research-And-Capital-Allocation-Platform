@@ -328,7 +328,7 @@ def build_nfl_research_asset_certification_contracts(
     table_label_map = {
         "nfl_games": ("dataset.nfl.games", "NFL Games"),
         "nfl_schedule": (DEFAULT_NFL_SCHEDULE_RESEARCH_ASSET_ID, "NFL Schedule"),
-        "nfl_results": ("dataset.nfl.results", "NFL Results"),
+        "nfl_results": ("dataset.sports.nfl.results", "NFL Results"),
         "nfl_odds_snapshots": ("dataset.nfl.odds", "NFL Odds Snapshots"),
         "nfl_weather_snapshots": ("dataset.nfl.weather", "NFL Weather Snapshots"),
         "nfl_team_stats_snapshots": ("dataset.nfl.team_stats", "NFL Team Statistics"),

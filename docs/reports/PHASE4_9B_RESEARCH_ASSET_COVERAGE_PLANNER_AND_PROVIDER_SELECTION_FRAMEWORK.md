@@ -22,15 +22,17 @@ The phase does not download data and does not implement connectors.
 
 ## Key Coverage Result
 
-The planner now identifies the first remaining NFL connector-upgrade target as:
+After Phase 4.9D, the planner identifies the first remaining NFL minimum-schema target as:
 
-- `dataset.nfl.results`
+- `dataset.nfl.odds_snapshots`
 
-The NFL schedule asset is already serviced by the first production connector path, so it is no longer the active coverage gap. The planner advances to the next missing asset while keeping the schedule connector pattern reusable for future markets.
+This is the current first production connector target emitted by the coverage gap engine.
+
+The NFL schedule and results assets are certified through the existing connector family, so neither remains an active coverage gap.
 
 First production connector target:
 
-- `dataset.nfl.results`
+- `dataset.nfl.odds_snapshots`
 
 ## Provider Selection Result
 
@@ -63,4 +65,4 @@ The phase preserves the metadata needed for future query and evidence packages:
 
 ## Next Phase
 
-Phase 4.9C completed the first production connector for the NFL schedule asset. Phase 4.9D should now populate the NFL results asset using the same canonical runtime path.
+Phase 4.9C completed the first production connector for the NFL schedule asset, and Phase 4.9D populated the certified results asset. Phase 4.9E should now populate decision-time-safe NFL odds snapshots using the same canonical runtime path.
