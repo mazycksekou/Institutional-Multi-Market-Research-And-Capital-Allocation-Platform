@@ -194,7 +194,8 @@ provider -> raw acquisition cache -> integrity validation -> normalization -> re
 ## Phase Boundary
 
 Phase 4.8 implements the research asset lifecycle runtime and time/entity alignment certification.
-Phase 4.9 implements connector implementation for the minimum NFL schema.
+Phase 4.9A populates the NFL schedule research asset.
+Phase 4.9B populates the NFL results research asset.
 
 ## Out Of Scope
 

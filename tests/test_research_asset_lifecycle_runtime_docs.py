@@ -59,16 +59,17 @@ def test_research_asset_lifecycle_runtime_docs_exist_and_cover_required_topics()
     assert "Worldview Intelligence Review" in report_text
     assert "Readiness for Phase 4.9" in report_text
 
-    assert "Phase 4.8 - Research Asset Lifecycle Runtime & Time & Entity Alignment Certification" in project_status_text
-    assert "Phase 4.9 - Connector Implementation (Minimum NFL Schema)" in project_status_text
+    assert "Phase 4.9A - NFL Schedule Research Asset Population" in project_status_text
+    assert "Phase 4.9B - NFL Results Research Asset Population" in project_status_text
     assert "docs/architecture/RESEARCH_ASSET_LIFECYCLE_RUNTIME.md" in project_status_text
     assert "docs/reports/PHASE4_8_RESEARCH_ASSET_LIFECYCLE_RUNTIME_AND_TIME_ENTITY_ALIGNMENT_CERTIFICATION.md" in project_status_text
-    assert "Phase 4.8 - Research Asset Lifecycle Runtime & Time & Entity Alignment Certification" in next_action_text
+    assert "Phase 4.9B - NFL Results Research Asset Population" in next_action_text
     assert "Do not implement connectors." in next_action_text
     assert "Time & Entity Alignment Certification" in next_action_text
 
     assert "Phase 4.8 implements the research asset lifecycle runtime and time/entity alignment certification." in roadmap_text
-    assert "Phase 4.9 implements connector implementation for the minimum NFL schema." in roadmap_text
+    assert "Phase 4.9A populates the NFL schedule research asset." in roadmap_text
+    assert "Phase 4.9B populates the NFL results research asset." in roadmap_text
     assert "Phase 5.0 materializes the historical dataset population layer." in roadmap_text
     assert "Phase 5.1 populates reusable features from certified assets and certified events." in roadmap_text
     assert "Phase 5.2 implements reusable mathematical engines." in roadmap_text

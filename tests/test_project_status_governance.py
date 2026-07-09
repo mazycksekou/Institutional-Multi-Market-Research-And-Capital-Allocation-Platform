@@ -42,6 +42,7 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "repository homepage" in project_status_text.lower()
     assert "feature/nfl-backtesting" in project_status_text
     assert "sports:nfl" in project_status_text
+    assert "Phase 4.9A - NFL Schedule Research Asset Population" in project_status_text
     assert "Phase 4.7B - Historical Dataset Acquisition Runtime" in project_status_text
     assert "Phase 4.7C - Historical Research Asset Certification Runtime" in project_status_text
     assert "Phase 4.8 - Research Asset Lifecycle Runtime & Time & Entity Alignment Certification" in project_status_text
@@ -60,6 +61,7 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "docs/architecture/HISTORICAL_DATASET_ACQUISITION_FRAMEWORK.md" in project_status_text
     assert "docs/architecture/HISTORICAL_DATASET_ACQUISITION_RUNTIME.md" in project_status_text
     assert "docs/architecture/HISTORICAL_RESEARCH_ASSET_CERTIFICATION_RUNTIME.md" in project_status_text
+    assert "docs/architecture/NFL_SCHEDULE_RESEARCH_ASSET.md" in project_status_text
     assert "docs/architecture/RESEARCH_ASSET_SOURCE_DISCOVERY_AND_CONNECTOR_MAPPING.md" in project_status_text
     assert "docs/architecture/UNIVERSAL_FEATURE_REGISTRY.md" in project_status_text
     assert "docs/architecture/UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md" in project_status_text
@@ -72,8 +74,9 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "docs/reports/PHASE4_7A_RESEARCH_ASSET_SOURCE_DISCOVERY_AND_CONNECTOR_MAPPING.md" in project_status_text
     assert "docs/reports/PHASE4_7B_HISTORICAL_DATASET_ACQUISITION_RUNTIME.md" in project_status_text
     assert "docs/reports/PHASE4_7C_HISTORICAL_RESEARCH_ASSET_CERTIFICATION_RUNTIME.md" in project_status_text
+    assert "docs/reports/PHASE4_9A_NFL_SCHEDULE_RESEARCH_ASSET_POPULATION.md" in project_status_text
 
-    assert "Phase 4.8 - Research Asset Lifecycle Runtime & Time & Entity Alignment Certification" in next_action_text
+    assert "Phase 4.9B - NFL Results Research Asset Population" in next_action_text
     assert "time/entity alignment certification" in next_action_text.lower()
     assert "Do not implement mathematical engines yet." in next_action_text
     assert "Do not generate decision rows yet." in next_action_text
@@ -101,7 +104,9 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "Phase 4.7B builds the reusable historical dataset acquisition runtime with raw acquisition cache and integrity validation." in roadmap_text
     assert "Phase 4.7C completed the historical research asset certification runtime and gated dataset certification on asset-level evidence." in roadmap_text
     assert "Phase 4.8 implements the research asset lifecycle runtime and time/entity alignment certification." in roadmap_text
-    assert "Phase 4.9 implements connector implementation for the minimum NFL schema." in roadmap_text
+    assert "Phase 4.9A populates the NFL schedule research asset." in roadmap_text
+    assert "Phase 4.9B populates the NFL results research asset." in roadmap_text
+    assert "Phase 4.9H populates the NFL officials/coaching research asset." in roadmap_text
     assert "Phase 5.0 materializes the historical dataset population layer." in roadmap_text
     assert "Phase 5.1 populates reusable features from certified assets and certified events." in roadmap_text
     assert "Phase 5.2 implements reusable mathematical engines." in roadmap_text
@@ -121,6 +126,7 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "docs/NEXT_ACTION.md" in master_index_text
     assert "docs/STATUS_UPDATE_POLICY.md" in master_index_text
     assert "docs/architecture/MASTER_RESEARCH_ENGINE_SPECIFICATION.md" in master_index_text
+    assert "docs/architecture/NFL_SCHEDULE_RESEARCH_ASSET.md" in master_index_text
     assert "docs/architecture/RESEARCH_ASSET_SOURCE_DISCOVERY_AND_CONNECTOR_MAPPING.md" in master_index_text
     assert "docs/architecture/UNIVERSAL_FEATURE_REGISTRY.md" in master_index_text
     assert "docs/architecture/UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md" in master_index_text
@@ -136,6 +142,8 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "docs/reports/PHASE4_5C_UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md" in retention_index_text
     assert "docs/reports/PHASE4_5D_RESEARCH_ASSET_RUNTIME_FRAMEWORK.md" in retention_index_text
     assert "docs/reports/PHASE4_4_EVENT_CENTRIC_HISTORICAL_ACQUISITION.md" in retention_index_text
+    assert "docs/architecture/NFL_SCHEDULE_RESEARCH_ASSET.md" in retention_index_text
+    assert "docs/reports/PHASE4_9A_NFL_SCHEDULE_RESEARCH_ASSET_POPULATION.md" in retention_index_text
 
 
 def test_project_status_governance_has_no_duplicate_status_files() -> None:

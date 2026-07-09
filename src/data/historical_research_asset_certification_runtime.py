@@ -13,6 +13,7 @@ from src.data.data_paths import get_runtime_data_path
 from src.data.market_profile_contracts import MarketProfileContract, validate_market_profile_contract
 from src.data.market_profile_registry import get_market_profile, register_market_profile
 from src.data.nfl_p0_foundation import NFL_P0_SCHEMA_VERSION, NFL_P0_TABLE_CONTRACTS, validate_nfl_p0_rows
+from src.data.validation import validate_dataset_rows
 from src.storage.local_store import LocalStorageEngine, create_local_storage_engine
 
 
@@ -32,6 +33,7 @@ DEFAULT_HISTORICAL_RESEARCH_ASSET_CERTIFICATION_MARKET = "historical"
 DEFAULT_HISTORICAL_RESEARCH_ASSET_CERTIFICATION_MARKET_TYPE = "research_asset_certification"
 DEFAULT_HISTORICAL_RESEARCH_ASSET_CERTIFICATION_ASSET_CLASS = "historical"
 DEFAULT_HISTORICAL_RESEARCH_ASSET_CERTIFICATION_BATCH_ID = "historical.research.asset.certification.batch.001"
+DEFAULT_NFL_SCHEDULE_RESEARCH_ASSET_ID = "dataset.sports.nfl.schedule"
 
 CERTIFICATION_STATES: tuple[str, ...] = (
     "unknown",
@@ -325,7 +327,7 @@ def build_nfl_research_asset_certification_contracts(
     _ = _resolve_market_profile(profile_id)
     table_label_map = {
         "nfl_games": ("dataset.nfl.games", "NFL Games"),
-        "nfl_schedule": ("dataset.nfl.schedule", "NFL Schedule"),
+        "nfl_schedule": (DEFAULT_NFL_SCHEDULE_RESEARCH_ASSET_ID, "NFL Schedule"),
         "nfl_results": ("dataset.nfl.results", "NFL Results"),
         "nfl_odds_snapshots": ("dataset.nfl.odds", "NFL Odds Snapshots"),
         "nfl_weather_snapshots": ("dataset.nfl.weather", "NFL Weather Snapshots"),
@@ -394,6 +396,34 @@ def build_nfl_research_asset_future_contracts(
         )
         for asset_id, asset_name, asset_type in future_assets
     ]
+
+
+def build_nfl_schedule_research_asset_certification_contract(
+    *,
+    profile_id: str = DEFAULT_HISTORICAL_RESEARCH_ASSET_CERTIFICATION_PROFILE_ID,
+) -> ResearchAssetCertificationContract:
+    _ = _resolve_market_profile(profile_id)
+    table_contract = NFL_P0_TABLE_CONTRACTS["nfl_schedule"]
+    return ResearchAssetCertificationContract(
+        research_asset_id=DEFAULT_NFL_SCHEDULE_RESEARCH_ASSET_ID,
+        research_asset_name="NFL Schedule",
+        asset_category="dataset",
+        asset_type="table_snapshot",
+        source_table_name="nfl_schedule",
+        required_fields=table_contract.required_fields,
+        required_timestamps=table_contract.required_timestamps,
+        point_in_time_rules=table_contract.point_in_time_rules,
+        description=table_contract.description,
+        priority="P0",
+        required=True,
+        future_asset=False,
+        metadata={
+            "market_profile": profile_id,
+            "market_family": "sports",
+            "minimum_schema": True,
+            "dataset_role": "schedule",
+        },
+    )
 
 
 def build_nfl_research_asset_catalog(
@@ -787,6 +817,77 @@ class HistoricalResearchAssetCertificationRuntime:
             *self.build_discovered_future_asset_catalog(profile_id=profile_id),
         ]
 
+    def certify_research_asset(
+        self,
+        *,
+        asset_contract: ResearchAssetCertificationContract,
+        rows: Sequence[Mapping[str, Any]],
+        profile_id: str = DEFAULT_HISTORICAL_RESEARCH_ASSET_CERTIFICATION_PROFILE_ID,
+        validation: Mapping[str, Any] | None = None,
+        source_bundle: Mapping[str, Any] | None = None,
+        raw_acquisition_result: Mapping[str, Any] | None = None,
+        dataset_version: str | None = None,
+        created_at: str | None = None,
+        batch_id: str | None = None,
+    ) -> dict[str, Any]:
+        profile = _resolve_market_profile(profile_id)
+        profile_validation = _validate_market_profile(profile)
+        if not profile_validation["ok"]:
+            raise ValueError("; ".join(profile_validation["errors"]) or "historical research asset profile validation failed")
+
+        source_bundle = dict(source_bundle or {})
+        raw_acquisition_result = dict(raw_acquisition_result or {})
+        dataset_version = _normalize_text(
+            dataset_version,
+            _normalize_text(
+                raw_acquisition_result.get("dataset_version")
+                or source_bundle.get("dataset_version")
+                or (rows[0].get("dataset_version") if rows else ""),
+                "historical.research.v1",
+            ),
+        )
+        created_at = _normalize_text(created_at, _utc_now_iso())
+        batch_id = _normalize_text(batch_id, f"{dataset_version}.batch.001")
+        normalized_rows = self._normalize_source_asset_rows(rows, source_bundle=source_bundle, raw_acquisition_result=raw_acquisition_result)
+        validation_payload = dict(
+            validation
+            or (
+                validate_nfl_p0_rows(asset_contract.source_table_name, normalized_rows)
+                if asset_contract.source_table_name in NFL_P0_TABLE_CONTRACTS
+                else validate_dataset_rows(normalized_rows, required_fields=asset_contract.required_fields)
+            )
+        )
+        certification_state, certification_reason, failure_reason = self._classify_asset_state(asset_contract, normalized_rows, validation_payload)
+        row = build_research_asset_certification_row(
+            profile=profile,
+            asset_contract=asset_contract,
+            rows=normalized_rows,
+            validation=validation_payload,
+            dataset_version=dataset_version,
+            batch_id=batch_id,
+            created_at=created_at,
+            source_bundle=source_bundle,
+            raw_acquisition_result=raw_acquisition_result,
+            certification_state=certification_state,
+            certification_reason=certification_reason,
+            failure_reason=failure_reason,
+        )
+        self.store.upsert("historical_research_asset_certifications", row, key_columns=("certification_id",))
+        return {
+            "ok": certification_state == "certified",
+            "status": certification_state,
+            "profile": profile.as_dict(),
+            "dataset_version": dataset_version,
+            "batch_id": batch_id,
+            "asset_contract": asset_contract.as_dict(),
+            "normalized_rows": normalized_rows,
+            "validation": validation_payload,
+            "research_asset_certification": row,
+            "certification_state": certification_state,
+            "certification_reason": certification_reason,
+            "failure_reason": failure_reason,
+        }
+
     @staticmethod
     def _normalize_source_asset_rows(
         rows: Sequence[Mapping[str, Any]],
@@ -860,25 +961,17 @@ class HistoricalResearchAssetCertificationRuntime:
         asset_rows: list[dict[str, Any]] = []
         for asset_contract in self.build_required_asset_catalog(profile_id=profile.profile_id):
             rows = source_tables.get(asset_contract.source_table_name, [])
-            normalized_rows = self._normalize_source_asset_rows(rows, source_bundle=source_bundle, raw_acquisition_result=raw_acquisition_result)
-            validation = validate_nfl_p0_rows(asset_contract.source_table_name, normalized_rows)
-            certification_state, certification_reason, failure_reason = self._classify_asset_state(asset_contract, normalized_rows, validation)
-            row = build_research_asset_certification_row(
-                profile=profile,
+            asset_result = self.certify_research_asset(
                 asset_contract=asset_contract,
-                rows=normalized_rows,
-                validation=validation,
-                dataset_version=dataset_version,
-                batch_id=batch_id,
-                created_at=created_at,
+                rows=rows,
+                profile_id=profile.profile_id,
                 source_bundle=source_bundle,
                 raw_acquisition_result=raw_acquisition_result,
-                certification_state=certification_state,
-                certification_reason=certification_reason,
-                failure_reason=failure_reason,
+                dataset_version=dataset_version,
+                created_at=created_at,
+                batch_id=batch_id,
             )
-            self.store.upsert("historical_research_asset_certifications", row, key_columns=("certification_id",))
-            asset_rows.append(row)
+            asset_rows.append(dict(asset_result["research_asset_certification"]))
 
         dataset_row = build_historical_dataset_certification_row(
             profile=profile,
@@ -1160,6 +1253,7 @@ __all__ = [
     "DEFAULT_HISTORICAL_RESEARCH_ASSET_CERTIFICATION_SOURCE_NAME",
     "DEFAULT_HISTORICAL_RESEARCH_ASSET_CERTIFICATION_SOURCE_TYPE",
     "DEFAULT_HISTORICAL_RESEARCH_ASSET_CERTIFICATION_STORAGE_PATH",
+    "DEFAULT_NFL_SCHEDULE_RESEARCH_ASSET_ID",
     "HISTORICAL_RESEARCH_ASSET_CERTIFICATION_SCHEMA_VERSION",
     "HistoricalResearchAssetCertificationRuntime",
     "ResearchAssetCertificationContract",
@@ -1167,6 +1261,7 @@ __all__ = [
     "build_historical_research_asset_certification_runtime_dashboard_snapshot",
     "build_nfl_research_asset_catalog",
     "build_nfl_research_asset_certification_contracts",
+    "build_nfl_schedule_research_asset_certification_contract",
     "build_nfl_research_asset_future_contracts",
     "build_research_asset_certification_row",
     "get_historical_research_asset_certification_snapshot_for_dashboard",

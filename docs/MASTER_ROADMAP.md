@@ -47,7 +47,7 @@ The repository does **not** skip discovery, blueprinting, validation, or reprodu
 
 The historical research database now follows a shared chain that future markets can reuse:
 
-Provider -> Raw Acquisition Cache -> Integrity Validation -> Normalization -> Research Asset Certification -> Dataset Certification -> Historical Research Database -> Master Research Engine Specification -> Universal Feature Registry -> Universal Math Engine Contracts -> Research Asset Runtime Framework -> Historical Dataset Acquisition Framework -> Historical Research Asset Certification Runtime -> Research Asset Lifecycle Runtime -> Connector Implementation -> Historical Dataset Population -> Feature Population -> Mathematical Engine Population -> Signal Population -> Decision Rows -> Backtesting
+Provider -> Raw Acquisition Cache -> Integrity Validation -> Normalization -> Research Asset Certification -> Dataset Certification -> Historical Research Database -> Master Research Engine Specification -> Universal Feature Registry -> Universal Math Engine Contracts -> Research Asset Runtime Framework -> Historical Dataset Acquisition Framework -> Historical Research Asset Certification Runtime -> Research Asset Lifecycle Runtime -> Research Asset Source Discovery And Connector Mapping -> Research Asset Population -> Historical Dataset Population -> Feature Population -> Mathematical Engine Population -> Signal Population -> Decision Rows -> Backtesting
 
 Phase 4.4 established the event-centric historical acquisition foundation.
 Phase 4.5A defined the master research engine specification.
@@ -60,7 +60,14 @@ Phase 4.7A discovers and maps research asset sources and connector families for 
 Phase 4.7B builds the reusable historical dataset acquisition runtime with raw acquisition cache and integrity validation.
 Phase 4.7C certifies the individual research assets required by the minimum certified historical dataset and then certifies the dataset once every required asset passes.
 Phase 4.8 implements the research asset lifecycle runtime and time/entity alignment certification.
-Phase 4.9 implements connector implementation for the minimum NFL schema.
+Phase 4.9A populates the NFL schedule research asset.
+Phase 4.9B populates the NFL results research asset.
+Phase 4.9C populates the NFL team statistics research asset.
+Phase 4.9D populates the NFL odds research asset.
+Phase 4.9E populates the NFL weather research asset.
+Phase 4.9F populates the NFL injuries research asset.
+Phase 4.9G populates the NFL rest/travel research asset.
+Phase 4.9H populates the NFL officials/coaching research asset.
 Phase 5.0 materializes the historical dataset population layer.
 Phase 5.1 populates reusable features from certified assets and certified events.
 Phase 5.2 implements reusable mathematical engines.
@@ -90,7 +97,14 @@ Current NFL work is in Phase 4:
 - Phase 4.7B will build the reusable historical dataset acquisition runtime with raw acquisition cache and integrity validation.
 - Phase 4.7C completed the historical research asset certification runtime and gated dataset certification on asset-level evidence.
 - Phase 4.8 will implement the research asset lifecycle runtime and time/entity alignment certification.
-- Phase 4.9 will implement connector implementation for the minimum NFL schema.
+- Phase 4.9A is populating the NFL schedule research asset.
+- Phase 4.9B will populate the NFL results research asset.
+- Phase 4.9C will populate the NFL team statistics research asset.
+- Phase 4.9D will populate the NFL odds research asset.
+- Phase 4.9E will populate the NFL weather research asset.
+- Phase 4.9F will populate the NFL injuries research asset.
+- Phase 4.9G will populate the NFL rest/travel research asset.
+- Phase 4.9H will populate the NFL officials/coaching research asset.
 - Phase 5.0 will materialize the historical dataset population layer.
 - Phase 5.1 will populate reusable features from certified assets and certified events.
 - Phase 5.2 will implement reusable mathematical engines.
