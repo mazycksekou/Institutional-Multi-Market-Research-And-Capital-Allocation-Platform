@@ -331,8 +331,8 @@ def build_nfl_research_asset_certification_contracts(
         "nfl_schedule": (DEFAULT_NFL_SCHEDULE_RESEARCH_ASSET_ID, "NFL Schedule"),
         "nfl_results": ("dataset.sports.nfl.results", "NFL Results"),
         "nfl_odds_snapshots": (DEFAULT_NFL_ODDS_RESEARCH_ASSET_ID, "NFL Odds Snapshots"),
-        "nfl_weather_snapshots": ("dataset.nfl.weather", "NFL Weather Snapshots"),
-        "nfl_team_stats_snapshots": ("dataset.nfl.team_stats", "NFL Team Statistics"),
+        "nfl_weather_snapshots": ("dataset.nfl.weather_snapshots", "NFL Weather Snapshots"),
+        "nfl_team_stats_snapshots": ("dataset.nfl.team_stats_snapshots", "NFL Team Statistics"),
     }
     contracts: list[ResearchAssetCertificationContract] = []
     for table_name, (asset_id, asset_name) in table_label_map.items():

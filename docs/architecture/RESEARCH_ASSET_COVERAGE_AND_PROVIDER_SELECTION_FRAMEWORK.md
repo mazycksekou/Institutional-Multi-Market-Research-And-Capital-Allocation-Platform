@@ -85,11 +85,11 @@ It emits acquisition plans only.
 
 For the current NFL lane, the next missing minimum-schema target is:
 
-- `dataset.nfl.weather_snapshots`
+- `dataset.nfl.team_stats_snapshots`
 
 This remains the planner's first production connector target concept: the label always points at the highest-priority unresolved certified-coverage gap.
 
-The schedule and results assets now reuse the first production connector family and are certified. The planner therefore advances to odds rather than keeping either completed asset as an active gap.
+The schedule, results, odds, and weather assets now reuse the shared connector families and are certified. The planner therefore advances to team statistics rather than keeping completed assets as active gaps.
 
 That first connector path served `dataset.sports.nfl.schedule`, which is why the planner can now advance beyond the schedule asset without losing the canonical open-provider acquisition pattern.
 
@@ -115,7 +115,8 @@ The future query layer should read this planner output rather than infer coverag
 - Phase 4.9C completed the first production connector for the NFL schedule asset.
 - Phase 4.9D completed the NFL results research asset population.
 - Phase 4.9E completed the NFL odds research asset population.
-- Phase 4.9F now focuses on the NFL weather research asset population.
+- Phase 4.9F completed the NFL weather research asset population.
+- Phase 4.9G now focuses on the NFL injuries research asset population.
 
 ## Reusability
 

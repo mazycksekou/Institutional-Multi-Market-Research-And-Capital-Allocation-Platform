@@ -2,9 +2,9 @@
 
 This register classifies every tracked document under `docs/` so the repository can keep durable knowledge, archive historical evidence, and identify temporary work products that should eventually be consolidated or deleted.
 
-- scanned_files: 1158
-- working: 70
-- active: 124
+- scanned_files: 1172
+- working: 77
+- active: 131
 - decision_captured: 14
 - consolidated: 6
 - archived: 944
@@ -1175,6 +1175,8 @@ This register classifies every tracked document under `docs/` so the repository 
 | docs/reports/PHASE4_9D_NFL_RESULTS_RESEARCH_ASSET_POPULATION.md | Phase 4.9D NFL Results Research Asset Population | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; docs/PROJECT_STATUS.md; tests/test_nfl_results_research_asset_population_docs.py | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/architecture/NFL_ODDS_RESEARCH_ASSET.md | NFL Odds Research Asset | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/PROJECT_STATUS.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/reports/PHASE4_9E_NFL_ODDS_RESEARCH_ASSET_POPULATION.md | Phase 4.9E NFL Odds Research Asset Population | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; docs/PROJECT_STATUS.md; tests/test_nfl_odds_research_asset_population_docs.py | Temporary work product or active discovery artifact | KEEP ACTIVE |
+| docs/architecture/NFL_WEATHER_RESEARCH_ASSET.md | NFL Weather Research Asset | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/PROJECT_STATUS.md | Current authoritative documentation | KEEP ACTIVE |
+| docs/reports/PHASE4_9F_NFL_WEATHER_RESEARCH_ASSET_POPULATION.md | Phase 4.9F NFL Weather Research Asset Population | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; docs/PROJECT_STATUS.md; tests/test_nfl_weather_research_asset_population_docs.py | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/PROFILE_AWARE_NFL_P0_VALIDATION.md | Profile-Aware NFL P0 Validation | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/PROJECT_ENTRYPOINT_AUDIT.md | Project Entrypoint Audit | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; tests/test_project_status_governance.py | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/PROJECT_STATUS_GOVERNANCE_DISCOVERY.md | Project Status Governance Discovery | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; docs/reports/MASTER_DOC_CONSOLIDATION_AUDIT.md; tests/test_project_status_governance.py | Temporary work product or active discovery artifact | KEEP ACTIVE |

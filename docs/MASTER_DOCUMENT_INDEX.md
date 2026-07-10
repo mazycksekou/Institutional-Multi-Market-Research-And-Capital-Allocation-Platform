@@ -45,6 +45,7 @@ This index points readers to the current truth and the durable historical entry 
 - `docs/architecture/NFL_SCHEDULE_RESEARCH_ASSET.md` - NFL Schedule Research Asset
 - `docs/architecture/NFL_SCHEDULE_CONNECTOR.md` - NFL Schedule Connector
 - `docs/architecture/NFL_RESULTS_RESEARCH_ASSET.md` - NFL Results Research Asset
+- `docs/architecture/NFL_WEATHER_RESEARCH_ASSET.md` - NFL Weather Research Asset
 - `docs/architecture/RESEARCH_ASSET_SOURCE_DISCOVERY_AND_CONNECTOR_MAPPING.md` - Research Asset Source Discovery And Connector Mapping
 - `docs/architecture/RESEARCH_ASSET_COVERAGE_AND_PROVIDER_SELECTION_FRAMEWORK.md` - Research Asset Coverage And Provider Selection Framework
 - `docs/architecture/RESEARCH_PLATFORM_ARCHITECTURE.md` - Research Platform Architecture
@@ -142,6 +143,8 @@ This index points readers to the current truth and the durable historical entry 
 - `docs/reports/PHASE4_9D_NFL_RESULTS_RESEARCH_ASSET_POPULATION.md` - Phase 4.9D NFL Results Research Asset Population
 - `docs/architecture/NFL_ODDS_RESEARCH_ASSET.md` - NFL Odds Research Asset
 - `docs/reports/PHASE4_9E_NFL_ODDS_RESEARCH_ASSET_POPULATION.md` - Phase 4.9E NFL Odds Research Asset Population
+- `docs/architecture/NFL_WEATHER_RESEARCH_ASSET.md` - NFL Weather Research Asset
+- `docs/reports/PHASE4_9F_NFL_WEATHER_RESEARCH_ASSET_POPULATION.md` - Phase 4.9F NFL Weather Research Asset Population
 
 ### INDEX
 - `docs/DOCUMENT_RETENTION_INDEX.md` - Policy Note
