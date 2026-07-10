@@ -83,7 +83,7 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "docs/reports/PHASE4_9A_NFL_SCHEDULE_RESEARCH_ASSET_POPULATION.md" in project_status_text
     assert "docs/reports/PHASE4_9E_NFL_ODDS_RESEARCH_ASSET_POPULATION.md" in project_status_text
 
-    assert "Phase 4.9H - NFL Team Statistics Research Asset Population" in next_action_text
+    assert "Phase 5.0 - Historical Dataset Population Layer" in next_action_text
     assert "canonical connector" in next_action_text.lower()
     assert "Do not implement mathematical engines yet." in next_action_text
     assert "Do not generate decision rows yet." in next_action_text

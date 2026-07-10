@@ -67,10 +67,9 @@ Phase 4.9D populates the NFL results research asset.
 Phase 4.9E completes the NFL odds research asset population and certifies its decision-time-safe join to the schedule and results backbone.
 Phase 4.9F completed the NFL weather research asset population and certified its forecast-time-safe join to the schedule, results, and odds backbone.
 Phase 4.9G completed the NFL injuries research asset population and certified its report-time-safe join to the schedule, results, odds, and weather backbone.
-Phase 4.9H populates the NFL team statistics research asset.
-Phase 4.9I populates the NFL player statistics research asset.
-Phase 4.9J populates the NFL betting splits research asset.
+Phase 4.9H completed the NFL team statistics research asset population and closed the known minimum-schema asset gap.
 Phase 5.0 materializes the historical dataset population layer.
+Phase 5.0 materializes the historical dataset population layer from the certified minimum-schema asset set.
 Phase 5.1 populates reusable features from certified assets and certified events.
 Phase 5.2 implements reusable mathematical engines.
 Phase 5.3 implements reusable signals.
@@ -78,6 +77,13 @@ Phase 5.4 generates decision rows from events, markets, selections, and feature 
 Phase 5.5 begins baseline backtesting from frozen, certified inputs.
 Phase 5.6 performs validation and hardening on the production research engine path.
 Later phases continue with paper trading, incremental live updates, Worldview Intelligence, and controlled production deployment.
+
+Deferred enrichment lanes after the first minimum-schema dataset path remains stable:
+
+- Phase 4.9I - NFL Player Statistics Research Asset Population
+- Phase 4.9J - NFL Betting Splits Research Asset Population
+Phase 4.9I populates the NFL player statistics research asset.
+Phase 4.9J populates the NFL betting splits research asset.
 
 ## Current Phase Focus
 
@@ -106,16 +112,15 @@ Current NFL work is in Phase 4:
 - Phase 4.9E completed the NFL odds research asset population and certified its decision-time-safe join to the schedule and results backbone.
 - Phase 4.9F completed the NFL weather research asset population and certified its forecast-time-safe join to the schedule, results, and odds backbone.
 - Phase 4.9G completed the NFL injuries research asset population and certified its report-time-safe join to the schedule, results, odds, and weather backbone.
-- Phase 4.9H will populate the NFL team statistics research asset.
-- Phase 4.9I will populate the NFL player statistics research asset.
-- Phase 4.9J will populate the NFL betting splits research asset.
-- Phase 5.0 will materialize the historical dataset population layer.
+- Phase 4.9H completed the NFL team statistics research asset population and closed the known minimum-schema asset gap.
+- Phase 5.0 will materialize the historical dataset population layer from the certified minimum-schema asset set.
 - Phase 5.1 will populate reusable features from certified assets and certified events.
 - Phase 5.2 will implement reusable mathematical engines.
 - Phase 5.3 will implement reusable signals.
 - Phase 5.4 will generate decision rows from events, markets, selections, and feature snapshots.
 - Phase 5.5 will begin baseline backtesting against the minimum certified schema.
 - Phase 5.6 will perform validation and hardening on the production research engine path.
+- Phase 4.9I and Phase 4.9J remain deferred enrichment asset lanes after the first baseline dataset path is established.
 
 The master research engine specification is already the canonical name for the broader research-engine scope. If the repository later needs an even broader top-level research asset registry, that should be treated as a separate future phase rather than another rename of this specification.
 
@@ -138,6 +143,7 @@ The master research engine specification is already the canonical name for the b
 - Canonical NFL odds research asset: `docs/architecture/NFL_ODDS_RESEARCH_ASSET.md`
 - Canonical NFL weather research asset: `docs/architecture/NFL_WEATHER_RESEARCH_ASSET.md`
 - Canonical NFL injuries research asset: `docs/architecture/NFL_INJURIES_RESEARCH_ASSET.md`
+- Canonical NFL team statistics research asset: `docs/architecture/NFL_TEAM_STATISTICS_RESEARCH_ASSET.md`
 
 ## Worldview Constraint
 

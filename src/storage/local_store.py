@@ -387,6 +387,15 @@ TABLE_DEFINITIONS: dict[str, list[tuple[str, str]]] = {
         ("team_id", "TEXT"),
         ("team_name", "TEXT"),
         ("opponent_team_id", "TEXT"),
+        ("team_side", "TEXT"),
+        ("source_record_id", "TEXT"),
+        ("source_retrieved_at", "TEXT"),
+        ("measurement_period", "TEXT"),
+        ("statistic_context", "TEXT"),
+        ("statistic_window_type", "TEXT"),
+        ("window_start_time", "TEXT"),
+        ("team_stats_cutoff_time", "TEXT"),
+        ("window_excludes_current_event", "INTEGER"),
         ("rest_days", "REAL"),
         ("travel_distance_miles", "REAL"),
         ("travel_timezone_change", "REAL"),
@@ -404,6 +413,10 @@ TABLE_DEFINITIONS: dict[str, list[tuple[str, str]]] = {
         ("injury_adjusted_availability", "REAL"),
         ("position_group", "TEXT"),
         ("efficiency_window_games", "INTEGER"),
+        ("metric_units_json", "TEXT"),
+        ("field_provenance_json", "TEXT"),
+        ("alignment_status", "TEXT"),
+        ("certification_state", "TEXT"),
         ("source_signature", "TEXT"),
     ),
     "historical_acquisition_batches": _historical_stage_columns(
@@ -771,8 +784,18 @@ class LocalStorageEngine:
 
     def ensure_schema(self) -> None:
         for table_name, columns in TABLE_DEFINITIONS.items():
-            sql = _build_create_table_sql(table_name, _merged_schema_columns(columns))
+            merged_columns = _merged_schema_columns(columns)
+            sql = _build_create_table_sql(table_name, merged_columns)
             self.execute(sql)
+            existing_columns = set(self.table_columns(table_name))
+            for column_name, column_type in merged_columns:
+                if column_name in existing_columns:
+                    continue
+                alter_type = column_type.replace(" PRIMARY KEY", "")
+                self.execute(
+                    f"ALTER TABLE {_quote_identifier(table_name)} "
+                    f"ADD COLUMN {_quote_identifier(column_name)} {alter_type}"
+                )
 
     def table_exists(self, table_name: str) -> bool:
         if self.backend == "sqlite":

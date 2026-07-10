@@ -54,7 +54,7 @@ def test_research_asset_source_discovery_and_connector_mapping_docs_exist_and_co
     assert "Readiness For Phase 4.7B - Historical Dataset Acquisition Runtime" in report_text
 
     assert "Phase 4.7B - Historical Dataset Acquisition Runtime" in project_status_text
-    assert "Phase 4.9H - NFL Team Statistics Research Asset Population" in next_action_text
+    assert "Phase 5.0 - Historical Dataset Population Layer" in next_action_text
     assert "docs/architecture/RESEARCH_ASSET_SOURCE_DISCOVERY_AND_CONNECTOR_MAPPING.md" in project_status_text
     assert "docs/reports/PHASE4_7A_RESEARCH_ASSET_SOURCE_DISCOVERY_AND_CONNECTOR_MAPPING.md" in project_status_text
     assert "Phase 4.7A" in roadmap_text

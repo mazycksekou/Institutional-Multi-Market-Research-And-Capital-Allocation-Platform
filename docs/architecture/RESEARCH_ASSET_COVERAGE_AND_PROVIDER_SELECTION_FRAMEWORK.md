@@ -83,15 +83,13 @@ The planner uses these scores to sort acquisition targets and recommend provider
 The planner does not acquire data.
 It emits acquisition plans only.
 
-For the current NFL lane, the next missing minimum-schema target is:
+For the current NFL lane, the required minimum-schema asset gaps are resolved once `dataset.nfl.team_stats_snapshots` is certified.
 
-- `dataset.nfl.team_stats_snapshots`
+At that point the planner clears the first production connector target instead of manufacturing another required gap.
+Future enrichment assets still remain visible, but they are tracked separately from the minimum-schema readiness decision.
 
-This remains the planner's first production connector target concept: the label always points at the highest-priority unresolved certified-coverage gap.
-
-The schedule, results, odds, and weather assets now reuse the shared connector families and are certified. The planner therefore advances to team statistics rather than keeping completed assets as active gaps.
-
-That first connector path served `dataset.sports.nfl.schedule`, which is why the planner can now advance beyond the schedule asset without losing the canonical open-provider acquisition pattern.
+The schedule, results, odds, weather, injuries, and team-statistics assets now reuse the shared connector families and certification path without keeping completed assets in the unresolved-gap set.
+The first connector lane was proven on `dataset.sports.nfl.schedule`, which remains the canonical open-provider acquisition pattern for later minimum-schema assets and dataset population.
 
 ## Worldview And Query Readiness
 
@@ -117,7 +115,8 @@ The future query layer should read this planner output rather than infer coverag
 - Phase 4.9E completed the NFL odds research asset population.
 - Phase 4.9F completed the NFL weather research asset population.
 - Phase 4.9G completed the NFL injuries research asset population.
-- Phase 4.9H now focuses on the NFL team statistics research asset population.
+- Phase 4.9H completed the NFL team statistics research asset population.
+- Phase 5.0 now focuses on the historical dataset population layer because the certified minimum-schema asset gap is closed.
 
 ## Reusability
 

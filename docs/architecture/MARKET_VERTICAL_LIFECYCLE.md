@@ -80,11 +80,18 @@ Phase 4.9E -> NFL Odds Research Asset Population
 Phase 4.9F -> NFL Weather Research Asset Population
 Phase 4.9G -> NFL Injuries Research Asset Population
 Phase 4.9H -> NFL Team Statistics Research Asset Population
-Phase 4.9I -> NFL Player Statistics Research Asset Population
-Phase 4.9J -> NFL Betting Splits Research Asset Population
-Phase 5.0 -> Decision Row Generation
-Phase 5.1 -> Baseline Backtesting
-Phase 5.2 -> Walk-Forward Validation
+Phase 5.0 -> Historical Dataset Population Layer
+Phase 5.1 -> Feature Population
+Phase 5.2 -> Mathematical Engine Population
+Phase 5.3 -> Signal Population
+Phase 5.4 -> Decision Row Generation
+Phase 5.5 -> Baseline Backtesting
+Phase 5.6 -> Walk-Forward Validation
+
+Deferred enrichment lanes after the first minimum-schema dataset path is stable:
+
+- Phase 4.9I -> NFL Player Statistics Research Asset Population
+- Phase 4.9J -> NFL Betting Splits Research Asset Population
 
 ## Worldview Integration Rule
 

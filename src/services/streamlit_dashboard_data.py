@@ -84,6 +84,7 @@ from src.data.historical_research_asset_certification_runtime import build_histo
 from src.data.historical_dataset_acquisition_runtime import build_historical_dataset_acquisition_runtime_dashboard_snapshot
 from src.data.nfl_injuries_research_asset_population import build_nfl_injuries_research_asset_dashboard_snapshot
 from src.data.nfl_odds_research_asset_population import build_nfl_odds_research_asset_dashboard_snapshot
+from src.data.nfl_team_statistics_research_asset_population import build_nfl_team_statistics_research_asset_dashboard_snapshot
 from src.data.nfl_weather_research_asset_population import build_nfl_weather_research_asset_dashboard_snapshot
 from src.data.nfl_schedule_research_asset_population import build_nfl_schedule_research_asset_dashboard_snapshot
 from src.data.nfl_results_research_asset_population import build_nfl_results_research_asset_dashboard_snapshot
@@ -4074,6 +4075,75 @@ def get_nfl_injuries_research_asset_snapshot_for_dashboard(
             "coverage_planner_snapshot": {},
             "join_validation": {},
             "storage": {},
+            "warnings": [str(exc)],
+        }
+
+
+def get_nfl_team_statistics_research_asset_snapshot_for_dashboard(
+    storage_path: str | Path | None = None,
+    *,
+    backend: str = "sqlite",
+    fixture: Mapping[str, Any] | None = None,
+    source_bundle: Mapping[str, Any] | None = None,
+    raw_acquisition_result: Mapping[str, Any] | None = None,
+    normalized_rows: Sequence[Mapping[str, Any]] | None = None,
+    validation: Mapping[str, Any] | None = None,
+    certification_result: Mapping[str, Any] | None = None,
+    dataset_result: Mapping[str, Any] | None = None,
+    lifecycle_result: Mapping[str, Any] | None = None,
+    join_validation: Mapping[str, Any] | None = None,
+    coverage_planner_snapshot: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Return the canonical NFL team statistics research asset readiness snapshot."""
+    try:
+        return build_nfl_team_statistics_research_asset_dashboard_snapshot(
+            storage_path=storage_path,
+            backend=backend,
+            fixture=fixture,
+            source_bundle=source_bundle,
+            raw_acquisition_result=raw_acquisition_result,
+            normalized_rows=normalized_rows,
+            validation=validation,
+            certification_result=certification_result,
+            dataset_result=dataset_result,
+            lifecycle_result=lifecycle_result,
+            join_validation=join_validation,
+            coverage_planner_snapshot=coverage_planner_snapshot,
+        )
+    except Exception as exc:
+        return {
+            "ok": False,
+            "status": "nfl_team_statistics_research_asset_snapshot_error",
+            "asset_id": "dataset.nfl.team_stats_snapshots",
+            "asset_name": "NFL Team Statistics Snapshots",
+            "raw_acquisition_status": "missing",
+            "integrity_status": "missing",
+            "alignment_status": "missing",
+            "lifecycle_state": "missing",
+            "certification_status": "missing",
+            "dataset_certification_status": "missing",
+            "row_count": 0,
+            "rows_produced": 0,
+            "coverage_seasons": [],
+            "missing_required_fields": [],
+            "alignment_failures": [],
+            "source_provider_role": {},
+            "readiness_percentage": 0.0,
+            "source_bundle": {},
+            "validation": {},
+            "research_asset_certifications": [],
+            "dataset_certifications": [],
+            "research_asset_lifecycles": [],
+            "research_asset_alignment_certifications": [],
+            "normalized_rows": [],
+            "connector_state": {},
+            "field_provenance": {},
+            "provenance_completeness": False,
+            "coverage_planner_readiness": {},
+            "coverage_planner_snapshot": {},
+            "join_validation": {},
+            "storage": {},
+            "unresolved_blockers": [],
             "warnings": [str(exc)],
         }
 

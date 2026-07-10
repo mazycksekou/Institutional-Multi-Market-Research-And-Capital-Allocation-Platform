@@ -620,7 +620,11 @@ class HistoricalDatasetAcquisitionRuntime:
                 "step_index": index,
                 "payload_json": _as_json(lineage_payload),
             }
-            self.platform.store.insert("lineage_edges", lineage_edge)
+            self.platform.store.upsert(
+                "lineage_edges",
+                lineage_edge,
+                key_columns=("lineage_edge_id",),
+            )
             lineage_edges.append(lineage_edge)
 
         normalization_request = self.build_normalization_request(

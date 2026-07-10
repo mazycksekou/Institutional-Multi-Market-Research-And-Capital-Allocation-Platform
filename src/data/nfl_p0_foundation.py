@@ -96,6 +96,21 @@ def _as_json(value: Any) -> str:
     return json.dumps(value, default=default, ensure_ascii=False, sort_keys=True)
 
 
+def _load_json_mapping(value: Any) -> dict[str, Any]:
+    if isinstance(value, Mapping):
+        return {str(key): payload for key, payload in value.items()}
+    if value in (None, ""):
+        return {}
+    if isinstance(value, str):
+        try:
+            parsed = json.loads(value)
+        except json.JSONDecodeError:
+            return {}
+        if isinstance(parsed, Mapping):
+            return {str(key): payload for key, payload in parsed.items()}
+    return {}
+
+
 def _source_signature(source_name: str, source_snapshot_time: str) -> str:
     return f"{source_name}:{source_snapshot_time}"
 
@@ -215,6 +230,43 @@ class NflP0TableContract:
             "result_only": self.result_only,
             "metadata": dict(self.metadata),
         }
+
+
+NFL_TEAM_STATS_ALLOWED_MEASUREMENT_PERIODS: tuple[str, ...] = (
+    "rolling_prior_games",
+    "season_to_date_excluding_current_event",
+    "prior_game_realized",
+)
+
+NFL_TEAM_STATS_ALLOWED_CONTEXTS: tuple[str, ...] = (
+    "pregame",
+    "pregame_provider_snapshot",
+)
+
+NFL_TEAM_STATS_ALLOWED_WINDOW_TYPES: tuple[str, ...] = (
+    "rolling_prior_games_excluding_current_event",
+    "season_to_date_excluding_current_event",
+    "prior_game_only",
+)
+
+NFL_TEAM_STATS_METRIC_UNITS: dict[str, str] = {
+    "rest_days": "days",
+    "travel_distance_miles": "miles",
+    "travel_timezone_change": "hours",
+    "offensive_efficiency": "rating",
+    "defensive_efficiency": "rating",
+    "pace": "plays_per_game",
+    "play_volume": "plays",
+    "scoring_efficiency": "points_per_drive",
+    "turnover_rate": "ratio",
+    "red_zone_efficiency": "ratio",
+    "third_down_efficiency": "ratio",
+    "special_teams_efficiency": "rating",
+    "coaching_continuity": "ratio",
+    "roster_continuity": "ratio",
+    "injury_adjusted_availability": "ratio",
+    "efficiency_window_games": "games",
+}
 
 
 NFL_P0_TABLE_CONTRACTS: dict[str, NflP0TableContract] = {
@@ -442,11 +494,20 @@ NFL_P0_TABLE_CONTRACTS: dict[str, NflP0TableContract] = {
             "team_id",
             "team_name",
             "opponent_team_id",
+            "team_side",
             "game_id",
             "kickoff_time",
             "season",
             "season_type",
             "week",
+            "source_record_id",
+            "source_retrieved_at",
+            "measurement_period",
+            "statistic_context",
+            "statistic_window_type",
+            "window_start_time",
+            "team_stats_cutoff_time",
+            "window_excludes_current_event",
             "rest_days",
             "travel_distance_miles",
             "travel_timezone_change",
@@ -464,11 +525,15 @@ NFL_P0_TABLE_CONTRACTS: dict[str, NflP0TableContract] = {
             "injury_adjusted_availability",
             "position_group",
             "efficiency_window_games",
+            "metric_units_json",
+            "field_provenance_json",
             "source_name",
             "source_type",
             "source_snapshot_time",
             "snapshot_time",
             "decision_time",
+            "alignment_status",
+            "certification_state",
             "dataset_version",
             "lineage_id",
             "schema_version",
@@ -476,12 +541,29 @@ NFL_P0_TABLE_CONTRACTS: dict[str, NflP0TableContract] = {
             "completeness_score",
             "status",
         ),
-        required_timestamps=("kickoff_time", "source_snapshot_time", "snapshot_time", "decision_time", "created_at", "updated_at"),
+        required_timestamps=(
+            "kickoff_time",
+            "source_retrieved_at",
+            "source_snapshot_time",
+            "snapshot_time",
+            "decision_time",
+            "window_start_time",
+            "team_stats_cutoff_time",
+            "created_at",
+            "updated_at",
+        ),
         join_keys=("team_stats_snapshot_id", "team_id", "game_id", "snapshot_time"),
-        point_in_time_rules=("snapshot_time <= kickoff_time", "decision_time <= kickoff_time", "source_snapshot_time <= kickoff_time"),
+        point_in_time_rules=(
+            "snapshot_time <= kickoff_time",
+            "decision_time <= kickoff_time",
+            "source_snapshot_time <= kickoff_time",
+            "team_stats_cutoff_time <= decision_time",
+            "team_stats_cutoff_time <= kickoff_time",
+        ),
         numeric_fields=(
             "season",
             "week",
+            "window_excludes_current_event",
             "rest_days",
             "travel_distance_miles",
             "travel_timezone_change",
@@ -503,6 +585,13 @@ NFL_P0_TABLE_CONTRACTS: dict[str, NflP0TableContract] = {
         ),
         description="Pregame team efficiency snapshot with rest and travel context.",
         market_type="team_efficiency",
+        metadata={
+            "metric_fields": list(NFL_TEAM_STATS_METRIC_UNITS),
+            "allowed_measurement_periods": list(NFL_TEAM_STATS_ALLOWED_MEASUREMENT_PERIODS),
+            "allowed_contexts": list(NFL_TEAM_STATS_ALLOWED_CONTEXTS),
+            "allowed_window_types": list(NFL_TEAM_STATS_ALLOWED_WINDOW_TYPES),
+            "metric_units": dict(NFL_TEAM_STATS_METRIC_UNITS),
+        },
     ),
 }
 
@@ -927,19 +1016,56 @@ def build_nfl_p0_fixture(
             last_game_time = team_last_game_day.get(team_id)
             if last_game_time is not None:
                 rest_days = max(rest_days, (kickoff.date() - last_game_time.date()).days)
+            team_stats_cutoff = (last_game_time + timedelta(hours=4)) if last_game_time is not None else (kickoff - timedelta(days=7))
+            window_start = team_stats_cutoff - timedelta(days=28)
             team_last_game_day[team_id] = kickoff
             base_efficiency = _team_strength_index(team_id)
+            team_stats_snapshot_id = f"{game['game_id']}.{team_id}.team_stats"
+            metric_units = dict(NFL_TEAM_STATS_METRIC_UNITS)
+            field_provenance = {
+                field_name: {
+                    "source_provider": NFL_P0_PROVIDER,
+                    "source_field_name": field_name,
+                    "acquisition_timestamp": created_at,
+                    "source_snapshot_time": _iso_nowish(stats_snapshot),
+                }
+                for field_name in (
+                    "team_stats_snapshot_id",
+                    "team_id",
+                    "team_name",
+                    "opponent_team_id",
+                    "team_side",
+                    "source_record_id",
+                    "source_retrieved_at",
+                    "measurement_period",
+                    "statistic_context",
+                    "statistic_window_type",
+                    "window_start_time",
+                    "team_stats_cutoff_time",
+                    "window_excludes_current_event",
+                    *metric_units.keys(),
+                )
+            }
             tables["nfl_team_stats_snapshots"].append(
                 {
-                    "team_stats_snapshot_id": f"{game['game_id']}.{team_id}.team_stats",
+                    "team_stats_snapshot_id": team_stats_snapshot_id,
                     **game,
                     "team_id": team_id,
                     "team_name": team_name,
                     "opponent_team_id": opponent_id,
+                    "team_side": team_side,
                     "kickoff_time": game["kickoff_time"],
                     "season": game["season"],
                     "season_type": game["season_type"],
                     "week": game["week"],
+                    "source_record_id": team_stats_snapshot_id,
+                    "source_retrieved_at": _iso_nowish(stats_snapshot),
+                    "measurement_period": "rolling_prior_games",
+                    "statistic_context": "pregame",
+                    "statistic_window_type": "rolling_prior_games_excluding_current_event",
+                    "window_start_time": _iso_nowish(window_start),
+                    "team_stats_cutoff_time": _iso_nowish(team_stats_cutoff),
+                    "window_excludes_current_event": 1,
                     "rest_days": float(rest_days),
                     "travel_distance_miles": float(travel_distance),
                     "travel_timezone_change": float(travel_timezone_change),
@@ -957,12 +1083,16 @@ def build_nfl_p0_fixture(
                     "injury_adjusted_availability": round(0.90 - index * 0.02, 4),
                     "position_group": "team",
                     "efficiency_window_games": 4 + index,
+                    "metric_units_json": metric_units,
+                    "field_provenance_json": field_provenance,
                     "dataset_version": dataset_version,
                     "source_name": NFL_P0_SOURCE_NAME,
                     "source_type": NFL_P0_SOURCE_TYPE,
                     "source_snapshot_time": _iso_nowish(stats_snapshot),
                     "snapshot_time": _iso_nowish(stats_snapshot),
                     "decision_time": _iso_nowish(stats_snapshot),
+                    "alignment_status": "pending",
+                    "certification_state": "pending",
                     "status": "pregame",
                     "completeness_score": 1.0,
                     "source_signature": _source_signature(NFL_P0_SOURCE_NAME, _iso_nowish(stats_snapshot)),
@@ -1045,12 +1175,86 @@ def normalize_nfl_p0_rows(
         payload["version_id"] = _normalize_text(payload.get("version_id"), dataset_version)
         payload["quality_score"] = _normalize_float(payload.get("quality_score"), 1.0)
         payload["completeness_score"] = _normalize_float(payload.get("completeness_score"), 1.0)
-        integer_fields = {"season", "week", "indoor_flag", "efficiency_window_games", "neutral_site", "final_score_home", "final_score_away", "margin", "total_points"}
+        integer_fields = {
+            "season",
+            "week",
+            "indoor_flag",
+            "window_excludes_current_event",
+            "efficiency_window_games",
+            "neutral_site",
+            "final_score_home",
+            "final_score_away",
+            "margin",
+            "total_points",
+        }
         for field in contract.numeric_fields:
             if field in payload:
                 payload[field] = _normalize_int(payload.get(field)) if field in integer_fields else _normalize_float(payload.get(field))
         normalized.append(payload)
     return normalized
+
+
+def _team_stats_semantic_issues(row: Mapping[str, Any]) -> list[str]:
+    issues: list[str] = []
+    team_side = _normalize_text(row.get("team_side")).lower()
+    if team_side not in {"home", "away"}:
+        issues.append("invalid_team_side")
+
+    measurement_period = _normalize_text(row.get("measurement_period")).lower()
+    if measurement_period not in {value.lower() for value in NFL_TEAM_STATS_ALLOWED_MEASUREMENT_PERIODS}:
+        issues.append("unsupported_measurement_period")
+
+    statistic_context = _normalize_text(row.get("statistic_context")).lower()
+    if statistic_context not in {value.lower() for value in NFL_TEAM_STATS_ALLOWED_CONTEXTS}:
+        issues.append("unsupported_statistic_context")
+
+    statistic_window_type = _normalize_text(row.get("statistic_window_type")).lower()
+    if statistic_window_type not in {value.lower() for value in NFL_TEAM_STATS_ALLOWED_WINDOW_TYPES}:
+        issues.append("unsupported_statistic_window_type")
+
+    window_excludes_current_event = _normalize_int(row.get("window_excludes_current_event"), 0)
+    if window_excludes_current_event != 1:
+        issues.append("window_includes_current_event")
+
+    source_retrieved_at = _parse_iso(row.get("source_retrieved_at"))
+    source_snapshot_time = _parse_iso(row.get("source_snapshot_time"))
+    window_start_time = _parse_iso(row.get("window_start_time"))
+    team_stats_cutoff_time = _parse_iso(row.get("team_stats_cutoff_time"))
+    decision_time = _parse_iso(row.get("decision_time"))
+    kickoff_time = _parse_iso(row.get("kickoff_time"))
+    snapshot_time = _parse_iso(row.get("snapshot_time"))
+
+    if source_retrieved_at is None:
+        issues.append("missing_source_retrieved_at")
+    if team_stats_cutoff_time is None:
+        issues.append("missing_team_stats_cutoff_time")
+    if source_snapshot_time and source_retrieved_at and source_retrieved_at < source_snapshot_time:
+        issues.append("source_retrieved_before_source_snapshot")
+    if window_start_time and team_stats_cutoff_time and window_start_time > team_stats_cutoff_time:
+        issues.append("window_start_after_team_stats_cutoff")
+    if team_stats_cutoff_time and decision_time and team_stats_cutoff_time > decision_time:
+        issues.append("team_stats_cutoff_after_decision")
+    if team_stats_cutoff_time and kickoff_time and team_stats_cutoff_time > kickoff_time:
+        issues.append("team_stats_cutoff_after_kickoff")
+    if team_stats_cutoff_time and snapshot_time and team_stats_cutoff_time > snapshot_time:
+        issues.append("team_stats_cutoff_after_snapshot")
+
+    metric_units = _load_json_mapping(row.get("metric_units_json"))
+    if not metric_units:
+        issues.append("missing_metric_units")
+    else:
+        for field_name, expected_unit in NFL_TEAM_STATS_METRIC_UNITS.items():
+            actual_unit = _normalize_text(metric_units.get(field_name)).lower()
+            if not actual_unit:
+                issues.append(f"missing_metric_unit:{field_name}")
+                continue
+            if actual_unit != expected_unit.lower():
+                issues.append(f"unsupported_metric_unit:{field_name}:{actual_unit}")
+
+    if not _load_json_mapping(row.get("field_provenance_json")):
+        issues.append("missing_field_provenance")
+
+    return issues
 
 
 def _point_in_time_issues(contract: NflP0TableContract, row: Mapping[str, Any]) -> list[str]:
@@ -1073,6 +1277,18 @@ def _point_in_time_issues(contract: NflP0TableContract, row: Mapping[str, Any]) 
         for label, instant in (("snapshot_time", snapshot), ("source_snapshot_time", source_snapshot), ("decision_time", decision)):
             if instant is not None and instant > kickoff:
                 issues.append(f"{label}_after_kickoff")
+    if source_snapshot is not None and snapshot is not None and source_snapshot > snapshot:
+        issues.append("source_snapshot_after_snapshot_time")
+    if snapshot is not None and decision is not None and snapshot > decision:
+        issues.append("snapshot_after_decision")
+    if source_snapshot is not None and decision is not None and source_snapshot > decision:
+        issues.append("source_snapshot_after_decision")
+    if contract.table_name == "nfl_team_stats_snapshots":
+        team_stats_cutoff_time = _parse_iso(row.get("team_stats_cutoff_time"))
+        if team_stats_cutoff_time is not None and decision is not None and team_stats_cutoff_time > decision:
+            issues.append("team_stats_cutoff_after_decision")
+        if team_stats_cutoff_time is not None and kickoff is not None and team_stats_cutoff_time > kickoff:
+            issues.append("team_stats_cutoff_after_kickoff")
     return issues
 
 
@@ -1105,6 +1321,7 @@ def validate_nfl_p0_rows(
     lineage_issues = [index for index, row in enumerate(rows) if not _normalize_text(row.get("lineage_id")) or not _normalize_text(row.get("snapshot_id")) or not _normalize_text(row.get("version_id"))]
     point_in_time_issues = [issue for row in rows for issue in _point_in_time_issues(contract, row)]
     numeric_issues: list[str] = []
+    semantic_issues: list[str] = []
     for index, row in enumerate(rows):
         for field in contract.numeric_fields:
             value = row.get(field)
@@ -1117,6 +1334,8 @@ def validate_nfl_p0_rows(
                     float(value)
             except (TypeError, ValueError):
                 numeric_issues.append(f"{index}:{field}")
+        if table_name == "nfl_team_stats_snapshots":
+            semantic_issues.extend(f"{index}:{issue}" for issue in _team_stats_semantic_issues(row))
 
     errors = list(dict.fromkeys([
         *missing_fields,
@@ -1127,6 +1346,7 @@ def validate_nfl_p0_rows(
         *[f"lineage_metadata:{index}" for index in lineage_issues],
         *[f"point_in_time:{issue}" for issue in point_in_time_issues],
         *[f"numeric:{issue}" for issue in numeric_issues],
+        *[f"semantic:{issue}" for issue in semantic_issues],
     ]))
     ok = not errors
     return {
@@ -1144,6 +1364,7 @@ def validate_nfl_p0_rows(
         "lineage_issues": lineage_issues,
         "point_in_time_issues": point_in_time_issues,
         "numeric_issues": numeric_issues,
+        "semantic_issues": semantic_issues,
         "errors": errors,
         "validation_contract": contract.as_dict(),
         "base_validation": base,

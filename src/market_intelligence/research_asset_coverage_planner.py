@@ -849,6 +849,12 @@ def _build_nfl_asset_blueprints(profile_id: str) -> list[dict[str, Any]]:
                     "notes": "Weekly team stats fallback lane.",
                     "source_aliases": ("nflreadr",),
                 },
+                "manual_import": {
+                    "provider_role": "fallback_source",
+                    "coverage_components": ("team_week", "efficiency_metrics", "pace_metrics", "source_metadata", "lineage"),
+                    "notes": "Reviewed local import fallback when a deterministic offline slice must be preserved without a live connector.",
+                    "source_aliases": ("manual_import",),
+                },
             },
             notes=("Team statistics are the first reusable efficiency layer after the schedule and results facts are certified.",),
             minimum_schema=True,
@@ -1446,7 +1452,18 @@ def _build_coverage_gap_engine(
         for index, asset in enumerate(sorted(future_assets, key=lambda row: (-float(row.get("provider_selection_score") or 0.0), _normalize_text(row.get("research_asset_id")))))
     ]
     next_acquisition_targets.extend(future_needs)
-    first_production_connector_target = _normalize_text(next_acquisition_targets[0]["research_asset_ids"][0]) if next_acquisition_targets else ""
+    prioritized_required_target = next(
+        (
+            target
+            for target in next_acquisition_targets
+            if _normalize_text(target.get("target_type"))
+            in {"connector_upgrade", "missing_required_asset"}
+        ),
+        {},
+    )
+    first_production_connector_target = _normalize_text(
+        (prioritized_required_target.get("research_asset_ids") or [""])[0]
+    )
     return {
         "profile_id": profile_id,
         "required_asset_count": len(required_assets),

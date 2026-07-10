@@ -80,11 +80,9 @@ The following remain intentionally deferred:
 
 The foundation is structurally ready, but the repository still needs future phases to:
 
-- define the minimum certified historical dataset acquisition framework in Phase 4.6
-- acquire and certify the minimum certified historical dataset in Phase 4.7
-- implement the research asset lifecycle runtime and time/entity alignment certification in Phase 4.8
-- populate the NFL schedule research asset in Phase 4.9A
-- use the research asset coverage planner in Phase 4.9B
-- populate the first production connector for the NFL schedule asset in Phase 4.9C
-- build decision rows in Phase 5.0
-- expand beyond the P0 team/game foundation when the data layer is proven stable
+- materialize the historical dataset population layer in Phase 5.0
+- populate reusable features in Phase 5.1
+- implement reusable mathematical engines in Phase 5.2
+- generate decision rows in Phase 5.4
+- begin baseline backtesting in Phase 5.5
+- expand beyond the P0 team/game foundation when the minimum-schema dataset path is proven stable

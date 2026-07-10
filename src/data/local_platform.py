@@ -947,7 +947,7 @@ class LocalDataPlatform:
                 "row_index": index,
                 "payload_json": _as_json(payload),
             }
-            self.store.insert("raw_records", stored_row)
+            self.store.upsert("raw_records", stored_row, key_columns=("record_id",))
             stored.append(stored_row)
         return stored
 
