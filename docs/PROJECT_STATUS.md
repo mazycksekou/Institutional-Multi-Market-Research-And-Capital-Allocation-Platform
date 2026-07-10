@@ -7,9 +7,9 @@ Canonical live status for the repository and the required starting document for 
 - current branch: `feature/nfl-backtesting`
 - current HEAD: live branch tip (exact hash is reported in the task final report)
 - remote tracking branch: `origin/feature/nfl-backtesting`
-- active phase: `Phase 4.9F - NFL Weather Research Asset Population (complete)`
+- active phase: `Phase 4.9G - NFL Injuries Research Asset Population (complete)`
 - active market profile: `sports:nfl`
-- active implementation lane: `NFL P0 profile-aware foundation + event-centric historical research database + master research engine specification + universal feature registry + universal math engine contracts + research asset runtime framework + historical dataset acquisition framework + historical dataset acquisition runtime + research asset source discovery and connector mapping framework + historical research asset certification runtime + research asset lifecycle runtime + NFL schedule research asset population + research asset coverage planner and provider selection framework + first production NFL schedule connector + certified NFL results research asset + certified NFL odds research asset + certified NFL weather research asset`
+- active implementation lane: `NFL P0 profile-aware foundation + event-centric historical research database + master research engine specification + universal feature registry + universal math engine contracts + research asset runtime framework + historical dataset acquisition framework + historical dataset acquisition runtime + research asset source discovery and connector mapping framework + historical research asset certification runtime + research asset lifecycle runtime + NFL schedule research asset population + research asset coverage planner and provider selection framework + first production NFL schedule connector + certified NFL results research asset + certified NFL odds research asset + certified NFL weather research asset + certified NFL injuries research asset`
 - completed phases:
   - `Phase 4.3.6 - Profile-Aware NFL P0 Validation`
   - `Phase 4.3.7 - Minimum Backtest Row Contract`
@@ -28,8 +28,9 @@ Canonical live status for the repository and the required starting document for 
   - `Phase 4.9D - NFL Results Research Asset Population`
   - `Phase 4.9E - NFL Odds Research Asset Population`
   - `Phase 4.9F - NFL Weather Research Asset Population`
-- current phase objective: Phase 4.9F is complete; the next objective is to populate the NFL injuries research asset through the same canonical raw-cache, validation, certification, lifecycle, coverage-planning, and readiness owners while preserving report-time correctness, entity identity, and local certification.
-- next phase: `Phase 4.9G - NFL Injuries Research Asset Population`
+  - `Phase 4.9G - NFL Injuries Research Asset Population`
+- current phase objective: Phase 4.9G is complete; the next objective is to populate the NFL team statistics research asset through the same canonical raw-cache, validation, certification, lifecycle, coverage-planning, and readiness owners while preserving point-in-time correctness, team identity, and local certification.
+- next phase: `Phase 4.9H - NFL Team Statistics Research Asset Population`
 - current blockers: None
 - latest validation status:
   - Phase 4.7C runtime validation passed: compileall, certification runtime tests, smoke, architecture, document lifecycle, and ops checks are green.
@@ -40,7 +41,8 @@ Canonical live status for the repository and the required starting document for 
   - Phase 4.9D results population focused runtime tests pass for the certified schedule/results path, schedule-join rejection path, coverage planner, dashboard readiness, compileall, smoke, architecture, document lifecycle, ops checks, and the full repository test suite.
   - Phase 4.9E odds population code changes are complete and validated: compileall, focused odds runtime tests, smoke, architecture, document lifecycle, ops checks, and the full repository test suite are green.
   - Phase 4.9F weather population code changes are complete and validated: compileall, focused weather runtime tests, smoke, architecture, document lifecycle is advisory with no clear violations, and ops checks are green.
-- latest full gate result: `passed; compileall, smoke, architecture, document lifecycle, ops checks, and the full repository test suite are green`
+  - Phase 4.9G injuries population code changes are complete and validated: compileall, focused injuries runtime tests, focused injuries documentation tests, smoke, root markdown, OpenAPI contract, architecture, audit lifecycle, document lifecycle advisory with no clear violations, and the full repository test suite are green.
+- latest full gate result: `passed; compileall, smoke, root markdown, OpenAPI contract, architecture, audit lifecycle, document lifecycle advisory with no clear violations, and the full repository test suite are green`
 - latest pushed commit: live branch tip (exact hash is reported in the task final report)
 
 ## Active Canonical Rules
@@ -65,6 +67,7 @@ Canonical live status for the repository and the required starting document for 
 - The master research engine specification is the next governing layer above the market-profile framework.
 - The first production NFL schedule connector is the canonical connector-backed pattern for future research asset population phases.
 - NFL results reuse the schedule event identity and cannot certify without a certified games/schedule backbone and a successful event join.
+- NFL injuries reuse the certified schedule/results/odds/weather backbone and cannot certify without report-time-safe injury timestamps, successful join alignment, and continued separation between forecast weather and realized weather.
 
 ## Required Supporting Docs
 
@@ -84,6 +87,7 @@ Read these only when you need more detail than the project status page provides:
 - `docs/architecture/NFL_SCHEDULE_RESEARCH_ASSET.md`
 - `docs/architecture/NFL_ODDS_RESEARCH_ASSET.md`
 - `docs/architecture/NFL_WEATHER_RESEARCH_ASSET.md`
+- `docs/architecture/NFL_INJURIES_RESEARCH_ASSET.md`
 - `docs/architecture/RESEARCH_ASSET_SOURCE_DISCOVERY_AND_CONNECTOR_MAPPING.md`
 - `docs/architecture/RESEARCH_ASSET_COVERAGE_AND_PROVIDER_SELECTION_FRAMEWORK.md`
 - `docs/architecture/HISTORICAL_RESEARCH_DATABASE.md`
@@ -109,6 +113,7 @@ Read these only when you need more detail than the project status page provides:
 - `docs/reports/PHASE4_9D_NFL_RESULTS_RESEARCH_ASSET_POPULATION.md`
 - `docs/reports/PHASE4_9E_NFL_ODDS_RESEARCH_ASSET_POPULATION.md`
 - `docs/reports/PHASE4_9F_NFL_WEATHER_RESEARCH_ASSET_POPULATION.md`
+- `docs/reports/PHASE4_9G_NFL_INJURIES_RESEARCH_ASSET_POPULATION.md`
 - `docs/contracts/MINIMUM_BACKTEST_ROW_CONTRACT.md`
 - `docs/contracts/NFL_MINIMUM_BACKTEST_ROW_CONTRACT.md`
 - `docs/contracts/NFL_BACKTEST_CONTRACT.md`
@@ -127,4 +132,4 @@ Read these only when you need more detail than the project status page provides:
 
 ## Next Recommended Codex Task
 
-`Phase 4.9G - NFL Injuries Research Asset Population`
+`Phase 4.9H - NFL Team Statistics Research Asset Population`

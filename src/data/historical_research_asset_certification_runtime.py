@@ -367,7 +367,7 @@ def build_nfl_research_asset_future_contracts(
 ) -> list[ResearchAssetCertificationContract]:
     _ = _resolve_market_profile(profile_id)
     future_assets = [
-        ("dataset.nfl.injuries", "NFL Injuries", "injury_context"),
+        ("dataset.nfl.injury_snapshots", "NFL Injury Snapshots", "injury_context"),
         ("dataset.nfl.officials", "NFL Officials", "official_assignment"),
         ("dataset.nfl.coaching", "NFL Coaching", "coaching_context"),
         ("dataset.nfl.player_statistics", "NFL Player Statistics", "player_statistics"),

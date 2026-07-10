@@ -854,8 +854,8 @@ def _build_nfl_asset_blueprints(profile_id: str) -> list[dict[str, Any]]:
             minimum_schema=True,
         ),
         asset(
-            research_asset_id="dataset.nfl.injuries",
-            research_asset_name="NFL Injuries",
+            research_asset_id="dataset.nfl.injury_snapshots",
+            research_asset_name="NFL Injury Snapshots",
             asset_category="dataset",
             asset_type="table_snapshot",
             bundle_role="future_enrichment",
@@ -866,8 +866,14 @@ def _build_nfl_asset_blueprints(profile_id: str) -> list[dict[str, Any]]:
                 "nflverse_injuries": {
                     "provider_role": "primary_acquisition",
                     "coverage_components": ("player_status", "report_time", "team", "player", "source_metadata", "lineage", "injury_status", "availability_status"),
-                    "notes": "Open NFL injuries lane from the data registry.",
+                    "notes": "Open NFL injuries lane from the data registry and the canonical fixture-backed report-time-safe acquisition path.",
                     "source_aliases": ("nflverse_injuries",),
+                },
+                "manual_import": {
+                    "provider_role": "fallback_source",
+                    "coverage_components": ("player_status", "report_time", "team", "player", "source_metadata", "lineage", "injury_status"),
+                    "notes": "Manual evidence fallback when timing, terms review, or provenance requires a reviewed local import.",
+                    "source_aliases": ("manual_import",),
                 },
                 "official_team_reports": {
                     "provider_role": "verification_source",
@@ -888,7 +894,7 @@ def _build_nfl_asset_blueprints(profile_id: str) -> list[dict[str, Any]]:
                     "source_aliases": ("official_nfl_staff_or_news_pages",),
                 },
             },
-            notes=("Injury timing is a leakage-sensitive context asset and remains future enrichment for the first minimum-schema path.",),
+            notes=("Injury timing is a leakage-sensitive context asset; the open nflverse path and the manual evidence fallback must both preserve report timestamps and provenance.",),
             future_asset=True,
         ),
         asset(

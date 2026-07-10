@@ -56,9 +56,9 @@ def test_nfl_results_research_asset_docs_and_governance_are_current() -> None:
     assert "docs/reports/PHASE4_9E_NFL_ODDS_RESEARCH_ASSET_POPULATION.md" in project_status_text
     assert "docs/architecture/NFL_RESULTS_RESEARCH_ASSET.md" in project_status_text
     assert "docs/reports/PHASE4_9D_NFL_RESULTS_RESEARCH_ASSET_POPULATION.md" in project_status_text
-    assert "Phase 4.9G - NFL Injuries Research Asset Population" in next_action_text
+    assert "Phase 4.9H - NFL Team Statistics Research Asset Population" in next_action_text
     assert "Phase 4.9E completes the NFL odds research asset population" in roadmap_text
-    assert "Phase 4.9G will populate the NFL injuries research asset." in roadmap_text
+    assert "Phase 4.9H will populate the NFL team statistics research asset." in roadmap_text
 
     assert "docs/architecture/NFL_RESULTS_RESEARCH_ASSET.md" in master_index_text
     assert "docs/reports/PHASE4_9D_NFL_RESULTS_RESEARCH_ASSET_POPULATION.md" in master_index_text

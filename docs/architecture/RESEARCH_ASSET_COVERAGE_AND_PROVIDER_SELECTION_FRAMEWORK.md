@@ -116,7 +116,8 @@ The future query layer should read this planner output rather than infer coverag
 - Phase 4.9D completed the NFL results research asset population.
 - Phase 4.9E completed the NFL odds research asset population.
 - Phase 4.9F completed the NFL weather research asset population.
-- Phase 4.9G now focuses on the NFL injuries research asset population.
+- Phase 4.9G completed the NFL injuries research asset population.
+- Phase 4.9H now focuses on the NFL team statistics research asset population.
 
 ## Reusability
 

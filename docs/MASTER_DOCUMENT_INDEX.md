@@ -45,6 +45,7 @@ This index points readers to the current truth and the durable historical entry 
 - `docs/architecture/NFL_SCHEDULE_RESEARCH_ASSET.md` - NFL Schedule Research Asset
 - `docs/architecture/NFL_SCHEDULE_CONNECTOR.md` - NFL Schedule Connector
 - `docs/architecture/NFL_RESULTS_RESEARCH_ASSET.md` - NFL Results Research Asset
+- `docs/architecture/NFL_INJURIES_RESEARCH_ASSET.md` - NFL Injuries Research Asset
 - `docs/architecture/NFL_WEATHER_RESEARCH_ASSET.md` - NFL Weather Research Asset
 - `docs/architecture/RESEARCH_ASSET_SOURCE_DISCOVERY_AND_CONNECTOR_MAPPING.md` - Research Asset Source Discovery And Connector Mapping
 - `docs/architecture/RESEARCH_ASSET_COVERAGE_AND_PROVIDER_SELECTION_FRAMEWORK.md` - Research Asset Coverage And Provider Selection Framework
@@ -145,6 +146,8 @@ This index points readers to the current truth and the durable historical entry 
 - `docs/reports/PHASE4_9E_NFL_ODDS_RESEARCH_ASSET_POPULATION.md` - Phase 4.9E NFL Odds Research Asset Population
 - `docs/architecture/NFL_WEATHER_RESEARCH_ASSET.md` - NFL Weather Research Asset
 - `docs/reports/PHASE4_9F_NFL_WEATHER_RESEARCH_ASSET_POPULATION.md` - Phase 4.9F NFL Weather Research Asset Population
+- `docs/architecture/NFL_INJURIES_RESEARCH_ASSET.md` - NFL Injuries Research Asset
+- `docs/reports/PHASE4_9G_NFL_INJURIES_RESEARCH_ASSET_POPULATION.md` - Phase 4.9G NFL Injuries Research Asset Population
 
 ### INDEX
 - `docs/DOCUMENT_RETENTION_INDEX.md` - Policy Note

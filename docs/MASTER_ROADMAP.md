@@ -66,7 +66,7 @@ Phase 4.9C implements the first production connector for the NFL schedule resear
 Phase 4.9D populates the NFL results research asset.
 Phase 4.9E completes the NFL odds research asset population and certifies its decision-time-safe join to the schedule and results backbone.
 Phase 4.9F completed the NFL weather research asset population and certified its forecast-time-safe join to the schedule, results, and odds backbone.
-Phase 4.9G populates the NFL injuries research asset.
+Phase 4.9G completed the NFL injuries research asset population and certified its report-time-safe join to the schedule, results, odds, and weather backbone.
 Phase 4.9H populates the NFL team statistics research asset.
 Phase 4.9I populates the NFL player statistics research asset.
 Phase 4.9J populates the NFL betting splits research asset.
@@ -105,7 +105,7 @@ Current NFL work is in Phase 4:
 - Phase 4.9D completed the NFL results research asset population and certified its join to the schedule backbone.
 - Phase 4.9E completed the NFL odds research asset population and certified its decision-time-safe join to the schedule and results backbone.
 - Phase 4.9F completed the NFL weather research asset population and certified its forecast-time-safe join to the schedule, results, and odds backbone.
-- Phase 4.9G will populate the NFL injuries research asset.
+- Phase 4.9G completed the NFL injuries research asset population and certified its report-time-safe join to the schedule, results, odds, and weather backbone.
 - Phase 4.9H will populate the NFL team statistics research asset.
 - Phase 4.9I will populate the NFL player statistics research asset.
 - Phase 4.9J will populate the NFL betting splits research asset.
@@ -137,6 +137,7 @@ The master research engine specification is already the canonical name for the b
 - Canonical historical research database: `docs/architecture/HISTORICAL_RESEARCH_DATABASE.md`
 - Canonical NFL odds research asset: `docs/architecture/NFL_ODDS_RESEARCH_ASSET.md`
 - Canonical NFL weather research asset: `docs/architecture/NFL_WEATHER_RESEARCH_ASSET.md`
+- Canonical NFL injuries research asset: `docs/architecture/NFL_INJURIES_RESEARCH_ASSET.md`
 
 ## Worldview Constraint
 

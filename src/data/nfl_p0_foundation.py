@@ -394,6 +394,46 @@ NFL_P0_TABLE_CONTRACTS: dict[str, NflP0TableContract] = {
         description="Pregame weather forecast snapshot.",
         market_type="weather_snapshot",
     ),
+    "nfl_injury_snapshots": NflP0TableContract(
+        table_name="nfl_injury_snapshots",
+        row_id_field="injury_snapshot_id",
+        required_fields=(
+            "injury_snapshot_id",
+            "game_id",
+            "kickoff_time",
+            "team_id",
+            "team_name",
+            "opponent_team_id",
+            "player_id",
+            "player_name",
+            "position",
+            "report_status",
+            "availability_status",
+            "practice_status",
+            "report_primary_injury",
+            "injury_category",
+            "report_time",
+            "timing_confidence",
+            "report_source",
+            "source_name",
+            "source_type",
+            "source_snapshot_time",
+            "snapshot_time",
+            "decision_time",
+            "dataset_version",
+            "lineage_id",
+            "schema_version",
+            "quality_score",
+            "completeness_score",
+            "status",
+        ),
+        required_timestamps=("kickoff_time", "report_time", "source_snapshot_time", "snapshot_time", "decision_time", "created_at", "updated_at"),
+        join_keys=("injury_snapshot_id", "team_id", "player_id", "snapshot_time"),
+        point_in_time_rules=("report_time <= kickoff_time", "snapshot_time <= kickoff_time", "decision_time <= kickoff_time", "source_snapshot_time <= kickoff_time"),
+        numeric_fields=("season", "week", "timing_confidence", "quality_score", "completeness_score"),
+        description="Pregame injury and availability snapshot for a player.",
+        market_type="injury_snapshot",
+    ),
     "nfl_team_stats_snapshots": NflP0TableContract(
         table_name="nfl_team_stats_snapshots",
         row_id_field="team_stats_snapshot_id",
@@ -628,6 +668,8 @@ def build_nfl_p0_fixture(
         schedule_snapshot = kickoff - timedelta(days=7)
         odds_snapshot = kickoff - timedelta(days=1)
         weather_snapshot = kickoff - timedelta(hours=12)
+        injury_report_time = kickoff - timedelta(hours=30)
+        injury_snapshot = kickoff - timedelta(hours=24)
         stats_snapshot = kickoff - timedelta(days=2)
         result_time = kickoff + timedelta(hours=3, minutes=10)
         game_version_seed = f"{dataset_version}.game.{index + 1:03d}"
@@ -794,6 +836,89 @@ def build_nfl_p0_fixture(
                 "quality_score": 1.0,
             }
         )
+
+        injury_rows = (
+            (
+                game["home_team_id"],
+                game["home_team"],
+                game["away_team_id"],
+                f"{game['home_team_id']}.player.qb.001",
+                f"{game['home_team']} QB",
+                "QB",
+                "Questionable",
+                "limited",
+                "Limited",
+                "ankle",
+                "lower_body",
+                "official_team_report",
+            ),
+            (
+                game["away_team_id"],
+                game["away_team"],
+                game["home_team_id"],
+                f"{game['away_team_id']}.player.wr.001",
+                f"{game['away_team']} WR",
+                "WR",
+                "Out",
+                "unavailable",
+                "DNP",
+                "hamstring",
+                "soft_tissue",
+                "official_team_report",
+            ),
+        )
+        for player_index, (
+            team_id,
+            team_name,
+            opponent_team_id,
+            player_id,
+            player_name,
+            position,
+            report_status,
+            availability_status,
+            practice_status,
+            report_primary_injury,
+            injury_category,
+            report_source,
+        ) in enumerate(injury_rows):
+            tables["nfl_injury_snapshots"].append(
+                {
+                    "injury_snapshot_id": f"{game['game_id']}.{team_id}.injury.{player_index + 1:02d}",
+                    **game,
+                    "kickoff_time": game["kickoff_time"],
+                    "team_id": team_id,
+                    "team_name": team_name,
+                    "opponent_team_id": opponent_team_id,
+                    "player_id": player_id,
+                    "player_name": player_name,
+                    "position": position,
+                    "report_status": report_status,
+                    "availability_status": availability_status,
+                    "practice_status": practice_status,
+                    "report_primary_injury": report_primary_injury,
+                    "injury_category": injury_category,
+                    "report_time": _iso_nowish(injury_report_time),
+                    "timing_confidence": 0.96 - player_index * 0.02,
+                    "report_source": report_source,
+                    "dataset_version": dataset_version,
+                    "source_name": NFL_P0_SOURCE_NAME,
+                    "source_type": NFL_P0_SOURCE_TYPE,
+                    "source_snapshot_time": _iso_nowish(injury_snapshot),
+                    "snapshot_time": _iso_nowish(injury_snapshot),
+                    "decision_time": _iso_nowish(injury_snapshot),
+                    "status": "pregame",
+                    "completeness_score": 1.0,
+                    "source_signature": _source_signature(NFL_P0_SOURCE_NAME, _iso_nowish(injury_snapshot)),
+                    "market_type": "injury_snapshot",
+                    "provider": NFL_P0_PROVIDER,
+                    "market": NFL_P0_MARKET,
+                    "asset_class": NFL_P0_ASSET_CLASS,
+                    "snapshot_id": f"{game_version_seed}.{team_id}.injury.snapshot",
+                    "lineage_id": f"{game_version_seed}.{team_id}.injury.lineage",
+                    "version_id": dataset_version,
+                    "quality_score": 1.0,
+                }
+            )
 
         for team_side, team_id, team_name, opponent_id, rest_days, travel_distance, travel_timezone_change in (
             ("home", game["home_team_id"], game["home_team"], game["away_team_id"], max(7, 10 - index), 0.0, 0.0),
