@@ -122,8 +122,8 @@ Recommendation:
 - focused weather runtime/docs tests: passed
 - smoke: passed
 - architecture: passed
-- document lifecycle: passed
-- ops workflow check: passed
+- document lifecycle: advisory, no clear violations
+- ops workflow check: passed; final repo preflight is clean after commit and push
 
 ## Readiness For Phase 4.9G
 

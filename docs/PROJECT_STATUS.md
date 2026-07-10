@@ -39,7 +39,7 @@ Canonical live status for the repository and the required starting document for 
   - Phase 4.9C connector code changes are complete and validated through compileall, focused NFL schedule connector tests, smoke, architecture, document lifecycle, ops checks, and the final end-task preflight; the branch is clean and pushed.
   - Phase 4.9D results population focused runtime tests pass for the certified schedule/results path, schedule-join rejection path, coverage planner, dashboard readiness, compileall, smoke, architecture, document lifecycle, ops checks, and the full repository test suite.
   - Phase 4.9E odds population code changes are complete and validated: compileall, focused odds runtime tests, smoke, architecture, document lifecycle, ops checks, and the full repository test suite are green.
-  - Phase 4.9F weather population code changes are complete and validated: compileall, focused weather runtime tests, smoke, architecture, document lifecycle, and ops checks are green.
+  - Phase 4.9F weather population code changes are complete and validated: compileall, focused weather runtime tests, smoke, architecture, document lifecycle is advisory with no clear violations, and ops checks are green.
 - latest full gate result: `passed; compileall, smoke, architecture, document lifecycle, ops checks, and the full repository test suite are green`
 - latest pushed commit: live branch tip (exact hash is reported in the task final report)
 
