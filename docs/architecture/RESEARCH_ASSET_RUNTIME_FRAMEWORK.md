@@ -75,7 +75,7 @@ The identifier standard is:
 Examples:
 
 - `dataset.nfl.games`
-- `dataset.nfl.odds`
+- `dataset.nfl.odds_snapshots`
 - `feature.sports.ticket_percentage`
 - `feature.options.gex`
 - `math.options.gex`

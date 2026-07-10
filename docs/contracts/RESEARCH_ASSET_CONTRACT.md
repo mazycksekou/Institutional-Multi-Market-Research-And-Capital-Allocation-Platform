@@ -20,7 +20,7 @@ Format:
 Examples:
 
 - `dataset.nfl.games`
-- `dataset.nfl.odds`
+- `dataset.nfl.odds_snapshots`
 - `feature.sports.ticket_percentage`
 - `math.options.gex`
 - `signal.sports.reverse_line_movement`

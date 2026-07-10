@@ -64,7 +64,7 @@ Phase 4.9A populates the NFL schedule research asset.
 Phase 4.9B builds the research asset coverage planner and provider selection framework.
 Phase 4.9C implements the first production connector for the NFL schedule research asset.
 Phase 4.9D populates the NFL results research asset.
-Phase 4.9E populates the NFL odds research asset.
+Phase 4.9E completes the NFL odds research asset population and certifies its decision-time-safe join to the schedule and results backbone.
 Phase 4.9F populates the NFL weather research asset.
 Phase 4.9G populates the NFL injuries research asset.
 Phase 4.9H populates the NFL team statistics research asset.
@@ -103,7 +103,7 @@ Current NFL work is in Phase 4:
 - Phase 4.9B completed the research asset coverage planner and provider selection framework.
 - Phase 4.9C completed the first production connector for the NFL schedule research asset.
 - Phase 4.9D completed the NFL results research asset population and certified its join to the schedule backbone.
-- Phase 4.9E will populate the NFL odds research asset.
+- Phase 4.9E completed the NFL odds research asset population and certified its decision-time-safe join to the schedule and results backbone.
 - Phase 4.9F will populate the NFL weather research asset.
 - Phase 4.9G will populate the NFL injuries research asset.
 - Phase 4.9H will populate the NFL team statistics research asset.
@@ -135,6 +135,7 @@ The master research engine specification is already the canonical name for the b
 - Canonical NFL minimum backtest row contract: `docs/contracts/NFL_MINIMUM_BACKTEST_ROW_CONTRACT.md`
 - Canonical mathematical engine contracts: `docs/architecture/UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md`
 - Canonical historical research database: `docs/architecture/HISTORICAL_RESEARCH_DATABASE.md`
+- Canonical NFL odds research asset: `docs/architecture/NFL_ODDS_RESEARCH_ASSET.md`
 
 ## Worldview Constraint
 

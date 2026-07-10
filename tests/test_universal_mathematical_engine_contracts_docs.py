@@ -93,7 +93,7 @@ def test_universal_math_engine_contract_docs_exist_and_cover_required_topics() -
     assert "Readiness for Phase 4.5D" in report_text
 
     assert "Phase 4.5E - Canonical Engineering Specification Rename & Research Asset Runtime Framework" in project_status_text
-    assert "Phase 4.9D - NFL Results Research Asset Population" in next_action_text
+    assert "Phase 4.9F - NFL Weather Research Asset Population" in next_action_text
     assert "docs/architecture/UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md" in project_status_text
     assert "docs/reports/PHASE4_5C_UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md" in project_status_text
     assert "Canonical math-engine inputs, outputs, lifecycle, and validation rules" in contract_index_text

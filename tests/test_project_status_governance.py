@@ -17,6 +17,7 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     status_policy = DOCS / "STATUS_UPDATE_POLICY.md"
     discovery_report = DOCS / "reports" / "PROJECT_STATUS_GOVERNANCE_DISCOVERY.md"
     entrypoint_audit = DOCS / "reports" / "PROJECT_ENTRYPOINT_AUDIT.md"
+    odds_architecture = DOCS / "architecture" / "NFL_ODDS_RESEARCH_ASSET.md"
     master_roadmap = DOCS / "MASTER_ROADMAP.md"
     master_index = DOCS / "MASTER_DOCUMENT_INDEX.md"
     retention_index = DOCS / "DOCUMENT_RETENTION_INDEX.md"
@@ -26,6 +27,7 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert status_policy.exists()
     assert discovery_report.exists()
     assert entrypoint_audit.exists()
+    assert odds_architecture.exists()
     assert master_roadmap.exists()
     assert master_index.exists()
     assert retention_index.exists()
@@ -45,6 +47,7 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "Phase 4.9A - NFL Schedule Research Asset Population" in project_status_text
     assert "Phase 4.9C - First Production Connector (NFL Schedule)" in project_status_text
     assert "Phase 4.9D - NFL Results Research Asset Population" in project_status_text
+    assert "Phase 4.9E - NFL Odds Research Asset Population" in project_status_text
     assert "Phase 4.7B - Historical Dataset Acquisition Runtime" in project_status_text
     assert "Phase 4.7C - Historical Research Asset Certification Runtime" in project_status_text
     assert "Phase 4.8 - Research Asset Lifecycle Runtime & Time & Entity Alignment Certification" in project_status_text
@@ -64,6 +67,7 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "docs/architecture/HISTORICAL_DATASET_ACQUISITION_RUNTIME.md" in project_status_text
     assert "docs/architecture/HISTORICAL_RESEARCH_ASSET_CERTIFICATION_RUNTIME.md" in project_status_text
     assert "docs/architecture/NFL_SCHEDULE_RESEARCH_ASSET.md" in project_status_text
+    assert "docs/architecture/NFL_ODDS_RESEARCH_ASSET.md" in project_status_text
     assert "docs/architecture/RESEARCH_ASSET_SOURCE_DISCOVERY_AND_CONNECTOR_MAPPING.md" in project_status_text
     assert "docs/architecture/UNIVERSAL_FEATURE_REGISTRY.md" in project_status_text
     assert "docs/architecture/UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md" in project_status_text
@@ -77,9 +81,10 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "docs/reports/PHASE4_7B_HISTORICAL_DATASET_ACQUISITION_RUNTIME.md" in project_status_text
     assert "docs/reports/PHASE4_7C_HISTORICAL_RESEARCH_ASSET_CERTIFICATION_RUNTIME.md" in project_status_text
     assert "docs/reports/PHASE4_9A_NFL_SCHEDULE_RESEARCH_ASSET_POPULATION.md" in project_status_text
+    assert "docs/reports/PHASE4_9E_NFL_ODDS_RESEARCH_ASSET_POPULATION.md" in project_status_text
 
-    assert "Phase 4.9D - NFL Results Research Asset Population" in next_action_text
-    assert "first production connector" in next_action_text.lower()
+    assert "Phase 4.9F - NFL Weather Research Asset Population" in next_action_text
+    assert "canonical connector" in next_action_text.lower()
     assert "Do not implement mathematical engines yet." in next_action_text
     assert "Do not generate decision rows yet." in next_action_text
     assert "validation commands" in next_action_text.lower()
@@ -109,6 +114,7 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "Phase 4.9A populates the NFL schedule research asset." in roadmap_text
     assert "Phase 4.9B builds the research asset coverage planner and provider selection framework." in roadmap_text
     assert "Phase 4.9C implements the first production connector for the NFL schedule research asset." in roadmap_text
+    assert "Phase 4.9E completes the NFL odds research asset population" in roadmap_text
     assert "Phase 4.9J populates the NFL betting splits research asset." in roadmap_text
     assert "Phase 5.0 materializes the historical dataset population layer." in roadmap_text
     assert "Phase 5.1 populates reusable features from certified assets and certified events." in roadmap_text
@@ -117,6 +123,7 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "docs/NEXT_ACTION.md" in roadmap_text
     assert "docs/STATUS_UPDATE_POLICY.md" in roadmap_text
     assert "docs/architecture/MASTER_RESEARCH_ENGINE_SPECIFICATION.md" in roadmap_text
+    assert "docs/architecture/NFL_ODDS_RESEARCH_ASSET.md" in roadmap_text
     assert "docs/architecture/RESEARCH_ASSET_SOURCE_DISCOVERY_AND_CONNECTOR_MAPPING.md" in roadmap_text
     assert "docs/architecture/HISTORICAL_DATASET_ACQUISITION_FRAMEWORK.md" in roadmap_text
     assert "docs/architecture/UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md" in roadmap_text
@@ -130,6 +137,7 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "docs/STATUS_UPDATE_POLICY.md" in master_index_text
     assert "docs/architecture/MASTER_RESEARCH_ENGINE_SPECIFICATION.md" in master_index_text
     assert "docs/architecture/NFL_SCHEDULE_RESEARCH_ASSET.md" in master_index_text
+    assert "docs/architecture/NFL_ODDS_RESEARCH_ASSET.md" in master_index_text
     assert "docs/architecture/RESEARCH_ASSET_SOURCE_DISCOVERY_AND_CONNECTOR_MAPPING.md" in master_index_text
     assert "docs/architecture/UNIVERSAL_FEATURE_REGISTRY.md" in master_index_text
     assert "docs/architecture/UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md" in master_index_text
@@ -146,7 +154,9 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "docs/reports/PHASE4_5D_RESEARCH_ASSET_RUNTIME_FRAMEWORK.md" in retention_index_text
     assert "docs/reports/PHASE4_4_EVENT_CENTRIC_HISTORICAL_ACQUISITION.md" in retention_index_text
     assert "docs/architecture/NFL_SCHEDULE_RESEARCH_ASSET.md" in retention_index_text
+    assert "docs/architecture/NFL_ODDS_RESEARCH_ASSET.md" in retention_index_text
     assert "docs/reports/PHASE4_9A_NFL_SCHEDULE_RESEARCH_ASSET_POPULATION.md" in retention_index_text
+    assert "docs/reports/PHASE4_9E_NFL_ODDS_RESEARCH_ASSET_POPULATION.md" in retention_index_text
 
 
 def test_project_status_governance_has_no_duplicate_status_files() -> None:

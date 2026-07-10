@@ -51,12 +51,14 @@ def test_nfl_results_research_asset_docs_and_governance_are_current() -> None:
     assert "negative gate proof" in report_text.lower()
     assert "Readiness For Phase 4.9E" in report_text
 
-    assert "Phase 4.9D - NFL Results Research Asset Population" in project_status_text
+    assert "Phase 4.9E - NFL Odds Research Asset Population" in project_status_text
+    assert "docs/architecture/NFL_ODDS_RESEARCH_ASSET.md" in project_status_text
+    assert "docs/reports/PHASE4_9E_NFL_ODDS_RESEARCH_ASSET_POPULATION.md" in project_status_text
     assert "docs/architecture/NFL_RESULTS_RESEARCH_ASSET.md" in project_status_text
     assert "docs/reports/PHASE4_9D_NFL_RESULTS_RESEARCH_ASSET_POPULATION.md" in project_status_text
-    assert "Phase 4.9E - NFL Odds Research Asset Population" in next_action_text
-    assert "Phase 4.9D populates the NFL results research asset." in roadmap_text
-    assert "Phase 4.9E populates the NFL odds research asset." in roadmap_text
+    assert "Phase 4.9F - NFL Weather Research Asset Population" in next_action_text
+    assert "Phase 4.9E completes the NFL odds research asset population" in roadmap_text
+    assert "Phase 4.9F will populate the NFL weather research asset." in roadmap_text
 
     assert "docs/architecture/NFL_RESULTS_RESEARCH_ASSET.md" in master_index_text
     assert "docs/reports/PHASE4_9D_NFL_RESULTS_RESEARCH_ASSET_POPULATION.md" in master_index_text

@@ -16,6 +16,18 @@ from .readiness import OddsDataConnectorReadiness, describe_odds_data_connector_
 from .payloads import build_odds_record, normalize_odds_payload, validate_odds_payload
 from .source_profile import OddsDataSourceProfile, build_odds_data_source_profile
 from .transport import OddsDataConnectorTransport, build_odds_data_transport
+from .nfl import (
+    NFL_ODDS_CONNECTOR_EXECUTION_MODE,
+    NFL_ODDS_CONNECTOR_FAMILY,
+    NFL_ODDS_CONNECTOR_ID,
+    NFL_ODDS_CONNECTOR_NAME,
+    NFL_ODDS_PROVIDER_ID,
+    NFL_ODDS_PROVIDER_NAME,
+    NFL_ODDS_PROVIDER_ROLE,
+    NFL_ODDS_RESEARCH_ASSET_ID,
+    build_nfl_odds_connector_bundle,
+    build_nfl_odds_provider_capability,
+)
 
 __all__ = [
     "ODDS_DATA_CONNECTOR_CATEGORY",
@@ -33,6 +45,14 @@ __all__ = [
     "OddsDataRecord",
     "OddsDataSnapshot",
     "OddsDataSourceProfile",
+    "NFL_ODDS_CONNECTOR_EXECUTION_MODE",
+    "NFL_ODDS_CONNECTOR_FAMILY",
+    "NFL_ODDS_CONNECTOR_ID",
+    "NFL_ODDS_CONNECTOR_NAME",
+    "NFL_ODDS_PROVIDER_ID",
+    "NFL_ODDS_PROVIDER_NAME",
+    "NFL_ODDS_PROVIDER_ROLE",
+    "NFL_ODDS_RESEARCH_ASSET_ID",
     "build_odds_data_connector_contract",
     "build_odds_data_auth_requirement",
     "build_odds_data_connector_configuration",
@@ -42,6 +62,8 @@ __all__ = [
     "build_odds_record",
     "build_odds_data_source_profile",
     "build_odds_data_transport",
+    "build_nfl_odds_connector_bundle",
+    "build_nfl_odds_provider_capability",
     "describe_odds_data_connector_readiness",
     "normalize_odds_payload",
     "validate_odds_payload",

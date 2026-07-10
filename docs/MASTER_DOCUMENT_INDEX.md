@@ -140,6 +140,8 @@ This index points readers to the current truth and the durable historical entry 
 - `docs/reports/PHASE4_9B_RESEARCH_ASSET_COVERAGE_PLANNER_AND_PROVIDER_SELECTION_FRAMEWORK.md` - Phase 4.9B Research Asset Coverage Planner And Provider Selection Framework
 - `docs/reports/PHASE4_9C_FIRST_PRODUCTION_NFL_SCHEDULE_CONNECTOR.md` - Phase 4.9C First Production NFL Schedule Connector
 - `docs/reports/PHASE4_9D_NFL_RESULTS_RESEARCH_ASSET_POPULATION.md` - Phase 4.9D NFL Results Research Asset Population
+- `docs/architecture/NFL_ODDS_RESEARCH_ASSET.md` - NFL Odds Research Asset
+- `docs/reports/PHASE4_9E_NFL_ODDS_RESEARCH_ASSET_POPULATION.md` - Phase 4.9E NFL Odds Research Asset Population
 
 ### INDEX
 - `docs/DOCUMENT_RETENTION_INDEX.md` - Policy Note

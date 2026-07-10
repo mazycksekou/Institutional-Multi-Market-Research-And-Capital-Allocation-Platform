@@ -34,6 +34,7 @@ DEFAULT_HISTORICAL_RESEARCH_ASSET_CERTIFICATION_MARKET_TYPE = "research_asset_ce
 DEFAULT_HISTORICAL_RESEARCH_ASSET_CERTIFICATION_ASSET_CLASS = "historical"
 DEFAULT_HISTORICAL_RESEARCH_ASSET_CERTIFICATION_BATCH_ID = "historical.research.asset.certification.batch.001"
 DEFAULT_NFL_SCHEDULE_RESEARCH_ASSET_ID = "dataset.sports.nfl.schedule"
+DEFAULT_NFL_ODDS_RESEARCH_ASSET_ID = "dataset.nfl.odds_snapshots"
 
 CERTIFICATION_STATES: tuple[str, ...] = (
     "unknown",
@@ -329,7 +330,7 @@ def build_nfl_research_asset_certification_contracts(
         "nfl_games": ("dataset.nfl.games", "NFL Games"),
         "nfl_schedule": (DEFAULT_NFL_SCHEDULE_RESEARCH_ASSET_ID, "NFL Schedule"),
         "nfl_results": ("dataset.sports.nfl.results", "NFL Results"),
-        "nfl_odds_snapshots": ("dataset.nfl.odds", "NFL Odds Snapshots"),
+        "nfl_odds_snapshots": (DEFAULT_NFL_ODDS_RESEARCH_ASSET_ID, "NFL Odds Snapshots"),
         "nfl_weather_snapshots": ("dataset.nfl.weather", "NFL Weather Snapshots"),
         "nfl_team_stats_snapshots": ("dataset.nfl.team_stats", "NFL Team Statistics"),
     }
@@ -1254,6 +1255,7 @@ __all__ = [
     "DEFAULT_HISTORICAL_RESEARCH_ASSET_CERTIFICATION_SOURCE_TYPE",
     "DEFAULT_HISTORICAL_RESEARCH_ASSET_CERTIFICATION_STORAGE_PATH",
     "DEFAULT_NFL_SCHEDULE_RESEARCH_ASSET_ID",
+    "DEFAULT_NFL_ODDS_RESEARCH_ASSET_ID",
     "HISTORICAL_RESEARCH_ASSET_CERTIFICATION_SCHEMA_VERSION",
     "HistoricalResearchAssetCertificationRuntime",
     "ResearchAssetCertificationContract",
