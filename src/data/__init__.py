@@ -108,6 +108,11 @@ from .historical_research_database import (
     validate_historical_research_profile,
     validate_historical_stage_rows,
 )
+from .feature_registry import (
+    build_feature_snapshot_population,
+    build_feature_snapshot_population_dashboard_snapshot,
+    get_feature_snapshot_population_snapshot_for_dashboard,
+)
 from .historical_research_asset_certification_runtime import (
     CERTIFICATION_FAILURE_REASONS,
     CERTIFICATION_STATES,
@@ -317,6 +322,9 @@ __all__ = [
     "build_historical_research_fixture",
     "create_historical_research_storage_engine",
     "get_historical_dataset_population_snapshot_for_dashboard",
+    "build_feature_snapshot_population",
+    "build_feature_snapshot_population_dashboard_snapshot",
+    "get_feature_snapshot_population_snapshot_for_dashboard",
     "validate_market_profile_contract",
     "get_historical_research_market_profile",
     "get_historical_research_snapshot_for_dashboard",

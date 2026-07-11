@@ -680,10 +680,23 @@ class LocalDataPlatform:
         return len(rows) + 1
 
     def _row_counts(self, dataset_id: str) -> dict[str, int]:
+        feature_snapshot_count = 0
+        if self.store.table_exists("feature_snapshots"):
+            columns = set(self.store.table_columns("feature_snapshots"))
+            if "snapshot_kind" in columns:
+                feature_snapshot_count = len(
+                    self.store.fetch(
+                        "feature_snapshots",
+                        where="snapshot_kind = ?",
+                        params=["dataset_summary"],
+                    )
+                )
+            else:
+                feature_snapshot_count = self.store.count("feature_snapshots")
         counts = {
             "raw_record_count": self.store.count("raw_records") if self.store.table_exists("raw_records") else 0,
             "normalized_record_count": self.store.count("normalized_records") if self.store.table_exists("normalized_records") else 0,
-            "feature_snapshot_count": self.store.count("feature_snapshots") if self.store.table_exists("feature_snapshots") else 0,
+            "feature_snapshot_count": feature_snapshot_count,
         }
         return counts
 
@@ -1060,6 +1073,8 @@ class LocalDataPlatform:
             "update_frequency": contract.update_frequency,
             "validation_state": contract.validation_state,
             "status": contract.status,
+            "batch_id": version_id,
+            "snapshot_kind": "dataset_summary",
             "feature_pack_version": contract.feature_pack,
             "record_count": len(feature_values),
             "feature_count": len(feature_values[0]) if feature_values else 0,
@@ -1340,6 +1355,27 @@ class LocalDataPlatform:
 
     def list_feature_snapshots(self, dataset_id: str | None = None) -> list[dict[str, Any]]:
         if dataset_id:
+            columns = set(self.store.table_columns("feature_snapshots")) if self.store.table_exists("feature_snapshots") else set()
+            if "snapshot_kind" in columns:
+                return self.store.fetch(
+                    "feature_snapshots",
+                    where="dataset_id = ? AND snapshot_kind = ?",
+                    params=[dataset_id, "dataset_summary"],
+                    order_by="created_at DESC",
+                )
+            return self.store.fetch("feature_snapshots", where="dataset_id = ?", params=[dataset_id], order_by="created_at DESC")
+        return self.store.fetch("feature_snapshots", order_by="created_at DESC")
+
+    def list_feature_snapshot_rows(self, dataset_id: str | None = None) -> list[dict[str, Any]]:
+        if dataset_id:
+            columns = set(self.store.table_columns("feature_snapshots")) if self.store.table_exists("feature_snapshots") else set()
+            if "snapshot_kind" in columns:
+                return self.store.fetch(
+                    "feature_snapshots",
+                    where="dataset_id = ? AND snapshot_kind = ?",
+                    params=[dataset_id, "feature_value"],
+                    order_by="created_at DESC, feature_id ASC",
+                )
             return self.store.fetch("feature_snapshots", where="dataset_id = ?", params=[dataset_id], order_by="created_at DESC")
         return self.store.fetch("feature_snapshots", order_by="created_at DESC")
 

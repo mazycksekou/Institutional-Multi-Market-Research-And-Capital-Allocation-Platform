@@ -35,3 +35,5 @@ A snapshot must recreate the exact feature set that was available when the decis
 For the first reusable NFL feature layer, that means inheriting the certified
 Phase 5.0 historical dataset row and its selected evidence rather than
 reselecting records from the underlying source asset tables.
+Phase 5.1B now materializes and persists those snapshots as the reusable NFL
+feature layer.

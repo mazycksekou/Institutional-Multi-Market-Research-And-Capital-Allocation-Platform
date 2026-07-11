@@ -88,7 +88,7 @@ Phase 4.8 implements the research asset lifecycle runtime and time/entity alignm
 Phase 4.9A populates the NFL schedule research asset.
 Phase 4.9B builds the research asset coverage planner and provider selection framework.
 Phase 5.0 materializes the historical dataset population layer from certified historical research assets.
-Phase 5.1 populates reusable features from the certified historical dataset layer and certified event context.
+Phase 5.1B completed the reusable feature snapshot population layer from the certified historical dataset layer and certified event context.
 
 ## Readiness Contract
 

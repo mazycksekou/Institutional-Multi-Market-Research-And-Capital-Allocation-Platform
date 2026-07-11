@@ -87,7 +87,8 @@ The first active input dataset for this runtime contract is:
 
 - `dataset.sports.nfl.historical_dataset`
 
-Phase 5.1A establishes the reusable feature-definition and feature-snapshot grain rules without materializing feature rows yet.
+Phase 5.1A established the reusable feature-definition and feature-snapshot grain rules.
+Phase 5.1B now materializes feature rows from the certified historical dataset layer.
 The certified historical dataset is the sole canonical input for the first feature layer.
 Feature contracts must not reread or reselect predictor evidence from raw provider payloads or normalized source asset tables.
 
@@ -129,6 +130,7 @@ The canonical feature-snapshot grain for the reusable feature layer is:
 - under one `transformation_version`
 
 This prevents distinct market or team contexts from being collapsed or multiplied.
+The current Phase 5.1B runtime persists those contexts as deterministic feature rows rather than treating the grain as contract-only metadata.
 
 ### Classification Rule
 

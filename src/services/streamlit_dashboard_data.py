@@ -94,6 +94,7 @@ from src.data.historical_research_database import (
     build_historical_dataset_population_dashboard_snapshot,
     build_historical_research_dashboard_snapshot,
 )
+from src.data.feature_registry import build_feature_snapshot_population_dashboard_snapshot
 from src.market_intelligence.research_asset_coverage_planner import build_research_asset_coverage_planner_dashboard_snapshot
 from src.research.feature_control import run_calibration_strategy_filter
 from src.research.history import (
@@ -3798,6 +3799,40 @@ def get_historical_dataset_population_snapshot_for_dashboard(
             "dataset_lifecycles": [],
             "local_platform_snapshot": {},
             "coverage_planner_snapshot": {},
+            "storage": {},
+            "warnings": [str(exc)],
+        }
+
+
+def get_feature_snapshot_population_snapshot_for_dashboard(
+    storage_path: str | Path | None = None,
+    *,
+    backend: str = "sqlite",
+    dataset_id: str = "dataset.sports.nfl.historical_dataset",
+) -> dict[str, Any]:
+    """Return a canonical feature-snapshot population readiness snapshot."""
+    try:
+        return build_feature_snapshot_population_dashboard_snapshot(
+            storage_path=storage_path,
+            backend=backend,
+            dataset_id=dataset_id,
+            include_source_dataset_snapshot=True,
+        )
+    except Exception as exc:
+        return {
+            "ok": False,
+            "status": "feature_snapshot_population_snapshot_error",
+            "dataset_id": dataset_id,
+            "batch_id": "",
+            "version_id": "",
+            "dataset_row_count": 0,
+            "feature_definition_count": 0,
+            "feature_snapshot_count": 0,
+            "feature_rows": [],
+            "feature_batches": [],
+            "feature_lineage_edges": [],
+            "join_diagnostics": {},
+            "source_dataset_snapshot": {},
             "storage": {},
             "warnings": [str(exc)],
         }

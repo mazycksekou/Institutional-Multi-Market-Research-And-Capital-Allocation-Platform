@@ -1,11 +1,12 @@
 # NFL Feature Store Contract
 
 This contract defines the feature-store shape for NFL feature families.
-Phase 5.1A establishes the canonical reusable feature-definition contract and
-feature-snapshot grain that Phase 5.1B will populate from the certified
+Phase 5.1A established the canonical reusable feature-definition contract and
+feature-snapshot grain.
+Phase 5.1B now populates deterministic feature snapshots from the certified
 historical dataset layer.
-It does not claim a full feature-snapshot population or certification
-implementation yet.
+The contract still does not claim feature certification or backtest-ready
+feature materialization.
 
 ## Contract Rules
 
@@ -192,7 +193,7 @@ exposes them directly without raw-source rereads:
 ## Current Maturity
 
 The repo has enough structure to define the feature store contract now.
-It now has a canonical Phase 5.1A reusable feature-definition contract backed
-by the certified historical dataset layer.
-It does not yet have the final NFL end-to-end feature snapshot population,
-feature certification, or backtest-ready feature materialization slice.
+It now has a canonical Phase 5.1B reusable feature snapshot population slice
+backed by the certified historical dataset layer.
+Feature certification and backtest-ready feature materialization remain later
+phases.

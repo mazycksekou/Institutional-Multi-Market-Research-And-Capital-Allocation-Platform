@@ -1,28 +1,34 @@
 from __future__ import annotations
 
-"""Canonical reusable feature contracts for Phase 5.1A.
+"""Canonical reusable feature contracts and feature snapshot population.
 
 This module defines the registry and snapshot-grain contracts for reusable
 feature population from the certified Phase 5.0 historical dataset layer.
-It does not populate feature snapshots, persist feature batches, run math
-engines, or reread raw asset tables.
+It owns the reusable feature registry, deterministic feature snapshot
+population, and point-in-time-safe evidence projection from the certified
+historical dataset layer.
 """
 
 import hashlib
 import json
+from collections import Counter, defaultdict
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
+from src.analytics.model_governance.data_lineage import create_lineage_record
 from src.data.historical_research_database import (
     DEFAULT_NFL_HISTORICAL_DATASET_ID,
+    DEFAULT_NFL_HISTORICAL_DATASET_NAME,
     HISTORICAL_DATASET_CUTOFF_POLICY_ID,
 )
+from src.storage.local_store import LocalStorageEngine, create_local_storage_engine
 
 
 FEATURE_REGISTRY_SCHEMA_VERSION = "src.data.feature_registry.v1"
 FEATURE_DEFINITION_VERSION = "phase5.1a.feature_definitions.v1"
-FEATURE_SNAPSHOT_TRANSFORMATION_VERSION = "phase5.1b.snapshot_population.pending"
+FEATURE_SNAPSHOT_TRANSFORMATION_VERSION = "phase5.1b.feature_snapshot_population.v1"
 CANONICAL_DATASET_ROW_GRAIN_ID = "dataset.sports.nfl.historical_dataset.event_market_context.v1"
 CANONICAL_FEATURE_SNAPSHOT_GRAIN_ID = "dataset.sports.nfl.feature_snapshot.dataset_row_scope.v1"
 CANONICAL_FEATURE_REGISTRY_DOC = "docs/architecture/UNIVERSAL_FEATURE_REGISTRY.md"
@@ -176,6 +182,12 @@ DEFERRED_UNSUPPORTED_DATASET_FEATURE_IDS = (
     "feature.sports.nfl.team_stats.measurement_window",
 )
 
+FEATURE_SNAPSHOT_ROW_KIND = "feature_value"
+FEATURE_SNAPSHOT_BATCH_KIND = "feature_population_summary"
+FEATURE_SUMMARY_ROW_KIND = "dataset_summary"
+FEATURE_PRESENT_STATE = "present"
+FEATURE_MISSING_REQUIRED_STATE = "missing_required"
+
 
 def _normalize_text(value: Any, default: str = "") -> str:
     text = str(value if value is not None else default).strip()
@@ -232,6 +244,63 @@ def _stable_id(prefix: str, *parts: Any) -> str:
 
 def _split_root(field_ref: str) -> str:
     return _normalize_text(field_ref).split(".", 1)[0]
+
+
+def _parse_iso_datetime(value: Any) -> datetime | None:
+    text = _normalize_text(value)
+    if not text:
+        return None
+    candidate = text[:-1] + "+00:00" if text.endswith("Z") else text
+    try:
+        parsed = datetime.fromisoformat(candidate)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.replace(microsecond=0)
+
+
+def _to_iso8601_utc(value: Any) -> str:
+    parsed = _parse_iso_datetime(value)
+    if parsed is None:
+        return _normalize_text(value)
+    return parsed.astimezone(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def _seconds_between(later: Any, earlier: Any) -> int | None:
+    later_dt = _parse_iso_datetime(later)
+    earlier_dt = _parse_iso_datetime(earlier)
+    if later_dt is None or earlier_dt is None:
+        return None
+    return int((later_dt - earlier_dt).total_seconds())
+
+
+def _json_lookup(value: Any, path: str, default: Any = None) -> Any:
+    current: Any = value
+    for part in [segment for segment in _normalize_text(path).split(".") if segment]:
+        if isinstance(current, Mapping):
+            if part not in current:
+                return default
+            current = current[part]
+            continue
+        if isinstance(current, list):
+            if not part.isdigit():
+                return default
+            index = int(part)
+            if index < 0 or index >= len(current):
+                return default
+            current = current[index]
+            continue
+        return default
+    return current
+
+
+def _is_present_value(value: Any) -> bool:
+    if value is None:
+        return False
+    if isinstance(value, str):
+        return bool(value.strip())
+    return True
 
 
 @dataclass(slots=True, frozen=True)
@@ -1147,14 +1216,22 @@ def build_feature_value_identity(
         "feature_value",
         definition.get("feature_id"),
         definition.get("feature_version"),
+        context.get("batch_id"),
         context.get("dataset_row_id"),
+        context.get("decision_context_id"),
         definition.get("entity_scope"),
+        context.get("scheduled_kickoff_time"),
+        context.get("decision_cutoff_time"),
         context.get("market_type"),
         context.get("selection"),
         context.get("book"),
         context.get("team_side"),
-        context.get("decision_cutoff_time"),
         definition.get("transformation_version"),
+        _as_json(context.get("selected_source_row_ids")),
+        _as_json(context.get("source_certification_ids")),
+        _as_json(context.get("source_alignment_certification_ids")),
+        _as_json(context.get("source_lineage_ids")),
+        _as_json(context.get("missing_required_assets")),
     )
 
 
@@ -1232,6 +1309,1067 @@ def validate_feature_registry(
     }
 
 
+_DIRECT_FEATURE_FIELD_MAP: dict[str, str] = {
+    "feature.sports.nfl.event.season": "season",
+    "feature.sports.nfl.event.week": "week",
+    "feature.sports.nfl.event.team_side": "team_side",
+    "feature.sports.nfl.event.home_team_id": "home_team_id",
+    "feature.sports.nfl.event.away_team_id": "away_team_id",
+    "feature.sports.nfl.event.scheduled_kickoff_time": "scheduled_kickoff_time",
+    "feature.sports.nfl.event.decision_cutoff_time": "decision_cutoff_time",
+    "feature.sports.nfl.event.neutral_site_flag": "neutral_site",
+    "feature.sports.nfl.market.market_type": "market_type",
+    "feature.sports.nfl.market.selection": "selection",
+    "feature.sports.nfl.market.book": "book",
+    "feature.sports.nfl.market.line_value": "line_value",
+    "feature.sports.nfl.market.american_odds": "american_odds",
+    "feature.sports.nfl.market.decimal_odds": "decimal_odds",
+    "feature.sports.nfl.market.implied_probability": "implied_probability",
+    "feature.sports.nfl.market.odds_freshness_seconds": "odds_freshness_seconds",
+    "feature.sports.nfl.weather.forecast_time": "weather_forecast_time",
+    "feature.sports.nfl.weather.freshness_seconds": "weather_freshness_seconds",
+    "feature.sports.nfl.injury.home_reported_player_count": "home_injury_record_count",
+    "feature.sports.nfl.injury.away_reported_player_count": "away_injury_record_count",
+    "feature.sports.nfl.injury.home_freshness_seconds": "home_injury_freshness_seconds",
+    "feature.sports.nfl.injury.away_freshness_seconds": "away_injury_freshness_seconds",
+    "feature.sports.nfl.team_stats.home_freshness_seconds": "home_team_stats_freshness_seconds",
+    "feature.sports.nfl.team_stats.away_freshness_seconds": "away_team_stats_freshness_seconds",
+}
+
+
+def _feature_source_maps(row: Mapping[str, Any]) -> dict[str, Any]:
+    return {
+        "predictor_references": _load_json_mapping(row.get("predictor_references_json")),
+        "source_certification_ids": _load_json_mapping(row.get("source_certification_ids_json")),
+        "source_alignment_certification_ids": _load_json_mapping(row.get("source_alignment_certification_ids_json")),
+        "selected_source_row_ids": _load_json_mapping(row.get("selected_source_row_ids_json")),
+        "source_lineage_ids": _load_json_mapping(row.get("source_lineage_ids_json")),
+        "missing_required_assets": _load_json_list(row.get("missing_required_assets_json")),
+        "asset_freshness": _load_json_mapping(row.get("asset_freshness_json")),
+    }
+
+
+def _feature_value_and_missingness(
+    feature_definition: Mapping[str, Any],
+    row: Mapping[str, Any],
+    source_maps: Mapping[str, Any],
+) -> tuple[Any, str, str]:
+    feature_id = _normalize_text(feature_definition.get("feature_id"))
+    market_type = _normalize_text(row.get("market_type")).lower()
+    selection = _normalize_text(row.get("selection")).lower()
+    team_side = _normalize_text(row.get("team_side")).lower()
+    value: Any = None
+    if feature_id == "feature.sports.nfl.event.cutoff_buffer_seconds":
+        value = _seconds_between(row.get("scheduled_kickoff_time"), row.get("decision_cutoff_time"))
+    elif feature_id == "feature.sports.nfl.weather.available_flag":
+        value = bool(_normalize_text(row.get("selected_weather_timestamp")))
+    elif feature_id == "feature.sports.nfl.injury.home_availability_limited_count":
+        value = _json_lookup(source_maps["predictor_references"], "injuries.home.summary.availability_status_counts.limited")
+    elif feature_id == "feature.sports.nfl.injury.home_availability_unavailable_count":
+        value = _json_lookup(source_maps["predictor_references"], "injuries.home.summary.availability_status_counts.unavailable")
+    elif feature_id == "feature.sports.nfl.injury.away_availability_limited_count":
+        value = _json_lookup(source_maps["predictor_references"], "injuries.away.summary.availability_status_counts.limited")
+    elif feature_id == "feature.sports.nfl.injury.away_availability_unavailable_count":
+        value = _json_lookup(source_maps["predictor_references"], "injuries.away.summary.availability_status_counts.unavailable")
+    elif feature_id == "feature.sports.nfl.data_quality.point_in_time_safe_flag":
+        value = _normalize_text(row.get("point_in_time_status")).lower() == "safe"
+    elif feature_id == "feature.sports.nfl.data_quality.predictor_outcome_separated_flag":
+        value = _normalize_text(row.get("predictor_outcome_separation_status")).lower() == "separated"
+    elif feature_id == "feature.sports.nfl.data_quality.decision_ready_flag":
+        value = _normalize_text(row.get("decision_readiness_status")).lower() == "ready"
+    elif feature_id == "feature.sports.nfl.data_quality.missing_required_asset_count":
+        value = len(source_maps["missing_required_assets"])
+    elif feature_id == "feature.sports.nfl.data_quality.home_injury_present_flag":
+        value = bool(_normalize_text(row.get("selected_home_injury_timestamp")))
+    elif feature_id == "feature.sports.nfl.data_quality.away_injury_present_flag":
+        value = bool(_normalize_text(row.get("selected_away_injury_timestamp")))
+    elif feature_id == "feature.sports.nfl.data_quality.home_team_stats_present_flag":
+        value = bool(_normalize_text(row.get("selected_home_team_stats_timestamp")) or _normalize_text(row.get("home_team_stats_snapshot_id")))
+    elif feature_id == "feature.sports.nfl.data_quality.away_team_stats_present_flag":
+        value = bool(_normalize_text(row.get("selected_away_team_stats_timestamp")) or _normalize_text(row.get("away_team_stats_snapshot_id")))
+    else:
+        field_name = _DIRECT_FEATURE_FIELD_MAP.get(feature_id)
+        if field_name is not None:
+            value = row.get(field_name)
+
+    if _is_present_value(value):
+        return value, FEATURE_PRESENT_STATE, ""
+
+    policy = _normalize_text(feature_definition.get("missingness_policy"))
+    if feature_id == "feature.sports.nfl.event.team_side" and market_type in {"total", "team_total"}:
+        return None, policy, "event-scoped market does not carry a team side"
+    if feature_id == "feature.sports.nfl.market.line_value" and market_type not in {"spread", "team_total", "total"}:
+        return None, policy, "market type does not expose a line value"
+    if feature_id == "feature.sports.nfl.weather.forecast_time" and not _normalize_text(row.get("selected_weather_timestamp")):
+        return None, policy, "weather evidence is unavailable at the decision cutoff"
+    if feature_id.startswith("feature.sports.nfl.injury.") and not source_maps["predictor_references"]:
+        return None, policy, "injury evidence is unavailable at the decision cutoff"
+    if feature_id.startswith("feature.sports.nfl.team_stats.") and not (
+        _normalize_text(row.get("selected_home_team_stats_timestamp"))
+        or _normalize_text(row.get("selected_away_team_stats_timestamp"))
+        or _normalize_text(row.get("home_team_stats_snapshot_id"))
+        or _normalize_text(row.get("away_team_stats_snapshot_id"))
+    ):
+        return None, policy, "team-stat evidence is unavailable at the decision cutoff"
+    if policy and policy != "required":
+        return None, policy, "feature contract marks the value as explicitly missing"
+    return None, FEATURE_MISSING_REQUIRED_STATE, "required feature missing from the certified dataset row"
+
+
+def _feature_value_type_columns(value: Any) -> dict[str, Any]:
+    if value is None:
+        return {
+            "feature_value_json": None,
+            "feature_value_text": None,
+            "feature_value_number": None,
+            "feature_value_boolean": None,
+        }
+    if isinstance(value, bool):
+        return {
+            "feature_value_json": _as_json(value),
+            "feature_value_text": None,
+            "feature_value_number": None,
+            "feature_value_boolean": int(value),
+        }
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        return {
+            "feature_value_json": _as_json(value),
+            "feature_value_text": None,
+            "feature_value_number": value,
+            "feature_value_boolean": None,
+        }
+    text = _normalize_text(value)
+    return {
+        "feature_value_json": _as_json(text),
+        "feature_value_text": text,
+        "feature_value_number": None,
+        "feature_value_boolean": None,
+    }
+
+
+def _feature_snapshot_population_signature(
+    dataset_id: str,
+    source_dataset_batch_id: str,
+    feature_rows: Sequence[Mapping[str, Any]],
+) -> str:
+    context_signatures = [
+        _stable_id(
+            "feature_snapshot_population_context",
+            row.get("dataset_row_id"),
+            row.get("decision_context_id"),
+            row.get("feature_id"),
+            row.get("feature_version"),
+            row.get("entity_scope"),
+            row.get("scheduled_kickoff_time"),
+            row.get("decision_cutoff_time"),
+            row.get("feature_lineage_id"),
+            row.get("certification_id"),
+            row.get("dataset_certification_id"),
+            row.get("selected_source_row_ids_json"),
+            row.get("source_certification_ids_json"),
+            row.get("source_alignment_certification_ids_json"),
+            row.get("source_lineage_ids_json"),
+            row.get("missing_required_assets_json"),
+        )
+        for row in feature_rows
+    ]
+    return _stable_id(
+        "feature_snapshot_population_batch",
+        dataset_id,
+        source_dataset_batch_id,
+        FEATURE_REGISTRY_SCHEMA_VERSION,
+        FEATURE_DEFINITION_VERSION,
+        FEATURE_SNAPSHOT_TRANSFORMATION_VERSION,
+        _as_json(sorted(context_signatures)),
+    )
+
+
+def _feature_snapshot_population_batch_id(
+    dataset_id: str,
+    source_dataset_batch_id: str,
+    contexts: Sequence[Mapping[str, Any]],
+) -> str:
+    context_signatures = [
+        _stable_id(
+            "feature_snapshot_population_context",
+            context.get("dataset_row_id"),
+            context.get("decision_context_id"),
+            context.get("feature_context_id"),
+            _as_json(context.get("selected_source_row_ids")),
+            _as_json(context.get("source_certification_ids")),
+            _as_json(context.get("source_alignment_certification_ids")),
+            _as_json(context.get("source_lineage_ids")),
+            _as_json(context.get("missing_required_assets")),
+        )
+        for context in contexts
+    ]
+    return _stable_id(
+        "feature_snapshot_population_batch",
+        dataset_id,
+        source_dataset_batch_id,
+        FEATURE_REGISTRY_SCHEMA_VERSION,
+        FEATURE_DEFINITION_VERSION,
+        FEATURE_SNAPSHOT_TRANSFORMATION_VERSION,
+        _as_json(sorted(context_signatures)),
+    )
+
+
+def build_feature_snapshot_population(
+    storage_path: str | Path | None = None,
+    *,
+    backend: str = "sqlite",
+    dataset_id: str = DEFAULT_NFL_HISTORICAL_DATASET_ID,
+    batch_id: str | None = None,
+) -> dict[str, Any]:
+    storage = create_local_storage_engine(storage_path, backend=backend)
+    try:
+        required_tables = (
+            "historical_dataset_batches",
+            "historical_dataset_rows",
+            "historical_certifications",
+        )
+        if not all(storage.table_exists(table_name) for table_name in required_tables):
+            return {
+                "ok": False,
+                "status": "missing_required_dataset_tables",
+                "dataset_id": dataset_id,
+                "batch_id": "",
+                "version_id": "",
+                "source_dataset_batch_id": "",
+                "source_dataset_version_id": "",
+                "source_dataset_certification_id": "",
+                "dataset_row_count": 0,
+                "feature_definition_count": len(list_feature_definitions(dataset_id=dataset_id)),
+                "feature_snapshot_count": 0,
+                "feature_snapshots": [],
+                "feature_population_summary": {},
+                "join_diagnostics": {},
+                "warnings": ["required historical dataset tables are missing"],
+            }
+
+        batch_rows = storage.fetch(
+            "historical_dataset_batches",
+            where="dataset_id = ?" + (" AND batch_id = ?" if batch_id else ""),
+            params=[dataset_id, *([batch_id] if batch_id else [])],
+            order_by="created_at ASC, batch_id ASC",
+        )
+        if not batch_rows:
+            return {
+                "ok": False,
+                "status": "missing_dataset_batch",
+                "dataset_id": dataset_id,
+                "batch_id": "",
+                "version_id": "",
+                "source_dataset_batch_id": "",
+                "source_dataset_version_id": "",
+                "source_dataset_certification_id": "",
+                "dataset_row_count": 0,
+                "feature_definition_count": len(list_feature_definitions(dataset_id=dataset_id)),
+                "feature_snapshot_count": 0,
+                "feature_snapshots": [],
+                "feature_population_summary": {},
+                "join_diagnostics": {},
+                "warnings": ["no certified historical dataset batch was found"],
+            }
+
+        source_dataset_batch_row = dict(batch_rows[-1])
+        source_dataset_batch_id = _normalize_text(source_dataset_batch_row.get("batch_id"))
+        source_dataset_version_id = _normalize_text(source_dataset_batch_row.get("version_id"))
+        if not source_dataset_batch_id:
+            return {
+                "ok": False,
+                "status": "missing_dataset_batch_id",
+                "dataset_id": dataset_id,
+                "batch_id": "",
+                "version_id": "",
+                "source_dataset_batch_id": "",
+                "source_dataset_version_id": source_dataset_version_id,
+                "source_dataset_certification_id": "",
+                "dataset_row_count": 0,
+                "feature_definition_count": len(list_feature_definitions(dataset_id=dataset_id)),
+                "feature_snapshot_count": 0,
+                "feature_snapshots": [],
+                "feature_population_summary": {},
+                "join_diagnostics": {},
+                "warnings": ["dataset batch id is missing"],
+            }
+
+        dataset_rows = [
+            dict(row)
+            for row in storage.fetch(
+                "historical_dataset_rows",
+                where="dataset_id = ? AND batch_id = ?",
+                params=[dataset_id, source_dataset_batch_id],
+                order_by="decision_cutoff_time ASC, market_type ASC, selection ASC, book ASC, dataset_row_id ASC",
+            )
+        ]
+        if not dataset_rows:
+            return {
+                "ok": False,
+                "status": "missing_dataset_rows",
+                "dataset_id": dataset_id,
+                "batch_id": "",
+                "version_id": "",
+                "source_dataset_batch_id": source_dataset_batch_id,
+                "source_dataset_version_id": source_dataset_version_id,
+                "source_dataset_certification_id": "",
+                "dataset_row_count": 0,
+                "feature_definition_count": len(list_feature_definitions(dataset_id=dataset_id)),
+                "feature_snapshot_count": 0,
+                "feature_snapshots": [],
+                "feature_population_summary": {},
+                "join_diagnostics": {},
+                "warnings": ["the certified historical dataset batch has no rows"],
+            }
+
+        certification_rows = storage.fetch(
+            "historical_certifications",
+            where="batch_id = ? AND stage_name = ?",
+            params=[source_dataset_batch_id, "historical_dataset_population.minimum_schema"],
+            order_by="certified_at ASC, certification_id ASC",
+        )
+        if not certification_rows:
+            return {
+                "ok": False,
+                "status": "missing_dataset_certification",
+                "dataset_id": dataset_id,
+                "batch_id": "",
+                "version_id": "",
+                "source_dataset_batch_id": source_dataset_batch_id,
+                "source_dataset_version_id": source_dataset_version_id,
+                "source_dataset_certification_id": "",
+                "dataset_row_count": len(dataset_rows),
+                "feature_definition_count": len(list_feature_definitions(dataset_id=dataset_id)),
+                "feature_snapshot_count": 0,
+                "feature_snapshots": [],
+                "feature_population_summary": {},
+                "join_diagnostics": {},
+                "warnings": ["dataset certification is missing for the certified historical dataset batch"],
+            }
+
+        source_dataset_certification_row = dict(certification_rows[-1])
+        source_dataset_certification_id = _normalize_text(source_dataset_certification_row.get("certification_id"))
+        source_dataset_batch_status = _normalize_text(source_dataset_batch_row.get("readiness_state"), "missing")
+        source_dataset_certification_status = _normalize_text(source_dataset_certification_row.get("certification_status"), "missing")
+        source_dataset_cardinality_status = _normalize_text(source_dataset_batch_row.get("cardinality_validation_status"), "missing")
+        source_dataset_point_in_time_status = _normalize_text(source_dataset_batch_row.get("point_in_time_validation_status"), "missing")
+        source_dataset_lineage_status = bool(int(source_dataset_batch_row.get("lineage_completeness") or 0))
+        source_dataset_provenance_status = bool(int(source_dataset_batch_row.get("provenance_completeness") or 0))
+
+        contexts = [build_feature_snapshot_context(row) for row in dataset_rows]
+        feature_definitions = list_feature_definitions(dataset_id=dataset_id)
+        feature_batch_id = _feature_snapshot_population_batch_id(dataset_id, source_dataset_batch_id, contexts)
+        feature_batch_version_id = _stable_id(
+            "feature_snapshot_version",
+            dataset_id,
+            feature_batch_id,
+            FEATURE_REGISTRY_SCHEMA_VERSION,
+            FEATURE_DEFINITION_VERSION,
+            FEATURE_SNAPSHOT_TRANSFORMATION_VERSION,
+        )
+        feature_batch_lineage_id = _stable_id(
+            "feature_snapshot_population_lineage",
+            dataset_id,
+            feature_batch_id,
+            feature_batch_version_id,
+        )
+        feature_evidence_package_id = _stable_id(
+            "feature_snapshot_population_evidence",
+            dataset_id,
+            feature_batch_id,
+            feature_batch_version_id,
+        )
+
+        expected_feature_row_count = len(dataset_rows) * len(feature_definitions)
+        summary_snapshot_id = _stable_id(
+            "feature_snapshot_population_summary",
+            dataset_id,
+            feature_batch_id,
+            feature_batch_version_id,
+        )
+        existing_summary_rows = storage.fetch(
+            "feature_snapshots",
+            where="dataset_id = ? AND batch_id = ? AND snapshot_kind = ?",
+            params=[dataset_id, feature_batch_id, FEATURE_SNAPSHOT_BATCH_KIND],
+            limit=1,
+        ) if storage.table_exists("feature_snapshots") else []
+        existing_feature_rows = storage.fetch(
+            "feature_snapshots",
+            where="dataset_id = ? AND batch_id = ? AND snapshot_kind = ?",
+            params=[dataset_id, feature_batch_id, FEATURE_SNAPSHOT_ROW_KIND],
+        ) if storage.table_exists("feature_snapshots") else []
+        if existing_summary_rows and len(existing_feature_rows) == expected_feature_row_count:
+            return build_feature_snapshot_population_dashboard_snapshot(
+                storage_path=storage.path,
+                backend=backend,
+                dataset_id=dataset_id,
+                batch_id=feature_batch_id,
+                include_source_dataset_snapshot=True,
+                idempotent_reuse=True,
+            )
+
+        created_at = _normalize_text(source_dataset_batch_row.get("certified_at")) or _to_iso8601_utc(source_dataset_batch_row.get("created_at")) or _to_iso8601_utc(None)
+        if not created_at:
+            created_at = _to_iso8601_utc(source_dataset_batch_row.get("created_at")) or _to_iso8601_utc(source_dataset_batch_row.get("snapshot_time"))
+        if not created_at:
+            created_at = _to_iso8601_utc(source_dataset_batch_row.get("updated_at")) or _to_iso8601_utc(source_dataset_certification_row.get("certified_at"))
+
+        feature_rows: list[dict[str, Any]] = []
+        lineage_edges: list[dict[str, Any]] = []
+        missingness_counts: Counter[str] = Counter()
+        feature_family_counts: Counter[str] = Counter()
+        value_type_counts: Counter[str] = Counter()
+        status_counts: Counter[str] = Counter()
+        row_feature_counts: Counter[str] = Counter()
+        blocked_feature_ids: list[str] = []
+        aggregated_context_summaries: dict[str, Any] = {}
+        aggregated_selected_source_row_ids: dict[str, Any] = {}
+        aggregated_source_lineage_ids: dict[str, Any] = {}
+        aggregated_source_certification_ids: dict[str, Any] = {}
+        aggregated_source_alignment_certification_ids: dict[str, Any] = {}
+        aggregated_predictor_references: dict[str, Any] = {}
+        aggregated_asset_freshness: dict[str, Any] = {}
+        aggregated_missing_required_assets: dict[str, Any] = {}
+
+        for row_index, dataset_row in enumerate(dataset_rows):
+            context = contexts[row_index]
+            source_maps = _feature_source_maps(dataset_row)
+            row_context_id = _normalize_text(context.get("dataset_row_id"))
+            aggregated_context_summaries[row_context_id] = {
+                "dataset_row_id": row_context_id,
+                "decision_context_id": _normalize_text(context.get("decision_context_id")),
+                "feature_context_id": _normalize_text(context.get("feature_context_id")),
+                "feature_snapshot_count": len(feature_definitions),
+                "selected_source_row_ids": dict(source_maps["selected_source_row_ids"]),
+                "source_certification_ids": dict(source_maps["source_certification_ids"]),
+                "source_alignment_certification_ids": dict(source_maps["source_alignment_certification_ids"]),
+                "source_lineage_ids": dict(source_maps["source_lineage_ids"]),
+                "predictor_references": dict(source_maps["predictor_references"]),
+                "asset_freshness": dict(source_maps["asset_freshness"]),
+                "missing_required_assets": list(source_maps["missing_required_assets"]),
+            }
+            aggregated_selected_source_row_ids[row_context_id] = dict(source_maps["selected_source_row_ids"])
+            aggregated_source_lineage_ids[row_context_id] = dict(source_maps["source_lineage_ids"])
+            aggregated_source_certification_ids[row_context_id] = dict(source_maps["source_certification_ids"])
+            aggregated_source_alignment_certification_ids[row_context_id] = dict(source_maps["source_alignment_certification_ids"])
+            aggregated_predictor_references[row_context_id] = dict(source_maps["predictor_references"])
+            aggregated_asset_freshness[row_context_id] = dict(source_maps["asset_freshness"])
+            aggregated_missing_required_assets[row_context_id] = list(source_maps["missing_required_assets"])
+
+            for definition in feature_definitions:
+                feature_row, lineage_record = _feature_snapshot_record(
+                    storage_location=str(storage.path),
+                    dataset_id=dataset_id,
+                    dataset_name=DEFAULT_NFL_HISTORICAL_DATASET_NAME,
+                    source_dataset_batch_id=source_dataset_batch_id,
+                    source_dataset_version_id=source_dataset_version_id,
+                    source_dataset_row_count=len(dataset_rows),
+                    feature_batch_id=feature_batch_id,
+                    feature_batch_version_id=feature_batch_version_id,
+                    feature_evidence_package_id=feature_evidence_package_id,
+                    dataset_certification_id=source_dataset_certification_id,
+                    dataset_batch_row=source_dataset_batch_row,
+                    dataset_row=dataset_row,
+                    context=context,
+                    feature_definition=definition,
+                    source_maps=source_maps,
+                    created_at=created_at,
+                    feature_row_index=len(feature_rows),
+                )
+                feature_rows.append(feature_row)
+                lineage_edges.append(lineage_record)
+                row_feature_counts[row_context_id] += 1
+                missingness_counts[feature_row["feature_missingness_state"]] += 1
+                feature_family_counts[feature_row["feature_family"]] += 1
+                value_type_counts[feature_row["value_type"]] += 1
+                status_counts[feature_row["status"]] += 1
+                if feature_row["status"] != "certified":
+                    blocked_feature_ids.append(feature_row["feature_id"])
+
+        feature_values_summary = {
+            "feature_snapshot_ids": [row["snapshot_id"] for row in feature_rows],
+            "feature_ids": [row["feature_id"] for row in feature_rows],
+            "feature_row_count": len(feature_rows),
+            "feature_count": len(feature_definitions),
+            "dataset_row_count": len(dataset_rows),
+        }
+        feature_summary_payload = {
+            "dataset_id": dataset_id,
+            "dataset_name": DEFAULT_NFL_HISTORICAL_DATASET_NAME,
+            "batch_id": feature_batch_id,
+            "version_id": feature_batch_version_id,
+            "source_dataset_batch_id": source_dataset_batch_id,
+            "source_dataset_version_id": source_dataset_version_id,
+            "source_dataset_certification_id": source_dataset_certification_id,
+            "dataset_certification_status": source_dataset_certification_status,
+            "source_dataset_readiness_state": source_dataset_batch_status,
+            "source_dataset_cardinality_status": source_dataset_cardinality_status,
+            "source_dataset_point_in_time_status": source_dataset_point_in_time_status,
+            "source_dataset_lineage_completeness": source_dataset_lineage_status,
+            "source_dataset_provenance_completeness": source_dataset_provenance_status,
+            "dataset_row_count": len(dataset_rows),
+            "feature_row_count": len(feature_rows),
+            "feature_count": len(feature_definitions),
+            "expected_feature_row_count": expected_feature_row_count,
+            "feature_definition_ids": [definition["feature_id"] for definition in feature_definitions],
+            "feature_family_counts": dict(feature_family_counts),
+            "value_type_counts": dict(value_type_counts),
+            "missingness_counts": dict(missingness_counts),
+            "status_counts": dict(status_counts),
+            "row_feature_counts": dict(row_feature_counts),
+            "row_contexts": aggregated_context_summaries,
+            "population_signature": _feature_snapshot_population_signature(dataset_id, source_dataset_batch_id, feature_rows),
+            "source_certification_ids": _normalize_text(source_dataset_certification_row.get("certification_id")),
+            "source_alignment_certification_ids": aggregated_source_alignment_certification_ids,
+            "selected_source_row_ids": aggregated_selected_source_row_ids,
+            "source_lineage_ids": aggregated_source_lineage_ids,
+            "predictor_references": aggregated_predictor_references,
+            "asset_freshness": aggregated_asset_freshness,
+            "missing_required_assets": aggregated_missing_required_assets,
+            "feature_snapshot_grain_id": CANONICAL_FEATURE_SNAPSHOT_GRAIN_ID,
+            "feature_registry_schema_version": FEATURE_REGISTRY_SCHEMA_VERSION,
+            "feature_definition_version": FEATURE_DEFINITION_VERSION,
+            "feature_snapshot_transformation_version": FEATURE_SNAPSHOT_TRANSFORMATION_VERSION,
+        }
+        summary_row = {
+            "snapshot_id": summary_snapshot_id,
+            "dataset_id": dataset_id,
+            "dataset_name": DEFAULT_NFL_HISTORICAL_DATASET_NAME,
+            "owner": DEFAULT_FEATURE_OWNER,
+            "sport": "football",
+            "feature_pack": FEATURE_DEFINITION_VERSION,
+            "storage_location": str(storage.path),
+            "readiness": "feature_ready" if not blocked_feature_ids else "blocked",
+            "update_frequency": "manual",
+            "validation_state": "validated" if not blocked_feature_ids else "rejected",
+            "status": "certified" if not blocked_feature_ids else "blocked",
+            "batch_id": feature_batch_id,
+            "snapshot_kind": FEATURE_SNAPSHOT_BATCH_KIND,
+            "feature_pack_version": FEATURE_DEFINITION_VERSION,
+            "dataset_batch_id": source_dataset_batch_id,
+            "dataset_version_id": source_dataset_version_id,
+            "dataset_row_id": "",
+            "decision_context_id": "",
+            "event_id": "",
+            "game_id": "",
+            "season": None,
+            "week": None,
+            "home_team_id": "",
+            "away_team_id": "",
+            "team_side": "",
+            "target_team_id": "",
+            "opponent_team_id": "",
+            "home_team": "",
+            "away_team": "",
+            "market_type": "feature_population",
+            "selection": "",
+            "book": "",
+            "scheduled_kickoff_time": "",
+            "decision_cutoff_time": "",
+            "cutoff_policy_version": HISTORICAL_DATASET_CUTOFF_POLICY_ID,
+            "feature_id": "",
+            "feature_name": "",
+            "feature_family": "",
+            "feature_version": FEATURE_DEFINITION_VERSION,
+            "classification": "direct",
+            "value_type": "string",
+            "unit": "summary",
+            "feature_owner": DEFAULT_FEATURE_OWNER,
+            "entity_scope": "feature_population_batch",
+            "dataset_grain_compatibility": CANONICAL_FEATURE_SNAPSHOT_GRAIN_ID,
+            "transformation_version": FEATURE_SNAPSHOT_TRANSFORMATION_VERSION,
+            "missingness_policy": "required",
+            "feature_context_id": "",
+            "feature_value_json": _as_json(feature_values_summary),
+            "feature_value_text": None,
+            "feature_value_number": None,
+            "feature_value_boolean": None,
+            "feature_missingness_state": FEATURE_PRESENT_STATE,
+            "feature_missingness_reason": "",
+            "feature_definition_json": _as_json({"feature_definition_count": len(feature_definitions)}),
+            "feature_context_json": _as_json(aggregated_context_summaries),
+            "feature_snapshot_grain_id": CANONICAL_FEATURE_SNAPSHOT_GRAIN_ID,
+            "feature_registry_schema_version": FEATURE_REGISTRY_SCHEMA_VERSION,
+            "source_dataset_batch_id": source_dataset_batch_id,
+            "source_dataset_row_count": len(dataset_rows),
+            "certification_id": source_dataset_certification_id,
+            "dataset_certification_id": source_dataset_certification_id,
+            "feature_lineage_id": feature_batch_lineage_id,
+            "feature_evidence_id": feature_evidence_package_id,
+            "source_certification_ids_json": _as_json(source_dataset_batch_row.get("source_certification_ids_json")),
+            "source_alignment_certification_ids_json": _as_json(aggregated_source_alignment_certification_ids),
+            "selected_source_row_ids_json": _as_json(aggregated_selected_source_row_ids),
+            "source_lineage_ids_json": _as_json(aggregated_source_lineage_ids),
+            "predictor_references_json": _as_json(aggregated_predictor_references),
+            "missing_required_assets_json": _as_json(aggregated_missing_required_assets),
+            "asset_freshness_json": _as_json(aggregated_asset_freshness),
+            "evidence_package_id": feature_evidence_package_id,
+            "record_count": len(feature_rows),
+            "feature_count": len(feature_definitions),
+            "feature_values_json": _as_json(feature_values_summary),
+            "summary_json": _as_json(feature_summary_payload),
+            "payload_json": _as_json(
+                {
+                    "summary": feature_summary_payload,
+                    "feature_values": feature_values_summary,
+                }
+            ),
+            "schema_version": FEATURE_REGISTRY_SCHEMA_VERSION,
+            "created_at": created_at,
+            "updated_at": created_at,
+            "source": "historical_dataset_population_runtime",
+            "provider": "repository",
+            "market": _normalize_text(source_dataset_batch_row.get("market_profile"), "sports:nfl"),
+            "asset_class": _normalize_text(source_dataset_batch_row.get("profile_family"), "sports"),
+            "lineage_id": feature_batch_lineage_id,
+            "version_id": feature_batch_version_id,
+            "quality_score": 1.0 if not blocked_feature_ids else 0.0,
+        }
+        summary_lineage = create_lineage_record(
+            provider_id="historical_dataset_population_runtime",
+            provider_type="feature_population",
+            payload_schema_version=FEATURE_REGISTRY_SCHEMA_VERSION,
+            snapshot_id=summary_snapshot_id,
+            source_type="historical_dataset",
+            schema_version=FEATURE_REGISTRY_SCHEMA_VERSION,
+            lineage_id=feature_batch_lineage_id,
+            dataset_id=dataset_id,
+            dataset_name=DEFAULT_NFL_HISTORICAL_DATASET_NAME,
+            source_record_id=source_dataset_batch_id,
+            target_record_id=summary_snapshot_id,
+            source_stage="historical_dataset_batch",
+            target_stage="feature_population_summary",
+            transformation="populate_feature_snapshot_population",
+        )
+        summary_lineage_row = {
+            "lineage_edge_id": feature_batch_lineage_id,
+            "dataset_id": dataset_id,
+            "dataset_name": DEFAULT_NFL_HISTORICAL_DATASET_NAME,
+            "owner": DEFAULT_FEATURE_OWNER,
+            "sport": "football",
+            "feature_pack": FEATURE_DEFINITION_VERSION,
+            "storage_location": str(storage.path),
+            "readiness": "feature_ready" if not blocked_feature_ids else "blocked",
+            "update_frequency": "manual",
+            "validation_state": "validated" if not blocked_feature_ids else "rejected",
+            "status": "certified" if not blocked_feature_ids else "blocked",
+            "schema_version": FEATURE_REGISTRY_SCHEMA_VERSION,
+            "created_at": created_at,
+            "updated_at": created_at,
+            "source": "historical_dataset_population_runtime",
+            "provider": "repository",
+            "market": _normalize_text(source_dataset_batch_row.get("market_profile"), "sports:nfl"),
+            "market_type": "feature_population",
+            "asset_class": _normalize_text(source_dataset_batch_row.get("profile_family"), "sports"),
+            "snapshot_id": summary_snapshot_id,
+            "lineage_id": feature_batch_lineage_id,
+            "version_id": feature_batch_version_id,
+            "quality_score": 1.0 if not blocked_feature_ids else 0.0,
+            "source_stage": "historical_dataset_batch",
+            "source_id": source_dataset_batch_id,
+            "target_stage": "feature_population_summary",
+            "target_id": summary_snapshot_id,
+            "transformation": "populate_feature_snapshot_population",
+            "step_index": 0,
+            "payload_json": _as_json(summary_lineage),
+        }
+
+        for row in feature_rows:
+            storage.upsert("feature_snapshots", row, key_columns=("snapshot_id",))
+        storage.upsert("feature_snapshots", summary_row, key_columns=("snapshot_id",))
+        for lineage_row in lineage_edges:
+            storage.upsert("lineage_edges", lineage_row, key_columns=("lineage_edge_id",))
+        storage.upsert("lineage_edges", summary_lineage_row, key_columns=("lineage_edge_id",))
+
+        return build_feature_snapshot_population_dashboard_snapshot(
+            storage_path=storage.path,
+            backend=backend,
+            dataset_id=dataset_id,
+            batch_id=feature_batch_id,
+            include_source_dataset_snapshot=True,
+            idempotent_reuse=False,
+        )
+    finally:
+        storage.close()
+
+
+def build_feature_snapshot_population_dashboard_snapshot(
+    storage_path: str | Path | None = None,
+    *,
+    backend: str = "sqlite",
+    dataset_id: str = DEFAULT_NFL_HISTORICAL_DATASET_ID,
+    batch_id: str | None = None,
+    include_source_dataset_snapshot: bool = True,
+    idempotent_reuse: bool = False,
+) -> dict[str, Any]:
+    storage = create_local_storage_engine(storage_path, backend=backend)
+    try:
+        batch_rows = storage.fetch(
+            "feature_snapshots",
+            where="dataset_id = ? AND snapshot_kind = ?" + (" AND batch_id = ?" if batch_id else ""),
+            params=[dataset_id, FEATURE_SNAPSHOT_BATCH_KIND, *([batch_id] if batch_id else [])],
+            order_by="created_at ASC, snapshot_id ASC",
+        ) if storage.table_exists("feature_snapshots") else []
+        latest_batch = dict(batch_rows[-1]) if batch_rows else {}
+        feature_rows = storage.fetch(
+            "feature_snapshots",
+            where="dataset_id = ? AND snapshot_kind = ?" + (" AND batch_id = ?" if batch_id else ""),
+            params=[dataset_id, FEATURE_SNAPSHOT_ROW_KIND, *([batch_id] if batch_id else [])],
+            order_by="dataset_row_id ASC, feature_id ASC, snapshot_id ASC",
+        ) if storage.table_exists("feature_snapshots") else []
+        lineage_rows = storage.fetch(
+            "lineage_edges",
+            where="dataset_id = ? AND target_stage IN (?, ?)" + (" AND version_id = ?" if batch_id else ""),
+            params=[dataset_id, "feature_snapshot", "feature_population_summary", *([_normalize_text(latest_batch.get("version_id"))] if batch_id else [])],
+            order_by="created_at ASC, lineage_edge_id ASC",
+        ) if storage.table_exists("lineage_edges") else []
+
+        source_dataset_snapshot = {}
+        if include_source_dataset_snapshot:
+            try:
+                from src.data.historical_research_database import build_historical_dataset_population_dashboard_snapshot
+
+                source_dataset_snapshot = build_historical_dataset_population_dashboard_snapshot(
+                    storage_path=storage.path,
+                    backend=backend,
+                    profile_id="sports:nfl",
+                    dataset_id=dataset_id,
+                    batch_id=_normalize_text(latest_batch.get("dataset_batch_id")),
+                    include_coverage_planner_snapshot=False,
+                )
+            except Exception as exc:
+                source_dataset_snapshot = {
+                    "ok": False,
+                    "status": "historical_dataset_population_snapshot_error",
+                    "warnings": [str(exc)],
+                }
+
+        latest_row = dict(feature_rows[-1]) if feature_rows else {}
+        dataset_row_count = len({row.get("dataset_row_id") for row in feature_rows if row.get("dataset_row_id")})
+        feature_definition_ids = list_feature_definition_ids(dataset_id=dataset_id)
+        feature_definition_count = len(feature_definition_ids)
+        feature_row_count = len(feature_rows)
+        missingness_counts = dict(Counter(str(row.get("feature_missingness_state") or "unknown") for row in feature_rows))
+        family_counts = dict(Counter(str(row.get("feature_family") or "unknown") for row in feature_rows))
+        value_type_counts = dict(Counter(str(row.get("value_type") or "unknown") for row in feature_rows))
+        status_counts = dict(Counter(str(row.get("status") or "unknown") for row in feature_rows))
+        readiness_state = _normalize_text(latest_batch.get("readiness"), "missing")
+        validation_state = _normalize_text(latest_batch.get("validation_state"), "missing")
+        status = _normalize_text(latest_batch.get("status"), "missing")
+        ok = bool(feature_rows) and status == "certified" and readiness_state == "feature_ready" and validation_state == "validated"
+        join_diagnostics = {
+            "feature_row_count": feature_row_count,
+            "feature_definition_count": feature_definition_count,
+            "dataset_row_count": dataset_row_count,
+            "feature_family_counts": family_counts,
+            "feature_value_type_counts": value_type_counts,
+            "feature_status_counts": status_counts,
+            "feature_missingness_counts": missingness_counts,
+        }
+        feature_summary = dict(latest_batch)
+        feature_summary.update(
+            {
+                "ok": ok,
+                "status": "ready" if ok else "partial" if latest_batch or feature_rows else "missing",
+                "dataset_id": dataset_id,
+                "batch_id": _normalize_text(latest_batch.get("batch_id")),
+                "version_id": _normalize_text(latest_batch.get("version_id")),
+                "dataset_batch_id": _normalize_text(latest_batch.get("dataset_batch_id")),
+                "dataset_version_id": _normalize_text(latest_batch.get("dataset_version_id")),
+                "dataset_row_count": dataset_row_count,
+                "feature_definition_count": feature_definition_count,
+                "feature_snapshot_count": feature_row_count,
+                "feature_rows": [dict(row) for row in feature_rows],
+                "feature_batches": [dict(row) for row in batch_rows],
+                "feature_lineage_edges": [dict(row) for row in lineage_rows],
+                "feature_definition_ids": feature_definition_ids,
+                "join_diagnostics": join_diagnostics,
+                "source_dataset_snapshot": source_dataset_snapshot,
+                "source_dataset_batch_id": _normalize_text(latest_batch.get("dataset_batch_id")),
+                "source_dataset_version_id": _normalize_text(latest_batch.get("dataset_version_id")),
+                "source_dataset_certification_id": _normalize_text(latest_batch.get("certification_id")),
+                "idempotent_reuse": idempotent_reuse,
+            }
+        )
+        feature_summary.setdefault("feature_rows_json", _as_json([row.get("snapshot_id") for row in feature_rows]))
+        feature_summary.setdefault("feature_snapshot_grain_id", CANONICAL_FEATURE_SNAPSHOT_GRAIN_ID)
+        feature_summary.setdefault("feature_registry_schema_version", FEATURE_REGISTRY_SCHEMA_VERSION)
+        feature_summary.setdefault("feature_definition_version", FEATURE_DEFINITION_VERSION)
+        feature_summary.setdefault("feature_snapshot_transformation_version", FEATURE_SNAPSHOT_TRANSFORMATION_VERSION)
+        feature_summary.setdefault("storage", storage.health())
+        feature_summary.setdefault("warnings", [])
+        if latest_batch:
+            feature_summary.setdefault("feature_population_summary", latest_batch)
+            feature_summary.setdefault("feature_population_summary_row", latest_batch)
+            feature_summary.setdefault("feature_population_summary_id", _normalize_text(latest_batch.get("snapshot_id")))
+            feature_summary.setdefault("feature_evidence_package_id", _normalize_text(latest_batch.get("evidence_package_id")))
+            feature_summary.setdefault("source_dataset_batch_id", _normalize_text(latest_batch.get("dataset_batch_id")))
+            feature_summary.setdefault("source_dataset_certification_id", _normalize_text(latest_batch.get("certification_id")))
+            feature_summary.setdefault("feature_batch_lineage_id", _normalize_text(latest_batch.get("lineage_id")))
+        return feature_summary
+    finally:
+        storage.close()
+
+
+def get_feature_snapshot_population_snapshot_for_dashboard(
+    storage_path: str | Path | None = None,
+    *,
+    backend: str = "sqlite",
+    dataset_id: str = DEFAULT_NFL_HISTORICAL_DATASET_ID,
+    batch_id: str | None = None,
+) -> dict[str, Any]:
+    try:
+        return build_feature_snapshot_population_dashboard_snapshot(
+            storage_path=storage_path,
+            backend=backend,
+            dataset_id=dataset_id,
+            batch_id=batch_id,
+            include_source_dataset_snapshot=True,
+            idempotent_reuse=False,
+        )
+    except Exception as exc:
+        return {
+            "ok": False,
+            "status": "feature_snapshot_population_snapshot_error",
+            "dataset_id": dataset_id,
+            "batch_id": _normalize_text(batch_id),
+            "version_id": "",
+            "dataset_row_count": 0,
+            "feature_definition_count": len(list_feature_definitions(dataset_id=dataset_id)),
+            "feature_snapshot_count": 0,
+            "feature_rows": [],
+            "feature_batches": [],
+            "feature_lineage_edges": [],
+            "join_diagnostics": {},
+            "source_dataset_snapshot": {},
+            "storage": {},
+            "warnings": [str(exc)],
+        }
+
+
+def _feature_snapshot_record_status(missingness_state: str) -> tuple[str, str, str, float]:
+    blocked_states = {FEATURE_MISSING_REQUIRED_STATE, "invalid_source", "unsupported_context"}
+    status = "certified" if missingness_state not in blocked_states else "blocked"
+    readiness = "feature_ready" if status == "certified" else "blocked"
+    validation_state = "validated" if status == "certified" else "rejected"
+    quality_score = 1.0 if status == "certified" else 0.0
+    return status, readiness, validation_state, quality_score
+
+
+def _feature_snapshot_record(
+    *,
+    storage_location: str,
+    dataset_id: str,
+    dataset_name: str,
+    source_dataset_batch_id: str,
+    source_dataset_version_id: str,
+    source_dataset_row_count: int,
+    feature_batch_id: str,
+    feature_batch_version_id: str,
+    feature_evidence_package_id: str,
+    dataset_certification_id: str,
+    dataset_batch_row: Mapping[str, Any],
+    dataset_row: Mapping[str, Any],
+    context: Mapping[str, Any],
+    feature_definition: Mapping[str, Any],
+    source_maps: Mapping[str, Any],
+    created_at: str,
+    feature_row_index: int,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    feature_id = _normalize_text(feature_definition.get("feature_id"))
+    feature_snapshot_id = build_feature_value_identity(feature_definition, context)
+    feature_context_id = build_feature_snapshot_context_id(context)
+    feature_value, missingness_state, missingness_reason = _feature_value_and_missingness(
+        feature_definition,
+        dataset_row,
+        source_maps,
+    )
+    status, readiness, validation_state, quality_score = _feature_snapshot_record_status(missingness_state)
+    value_columns = _feature_value_type_columns(feature_value)
+    feature_lineage_id = _stable_id(
+        "feature_snapshot_lineage",
+        feature_snapshot_id,
+        feature_context_id,
+        feature_id,
+        _as_json(source_maps["source_lineage_ids"]),
+        _as_json(source_maps["source_certification_ids"]),
+        _as_json(source_maps["source_alignment_certification_ids"]),
+    )
+    feature_evidence_id = _stable_id(
+        "feature_snapshot_evidence",
+        feature_snapshot_id,
+        feature_context_id,
+        _as_json(source_maps["selected_source_row_ids"]),
+        _as_json(source_maps["source_lineage_ids"]),
+        _as_json(source_maps["source_certification_ids"]),
+    )
+    feature_definition_json = feature_definition if isinstance(feature_definition, dict) else dict(feature_definition)
+    feature_context_json = dict(context)
+    feature_value_summary = {
+        "feature_id": feature_id,
+        "feature_name": _normalize_text(feature_definition.get("feature_name")),
+        "feature_value": feature_value,
+        "feature_missingness_state": missingness_state,
+        "feature_missingness_reason": missingness_reason,
+        "dataset_row_id": _normalize_text(context.get("dataset_row_id")),
+        "decision_context_id": _normalize_text(context.get("decision_context_id")),
+        "feature_context_id": feature_context_id,
+    }
+    payload = {
+        "feature_snapshot_id": feature_snapshot_id,
+        "feature_evidence_id": feature_evidence_id,
+        "feature_definition": feature_definition_json,
+        "feature_context": feature_context_json,
+        "feature_value": feature_value,
+        "feature_missingness_state": missingness_state,
+        "feature_missingness_reason": missingness_reason,
+        "source_maps": {
+            "source_certification_ids": dict(source_maps["source_certification_ids"]),
+            "source_alignment_certification_ids": dict(source_maps["source_alignment_certification_ids"]),
+            "selected_source_row_ids": dict(source_maps["selected_source_row_ids"]),
+            "source_lineage_ids": dict(source_maps["source_lineage_ids"]),
+            "predictor_references": dict(source_maps["predictor_references"]),
+            "missing_required_assets": list(source_maps["missing_required_assets"]),
+            "asset_freshness": dict(source_maps["asset_freshness"]),
+        },
+    }
+    row = {
+        "snapshot_id": feature_snapshot_id,
+        "dataset_id": dataset_id,
+        "dataset_name": dataset_name,
+        "owner": DEFAULT_FEATURE_OWNER,
+        "sport": "football",
+        "feature_pack": FEATURE_DEFINITION_VERSION,
+        "storage_location": storage_location,
+        "readiness": readiness,
+        "update_frequency": "manual",
+        "validation_state": validation_state,
+        "status": status,
+        "batch_id": feature_batch_id,
+        "snapshot_kind": FEATURE_SNAPSHOT_ROW_KIND,
+        "feature_pack_version": FEATURE_DEFINITION_VERSION,
+        "dataset_batch_id": source_dataset_batch_id,
+        "dataset_version_id": source_dataset_version_id,
+        "dataset_row_id": _normalize_text(context.get("dataset_row_id")),
+        "decision_context_id": _normalize_text(context.get("decision_context_id")),
+        "event_id": _normalize_text(context.get("event_id")),
+        "game_id": _normalize_text(context.get("event_id")),
+        "season": int(context.get("season") or 0),
+        "week": int(context.get("week") or 0),
+        "home_team_id": _normalize_text(context.get("home_team_id")),
+        "away_team_id": _normalize_text(context.get("away_team_id")),
+        "team_side": _normalize_text(context.get("team_side")),
+        "target_team_id": _normalize_text(dataset_row.get("target_team_id")),
+        "opponent_team_id": _normalize_text(dataset_row.get("opponent_team_id")),
+        "home_team": _normalize_text(dataset_row.get("home_team")),
+        "away_team": _normalize_text(dataset_row.get("away_team")),
+        "market_type": _normalize_text(dataset_row.get("market_type")),
+        "selection": _normalize_text(dataset_row.get("selection")),
+        "book": _normalize_text(dataset_row.get("book"), "consensus"),
+        "scheduled_kickoff_time": _normalize_text(context.get("scheduled_kickoff_time")),
+        "decision_cutoff_time": _normalize_text(context.get("decision_cutoff_time")),
+        "cutoff_policy_version": _normalize_text(context.get("cutoff_policy_version"), HISTORICAL_DATASET_CUTOFF_POLICY_ID),
+        "feature_id": feature_id,
+        "feature_name": _normalize_text(feature_definition.get("feature_name")),
+        "feature_family": _normalize_text(feature_definition.get("feature_family")),
+        "feature_version": _normalize_text(feature_definition.get("feature_version"), FEATURE_DEFINITION_VERSION),
+        "classification": _normalize_text(feature_definition.get("classification")),
+        "value_type": _normalize_text(feature_definition.get("value_type")),
+        "unit": _normalize_text(feature_definition.get("unit")),
+        "feature_owner": _normalize_text(feature_definition.get("feature_owner"), DEFAULT_FEATURE_OWNER),
+        "entity_scope": _normalize_text(feature_definition.get("entity_scope")),
+        "dataset_grain_compatibility": _normalize_text(feature_definition.get("dataset_grain_compatibility"), CANONICAL_FEATURE_SNAPSHOT_GRAIN_ID),
+        "transformation_version": _normalize_text(feature_definition.get("transformation_version"), FEATURE_SNAPSHOT_TRANSFORMATION_VERSION),
+        "missingness_policy": _normalize_text(feature_definition.get("missingness_policy")),
+        "feature_context_id": feature_context_id,
+        **value_columns,
+        "feature_missingness_state": missingness_state,
+        "feature_missingness_reason": missingness_reason,
+        "feature_definition_json": _as_json(feature_definition_json),
+        "feature_context_json": _as_json(feature_context_json),
+        "feature_snapshot_grain_id": CANONICAL_FEATURE_SNAPSHOT_GRAIN_ID,
+        "feature_registry_schema_version": FEATURE_REGISTRY_SCHEMA_VERSION,
+        "source_dataset_batch_id": source_dataset_batch_id,
+        "source_dataset_row_count": int(source_dataset_row_count),
+        "certification_id": dataset_certification_id,
+        "dataset_certification_id": dataset_certification_id,
+        "feature_lineage_id": feature_lineage_id,
+        "feature_evidence_id": feature_evidence_id,
+        "source_certification_ids_json": _as_json(source_maps["source_certification_ids"]),
+        "source_alignment_certification_ids_json": _as_json(source_maps["source_alignment_certification_ids"]),
+        "selected_source_row_ids_json": _as_json(source_maps["selected_source_row_ids"]),
+        "source_lineage_ids_json": _as_json(source_maps["source_lineage_ids"]),
+        "predictor_references_json": _as_json(source_maps["predictor_references"]),
+        "missing_required_assets_json": _as_json(source_maps["missing_required_assets"]),
+        "asset_freshness_json": _as_json(source_maps["asset_freshness"]),
+        "evidence_package_id": feature_evidence_package_id,
+        "record_count": 1,
+        "feature_count": 1,
+        "feature_values_json": _as_json(feature_value_summary),
+        "summary_json": _as_json(feature_value_summary),
+        "payload_json": _as_json(payload),
+        "schema_version": FEATURE_REGISTRY_SCHEMA_VERSION,
+        "created_at": created_at,
+        "updated_at": created_at,
+        "source": "historical_dataset_population_runtime",
+        "provider": "repository",
+        "market": _normalize_text(dataset_batch_row.get("market_profile"), "sports:nfl"),
+        "asset_class": _normalize_text(dataset_batch_row.get("profile_family"), "sports"),
+        "lineage_id": feature_lineage_id,
+        "version_id": feature_batch_version_id,
+        "quality_score": quality_score,
+    }
+    lineage_edge = create_lineage_record(
+        provider_id="historical_dataset_population_runtime",
+        provider_type="feature_population",
+        payload_schema_version=FEATURE_REGISTRY_SCHEMA_VERSION,
+        snapshot_id=feature_snapshot_id,
+        source_type="historical_dataset",
+        schema_version=FEATURE_REGISTRY_SCHEMA_VERSION,
+        lineage_id=feature_lineage_id,
+        dataset_id=dataset_id,
+        dataset_name=dataset_name,
+        source_record_id=_normalize_text(context.get("dataset_row_id")),
+        target_record_id=feature_snapshot_id,
+        source_stage="historical_dataset_row",
+        target_stage="feature_snapshot",
+        transformation="populate_feature_snapshot",
+    )
+    lineage_record = {
+        "lineage_edge_id": feature_lineage_id,
+        "dataset_id": dataset_id,
+        "dataset_name": dataset_name,
+        "owner": DEFAULT_FEATURE_OWNER,
+        "sport": "football",
+        "feature_pack": FEATURE_DEFINITION_VERSION,
+        "storage_location": storage_location,
+        "readiness": readiness,
+        "update_frequency": "manual",
+        "validation_state": validation_state,
+        "status": status,
+        "schema_version": FEATURE_REGISTRY_SCHEMA_VERSION,
+        "created_at": created_at,
+        "updated_at": created_at,
+        "source": "historical_dataset_population_runtime",
+        "provider": "repository",
+        "market": _normalize_text(dataset_batch_row.get("market_profile"), "sports:nfl"),
+        "market_type": _normalize_text(context.get("market_type")),
+        "asset_class": _normalize_text(dataset_batch_row.get("profile_family"), "sports"),
+        "snapshot_id": feature_snapshot_id,
+        "lineage_id": feature_lineage_id,
+        "version_id": feature_batch_version_id,
+        "quality_score": quality_score,
+        "source_stage": "historical_dataset_row",
+        "source_id": _normalize_text(context.get("dataset_row_id")),
+        "target_stage": "feature_snapshot",
+        "target_id": feature_snapshot_id,
+        "transformation": "populate_feature_snapshot",
+        "step_index": feature_row_index,
+        "payload_json": _as_json(lineage_edge),
+    }
+    return row, lineage_record
+
+
 __all__ = [
     "ACTIVE_FEATURE_FAMILIES",
     "CANONICAL_DATASET_ROW_GRAIN_ID",
@@ -1250,14 +2388,22 @@ __all__ = [
     "FEATURE_MISSINGNESS_POLICIES",
     "FEATURE_REGISTRY_SCHEMA_VERSION",
     "FEATURE_SNAPSHOT_TRANSFORMATION_VERSION",
+    "FEATURE_SNAPSHOT_BATCH_KIND",
+    "FEATURE_SNAPSHOT_ROW_KIND",
+    "FEATURE_SUMMARY_ROW_KIND",
+    "FEATURE_PRESENT_STATE",
+    "FEATURE_MISSING_REQUIRED_STATE",
     "FEATURE_VALUE_TYPES",
     "FeatureDefinition",
     "FeatureSnapshotContext",
     "build_feature_snapshot_context",
     "build_feature_snapshot_context_id",
+    "build_feature_snapshot_population",
+    "build_feature_snapshot_population_dashboard_snapshot",
     "build_feature_value_identity",
     "dataset_row_identity_components",
     "get_feature_definition",
+    "get_feature_snapshot_population_snapshot_for_dashboard",
     "list_deferred_feature_ids",
     "list_feature_definition_ids",
     "list_feature_definitions",

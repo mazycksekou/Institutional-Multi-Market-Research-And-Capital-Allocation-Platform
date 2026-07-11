@@ -106,7 +106,7 @@ def test_feature_registry_definitions_are_complete_unique_and_dataset_only():
         assert definition["feature_version"] == "phase5.1a.feature_definitions.v1"
         assert definition["dataset_grain_compatibility"] == CANONICAL_FEATURE_SNAPSHOT_GRAIN_ID
         assert definition["cutoff_semantics"] == DEFAULT_CUTOFF_SEMANTICS
-        assert definition["transformation_version"] == "phase5.1b.snapshot_population.pending"
+        assert definition["transformation_version"] == "phase5.1b.feature_snapshot_population.v1"
         assert definition["classification"] in {"direct", "deterministic_derived"}
         assert definition["value_type"]
         assert definition["unit"]

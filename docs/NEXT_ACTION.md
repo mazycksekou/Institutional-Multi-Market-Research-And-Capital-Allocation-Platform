@@ -2,30 +2,30 @@
 
 ## Next Phase
 
-`Phase 5.1 - Reusable Feature Population`
+`Phase 5.2 - Reusable Mathematical Engines`
 
 ## Previous Phase
 
-`Phase 5.0 - Historical Dataset Population Layer` completed the first deterministic, point-in-time-safe NFL historical dataset batch from the certified minimum-schema asset set and exposed dataset readiness, lineage, certification, evidence-package, planner, and dashboard reporting.
+`Phase 5.1B - Feature Snapshot Population` completed the first reusable NFL feature layer from the certified historical dataset batch and exposed feature readiness, lineage, certification, evidence-package, planner, dashboard, and NFL P0 reporting.
 
 ## Objective
 
-Populate the first reusable, point-in-time-safe NFL feature layer from the certified historical dataset batch and certified event context.
+Implement the first reusable, point-in-time-safe NFL mathematical engine layer from the certified feature snapshots and certified event context.
 Reuse the canonical local-first storage, lineage, certification, lifecycle, coverage, and readiness owners without reopening optional enrichment assets as blockers.
-Preserve deterministic feature identities, feature snapshot timestamps, dataset-row lineage, explicit missingness, and point-in-time safety from the certified dataset layer upward.
-Apply the minimum certified schema first rule: only the certified minimum-schema dataset layer may block this phase, while future enrichment assets remain deferred.
-Reuse the canonical evidence chain that now runs from certified research assets into the certified historical dataset layer.
-Treat the certified schedule, results, odds, weather, injuries, and team-statistics evidence as immutable inputs to the first reusable feature layer.
-Preserve the canonical connector-backed and canonical open-provider acquisition path that already feeds the certified historical dataset layer without introducing new connector work.
-Do not ingest paid or live data, and do not begin mathematical engines, signal population, decision rows, or backtesting in this phase.
+Preserve deterministic mathematical-engine identities, feature-to-engine lineage, explicit missingness, and point-in-time safety from the certified feature layer upward.
+Apply the minimum certified schema first rule: only the certified minimum-schema feature layer may block this phase, while future enrichment assets remain deferred.
+Reuse the canonical evidence chain that now runs from certified research assets into certified historical dataset rows and then into certified feature snapshots.
+Treat the certified schedule, results, odds, weather, injuries, team-statistics, and feature evidence as immutable inputs to the first reusable mathematical-engine layer.
+Preserve the canonical connector-backed and canonical open-provider acquisition path already feeding the certified dataset and feature layers without introducing new connector work.
+Do not ingest paid or live data, and do not begin signal population, decision rows, or backtesting in this phase.
 
 ## Allowed Actions
 
-- Reuse the canonical market profile framework, research engine specification, storage, validation, lineage, acquisition runtime, certification runtime, and lifecycle runtime owners.
-- Populate reusable feature snapshots from the certified historical dataset layer and certified event context.
-- Verify that feature readiness is derived from certified dataset evidence rather than hard-coded assumptions.
-- Preserve dataset-batch references, dataset-row references, source certification references, and field-level provenance links.
-- Preserve the canonical evidence chain without introducing a new connector, acquisition, or dataset framework.
+- Reuse the canonical market profile framework, research engine specification, storage, validation, lineage, acquisition runtime, certification runtime, lifecycle runtime, feature registry, and feature snapshot population owners.
+- Populate reusable mathematical-engine contracts and the first deterministic math outputs from the certified feature layer.
+- Verify that mathematical-engine readiness is derived from certified feature evidence rather than hard-coded assumptions.
+- Preserve dataset-batch references, dataset-row references, feature references, source certification references, and field-level provenance links.
+- Preserve the canonical evidence chain without introducing a new connector, acquisition, dataset, or feature framework.
 - Preserve the canonical connector-backed and canonical open-provider acquisition path without introducing new connector work.
 - Update project status, roadmap, and document indexes when this phase completes.
 
@@ -34,19 +34,18 @@ Do not ingest paid or live data, and do not begin mathematical engines, signal p
 - Do not ingest paid or live data.
 - Do not implement connectors.
 - Do not implement new provider connectors.
-- Do not implement mathematical engines yet.
+- Do not implement signals, decision rows, or backtesting yet.
 - Do not add provider-specific runtime ownership.
-- Do not reopen player statistics, betting splits, officials, coaching, or other enrichment assets as blockers for the first dataset layer.
-- Do not implement mathematical engines, signals, decision rows, or backtesting yet.
+- Do not reopen player statistics, betting splits, officials, coaching, or other enrichment assets as blockers for the first feature layer.
 - Do not generate decision rows yet.
 - Do not backtest.
 - Do not make uncontrolled network calls or require secrets in tests.
 
 ## Expected Deliverables
 
-- Reusable feature population implementation for the certified NFL minimum schema.
-- Deterministic feature-snapshot lineage linking certified dataset rows and underlying certified source evidence.
-- Feature readiness, evidence packaging, and governance updates.
+- Reusable mathematical-engine implementation for the certified NFL minimum schema.
+- Deterministic engine lineage linking certified feature snapshots and underlying certified dataset evidence.
+- Mathematical-engine readiness, evidence packaging, and governance updates.
 
 ## Validation Commands
 

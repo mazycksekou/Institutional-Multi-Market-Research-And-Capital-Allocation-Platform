@@ -1507,6 +1507,20 @@ def build_nfl_p0_dashboard_snapshot(
             "status": "historical_dataset_population_snapshot_error",
             "warnings": [str(exc)],
         }
+    try:
+        from src.data.feature_registry import build_feature_snapshot_population_dashboard_snapshot
+
+        feature_layer_snapshot = build_feature_snapshot_population_dashboard_snapshot(
+            storage_path=storage_path,
+            backend=backend,
+            dataset_id="dataset.sports.nfl.historical_dataset",
+        )
+    except Exception as exc:
+        feature_layer_snapshot = {
+            "ok": False,
+            "status": "feature_snapshot_population_snapshot_error",
+            "warnings": [str(exc)],
+        }
     snapshot["table_counts"] = {name: details.get("row_count", 0) for name, details in snapshot.get("table_readiness", {}).items()}
     snapshot["dataset_readiness"] = {
         "status": snapshot.get("status"),
@@ -1524,11 +1538,24 @@ def build_nfl_p0_dashboard_snapshot(
         "dataset_certification_status": dataset_layer_snapshot.get("dataset_certification_status", "missing"),
         "lifecycle_state": dataset_layer_snapshot.get("lifecycle_state", "missing"),
     }
+    snapshot["feature_layer_readiness"] = {
+        "status": feature_layer_snapshot.get("status", "missing"),
+        "dataset_id": feature_layer_snapshot.get("dataset_id", ""),
+        "batch_id": feature_layer_snapshot.get("batch_id", ""),
+        "feature_snapshot_count": feature_layer_snapshot.get("feature_snapshot_count", 0),
+        "feature_definition_count": feature_layer_snapshot.get("feature_definition_count", 0),
+        "dataset_row_count": feature_layer_snapshot.get("dataset_row_count", 0),
+        "feature_population_summary_id": feature_layer_snapshot.get("feature_population_summary_id", ""),
+        "feature_evidence_package_id": feature_layer_snapshot.get("feature_evidence_package_id", ""),
+        "dataset_certification_status": feature_layer_snapshot.get("dataset_certification_status", "missing"),
+        "lifecycle_state": feature_layer_snapshot.get("lifecycle_state", "missing"),
+    }
     snapshot["readiness_summary"] = {
         "table_readiness_ready": len(snapshot.get("ready_tables", [])),
         "table_readiness_missing": len(snapshot.get("missing_tables", [])),
         "table_readiness_blocked": len(snapshot.get("blocked_tables", [])),
         "historical_dataset_population_status": dataset_layer_snapshot.get("status", "missing"),
+        "feature_snapshot_population_status": feature_layer_snapshot.get("status", "missing"),
     }
     return snapshot
 

@@ -57,8 +57,8 @@ def test_historical_dataset_population_docs_exist_and_cover_required_topics() ->
     assert "Senior Systems Engineer Review" in report_text
     assert "Worldview / Research Query Engine Review" in report_text
 
-    assert "Phase 5.0 - Historical Dataset Population Layer (complete)" in project_status_text
-    assert "Phase 5.1 - Reusable Feature Population" in next_action_text
+    assert "Phase 5.0 historical dataset population code changes are complete and validated" in project_status_text
+    assert "Phase 5.2 - Reusable Mathematical Engines" in next_action_text
     assert "Phase 5.0 completed the historical dataset population layer" in roadmap_text
     assert "docs/architecture/HISTORICAL_DATASET_POPULATION_LAYER.md" in project_status_text
     assert "docs/reports/PHASE5_0_HISTORICAL_DATASET_POPULATION_LAYER.md" in project_status_text

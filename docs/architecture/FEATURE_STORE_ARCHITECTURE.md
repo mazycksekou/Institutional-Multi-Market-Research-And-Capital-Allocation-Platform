@@ -42,8 +42,16 @@ The first active source dataset for this runtime contract is:
 
 - `dataset.sports.nfl.historical_dataset`
 
-Phase 5.1A does not populate feature snapshots yet.
-It defines the contract surface that Phase 5.1B will materialize.
+Phase 5.1A defined the contract surface for reusable feature snapshots.
+Phase 5.1B materializes those snapshots from the certified historical dataset layer.
+
+## Phase 5.1B Runtime Owner
+
+The canonical runtime owner for reusable feature-snapshot population is:
+
+- `src.data.feature_registry`
+
+The phase materializes feature rows, batch summaries, and lineage edges through the shared local storage owner.
 
 ## Phase 5.1A Grain Rule
 
@@ -73,6 +81,7 @@ This keeps:
 - `total / over / consensus`
 
 as three distinct feature contexts for the current one-game fixture.
+The current implementation persists 38 features across those three contexts as 114 deterministic feature rows.
 
 ## Notes
 

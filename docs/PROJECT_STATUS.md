@@ -7,9 +7,9 @@ Canonical live status for the repository and the required starting document for 
 - current branch: `feature/nfl-backtesting`
 - current HEAD: live branch tip (exact hash is reported in the task final report)
 - remote tracking branch: `origin/feature/nfl-backtesting`
-- active phase: `Phase 5.0 - Historical Dataset Population Layer (complete)`
+- active phase: `Phase 5.1B - Feature Snapshot Population (complete)`
 - active market profile: `sports:nfl`
-- active implementation lane: `NFL P0 profile-aware foundation + event-centric historical research database + master research engine specification + universal feature registry + universal math engine contracts + research asset runtime framework + historical dataset acquisition framework + historical dataset acquisition runtime + research asset source discovery and connector mapping framework + historical research asset certification runtime + research asset lifecycle runtime + NFL schedule research asset population + research asset coverage planner and provider selection framework + first production NFL schedule connector + certified NFL results research asset + certified NFL odds research asset + certified NFL weather research asset + certified NFL injuries research asset + certified NFL team statistics research asset + deterministic historical dataset population layer`
+- active implementation lane: `NFL P0 profile-aware foundation + event-centric historical research database + master research engine specification + universal feature registry + universal math engine contracts + research asset runtime framework + historical dataset acquisition framework + historical dataset acquisition runtime + research asset source discovery and connector mapping framework + historical research asset certification runtime + research asset lifecycle runtime + NFL schedule research asset population + research asset coverage planner and provider selection framework + first production NFL schedule connector + certified NFL results research asset + certified NFL odds research asset + certified NFL weather research asset + certified NFL injuries research asset + certified NFL team statistics research asset + deterministic historical dataset population layer + deterministic feature snapshot population layer`
 - completed phases:
   - `Phase 4.3.6 - Profile-Aware NFL P0 Validation`
   - `Phase 4.3.7 - Minimum Backtest Row Contract`
@@ -31,8 +31,9 @@ Canonical live status for the repository and the required starting document for 
   - `Phase 4.9G - NFL Injuries Research Asset Population`
   - `Phase 4.9H - NFL Team Statistics Research Asset Population`
   - `Phase 5.0 - Historical Dataset Population Layer`
-- current phase objective: Phase 5.0 is complete; the next objective is to populate reusable features from the certified historical dataset layer and certified event context without starting mathematical engines, signals, decision rows, or backtesting.
-- next phase: `Phase 5.1 - Reusable Feature Population`
+  - `Phase 5.1B - Feature Snapshot Population`
+- current phase objective: Phase 5.1B is complete; the next objective is to implement reusable mathematical engines from the certified feature layer without starting signals, decision rows, or backtesting.
+- next phase: `Phase 5.2 - Reusable Mathematical Engines`
 - current blockers: None
 - latest validation status:
   - Phase 4.7C runtime validation passed: compileall, certification runtime tests, smoke, architecture, document lifecycle, and ops checks are green.
@@ -46,7 +47,8 @@ Canonical live status for the repository and the required starting document for 
   - Phase 4.9G injuries population code changes are complete and validated: compileall, focused injuries runtime tests, focused injuries documentation tests, smoke, root markdown, OpenAPI contract, architecture, audit lifecycle, document lifecycle advisory with no clear violations, and the full repository test suite are green.
   - Phase 4.9H team statistics population code changes are complete and validated: compileall, focused team-statistics runtime tests, focused team-statistics documentation tests, smoke, root markdown, OpenAPI contract, architecture, audit lifecycle, document lifecycle advisory with no clear violations, repository preflight checks, and the full repository test suite are green.
   - Phase 5.0 historical dataset population code changes are complete and validated: focused dataset-population runtime tests, focused dataset-population documentation tests, adjacent shared-runtime regressions, compileall, smoke, root markdown, OpenAPI contract, architecture, audit lifecycle, ops checks, repository preflight checks, and the full repository test suite are green; document lifecycle remains advisory with one warning and no clear violations.
-- latest full gate result: `passed; focused dataset-population runtime and documentation tests, adjacent shared-runtime regressions, compileall, smoke, root markdown, OpenAPI contract, architecture, audit lifecycle, ops checks, and the full repository test suite are green; document lifecycle is advisory with one warning and no clear violations`
+  - Phase 5.1B feature snapshot population code changes are complete and validated: focused feature registry tests, focused feature snapshot population tests, adjacent dataset and local-platform regressions, compileall, and git diff checks are green; broader repository gates remain queued for the final phase handoff.
+- latest full gate result: `passed for the completed Phase 5.0 gate; Phase 5.1B broader repository gates are pending rerun before the final handoff`
 - latest pushed commit: live branch tip (exact hash is reported in the task final report)
 
 ## Active Canonical Rules
@@ -142,4 +144,4 @@ Read these only when you need more detail than the project status page provides:
 
 ## Next Recommended Codex Task
 
-`Phase 5.1 - Reusable Feature Population`
+`Phase 5.2 - Reusable Mathematical Engines`

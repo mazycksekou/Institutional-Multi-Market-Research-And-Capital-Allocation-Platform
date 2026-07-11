@@ -21,6 +21,7 @@ This index points readers to the current truth and the durable historical entry 
 - `docs/architecture/DOCUMENTATION_GOVERNANCE.md` - Documentation Governance
 - `docs/architecture/DOCUMENTATION_MAP.md` - Documentation Map
 - `docs/architecture/DOCUMENT_LIFECYCLE_POLICY.md` - Document Lifecycle Policy
+- `docs/architecture/FEATURE_SNAPSHOT_POPULATION_LAYER.md` - Feature Snapshot Population Layer
 - `docs/architecture/FEATURE_STORE_ARCHITECTURE.md` - Feature Store Architecture
 - `docs/architecture/FINAL_REPOSITORY_STRUCTURE.md` - Final Repository Structure
 - `docs/architecture/HISTORICAL_DATASET_ACQUISITION_FRAMEWORK.md` - Historical Dataset Acquisition Framework
@@ -153,6 +154,7 @@ This index points readers to the current truth and the durable historical entry 
 - `docs/architecture/NFL_TEAM_STATISTICS_RESEARCH_ASSET.md` - NFL Team Statistics Research Asset
 - `docs/reports/PHASE4_9H_NFL_TEAM_STATISTICS_RESEARCH_ASSET_POPULATION.md` - Phase 4.9H NFL Team Statistics Research Asset Population
 - `docs/reports/PHASE5_0_HISTORICAL_DATASET_POPULATION_LAYER.md` - Phase 5.0 Historical Dataset Population Layer
+- `docs/reports/PHASE5_1B_FEATURE_SNAPSHOT_POPULATION.md` - Phase 5.1B Feature Snapshot Population
 
 ### INDEX
 - `docs/DOCUMENT_RETENTION_INDEX.md` - Policy Note
