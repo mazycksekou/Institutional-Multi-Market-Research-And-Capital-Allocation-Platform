@@ -16,6 +16,7 @@ It defines the reusable feature ownership model and lifecycle rules that all fut
 - `docs/catalogs/FEATURE_USAGE_BY_MARKET.md`
 - `docs/catalogs/FEATURE_OWNERSHIP_MATRIX.md`
 - `src.data.model_data_field_catalog`
+- `src.data.feature_registry`
 - `src.market_intelligence.feature_packs`
 - `src.services.streamlit_dashboard_data`
 - `src.backtesting.backtest_schema`
@@ -31,7 +32,7 @@ This registry standardizes the cross-market schema and lifecycle that those inve
 | Feature family | Canonical role | Current state | Detailed inventory owner |
 | --- | --- | --- | --- |
 | Universal | Cross-market governing layer | Exists partially | This doc + `docs/architecture/MASTER_RESEARCH_ENGINE_SPECIFICATION.md` |
-| Sports | Event-based sports features | Exists partially | `docs/reports/NFL_FEATURE_REGISTRY.md` and sport feature packs |
+| Sports | Event-based sports features | Phase 5.1A contract-ready for the certified NFL historical dataset layer | `src.data.feature_registry`, `docs/contracts/NFL_FEATURE_STORE_CONTRACT.md`, and sport feature packs |
 | Prediction Markets | Event / contract features | Scaffold only | `src.market_intelligence.feature_packs` and related catalogs |
 | Options / 0DTE | Short-dated derivatives features | Scaffold only | `src.data.model_data_field_catalog` and related catalogs |
 | Futures | Future extension | Documentation only | Roadmap and future catalogs |
@@ -46,12 +47,25 @@ Every feature entry in the repository should be able to report the following can
 - `Feature Name`
 - `Feature Family`
 - `Market Family`
+- `Feature Version`
+- `Entity / Side Scope`
+- `Dataset Grain Compatibility`
 - `Purpose`
 - `Description`
 - `Required Inputs`
 - `Dependencies`
 - `Expected Output Type`
+- `Value Type`
+- `Unit`
+- `Missingness Policy`
+- `Source Dataset Field References`
+- `Transformation Definition`
+- `Transformation Version`
+- `Cutoff Semantics`
+- `Point-In-Time Constraints`
+- `Expected Range / Allowed Values`
 - `Owning Runtime Module`
+- `Feature Owner`
 - `Owning Market Profile`
 - `Recommended Storage Owner`
 - `Related Signals`
@@ -59,7 +73,101 @@ Every feature entry in the repository should be able to report the following can
 - `Related Validation Metrics`
 - `Related Engines`
 - `Lifecycle Status`
+- `Certification State`
+- `Portability Classification`
 - `Priority`
+
+## Phase 5.1A Runtime Contract
+
+The canonical runtime implementation for the first reusable feature layer is:
+
+- `src.data.feature_registry`
+
+The first active input dataset for this runtime contract is:
+
+- `dataset.sports.nfl.historical_dataset`
+
+Phase 5.1A establishes the reusable feature-definition and feature-snapshot grain rules without materializing feature rows yet.
+The certified historical dataset is the sole canonical input for the first feature layer.
+Feature contracts must not reread or reselect predictor evidence from raw provider payloads or normalized source asset tables.
+
+### Certified Dataset Row Grain
+
+The certified Phase 5.0 dataset row grain remains:
+
+- `dataset_id`
+- `game_id`
+- `market_type`
+- `selection`
+- `book`
+- `decision_cutoff_time`
+
+The corresponding row-level identities that later feature snapshots must inherit are:
+
+- `dataset_row_id`
+- `decision_context_id`
+
+This preserves the three current fixture contexts as distinct rows:
+
+- `moneyline / home / consensus`
+- `spread / home / consensus`
+- `total / over / consensus`
+
+Totals remain event-scoped contexts and may intentionally have a blank `team_side`.
+
+### Feature Snapshot Grain
+
+The canonical feature-snapshot grain for the reusable feature layer is:
+
+- one feature value
+- for one certified `dataset_row_id`
+- under one `decision_context_id`
+- for one `feature_id`
+- at one `feature_version`
+- for one `entity_scope`
+- at one `decision_cutoff_time`
+- under one `transformation_version`
+
+This prevents distinct market or team contexts from being collapsed or multiplied.
+
+### Classification Rule
+
+Every active feature definition must be classified as exactly one of:
+
+- `direct`
+- `deterministic derived`
+- `deferred mathematical-engine output`
+
+Phase 5.1A registers only dataset-supported direct and deterministic-derived features.
+Mathematical outputs such as model probability, edge, expected value, Kelly sizing, and signals remain deferred.
+
+### Point-In-Time Rule
+
+All predictor features must inherit the certified game-level cutoff from Phase 5.0:
+
+- `decision_cutoff_time = scheduled_kickoff_time - 5 minutes`
+
+Feature definitions must preserve:
+
+- `dataset_batch` identity
+- `dataset_row_id`
+- `decision_context_id`
+- `scheduled_kickoff_time`
+- `decision_cutoff_time`
+- selected Phase 5.0 evidence timestamps
+- source certification references
+- source lineage references
+
+Feature definitions must reject:
+
+- post-cutoff odds
+- post-cutoff injury revisions
+- weather issued after the cutoff
+- target-event live statistics
+- target-event final statistics
+- rolling statistics containing the target event
+- final results in predictor namespaces
+- raw-source rereads that bypass the certified dataset layer
 
 ## Feature Lifecycle
 
@@ -91,6 +199,8 @@ Defined -> Schema Ready -> Source Identified -> Connector Ready -> Historical Da
 5. Do not create market-specific feature registries.
 6. Keep result-only and post-event fields out of pregame feature snapshots.
 7. Keep detailed feature entries in the supporting catalogs, not duplicated here.
+8. Treat the certified historical dataset layer as the canonical feature-layer input once that layer exists.
+9. Preserve `dataset_row_id`, `decision_context_id`, `decision_cutoff_time`, and selected evidence lineage when defining reusable feature snapshots.
 
 ## Naming Review
 

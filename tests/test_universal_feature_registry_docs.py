@@ -56,8 +56,22 @@ def test_universal_feature_registry_docs_exist_and_cover_required_topics() -> No
     assert "Feature Name" in registry_text
     assert "Feature Family" in registry_text
     assert "Market Family" in registry_text
+    assert "Feature Version" in registry_text
+    assert "Entity / Side Scope" in registry_text
+    assert "Dataset Grain Compatibility" in registry_text
+    assert "Source Dataset Field References" in registry_text
+    assert "Transformation Version" in registry_text
+    assert "Cutoff Semantics" in registry_text
     assert "Lifecycle Status" in registry_text
+    assert "Portability Classification" in registry_text
     assert "Priority" in registry_text
+    assert "src.data.feature_registry" in registry_text
+    assert "dataset.sports.nfl.historical_dataset" in registry_text
+    assert "dataset_row_id" in registry_text
+    assert "decision_context_id" in registry_text
+    assert "scheduled_kickoff_time - 5 minutes" in registry_text
+    assert "deterministic derived" in registry_text.lower()
+    assert "deferred mathematical-engine output" in registry_text.lower()
     assert "Out Of Scope" in registry_text
     assert "do not implement providers" in registry_text.lower()
 
