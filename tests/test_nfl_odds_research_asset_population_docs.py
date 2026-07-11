@@ -46,8 +46,8 @@ def test_nfl_odds_research_asset_population_docs_exist_and_cover_required_topics
     assert "Senior Systems Engineer Review" in report_text
     assert "Worldview Intelligence Review" in report_text
 
-    assert "Phase 4.9H - NFL Team Statistics Research Asset Population (complete)" in project_status_text
-    assert "Phase 5.0 - Historical Dataset Population Layer" in next_action_text
+    assert "Phase 5.0 - Historical Dataset Population Layer (complete)" in project_status_text
+    assert "Phase 5.1 - Reusable Feature Population" in next_action_text
     assert "docs/architecture/NFL_ODDS_RESEARCH_ASSET.md" in project_status_text
     assert "docs/reports/PHASE4_9E_NFL_ODDS_RESEARCH_ASSET_POPULATION.md" in project_status_text
     assert "docs/architecture/NFL_ODDS_RESEARCH_ASSET.md" in master_index_text

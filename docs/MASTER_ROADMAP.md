@@ -68,8 +68,7 @@ Phase 4.9E completes the NFL odds research asset population and certifies its de
 Phase 4.9F completed the NFL weather research asset population and certified its forecast-time-safe join to the schedule, results, and odds backbone.
 Phase 4.9G completed the NFL injuries research asset population and certified its report-time-safe join to the schedule, results, odds, and weather backbone.
 Phase 4.9H completed the NFL team statistics research asset population and closed the known minimum-schema asset gap.
-Phase 5.0 materializes the historical dataset population layer.
-Phase 5.0 materializes the historical dataset population layer from the certified minimum-schema asset set.
+Phase 5.0 completed the historical dataset population layer and certified the first deterministic NFL minimum-schema dataset batch.
 Phase 5.1 populates reusable features from certified assets and certified events.
 Phase 5.2 implements reusable mathematical engines.
 Phase 5.3 implements reusable signals.
@@ -87,7 +86,7 @@ Phase 4.9J populates the NFL betting splits research asset.
 
 ## Current Phase Focus
 
-Current NFL work is in Phase 4:
+Current NFL work is in Phase 5:
 
 - Phase 4.1 established the NFL discovery and capability audit.
 - Phase 4.2 defines the NFL research blueprint and the permanent roadmap rule.
@@ -113,7 +112,7 @@ Current NFL work is in Phase 4:
 - Phase 4.9F completed the NFL weather research asset population and certified its forecast-time-safe join to the schedule, results, and odds backbone.
 - Phase 4.9G completed the NFL injuries research asset population and certified its report-time-safe join to the schedule, results, odds, and weather backbone.
 - Phase 4.9H completed the NFL team statistics research asset population and closed the known minimum-schema asset gap.
-- Phase 5.0 will materialize the historical dataset population layer from the certified minimum-schema asset set.
+- Phase 5.0 completed the historical dataset population layer and certified the first deterministic NFL minimum-schema dataset batch.
 - Phase 5.1 will populate reusable features from certified assets and certified events.
 - Phase 5.2 will implement reusable mathematical engines.
 - Phase 5.3 will implement reusable signals.

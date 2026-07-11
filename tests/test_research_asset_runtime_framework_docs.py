@@ -135,7 +135,7 @@ def test_research_asset_runtime_framework_docs_exist_and_cover_required_topics()
     assert "Readiness for Phase 4.7" in report_text
 
     assert "Phase 4.5E - Canonical Engineering Specification Rename & Research Asset Runtime Framework" in project_status_text
-    assert "Phase 5.0 - Historical Dataset Population Layer" in next_action_text
+    assert "Phase 5.1 - Reusable Feature Population" in next_action_text
     assert "docs/architecture/RESEARCH_ASSET_RUNTIME_FRAMEWORK.md" in project_status_text
     assert "docs/architecture/HISTORICAL_DATASET_ACQUISITION_FRAMEWORK.md" in project_status_text
     assert "docs/contracts/RESEARCH_ASSET_CONTRACT.md" in project_status_text
@@ -153,7 +153,7 @@ def test_research_asset_runtime_framework_docs_exist_and_cover_required_topics()
     assert "Phase 4.9A populates the NFL schedule research asset." in roadmap_text
     assert "Phase 4.9B builds the research asset coverage planner and provider selection framework." in roadmap_text
     assert "Phase 4.9C implements the first production connector for the NFL schedule research asset." in roadmap_text
-    assert "Phase 5.0 materializes the historical dataset population layer." in roadmap_text
+    assert "Phase 5.0 completed the historical dataset population layer" in roadmap_text
     assert "Phase 5.1 populates reusable features from certified assets and certified events." in roadmap_text
     assert "minimum certified schema" in roadmap_text.lower()
     assert "research asset runtime framework" in roadmap_text.lower()

@@ -332,6 +332,7 @@ def build_nfl_research_asset_certification_contracts(
         "nfl_results": ("dataset.sports.nfl.results", "NFL Results"),
         "nfl_odds_snapshots": (DEFAULT_NFL_ODDS_RESEARCH_ASSET_ID, "NFL Odds Snapshots"),
         "nfl_weather_snapshots": ("dataset.nfl.weather_snapshots", "NFL Weather Snapshots"),
+        "nfl_injury_snapshots": ("dataset.nfl.injury_snapshots", "NFL Injury Snapshots"),
         "nfl_team_stats_snapshots": ("dataset.nfl.team_stats_snapshots", "NFL Team Statistics"),
     }
     contracts: list[ResearchAssetCertificationContract] = []
@@ -367,7 +368,6 @@ def build_nfl_research_asset_future_contracts(
 ) -> list[ResearchAssetCertificationContract]:
     _ = _resolve_market_profile(profile_id)
     future_assets = [
-        ("dataset.nfl.injury_snapshots", "NFL Injury Snapshots", "injury_context"),
         ("dataset.nfl.officials", "NFL Officials", "official_assignment"),
         ("dataset.nfl.coaching", "NFL Coaching", "coaching_context"),
         ("dataset.nfl.player_statistics", "NFL Player Statistics", "player_statistics"),

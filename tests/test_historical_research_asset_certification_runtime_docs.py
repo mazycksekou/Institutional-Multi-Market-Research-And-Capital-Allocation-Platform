@@ -60,7 +60,7 @@ def test_historical_research_asset_certification_runtime_docs_exist_and_cover_re
     assert "Phase 4.9E - NFL Odds Research Asset Population" in project_status_text
     assert "docs/architecture/HISTORICAL_RESEARCH_ASSET_CERTIFICATION_RUNTIME.md" in project_status_text
     assert "docs/reports/PHASE4_7C_HISTORICAL_RESEARCH_ASSET_CERTIFICATION_RUNTIME.md" in project_status_text
-    assert "Phase 5.0 - Historical Dataset Population Layer" in next_action_text
+    assert "Phase 5.1 - Reusable Feature Population" in next_action_text
 
     assert "docs/architecture/HISTORICAL_RESEARCH_ASSET_CERTIFICATION_RUNTIME.md" in master_index_text
     assert "docs/reports/PHASE4_7C_HISTORICAL_RESEARCH_ASSET_CERTIFICATION_RUNTIME.md" in retention_index_text

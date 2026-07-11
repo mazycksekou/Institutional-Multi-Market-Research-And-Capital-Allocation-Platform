@@ -2,29 +2,31 @@
 
 ## Next Phase
 
-`Phase 5.0 - Historical Dataset Population Layer`
+`Phase 5.1 - Reusable Feature Population`
 
 ## Previous Phase
 
-`Phase 4.9H - NFL Team Statistics Research Asset Population` completed the final known minimum-schema NFL research asset and closed the required certified asset gap for the first baseline dataset path.
+`Phase 5.0 - Historical Dataset Population Layer` completed the first deterministic, point-in-time-safe NFL historical dataset batch from the certified minimum-schema asset set and exposed dataset readiness, lineage, certification, evidence-package, planner, and dashboard reporting.
 
 ## Objective
 
-Materialize the minimum-certified NFL historical dataset layer from the already certified schedule, results, odds, weather, injuries, and team-statistics assets.
-Reuse the canonical local-first acquisition, certification, lifecycle, coverage, and readiness owners without reopening optional enrichment assets as blockers.
-Preserve point-in-time-safe joins, immutable dataset lineage, deterministic reruns, evidence packaging, and readiness reporting.
-Apply the minimum certified schema first rule: only the certified minimum-schema asset set may block this phase, while future enrichment assets remain deferred.
-Reuse the canonical connector pattern that was already proven by the NFL schedule connector and the certified asset-population phases.
-Preserve the canonical open-provider acquisition path that was established for `dataset.sports.nfl.schedule` and then reused across the certified NFL asset phases.
-Do not ingest paid or live data, and do not begin feature engineering, mathematical engines, signal population, decision rows, or backtesting in this phase.
+Populate the first reusable, point-in-time-safe NFL feature layer from the certified historical dataset batch and certified event context.
+Reuse the canonical local-first storage, lineage, certification, lifecycle, coverage, and readiness owners without reopening optional enrichment assets as blockers.
+Preserve deterministic feature identities, feature snapshot timestamps, dataset-row lineage, explicit missingness, and point-in-time safety from the certified dataset layer upward.
+Apply the minimum certified schema first rule: only the certified minimum-schema dataset layer may block this phase, while future enrichment assets remain deferred.
+Reuse the canonical evidence chain that now runs from certified research assets into the certified historical dataset layer.
+Treat the certified schedule, results, odds, weather, injuries, and team-statistics evidence as immutable inputs to the first reusable feature layer.
+Preserve the canonical connector-backed and canonical open-provider acquisition path that already feeds the certified historical dataset layer without introducing new connector work.
+Do not ingest paid or live data, and do not begin mathematical engines, signal population, decision rows, or backtesting in this phase.
 
 ## Allowed Actions
 
 - Reuse the canonical market profile framework, research engine specification, storage, validation, lineage, acquisition runtime, certification runtime, and lifecycle runtime owners.
-- Integrate the certified minimum-schema NFL assets into one deterministic historical dataset population path.
-- Verify that minimum-schema completeness is derived from certified evidence rather than hard-coded assumptions.
-- Preserve raw-cache references, research-asset certification references, dataset certification references, and field-level provenance links.
-- Preserve the canonical connector-backed acquisition pattern without introducing a new connector family.
+- Populate reusable feature snapshots from the certified historical dataset layer and certified event context.
+- Verify that feature readiness is derived from certified dataset evidence rather than hard-coded assumptions.
+- Preserve dataset-batch references, dataset-row references, source certification references, and field-level provenance links.
+- Preserve the canonical evidence chain without introducing a new connector, acquisition, or dataset framework.
+- Preserve the canonical connector-backed and canonical open-provider acquisition path without introducing new connector work.
 - Update project status, roadmap, and document indexes when this phase completes.
 
 ## Forbidden Actions
@@ -35,16 +37,16 @@ Do not ingest paid or live data, and do not begin feature engineering, mathemati
 - Do not implement mathematical engines yet.
 - Do not add provider-specific runtime ownership.
 - Do not reopen player statistics, betting splits, officials, coaching, or other enrichment assets as blockers for the first dataset layer.
-- Do not implement feature engineering, mathematical engines, signals, decision rows, or backtesting yet.
+- Do not implement mathematical engines, signals, decision rows, or backtesting yet.
 - Do not generate decision rows yet.
 - Do not backtest.
 - Do not make uncontrolled network calls or require secrets in tests.
 
 ## Expected Deliverables
 
-- Historical dataset population implementation for the certified NFL minimum schema.
-- Deterministic dataset-batch lineage linking certified schedule, results, odds, weather, injuries, and team-statistics assets.
-- Dataset readiness, evidence packaging, and governance updates.
+- Reusable feature population implementation for the certified NFL minimum schema.
+- Deterministic feature-snapshot lineage linking certified dataset rows and underlying certified source evidence.
+- Feature readiness, evidence packaging, and governance updates.
 
 ## Validation Commands
 

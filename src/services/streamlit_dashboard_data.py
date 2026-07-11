@@ -90,7 +90,10 @@ from src.data.nfl_schedule_research_asset_population import build_nfl_schedule_r
 from src.data.nfl_results_research_asset_population import build_nfl_results_research_asset_dashboard_snapshot
 from src.data.research_asset_lifecycle_runtime import build_research_asset_lifecycle_runtime_dashboard_snapshot
 from src.data.nfl_p0_foundation import build_nfl_p0_dashboard_snapshot
-from src.data.historical_research_database import build_historical_research_dashboard_snapshot
+from src.data.historical_research_database import (
+    build_historical_dataset_population_dashboard_snapshot,
+    build_historical_research_dashboard_snapshot,
+)
 from src.market_intelligence.research_asset_coverage_planner import build_research_asset_coverage_planner_dashboard_snapshot
 from src.research.feature_control import run_calibration_strategy_filter
 from src.research.history import (
@@ -3738,6 +3741,64 @@ def get_historical_research_snapshot_for_dashboard(
             "blocked_tables": [],
             "dataset_readiness": {},
             "readiness_summary": {},
+            "warnings": [str(exc)],
+        }
+
+
+def get_historical_dataset_population_snapshot_for_dashboard(
+    storage_path: str | Path | None = None,
+    *,
+    backend: str = "sqlite",
+    profile_id: str = "sports:nfl",
+    dataset_id: str = "dataset.sports.nfl.historical_dataset",
+) -> dict[str, Any]:
+    """Return the canonical historical dataset population readiness snapshot."""
+    try:
+        return build_historical_dataset_population_dashboard_snapshot(
+            storage_path=storage_path,
+            backend=backend,
+            profile_id=profile_id,
+            dataset_id=dataset_id,
+        )
+    except Exception as exc:
+        return {
+            "ok": False,
+            "status": "historical_dataset_population_snapshot_error",
+            "profile_id": profile_id,
+            "dataset_id": dataset_id,
+            "dataset_name": "nfl_historical_dataset_population",
+            "batch_id": "",
+            "version_id": "",
+            "dataset_row_count": 0,
+            "source_asset_count": 0,
+            "required_source_assets": [],
+            "certified_source_asset_count": 0,
+            "source_record_counts": {},
+            "eligible_record_counts": {},
+            "selected_record_counts": {},
+            "rejected_record_count": 0,
+            "unmatched_record_count": 0,
+            "join_validation_status": "missing",
+            "cardinality_validation_status": "missing",
+            "point_in_time_validation_status": "missing",
+            "predictor_outcome_separation_status": "missing",
+            "provenance_completeness": False,
+            "lineage_completeness": False,
+            "dataset_certification_status": "missing",
+            "lifecycle_state": "missing",
+            "readiness_state": "missing",
+            "unresolved_blockers": [],
+            "evidence_package_id": "",
+            "join_diagnostics": {},
+            "rejected_evidence": {},
+            "unmatched_evidence": {},
+            "dataset_rows": [],
+            "dataset_batches": [],
+            "dataset_certifications": [],
+            "dataset_lifecycles": [],
+            "local_platform_snapshot": {},
+            "coverage_planner_snapshot": {},
+            "storage": {},
             "warnings": [str(exc)],
         }
 

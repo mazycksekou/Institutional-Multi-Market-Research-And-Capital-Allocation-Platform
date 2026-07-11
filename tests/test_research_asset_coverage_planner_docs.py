@@ -46,7 +46,7 @@ def test_research_asset_coverage_planner_docs_exist_and_cover_required_topics() 
     assert "Phase 4.9B - Research Asset Coverage Planner & Provider Selection Framework" in project_status_text
     assert "Phase 4.9C - First Production Connector (NFL Schedule)" in project_status_text
     assert "Phase 4.9F - NFL Weather Research Asset Population" in project_status_text
-    assert "Phase 5.0 - Historical Dataset Population Layer" in next_action_text
+    assert "Phase 5.1 - Reusable Feature Population" in next_action_text
     assert "docs/architecture/RESEARCH_ASSET_COVERAGE_AND_PROVIDER_SELECTION_FRAMEWORK.md" in project_status_text
     assert "docs/reports/PHASE4_9B_RESEARCH_ASSET_COVERAGE_PLANNER_AND_PROVIDER_SELECTION_FRAMEWORK.md" in project_status_text
 

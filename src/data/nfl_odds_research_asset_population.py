@@ -900,12 +900,19 @@ def build_nfl_odds_research_asset_population(
     backend: str = "sqlite",
     game_count: int = 1,
     dataset_version: str | None = None,
+    connector_bundle: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     profile = get_nfl_p0_market_profile()
     if profile.profile_id != NFL_ODDS_RESEARCH_ASSET_PROFILE_ID:
         raise ValueError(f"unexpected market profile: {profile.profile_id}")
 
-    connector_bundle = build_nfl_odds_connector_bundle(game_count=game_count, dataset_version=dataset_version)
+    connector_bundle = dict(
+        connector_bundle
+        or build_nfl_odds_connector_bundle(
+            game_count=game_count,
+            dataset_version=dataset_version,
+        )
+    )
     fixture = dict(connector_bundle.get("fixture") or {})
     raw_odds_rows = [dict(row) for row in connector_bundle.get("odds_rows", [])]
     if not raw_odds_rows:

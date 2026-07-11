@@ -65,7 +65,7 @@ def test_research_asset_lifecycle_runtime_docs_exist_and_cover_required_topics()
     assert "Phase 4.9F - NFL Weather Research Asset Population" in project_status_text
     assert "docs/architecture/RESEARCH_ASSET_LIFECYCLE_RUNTIME.md" in project_status_text
     assert "docs/reports/PHASE4_8_RESEARCH_ASSET_LIFECYCLE_RUNTIME_AND_TIME_ENTITY_ALIGNMENT_CERTIFICATION.md" in project_status_text
-    assert "Phase 5.0 - Historical Dataset Population Layer" in next_action_text
+    assert "Phase 5.1 - Reusable Feature Population" in next_action_text
     assert "Do not implement connectors." in next_action_text
     assert "canonical open-provider acquisition path" in next_action_text.lower()
 
@@ -73,7 +73,7 @@ def test_research_asset_lifecycle_runtime_docs_exist_and_cover_required_topics()
     assert "Phase 4.9A populates the NFL schedule research asset." in roadmap_text
     assert "Phase 4.9B builds the research asset coverage planner and provider selection framework." in roadmap_text
     assert "Phase 4.9C implements the first production connector for the NFL schedule research asset." in roadmap_text
-    assert "Phase 5.0 materializes the historical dataset population layer." in roadmap_text
+    assert "Phase 5.0 completed the historical dataset population layer" in roadmap_text
     assert "Phase 5.1 populates reusable features from certified assets and certified events." in roadmap_text
     assert "Phase 5.2 implements reusable mathematical engines." in roadmap_text
     assert "Phase 5.3 implements reusable signals." in roadmap_text

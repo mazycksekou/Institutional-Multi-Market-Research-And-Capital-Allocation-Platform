@@ -7,9 +7,9 @@ Canonical live status for the repository and the required starting document for 
 - current branch: `feature/nfl-backtesting`
 - current HEAD: live branch tip (exact hash is reported in the task final report)
 - remote tracking branch: `origin/feature/nfl-backtesting`
-- active phase: `Phase 4.9H - NFL Team Statistics Research Asset Population (complete)`
+- active phase: `Phase 5.0 - Historical Dataset Population Layer (complete)`
 - active market profile: `sports:nfl`
-- active implementation lane: `NFL P0 profile-aware foundation + event-centric historical research database + master research engine specification + universal feature registry + universal math engine contracts + research asset runtime framework + historical dataset acquisition framework + historical dataset acquisition runtime + research asset source discovery and connector mapping framework + historical research asset certification runtime + research asset lifecycle runtime + NFL schedule research asset population + research asset coverage planner and provider selection framework + first production NFL schedule connector + certified NFL results research asset + certified NFL odds research asset + certified NFL weather research asset + certified NFL injuries research asset + certified NFL team statistics research asset`
+- active implementation lane: `NFL P0 profile-aware foundation + event-centric historical research database + master research engine specification + universal feature registry + universal math engine contracts + research asset runtime framework + historical dataset acquisition framework + historical dataset acquisition runtime + research asset source discovery and connector mapping framework + historical research asset certification runtime + research asset lifecycle runtime + NFL schedule research asset population + research asset coverage planner and provider selection framework + first production NFL schedule connector + certified NFL results research asset + certified NFL odds research asset + certified NFL weather research asset + certified NFL injuries research asset + certified NFL team statistics research asset + deterministic historical dataset population layer`
 - completed phases:
   - `Phase 4.3.6 - Profile-Aware NFL P0 Validation`
   - `Phase 4.3.7 - Minimum Backtest Row Contract`
@@ -30,8 +30,9 @@ Canonical live status for the repository and the required starting document for 
   - `Phase 4.9F - NFL Weather Research Asset Population`
   - `Phase 4.9G - NFL Injuries Research Asset Population`
   - `Phase 4.9H - NFL Team Statistics Research Asset Population`
-- current phase objective: Phase 4.9H is complete; the next objective is to materialize the historical dataset population layer from the certified minimum-schema NFL asset set without reopening optional enrichment assets as blockers.
-- next phase: `Phase 5.0 - Historical Dataset Population Layer`
+  - `Phase 5.0 - Historical Dataset Population Layer`
+- current phase objective: Phase 5.0 is complete; the next objective is to populate reusable features from the certified historical dataset layer and certified event context without starting mathematical engines, signals, decision rows, or backtesting.
+- next phase: `Phase 5.1 - Reusable Feature Population`
 - current blockers: None
 - latest validation status:
   - Phase 4.7C runtime validation passed: compileall, certification runtime tests, smoke, architecture, document lifecycle, and ops checks are green.
@@ -44,7 +45,8 @@ Canonical live status for the repository and the required starting document for 
   - Phase 4.9F weather population code changes are complete and validated: compileall, focused weather runtime tests, smoke, architecture, document lifecycle is advisory with no clear violations, and ops checks are green.
   - Phase 4.9G injuries population code changes are complete and validated: compileall, focused injuries runtime tests, focused injuries documentation tests, smoke, root markdown, OpenAPI contract, architecture, audit lifecycle, document lifecycle advisory with no clear violations, and the full repository test suite are green.
   - Phase 4.9H team statistics population code changes are complete and validated: compileall, focused team-statistics runtime tests, focused team-statistics documentation tests, smoke, root markdown, OpenAPI contract, architecture, audit lifecycle, document lifecycle advisory with no clear violations, repository preflight checks, and the full repository test suite are green.
-- latest full gate result: `passed; compileall, smoke, root markdown, OpenAPI contract, architecture, audit lifecycle, document lifecycle advisory with no clear violations, and the full repository test suite are green`
+  - Phase 5.0 historical dataset population code changes are complete and validated: focused dataset-population runtime tests, focused dataset-population documentation tests, adjacent shared-runtime regressions, compileall, smoke, root markdown, OpenAPI contract, architecture, audit lifecycle, ops checks, and the full repository test suite are green; document lifecycle remains advisory with one warning and no clear violations; the before-commit preflight reported the expected open-worktree violation prior to commit.
+- latest full gate result: `passed; focused dataset-population runtime and documentation tests, adjacent shared-runtime regressions, compileall, smoke, root markdown, OpenAPI contract, architecture, audit lifecycle, ops checks, and the full repository test suite are green; document lifecycle is advisory with one warning and no clear violations`
 - latest pushed commit: live branch tip (exact hash is reported in the task final report)
 
 ## Active Canonical Rules
@@ -61,6 +63,7 @@ Canonical live status for the repository and the required starting document for 
 - Research assets are certified individually before dataset certification completes.
 - Dataset certification is gated on the required research assets passing first.
 - Research assets advance through one canonical lifecycle and must satisfy time/entity alignment before lifecycle promotion.
+- Historical dataset population derives one deterministic game-level cutoff from scheduled kickoff minus five minutes; predictor assets select their latest eligible evidence independently at or before that cutoff, while results remain label-only.
 - Events own shared context.
 - Markets belong to events.
 - Selections belong to markets.
@@ -97,6 +100,7 @@ Read these only when you need more detail than the project status page provides:
 - `docs/architecture/HISTORICAL_RESEARCH_DATABASE.md`
 - `docs/architecture/HISTORICAL_DATASET_ACQUISITION_FRAMEWORK.md`
 - `docs/architecture/HISTORICAL_DATASET_ACQUISITION_RUNTIME.md`
+- `docs/architecture/HISTORICAL_DATASET_POPULATION_LAYER.md`
 - `docs/architecture/NFL_SCHEDULE_CONNECTOR.md`
 - `docs/architecture/NFL_RESULTS_RESEARCH_ASSET.md`
 - `docs/contracts/RESEARCH_ASSET_CONTRACT.md`
@@ -119,6 +123,7 @@ Read these only when you need more detail than the project status page provides:
 - `docs/reports/PHASE4_9F_NFL_WEATHER_RESEARCH_ASSET_POPULATION.md`
 - `docs/reports/PHASE4_9G_NFL_INJURIES_RESEARCH_ASSET_POPULATION.md`
 - `docs/reports/PHASE4_9H_NFL_TEAM_STATISTICS_RESEARCH_ASSET_POPULATION.md`
+- `docs/reports/PHASE5_0_HISTORICAL_DATASET_POPULATION_LAYER.md`
 - `docs/contracts/MINIMUM_BACKTEST_ROW_CONTRACT.md`
 - `docs/contracts/NFL_MINIMUM_BACKTEST_ROW_CONTRACT.md`
 - `docs/contracts/NFL_BACKTEST_CONTRACT.md`
@@ -137,4 +142,4 @@ Read these only when you need more detail than the project status page provides:
 
 ## Next Recommended Codex Task
 
-`Phase 5.0 - Historical Dataset Population Layer`
+`Phase 5.1 - Reusable Feature Population`

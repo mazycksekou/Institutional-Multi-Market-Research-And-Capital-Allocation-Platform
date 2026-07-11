@@ -25,6 +25,7 @@ This index points readers to the current truth and the durable historical entry 
 - `docs/architecture/FINAL_REPOSITORY_STRUCTURE.md` - Final Repository Structure
 - `docs/architecture/HISTORICAL_DATASET_ACQUISITION_FRAMEWORK.md` - Historical Dataset Acquisition Framework
 - `docs/architecture/HISTORICAL_DATASET_ACQUISITION_RUNTIME.md` - Historical Dataset Acquisition Runtime
+- `docs/architecture/HISTORICAL_DATASET_POPULATION_LAYER.md` - Historical Dataset Population Layer
 - `docs/architecture/HISTORICAL_RESEARCH_ASSET_CERTIFICATION_RUNTIME.md` - Historical Research Asset Certification Runtime
 - `docs/architecture/HISTORICAL_RESEARCH_DATABASE.md` - Purpose
 - `docs/architecture/MARKET_PROFILE_FRAMEWORK.md` - Purpose
@@ -151,6 +152,7 @@ This index points readers to the current truth and the durable historical entry 
 - `docs/reports/PHASE4_9G_NFL_INJURIES_RESEARCH_ASSET_POPULATION.md` - Phase 4.9G NFL Injuries Research Asset Population
 - `docs/architecture/NFL_TEAM_STATISTICS_RESEARCH_ASSET.md` - NFL Team Statistics Research Asset
 - `docs/reports/PHASE4_9H_NFL_TEAM_STATISTICS_RESEARCH_ASSET_POPULATION.md` - Phase 4.9H NFL Team Statistics Research Asset Population
+- `docs/reports/PHASE5_0_HISTORICAL_DATASET_POPULATION_LAYER.md` - Phase 5.0 Historical Dataset Population Layer
 
 ### INDEX
 - `docs/DOCUMENT_RETENTION_INDEX.md` - Policy Note

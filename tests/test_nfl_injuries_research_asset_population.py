@@ -90,8 +90,8 @@ def test_nfl_injuries_asset_reuses_shared_runtime_and_certifies_joined_injuries(
     assert readiness["join_validation"]["ok"]
     assert readiness["row_count"] == 2
     assert readiness["coverage_planner_readiness"]["first_production_connector_target"] == "dataset.nfl.team_stats_snapshots"
-    assert DEFAULT_NFL_INJURIES_RESEARCH_ASSET_ID in readiness["coverage_planner_readiness"]["future_asset_ids"]
     assert DEFAULT_NFL_INJURIES_RESEARCH_ASSET_ID not in readiness["coverage_planner_readiness"]["missing_required_asset_ids"]
+    assert DEFAULT_NFL_INJURIES_RESEARCH_ASSET_ID not in readiness["coverage_planner_readiness"]["future_asset_ids"]
 
     storage = create_nfl_p0_storage_engine(storage_path)
     try:

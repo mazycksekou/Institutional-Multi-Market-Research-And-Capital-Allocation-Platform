@@ -864,7 +864,7 @@ def _build_nfl_asset_blueprints(profile_id: str) -> list[dict[str, Any]]:
             research_asset_name="NFL Injury Snapshots",
             asset_category="dataset",
             asset_type="table_snapshot",
-            bundle_role="future_enrichment",
+            bundle_role="minimum_schema",
             required_components=("player_status", "report_time", "team", "player", "source_metadata", "lineage"),
             supporting_components=("injury_status", "availability_status", "practice_participation"),
             required_inputs=("player_stats", "team_stats", "final_results"),
@@ -901,7 +901,7 @@ def _build_nfl_asset_blueprints(profile_id: str) -> list[dict[str, Any]]:
                 },
             },
             notes=("Injury timing is a leakage-sensitive context asset; the open nflverse path and the manual evidence fallback must both preserve report timestamps and provenance.",),
-            future_asset=True,
+            minimum_schema=True,
         ),
         asset(
             research_asset_id="dataset.nfl.officials",
@@ -1464,6 +1464,11 @@ def _build_coverage_gap_engine(
     first_production_connector_target = _normalize_text(
         (prioritized_required_target.get("research_asset_ids") or [""])[0]
     )
+    connector_note = (
+        "No production connector upgrade is currently blocking the minimum-schema path."
+        if not first_production_connector_target
+        else "The first production connector target remains the next unresolved required asset or connector-upgrade lane."
+    )
     return {
         "profile_id": profile_id,
         "required_asset_count": len(required_assets),
@@ -1488,7 +1493,7 @@ def _build_coverage_gap_engine(
         },
         "notes": [
             "Coverage is asset-first: the planner tracks what is certified, what is missing, and which provider bundle best closes each gap.",
-            "The first production connector target remains the NFL schedule asset so the fixture-backed path can be replaced by the canonical open provider bundle.",
+            connector_note,
         ],
     }
 
@@ -1650,6 +1655,7 @@ class ResearchAssetCoveragePlannerRuntime:
         self,
         *,
         profile_id: str = DEFAULT_RESEARCH_ASSET_COVERAGE_PLANNER_PROFILE_ID,
+        include_dataset_population_snapshot: bool = True,
     ) -> dict[str, Any]:
         profile_id, required_catalog, future_catalog, lifecycle_identity_catalog = self._profile_and_catalog(profile_id)
         certification_runtime = self._certification_runtime()
@@ -1670,6 +1676,32 @@ class ResearchAssetCoveragePlannerRuntime:
             certification_rows=certification_snapshot.get("research_asset_certifications", []),
             lifecycle_rows=lifecycle_snapshot.get("research_asset_lifecycles", []),
         )
+        if include_dataset_population_snapshot:
+            try:
+                from src.data.historical_research_database import (
+                    build_historical_dataset_population_dashboard_snapshot,
+                )
+
+                dataset_population_snapshot = (
+                    build_historical_dataset_population_dashboard_snapshot(
+                        storage_path=self.storage_path,
+                        backend=self.backend,
+                        profile_id=profile_id,
+                        include_coverage_planner_snapshot=False,
+                    )
+                )
+            except Exception as exc:
+                dataset_population_snapshot = {
+                    "ok": False,
+                    "status": "historical_dataset_population_snapshot_failed",
+                    "warnings": [str(exc)],
+                }
+        else:
+            dataset_population_snapshot = {
+                "ok": False,
+                "status": "not_embedded",
+                "warnings": [],
+            }
         worldview_query_surface = _build_worldview_query_surface(profile_id=profile_id, asset_catalog=asset_registry, coverage_gap_engine=gap_engine)
         registry_report = build_registry_report(module="americanfootball_nfl")
         registry_snapshot = build_registry()
@@ -1699,6 +1731,24 @@ class ResearchAssetCoveragePlannerRuntime:
             "acquisition_plans": list(gap_engine.get("next_acquisition_targets", [])),
             "worldview_query_surface": worldview_query_surface,
             "planner_readiness": planner_readiness,
+            "dataset_population_snapshot": dataset_population_snapshot,
+            "dataset_population_readiness": {
+                "status": _normalize_text(dataset_population_snapshot.get("status"), "missing"),
+                "dataset_id": _normalize_text(dataset_population_snapshot.get("dataset_id")),
+                "batch_id": _normalize_text(dataset_population_snapshot.get("batch_id")),
+                "dataset_row_count": int(dataset_population_snapshot.get("dataset_row_count") or 0),
+                "dataset_certification_status": _normalize_text(
+                    dataset_population_snapshot.get("dataset_certification_status"),
+                    "missing",
+                ),
+                "lifecycle_state": _normalize_text(
+                    dataset_population_snapshot.get("lifecycle_state"),
+                    "missing",
+                ),
+                "unresolved_blockers": list(
+                    dataset_population_snapshot.get("unresolved_blockers", [])
+                ),
+            },
             "certification_snapshot": certification_snapshot,
             "lifecycle_snapshot": lifecycle_snapshot,
             "identity_catalog": lifecycle_identity_catalog,
@@ -1717,12 +1767,24 @@ class ResearchAssetCoveragePlannerRuntime:
             },
             "notes": [
                 "The planner is read-only. It inspects certified assets, source coverage, and readiness metadata without downloading data or enabling providers.",
-                "The first production connector target remains the NFL schedule asset so the deterministic fixture can be replaced with the canonical open provider path.",
+                (
+                    "No production connector upgrade is currently blocking the minimum-schema path."
+                    if not gap_engine["first_production_connector_target"]
+                    else "The first production connector target remains the next unresolved required asset or connector-upgrade lane."
+                ),
             ],
         }
 
-    def dashboard_snapshot(self, *, profile_id: str = DEFAULT_RESEARCH_ASSET_COVERAGE_PLANNER_PROFILE_ID) -> dict[str, Any]:
-        snapshot = self.build_snapshot(profile_id=profile_id)
+    def dashboard_snapshot(
+        self,
+        *,
+        profile_id: str = DEFAULT_RESEARCH_ASSET_COVERAGE_PLANNER_PROFILE_ID,
+        include_dataset_population_snapshot: bool = True,
+    ) -> dict[str, Any]:
+        snapshot = self.build_snapshot(
+            profile_id=profile_id,
+            include_dataset_population_snapshot=include_dataset_population_snapshot,
+        )
         snapshot["coverage_planner_readiness"] = {
             "status": snapshot.get("planner_readiness", {}).get("status", "missing"),
             "minimum_schema_completion_percentage": snapshot.get("planner_readiness", {}).get("minimum_schema_completion_percentage", 0.0),
@@ -1741,6 +1803,13 @@ class ResearchAssetCoveragePlannerRuntime:
             "minimum_schema_completion_percentage": snapshot.get("coverage_gap_engine", {}).get("minimum_schema_completion_percentage", 0.0),
             "first_production_connector_target": snapshot.get("coverage_gap_engine", {}).get("first_production_connector_target", ""),
             "next_acquisition_target_count": len(snapshot.get("coverage_gap_engine", {}).get("next_acquisition_targets", [])),
+        }
+        snapshot["dataset_population_summary"] = {
+            "status": snapshot.get("dataset_population_readiness", {}).get("status", "missing"),
+            "dataset_id": snapshot.get("dataset_population_readiness", {}).get("dataset_id", ""),
+            "batch_id": snapshot.get("dataset_population_readiness", {}).get("batch_id", ""),
+            "dataset_row_count": snapshot.get("dataset_population_readiness", {}).get("dataset_row_count", 0),
+            "dataset_certification_status": snapshot.get("dataset_population_readiness", {}).get("dataset_certification_status", "missing"),
         }
         snapshot["dashboard_ready"] = True
         return snapshot
@@ -1816,10 +1885,14 @@ def build_research_asset_coverage_planner_snapshot(
     *,
     backend: str = "sqlite",
     profile_id: str = DEFAULT_RESEARCH_ASSET_COVERAGE_PLANNER_PROFILE_ID,
+    include_dataset_population_snapshot: bool = True,
 ) -> dict[str, Any]:
     runtime = ResearchAssetCoveragePlannerRuntime(storage_path=storage_path or DEFAULT_RESEARCH_ASSET_COVERAGE_PLANNER_STORAGE_PATH, backend=backend)
     try:
-        return runtime.build_snapshot(profile_id=profile_id)
+        return runtime.build_snapshot(
+            profile_id=profile_id,
+            include_dataset_population_snapshot=include_dataset_population_snapshot,
+        )
     finally:
         runtime.close()
 
@@ -1829,10 +1902,14 @@ def build_research_asset_coverage_planner_dashboard_snapshot(
     *,
     backend: str = "sqlite",
     profile_id: str = DEFAULT_RESEARCH_ASSET_COVERAGE_PLANNER_PROFILE_ID,
+    include_dataset_population_snapshot: bool = True,
 ) -> dict[str, Any]:
     runtime = ResearchAssetCoveragePlannerRuntime(storage_path=storage_path or DEFAULT_RESEARCH_ASSET_COVERAGE_PLANNER_STORAGE_PATH, backend=backend)
     try:
-        return runtime.dashboard_snapshot(profile_id=profile_id)
+        return runtime.dashboard_snapshot(
+            profile_id=profile_id,
+            include_dataset_population_snapshot=include_dataset_population_snapshot,
+        )
     finally:
         runtime.close()
 

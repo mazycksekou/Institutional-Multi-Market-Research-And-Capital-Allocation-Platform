@@ -78,9 +78,9 @@ The following remain intentionally deferred:
 
 ## Remaining blockers
 
-The foundation is structurally ready, but the repository still needs future phases to:
+The foundation now includes the completed historical dataset population layer.
+The remaining governed phases are:
 
-- materialize the historical dataset population layer in Phase 5.0
 - populate reusable features in Phase 5.1
 - implement reusable mathematical engines in Phase 5.2
 - generate decision rows in Phase 5.4

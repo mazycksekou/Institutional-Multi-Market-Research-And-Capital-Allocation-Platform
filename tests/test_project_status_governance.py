@@ -83,7 +83,7 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "docs/reports/PHASE4_9A_NFL_SCHEDULE_RESEARCH_ASSET_POPULATION.md" in project_status_text
     assert "docs/reports/PHASE4_9E_NFL_ODDS_RESEARCH_ASSET_POPULATION.md" in project_status_text
 
-    assert "Phase 5.0 - Historical Dataset Population Layer" in next_action_text
+    assert "Phase 5.1 - Reusable Feature Population" in next_action_text
     assert "canonical connector" in next_action_text.lower()
     assert "Do not implement mathematical engines yet." in next_action_text
     assert "Do not generate decision rows yet." in next_action_text
@@ -116,7 +116,7 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "Phase 4.9C implements the first production connector for the NFL schedule research asset." in roadmap_text
     assert "Phase 4.9E completes the NFL odds research asset population" in roadmap_text
     assert "Phase 4.9J populates the NFL betting splits research asset." in roadmap_text
-    assert "Phase 5.0 materializes the historical dataset population layer." in roadmap_text
+    assert "Phase 5.0 completed the historical dataset population layer" in roadmap_text
     assert "Phase 5.1 populates reusable features from certified assets and certified events." in roadmap_text
     assert "Phase 5.2 implements reusable mathematical engines." in roadmap_text
     assert "docs/PROJECT_STATUS.md" in roadmap_text

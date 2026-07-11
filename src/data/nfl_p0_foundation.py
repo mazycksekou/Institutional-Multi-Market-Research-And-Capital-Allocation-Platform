@@ -1493,6 +1493,20 @@ def build_nfl_p0_dashboard_snapshot(
     backend: str = "sqlite",
 ) -> dict[str, Any]:
     snapshot = build_nfl_p0_readiness_snapshot(storage_path=storage_path, backend=backend)
+    try:
+        from src.data.historical_research_database import build_historical_dataset_population_dashboard_snapshot
+
+        dataset_layer_snapshot = build_historical_dataset_population_dashboard_snapshot(
+            storage_path=storage_path,
+            backend=backend,
+            profile_id=NFL_P0_PROFILE_ID,
+        )
+    except Exception as exc:
+        dataset_layer_snapshot = {
+            "ok": False,
+            "status": "historical_dataset_population_snapshot_error",
+            "warnings": [str(exc)],
+        }
     snapshot["table_counts"] = {name: details.get("row_count", 0) for name, details in snapshot.get("table_readiness", {}).items()}
     snapshot["dataset_readiness"] = {
         "status": snapshot.get("status"),
@@ -1500,11 +1514,21 @@ def build_nfl_p0_dashboard_snapshot(
         "total_table_count": len(NFL_P0_TABLE_CONTRACTS),
         "missing_tables": snapshot.get("missing_tables", []),
         "blocked_tables": snapshot.get("blocked_tables", []),
+        "historical_dataset_population_status": dataset_layer_snapshot.get("status", "missing"),
+    }
+    snapshot["dataset_layer_readiness"] = {
+        "status": dataset_layer_snapshot.get("status", "missing"),
+        "dataset_id": dataset_layer_snapshot.get("dataset_id", ""),
+        "batch_id": dataset_layer_snapshot.get("batch_id", ""),
+        "dataset_row_count": dataset_layer_snapshot.get("dataset_row_count", 0),
+        "dataset_certification_status": dataset_layer_snapshot.get("dataset_certification_status", "missing"),
+        "lifecycle_state": dataset_layer_snapshot.get("lifecycle_state", "missing"),
     }
     snapshot["readiness_summary"] = {
         "table_readiness_ready": len(snapshot.get("ready_tables", [])),
         "table_readiness_missing": len(snapshot.get("missing_tables", [])),
         "table_readiness_blocked": len(snapshot.get("blocked_tables", [])),
+        "historical_dataset_population_status": dataset_layer_snapshot.get("status", "missing"),
     }
     return snapshot
 

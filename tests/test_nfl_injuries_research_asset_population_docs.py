@@ -46,13 +46,13 @@ def test_nfl_injuries_research_asset_population_docs_exist_and_cover_required_to
     assert "Senior Systems Engineer Review" in report_text
     assert "Worldview Intelligence Review" in report_text
 
-    assert "Phase 4.9H - NFL Team Statistics Research Asset Population (complete)" in project_status_text
-    assert "Phase 5.0 - Historical Dataset Population Layer" in next_action_text
+    assert "Phase 5.0 - Historical Dataset Population Layer (complete)" in project_status_text
+    assert "Phase 5.1 - Reusable Feature Population" in next_action_text
     assert "docs/architecture/NFL_INJURIES_RESEARCH_ASSET.md" in project_status_text
     assert "docs/reports/PHASE4_9G_NFL_INJURIES_RESEARCH_ASSET_POPULATION.md" in project_status_text
     assert "docs/architecture/NFL_INJURIES_RESEARCH_ASSET.md" in master_index_text
     assert "docs/reports/PHASE4_9G_NFL_INJURIES_RESEARCH_ASSET_POPULATION.md" in retention_index_text
-    assert "historical dataset population layer" in next_action_text.lower()
+    assert "reusable feature population" in next_action_text.lower()
 
 
 def test_nfl_injuries_research_asset_population_docs_do_not_depend_on_runtime_code() -> None:

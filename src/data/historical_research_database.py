@@ -5,7 +5,7 @@ import json
 from collections import defaultdict
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -13,8 +13,10 @@ from src.analytics.model_governance.data_lineage import create_lineage_record
 from src.data.data_paths import get_runtime_data_path
 from src.data.historical_research_asset_certification_runtime import HistoricalResearchAssetCertificationRuntime
 from src.data.historical_dataset_acquisition_runtime import HistoricalDatasetAcquisitionRuntime
+from src.data.local_platform import DatasetContract, LocalDataPlatform
 from src.data.market_profile_contracts import MarketProfileContract, validate_market_profile_contract
 from src.data.market_profile_registry import get_market_profile, register_market_profile
+from src.data.research_asset_lifecycle_runtime import ResearchAssetLifecycleRuntime, build_research_asset_identity_contract
 from src.data.source_event_links import build_event_link_index, resolve_source_event_links
 from src.data.validation import validate_dataset_rows
 from src.storage.local_store import LocalStorageEngine, create_local_storage_engine
@@ -31,6 +33,83 @@ DEFAULT_HISTORICAL_RESEARCH_SOURCE_KEY = "local_historical_fixture"
 DEFAULT_HISTORICAL_RESEARCH_OWNER = "local"
 DEFAULT_HISTORICAL_RESEARCH_ASSET_CLASS = "sports"
 DEFAULT_HISTORICAL_RESEARCH_MARKET = DEFAULT_HISTORICAL_RESEARCH_PROFILE_ID
+DEFAULT_NFL_HISTORICAL_DATASET_ID = "dataset.sports.nfl.historical_dataset"
+DEFAULT_NFL_HISTORICAL_DATASET_NAME = "nfl_historical_dataset_population"
+HISTORICAL_DATASET_POPULATION_SCHEMA_VERSION = "src.data.historical_research_database.population.v1"
+HISTORICAL_DATASET_POPULATION_STAGE_NAME = "historical_dataset_population"
+HISTORICAL_DATASET_BATCH_TABLE = "historical_dataset_batches"
+HISTORICAL_DATASET_ROW_TABLE = "historical_dataset_rows"
+HISTORICAL_DATASET_CUTOFF_POLICY_ID = "nfl.minimum_schema.kickoff_minus_five_minutes.v1"
+HISTORICAL_DATASET_JOIN_POLICY_ID = "nfl.minimum_schema.event_market_context.v1"
+HISTORICAL_DATASET_CONTRACT_VERSION = "nfl.minimum_schema.dataset_contract.v1"
+HISTORICAL_DATASET_DECISION_CUTOFF_OFFSET = timedelta(minutes=5)
+HISTORICAL_DATASET_ALLOWED_LIFECYCLE_STATES: tuple[str, ...] = (
+    "feature_ready",
+    "math_ready",
+    "signal_ready",
+    "backtest_ready",
+    "production_ready",
+)
+HISTORICAL_DATASET_REQUIRED_ASSETS: tuple[dict[str, str], ...] = (
+    {
+        "research_asset_id": "dataset.sports.nfl.schedule",
+        "table_name": "nfl_schedule",
+        "row_id_field": "schedule_id",
+    },
+    {
+        "research_asset_id": "dataset.sports.nfl.results",
+        "table_name": "nfl_results",
+        "row_id_field": "result_id",
+    },
+    {
+        "research_asset_id": "dataset.nfl.odds_snapshots",
+        "table_name": "nfl_odds_snapshots",
+        "row_id_field": "odds_snapshot_id",
+    },
+    {
+        "research_asset_id": "dataset.nfl.weather_snapshots",
+        "table_name": "nfl_weather_snapshots",
+        "row_id_field": "weather_snapshot_id",
+    },
+    {
+        "research_asset_id": "dataset.nfl.injury_snapshots",
+        "table_name": "nfl_injury_snapshots",
+        "row_id_field": "injury_snapshot_id",
+    },
+    {
+        "research_asset_id": "dataset.nfl.team_stats_snapshots",
+        "table_name": "nfl_team_stats_snapshots",
+        "row_id_field": "team_stats_snapshot_id",
+    },
+)
+HISTORICAL_DATASET_REQUIRED_ASSET_LOOKUP: dict[str, dict[str, str]] = {
+    asset["research_asset_id"]: dict(asset) for asset in HISTORICAL_DATASET_REQUIRED_ASSETS
+}
+HISTORICAL_DATASET_IDENTITY_ASSET_IDS: tuple[str, ...] = (
+    "dataset.sports.nfl.schedule",
+    "dataset.nfl.odds_snapshots",
+    "dataset.nfl.weather_snapshots",
+    "dataset.nfl.injury_snapshots",
+    "dataset.nfl.team_stats_snapshots",
+)
+HISTORICAL_DATASET_TEAM_STAT_UNITS: dict[str, str] = {
+    "rest_days": "days",
+    "travel_distance_miles": "miles",
+    "travel_timezone_change": "hours",
+    "offensive_efficiency": "rating",
+    "defensive_efficiency": "rating",
+    "pace": "plays_per_game",
+    "play_volume": "plays",
+    "scoring_efficiency": "points_per_drive",
+    "turnover_rate": "ratio",
+    "red_zone_efficiency": "ratio",
+    "third_down_efficiency": "ratio",
+    "special_teams_efficiency": "rating",
+    "coaching_continuity": "ratio",
+    "roster_continuity": "ratio",
+    "injury_adjusted_availability": "ratio",
+    "efficiency_window_games": "games",
+}
 
 HISTORICAL_SHARED_REQUIRED_FIELDS: tuple[str, ...] = (
     "dataset_id",
@@ -111,6 +190,36 @@ def _as_json(value: Any) -> str:
         return str(obj)
 
     return json.dumps(value, default=default, sort_keys=True, ensure_ascii=False)
+
+
+def _load_json_mapping(value: Any) -> dict[str, Any]:
+    if isinstance(value, Mapping):
+        return {str(key): payload for key, payload in value.items()}
+    if value in (None, ""):
+        return {}
+    if isinstance(value, str):
+        try:
+            parsed = json.loads(value)
+        except json.JSONDecodeError:
+            return {}
+        if isinstance(parsed, Mapping):
+            return {str(key): payload for key, payload in parsed.items()}
+    return {}
+
+
+def _load_json_list(value: Any) -> list[Any]:
+    if isinstance(value, list):
+        return list(value)
+    if value in (None, ""):
+        return []
+    if isinstance(value, str):
+        try:
+            parsed = json.loads(value)
+        except json.JSONDecodeError:
+            return []
+        if isinstance(parsed, list):
+            return list(parsed)
+    return []
 
 
 def _stable_id(prefix: str, *parts: Any) -> str:
@@ -1814,9 +1923,2163 @@ def get_historical_research_snapshot_for_dashboard(
         }
 
 
+def _asset_row_id_field(research_asset_id: str) -> str:
+    asset = HISTORICAL_DATASET_REQUIRED_ASSET_LOOKUP.get(research_asset_id) or {}
+    return _normalize_text(asset.get("row_id_field"), "record_id")
+
+
+def _latest_certified_research_asset_row(
+    storage: LocalStorageEngine,
+    *,
+    research_asset_id: str,
+) -> dict[str, Any]:
+    if not storage.table_exists("historical_research_asset_certifications"):
+        return {}
+    rows = storage.fetch(
+        "historical_research_asset_certifications",
+        where="research_asset_id = ? AND certification_status = ?",
+        params=[research_asset_id, "certified"],
+        order_by="certified_at ASC, created_at ASC, certification_id ASC",
+    )
+    return dict(rows[-1]) if rows else {}
+
+
+def _latest_certified_dataset_row_for_batch(
+    storage: LocalStorageEngine,
+    *,
+    batch_id: str,
+) -> dict[str, Any]:
+    if not storage.table_exists("historical_certifications"):
+        return {}
+    rows = storage.fetch(
+        "historical_certifications",
+        where="batch_id = ? AND certification_status = ?",
+        params=[batch_id, "certified"],
+        order_by="certified_at ASC, created_at ASC, certification_id ASC",
+    )
+    return dict(rows[-1]) if rows else {}
+
+
+def _latest_lifecycle_row(
+    storage: LocalStorageEngine,
+    *,
+    asset_id: str,
+) -> dict[str, Any]:
+    if not storage.table_exists("research_asset_lifecycles"):
+        return {}
+    rows = storage.fetch(
+        "research_asset_lifecycles",
+        where="asset_id = ?",
+        params=[asset_id],
+        order_by="created_at ASC, updated_at ASC, asset_id ASC",
+    )
+    return dict(rows[-1]) if rows else {}
+
+
+def _alignment_rows_for_asset(
+    storage: LocalStorageEngine,
+    *,
+    research_asset_id: str,
+) -> list[dict[str, Any]]:
+    if not storage.table_exists("research_asset_alignment_certifications"):
+        return []
+    return [
+        dict(row)
+        for row in storage.fetch(
+            "research_asset_alignment_certifications",
+            where="research_asset_id = ?",
+            params=[research_asset_id],
+            order_by="certification_timestamp ASC, alignment_certification_id ASC",
+        )
+    ]
+
+
+def _row_collection_for_asset(
+    storage: LocalStorageEngine,
+    *,
+    research_asset_id: str,
+    version_id: str,
+) -> list[dict[str, Any]]:
+    asset = HISTORICAL_DATASET_REQUIRED_ASSET_LOOKUP.get(research_asset_id) or {}
+    table_name = _normalize_text(asset.get("table_name"))
+    row_id_field = _normalize_text(asset.get("row_id_field"))
+    if not table_name or not storage.table_exists(table_name):
+        return []
+    where = "version_id = ?" if version_id else None
+    params: list[Any] = [version_id] if version_id else []
+    order_by = f"{row_id_field} ASC" if row_id_field else None
+    return [
+        dict(row)
+        for row in storage.fetch(
+            table_name,
+            where=where,
+            params=params,
+            order_by=order_by,
+        )
+    ]
+
+
+def _is_allowed_lifecycle_state(value: Any) -> bool:
+    return _normalize_text(value).lower() in HISTORICAL_DATASET_ALLOWED_LIFECYCLE_STATES
+
+
+def _bool_to_int(value: Any) -> int:
+    return 1 if bool(value) else 0
+
+
+def _min_dt() -> datetime:
+    return datetime(1970, 1, 1, tzinfo=timezone.utc)
+
+
+def _candidate_sort_key(
+    row: Mapping[str, Any],
+    *,
+    row_id_field: str,
+    timestamp_fields: Sequence[str],
+) -> tuple[Any, ...]:
+    values: list[Any] = []
+    for field_name in timestamp_fields:
+        values.append(_parse_iso(row.get(field_name)) or _min_dt())
+    values.append(_normalize_text(row.get(row_id_field)))
+    return tuple(values)
+
+
+def _select_latest_candidate(
+    rows: Sequence[Mapping[str, Any]],
+    *,
+    row_id_field: str,
+    timestamp_fields: Sequence[str],
+) -> dict[str, Any]:
+    if not rows:
+        return {}
+    ordered = sorted(
+        (dict(row) for row in rows),
+        key=lambda row: _candidate_sort_key(
+            row,
+            row_id_field=row_id_field,
+            timestamp_fields=timestamp_fields,
+        ),
+    )
+    return ordered[-1]
+
+
+def _source_row_identifier(research_asset_id: str, row: Mapping[str, Any]) -> str:
+    return _normalize_text(row.get(_asset_row_id_field(research_asset_id)))
+
+
+def _source_row_has_provenance(row: Mapping[str, Any]) -> bool:
+    if not _normalize_text(row.get("lineage_id")):
+        return False
+    if not _normalize_text(row.get("source_metadata_json")):
+        return False
+    field_provenance = _load_json_mapping(row.get("field_provenance_json"))
+    if "field_provenance_json" in row and not field_provenance:
+        return False
+    return True
+
+
+def _match_alignment_row(
+    research_asset_id: str,
+    *,
+    alignment_row: Mapping[str, Any],
+    source_row: Mapping[str, Any],
+) -> bool:
+    game_id = _normalize_text(source_row.get("game_id"), _normalize_text(source_row.get("event_id")))
+    if game_id and _normalize_text(alignment_row.get("game_id")) != game_id:
+        return False
+    if research_asset_id == "dataset.sports.nfl.schedule":
+        return True
+    if research_asset_id == "dataset.sports.nfl.results":
+        return True
+    if research_asset_id == "dataset.nfl.weather_snapshots":
+        return True
+    if research_asset_id == "dataset.nfl.odds_snapshots":
+        selection = _normalize_text(source_row.get("selection"))
+        market_type = _normalize_text(source_row.get("market_type"))
+        market_id = _normalize_text(source_row.get("odds_snapshot_id"))
+        return (
+            _normalize_text(alignment_row.get("selection")) in {"", selection}
+            and _normalize_text(alignment_row.get("market_type")) in {"", market_type}
+            and _normalize_text(alignment_row.get("market_id")) in {"", market_id}
+        )
+    if research_asset_id == "dataset.nfl.team_stats_snapshots":
+        team_id = _normalize_text(source_row.get("team_id"))
+        market_id = _normalize_text(source_row.get("team_stats_snapshot_id"))
+        return (
+            _normalize_text(alignment_row.get("team_id")) == team_id
+            and _normalize_text(alignment_row.get("market_id")) in {"", market_id}
+        )
+    if research_asset_id == "dataset.nfl.injury_snapshots":
+        team_id = _normalize_text(source_row.get("team_id"))
+        participant_id = _normalize_text(source_row.get("player_id"))
+        market_id = _normalize_text(source_row.get("injury_snapshot_id"))
+        return (
+            _normalize_text(alignment_row.get("team_id")) == team_id
+            and _normalize_text(alignment_row.get("participant_id")) in {"", participant_id}
+            and _normalize_text(alignment_row.get("market_id")) in {"", market_id}
+        )
+    return False
+
+
+def _matching_alignment_ids(
+    research_asset_id: str,
+    *,
+    alignment_rows: Sequence[Mapping[str, Any]],
+    source_row: Mapping[str, Any],
+) -> list[str]:
+    aligned_rows = [
+        alignment_row
+        for alignment_row in alignment_rows
+        if _normalize_text(alignment_row.get("alignment_status")) == "aligned"
+    ]
+    matches = []
+    for alignment_row in aligned_rows:
+        if _match_alignment_row(
+            research_asset_id,
+            alignment_row=alignment_row,
+            source_row=source_row,
+        ):
+            alignment_id = _normalize_text(alignment_row.get("alignment_certification_id"))
+            if alignment_id and alignment_id not in matches:
+                matches.append(alignment_id)
+    if not matches and research_asset_id == "dataset.nfl.odds_snapshots" and len(aligned_rows) == 1:
+        alignment_id = _normalize_text(aligned_rows[0].get("alignment_certification_id"))
+        if alignment_id:
+            matches.append(alignment_id)
+    return matches
+
+
+def _source_asset_status_bundle(
+    storage: LocalStorageEngine,
+    *,
+    research_asset_id: str,
+) -> dict[str, Any]:
+    asset = HISTORICAL_DATASET_REQUIRED_ASSET_LOOKUP.get(research_asset_id) or {}
+    certification_row = _latest_certified_research_asset_row(
+        storage,
+        research_asset_id=research_asset_id,
+    )
+    dataset_certification_row = _latest_certified_dataset_row_for_batch(
+        storage,
+        batch_id=_normalize_text(certification_row.get("batch_id")),
+    ) if certification_row else {}
+    lifecycle_row = _latest_lifecycle_row(storage, asset_id=research_asset_id)
+    alignment_rows = _alignment_rows_for_asset(storage, research_asset_id=research_asset_id)
+    version_id = _normalize_text(certification_row.get("version_id"))
+    rows = _row_collection_for_asset(
+        storage,
+        research_asset_id=research_asset_id,
+        version_id=version_id,
+    ) if version_id else []
+    errors: list[str] = []
+    if not certification_row:
+        errors.append(f"missing_source_certification:{research_asset_id}")
+    if certification_row and not dataset_certification_row:
+        errors.append(f"missing_source_dataset_certification:{research_asset_id}")
+    lifecycle_state = _normalize_text(lifecycle_row.get("lifecycle_state")).lower()
+    if certification_row and not _is_allowed_lifecycle_state(lifecycle_state):
+        errors.append(f"insufficient_source_lifecycle:{research_asset_id}:{lifecycle_state or 'missing'}")
+    if certification_row and not alignment_rows:
+        errors.append(f"missing_source_alignment_certification:{research_asset_id}")
+    if certification_row and not rows:
+        errors.append(f"missing_source_rows:{research_asset_id}")
+    return {
+        "research_asset_id": research_asset_id,
+        "table_name": _normalize_text(asset.get("table_name")),
+        "row_id_field": _normalize_text(asset.get("row_id_field")),
+        "certification_row": certification_row,
+        "dataset_certification_row": dataset_certification_row,
+        "lifecycle_row": lifecycle_row,
+        "alignment_rows": alignment_rows,
+        "rows": rows,
+        "errors": errors,
+    }
+
+
+def _target_team_context(
+    schedule_row: Mapping[str, Any],
+    odds_row: Mapping[str, Any],
+) -> dict[str, str]:
+    selection = _normalize_text(odds_row.get("selection")).lower()
+    if selection == "home":
+        return {
+            "target_team_id": _normalize_text(schedule_row.get("home_team_id")),
+            "target_team": _normalize_text(schedule_row.get("home_team")),
+            "opponent_team_id": _normalize_text(schedule_row.get("away_team_id")),
+            "opponent_team": _normalize_text(schedule_row.get("away_team")),
+            "team_side": "home",
+        }
+    if selection == "away":
+        return {
+            "target_team_id": _normalize_text(schedule_row.get("away_team_id")),
+            "target_team": _normalize_text(schedule_row.get("away_team")),
+            "opponent_team_id": _normalize_text(schedule_row.get("home_team_id")),
+            "opponent_team": _normalize_text(schedule_row.get("home_team")),
+            "team_side": "away",
+        }
+    return {
+        "target_team_id": "",
+        "target_team": "",
+        "opponent_team_id": "",
+        "opponent_team": "",
+        "team_side": "",
+    }
+
+
+def _injury_summary(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    availability_counts: dict[str, int] = {}
+    report_status_counts: dict[str, int] = {}
+    positions: list[str] = []
+    latest_report_time = ""
+    for row in rows:
+        availability = _normalize_text(row.get("availability_status"), "unknown")
+        report_status = _normalize_text(row.get("report_status"), "unknown")
+        position = _normalize_text(row.get("position"))
+        availability_counts[availability] = availability_counts.get(availability, 0) + 1
+        report_status_counts[report_status] = report_status_counts.get(report_status, 0) + 1
+        if position and position not in positions:
+            positions.append(position)
+        report_time = _to_iso(row.get("report_time"))
+        if report_time and (not latest_report_time or (_parse_iso(report_time) or _min_dt()) > (_parse_iso(latest_report_time) or _min_dt())):
+            latest_report_time = report_time
+    return {
+        "row_count": len(rows),
+        "availability_status_counts": availability_counts,
+        "report_status_counts": report_status_counts,
+        "positions": positions,
+        "latest_report_time": latest_report_time,
+        "row_ids": [_source_row_identifier("dataset.nfl.injury_snapshots", row) for row in rows],
+    }
+
+
+def _decision_cutoff_from_kickoff(kickoff: datetime) -> str:
+    return (kickoff - HISTORICAL_DATASET_DECISION_CUTOFF_OFFSET).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def _asset_availability_time(research_asset_id: str, row: Mapping[str, Any]) -> datetime | None:
+    if research_asset_id == "dataset.nfl.odds_snapshots":
+        field_names = ("decision_time", "snapshot_time", "source_snapshot_time")
+    elif research_asset_id == "dataset.nfl.weather_snapshots":
+        field_names = ("forecast_time", "snapshot_time", "source_snapshot_time")
+    elif research_asset_id == "dataset.nfl.injury_snapshots":
+        field_names = ("report_time", "snapshot_time", "source_snapshot_time")
+    elif research_asset_id == "dataset.nfl.team_stats_snapshots":
+        field_names = (
+            "snapshot_time",
+            "source_snapshot_time",
+            "source_retrieved_at",
+            "team_stats_cutoff_time",
+        )
+    elif research_asset_id == "dataset.sports.nfl.schedule":
+        field_names = ("kickoff_time", "snapshot_time", "source_snapshot_time")
+    else:
+        field_names = ("snapshot_time", "source_snapshot_time", "decision_time")
+    latest: datetime | None = None
+    for field_name in field_names:
+        candidate = _parse_iso(row.get(field_name))
+        if candidate and (latest is None or candidate > latest):
+            latest = candidate
+    return latest
+
+
+def _selected_asset_timestamp(research_asset_id: str, row: Mapping[str, Any]) -> str:
+    return _to_iso(_asset_availability_time(research_asset_id, row))
+
+
+def _freshness_seconds(cutoff_time: datetime, research_asset_id: str, row: Mapping[str, Any]) -> int:
+    availability_time = _asset_availability_time(research_asset_id, row)
+    if availability_time is None:
+        return -1
+    return max(int((cutoff_time - availability_time).total_seconds()), 0)
+
+
+def _derive_final_result_label(
+    schedule_row: Mapping[str, Any],
+    result_row: Mapping[str, Any],
+) -> str:
+    winner_team_id = _normalize_text(result_row.get("winner_team_id"))
+    if winner_team_id and winner_team_id == _normalize_text(schedule_row.get("home_team_id")):
+        return "home_win"
+    if winner_team_id and winner_team_id == _normalize_text(schedule_row.get("away_team_id")):
+        return "away_win"
+    if _normalize_text(result_row.get("settlement_status")).lower() == "void":
+        return "void"
+    return "unknown"
+
+
+def _expected_team_stat_units(row: Mapping[str, Any]) -> bool:
+    units = _load_json_mapping(row.get("metric_units_json"))
+    if not units:
+        return False
+    for field_name, expected_unit in HISTORICAL_DATASET_TEAM_STAT_UNITS.items():
+        if _normalize_text(units.get(field_name)) != expected_unit:
+            return False
+    return True
+
+
+def _stable_dataset_batch_id(
+    dataset_id: str,
+    *,
+    source_certification_ids: Mapping[str, Any],
+    source_dataset_certification_ids: Mapping[str, Any],
+    source_asset_version_ids: Mapping[str, Any],
+    source_asset_batch_ids: Mapping[str, Any],
+    event_scope: Mapping[str, Any],
+) -> str:
+    digest = _stable_id(
+        "historical_dataset_batch",
+        dataset_id,
+        HISTORICAL_DATASET_CONTRACT_VERSION,
+        HISTORICAL_DATASET_CUTOFF_POLICY_ID,
+        HISTORICAL_DATASET_JOIN_POLICY_ID,
+        _as_json(source_certification_ids),
+        _as_json(source_dataset_certification_ids),
+        _as_json(source_asset_version_ids),
+        _as_json(source_asset_batch_ids),
+        _as_json(event_scope),
+    )
+    return f"{dataset_id}.batch.{digest}"
+
+
+def _stable_dataset_version_id(dataset_id: str, batch_id: str) -> str:
+    return f"{dataset_id}.version.{_stable_id('historical_dataset_version', dataset_id, batch_id)}"
+
+
+def _base_dataset_contract(storage_path: Path) -> DatasetContract:
+    return DatasetContract.create(
+        dataset_name=DEFAULT_NFL_HISTORICAL_DATASET_NAME,
+        dataset_id=DEFAULT_NFL_HISTORICAL_DATASET_ID,
+        source_name="historical_dataset_population_runtime",
+        source_type="population_runtime",
+        market=DEFAULT_HISTORICAL_RESEARCH_PROFILE_ID,
+        sport="football",
+        asset_class="sports",
+        provider="repository",
+        schema_version=HISTORICAL_DATASET_POPULATION_SCHEMA_VERSION,
+        feature_pack=HISTORICAL_DATASET_CONTRACT_VERSION,
+        storage_location=str(storage_path),
+        readiness="feature_ready",
+        update_frequency="manual",
+        validation_state="pending",
+        owner="src.data",
+        status="registered",
+        market_type="historical_dataset_population",
+        quality_score=1.0,
+        metadata={
+            "profile_id": DEFAULT_HISTORICAL_RESEARCH_PROFILE_ID,
+            "minimum_schema": True,
+            "cutoff_policy_id": HISTORICAL_DATASET_CUTOFF_POLICY_ID,
+            "join_policy_id": HISTORICAL_DATASET_JOIN_POLICY_ID,
+        },
+    )
+
+
+def _serialize_source_reference(
+    *,
+    research_asset_id: str,
+    source_row: Mapping[str, Any],
+    certification_row: Mapping[str, Any],
+    dataset_certification_row: Mapping[str, Any],
+    alignment_ids: Sequence[str],
+) -> dict[str, Any]:
+    return {
+        "research_asset_id": research_asset_id,
+        "source_row_id": _source_row_identifier(research_asset_id, source_row),
+        "version_id": _normalize_text(certification_row.get("version_id")),
+        "batch_id": _normalize_text(certification_row.get("batch_id")),
+        "certification_id": _normalize_text(certification_row.get("certification_id")),
+        "dataset_certification_id": _normalize_text(dataset_certification_row.get("certification_id")),
+        "alignment_certification_ids": list(alignment_ids),
+        "snapshot_time": _to_iso(source_row.get("snapshot_time")),
+        "source_snapshot_time": _to_iso(source_row.get("source_snapshot_time")),
+        "decision_time": _to_iso(source_row.get("decision_time")),
+    }
+
+
+def _update_rejected_ids(
+    rejected_ids: dict[str, set[str]],
+    category: str,
+    row_id: str,
+) -> None:
+    if not row_id:
+        return
+    rejected_ids.setdefault(category, set()).add(row_id)
+
+
+def _build_dataset_population_certification_row(
+    *,
+    profile: MarketProfileContract,
+    batch_id: str,
+    version_id: str,
+    created_at: str,
+    validation: Mapping[str, Any],
+    evidence_package_id: str,
+    source_name: str,
+    source_type: str,
+    source_key: str,
+) -> dict[str, Any]:
+    row = _build_certification_row(
+        profile=profile,
+        batch_id=batch_id,
+        dataset_version=version_id,
+        stage_name="historical_dataset_population.minimum_schema",
+        validation=validation,
+        source_name=source_name,
+        source_type=source_type,
+        source_key=source_key,
+        created_at=created_at,
+    )
+    row["context_json"] = _as_json(
+        {
+            "dataset_id": DEFAULT_NFL_HISTORICAL_DATASET_ID,
+            "evidence_package_id": evidence_package_id,
+            "validation": dict(validation),
+        }
+    )
+    row["payload_json"] = _as_json(
+        {
+            "dataset_id": DEFAULT_NFL_HISTORICAL_DATASET_ID,
+            "dataset_name": DEFAULT_NFL_HISTORICAL_DATASET_NAME,
+            "batch_id": batch_id,
+            "version_id": version_id,
+            "evidence_package_id": evidence_package_id,
+            "validation": dict(validation),
+        }
+    )
+    row["version_id"] = version_id
+    row["schema_version"] = HISTORICAL_DATASET_POPULATION_SCHEMA_VERSION
+    return row
+
+
+def _lineage_edge_row(
+    contract: DatasetContract,
+    *,
+    version_id: str,
+    snapshot_id: str,
+    batch_lineage_id: str,
+    source_stage: str,
+    source_id: str,
+    target_id: str,
+    step_index: int,
+    payload: Mapping[str, Any],
+    created_at: str,
+) -> dict[str, Any]:
+    return {
+        "lineage_edge_id": _stable_id(
+            "historical_dataset_lineage_edge",
+            contract.dataset_id,
+            version_id,
+            source_stage,
+            source_id,
+            target_id,
+        ),
+        "dataset_id": contract.dataset_id,
+        "dataset_name": contract.dataset_name,
+        "owner": contract.owner,
+        "sport": contract.sport,
+        "feature_pack": contract.feature_pack,
+        "storage_location": contract.storage_location,
+        "readiness": contract.readiness,
+        "update_frequency": contract.update_frequency,
+        "validation_state": contract.validation_state,
+        "status": contract.status,
+        "schema_version": contract.schema_version,
+        "created_at": created_at,
+        "updated_at": created_at,
+        "source": contract.source_name,
+        "provider": contract.provider,
+        "market": contract.market,
+        "market_type": contract.market_type,
+        "asset_class": contract.asset_class,
+        "snapshot_id": snapshot_id,
+        "lineage_id": batch_lineage_id,
+        "version_id": version_id,
+        "quality_score": 1.0,
+        "source_stage": source_stage,
+        "source_id": source_id,
+        "target_stage": "historical_dataset_row",
+        "target_id": target_id,
+        "transformation": "attach_certified_research_asset_to_historical_dataset_row",
+        "step_index": step_index,
+        "payload_json": _as_json(dict(payload)),
+    }
+
+
+def build_historical_dataset_population(
+    storage_path: str | Path | None = None,
+    *,
+    backend: str = "sqlite",
+    profile_id: str = DEFAULT_HISTORICAL_RESEARCH_PROFILE_ID,
+) -> dict[str, Any]:
+    if profile_id != DEFAULT_HISTORICAL_RESEARCH_PROFILE_ID:
+        raise NotImplementedError("Historical dataset population currently supports sports:nfl only.")
+    profile = _ensure_profile(profile_id=profile_id)
+    storage = create_historical_research_storage_engine(storage_path, backend=backend)
+    try:
+        source_assets = {
+            asset["research_asset_id"]: _source_asset_status_bundle(
+                storage,
+                research_asset_id=asset["research_asset_id"],
+            )
+            for asset in HISTORICAL_DATASET_REQUIRED_ASSETS
+        }
+        source_errors = [
+            error
+            for bundle in source_assets.values()
+            for error in bundle.get("errors", [])
+        ]
+        schedule_rows = list(source_assets["dataset.sports.nfl.schedule"]["rows"])
+        event_scope = {
+            "season_values": sorted(
+                {
+                    _normalize_text(row.get("season"))
+                    for row in schedule_rows
+                    if _normalize_text(row.get("season"))
+                }
+            ),
+            "week_values": sorted(
+                {
+                    _normalize_text(row.get("week"))
+                    for row in schedule_rows
+                    if _normalize_text(row.get("week"))
+                }
+            ),
+            "game_ids": sorted(
+                {
+                    _normalize_text(row.get("game_id"))
+                    for row in schedule_rows
+                    if _normalize_text(row.get("game_id"))
+                }
+            ),
+        }
+        source_certification_ids = {
+            asset_id: _normalize_text(bundle.get("certification_row", {}).get("certification_id"))
+            for asset_id, bundle in source_assets.items()
+        }
+        source_dataset_certification_ids = {
+            asset_id: _normalize_text(bundle.get("dataset_certification_row", {}).get("certification_id"))
+            for asset_id, bundle in source_assets.items()
+        }
+        source_asset_version_ids = {
+            asset_id: _normalize_text(bundle.get("certification_row", {}).get("version_id"))
+            for asset_id, bundle in source_assets.items()
+        }
+        source_asset_batch_ids = {
+            asset_id: _normalize_text(bundle.get("certification_row", {}).get("batch_id"))
+            for asset_id, bundle in source_assets.items()
+        }
+        identity_source_certification_ids = {
+            asset_id: value
+            for asset_id, value in source_certification_ids.items()
+            if asset_id in HISTORICAL_DATASET_IDENTITY_ASSET_IDS
+        }
+        identity_source_dataset_certification_ids = {
+            asset_id: value
+            for asset_id, value in source_dataset_certification_ids.items()
+            if asset_id in HISTORICAL_DATASET_IDENTITY_ASSET_IDS
+        }
+        identity_source_asset_version_ids = {
+            asset_id: value
+            for asset_id, value in source_asset_version_ids.items()
+            if asset_id in HISTORICAL_DATASET_IDENTITY_ASSET_IDS
+        }
+        identity_source_asset_batch_ids = {
+            asset_id: value
+            for asset_id, value in source_asset_batch_ids.items()
+            if asset_id in HISTORICAL_DATASET_IDENTITY_ASSET_IDS
+        }
+        batch_id = _stable_dataset_batch_id(
+            DEFAULT_NFL_HISTORICAL_DATASET_ID,
+            source_certification_ids=identity_source_certification_ids,
+            source_dataset_certification_ids=identity_source_dataset_certification_ids,
+            source_asset_version_ids=identity_source_asset_version_ids,
+            source_asset_batch_ids=identity_source_asset_batch_ids,
+            event_scope=event_scope,
+        )
+        version_id = _stable_dataset_version_id(DEFAULT_NFL_HISTORICAL_DATASET_ID, batch_id)
+        if storage.table_exists(HISTORICAL_DATASET_BATCH_TABLE):
+            existing_batch_rows = storage.fetch(
+                HISTORICAL_DATASET_BATCH_TABLE,
+                where="batch_id = ?",
+                params=[batch_id],
+                limit=1,
+            )
+            if existing_batch_rows:
+                snapshot = build_historical_dataset_population_dashboard_snapshot(
+                    storage_path=storage_path,
+                    backend=backend,
+                    profile_id=profile_id,
+                    dataset_id=DEFAULT_NFL_HISTORICAL_DATASET_ID,
+                    batch_id=batch_id,
+                )
+                snapshot["idempotent_reuse"] = True
+                return snapshot
+
+        created_at = _utc_now_iso()
+        contract = _base_dataset_contract(Path(storage.path))
+        source_name = contract.source_name
+        source_type = contract.source_type
+        source_key = contract.source_name
+        batch_snapshot_id = _stable_id("historical_dataset_batch_snapshot", contract.dataset_id, batch_id)
+        batch_lineage_id = _stable_id("historical_dataset_batch_lineage", contract.dataset_id, batch_id)
+        batch_source_snapshot_time = max(
+            [
+                _to_iso(bundle.get("certification_row", {}).get("certified_at"))
+                for bundle in source_assets.values()
+                if _to_iso(bundle.get("certification_row", {}).get("certified_at"))
+            ]
+            or [created_at]
+        )
+
+        results_by_game: dict[str, list[dict[str, Any]]] = defaultdict(list)
+        for row in source_assets["dataset.sports.nfl.results"]["rows"]:
+            results_by_game[_normalize_text(row.get("game_id"))].append(dict(row))
+        odds_by_game: dict[str, list[dict[str, Any]]] = defaultdict(list)
+        for row in source_assets["dataset.nfl.odds_snapshots"]["rows"]:
+            odds_by_game[_normalize_text(row.get("game_id"))].append(dict(row))
+        weather_by_game: dict[str, list[dict[str, Any]]] = defaultdict(list)
+        for row in source_assets["dataset.nfl.weather_snapshots"]["rows"]:
+            weather_by_game[_normalize_text(row.get("game_id"))].append(dict(row))
+        injuries_by_game_team: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
+        for row in source_assets["dataset.nfl.injury_snapshots"]["rows"]:
+            injuries_by_game_team[
+                (
+                    _normalize_text(row.get("game_id")),
+                    _normalize_text(row.get("team_id")),
+                )
+            ].append(dict(row))
+        team_stats_by_game_team: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
+        for row in source_assets["dataset.nfl.team_stats_snapshots"]["rows"]:
+            team_stats_by_game_team[
+                (
+                    _normalize_text(row.get("game_id")),
+                    _normalize_text(row.get("team_id")),
+                )
+            ].append(dict(row))
+
+        produced_rows: list[dict[str, Any]] = []
+        lineage_edges: list[dict[str, Any]] = []
+        build_errors = list(source_errors)
+        build_warnings: list[str] = []
+        rejected_ids: dict[str, set[str]] = {}
+        unmatched_entities: dict[str, set[str]] = {}
+        source_selected_unique_ids: dict[str, set[str]] = {
+            asset["research_asset_id"]: set() for asset in HISTORICAL_DATASET_REQUIRED_ASSETS
+        }
+        source_eligible_unique_ids: dict[str, set[str]] = {
+            asset["research_asset_id"]: set() for asset in HISTORICAL_DATASET_REQUIRED_ASSETS
+        }
+        source_attachment_counts: dict[str, int] = {
+            asset["research_asset_id"]: 0 for asset in HISTORICAL_DATASET_REQUIRED_ASSETS
+        }
+        duplicate_row_ids: set[str] = set()
+        cardinality_issues: list[str] = []
+        expected_market_contexts = 0
+        decision_cutoff_by_game: dict[str, str] = {}
+
+        for schedule_row in sorted(
+            (dict(row) for row in schedule_rows),
+            key=lambda row: _normalize_text(row.get("game_id")),
+        ):
+            game_id = _normalize_text(schedule_row.get("game_id"))
+            kickoff = _parse_iso(schedule_row.get("kickoff_time"))
+            if not game_id or kickoff is None:
+                build_errors.append(f"missing_schedule_backbone:{game_id or 'unknown'}")
+                unmatched_entities.setdefault("schedule", set()).add(game_id or "unknown")
+                continue
+            decision_cutoff = kickoff - HISTORICAL_DATASET_DECISION_CUTOFF_OFFSET
+            decision_cutoff_time = _decision_cutoff_from_kickoff(kickoff)
+            decision_cutoff_by_game[game_id] = decision_cutoff_time
+            result_rows = list(results_by_game.get(game_id, []))
+            if len(result_rows) != 1:
+                cardinality_issues.append(f"schedule_to_results:{game_id}:{len(result_rows)}")
+                unmatched_entities.setdefault("results", set()).add(game_id)
+                continue
+            result_row = result_rows[0]
+            game_odds_rows = list(odds_by_game.get(game_id, []))
+            odds_groups: dict[tuple[str, str, str], list[dict[str, Any]]] = defaultdict(list)
+            for odds_row in game_odds_rows:
+                key = (
+                    _normalize_text(odds_row.get("market_type") or odds_row.get("market")),
+                    _normalize_text(odds_row.get("selection")),
+                    _normalize_text(odds_row.get("book"), "consensus"),
+                )
+                odds_groups[key].append(dict(odds_row))
+            if not odds_groups:
+                unmatched_entities.setdefault("odds", set()).add(game_id)
+                continue
+
+            for group_key in sorted(odds_groups):
+                expected_market_contexts += 1
+                market_rows = odds_groups[group_key]
+                eligible_odds_rows: list[dict[str, Any]] = []
+                for odds_row in market_rows:
+                    row_id = _source_row_identifier("dataset.nfl.odds_snapshots", odds_row)
+                    source_eligible_unique_ids["dataset.nfl.odds_snapshots"].add(row_id)
+                    row_snapshot = _parse_iso(odds_row.get("snapshot_time"))
+                    row_source_snapshot = _parse_iso(odds_row.get("source_snapshot_time"))
+                    row_decision = _parse_iso(odds_row.get("decision_time"))
+                    malformed = any(
+                        odds_row.get(field_name) in (None, "")
+                        for field_name in ("decimal_odds", "implied_probability")
+                    )
+                    if malformed:
+                        build_errors.append(f"malformed_odds:{row_id}")
+                        _update_rejected_ids(rejected_ids, "malformed_odds_rows", row_id)
+                        continue
+                    if (
+                        row_snapshot is None
+                        or row_source_snapshot is None
+                        or row_decision is None
+                        or row_snapshot > decision_cutoff
+                        or row_source_snapshot > decision_cutoff
+                        or row_decision > decision_cutoff
+                    ):
+                        _update_rejected_ids(rejected_ids, "after_cutoff_odds_rows", row_id)
+                        continue
+                    eligible_odds_rows.append(dict(odds_row))
+                if not eligible_odds_rows:
+                    unmatched_entities.setdefault("eligible_odds", set()).add(f"{game_id}:{group_key[0]}:{group_key[1]}")
+                    continue
+                selected_odds = _select_latest_candidate(
+                    eligible_odds_rows,
+                    row_id_field="odds_snapshot_id",
+                    timestamp_fields=("decision_time", "snapshot_time", "source_snapshot_time"),
+                )
+                selected_odds_time = _asset_availability_time(
+                    "dataset.nfl.odds_snapshots",
+                    selected_odds,
+                )
+                if selected_odds_time is None or selected_odds_time > decision_cutoff:
+                    _update_rejected_ids(
+                        rejected_ids,
+                        "after_cutoff_odds_rows",
+                        _source_row_identifier("dataset.nfl.odds_snapshots", selected_odds),
+                    )
+                    continue
+                selected_odds_id = _source_row_identifier("dataset.nfl.odds_snapshots", selected_odds)
+                source_selected_unique_ids["dataset.nfl.odds_snapshots"].add(selected_odds_id)
+                source_attachment_counts["dataset.nfl.odds_snapshots"] += 1
+
+                weather_candidates = list(weather_by_game.get(game_id, []))
+                eligible_weather_rows: list[dict[str, Any]] = []
+                for weather_row in weather_candidates:
+                    row_id = _source_row_identifier("dataset.nfl.weather_snapshots", weather_row)
+                    forecast_time = _parse_iso(weather_row.get("forecast_time"))
+                    weather_snapshot = _parse_iso(weather_row.get("snapshot_time"))
+                    weather_source_snapshot = _parse_iso(weather_row.get("source_snapshot_time"))
+                    if (
+                        forecast_time is None
+                        or weather_snapshot is None
+                        or weather_source_snapshot is None
+                    ):
+                        build_errors.append(f"malformed_weather:{row_id}")
+                        _update_rejected_ids(rejected_ids, "malformed_weather_rows", row_id)
+                        continue
+                    if (
+                        forecast_time > decision_cutoff
+                        or weather_snapshot > decision_cutoff
+                        or weather_source_snapshot > decision_cutoff
+                    ):
+                        _update_rejected_ids(rejected_ids, "after_cutoff_weather_rows", row_id)
+                        continue
+                    eligible_weather_rows.append(dict(weather_row))
+                    source_eligible_unique_ids["dataset.nfl.weather_snapshots"].add(row_id)
+                selected_weather = _select_latest_candidate(
+                    eligible_weather_rows,
+                    row_id_field="weather_snapshot_id",
+                    timestamp_fields=("snapshot_time", "forecast_time", "source_snapshot_time"),
+                ) if eligible_weather_rows else {}
+                if not selected_weather:
+                    unmatched_entities.setdefault("weather", set()).add(game_id)
+                    continue
+                selected_weather_id = _source_row_identifier("dataset.nfl.weather_snapshots", selected_weather)
+                source_selected_unique_ids["dataset.nfl.weather_snapshots"].add(selected_weather_id)
+                source_attachment_counts["dataset.nfl.weather_snapshots"] += 1
+
+                team_stats_rows = {}
+                missing_team_stats = False
+                unsupported_team_stat_unit_rows: list[str] = []
+                same_event_team_stat_rows: list[str] = []
+                post_cutoff_team_stat_rows: list[str] = []
+                rolling_window_leakage_rows: list[str] = []
+                for team_side, team_id, opponent_team_id in (
+                    ("home", _normalize_text(schedule_row.get("home_team_id")), _normalize_text(schedule_row.get("away_team_id"))),
+                    ("away", _normalize_text(schedule_row.get("away_team_id")), _normalize_text(schedule_row.get("home_team_id"))),
+                ):
+                    candidates = list(team_stats_by_game_team.get((game_id, team_id), []))
+                    eligible_candidates: list[dict[str, Any]] = []
+                    for team_stats_row in candidates:
+                        row_id = _source_row_identifier("dataset.nfl.team_stats_snapshots", team_stats_row)
+                        source_eligible_unique_ids["dataset.nfl.team_stats_snapshots"].add(row_id)
+                        snapshot_time = _parse_iso(team_stats_row.get("snapshot_time"))
+                        source_snapshot_time = _parse_iso(team_stats_row.get("source_snapshot_time"))
+                        source_retrieved_at = _parse_iso(team_stats_row.get("source_retrieved_at"))
+                        cutoff_time = _parse_iso(team_stats_row.get("team_stats_cutoff_time"))
+                        statistic_context = _normalize_text(team_stats_row.get("statistic_context")).lower()
+                        measurement_period = _normalize_text(team_stats_row.get("measurement_period")).lower()
+                        window_type = _normalize_text(team_stats_row.get("statistic_window_type")).lower()
+                        window_excludes_current_event = int(team_stats_row.get("window_excludes_current_event") or 0)
+                        if statistic_context in {"live", "in_game", "postgame", "final", "target_event_live", "target_event_final"}:
+                            same_event_team_stat_rows.append(row_id)
+                            continue
+                        if measurement_period not in {
+                            "rolling_prior_games",
+                            "season_to_date_excluding_current_event",
+                            "prior_game_realized",
+                        }:
+                            rolling_window_leakage_rows.append(row_id)
+                            continue
+                        if window_type not in {
+                            "rolling_prior_games_excluding_current_event",
+                            "season_to_date_excluding_current_event",
+                            "prior_game_only",
+                        } or window_excludes_current_event != 1:
+                            rolling_window_leakage_rows.append(row_id)
+                            continue
+                        if (
+                            snapshot_time is None
+                            or source_snapshot_time is None
+                            or source_retrieved_at is None
+                            or cutoff_time is None
+                            or snapshot_time > decision_cutoff
+                            or source_snapshot_time > decision_cutoff
+                            or source_retrieved_at > decision_cutoff
+                            or cutoff_time > decision_cutoff
+                            or cutoff_time > kickoff
+                        ):
+                            post_cutoff_team_stat_rows.append(row_id)
+                            continue
+                        if _normalize_text(team_stats_row.get("opponent_team_id")) != opponent_team_id:
+                            build_errors.append(f"team_stats_opponent_mismatch:{row_id}")
+                            continue
+                        if not _expected_team_stat_units(team_stats_row):
+                            unsupported_team_stat_unit_rows.append(row_id)
+                            continue
+                        eligible_candidates.append(dict(team_stats_row))
+                    if not eligible_candidates:
+                        unmatched_entities.setdefault("team_stats", set()).add(f"{game_id}:{team_side}")
+                        missing_team_stats = True
+                        continue
+                    selected_team_stats = _select_latest_candidate(
+                        eligible_candidates,
+                        row_id_field="team_stats_snapshot_id",
+                        timestamp_fields=("snapshot_time", "team_stats_cutoff_time", "source_retrieved_at"),
+                    )
+                    team_stats_rows[team_side] = selected_team_stats
+                for row_id in same_event_team_stat_rows:
+                    _update_rejected_ids(rejected_ids, "same_event_team_stats_rows", row_id)
+                for row_id in post_cutoff_team_stat_rows:
+                    _update_rejected_ids(rejected_ids, "post_cutoff_team_stats_rows", row_id)
+                for row_id in rolling_window_leakage_rows:
+                    _update_rejected_ids(rejected_ids, "rolling_window_leakage_rows", row_id)
+                for row_id in unsupported_team_stat_unit_rows:
+                    _update_rejected_ids(rejected_ids, "unsupported_team_stat_unit_rows", row_id)
+                if missing_team_stats:
+                    continue
+                for team_side, selected_team_stats in team_stats_rows.items():
+                    selected_team_stats_id = _source_row_identifier("dataset.nfl.team_stats_snapshots", selected_team_stats)
+                    source_selected_unique_ids["dataset.nfl.team_stats_snapshots"].add(selected_team_stats_id)
+                    source_attachment_counts["dataset.nfl.team_stats_snapshots"] += 1
+
+                injury_groups = {}
+                for team_side, team_id in (
+                    ("home", _normalize_text(schedule_row.get("home_team_id"))),
+                    ("away", _normalize_text(schedule_row.get("away_team_id"))),
+                ):
+                    candidates = list(injuries_by_game_team.get((game_id, team_id), []))
+                    eligible_candidates: list[dict[str, Any]] = []
+                    for injury_row in candidates:
+                        row_id = _source_row_identifier("dataset.nfl.injury_snapshots", injury_row)
+                        report_time = _parse_iso(injury_row.get("report_time"))
+                        snapshot_time = _parse_iso(injury_row.get("snapshot_time"))
+                        source_snapshot_time = _parse_iso(injury_row.get("source_snapshot_time"))
+                        if (
+                            report_time is None
+                            or snapshot_time is None
+                            or source_snapshot_time is None
+                        ):
+                            build_errors.append(f"malformed_injury:{row_id}")
+                            _update_rejected_ids(rejected_ids, "malformed_injury_rows", row_id)
+                            continue
+                        if (
+                            report_time > decision_cutoff
+                            or snapshot_time > decision_cutoff
+                            or source_snapshot_time > decision_cutoff
+                        ):
+                            _update_rejected_ids(rejected_ids, "post_cutoff_injury_rows", row_id)
+                            continue
+                        source_eligible_unique_ids["dataset.nfl.injury_snapshots"].add(row_id)
+                        eligible_candidates.append(dict(injury_row))
+                    ordered = sorted(
+                        eligible_candidates,
+                        key=lambda row: _candidate_sort_key(
+                            row,
+                            row_id_field="injury_snapshot_id",
+                            timestamp_fields=("report_time", "snapshot_time", "source_snapshot_time"),
+                        ),
+                    )
+                    injury_groups[team_side] = ordered
+                    for injury_row in ordered:
+                        selected_id = _source_row_identifier("dataset.nfl.injury_snapshots", injury_row)
+                        source_selected_unique_ids["dataset.nfl.injury_snapshots"].add(selected_id)
+                        source_attachment_counts["dataset.nfl.injury_snapshots"] += 1
+
+                target_context = _target_team_context(schedule_row, selected_odds)
+                source_alignment_ids: dict[str, list[str]] = {}
+                source_certification_mapping = {
+                    asset_id: source_certification_ids.get(asset_id, "")
+                    for asset_id in source_assets
+                }
+                source_dataset_certification_mapping = {
+                    asset_id: source_dataset_certification_ids.get(asset_id, "")
+                    for asset_id in source_assets
+                }
+
+                source_references = {
+                    "schedule": _serialize_source_reference(
+                        research_asset_id="dataset.sports.nfl.schedule",
+                        source_row=schedule_row,
+                        certification_row=source_assets["dataset.sports.nfl.schedule"]["certification_row"],
+                        dataset_certification_row=source_assets["dataset.sports.nfl.schedule"]["dataset_certification_row"],
+                        alignment_ids=_matching_alignment_ids(
+                            "dataset.sports.nfl.schedule",
+                            alignment_rows=source_assets["dataset.sports.nfl.schedule"]["alignment_rows"],
+                            source_row=schedule_row,
+                        ),
+                    ),
+                    "results": _serialize_source_reference(
+                        research_asset_id="dataset.sports.nfl.results",
+                        source_row=result_row,
+                        certification_row=source_assets["dataset.sports.nfl.results"]["certification_row"],
+                        dataset_certification_row=source_assets["dataset.sports.nfl.results"]["dataset_certification_row"],
+                        alignment_ids=_matching_alignment_ids(
+                            "dataset.sports.nfl.results",
+                            alignment_rows=source_assets["dataset.sports.nfl.results"]["alignment_rows"],
+                            source_row=result_row,
+                        ),
+                    ),
+                    "odds": _serialize_source_reference(
+                        research_asset_id="dataset.nfl.odds_snapshots",
+                        source_row=selected_odds,
+                        certification_row=source_assets["dataset.nfl.odds_snapshots"]["certification_row"],
+                        dataset_certification_row=source_assets["dataset.nfl.odds_snapshots"]["dataset_certification_row"],
+                        alignment_ids=_matching_alignment_ids(
+                            "dataset.nfl.odds_snapshots",
+                            alignment_rows=source_assets["dataset.nfl.odds_snapshots"]["alignment_rows"],
+                            source_row=selected_odds,
+                        ),
+                    ),
+                    "weather": _serialize_source_reference(
+                        research_asset_id="dataset.nfl.weather_snapshots",
+                        source_row=selected_weather,
+                        certification_row=source_assets["dataset.nfl.weather_snapshots"]["certification_row"],
+                        dataset_certification_row=source_assets["dataset.nfl.weather_snapshots"]["dataset_certification_row"],
+                        alignment_ids=_matching_alignment_ids(
+                            "dataset.nfl.weather_snapshots",
+                            alignment_rows=source_assets["dataset.nfl.weather_snapshots"]["alignment_rows"],
+                            source_row=selected_weather,
+                        ),
+                    ),
+                    "team_stats": {
+                        "home": _serialize_source_reference(
+                            research_asset_id="dataset.nfl.team_stats_snapshots",
+                            source_row=team_stats_rows["home"],
+                            certification_row=source_assets["dataset.nfl.team_stats_snapshots"]["certification_row"],
+                            dataset_certification_row=source_assets["dataset.nfl.team_stats_snapshots"]["dataset_certification_row"],
+                            alignment_ids=_matching_alignment_ids(
+                                "dataset.nfl.team_stats_snapshots",
+                                alignment_rows=source_assets["dataset.nfl.team_stats_snapshots"]["alignment_rows"],
+                                source_row=team_stats_rows["home"],
+                            ),
+                        ),
+                        "away": _serialize_source_reference(
+                            research_asset_id="dataset.nfl.team_stats_snapshots",
+                            source_row=team_stats_rows["away"],
+                            certification_row=source_assets["dataset.nfl.team_stats_snapshots"]["certification_row"],
+                            dataset_certification_row=source_assets["dataset.nfl.team_stats_snapshots"]["dataset_certification_row"],
+                            alignment_ids=_matching_alignment_ids(
+                                "dataset.nfl.team_stats_snapshots",
+                                alignment_rows=source_assets["dataset.nfl.team_stats_snapshots"]["alignment_rows"],
+                                source_row=team_stats_rows["away"],
+                            ),
+                        ),
+                    },
+                    "injuries": {
+                        "home": [
+                            _serialize_source_reference(
+                                research_asset_id="dataset.nfl.injury_snapshots",
+                                source_row=injury_row,
+                                certification_row=source_assets["dataset.nfl.injury_snapshots"]["certification_row"],
+                                dataset_certification_row=source_assets["dataset.nfl.injury_snapshots"]["dataset_certification_row"],
+                                alignment_ids=_matching_alignment_ids(
+                                    "dataset.nfl.injury_snapshots",
+                                    alignment_rows=source_assets["dataset.nfl.injury_snapshots"]["alignment_rows"],
+                                    source_row=injury_row,
+                                ),
+                            )
+                            for injury_row in injury_groups["home"]
+                        ],
+                        "away": [
+                            _serialize_source_reference(
+                                research_asset_id="dataset.nfl.injury_snapshots",
+                                source_row=injury_row,
+                                certification_row=source_assets["dataset.nfl.injury_snapshots"]["certification_row"],
+                                dataset_certification_row=source_assets["dataset.nfl.injury_snapshots"]["dataset_certification_row"],
+                                alignment_ids=_matching_alignment_ids(
+                                    "dataset.nfl.injury_snapshots",
+                                    alignment_rows=source_assets["dataset.nfl.injury_snapshots"]["alignment_rows"],
+                                    source_row=injury_row,
+                                ),
+                            )
+                            for injury_row in injury_groups["away"]
+                        ],
+                    },
+                }
+                missing_alignment_ids = []
+                for reference in (
+                    source_references["schedule"],
+                    source_references["results"],
+                    source_references["odds"],
+                    source_references["weather"],
+                    source_references["team_stats"]["home"],
+                    source_references["team_stats"]["away"],
+                ):
+                    if not reference.get("alignment_certification_ids"):
+                        missing_alignment_ids.append(reference.get("source_row_id"))
+                for injury_reference in source_references["injuries"]["home"] + source_references["injuries"]["away"]:
+                    if not injury_reference.get("alignment_certification_ids"):
+                        missing_alignment_ids.append(injury_reference.get("source_row_id"))
+                if missing_alignment_ids:
+                    for row_id in missing_alignment_ids:
+                        _update_rejected_ids(rejected_ids, "missing_alignment_rows", _normalize_text(row_id))
+                    continue
+
+                source_rows_for_provenance = [
+                    schedule_row,
+                    result_row,
+                    selected_odds,
+                    selected_weather,
+                    team_stats_rows["home"],
+                    team_stats_rows["away"],
+                    *injury_groups["home"],
+                    *injury_groups["away"],
+                ]
+                if not all(_source_row_has_provenance(row) for row in source_rows_for_provenance):
+                    for source_row in source_rows_for_provenance:
+                        row_id = (
+                            _normalize_text(source_row.get("schedule_id"))
+                            or _normalize_text(source_row.get("result_id"))
+                            or _normalize_text(source_row.get("odds_snapshot_id"))
+                            or _normalize_text(source_row.get("weather_snapshot_id"))
+                            or _normalize_text(source_row.get("team_stats_snapshot_id"))
+                            or _normalize_text(source_row.get("injury_snapshot_id"))
+                        )
+                        _update_rejected_ids(rejected_ids, "missing_provenance_rows", row_id)
+                    continue
+
+                decision_context_id = _stable_id(
+                    "historical_dataset_decision_context",
+                    contract.dataset_id,
+                    game_id,
+                    _normalize_text(selected_odds.get("market_type"), _normalize_text(selected_odds.get("market"))),
+                    _normalize_text(selected_odds.get("selection")),
+                    _normalize_text(selected_odds.get("book"), "consensus"),
+                    decision_cutoff_time,
+                )
+                dataset_row_id = _stable_id(
+                    "historical_dataset_row",
+                    contract.dataset_id,
+                    game_id,
+                    _normalize_text(selected_odds.get("market_type"), _normalize_text(selected_odds.get("market"))),
+                    _normalize_text(selected_odds.get("selection")),
+                    _normalize_text(selected_odds.get("book"), "consensus"),
+                    decision_cutoff_time,
+                )
+                if dataset_row_id in {row["dataset_row_id"] for row in produced_rows}:
+                    duplicate_row_ids.add(dataset_row_id)
+                    continue
+                evidence_package_id = _stable_id(
+                    "historical_dataset_row_evidence",
+                    contract.dataset_id,
+                    batch_id,
+                    dataset_row_id,
+                )
+                predictor_references = {
+                    "decision_cutoff_time": decision_cutoff_time,
+                    "cutoff_policy_version": HISTORICAL_DATASET_CUTOFF_POLICY_ID,
+                    "schedule": source_references["schedule"],
+                    "odds": source_references["odds"],
+                    "weather": source_references["weather"],
+                    "team_stats": source_references["team_stats"],
+                    "injuries": {
+                        "home": {
+                            "summary": _injury_summary(injury_groups["home"]),
+                            "references": source_references["injuries"]["home"],
+                        },
+                        "away": {
+                            "summary": _injury_summary(injury_groups["away"]),
+                            "references": source_references["injuries"]["away"],
+                        },
+                    },
+                }
+                selected_odds_timestamp = _selected_asset_timestamp(
+                    "dataset.nfl.odds_snapshots",
+                    selected_odds,
+                )
+                selected_weather_timestamp = _selected_asset_timestamp(
+                    "dataset.nfl.weather_snapshots",
+                    selected_weather,
+                )
+                selected_home_injury_timestamp = _selected_asset_timestamp(
+                    "dataset.nfl.injury_snapshots",
+                    injury_groups["home"][-1],
+                ) if injury_groups["home"] else ""
+                selected_away_injury_timestamp = _selected_asset_timestamp(
+                    "dataset.nfl.injury_snapshots",
+                    injury_groups["away"][-1],
+                ) if injury_groups["away"] else ""
+                selected_home_team_stats_timestamp = _selected_asset_timestamp(
+                    "dataset.nfl.team_stats_snapshots",
+                    team_stats_rows["home"],
+                )
+                selected_away_team_stats_timestamp = _selected_asset_timestamp(
+                    "dataset.nfl.team_stats_snapshots",
+                    team_stats_rows["away"],
+                )
+                selected_source_row_ids = {
+                    "schedule": _normalize_text(schedule_row.get("schedule_id")),
+                    "results": _normalize_text(result_row.get("result_id")),
+                    "odds": selected_odds_id,
+                    "weather": selected_weather_id,
+                    "team_stats": {
+                        "home": _source_row_identifier("dataset.nfl.team_stats_snapshots", team_stats_rows["home"]),
+                        "away": _source_row_identifier("dataset.nfl.team_stats_snapshots", team_stats_rows["away"]),
+                    },
+                    "injuries": {
+                        "home": [_source_row_identifier("dataset.nfl.injury_snapshots", row) for row in injury_groups["home"]],
+                        "away": [_source_row_identifier("dataset.nfl.injury_snapshots", row) for row in injury_groups["away"]],
+                    },
+                }
+                source_lineage_ids = {
+                    "schedule": _normalize_text(schedule_row.get("lineage_id")),
+                    "results": _normalize_text(result_row.get("lineage_id")),
+                    "odds": _normalize_text(selected_odds.get("lineage_id")),
+                    "weather": _normalize_text(selected_weather.get("lineage_id")),
+                    "team_stats": {
+                        "home": _normalize_text(team_stats_rows["home"].get("lineage_id")),
+                        "away": _normalize_text(team_stats_rows["away"].get("lineage_id")),
+                    },
+                    "injuries": {
+                        "home": [_normalize_text(row.get("lineage_id")) for row in injury_groups["home"]],
+                        "away": [_normalize_text(row.get("lineage_id")) for row in injury_groups["away"]],
+                    },
+                }
+                asset_freshness = {
+                    "odds": _freshness_seconds(
+                        decision_cutoff,
+                        "dataset.nfl.odds_snapshots",
+                        selected_odds,
+                    ),
+                    "weather": _freshness_seconds(
+                        decision_cutoff,
+                        "dataset.nfl.weather_snapshots",
+                        selected_weather,
+                    ),
+                    "home_injuries": _freshness_seconds(
+                        decision_cutoff,
+                        "dataset.nfl.injury_snapshots",
+                        injury_groups["home"][-1],
+                    ) if injury_groups["home"] else -1,
+                    "away_injuries": _freshness_seconds(
+                        decision_cutoff,
+                        "dataset.nfl.injury_snapshots",
+                        injury_groups["away"][-1],
+                    ) if injury_groups["away"] else -1,
+                    "home_team_stats": _freshness_seconds(
+                        decision_cutoff,
+                        "dataset.nfl.team_stats_snapshots",
+                        team_stats_rows["home"],
+                    ),
+                    "away_team_stats": _freshness_seconds(
+                        decision_cutoff,
+                        "dataset.nfl.team_stats_snapshots",
+                        team_stats_rows["away"],
+                    ),
+                }
+                row_source_snapshot_time = max(
+                    [
+                        _to_iso(row.get("source_snapshot_time"))
+                        for row in (
+                            schedule_row,
+                            selected_odds,
+                            selected_weather,
+                            team_stats_rows["home"],
+                            team_stats_rows["away"],
+                            *injury_groups["home"],
+                            *injury_groups["away"],
+                        )
+                        if _to_iso(row.get("source_snapshot_time"))
+                    ]
+                    or [selected_odds.get("source_snapshot_time") or selected_odds.get("snapshot_time") or created_at]
+                )
+                row = _historical_row_base(
+                    profile=profile,
+                    stage_name=HISTORICAL_DATASET_POPULATION_STAGE_NAME,
+                    row_id=dataset_row_id,
+                    batch_id=batch_id,
+                    dataset_version=version_id,
+                    source_name=source_name,
+                    source_type=source_type,
+                    source_key=source_key,
+                    source_snapshot_time=row_source_snapshot_time,
+                    snapshot_time=_to_iso(selected_odds.get("snapshot_time")),
+                    decision_time=decision_cutoff_time,
+                    certified_at=created_at,
+                    status="certified",
+                    point_in_time_status="safe",
+                    leakage_status="none",
+                    completeness_score=1.0,
+                    quality_score=1.0,
+                    context={
+                        "dataset_id": contract.dataset_id,
+                        "evidence_package_id": evidence_package_id,
+                    },
+                    payload={
+                        "dataset_id": contract.dataset_id,
+                        "dataset_name": contract.dataset_name,
+                    },
+                    market_type=_normalize_text(selected_odds.get("market_type"), _normalize_text(selected_odds.get("market"))),
+                    market_profile=profile.profile_id,
+                    asset_class=profile.profile_family,
+                )
+                row.update(
+                    {
+                        "dataset_id": contract.dataset_id,
+                        "dataset_name": contract.dataset_name,
+                        "dataset_row_id": dataset_row_id,
+                        "decision_context_id": decision_context_id,
+                        "schedule_id": _normalize_text(schedule_row.get("schedule_id")),
+                        "result_id": _normalize_text(result_row.get("result_id")),
+                        "odds_snapshot_id": selected_odds_id,
+                        "weather_snapshot_id": selected_weather_id,
+                        "home_team_stats_snapshot_id": _source_row_identifier("dataset.nfl.team_stats_snapshots", team_stats_rows["home"]),
+                        "away_team_stats_snapshot_id": _source_row_identifier("dataset.nfl.team_stats_snapshots", team_stats_rows["away"]),
+                        "event_id": game_id,
+                        "game_id": game_id,
+                        "season": int(schedule_row.get("season") or 0),
+                        "season_type": _normalize_text(schedule_row.get("season_type")),
+                        "week": int(schedule_row.get("week") or 0),
+                        "scheduled_kickoff_time": _to_iso(schedule_row.get("kickoff_time")),
+                        "event_start_time": _to_iso(schedule_row.get("kickoff_time")),
+                        "decision_cutoff_time": decision_cutoff_time,
+                        "cutoff_policy_version": HISTORICAL_DATASET_CUTOFF_POLICY_ID,
+                        "home_team_id": _normalize_text(schedule_row.get("home_team_id")),
+                        "home_team": _normalize_text(schedule_row.get("home_team")),
+                        "away_team_id": _normalize_text(schedule_row.get("away_team_id")),
+                        "away_team": _normalize_text(schedule_row.get("away_team")),
+                        "neutral_site": int(schedule_row.get("neutral_site") or 0),
+                        "target_team_id": target_context["target_team_id"],
+                        "target_team": target_context["target_team"],
+                        "opponent_team_id": target_context["opponent_team_id"],
+                        "opponent_team": target_context["opponent_team"],
+                        "team_side": target_context["team_side"],
+                        "book": _normalize_text(selected_odds.get("book"), "consensus"),
+                        "market_name": _normalize_text(selected_odds.get("market")),
+                        "market_type": _normalize_text(selected_odds.get("market_type"), _normalize_text(selected_odds.get("market"))),
+                        "selection": _normalize_text(selected_odds.get("selection")),
+                        "line_value": selected_odds.get("line_value"),
+                        "american_odds": selected_odds.get("american_odds"),
+                        "decimal_odds": selected_odds.get("decimal_odds"),
+                        "implied_probability": selected_odds.get("implied_probability"),
+                        "market_label": _normalize_text(selected_odds.get("market_label")),
+                        "price_type": "decision_time_snapshot",
+                        "selected_odds_timestamp": selected_odds_timestamp,
+                        "weather_forecast_time": _to_iso(selected_weather.get("forecast_time")),
+                        "selected_weather_timestamp": selected_weather_timestamp,
+                        "selected_home_injury_timestamp": selected_home_injury_timestamp,
+                        "selected_away_injury_timestamp": selected_away_injury_timestamp,
+                        "selected_home_team_stats_timestamp": selected_home_team_stats_timestamp,
+                        "selected_away_team_stats_timestamp": selected_away_team_stats_timestamp,
+                        "odds_freshness_seconds": asset_freshness["odds"],
+                        "weather_freshness_seconds": asset_freshness["weather"],
+                        "home_injury_freshness_seconds": asset_freshness["home_injuries"],
+                        "away_injury_freshness_seconds": asset_freshness["away_injuries"],
+                        "home_team_stats_freshness_seconds": asset_freshness["home_team_stats"],
+                        "away_team_stats_freshness_seconds": asset_freshness["away_team_stats"],
+                        "home_injury_record_count": len(injury_groups["home"]),
+                        "away_injury_record_count": len(injury_groups["away"]),
+                        "home_injury_row_ids_json": _as_json(
+                            [_source_row_identifier("dataset.nfl.injury_snapshots", row) for row in injury_groups["home"]]
+                        ),
+                        "away_injury_row_ids_json": _as_json(
+                            [_source_row_identifier("dataset.nfl.injury_snapshots", row) for row in injury_groups["away"]]
+                        ),
+                        "selected_source_row_ids_json": _as_json(selected_source_row_ids),
+                        "source_lineage_ids_json": _as_json(source_lineage_ids),
+                        "asset_freshness_json": _as_json(asset_freshness),
+                        "missing_required_assets_json": _as_json([]),
+                        "source_certification_ids_json": _as_json(source_certification_mapping),
+                        "source_dataset_certification_ids_json": _as_json(source_dataset_certification_mapping),
+                        "source_alignment_certification_ids_json": _as_json(
+                            {
+                                "schedule": source_references["schedule"]["alignment_certification_ids"],
+                                "results": source_references["results"]["alignment_certification_ids"],
+                                "odds": source_references["odds"]["alignment_certification_ids"],
+                                "weather": source_references["weather"]["alignment_certification_ids"],
+                                "team_stats": {
+                                    "home": source_references["team_stats"]["home"]["alignment_certification_ids"],
+                                    "away": source_references["team_stats"]["away"]["alignment_certification_ids"],
+                                },
+                                "injuries": {
+                                    "home": [
+                                        reference["alignment_certification_ids"]
+                                        for reference in source_references["injuries"]["home"]
+                                    ],
+                                    "away": [
+                                        reference["alignment_certification_ids"]
+                                        for reference in source_references["injuries"]["away"]
+                                    ],
+                                },
+                            }
+                        ),
+                        "predictor_references_json": _as_json(predictor_references),
+                        "label_final_result": _derive_final_result_label(schedule_row, result_row),
+                        "label_final_score_home": int(result_row.get("final_score_home") or 0),
+                        "label_final_score_away": int(result_row.get("final_score_away") or 0),
+                        "label_winner_team_id": _normalize_text(result_row.get("winner_team_id")),
+                        "label_winner_team": _normalize_text(result_row.get("winner_team")),
+                        "label_margin": int(result_row.get("margin") or 0),
+                        "label_total_points": int(result_row.get("total_points") or 0),
+                        "label_settlement_status": _normalize_text(result_row.get("settlement_status"), "settled"),
+                        "label_result_recorded_time": _to_iso(result_row.get("final_scored_at")),
+                        "predictor_outcome_separation_status": "separated",
+                        "evidence_package_id": evidence_package_id,
+                        "evidence_package_json": _as_json(
+                            {
+                                "dataset_row_id": dataset_row_id,
+                                "batch_id": batch_id,
+                                "scheduled_kickoff_time": _to_iso(schedule_row.get("kickoff_time")),
+                                "decision_cutoff_time": decision_cutoff_time,
+                                "cutoff_policy_version": HISTORICAL_DATASET_CUTOFF_POLICY_ID,
+                                "selected_timestamps": {
+                                    "odds": selected_odds_timestamp,
+                                    "weather": selected_weather_timestamp,
+                                    "home_injuries": selected_home_injury_timestamp,
+                                    "away_injuries": selected_away_injury_timestamp,
+                                    "home_team_stats": selected_home_team_stats_timestamp,
+                                    "away_team_stats": selected_away_team_stats_timestamp,
+                                },
+                                "asset_freshness": asset_freshness,
+                                "predictor_references": predictor_references,
+                                "outcome_reference": {
+                                    "result_id": _normalize_text(result_row.get("result_id")),
+                                    "winner_team_id": _normalize_text(result_row.get("winner_team_id")),
+                                    "result_recorded_time": _to_iso(result_row.get("final_scored_at")),
+                                },
+                            }
+                        ),
+                        "decision_readiness_status": "ready",
+                        "readiness_state": "feature_ready",
+                        "unresolved_blockers_json": _as_json([]),
+                        "schema_version": HISTORICAL_DATASET_POPULATION_SCHEMA_VERSION,
+                        "source_metadata_json": _as_json(
+                            {
+                                "source_name": source_name,
+                                "source_type": source_type,
+                                "source_key": source_key,
+                                "batch_id": batch_id,
+                                "version_id": version_id,
+                            }
+                        ),
+                    }
+                )
+                produced_rows.append(row)
+
+                lineage_payloads = [
+                    ("dataset.sports.nfl.schedule", schedule_row, source_references["schedule"]),
+                    ("dataset.sports.nfl.results", result_row, source_references["results"]),
+                    ("dataset.nfl.odds_snapshots", selected_odds, source_references["odds"]),
+                    ("dataset.nfl.weather_snapshots", selected_weather, source_references["weather"]),
+                    ("dataset.nfl.team_stats_snapshots", team_stats_rows["home"], source_references["team_stats"]["home"]),
+                    ("dataset.nfl.team_stats_snapshots", team_stats_rows["away"], source_references["team_stats"]["away"]),
+                ]
+                for injury_reference, injury_row in zip(source_references["injuries"]["home"], injury_groups["home"], strict=False):
+                    lineage_payloads.append(("dataset.nfl.injury_snapshots", injury_row, injury_reference))
+                for injury_reference, injury_row in zip(source_references["injuries"]["away"], injury_groups["away"], strict=False):
+                    lineage_payloads.append(("dataset.nfl.injury_snapshots", injury_row, injury_reference))
+
+                for step_index, (asset_id, source_row, reference) in enumerate(lineage_payloads):
+                    lineage_record = create_lineage_record(
+                        provider_id=contract.provider,
+                        provider_type=contract.asset_class,
+                        payload_schema_version=HISTORICAL_DATASET_POPULATION_SCHEMA_VERSION,
+                        snapshot_id=batch_snapshot_id,
+                        source_type=contract.source_type,
+                        schema_version=HISTORICAL_DATASET_POPULATION_SCHEMA_VERSION,
+                        lineage_id=batch_lineage_id,
+                        dataset_id=contract.dataset_id,
+                        dataset_name=contract.dataset_name,
+                        source_record_id=_source_row_identifier(asset_id, source_row),
+                        target_record_id=dataset_row_id,
+                        source_stage=asset_id,
+                        target_stage="historical_dataset_row",
+                        transformation="attach_source_row_to_dataset_context",
+                    )
+                    lineage_edges.append(
+                        _lineage_edge_row(
+                            contract,
+                            version_id=version_id,
+                            snapshot_id=batch_snapshot_id,
+                            batch_lineage_id=batch_lineage_id,
+                            source_stage=asset_id,
+                            source_id=_source_row_identifier(asset_id, source_row),
+                            target_id=dataset_row_id,
+                            step_index=len(lineage_edges) + step_index,
+                            payload={
+                                "reference": reference,
+                                "lineage_record": lineage_record,
+                                "batch_id": batch_id,
+                                "dataset_row_id": dataset_row_id,
+                            },
+                            created_at=created_at,
+                        )
+                    )
+
+        predictor_outcome_issues = []
+        for row in produced_rows:
+            for field_name in row:
+                if field_name.startswith("label_"):
+                    continue
+                if field_name in {"result_id"}:
+                    continue
+                if any(token in field_name for token in ("winner", "final_score", "settlement_status", "result_recorded_time", "total_points", "margin")):
+                    predictor_outcome_issues.append(f"{row['dataset_row_id']}:{field_name}")
+        lineage_complete = bool(produced_rows) and len(lineage_edges) == sum(
+            6 + len(_load_json_list(row.get("home_injury_row_ids_json"))) + len(_load_json_list(row.get("away_injury_row_ids_json")))
+            for row in produced_rows
+        )
+        provenance_complete = not rejected_ids.get("missing_provenance_rows")
+        duplicate_lineage_ids = []
+        seen_lineage_edge_ids: set[str] = set()
+        for edge in lineage_edges:
+            edge_id = _normalize_text(edge.get("lineage_edge_id"))
+            if edge_id in seen_lineage_edge_ids and edge_id not in duplicate_lineage_ids:
+                duplicate_lineage_ids.append(edge_id)
+            seen_lineage_edge_ids.add(edge_id)
+        if duplicate_lineage_ids:
+            lineage_complete = False
+        validation_errors = list(dict.fromkeys([
+            *build_errors,
+            *[f"cardinality:{issue}" for issue in cardinality_issues],
+            *[f"duplicate_dataset_row:{row_id}" for row_id in sorted(duplicate_row_ids)],
+            *[f"predictor_outcome_separation:{issue}" for issue in predictor_outcome_issues],
+            *[
+                f"unmatched_entities:{name}:{','.join(sorted(values))}"
+                for name, values in sorted(unmatched_entities.items())
+                if values
+            ],
+            *([f"missing_lineage:{edge_id}" for edge_id in duplicate_lineage_ids] if duplicate_lineage_ids else []),
+            *([f"incomplete_lineage:expected_dataset_edges" ] if produced_rows and not lineage_complete else []),
+            *(["incomplete_provenance:source_rows"] if not provenance_complete else []),
+        ]))
+        validation = {
+            "ok": bool(
+                produced_rows
+                and not validation_errors
+                and expected_market_contexts == len(produced_rows)
+                and not unmatched_entities
+                and lineage_complete
+                and provenance_complete
+            ),
+            "status": "validated" if produced_rows and not validation_errors and expected_market_contexts == len(produced_rows) and not unmatched_entities and lineage_complete and provenance_complete else "rejected",
+            "row_count": expected_market_contexts,
+            "dataset_row_count": len(produced_rows),
+            "valid_row_count": len(produced_rows),
+            "invalid_row_count": max(expected_market_contexts - len(produced_rows), 0),
+            "error_count": len(validation_errors),
+            "warning_count": len(build_warnings),
+            "missing_fields": [],
+            "duplicate_keys": sorted(duplicate_row_ids),
+            "join_keys": ["game_id", "market_type", "selection", "decision_time"],
+            "errors": validation_errors,
+            "warnings": build_warnings,
+            "point_in_time_issues": sorted(
+                rejected_ids.get("after_cutoff_odds_rows", set())
+                | rejected_ids.get("after_cutoff_weather_rows", set())
+                | rejected_ids.get("post_cutoff_injury_rows", set())
+                | rejected_ids.get("post_cutoff_team_stats_rows", set())
+                | rejected_ids.get("same_event_team_stats_rows", set())
+                | rejected_ids.get("rolling_window_leakage_rows", set())
+            ),
+            "cardinality_issues": cardinality_issues,
+            "lineage_issues": duplicate_lineage_ids,
+            "provenance_issues": sorted(rejected_ids.get("missing_provenance_rows", set())),
+            "rejected_evidence": {name: sorted(values) for name, values in rejected_ids.items()},
+            "unmatched_entities": {name: sorted(values) for name, values in unmatched_entities.items()},
+        }
+        evidence_package_id = _stable_id(
+            "historical_dataset_batch_evidence",
+            contract.dataset_id,
+            batch_id,
+        )
+        join_diagnostics = {
+            "source_row_counts": {
+                asset_id: len(bundle.get("rows", []))
+                for asset_id, bundle in source_assets.items()
+            },
+            "eligible_record_counts": {
+                asset_id: len(source_eligible_unique_ids.get(asset_id, set()))
+                for asset_id in source_assets
+            },
+            "selected_unique_record_counts": {
+                asset_id: len(source_selected_unique_ids.get(asset_id, set()))
+                for asset_id in source_assets
+            },
+            "selected_attachment_counts": dict(source_attachment_counts),
+            "final_dataset_row_count": len(produced_rows),
+            "expected_market_context_count": expected_market_contexts,
+            "decision_cutoff_time_by_game": dict(decision_cutoff_by_game),
+            "rejected_record_count": sum(len(values) for values in rejected_ids.values()),
+            "unmatched_record_count": sum(len(values) for values in unmatched_entities.values()),
+            "duplicate_dataset_row_count": len(duplicate_row_ids),
+            "duplicate_lineage_edge_count": len(duplicate_lineage_ids),
+            "cardinality_contracts": {
+                "schedule_to_results": {
+                    "expected": "1:1",
+                    "violations": [issue for issue in cardinality_issues if issue.startswith("schedule_to_results:")],
+                },
+                "schedule_to_odds_context": {
+                    "expected": "1:N with one selected context row per market/selection/book group",
+                    "observed_context_count": expected_market_contexts,
+                },
+                "event_to_weather": {
+                    "expected": "1:1 selected forecast row at or before the decision cutoff",
+                    "violations": sorted(unmatched_entities.get("weather", set())),
+                },
+                "event_team_to_team_stats": {
+                    "expected": "1:1 selected team-stat row per game/team",
+                    "violations": sorted(unmatched_entities.get("team_stats", set())),
+                },
+                "event_team_to_injuries": {
+                    "expected": "0:N aggregated without row multiplication",
+                    "selected_attachment_count": source_attachment_counts.get("dataset.nfl.injury_snapshots", 0),
+                },
+            },
+        }
+        evidence_package = {
+            "dataset_id": contract.dataset_id,
+            "dataset_name": contract.dataset_name,
+            "batch_id": batch_id,
+            "version_id": version_id,
+            "dataset_schema_version": HISTORICAL_DATASET_POPULATION_SCHEMA_VERSION,
+            "dataset_contract_version": HISTORICAL_DATASET_CONTRACT_VERSION,
+            "source_asset_ids": list(source_assets),
+            "source_asset_batch_ids": source_asset_batch_ids,
+            "source_asset_version_ids": source_asset_version_ids,
+            "source_certification_ids": source_certification_ids,
+            "source_dataset_certification_ids": source_dataset_certification_ids,
+            "source_lifecycle_states": {
+                asset_id: _normalize_text(bundle.get("lifecycle_row", {}).get("lifecycle_state"))
+                for asset_id, bundle in source_assets.items()
+            },
+            "join_diagnostics": join_diagnostics,
+            "validation": validation,
+            "rejected_record_summary": {name: len(values) for name, values in rejected_ids.items()},
+            "unmatched_record_summary": {name: len(values) for name, values in unmatched_entities.items()},
+            "cutoff_policy_id": HISTORICAL_DATASET_CUTOFF_POLICY_ID,
+            "selection_policy": {
+                "odds": "latest certified and aligned odds snapshot by market_type/selection/book with availability at or before scheduled kickoff minus five minutes",
+                "weather": "latest certified and aligned forecast snapshot with availability at or before scheduled kickoff minus five minutes",
+                "injuries": "all certified and aligned injury rows with availability at or before scheduled kickoff minus five minutes, aggregated by team without row multiplication",
+                "team_stats": "latest certified and aligned pregame team-stat row per game/team excluding the target event and available at or before scheduled kickoff minus five minutes",
+            },
+            "lineage_summary": {
+                "edge_count": len(lineage_edges),
+                "dataset_row_count": len(produced_rows),
+            },
+            "final_row_count": len(produced_rows),
+            "readiness_result": "feature_ready" if validation["ok"] else "blocked",
+        }
+
+        certification_row = _build_dataset_population_certification_row(
+            profile=profile,
+            batch_id=batch_id,
+            version_id=version_id,
+            created_at=created_at,
+            validation=validation,
+            evidence_package_id=evidence_package_id,
+            source_name=source_name,
+            source_type=source_type,
+            source_key=source_key,
+        )
+
+        batch_row = _historical_row_base(
+            profile=profile,
+            stage_name=HISTORICAL_DATASET_POPULATION_STAGE_NAME,
+            row_id=batch_id,
+            batch_id=batch_id,
+            dataset_version=version_id,
+            source_name=source_name,
+            source_type=source_type,
+            source_key=source_key,
+            source_snapshot_time=batch_source_snapshot_time,
+            snapshot_time=batch_source_snapshot_time,
+            decision_time=batch_source_snapshot_time,
+            certified_at=created_at,
+            status="certified" if validation["ok"] else "rejected",
+            point_in_time_status="safe" if validation["ok"] else "blocked",
+            leakage_status="none" if validation["ok"] else "suspect",
+            completeness_score=round(len(produced_rows) / max(expected_market_contexts, 1), 4),
+            quality_score=1.0 if validation["ok"] else 0.0,
+            context={
+                "dataset_id": contract.dataset_id,
+                "evidence_package_id": evidence_package_id,
+            },
+            payload={
+                "dataset_id": contract.dataset_id,
+                "dataset_name": contract.dataset_name,
+            },
+            market_type=contract.market_type,
+            market_profile=profile.profile_id,
+            asset_class=profile.profile_family,
+        )
+        batch_row.update(
+            {
+                "dataset_id": contract.dataset_id,
+                "dataset_name": contract.dataset_name,
+                "dataset_contract_version": HISTORICAL_DATASET_CONTRACT_VERSION,
+                "population_version": HISTORICAL_DATASET_POPULATION_SCHEMA_VERSION,
+                "dataset_as_of_time": batch_source_snapshot_time,
+                "cutoff_policy_id": HISTORICAL_DATASET_CUTOFF_POLICY_ID,
+                "cutoff_policy_version": HISTORICAL_DATASET_CUTOFF_POLICY_ID,
+                "join_policy_id": HISTORICAL_DATASET_JOIN_POLICY_ID,
+                "event_scope_json": _as_json(event_scope),
+                "required_source_asset_ids_json": _as_json(list(source_assets)),
+                "source_asset_version_ids_json": _as_json(source_asset_version_ids),
+                "source_asset_batch_ids_json": _as_json(source_asset_batch_ids),
+                "source_certification_ids_json": _as_json(source_certification_ids),
+                "source_dataset_certification_ids_json": _as_json(source_dataset_certification_ids),
+                "source_lifecycle_states_json": _as_json(
+                    {
+                        asset_id: _normalize_text(bundle.get("lifecycle_row", {}).get("lifecycle_state"))
+                        for asset_id, bundle in source_assets.items()
+                    }
+                ),
+                "source_alignment_counts_json": _as_json(
+                    {
+                        asset_id: len(bundle.get("alignment_rows", []))
+                        for asset_id, bundle in source_assets.items()
+                    }
+                ),
+                "source_record_counts_json": _as_json(join_diagnostics["source_row_counts"]),
+                "eligible_record_counts_json": _as_json(join_diagnostics["eligible_record_counts"]),
+                "selected_record_counts_json": _as_json(
+                    {
+                        "selected_unique_record_counts": join_diagnostics["selected_unique_record_counts"],
+                        "selected_attachment_counts": join_diagnostics["selected_attachment_counts"],
+                    }
+                ),
+                "rejected_record_counts_json": _as_json(
+                    {name: len(values) for name, values in rejected_ids.items()}
+                ),
+                "unmatched_record_counts_json": _as_json(
+                    {name: len(values) for name, values in unmatched_entities.items()}
+                ),
+                "join_diagnostics_json": _as_json(join_diagnostics),
+                "rejected_evidence_json": _as_json(
+                    {name: sorted(values) for name, values in rejected_ids.items()}
+                ),
+                "unmatched_evidence_json": _as_json(
+                    {name: sorted(values) for name, values in unmatched_entities.items()}
+                ),
+                "cardinality_contract_json": _as_json(join_diagnostics["cardinality_contracts"]),
+                "cardinality_validation_status": "validated" if not cardinality_issues else "blocked",
+                "point_in_time_validation_status": "safe" if not validation["point_in_time_issues"] else "blocked",
+                "predictor_outcome_separation_status": "separated" if not predictor_outcome_issues else "blocked",
+                "provenance_completeness": _bool_to_int(provenance_complete),
+                "lineage_completeness": _bool_to_int(lineage_complete),
+                "dataset_row_count": len(produced_rows),
+                "rejected_row_count": sum(len(values) for values in rejected_ids.values()),
+                "unmatched_row_count": sum(len(values) for values in unmatched_entities.values()),
+                "duplicate_row_count": len(duplicate_row_ids),
+                "evidence_package_id": evidence_package_id,
+                "evidence_package_json": _as_json(evidence_package),
+                "readiness_state": "feature_ready" if validation["ok"] else "blocked",
+                "unresolved_blockers_json": _as_json(validation["errors"]),
+                "schema_version": HISTORICAL_DATASET_POPULATION_SCHEMA_VERSION,
+            }
+        )
+
+        for row in produced_rows:
+            storage.upsert(HISTORICAL_DATASET_ROW_TABLE, row, key_columns=("dataset_row_id",))
+        for edge in lineage_edges:
+            storage.upsert("lineage_edges", edge, key_columns=("lineage_edge_id",))
+        storage.upsert(HISTORICAL_DATASET_BATCH_TABLE, batch_row, key_columns=("batch_id",))
+        storage.upsert("historical_certifications", certification_row, key_columns=("certification_id",))
+
+        platform = LocalDataPlatform(storage_path=storage.path, backend=backend, dataset_owner="src.data")
+        try:
+            platform.register_dataset(contract)
+            validation_row = platform.store_validation_result(
+                contract,
+                version_id=version_id,
+                snapshot_id=batch_snapshot_id,
+                lineage_id=batch_lineage_id,
+                validation=validation,
+                created_at=created_at,
+                updated_at=created_at,
+            )
+            existing_versions = platform.store.fetch(
+                "dataset_versions",
+                where="dataset_id = ?",
+                params=[contract.dataset_id],
+                order_by="version_number ASC",
+            )
+            existing_version_row = next(
+                (dict(row) for row in existing_versions if _normalize_text(row.get("version_id")) == version_id),
+                {},
+            )
+            version_number = int(existing_version_row.get("version_number") or (len(existing_versions) + 1))
+            version_row = {
+                "version_id": version_id,
+                "dataset_id": contract.dataset_id,
+                "dataset_name": contract.dataset_name,
+                "owner": contract.owner,
+                "sport": contract.sport,
+                "feature_pack": contract.feature_pack,
+                "storage_location": contract.storage_location,
+                "readiness": "feature_ready" if validation["ok"] else "blocked",
+                "update_frequency": contract.update_frequency,
+                "validation_state": "validated" if validation["ok"] else "rejected",
+                "status": "active" if validation["ok"] else "blocked",
+                "version_number": version_number,
+                "raw_record_count": sum(join_diagnostics["source_row_counts"].values()),
+                "normalized_record_count": len(produced_rows),
+                "feature_snapshot_count": 0,
+                "validation_id": validation_row["validation_id"],
+                "checksum": hashlib.sha256(_as_json(produced_rows).encode("utf-8")).hexdigest(),
+                "schema_version": contract.schema_version,
+                "created_at": created_at,
+                "updated_at": created_at,
+                "source": contract.source_name,
+                "provider": contract.provider,
+                "market": contract.market,
+                "market_type": contract.market_type,
+                "asset_class": contract.asset_class,
+                "snapshot_id": batch_snapshot_id,
+                "lineage_id": batch_lineage_id,
+                "quality_score": 1.0 if validation["ok"] else 0.0,
+                "metadata_json": _as_json(dict(contract.metadata)),
+                "payload_json": _as_json(
+                    {
+                        **contract.as_dict(),
+                        "batch_id": batch_id,
+                        "version_number": version_number,
+                        "evidence_package_id": evidence_package_id,
+                        "validation": validation,
+                    }
+                ),
+            }
+            platform.store.upsert("dataset_versions", version_row, key_columns=("version_id",))
+            registry_contract = DatasetContract.from_mapping(
+                {
+                    **contract.as_dict(),
+                    "readiness": "feature_ready" if validation["ok"] else "blocked",
+                    "validation_state": "validated" if validation["ok"] else "rejected",
+                    "status": "active" if validation["ok"] else "blocked",
+                }
+            )
+            registry_row = platform._registry_row(
+                registry_contract,
+                latest_version_number=version_number,
+                latest_snapshot_id=batch_snapshot_id,
+                latest_feature_snapshot_id=_normalize_text(
+                    (platform.read_dataset(contract.dataset_id).get("latest_feature_snapshot_id") or f"{contract.dataset_id}.feature.000")
+                ),
+                latest_validation_id=validation_row["validation_id"],
+                version_count=max(len(existing_versions), version_number),
+                validation_state="validated" if validation["ok"] else "rejected",
+            )
+            platform.store.upsert("dataset_registry", registry_row, key_columns=("dataset_id",))
+        finally:
+            platform.close()
+
+        lifecycle_runtime = ResearchAssetLifecycleRuntime(storage_path=storage.path, backend=backend, dataset_owner="src.data")
+        try:
+            identity = build_research_asset_identity_contract(
+                asset_id=contract.dataset_id,
+                asset_family="dataset",
+                market_profile=profile.profile_id,
+                market=profile.market_scope or profile.profile_id,
+                league=_normalize_text(profile.metadata.get("league"), "NFL"),
+                sport=_normalize_text(profile.metadata.get("sport"), "football"),
+                provider=contract.provider,
+                connector="historical_dataset_population_runtime",
+                schema_version=HISTORICAL_DATASET_POPULATION_SCHEMA_VERSION,
+                lineage_version=version_id,
+                asset_name="NFL Historical Dataset Population",
+                asset_type="historical_dataset_population",
+                metadata={
+                    "batch_id": batch_id,
+                    "version_id": version_id,
+                    "dataset_contract_version": HISTORICAL_DATASET_CONTRACT_VERSION,
+                    "evidence_package_id": evidence_package_id,
+                },
+            )
+            lifecycle_row = lifecycle_runtime.record_lifecycle_state(
+                identity=identity,
+                lifecycle_state="feature_ready" if validation["ok"] else "dataset_certified",
+                lifecycle_reason="historical_dataset_population_certified" if validation["ok"] else "historical_dataset_population_blocked",
+                certification_result={
+                    "certification_id": certification_row["certification_id"],
+                    "certification_status": certification_row["certification_status"],
+                    "certification_state": certification_row["certification_status"],
+                    "alignment_status": "aligned" if validation["ok"] else "blocked",
+                    "alignment_reason": "dataset_population_validated" if validation["ok"] else "dataset_population_blocked",
+                    "alignment_score": 1.0 if validation["ok"] else 0.0,
+                    "batch_id": batch_id,
+                    "version_id": version_id,
+                },
+                dataset_result={
+                    "certification_id": certification_row["certification_id"],
+                    "certification_status": certification_row["certification_status"],
+                    "batch_id": batch_id,
+                    "version_id": version_id,
+                },
+                created_at=created_at,
+                notes={
+                    "dataset_row_count": len(produced_rows),
+                    "evidence_package_id": evidence_package_id,
+                },
+            )
+        finally:
+            lifecycle_runtime.close()
+
+        snapshot = build_historical_dataset_population_dashboard_snapshot(
+            storage_path=storage.path,
+            backend=backend,
+            profile_id=profile_id,
+            dataset_id=contract.dataset_id,
+            batch_id=batch_id,
+        )
+        snapshot["source_assets"] = source_assets
+        snapshot["validation"] = validation
+        snapshot["dataset_certification"] = certification_row
+        snapshot["dataset_lifecycle"] = lifecycle_row
+        snapshot["idempotent_reuse"] = False
+        return snapshot
+    finally:
+        storage.close()
+
+
+def build_historical_dataset_population_dashboard_snapshot(
+    storage_path: str | Path | None = None,
+    *,
+    backend: str = "sqlite",
+    profile_id: str = DEFAULT_HISTORICAL_RESEARCH_PROFILE_ID,
+    dataset_id: str = DEFAULT_NFL_HISTORICAL_DATASET_ID,
+    batch_id: str | None = None,
+    include_coverage_planner_snapshot: bool = True,
+) -> dict[str, Any]:
+    storage = create_historical_research_storage_engine(storage_path, backend=backend)
+    try:
+        batch_rows = storage.fetch(
+            HISTORICAL_DATASET_BATCH_TABLE,
+            where="dataset_id = ?" + (" AND batch_id = ?" if batch_id else ""),
+            params=[dataset_id, *([batch_id] if batch_id else [])],
+            order_by="created_at ASC, batch_id ASC",
+        ) if storage.table_exists(HISTORICAL_DATASET_BATCH_TABLE) else []
+        latest_batch = dict(batch_rows[-1]) if batch_rows else {}
+        dataset_rows = storage.fetch(
+            HISTORICAL_DATASET_ROW_TABLE,
+            where="dataset_id = ?" + (" AND batch_id = ?" if batch_id else ""),
+            params=[dataset_id, *([batch_id] if batch_id else [])],
+            order_by="event_start_time ASC, market_type ASC, selection ASC",
+        ) if storage.table_exists(HISTORICAL_DATASET_ROW_TABLE) else []
+        certification_rows = storage.fetch(
+            "historical_certifications",
+            where="batch_id = ?",
+            params=[_normalize_text(latest_batch.get("batch_id"))],
+            order_by="certified_at ASC, certification_id ASC",
+        ) if latest_batch and storage.table_exists("historical_certifications") else []
+        lifecycle_rows = storage.fetch(
+            "research_asset_lifecycles",
+            where="asset_id = ?",
+            params=[dataset_id],
+            order_by="created_at ASC, asset_id ASC",
+        ) if storage.table_exists("research_asset_lifecycles") else []
+        local_platform = LocalDataPlatform(
+            storage_path=storage.path,
+            backend=backend,
+            dataset_owner="src.data",
+        )
+        try:
+            local_platform_snapshot = local_platform.dashboard_snapshot(dataset_id)
+        finally:
+            local_platform.close()
+        source_certification_ids = _load_json_mapping(latest_batch.get("source_certification_ids_json"))
+        unresolved_blockers = _load_json_list(latest_batch.get("unresolved_blockers_json"))
+        join_diagnostics = _load_json_mapping(latest_batch.get("join_diagnostics_json"))
+        coverage_snapshot = {}
+        if include_coverage_planner_snapshot:
+            try:
+                from src.market_intelligence.research_asset_coverage_planner import (
+                    build_research_asset_coverage_planner_snapshot,
+                )
+
+                coverage_snapshot = build_research_asset_coverage_planner_snapshot(
+                    storage_path=storage.path,
+                    backend=backend,
+                    profile_id=profile_id,
+                    include_dataset_population_snapshot=False,
+                )
+            except Exception as exc:
+                coverage_snapshot = {
+                    "ok": False,
+                    "status": "coverage_planner_snapshot_failed",
+                    "warnings": [str(exc)],
+                }
+        else:
+            coverage_snapshot = {
+                "ok": False,
+                "status": "not_embedded",
+                "warnings": [],
+            }
+        latest_lifecycle = dict(lifecycle_rows[-1]) if lifecycle_rows else {}
+        latest_certification = dict(certification_rows[-1]) if certification_rows else {}
+        dataset_certification_status = _normalize_text(
+            latest_certification.get("certification_status"),
+            "missing",
+        )
+        readiness_state = _normalize_text(latest_batch.get("readiness_state"), "missing")
+        join_validation_status = (
+            "validated"
+            if latest_batch
+            and _normalize_text(latest_batch.get("cardinality_validation_status")) == "validated"
+            and _normalize_text(latest_batch.get("point_in_time_validation_status")) == "safe"
+            and not unresolved_blockers
+            else "blocked" if latest_batch else "missing"
+        )
+        ok = (
+            bool(latest_batch)
+            and bool(dataset_rows)
+            and dataset_certification_status == "certified"
+            and readiness_state == "feature_ready"
+        )
+        return {
+            "ok": ok,
+            "status": "ready" if ok else "partial" if latest_batch or dataset_rows else "missing",
+            "profile_id": profile_id,
+            "dataset_id": dataset_id,
+            "dataset_name": _normalize_text(latest_batch.get("dataset_name"), DEFAULT_NFL_HISTORICAL_DATASET_NAME),
+            "batch_id": _normalize_text(latest_batch.get("batch_id")),
+            "version_id": _normalize_text(latest_batch.get("version_id")),
+            "dataset_contract_version": _normalize_text(latest_batch.get("dataset_contract_version")),
+            "population_version": _normalize_text(latest_batch.get("population_version"), HISTORICAL_DATASET_POPULATION_SCHEMA_VERSION),
+            "dataset_as_of_time": _normalize_text(latest_batch.get("dataset_as_of_time")),
+            "cutoff_policy_version": _normalize_text(
+                latest_batch.get("cutoff_policy_version"),
+                HISTORICAL_DATASET_CUTOFF_POLICY_ID,
+            ),
+            "dataset_row_count": len(dataset_rows),
+            "source_asset_count": len(source_certification_ids),
+            "required_source_assets": list(HISTORICAL_DATASET_REQUIRED_ASSET_LOOKUP),
+            "certified_source_asset_count": len([asset_id for asset_id, cert_id in source_certification_ids.items() if cert_id]),
+            "source_record_counts": join_diagnostics.get("source_row_counts", {}),
+            "eligible_record_counts": join_diagnostics.get("eligible_record_counts", {}),
+            "selected_record_counts": join_diagnostics.get("selected_unique_record_counts", {}),
+            "rejected_record_count": int(latest_batch.get("rejected_row_count") or 0),
+            "unmatched_record_count": int(latest_batch.get("unmatched_row_count") or 0),
+            "join_validation_status": join_validation_status,
+            "cardinality_validation_status": _normalize_text(latest_batch.get("cardinality_validation_status"), "missing"),
+            "point_in_time_validation_status": _normalize_text(latest_batch.get("point_in_time_validation_status"), "missing"),
+            "predictor_outcome_separation_status": _normalize_text(latest_batch.get("predictor_outcome_separation_status"), "missing"),
+            "provenance_completeness": bool(int(latest_batch.get("provenance_completeness") or 0)),
+            "lineage_completeness": bool(int(latest_batch.get("lineage_completeness") or 0)),
+            "dataset_certification_status": dataset_certification_status,
+            "lifecycle_state": _normalize_text(latest_lifecycle.get("lifecycle_state"), "missing"),
+            "readiness_state": readiness_state,
+            "unresolved_blockers": unresolved_blockers,
+            "evidence_package_id": _normalize_text(latest_batch.get("evidence_package_id")),
+            "join_diagnostics": join_diagnostics,
+            "rejected_evidence": _load_json_mapping(latest_batch.get("rejected_evidence_json")),
+            "unmatched_evidence": _load_json_mapping(latest_batch.get("unmatched_evidence_json")),
+            "dataset_rows": [dict(row) for row in dataset_rows],
+            "dataset_batches": [dict(row) for row in batch_rows],
+            "dataset_certifications": [dict(row) for row in certification_rows],
+            "dataset_lifecycles": [dict(row) for row in lifecycle_rows],
+            "local_platform_snapshot": local_platform_snapshot,
+            "coverage_planner_snapshot": coverage_snapshot,
+            "storage": storage.health(),
+            "warnings": [],
+        }
+    finally:
+        storage.close()
+
+
+def get_historical_dataset_population_snapshot_for_dashboard(
+    storage_path: str | Path | None = None,
+    *,
+    backend: str = "sqlite",
+    profile_id: str = DEFAULT_HISTORICAL_RESEARCH_PROFILE_ID,
+    dataset_id: str = DEFAULT_NFL_HISTORICAL_DATASET_ID,
+) -> dict[str, Any]:
+    try:
+        return build_historical_dataset_population_dashboard_snapshot(
+            storage_path=storage_path,
+            backend=backend,
+            profile_id=profile_id,
+            dataset_id=dataset_id,
+        )
+    except Exception as exc:
+        return {
+            "ok": False,
+            "status": "historical_dataset_population_snapshot_error",
+            "profile_id": profile_id,
+            "dataset_id": dataset_id,
+            "dataset_name": DEFAULT_NFL_HISTORICAL_DATASET_NAME,
+            "batch_id": "",
+            "version_id": "",
+            "dataset_row_count": 0,
+            "source_asset_count": 0,
+            "required_source_assets": list(HISTORICAL_DATASET_REQUIRED_ASSET_LOOKUP),
+            "certified_source_asset_count": 0,
+            "source_record_counts": {},
+            "eligible_record_counts": {},
+            "selected_record_counts": {},
+            "rejected_record_count": 0,
+            "unmatched_record_count": 0,
+            "join_validation_status": "missing",
+            "cardinality_validation_status": "missing",
+            "point_in_time_validation_status": "missing",
+            "predictor_outcome_separation_status": "missing",
+            "provenance_completeness": False,
+            "lineage_completeness": False,
+            "dataset_certification_status": "missing",
+            "lifecycle_state": "missing",
+            "readiness_state": "missing",
+            "unresolved_blockers": [str(exc)],
+            "evidence_package_id": "",
+            "join_diagnostics": {},
+            "rejected_evidence": {},
+            "unmatched_evidence": {},
+            "dataset_rows": [],
+            "dataset_batches": [],
+            "dataset_certifications": [],
+            "dataset_lifecycles": [],
+            "local_platform_snapshot": {},
+            "coverage_planner_snapshot": {},
+            "storage": {},
+            "warnings": [str(exc)],
+        }
+
+
 __all__ = [
     "DEFAULT_HISTORICAL_RESEARCH_OWNER",
     "DEFAULT_HISTORICAL_RESEARCH_DATASET_NAME",
+    "DEFAULT_NFL_HISTORICAL_DATASET_ID",
+    "DEFAULT_NFL_HISTORICAL_DATASET_NAME",
     "DEFAULT_HISTORICAL_RESEARCH_PROFILE_ID",
     "DEFAULT_HISTORICAL_RESEARCH_PROVIDER",
     "DEFAULT_HISTORICAL_RESEARCH_SOURCE_KEY",
@@ -1831,9 +4094,12 @@ __all__ = [
     "HistoricalResearchDatabase",
     "HistoricalStageContract",
     "bootstrap_historical_research_database",
+    "build_historical_dataset_population",
+    "build_historical_dataset_population_dashboard_snapshot",
     "build_historical_research_dashboard_snapshot",
     "build_historical_research_fixture",
     "create_historical_research_storage_engine",
+    "get_historical_dataset_population_snapshot_for_dashboard",
     "get_historical_research_market_profile",
     "get_historical_research_snapshot_for_dashboard",
     "normalize_historical_event_rows",
