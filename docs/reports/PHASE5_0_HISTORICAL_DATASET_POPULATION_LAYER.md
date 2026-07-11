@@ -175,7 +175,7 @@ Use the certified dataset layer as the sole evidence substrate for Phase 5.1 reu
 - audit lifecycle: passed
 - document lifecycle: advisory with one warning and no clear violations
 - ops workflow check: passed with `verification_ok`
-- repository preflight checks: before-commit reported the expected open-worktree violation prior to commit; before-push and end-task remain for phase closeout
+- repository preflight checks: before-commit, before-push, and end-task passed in the final staged and committed states
 - full repository test gate: passed with 3823 tests passed, 670 skipped, and 519 subtests passed
 
 ## Readiness For Phase 5.1
