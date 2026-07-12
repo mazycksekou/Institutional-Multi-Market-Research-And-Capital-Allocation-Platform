@@ -2,6 +2,20 @@ from __future__ import annotations
 
 from .ablation import build_ablation_plan, describe_ablation_plan
 from .contracts import AblationPlan, ExperimentMetadata, HypothesisRecord, ResearchLaneDescriptor
+from .experiment_registry import (
+    EXPERIMENT_REGISTRY_SCHEMA_VERSION,
+    ExperimentRegistryCorruptionError,
+    ExperimentRegistryError,
+    ExperimentRegistryIntegrityError,
+    ExperimentRecord,
+    ExperimentRegistry,
+    build_experiment_record,
+    describe_experiment_registry,
+    get_default_experiment_registry_dir,
+    list_experiment_records,
+    load_experiment_record,
+    record_experiment,
+)
 from .experiments import build_experiment_metadata, build_hypothesis_record
 from .lanes import (
     TABULAR_FEATURE_SET_VERSION,
@@ -47,12 +61,19 @@ from .storage import (
 
 __all__ = [
     "AblationPlan",
+    "EXPERIMENT_REGISTRY_SCHEMA_VERSION",
+    "ExperimentRegistryCorruptionError",
+    "ExperimentRegistryError",
+    "ExperimentRegistryIntegrityError",
+    "ExperimentRecord",
+    "ExperimentRegistry",
     "ExperimentMetadata",
     "HypothesisRecord",
     "ResearchLaneDescriptor",
     "TABULAR_FEATURE_SET_VERSION",
     "TABULAR_REQUIRED_SAMPLE_SIZE",
     "build_ablation_plan",
+    "build_experiment_record",
     "build_deep_learning_maturity_records",
     "build_deep_learning_research_lanes",
     "build_experiment_metadata",
@@ -61,6 +82,7 @@ __all__ = [
     "build_tabular_maturity_records",
     "build_tabular_ml_research_lanes",
     "describe_ablation_plan",
+    "describe_experiment_registry",
     "ALLOWED_MDP_ACTIONS",
     "FORBIDDEN_MDP_ACTIONS",
     "MODEL_MATURITY_STATUSES",
@@ -69,6 +91,8 @@ __all__ = [
     "build_mdp_review_policy_scaffold",
     "build_model_maturity_registry",
     "get_model_maturity_registry",
+    "get_default_experiment_registry_dir",
+    "list_experiment_records",
     "list_research_lane_tags",
     "DEFAULT_DB_FILENAME",
     "MARKET_RESEARCH_SCHEMA_VERSION",
@@ -84,6 +108,8 @@ __all__ = [
     "initialize_market_research_db",
     "insert_schema_metadata",
     "list_market_research_tables",
+    "load_experiment_record",
+    "record_experiment",
     "table_exists",
     "locked_safety_flags",
     "normalize_model_maturity_record",
