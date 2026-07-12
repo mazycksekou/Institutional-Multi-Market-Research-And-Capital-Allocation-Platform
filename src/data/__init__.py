@@ -325,6 +325,14 @@ __all__ = [
     "build_feature_snapshot_population",
     "build_feature_snapshot_population_dashboard_snapshot",
     "get_feature_snapshot_population_snapshot_for_dashboard",
+    "DEFAULT_MATH_ENGINE_DATASET_ID",
+    "DEFAULT_MATH_ENGINE_DATASET_NAME",
+    "DEFAULT_MATH_ENGINE_RESEARCH_ASSET_ID",
+    "DEFAULT_MATH_ENGINE_RESEARCH_ASSET_NAME",
+    "DEFAULT_MATH_ENGINE_STORAGE_PATH",
+    "build_math_engine_population",
+    "build_math_engine_population_dashboard_snapshot",
+    "get_math_engine_population_snapshot_for_dashboard",
     "validate_market_profile_contract",
     "get_historical_research_market_profile",
     "get_historical_research_snapshot_for_dashboard",
@@ -361,3 +369,27 @@ __all__ = [
     "validate_research_asset_lifecycle_row",
     "validate_time_entity_alignment_certification_row",
 ]
+
+
+_MATH_ENGINE_EXPORTS = {
+    "DEFAULT_MATH_ENGINE_DATASET_ID",
+    "DEFAULT_MATH_ENGINE_DATASET_NAME",
+    "DEFAULT_MATH_ENGINE_RESEARCH_ASSET_ID",
+    "DEFAULT_MATH_ENGINE_RESEARCH_ASSET_NAME",
+    "DEFAULT_MATH_ENGINE_STORAGE_PATH",
+    "build_math_engine_population",
+    "build_math_engine_population_dashboard_snapshot",
+    "get_math_engine_population_snapshot_for_dashboard",
+}
+
+
+def __getattr__(name: str):  # pragma: no cover - module attribute shim
+    if name in _MATH_ENGINE_EXPORTS:
+        from . import math_engine_population as _math_engine_population
+
+        return getattr(_math_engine_population, name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+def __dir__() -> list[str]:  # pragma: no cover - module attribute shim
+    return sorted(set(globals()) | _MATH_ENGINE_EXPORTS)

@@ -95,6 +95,7 @@ from src.data.historical_research_database import (
     build_historical_research_dashboard_snapshot,
 )
 from src.data.feature_registry import build_feature_snapshot_population_dashboard_snapshot
+from src.data.math_engine_population import build_math_engine_population_dashboard_snapshot
 from src.market_intelligence.research_asset_coverage_planner import build_research_asset_coverage_planner_dashboard_snapshot
 from src.research.feature_control import run_calibration_strategy_filter
 from src.research.history import (
@@ -3835,6 +3836,72 @@ def get_feature_snapshot_population_snapshot_for_dashboard(
             "source_dataset_snapshot": {},
             "storage": {},
             "warnings": [str(exc)],
+        }
+
+
+def get_math_engine_population_snapshot_for_dashboard(
+    storage_path: str | Path | None = None,
+    *,
+    backend: str = "sqlite",
+    dataset_id: str = "dataset.sports.nfl.historical_dataset",
+    batch_id: str | None = None,
+) -> dict[str, Any]:
+    """Return a canonical math-engine population readiness snapshot."""
+    try:
+        return build_math_engine_population_dashboard_snapshot(
+            storage_path=storage_path,
+            backend=backend,
+            dataset_id=dataset_id,
+            batch_id=batch_id,
+        )
+    except Exception as exc:
+        return {
+            "ok": False,
+            "status": "math_engine_population_snapshot_error",
+            "schema_version": "",
+            "dataset_id": "",
+            "dataset_name": "",
+            "batch_id": _normalize_text(batch_id),
+            "version_id": "",
+            "dataset_row_count": 0,
+            "engine_definition_count": 0,
+            "engine_row_count": 0,
+            "math_engine_rows": [],
+            "math_engine_summary_rows": [],
+            "math_engine_population_summary": {},
+            "math_engine_population_summary_id": "",
+            "math_engine_evidence_package_id": "",
+            "math_engine_lineage_edges": [],
+            "math_engine_alignment_rows": [],
+            "math_engine_lifecycle_rows": [],
+            "dataset_certification_status": "missing",
+            "dataset_certification_id": "",
+            "lifecycle_state": "missing",
+            "source_feature_snapshot": {},
+            "source_feature_summary": {},
+            "source_feature_population_snapshot": {},
+            "source_feature_population_summary": {},
+            "source_feature_rows": [],
+            "source_feature_batch_id": "",
+            "source_feature_certification_id": "",
+            "source_feature_dataset_certification_id": "",
+            "source_feature_evidence_package_id": "",
+            "source_feature_population_summary_id": "",
+            "source_feature_batch_lineage_id": "",
+            "join_diagnostics": {},
+            "registry": {},
+            "validation": {},
+            "math_engine_validation": {},
+            "storage": {},
+            "unresolved_blockers": [str(exc)],
+            "readiness": "blocked",
+            "validation_state": "rejected",
+            "source_feature_snapshot_count": 0,
+            "feature_context_count": 0,
+            "math_engine_context_count": 0,
+            "math_engine_definition_ids": [],
+            "warnings": [str(exc)],
+            "idempotent_reuse": False,
         }
 
 

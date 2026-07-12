@@ -56,7 +56,7 @@ def test_nfl_results_research_asset_docs_and_governance_are_current() -> None:
     assert "docs/reports/PHASE4_9E_NFL_ODDS_RESEARCH_ASSET_POPULATION.md" in project_status_text
     assert "docs/architecture/NFL_RESULTS_RESEARCH_ASSET.md" in project_status_text
     assert "docs/reports/PHASE4_9D_NFL_RESULTS_RESEARCH_ASSET_POPULATION.md" in project_status_text
-    assert "Phase 5.2 - Reusable Mathematical Engines" in next_action_text
+    assert "Phase 5.3 - Reusable Signals" in next_action_text
     assert "Phase 4.9E completes the NFL odds research asset population" in roadmap_text
     assert "Phase 5.0 completed the historical dataset population layer" in roadmap_text
 

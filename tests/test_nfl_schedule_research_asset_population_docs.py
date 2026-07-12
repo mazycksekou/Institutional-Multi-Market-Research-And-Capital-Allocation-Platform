@@ -54,7 +54,7 @@ def test_nfl_schedule_research_asset_population_docs_exist_and_cover_required_to
     assert "docs/architecture/NFL_SCHEDULE_RESEARCH_ASSET.md" in project_status_text
     assert "docs/reports/PHASE4_9A_NFL_SCHEDULE_RESEARCH_ASSET_POPULATION.md" in project_status_text
 
-    assert "Phase 5.2 - Reusable Mathematical Engines" in next_action_text
+    assert "Phase 5.3 - Reusable Signals" in next_action_text
     assert "canonical connector" in next_action_text.lower()
     assert "canonical open-provider acquisition path" in next_action_text.lower()
 

@@ -7,9 +7,9 @@ Canonical live status for the repository and the required starting document for 
 - current branch: `feature/nfl-backtesting`
 - current HEAD: live branch tip (exact hash is reported in the task final report)
 - remote tracking branch: `origin/feature/nfl-backtesting`
-- active phase: `Phase 5.1B - Feature Snapshot Population (complete)`
+- active phase: `Phase 5.2 - Reusable Mathematical Engines (complete)`
 - active market profile: `sports:nfl`
-- active implementation lane: `NFL P0 profile-aware foundation + event-centric historical research database + master research engine specification + universal feature registry + universal math engine contracts + research asset runtime framework + historical dataset acquisition framework + historical dataset acquisition runtime + research asset source discovery and connector mapping framework + historical research asset certification runtime + research asset lifecycle runtime + NFL schedule research asset population + research asset coverage planner and provider selection framework + first production NFL schedule connector + certified NFL results research asset + certified NFL odds research asset + certified NFL weather research asset + certified NFL injuries research asset + certified NFL team statistics research asset + deterministic historical dataset population layer + deterministic feature snapshot population layer`
+- active implementation lane: `NFL P0 profile-aware foundation + event-centric historical research database + master research engine specification + universal feature registry + universal math engine contracts + research asset runtime framework + historical dataset acquisition framework + historical dataset acquisition runtime + research asset source discovery and connector mapping framework + historical research asset certification runtime + research asset lifecycle runtime + NFL schedule research asset population + research asset coverage planner and provider selection framework + first production NFL schedule connector + certified NFL results research asset + certified NFL odds research asset + certified NFL weather research asset + certified NFL injuries research asset + certified NFL team statistics research asset + deterministic historical dataset population layer + deterministic feature snapshot population layer + deterministic mathematical engine population layer`
 - completed phases:
   - `Phase 4.3.6 - Profile-Aware NFL P0 Validation`
   - `Phase 4.3.7 - Minimum Backtest Row Contract`
@@ -32,8 +32,9 @@ Canonical live status for the repository and the required starting document for 
   - `Phase 4.9H - NFL Team Statistics Research Asset Population`
   - `Phase 5.0 - Historical Dataset Population Layer`
   - `Phase 5.1B - Feature Snapshot Population`
-- current phase objective: Phase 5.1B is complete; the next objective is to implement reusable mathematical engines from the certified feature layer without starting signals, decision rows, or backtesting.
-- next phase: `Phase 5.2 - Reusable Mathematical Engines`
+  - `Phase 5.2 - Reusable Mathematical Engines`
+- current phase objective: Phase 5.2 is complete; the next objective is to implement reusable signals from the certified math-engine layer without starting decision rows or backtesting.
+- next phase: `Phase 5.3 - Reusable Signals`
 - current blockers: None
 - latest validation status:
   - Phase 4.7C runtime validation passed: compileall, certification runtime tests, smoke, architecture, document lifecycle, and ops checks are green.
@@ -144,4 +145,4 @@ Read these only when you need more detail than the project status page provides:
 
 ## Next Recommended Codex Task
 
-`Phase 5.2 - Reusable Mathematical Engines`
+`Phase 5.3 - Reusable Signals`

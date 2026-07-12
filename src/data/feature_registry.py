@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from src.analytics.model_governance.data_lineage import create_lineage_record
+from src.data.data_paths import get_runtime_data_path
 from src.data.historical_research_database import (
     DEFAULT_NFL_HISTORICAL_DATASET_ID,
     DEFAULT_NFL_HISTORICAL_DATASET_NAME,
@@ -35,6 +36,7 @@ CANONICAL_FEATURE_REGISTRY_DOC = "docs/architecture/UNIVERSAL_FEATURE_REGISTRY.m
 CANONICAL_FEATURE_STORE_CONTRACT_DOC = "docs/contracts/NFL_FEATURE_STORE_CONTRACT.md"
 CANONICAL_FEATURE_SNAPSHOT_CONTRACT_DOC = "docs/contracts/FEATURE_SNAPSHOT_CONTRACT.md"
 CANONICAL_FEATURE_STORE_ARCHITECTURE_DOC = "docs/architecture/FEATURE_STORE_ARCHITECTURE.md"
+DEFAULT_FEATURE_SNAPSHOT_STORAGE_PATH = get_runtime_data_path("feature_snapshot_population", "canonical_data.sqlite")
 DEFAULT_FEATURE_OWNER = "src.data.feature_registry"
 DEFAULT_MARKET_VERTICAL = "sports"
 DEFAULT_PORTABILITY_CLASSIFICATION = "nfl_minimum_schema_dataset"
@@ -1521,7 +1523,7 @@ def build_feature_snapshot_population(
     dataset_id: str = DEFAULT_NFL_HISTORICAL_DATASET_ID,
     batch_id: str | None = None,
 ) -> dict[str, Any]:
-    storage = create_local_storage_engine(storage_path, backend=backend)
+    storage = create_local_storage_engine(storage_path or DEFAULT_FEATURE_SNAPSHOT_STORAGE_PATH, backend=backend)
     try:
         required_tables = (
             "historical_dataset_batches",
@@ -2002,7 +2004,7 @@ def build_feature_snapshot_population_dashboard_snapshot(
     include_source_dataset_snapshot: bool = True,
     idempotent_reuse: bool = False,
 ) -> dict[str, Any]:
-    storage = create_local_storage_engine(storage_path, backend=backend)
+    storage = create_local_storage_engine(storage_path or DEFAULT_FEATURE_SNAPSHOT_STORAGE_PATH, backend=backend)
     try:
         batch_rows = storage.fetch(
             "feature_snapshots",
@@ -2378,6 +2380,7 @@ __all__ = [
     "CANONICAL_FEATURE_SNAPSHOT_GRAIN_ID",
     "CANONICAL_FEATURE_STORE_ARCHITECTURE_DOC",
     "CANONICAL_FEATURE_STORE_CONTRACT_DOC",
+    "DEFAULT_FEATURE_SNAPSHOT_STORAGE_PATH",
     "DEFAULT_CUTOFF_SEMANTICS",
     "DEFAULT_NFL_HISTORICAL_DATASET_ID",
     "DEFERRED_MATHEMATICAL_FEATURE_IDS",

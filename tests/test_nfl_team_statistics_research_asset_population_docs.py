@@ -55,8 +55,8 @@ def test_nfl_team_statistics_research_asset_population_docs_exist_and_cover_requ
     assert "Senior Systems Engineer Review" in report_text
     assert "Worldview / Research Query Engine Review" in report_text
 
-    assert "Phase 5.1B - Feature Snapshot Population (complete)" in project_status_text
-    assert "Phase 5.2 - Reusable Mathematical Engines" in next_action_text
+    assert "Phase 5.2 - Reusable Mathematical Engines (complete)" in project_status_text
+    assert "Phase 5.3 - Reusable Signals" in next_action_text
     assert "Phase 5.0 completed the historical dataset population layer" in roadmap_text
     assert "docs/architecture/NFL_TEAM_STATISTICS_RESEARCH_ASSET.md" in project_status_text
     assert "docs/reports/PHASE4_9H_NFL_TEAM_STATISTICS_RESEARCH_ASSET_POPULATION.md" in project_status_text

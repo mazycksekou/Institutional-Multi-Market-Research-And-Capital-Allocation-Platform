@@ -62,7 +62,7 @@ Normalization converts canonical NFL P0 rows into the storage-ready shape:
 
 The dashboard helper exposes a readiness snapshot for the NFL P0 foundation without owning the underlying storage.
 The dashboard layer stays thin and only reports readiness.
-That readiness snapshot now also includes the feature-layer rollup exposed by Phase 5.1B so the P0 view can report when reusable feature snapshots are available.
+That readiness snapshot now also includes the feature-layer rollup exposed by Phase 5.1B and the math-layer rollup exposed by Phase 5.2 so the P0 view can report when reusable feature snapshots and reusable mathematical engines are available.
 
 ## Deferred work
 
@@ -83,7 +83,8 @@ The foundation now includes the completed historical dataset population layer.
 The remaining governed phases are:
 
 - reusable feature snapshots are complete in Phase 5.1B
-- implement reusable mathematical engines in Phase 5.2
+- reusable mathematical engines are complete in Phase 5.2
+- implement reusable signals in Phase 5.3
 - generate decision rows in Phase 5.4
 - begin baseline backtesting in Phase 5.5
 - expand beyond the P0 team/game foundation when the minimum-schema dataset path is proven stable

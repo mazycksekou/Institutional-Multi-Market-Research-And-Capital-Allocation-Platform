@@ -83,10 +83,10 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "docs/reports/PHASE4_9A_NFL_SCHEDULE_RESEARCH_ASSET_POPULATION.md" in project_status_text
     assert "docs/reports/PHASE4_9E_NFL_ODDS_RESEARCH_ASSET_POPULATION.md" in project_status_text
 
-    assert "Phase 5.2 - Reusable Mathematical Engines" in next_action_text
+    assert "Phase 5.3 - Reusable Signals" in next_action_text
     assert "canonical connector" in next_action_text.lower()
-    assert "Do not implement signals, decision rows, or backtesting yet." in next_action_text
     assert "Do not generate decision rows yet." in next_action_text
+    assert "Do not backtest." in next_action_text
     assert "validation commands" in next_action_text.lower()
 
     assert "Every new session begins with `docs/PROJECT_STATUS.md`." in status_policy_text
@@ -118,7 +118,7 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "Phase 4.9J populates the NFL betting splits research asset." in roadmap_text
     assert "Phase 5.0 completed the historical dataset population layer" in roadmap_text
     assert "Phase 5.1B completed the reusable feature snapshot population layer from certified historical dataset rows." in roadmap_text
-    assert "Phase 5.2 implements reusable mathematical engines." in roadmap_text
+    assert "Phase 5.2 completed reusable mathematical engines." in roadmap_text
     assert "docs/PROJECT_STATUS.md" in roadmap_text
     assert "docs/NEXT_ACTION.md" in roadmap_text
     assert "docs/STATUS_UPDATE_POLICY.md" in roadmap_text
