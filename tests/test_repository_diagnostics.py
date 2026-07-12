@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import json
+import platform
+import sys
 import unittest
-from contextlib import redirect_stdout
+from contextlib import ExitStack, redirect_stdout
 from io import StringIO
 from pathlib import Path
 from unittest.mock import patch
@@ -11,6 +13,10 @@ import scripts.repo_diagnostics as diagnostics
 
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def _paths_match(left: str, right: str) -> bool:
+    return Path(left).resolve() == Path(right).resolve()
 
 
 def _clean_git_state() -> dict[str, object]:
@@ -52,9 +58,13 @@ class TestRepositoryDiagnostics(unittest.TestCase):
         self.assertEqual(report["git"]["branch"], "feature/nfl-backtesting")
         self.assertTrue(report["git"]["available"])
         self.assertEqual(report["git"]["clean"], True)
-        self.assertTrue(report["python"]["version"])
+        self.assertTrue(_paths_match(report["python"]["executable"], sys.executable))
+        self.assertEqual(report["python"]["version"], platform.python_version())
         self.assertIn("venv", report["python"])
-        self.assertEqual(report["python"]["venv"]["path"], str(ROOT / ".venv"))
+        self.assertEqual(report["python"]["venv"]["active"], sys.prefix != sys.base_prefix)
+        self.assertTrue(_paths_match(report["python"]["venv"]["path"], sys.prefix))
+        self.assertTrue(_paths_match(report["python"]["venv"]["prefix"], sys.prefix))
+        self.assertEqual(report["python"]["venv"]["base_prefix"], sys.base_prefix)
         self.assertTrue(report["repository_health"]["ok"], json.dumps(report["repository_health"], indent=2, sort_keys=True))
         self.assertIn("workflow_inventory", report)
         self.assertIn("script_inventory", report)
@@ -78,6 +88,19 @@ class TestRepositoryDiagnostics(unittest.TestCase):
         provider_ids = {provider["provider_id"] for provider in report["provider_inventory"]["providers"]}
         self.assertIn("sportsbook_placeholder", provider_ids)
         self.assertIn("prediction_market_placeholder", provider_ids)
+
+    def test_collect_repository_diagnostics_is_deterministic_and_read_only(self) -> None:
+        def _raise_on_write(*_args, **_kwargs):
+            raise AssertionError("unexpected write operation")
+
+        with patch.object(diagnostics, "_git_state", return_value=_clean_git_state()):
+            with ExitStack() as stack:
+                for attribute in ("write_text", "write_bytes", "touch", "mkdir", "unlink", "rename", "replace"):
+                    stack.enter_context(patch.object(Path, attribute, side_effect=_raise_on_write))
+                first = diagnostics.collect_repository_diagnostics(ROOT)
+                second = diagnostics.collect_repository_diagnostics(ROOT)
+
+        self.assertEqual(first, second)
 
     def test_text_renderer_mentions_core_sections(self) -> None:
         with patch.object(diagnostics, "_git_state", return_value=_clean_git_state()):
