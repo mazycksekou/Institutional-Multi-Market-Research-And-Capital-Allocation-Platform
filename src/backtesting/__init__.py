@@ -5,6 +5,11 @@ replay planning, and simulation planning. It remains separate from the core
 walk-forward engine so the ownership boundaries are explicit.
 """
 
+from .backtest_report_contracts import (
+    BACKTEST_REPORT_SCHEMA_VERSION,
+    BacktestPerformanceBucketContract,
+    BacktestReportContract,
+)
 from .contracts import BacktestDatasetContract, ReplayPlanContract, SimulationPlanContract
 from .datasets import build_backtest_dataset_contract, validate_backtest_dataset_order
 from .leakage import assert_no_future_timestamps, detect_future_timestamps
@@ -27,6 +32,9 @@ from .simulation import build_simulation_plan, run_simulation_plan
 
 __all__ = [
     "BacktestDatasetContract",
+    "BACKTEST_REPORT_SCHEMA_VERSION",
+    "BacktestPerformanceBucketContract",
+    "BacktestReportContract",
     "ReplayPlanContract",
     "SimulationPlanContract",
     "assert_no_future_timestamps",
