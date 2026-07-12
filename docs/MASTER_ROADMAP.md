@@ -72,7 +72,7 @@ Phase 5.0 completed the historical dataset population layer and certified the fi
 Phase 5.1B completed the reusable feature snapshot population layer from the certified historical dataset batch.
 Phase 5.2 completed reusable mathematical engines.
 Phase 5.3 completed reusable signals.
-Phase 5.4 generates decision rows from events, markets, selections, and feature snapshots.
+Phase 5.4 completed the decision-row generation layer from the certified signal layer.
 Phase 5.5 begins baseline backtesting from frozen, certified inputs.
 Phase 5.6 performs validation and hardening on the production research engine path.
 Later phases continue with paper trading, incremental live updates, Worldview Intelligence, and controlled production deployment.
@@ -116,7 +116,7 @@ Current NFL work is in Phase 5:
 - Phase 5.1B completed the reusable feature snapshot population layer from certified historical dataset rows.
 - Phase 5.2 completed the reusable mathematical engines.
 - Phase 5.3 completed reusable signals.
-- Phase 5.4 will generate decision rows from events, markets, selections, and feature snapshots.
+- Phase 5.4 completed the decision-row generation layer from the certified signal layer.
 - Phase 5.5 will begin baseline backtesting against the minimum certified schema.
 - Phase 5.6 will perform validation and hardening on the production research engine path.
 - Phase 4.9I and Phase 4.9J remain deferred enrichment asset lanes after the first baseline dataset path is established.

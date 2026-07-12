@@ -1547,6 +1547,19 @@ def build_nfl_p0_dashboard_snapshot(
             "status": "signal_population_snapshot_error",
             "warnings": [str(exc)],
         }
+    try:
+        from src.backtesting.decision_row_population import build_decision_row_population_dashboard_snapshot
+
+        decision_layer_snapshot = build_decision_row_population_dashboard_snapshot(
+            storage_path=storage_path,
+            backend=backend,
+        )
+    except Exception as exc:
+        decision_layer_snapshot = {
+            "ok": False,
+            "status": "decision_row_population_snapshot_error",
+            "warnings": [str(exc)],
+        }
     snapshot["table_counts"] = {name: details.get("row_count", 0) for name, details in snapshot.get("table_readiness", {}).items()}
     snapshot["dataset_readiness"] = {
         "status": snapshot.get("status"),
@@ -1606,6 +1619,21 @@ def build_nfl_p0_dashboard_snapshot(
         "dataset_certification_status": signal_layer_snapshot.get("dataset_certification_status", "missing"),
         "lifecycle_state": signal_layer_snapshot.get("lifecycle_state", "missing"),
     }
+    snapshot["decision_layer_readiness"] = {
+        "status": decision_layer_snapshot.get("status", "missing"),
+        "dataset_id": decision_layer_snapshot.get("dataset_id", ""),
+        "batch_id": decision_layer_snapshot.get("batch_id", ""),
+        "decision_row_count": decision_layer_snapshot.get("decision_row_count", 0),
+        "decision_definition_count": decision_layer_snapshot.get("decision_definition_count", 0),
+        "dataset_row_count": decision_layer_snapshot.get("dataset_row_count", 0),
+        "decision_population_summary_id": decision_layer_snapshot.get("decision_population_summary_id", ""),
+        "decision_evidence_package_id": decision_layer_snapshot.get("decision_evidence_package_id", ""),
+        "readiness": decision_layer_snapshot.get("readiness", "blocked"),
+        "validation_state": decision_layer_snapshot.get("validation_state", "missing"),
+        "unresolved_blockers": decision_layer_snapshot.get("unresolved_blockers", []),
+        "dataset_certification_status": decision_layer_snapshot.get("dataset_certification_status", "missing"),
+        "lifecycle_state": decision_layer_snapshot.get("lifecycle_state", "missing"),
+    }
     snapshot["readiness_summary"] = {
         "table_readiness_ready": len(snapshot.get("ready_tables", [])),
         "table_readiness_missing": len(snapshot.get("missing_tables", [])),
@@ -1614,6 +1642,7 @@ def build_nfl_p0_dashboard_snapshot(
         "feature_snapshot_population_status": feature_layer_snapshot.get("status", "missing"),
         "math_engine_population_status": math_layer_snapshot.get("status", "missing"),
         "signal_population_status": signal_layer_snapshot.get("status", "missing"),
+        "decision_row_population_status": decision_layer_snapshot.get("status", "missing"),
     }
     return snapshot
 

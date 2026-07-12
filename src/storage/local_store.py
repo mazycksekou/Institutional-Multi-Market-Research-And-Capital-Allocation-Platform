@@ -297,6 +297,89 @@ def _signal_columns(*columns: tuple[str, str]) -> list[tuple[str, str]]:
     ]
 
 
+def _decision_columns(*columns: tuple[str, str]) -> list[tuple[str, str]]:
+    transformed: list[tuple[str, str]] = []
+    for name, column_type in _signal_columns():
+        if name == "signal_pack":
+            transformed.append(("decision_pack", column_type))
+        elif name == "signal_pack_version":
+            transformed.append(("decision_pack_version", column_type))
+        elif name == "signal_usage_mode":
+            transformed.append(("decision_usage_mode", column_type))
+        elif name == "signal_id":
+            transformed.append(("decision_id", column_type))
+        elif name == "signal_name":
+            transformed.append(("decision_name", column_type))
+        elif name == "signal_family":
+            transformed.append(("decision_family", column_type))
+        elif name == "signal_version":
+            transformed.append(("decision_version", column_type))
+        elif name == "signal_owner":
+            transformed.append(("decision_owner", column_type))
+        elif name == "signal_context_id":
+            transformed.append(("decision_snapshot_context_id", column_type))
+        elif name == "signal_value_json":
+            transformed.append(("decision_value_json", column_type))
+        elif name == "signal_value_text":
+            transformed.append(("decision_value_text", column_type))
+        elif name == "signal_value_number":
+            transformed.append(("decision_value_number", column_type))
+        elif name == "signal_value_boolean":
+            transformed.append(("decision_value_boolean", column_type))
+        elif name == "signal_missingness_state":
+            transformed.append(("decision_missingness_state", column_type))
+        elif name == "signal_missingness_reason":
+            transformed.append(("decision_missingness_reason", column_type))
+        elif name == "signal_definition_json":
+            transformed.append(("decision_definition_json", column_type))
+        elif name == "signal_context_json":
+            transformed.append(("decision_context_json", column_type))
+        elif name == "signal_snapshot_grain_id":
+            transformed.append(("decision_snapshot_grain_id", column_type))
+        elif name == "signal_registry_schema_version":
+            transformed.append(("decision_registry_schema_version", column_type))
+        elif name == "signal_lineage_id":
+            transformed.append(("decision_lineage_id", column_type))
+        elif name == "signal_evidence_id":
+            transformed.append(("decision_evidence_id", column_type))
+        elif name == "signal_count":
+            transformed.append(("decision_count", column_type))
+        elif name == "signal_values_json":
+            transformed.append(("decision_values_json", column_type))
+        elif name == "source_math_values_json":
+            transformed.append((name, column_type))
+            transformed.extend(
+                [
+                    ("source_signal_context_id", "TEXT"),
+                    ("source_signal_dataset_id", "TEXT"),
+                    ("source_signal_dataset_name", "TEXT"),
+                    ("source_signal_batch_id", "TEXT"),
+                    ("source_signal_version_id", "TEXT"),
+                    ("source_signal_certification_id", "TEXT"),
+                    ("source_signal_dataset_certification_id", "TEXT"),
+                    ("source_signal_population_summary_id", "TEXT"),
+                    ("source_signal_evidence_package_id", "TEXT"),
+                    ("source_signal_batch_lineage_id", "TEXT"),
+                    ("source_signal_row_count", "INTEGER"),
+                    ("source_signal_snapshot_count", "INTEGER"),
+                    ("source_signal_definition_count", "INTEGER"),
+                    ("source_signal_ids_json", "TEXT"),
+                    ("source_signal_snapshot_ids_json", "TEXT"),
+                    ("source_signal_lineage_ids_json", "TEXT"),
+                    ("source_signal_certification_ids_json", "TEXT"),
+                    ("source_signal_dataset_certification_ids_json", "TEXT"),
+                    ("source_signal_alignment_certification_ids_json", "TEXT"),
+                    ("source_signal_missingness_json", "TEXT"),
+                    ("source_signal_freshness_json", "TEXT"),
+                    ("source_signal_value_types_json", "TEXT"),
+                    ("source_signal_values_json", "TEXT"),
+                ]
+            )
+        else:
+            transformed.append((name, column_type))
+    return [*transformed, *columns]
+
+
 def _nfl_p0_columns(*columns: tuple[str, str]) -> list[tuple[str, str]]:
     return [
         ("dataset_version", "TEXT"),
@@ -521,6 +604,7 @@ TABLE_DEFINITIONS: dict[str, list[tuple[str, str]]] = {
     ],
     "math_engine_snapshots": _math_engine_columns(),
     "signal_snapshots": _signal_columns(),
+    "decision_rows": _decision_columns(),
     "lineage_edges": [
         ("lineage_edge_id", "TEXT PRIMARY KEY"),
         ("dataset_id", "TEXT"),

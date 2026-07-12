@@ -51,6 +51,9 @@ from src.backtesting.historical_bridge import (
     run_sqlite_historical_backtest,
     summarize_sqlite_historical_backtest,
 )
+from src.backtesting.decision_row_population import (
+    get_decision_row_population_snapshot_for_dashboard as _get_decision_row_population_snapshot_for_dashboard,
+)
 from src.data.source_event_links import (
     build_source_event_link_resolver_snapshot,
     describe_source_event_link_resolver,
@@ -3917,6 +3920,22 @@ def get_signal_population_snapshot_for_dashboard(
 ) -> dict[str, Any]:
     """Return a canonical reusable-signal population readiness snapshot."""
     return _get_signal_population_snapshot_for_dashboard(
+        storage_path=storage_path,
+        backend=backend,
+        dataset_id=dataset_id,
+        batch_id=batch_id,
+    )
+
+
+def get_decision_row_population_snapshot_for_dashboard(
+    storage_path: str | Path | None = None,
+    *,
+    backend: str = "sqlite",
+    dataset_id: str = "dataset.sports.nfl.decision_rows",
+    batch_id: str | None = None,
+) -> dict[str, Any]:
+    """Return a canonical reusable-decision population readiness snapshot."""
+    return _get_decision_row_population_snapshot_for_dashboard(
         storage_path=storage_path,
         backend=backend,
         dataset_id=dataset_id,

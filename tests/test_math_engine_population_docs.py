@@ -67,7 +67,7 @@ def test_math_engine_population_docs_exist_and_cover_required_topics() -> None:
 
     assert "Phase 5.2 - Reusable Mathematical Engines" in project_status_text
     assert "Phase 5.3 - Reusable Signals" in project_status_text
-    assert "Phase 5.3 - Reusable Signals" in next_action_text
+    assert "Phase 5.5 - Baseline Backtesting" in next_action_text
     assert "Phase 5.2 completed reusable mathematical engines." in roadmap_text
     assert "Phase 5.3 completed reusable signals." in roadmap_text
 

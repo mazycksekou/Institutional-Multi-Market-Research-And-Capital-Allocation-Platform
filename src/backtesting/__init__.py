@@ -8,6 +8,20 @@ walk-forward engine so the ownership boundaries are explicit.
 from .contracts import BacktestDatasetContract, ReplayPlanContract, SimulationPlanContract
 from .datasets import build_backtest_dataset_contract, validate_backtest_dataset_order
 from .leakage import assert_no_future_timestamps, detect_future_timestamps
+from .decision_row_population import (
+    build_decision_row_population,
+    build_decision_row_population_dashboard_snapshot,
+    build_decision_snapshot_context,
+    build_decision_snapshot_context_id,
+    build_decision_value_identity,
+    get_decision_definition,
+    get_decision_row_population_snapshot_for_dashboard,
+    list_decision_definition_ids,
+    list_decision_definitions,
+    summarize_decision_registry,
+    validate_decision_registry,
+    validate_decision_rows,
+)
 from .replay import build_replay_plan, plan_replay_rows
 from .simulation import build_simulation_plan, run_simulation_plan
 
@@ -16,11 +30,23 @@ __all__ = [
     "ReplayPlanContract",
     "SimulationPlanContract",
     "assert_no_future_timestamps",
+    "build_decision_row_population",
+    "build_decision_row_population_dashboard_snapshot",
     "build_backtest_dataset_contract",
     "build_replay_plan",
     "build_simulation_plan",
     "detect_future_timestamps",
+    "build_decision_snapshot_context",
+    "build_decision_snapshot_context_id",
+    "build_decision_value_identity",
+    "get_decision_definition",
+    "get_decision_row_population_snapshot_for_dashboard",
     "plan_replay_rows",
     "run_simulation_plan",
+    "list_decision_definition_ids",
+    "list_decision_definitions",
+    "summarize_decision_registry",
+    "validate_decision_registry",
+    "validate_decision_rows",
     "validate_backtest_dataset_order",
 ]

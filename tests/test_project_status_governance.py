@@ -72,6 +72,7 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "docs/architecture/UNIVERSAL_FEATURE_REGISTRY.md" in project_status_text
     assert "docs/architecture/UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md" in project_status_text
     assert "docs/architecture/RESEARCH_ASSET_RUNTIME_FRAMEWORK.md" in project_status_text
+    assert "docs/architecture/DECISION_ROW_POPULATION_LAYER.md" in project_status_text
     assert "docs/contracts/RESEARCH_ASSET_CONTRACT.md" in project_status_text
     assert "docs/reports/PHASE4_5A_MASTER_RESEARCH_ENGINE_SPECIFICATION.md" in project_status_text
     assert "docs/reports/PHASE4_5B_UNIVERSAL_FEATURE_REGISTRY.md" in project_status_text
@@ -82,11 +83,12 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "docs/reports/PHASE4_7C_HISTORICAL_RESEARCH_ASSET_CERTIFICATION_RUNTIME.md" in project_status_text
     assert "docs/reports/PHASE4_9A_NFL_SCHEDULE_RESEARCH_ASSET_POPULATION.md" in project_status_text
     assert "docs/reports/PHASE4_9E_NFL_ODDS_RESEARCH_ASSET_POPULATION.md" in project_status_text
+    assert "docs/reports/PHASE5_4_DECISION_ROW_GENERATION.md" in project_status_text
 
+    assert "Phase 5.5 - Baseline Backtesting" in next_action_text
     assert "Phase 5.4 - Decision Row Generation" in next_action_text
-    assert "Phase 5.3 - Reusable Signals" in next_action_text
-    assert "canonical connector" in next_action_text.lower()
-    assert "Do not backtest." in next_action_text
+    assert "decision rows" in next_action_text.lower()
+    assert "frozen, certified inputs" in next_action_text.lower()
     assert "validation commands" in next_action_text.lower()
 
     assert "Every new session begins with `docs/PROJECT_STATUS.md`." in status_policy_text
@@ -119,6 +121,8 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "Phase 5.0 completed the historical dataset population layer" in roadmap_text
     assert "Phase 5.1B completed the reusable feature snapshot population layer from certified historical dataset rows." in roadmap_text
     assert "Phase 5.2 completed reusable mathematical engines." in roadmap_text
+    assert "Phase 5.3 completed reusable signals." in roadmap_text
+    assert "Phase 5.4 completed the decision-row generation layer from the certified signal layer." in roadmap_text
     assert "docs/PROJECT_STATUS.md" in roadmap_text
     assert "docs/NEXT_ACTION.md" in roadmap_text
     assert "docs/STATUS_UPDATE_POLICY.md" in roadmap_text
@@ -142,6 +146,7 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "docs/architecture/UNIVERSAL_FEATURE_REGISTRY.md" in master_index_text
     assert "docs/architecture/UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md" in master_index_text
     assert "docs/architecture/RESEARCH_ASSET_RUNTIME_FRAMEWORK.md" in master_index_text
+    assert "docs/architecture/DECISION_ROW_POPULATION_LAYER.md" in master_index_text
     assert "docs/architecture/HISTORICAL_RESEARCH_DATABASE.md" in master_index_text
     assert "docs/contracts/RESEARCH_ASSET_CONTRACT.md" in master_index_text
 
@@ -157,6 +162,7 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "docs/architecture/NFL_ODDS_RESEARCH_ASSET.md" in retention_index_text
     assert "docs/reports/PHASE4_9A_NFL_SCHEDULE_RESEARCH_ASSET_POPULATION.md" in retention_index_text
     assert "docs/reports/PHASE4_9E_NFL_ODDS_RESEARCH_ASSET_POPULATION.md" in retention_index_text
+    assert "docs/reports/PHASE5_4_DECISION_ROW_GENERATION.md" in retention_index_text
 
 
 def test_project_status_governance_has_no_duplicate_status_files() -> None:

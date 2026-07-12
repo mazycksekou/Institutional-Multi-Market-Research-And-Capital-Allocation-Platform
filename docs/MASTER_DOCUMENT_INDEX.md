@@ -22,6 +22,7 @@ This index points readers to the current truth and the durable historical entry 
 - `docs/architecture/DOCUMENTATION_MAP.md` - Documentation Map
 - `docs/architecture/DOCUMENT_LIFECYCLE_POLICY.md` - Document Lifecycle Policy
 - `docs/architecture/FEATURE_SNAPSHOT_POPULATION_LAYER.md` - Feature Snapshot Population Layer
+- `docs/architecture/DECISION_ROW_POPULATION_LAYER.md` - Decision Row Population Layer
 - `docs/architecture/MATH_ENGINE_POPULATION_LAYER.md` - Math Engine Population Layer
 - `docs/architecture/SIGNAL_POPULATION_LAYER.md` - Signal Population Layer
 - `docs/architecture/FEATURE_STORE_ARCHITECTURE.md` - Feature Store Architecture
@@ -159,6 +160,7 @@ This index points readers to the current truth and the durable historical entry 
 - `docs/reports/PHASE5_1B_FEATURE_SNAPSHOT_POPULATION.md` - Phase 5.1B Feature Snapshot Population
 - `docs/reports/PHASE5_2_REUSABLE_MATHEMATICAL_ENGINES.md` - Phase 5.2 Reusable Mathematical Engines
 - `docs/reports/PHASE5_3_REUSABLE_SIGNALS.md` - Phase 5.3 Reusable Signals
+- `docs/reports/PHASE5_4_DECISION_ROW_GENERATION.md` - Phase 5.4 Decision Row Generation
 
 ### INDEX
 - `docs/DOCUMENT_RETENTION_INDEX.md` - Policy Note
