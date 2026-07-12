@@ -4,6 +4,10 @@
 
 `Phase 5.5 - Baseline Backtesting`
 
+## Execution Policy
+
+Follow `docs/architecture/REPOSITORY_OS.md` for discovery, validation, and ownership rules. This file owns sequencing only and remains the sole sequencing source.
+
 ## Previous Phase
 
 `Phase 5.4 - Decision Row Generation` completed the first reusable NFL decision-row layer from the certified signal outputs and certified event context. It exposed decision readiness, lineage, certification, evidence-package, planner, dashboard, and NFL P0 reporting.

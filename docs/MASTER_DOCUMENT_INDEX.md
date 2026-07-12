@@ -6,25 +6,24 @@ This index points readers to the current truth and the durable historical entry 
 
 ### ARCHITECTURE DOCUMENT
 - `docs/MASTER_ROADMAP.md` - Universal Market Lifecycle
-- `docs/NEXT_ACTION.md` - Next Phase
+- `docs/NEXT_ACTION.md` - Next Action
 - `docs/PROJECT_STATUS.md` - Active Canonical Rules
 - `docs/architecture/ARCHITECTURE_ENFORCEMENT_CURRENT_STATE.md` - Architecture Enforcement Current State
 - `docs/architecture/ARCHITECTURE_IMPORT_RULES.md` - Architecture Import Rules
 - `docs/architecture/ARCHITECTURE_RULES.md` - Architecture Rules
 - `docs/architecture/AUDIT_LIFECYCLE_POLICY.md` - Audit Lifecycle Policy
 - `docs/architecture/CANONICAL_OWNERSHIP_MAP.md` - Canonical Ownership Map
+- `docs/architecture/CHANGE_IMPACT_MATRIX.md` - Change Impact Matrix
 - `docs/architecture/COMPLETE_STORAGE_BLUEPRINT.md` - Complete Storage Blueprint
 - `docs/architecture/CONFIGURATION_MAP.md` - Configuration Map
 - `docs/architecture/CONNECTOR_OWNERSHIP_MAP.md` - Connector Ownership Map
 - `docs/architecture/DATA_FLOW_MAP.md` - Data Flow Map
+- `docs/architecture/DECISION_ROW_POPULATION_LAYER.md` - Decision Row Population Layer
 - `docs/architecture/DEPENDENCY_FLOW_MAP.md` - Dependency Flow Map
 - `docs/architecture/DOCUMENTATION_GOVERNANCE.md` - Documentation Governance
 - `docs/architecture/DOCUMENTATION_MAP.md` - Documentation Map
 - `docs/architecture/DOCUMENT_LIFECYCLE_POLICY.md` - Document Lifecycle Policy
 - `docs/architecture/FEATURE_SNAPSHOT_POPULATION_LAYER.md` - Feature Snapshot Population Layer
-- `docs/architecture/DECISION_ROW_POPULATION_LAYER.md` - Decision Row Population Layer
-- `docs/architecture/MATH_ENGINE_POPULATION_LAYER.md` - Math Engine Population Layer
-- `docs/architecture/SIGNAL_POPULATION_LAYER.md` - Signal Population Layer
 - `docs/architecture/FEATURE_STORE_ARCHITECTURE.md` - Feature Store Architecture
 - `docs/architecture/FINAL_REPOSITORY_STRUCTURE.md` - Final Repository Structure
 - `docs/architecture/HISTORICAL_DATASET_ACQUISITION_FRAMEWORK.md` - Historical Dataset Acquisition Framework
@@ -36,36 +35,42 @@ This index points readers to the current truth and the durable historical entry 
 - `docs/architecture/MARKET_VERTICAL_LIFECYCLE.md` - Canonical Sequence
 - `docs/architecture/MASTER_RESEARCH_ENGINE_SPECIFICATION.md` - What This Spec Owns
 - `docs/architecture/MASTER_SYSTEM_ARCHITECTURE.md` - 1. Platform Purpose
+- `docs/architecture/MATH_ENGINE_POPULATION_LAYER.md` - Math Engine Population Layer
 - `docs/architecture/MODEL_FLOW_MAP.md` - Model Flow Map
 - `docs/architecture/MODEL_REGISTRY_ARCHITECTURE.md` - Model Registry Architecture
 - `docs/architecture/MODULE_DEPENDENCY_MAP.md` - Module Dependency Map
+- `docs/architecture/NFL_INJURIES_RESEARCH_ASSET.md` - NFL Injuries Research Asset
+- `docs/architecture/NFL_ODDS_RESEARCH_ASSET.md` - NFL Odds Research Asset
 - `docs/architecture/NFL_P0_DATA_FOUNDATION.md` - Canonical ownership
+- `docs/architecture/NFL_RESULTS_RESEARCH_ASSET.md` - NFL Results Research Asset
+- `docs/architecture/NFL_SCHEDULE_CONNECTOR.md` - NFL Schedule Connector
+- `docs/architecture/NFL_SCHEDULE_RESEARCH_ASSET.md` - NFL Schedule Research Asset
+- `docs/architecture/NFL_TEAM_STATISTICS_RESEARCH_ASSET.md` - NFL Team Statistics Research Asset
+- `docs/architecture/NFL_WEATHER_RESEARCH_ASSET.md` - NFL Weather Research Asset
 - `docs/architecture/OPENAPI_CONTRACT_GOVERNANCE.md` - OpenAPI Contract Governance
 - `docs/architecture/PRODUCTION_READINESS.md` - Production Readiness
 - `docs/architecture/PROVIDER_OWNERSHIP_MAP.md` - Provider Ownership Map
 - `docs/architecture/REPOSITORY_INDEPENDENCE_SCORECARD.md` - Repository Independence Scorecard
 - `docs/architecture/REPOSITORY_MODERNIZATION_COMPLETE_V1.md` - Repository Modernization Complete V1
+- `docs/architecture/REPOSITORY_OS.md` - Repository OS
+- `docs/architecture/RESEARCH_ASSET_COVERAGE_AND_PROVIDER_SELECTION_FRAMEWORK.md` - Research Asset Coverage And Provider Selection Framework
 - `docs/architecture/RESEARCH_ASSET_LIFECYCLE_RUNTIME.md` - Research Asset Lifecycle Runtime
 - `docs/architecture/RESEARCH_ASSET_RUNTIME_FRAMEWORK.md` - Purpose
-- `docs/architecture/NFL_SCHEDULE_RESEARCH_ASSET.md` - NFL Schedule Research Asset
-- `docs/architecture/NFL_SCHEDULE_CONNECTOR.md` - NFL Schedule Connector
-- `docs/architecture/NFL_RESULTS_RESEARCH_ASSET.md` - NFL Results Research Asset
-- `docs/architecture/NFL_INJURIES_RESEARCH_ASSET.md` - NFL Injuries Research Asset
-- `docs/architecture/NFL_TEAM_STATISTICS_RESEARCH_ASSET.md` - NFL Team Statistics Research Asset
-- `docs/architecture/NFL_WEATHER_RESEARCH_ASSET.md` - NFL Weather Research Asset
 - `docs/architecture/RESEARCH_ASSET_SOURCE_DISCOVERY_AND_CONNECTOR_MAPPING.md` - Research Asset Source Discovery And Connector Mapping
-- `docs/architecture/RESEARCH_ASSET_COVERAGE_AND_PROVIDER_SELECTION_FRAMEWORK.md` - Research Asset Coverage And Provider Selection Framework
 - `docs/architecture/RESEARCH_PLATFORM_ARCHITECTURE.md` - Research Platform Architecture
 - `docs/architecture/REVIEWER_GUIDE.md` - Reviewer Guide
 - `docs/architecture/RUNTIME_FLOW_MAP.md` - Runtime Flow Map
 - `docs/architecture/SCHEDULER_NAME_RETIREMENT_MAP.md` - Scheduler Name Retirement Map
+- `docs/architecture/SIGNAL_POPULATION_LAYER.md` - Signal Population Layer
 - `docs/architecture/STORAGE_DIRECTORY_MAP.md` - Storage Directory Map
 - `docs/architecture/STORAGE_LAYER_DOCUMENTATION.md` - Storage Layer Documentation
 - `docs/architecture/STREAMLIT_DATA_PIPELINE.md` - Streamlit Data Pipeline
+- `docs/architecture/SUBSYSTEM_DEPENDENCY_MAP.md` - Subsystem Dependency Map
 - `docs/architecture/SYSTEM_OVERVIEW.md` - System Overview
 - `docs/architecture/TERMINOLOGY_STANDARD.md` - Terminology Standard
 - `docs/architecture/UNIVERSAL_FEATURE_REGISTRY.md` - Canonical Owners Reused
 - `docs/architecture/UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md` - Canonical Owners Reused
+- `docs/architecture/VALIDATION_OWNERSHIP_MAP.md` - Validation Ownership Map
 - `docs/architecture/VENDOR_NEUTRALITY_AND_OPENAPI_NAMING.md` - Vendor Neutrality And OpenAPI Naming
 
 ### AUDIT REPORT
@@ -139,32 +144,9 @@ This index points readers to the current truth and the durable historical entry 
 - `docs/reports/gap_analysis/COMPLETE_GAP_ANALYSIS.md` - Complete Gap Analysis
 - `docs/reports/gap_analysis/IMPLEMENTATION_READINESS_REPORT.md` - Implementation Readiness Report
 
-### PHASE REPORT
-- `docs/reports/PHASE4_7A_RESEARCH_ASSET_SOURCE_DISCOVERY_AND_CONNECTOR_MAPPING.md` - Phase 4.7A Research Asset Source Discovery And Connector Mapping
-- `docs/reports/PHASE4_7B_HISTORICAL_DATASET_ACQUISITION_RUNTIME.md` - Phase 4.7B Historical Dataset Acquisition Runtime
-- `docs/reports/PHASE4_7C_HISTORICAL_RESEARCH_ASSET_CERTIFICATION_RUNTIME.md` - Phase 4.7C Historical Research Asset Certification Runtime
-- `docs/reports/PHASE4_8_RESEARCH_ASSET_LIFECYCLE_RUNTIME_AND_TIME_ENTITY_ALIGNMENT_CERTIFICATION.md` - Phase 4.8 Research Asset Lifecycle Runtime And Time & Entity Alignment Certification
-- `docs/reports/PHASE4_9A_NFL_SCHEDULE_RESEARCH_ASSET_POPULATION.md` - Phase 4.9A NFL Schedule Research Asset Population
-- `docs/reports/PHASE4_9B_RESEARCH_ASSET_COVERAGE_PLANNER_AND_PROVIDER_SELECTION_FRAMEWORK.md` - Phase 4.9B Research Asset Coverage Planner And Provider Selection Framework
-- `docs/reports/PHASE4_9C_FIRST_PRODUCTION_NFL_SCHEDULE_CONNECTOR.md` - Phase 4.9C First Production NFL Schedule Connector
-- `docs/reports/PHASE4_9D_NFL_RESULTS_RESEARCH_ASSET_POPULATION.md` - Phase 4.9D NFL Results Research Asset Population
-- `docs/architecture/NFL_ODDS_RESEARCH_ASSET.md` - NFL Odds Research Asset
-- `docs/reports/PHASE4_9E_NFL_ODDS_RESEARCH_ASSET_POPULATION.md` - Phase 4.9E NFL Odds Research Asset Population
-- `docs/architecture/NFL_WEATHER_RESEARCH_ASSET.md` - NFL Weather Research Asset
-- `docs/reports/PHASE4_9F_NFL_WEATHER_RESEARCH_ASSET_POPULATION.md` - Phase 4.9F NFL Weather Research Asset Population
-- `docs/architecture/NFL_INJURIES_RESEARCH_ASSET.md` - NFL Injuries Research Asset
-- `docs/reports/PHASE4_9G_NFL_INJURIES_RESEARCH_ASSET_POPULATION.md` - Phase 4.9G NFL Injuries Research Asset Population
-- `docs/architecture/NFL_TEAM_STATISTICS_RESEARCH_ASSET.md` - NFL Team Statistics Research Asset
-- `docs/reports/PHASE4_9H_NFL_TEAM_STATISTICS_RESEARCH_ASSET_POPULATION.md` - Phase 4.9H NFL Team Statistics Research Asset Population
-- `docs/reports/PHASE5_0_HISTORICAL_DATASET_POPULATION_LAYER.md` - Phase 5.0 Historical Dataset Population Layer
-- `docs/reports/PHASE5_1B_FEATURE_SNAPSHOT_POPULATION.md` - Phase 5.1B Feature Snapshot Population
-- `docs/reports/PHASE5_2_REUSABLE_MATHEMATICAL_ENGINES.md` - Phase 5.2 Reusable Mathematical Engines
-- `docs/reports/PHASE5_3_REUSABLE_SIGNALS.md` - Phase 5.3 Reusable Signals
-- `docs/reports/PHASE5_4_DECISION_ROW_GENERATION.md` - Phase 5.4 Decision Row Generation
-
 ### INDEX
-- `docs/DOCUMENT_RETENTION_INDEX.md` - Policy Note
-- `docs/MASTER_DOCUMENT_INDEX.md` - Current Truth
+- `docs/DOCUMENT_RETENTION_INDEX.md` - Document Retention Index
+- `docs/MASTER_DOCUMENT_INDEX.md` - Master Document Index
 
 ### MATRIX
 - `docs/reports/matrices/ASSET_CLASS_CAPABILITY_MATRIX.md` - Asset Class Capability Matrix

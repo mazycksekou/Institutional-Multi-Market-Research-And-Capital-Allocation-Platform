@@ -93,6 +93,8 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
 
     assert "Every new session begins with `docs/PROJECT_STATUS.md`." in status_policy_text
     assert "single required repository entrypoint" in status_policy_text
+    assert "docs/architecture/REPOSITORY_OS.md" in status_policy_text
+    assert "sole sequencing source" in status_policy_text.lower()
     assert "Every Codex task must update the canonical project status." in status_policy_text
     assert "Every Codex task must update the canonical next-action file." in status_policy_text
     assert "MASTER_DOCUMENT_INDEX.md" in status_policy_text
@@ -125,6 +127,7 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "Phase 5.4 completed the decision-row generation layer from the certified signal layer." in roadmap_text
     assert "docs/PROJECT_STATUS.md" in roadmap_text
     assert "docs/NEXT_ACTION.md" in roadmap_text
+    assert "docs/architecture/REPOSITORY_OS.md" in roadmap_text
     assert "docs/STATUS_UPDATE_POLICY.md" in roadmap_text
     assert "docs/architecture/MASTER_RESEARCH_ENGINE_SPECIFICATION.md" in roadmap_text
     assert "docs/architecture/NFL_ODDS_RESEARCH_ASSET.md" in roadmap_text
@@ -139,6 +142,7 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "docs/PROJECT_STATUS.md" in master_index_text
     assert "docs/NEXT_ACTION.md" in master_index_text
     assert "docs/STATUS_UPDATE_POLICY.md" in master_index_text
+    assert "docs/architecture/REPOSITORY_OS.md" in master_index_text
     assert "docs/architecture/MASTER_RESEARCH_ENGINE_SPECIFICATION.md" in master_index_text
     assert "docs/architecture/NFL_SCHEDULE_RESEARCH_ASSET.md" in master_index_text
     assert "docs/architecture/NFL_ODDS_RESEARCH_ASSET.md" in master_index_text
@@ -152,6 +156,7 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
 
     assert "docs/reports/PROJECT_ENTRYPOINT_AUDIT.md" in retention_index_text
     assert "docs/reports/PROJECT_STATUS_GOVERNANCE_DISCOVERY.md" in retention_index_text
+    assert "docs/architecture/REPOSITORY_OS.md" in retention_index_text
     assert "docs/reports/PHASE4_7A_RESEARCH_ASSET_SOURCE_DISCOVERY_AND_CONNECTOR_MAPPING.md" in retention_index_text
     assert "docs/reports/PHASE4_5A_MASTER_RESEARCH_ENGINE_SPECIFICATION.md" in retention_index_text
     assert "docs/reports/PHASE4_5B_UNIVERSAL_FEATURE_REGISTRY.md" in retention_index_text

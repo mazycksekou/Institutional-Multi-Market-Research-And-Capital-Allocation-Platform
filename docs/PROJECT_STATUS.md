@@ -71,6 +71,7 @@ Canonical live status for the repository and the required starting document for 
 - Dataset certification is gated on the required research assets passing first.
 - Research assets advance through one canonical lifecycle and must satisfy time/entity alignment before lifecycle promotion.
 - Historical dataset population derives one deterministic game-level cutoff from scheduled kickoff minus five minutes; predictor assets select their latest eligible evidence independently at or before that cutoff, while results remain label-only.
+- `docs/architecture/REPOSITORY_OS.md` is the canonical execution policy for repository work, and `docs/NEXT_ACTION.md` remains the sole sequencing source.
 - Events own shared context.
 - Markets belong to events.
 - Selections belong to markets.
@@ -88,6 +89,7 @@ Read these only when you need more detail than the project status page provides:
 
 - `docs/MASTER_ROADMAP.md`
 - `docs/NEXT_ACTION.md`
+- `docs/architecture/REPOSITORY_OS.md`
 - `docs/MASTER_DOCUMENT_INDEX.md`
 - `docs/STATUS_UPDATE_POLICY.md`
 - `docs/DOCUMENT_RETENTION_INDEX.md`

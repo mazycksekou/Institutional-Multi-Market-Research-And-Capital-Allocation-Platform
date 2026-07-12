@@ -8,6 +8,8 @@ This policy defines how Codex and future contributors keep the repository's live
 
 - Every new session begins with `docs/PROJECT_STATUS.md`.
 - `docs/PROJECT_STATUS.md` is the single required repository entrypoint.
+- `docs/architecture/REPOSITORY_OS.md` is the canonical execution policy for discovery, validation, and ownership.
+- `docs/NEXT_ACTION.md` is the sole sequencing source.
 - Supporting documents are consulted only as needed.
 - No future prompt should direct contributors to multiple master documents first.
 - Every Codex task must update the canonical project status.
@@ -22,6 +24,7 @@ This policy defines how Codex and future contributors keep the repository's live
 - `docs/MASTER_ROADMAP.md`
 - `docs/PROJECT_STATUS.md`
 - `docs/NEXT_ACTION.md`
+- `docs/architecture/REPOSITORY_OS.md`
 - `docs/STATUS_UPDATE_POLICY.md`
 
 ## Required Final Report Note

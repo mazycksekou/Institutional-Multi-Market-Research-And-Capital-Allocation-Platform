@@ -36,6 +36,7 @@ The repository does **not** skip discovery, blueprinting, validation, or reprodu
 - Multiple providers may contribute to one dataset.
 - The first production backtests use only the certified minimum schema.
 - Advanced metrics remain inactive until their data, math, and validation maturity are proven.
+- `docs/architecture/REPOSITORY_OS.md` is the canonical execution policy for repository work, and `docs/NEXT_ACTION.md` remains the sole sequencing source.
 - Events own shared information such as weather, officials, injuries, coaching, kickoff, stadium, rest, and travel.
 - Markets belong to events.
 - Selections belong to markets.
