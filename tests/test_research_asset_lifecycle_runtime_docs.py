@@ -76,7 +76,7 @@ def test_research_asset_lifecycle_runtime_docs_exist_and_cover_required_topics()
     assert "Phase 5.0 completed the historical dataset population layer" in roadmap_text
     assert "Phase 5.1B completed the reusable feature snapshot population layer" in roadmap_text
     assert "Phase 5.2 completed reusable mathematical engines." in roadmap_text
-    assert "Phase 5.3 implements reusable signals." in roadmap_text
+    assert "Phase 5.3 completed reusable signals." in roadmap_text
     assert "Phase 5.4 generates decision rows from events, markets, selections, and feature snapshots." in roadmap_text
     assert "Phase 5.5 begins baseline backtesting from frozen, certified inputs." in roadmap_text
     assert "Phase 5.6 performs validation and hardening on the production research engine path." in roadmap_text

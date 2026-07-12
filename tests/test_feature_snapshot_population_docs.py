@@ -60,8 +60,8 @@ def test_feature_snapshot_population_docs_exist_and_cover_required_topics() -> N
     assert "Senior Systems Engineer Review" in report_text
     assert "Worldview / Research Query Engine Review" in report_text
 
-    assert "Phase 5.2 - Reusable Mathematical Engines (complete)" in project_status_text
-    assert "Phase 5.2 - Reusable Mathematical Engines (complete)" in project_status_text
+    assert "Phase 5.3 - Reusable Signals (complete)" in project_status_text
+    assert "Phase 5.3 - Reusable Signals (complete)" in project_status_text
     assert "Phase 5.3 - Reusable Signals" in next_action_text
     assert "Phase 5.1B completed the reusable feature snapshot population layer" in roadmap_text
     assert "Phase 5.2 completed reusable mathematical engines." in roadmap_text

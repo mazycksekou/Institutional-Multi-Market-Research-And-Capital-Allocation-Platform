@@ -96,6 +96,9 @@ from src.data.historical_research_database import (
 )
 from src.data.feature_registry import build_feature_snapshot_population_dashboard_snapshot
 from src.data.math_engine_population import build_math_engine_population_dashboard_snapshot
+from src.market_intelligence.signal_population import (
+    get_signal_population_snapshot_for_dashboard as _get_signal_population_snapshot_for_dashboard,
+)
 from src.market_intelligence.research_asset_coverage_planner import build_research_asset_coverage_planner_dashboard_snapshot
 from src.research.feature_control import run_calibration_strategy_filter
 from src.research.history import (
@@ -3903,6 +3906,22 @@ def get_math_engine_population_snapshot_for_dashboard(
             "warnings": [str(exc)],
             "idempotent_reuse": False,
         }
+
+
+def get_signal_population_snapshot_for_dashboard(
+    storage_path: str | Path | None = None,
+    *,
+    backend: str = "sqlite",
+    dataset_id: str = "dataset.sports.nfl.signal_snapshots",
+    batch_id: str | None = None,
+) -> dict[str, Any]:
+    """Return a canonical reusable-signal population readiness snapshot."""
+    return _get_signal_population_snapshot_for_dashboard(
+        storage_path=storage_path,
+        backend=backend,
+        dataset_id=dataset_id,
+        batch_id=batch_id,
+    )
 
 
 def get_historical_dataset_acquisition_runtime_snapshot_for_dashboard(

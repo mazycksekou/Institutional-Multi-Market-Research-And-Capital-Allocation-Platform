@@ -46,7 +46,7 @@ def test_nfl_odds_research_asset_population_docs_exist_and_cover_required_topics
     assert "Senior Systems Engineer Review" in report_text
     assert "Worldview Intelligence Review" in report_text
 
-    assert "Phase 5.2 - Reusable Mathematical Engines (complete)" in project_status_text
+    assert "Phase 5.3 - Reusable Signals (complete)" in project_status_text
     assert "Phase 5.3 - Reusable Signals" in next_action_text
     assert "docs/architecture/NFL_ODDS_RESEARCH_ASSET.md" in project_status_text
     assert "docs/reports/PHASE4_9E_NFL_ODDS_RESEARCH_ASSET_POPULATION.md" in project_status_text

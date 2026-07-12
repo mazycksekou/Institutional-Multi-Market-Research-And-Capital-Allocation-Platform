@@ -1534,6 +1534,19 @@ def build_nfl_p0_dashboard_snapshot(
             "status": "math_engine_population_snapshot_error",
             "warnings": [str(exc)],
         }
+    try:
+        from src.market_intelligence.signal_population import get_signal_population_snapshot_for_dashboard
+
+        signal_layer_snapshot = get_signal_population_snapshot_for_dashboard(
+            storage_path=storage_path,
+            backend=backend,
+        )
+    except Exception as exc:
+        signal_layer_snapshot = {
+            "ok": False,
+            "status": "signal_population_snapshot_error",
+            "warnings": [str(exc)],
+        }
     snapshot["table_counts"] = {name: details.get("row_count", 0) for name, details in snapshot.get("table_readiness", {}).items()}
     snapshot["dataset_readiness"] = {
         "status": snapshot.get("status"),
@@ -1578,6 +1591,21 @@ def build_nfl_p0_dashboard_snapshot(
         "readiness": math_layer_snapshot.get("readiness", "missing"),
         "unresolved_blockers": math_layer_snapshot.get("unresolved_blockers", []),
     }
+    snapshot["signal_layer_readiness"] = {
+        "status": signal_layer_snapshot.get("status", "missing"),
+        "dataset_id": signal_layer_snapshot.get("dataset_id", ""),
+        "batch_id": signal_layer_snapshot.get("batch_id", ""),
+        "signal_row_count": signal_layer_snapshot.get("signal_row_count", 0),
+        "signal_definition_count": signal_layer_snapshot.get("signal_definition_count", 0),
+        "dataset_row_count": signal_layer_snapshot.get("dataset_row_count", 0),
+        "signal_population_summary_id": signal_layer_snapshot.get("signal_population_summary_id", ""),
+        "signal_evidence_package_id": signal_layer_snapshot.get("signal_evidence_package_id", ""),
+        "readiness": signal_layer_snapshot.get("readiness", "blocked"),
+        "validation_state": signal_layer_snapshot.get("validation_state", "missing"),
+        "unresolved_blockers": signal_layer_snapshot.get("unresolved_blockers", []),
+        "dataset_certification_status": signal_layer_snapshot.get("dataset_certification_status", "missing"),
+        "lifecycle_state": signal_layer_snapshot.get("lifecycle_state", "missing"),
+    }
     snapshot["readiness_summary"] = {
         "table_readiness_ready": len(snapshot.get("ready_tables", [])),
         "table_readiness_missing": len(snapshot.get("missing_tables", [])),
@@ -1585,6 +1613,7 @@ def build_nfl_p0_dashboard_snapshot(
         "historical_dataset_population_status": dataset_layer_snapshot.get("status", "missing"),
         "feature_snapshot_population_status": feature_layer_snapshot.get("status", "missing"),
         "math_engine_population_status": math_layer_snapshot.get("status", "missing"),
+        "signal_population_status": signal_layer_snapshot.get("status", "missing"),
     }
     return snapshot
 

@@ -71,7 +71,7 @@ Phase 4.9H completed the NFL team statistics research asset population and close
 Phase 5.0 completed the historical dataset population layer and certified the first deterministic NFL minimum-schema dataset batch.
 Phase 5.1B completed the reusable feature snapshot population layer from the certified historical dataset batch.
 Phase 5.2 completed reusable mathematical engines.
-Phase 5.3 implements reusable signals.
+Phase 5.3 completed reusable signals.
 Phase 5.4 generates decision rows from events, markets, selections, and feature snapshots.
 Phase 5.5 begins baseline backtesting from frozen, certified inputs.
 Phase 5.6 performs validation and hardening on the production research engine path.
@@ -115,7 +115,7 @@ Current NFL work is in Phase 5:
 - Phase 5.0 completed the historical dataset population layer and certified the first deterministic NFL minimum-schema dataset batch.
 - Phase 5.1B completed the reusable feature snapshot population layer from certified historical dataset rows.
 - Phase 5.2 completed the reusable mathematical engines.
-- Phase 5.3 will implement reusable signals.
+- Phase 5.3 completed reusable signals.
 - Phase 5.4 will generate decision rows from events, markets, selections, and feature snapshots.
 - Phase 5.5 will begin baseline backtesting against the minimum certified schema.
 - Phase 5.6 will perform validation and hardening on the production research engine path.
