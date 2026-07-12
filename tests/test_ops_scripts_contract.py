@@ -9,6 +9,7 @@ class TestOpsScriptsContract(unittest.TestCase):
     def test_required_scripts_exist(self):
         for relative in (
             "scripts/ops_check.py",
+            "scripts/run_quality_gates.py",
             "scripts/setup_dev.ps1",
             "scripts/check_local.ps1",
             "scripts/check_render.ps1",
@@ -32,23 +33,21 @@ class TestOpsScriptsContract(unittest.TestCase):
         for arg in ("--input", "--paths"):
             self.assertIn(arg, script)
 
-    def test_docs_file_exists(self):
-        docs = ROOT / "docs/operations/OPS_WORKFLOW.md"
-        self.assertTrue(docs.exists())
-        text = docs.read_text(encoding="utf-8")
-        self.assertIn(".\\scripts\\check_local.ps1", text)
-        self.assertIn("canonical workflow is Python-first", text)
-        self.assertIn("PowerShell scripts remain as optional Windows convenience wrappers", text)
-
-    def test_repository_validation_workflow_uses_full_checkout_history(self):
+    def test_repository_validation_workflow_uses_canonical_quality_gate(self):
         workflow = ROOT / ".github/workflows/repository-validation.yml"
         self.assertTrue(workflow.exists())
         text = workflow.read_text(encoding="utf-8")
         self.assertIn("fetch-depth: 0", text)
-        self.assertIn('python-version: "3.12.11"', text)
-        self.assertIn("python -m pip install -r requirements.txt", text)
-        self.assertIn("python -m pip install -r requirements-dev.txt", text)
-        self.assertIn("python scripts/ops_check.py --mode local --output text --skip-network", text)
+        self.assertIn('python-version: "3.12"', text)
+        self.assertIn("main", text)
+        self.assertIn("feature/nfl-backtesting", text)
+        self.assertIn("python scripts/run_quality_gates.py --install", text)
+
+    def test_canonical_quality_gate_is_documented(self):
+        expected = "./.venv/bin/python scripts/run_quality_gates.py --install"
+        for relative in ("README.md", "docs/development/CONTRIBUTING.md", "scripts/setup_dev.ps1"):
+            text = (ROOT / relative).read_text(encoding="utf-8")
+            self.assertIn(expected, text, relative)
 
     def test_requirements_and_pytest_config_exist(self):
         self.assertTrue((ROOT / "requirements-dev.txt").exists())
