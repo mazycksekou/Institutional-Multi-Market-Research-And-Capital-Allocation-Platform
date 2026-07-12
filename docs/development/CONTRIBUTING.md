@@ -13,19 +13,16 @@ Thanks for keeping the repository disciplined and reviewable.
 
 1. Make a focused change
 2. Run the pre-flight safety check before starting work and again before handoff
-3. Run the relevant local validation
+3. Run the canonical local validation command
 4. Update docs if the contract or ownership changes
 5. Commit once the change is clean
 6. Push to the branch after validation
 
 ## Required Local Checks
 
-- `python scripts/check_root_markdown.py`
-- `python scripts/check_openapi_contract.py --output text`
-- `python scripts/check_architecture.py --output text`
-- `python scripts/ops_check.py --mode local --output text --skip-network`
-- `python -m compileall src tests scripts`
-- `pytest -m smoke -q`
+- `./.venv/bin/python scripts/run_quality_gates.py --install`
+
+Use the canonical command above for dependency installation and the full validation pass. Re-run targeted checks only when you are isolating a failure.
 
 ## When to Update Tests
 

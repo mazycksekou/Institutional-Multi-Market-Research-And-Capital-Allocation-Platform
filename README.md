@@ -15,6 +15,15 @@ Data
 The public product surface should follow the canonical research/backtest workflow.
 There is no separate fake, paper, or testing-room product architecture.
 
+## Local Quality Gates
+Use the canonical command below for a full local validation run that installs dependencies first and then executes the repository checks in order:
+
+```bash
+./.venv/bin/python scripts/run_quality_gates.py --install
+```
+
+The runner performs dependency installation, `pip check`, `compileall`, repository contract checks, the local ops check, and the full pytest suite.
+
 ## Architecture Boundaries
 - `src/core/` is pure math only: no API calls, no Streamlit imports, no database writes.
 - `providers/` and provider adapters normalize external vendor data and do not own EV/Kelly/risk policy.

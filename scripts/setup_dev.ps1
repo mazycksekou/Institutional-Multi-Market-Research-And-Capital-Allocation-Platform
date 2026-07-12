@@ -18,10 +18,8 @@ if (Test-Path "requirements-dev.txt") {
 
 Write-Host ""
 Write-Host "Developer environment is ready."
-Write-Host "Next commands:"
-Write-Host "  .\scripts\check_local.ps1"
-Write-Host "  .\scripts\check_render.ps1"
-Write-Host "  .\scripts\check_cron.ps1"
-Write-Host "  .\scripts\check_all.ps1"
-Write-Host "  .\scripts\run_tests.ps1 -Mode quick"
+Write-Host "Canonical quality gate:"
+Write-Host "  ./.venv/bin/python scripts/run_quality_gates.py --install"
+Write-Host "PowerShell alternative:"
+Write-Host "  .\.venv\Scripts\python.exe scripts/run_quality_gates.py --install"
 
