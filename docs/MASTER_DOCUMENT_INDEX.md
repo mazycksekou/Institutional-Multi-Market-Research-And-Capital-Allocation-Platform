@@ -5,9 +5,9 @@ This index points readers to the current truth and the durable historical entry 
 ## Current Truth
 
 ### ARCHITECTURE DOCUMENT
-- `docs/MASTER_ROADMAP.md` - Universal Market Lifecycle
+- `docs/MASTER_ROADMAP.md` - Long-Term Platform Sequence
 - `docs/NEXT_ACTION.md` - Next Action
-- `docs/PROJECT_STATUS.md` - Active Canonical Rules
+- `docs/PROJECT_STATUS.md` - Mission
 - `docs/architecture/ARCHITECTURE_ENFORCEMENT_CURRENT_STATE.md` - Architecture Enforcement Current State
 - `docs/architecture/ARCHITECTURE_IMPORT_RULES.md` - Architecture Import Rules
 - `docs/architecture/ARCHITECTURE_RULES.md` - Architecture Rules

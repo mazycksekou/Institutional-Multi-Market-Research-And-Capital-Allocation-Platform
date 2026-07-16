@@ -97,6 +97,14 @@ from .research_intelligence import (
     build_research_intelligence_snapshot,
     get_research_intelligence_snapshot_for_dashboard,
 )
+from .universal_market_framework import (
+    DEFAULT_UNIVERSAL_MARKET_FRAMEWORK_ARTIFACT_ROOT,
+    NFL_REFERENCE_PROFILE_ID,
+    UNIVERSAL_MARKET_FRAMEWORK_RUNTIME_VERSION,
+    UNIVERSAL_MARKET_FRAMEWORK_SCHEMA_VERSION,
+    build_universal_market_framework_snapshot,
+    get_universal_market_framework_snapshot_for_dashboard,
+)
 
 __all__ = [
     "STANDARD_REPORT_FIELDS",
@@ -179,6 +187,12 @@ __all__ = [
     "RESEARCH_INTELLIGENCE_SCHEMA_VERSION",
     "build_research_intelligence_snapshot",
     "get_research_intelligence_snapshot_for_dashboard",
+    "DEFAULT_UNIVERSAL_MARKET_FRAMEWORK_ARTIFACT_ROOT",
+    "NFL_REFERENCE_PROFILE_ID",
+    "UNIVERSAL_MARKET_FRAMEWORK_RUNTIME_VERSION",
+    "UNIVERSAL_MARKET_FRAMEWORK_SCHEMA_VERSION",
+    "build_universal_market_framework_snapshot",
+    "get_universal_market_framework_snapshot_for_dashboard",
     "DEFAULT_MARKET_PROFILE_CATALOG",
     "NFL_AS_SPORTS_PROFILE_INSTANCE",
     "OPTIONS_0DTE_PROFILE",

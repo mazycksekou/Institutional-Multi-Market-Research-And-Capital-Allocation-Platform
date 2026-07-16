@@ -51,6 +51,9 @@ class TestDocumentLifecycleGovernance(unittest.TestCase):
             "MASTER_ROADMAP.md",
             "NEXT_ACTION.md",
             "PROJECT_STATUS.md",
+            "PRODUCT_SPEC.md",
+            "BUSINESS_STRATEGY.md",
+            "INTELLECTUAL_PROPERTY_REGISTER.md",
             "STATUS_UPDATE_POLICY.md",
         }
         offenders = sorted(

@@ -2,7 +2,7 @@
 
 ## Next Phase
 
-`Universal Market Framework`
+`Supported sports, prediction markets, and Zero-DTE research implementations`
 
 ## Execution Policy
 
@@ -10,15 +10,17 @@ Follow `docs/architecture/REPOSITORY_OS.md` for discovery, validation, and owner
 
 ## Previous Phase
 
-`Phase 5.7 - Research Intelligence` built the first deterministic explanatory layer on top of the certified and hardened NFL research pipeline. It added reproducible research summaries, evidence packages, queryable intelligence rows, persisted intelligence artifacts, and NFL P0 readiness for Universal Market Framework expansion on top of frozen, certified inputs.
+`Phase 5.7 - Research Intelligence` built the deterministic explanatory layer on top of the certified and hardened NFL research pipeline.
+`Universal Market Framework` built the first reusable market-agnostic framework surface on top of the certified NFL research pipeline and deterministic Research Intelligence layer. It preserves the NFL chain as immutable reference behavior while exposing reusable profile contracts, lifecycle gates, readiness surfaces, parity evidence, and dashboard/query interfaces for future market onboarding.
+
+Historical handoff objective preserved for audit compatibility: Build the first reusable Universal Market Framework on top of the certified NFL research pipeline and the deterministic Research Intelligence layer.
 
 ## Objective
 
-Build the first reusable Universal Market Framework on top of the certified NFL research pipeline and the deterministic Research Intelligence layer.
-Treat the certified NFL evidence chain and its Research Intelligence outputs as immutable reference behavior while extracting reusable market-agnostic contracts.
-Generalize only the canonical ownership seams required to support future markets without changing certified NFL outputs, lineage, provenance, certification, reproducibility, or point-in-time safety.
-Preserve the canonical local-first storage, dashboard, readiness, and validation owners while establishing the shared framework that later market profiles can adopt.
-Do not ingest paid or live data, do not add paper trading or live execution, and do not bypass the certified NFL reference path in this phase.
+Use the Universal Market Framework as the governed onboarding boundary for future supported sports, prediction markets, and Zero-DTE research implementations.
+Future implementation must satisfy the reusable profile contracts, lifecycle gates, readiness surfaces, parity checks, and dashboard/query interfaces before activating a new market profile.
+The certified NFL evidence chain and Research Intelligence outputs remain immutable reference behavior.
+Do not ingest paid or live data, do not add paper trading or live execution, and do not bypass the certified NFL reference path in the next phase.
 
 ## Allowed Actions
 

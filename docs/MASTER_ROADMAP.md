@@ -5,6 +5,20 @@ Every market uses the same progression, regardless of domain, provider mix, or f
 
 The repository does **not** skip discovery, blueprinting, validation, or reproducibility steps for any market.
 
+## Long-Term Platform Sequence
+
+Universal Market Framework
+-> supported sports, prediction markets, and Zero-DTE research implementations
+-> Worldview Intelligence
+-> Cross-Market Intelligence and Opportunity Ranking
+-> Capital Allocation, Treasury, and Risk
+-> Unified Paper Trading
+-> Controlled Live Execution
+-> Institutional Readiness and Proprietary-Evidence Packaging
+-> Autonomous Development Platform
+
+These are roadmap lanes only. They are not implementation authorization for the Universal Market Framework phase.
+
 ## Universal Market Lifecycle
 
 | Step | Name | Purpose | Exit criterion |
@@ -77,8 +91,9 @@ Phase 5.4 completed the decision-row generation layer from the certified signal 
 Phase 5.5 completed baseline backtesting from frozen, certified inputs.
 Phase 5.6 completed pipeline validation and hardening on the production research engine path.
 Phase 5.7 completed deterministic Research Intelligence on top of the certified NFL pipeline.
-The next governed step is the Universal Market Framework so the certified NFL pattern can be generalized without mutating the hardened NFL path.
-Later phases continue with paper trading, incremental live updates, Worldview Intelligence, and controlled production deployment.
+The next governed step is the Universal Market Framework, preserved here as the Phase 5.7 historical handoff statement.
+The Universal Market Framework completed the governed extraction of reusable market-agnostic contracts, registries, lifecycle interfaces, readiness surfaces, and dashboard/query interfaces without mutating the hardened NFL path.
+Later roadmap lanes continue with supported sports, prediction markets, and Zero-DTE research implementations, Worldview Intelligence, Cross-Market Intelligence and Opportunity Ranking, Capital Allocation, Treasury, and Risk, Unified Paper Trading, Controlled Live Execution, Institutional Readiness and Proprietary-Evidence Packaging, and the Autonomous Development Platform.
 
 Deferred enrichment lanes after the first minimum-schema dataset path remains stable:
 
@@ -123,7 +138,7 @@ Current NFL work is in Phase 5:
 - Phase 5.5 completed baseline backtesting against the minimum certified schema.
 - Phase 5.6 completed pipeline validation and hardening on the production research engine path.
 - Phase 5.7 completed Research Intelligence on the certified NFL pipeline.
-- Universal Market Framework work is next and should generalize the certified NFL research chain without changing the certified NFL outputs.
+- Universal Market Framework generalized the certified NFL research chain without changing certified NFL outputs.
 - Phase 4.9I and Phase 4.9J remain deferred enrichment asset lanes after the first baseline dataset path is established.
 
 The master research engine specification is already the canonical name for the broader research-engine scope. If the repository later needs an even broader top-level research asset registry, that should be treated as a separate future phase rather than another rename of this specification.
