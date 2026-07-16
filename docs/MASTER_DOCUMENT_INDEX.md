@@ -59,6 +59,7 @@ This index points readers to the current truth and the durable historical entry 
 - `docs/architecture/RESEARCH_ASSET_LIFECYCLE_RUNTIME.md` - Research Asset Lifecycle Runtime
 - `docs/architecture/RESEARCH_ASSET_RUNTIME_FRAMEWORK.md` - Purpose
 - `docs/architecture/RESEARCH_ASSET_SOURCE_DISCOVERY_AND_CONNECTOR_MAPPING.md` - Research Asset Source Discovery And Connector Mapping
+- `docs/architecture/RESEARCH_INTELLIGENCE_LAYER.md` - Research Intelligence Layer
 - `docs/architecture/RESEARCH_PLATFORM_ARCHITECTURE.md` - Research Platform Architecture
 - `docs/architecture/REVIEWER_GUIDE.md` - Reviewer Guide
 - `docs/architecture/RUNTIME_FLOW_MAP.md` - Runtime Flow Map
@@ -195,18 +196,6 @@ This index points readers to the current truth and the durable historical entry 
 - `docs/development/CONTRIBUTING.md` - Contributing
 - `docs/development/ENGINEERING_STANDARDS.md` - Engineering Standards
 - `docs/development/ONBOARDING.md` - Developer Onboarding
-
-### DOCUMENT
-- `docs/reports/PHASE4_7A_RESEARCH_ASSET_SOURCE_DISCOVERY_AND_CONNECTOR_MAPPING.md` - Phase 4.7A Research Asset Source Discovery And Connector Mapping
-- `docs/reports/PHASE4_9A_NFL_SCHEDULE_RESEARCH_ASSET_POPULATION.md` - Phase 4.9A - NFL Schedule Research Asset Population
-- `docs/reports/PHASE4_9B_RESEARCH_ASSET_COVERAGE_PLANNER_AND_PROVIDER_SELECTION_FRAMEWORK.md` - Phase 4.9B - Research Asset Coverage Planner And Provider Selection Framework
-- `docs/reports/PHASE4_9D_NFL_RESULTS_RESEARCH_ASSET_POPULATION.md` - Phase 4.9D - NFL Results Research Asset Population
-- `docs/reports/PHASE5_1B_FEATURE_SNAPSHOT_POPULATION.md` - Phase 5.1B - Feature Snapshot Population
-- `docs/reports/PHASE5_2_REUSABLE_MATHEMATICAL_ENGINES.md` - Phase 5.2 - Reusable Mathematical Engines
-- `docs/reports/PHASE5_3_REUSABLE_SIGNALS.md` - Phase 5.3 - Reusable Signals
-- `docs/reports/PHASE5_4_DECISION_ROW_GENERATION.md` - Phase 5.4 - Decision Row Generation
-- `docs/reports/PHASE5_5_BASELINE_BACKTESTING.md` - Phase 5.5 - Baseline Backtesting
-- `docs/reports/PHASE5_6_PIPELINE_VALIDATION_AND_HARDENING.md` - Phase 5.6 - Pipeline Validation And Hardening
 
 ## Historical Entry Points
 

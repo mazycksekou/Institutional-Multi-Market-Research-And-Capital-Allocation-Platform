@@ -67,14 +67,13 @@ def test_math_engine_population_docs_exist_and_cover_required_topics() -> None:
 
     assert "Phase 5.2 - Reusable Mathematical Engines" in project_status_text
     assert "Phase 5.3 - Reusable Signals" in project_status_text
+    assert "Universal Market Framework" in next_action_text
     assert "Phase 5.7 - Research Intelligence" in next_action_text
-    assert "Phase 5.6 - Validation And Hardening" in next_action_text
-    assert "certified and hardened nfl pipeline" in next_action_text.lower()
+    assert "certified and hardened nfl research pipeline" in next_action_text.lower()
     assert "Phase 5.2 completed reusable mathematical engines." in roadmap_text
     assert "Phase 5.3 completed reusable signals." in roadmap_text
 
     assert "docs/architecture/MATH_ENGINE_POPULATION_LAYER.md" in master_index_text
-    assert "docs/reports/PHASE5_2_REUSABLE_MATHEMATICAL_ENGINES.md" in master_index_text
     assert "docs/architecture/MATH_ENGINE_POPULATION_LAYER.md" in retention_index_text
     assert "docs/reports/PHASE5_2_REUSABLE_MATHEMATICAL_ENGINES.md" in retention_index_text
 

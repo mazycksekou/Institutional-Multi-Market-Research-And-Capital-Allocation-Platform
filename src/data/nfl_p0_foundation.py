@@ -1588,6 +1588,21 @@ def build_nfl_p0_dashboard_snapshot(
             "status": "pipeline_validation_snapshot_error",
             "warnings": [str(exc)],
         }
+    try:
+        from src.market_intelligence.research_intelligence import build_research_intelligence_snapshot
+
+        research_intelligence_snapshot = build_research_intelligence_snapshot(
+            storage_path=storage_path,
+            backend=backend,
+            include_layer_snapshots=False,
+            persist_artifacts=True,
+        )
+    except Exception as exc:
+        research_intelligence_snapshot = {
+            "ok": False,
+            "status": "research_intelligence_snapshot_error",
+            "warnings": [str(exc)],
+        }
     snapshot["table_counts"] = {name: details.get("row_count", 0) for name, details in snapshot.get("table_readiness", {}).items()}
     snapshot["dataset_readiness"] = {
         "status": snapshot.get("status"),
@@ -1692,6 +1707,24 @@ def build_nfl_p0_dashboard_snapshot(
         "warning_checks_passed": pipeline_validation_snapshot.get("validation_summary", {}).get("warning_checks_passed", 0),
         "unresolved_blockers": pipeline_validation_snapshot.get("unresolved_blockers", []),
     }
+    snapshot["research_intelligence_layer_readiness"] = {
+        "status": research_intelligence_snapshot.get("status", "missing"),
+        "dataset_id": research_intelligence_snapshot.get("dataset_id", ""),
+        "research_intelligence_run_id": research_intelligence_snapshot.get("research_intelligence_run_id", ""),
+        "readiness": research_intelligence_snapshot.get("readiness", "blocked"),
+        "lifecycle_state": research_intelligence_snapshot.get("lifecycle_state", "missing"),
+        "artifact_integrity_ok": research_intelligence_snapshot.get("artifact_integrity_ok", False),
+        "sample_size": research_intelligence_snapshot.get("research_summary", {}).get("sample_size", 0),
+        "wins": research_intelligence_snapshot.get("research_summary", {}).get("wins", 0),
+        "losses": research_intelligence_snapshot.get("research_summary", {}).get("losses", 0),
+        "pushes": research_intelligence_snapshot.get("research_summary", {}).get("pushes", 0),
+        "roi_percent": research_intelligence_snapshot.get("research_summary", {}).get("roi_percent", 0.0),
+        "error_check_count": research_intelligence_snapshot.get("validation_summary", {}).get("error_check_count", 0),
+        "error_checks_passed": research_intelligence_snapshot.get("validation_summary", {}).get("error_checks_passed", 0),
+        "warning_check_count": research_intelligence_snapshot.get("validation_summary", {}).get("warning_check_count", 0),
+        "warning_checks_passed": research_intelligence_snapshot.get("validation_summary", {}).get("warning_checks_passed", 0),
+        "unresolved_blockers": research_intelligence_snapshot.get("unresolved_blockers", []),
+    }
     snapshot["readiness_summary"] = {
         "table_readiness_ready": len(snapshot.get("ready_tables", [])),
         "table_readiness_missing": len(snapshot.get("missing_tables", [])),
@@ -1703,6 +1736,7 @@ def build_nfl_p0_dashboard_snapshot(
         "decision_row_population_status": decision_layer_snapshot.get("status", "missing"),
         "baseline_backtest_status": baseline_backtest_snapshot.get("status", "missing"),
         "pipeline_validation_status": pipeline_validation_snapshot.get("status", "missing"),
+        "research_intelligence_status": research_intelligence_snapshot.get("status", "missing"),
     }
     return snapshot
 

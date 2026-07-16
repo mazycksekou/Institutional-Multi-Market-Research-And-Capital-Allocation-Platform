@@ -50,8 +50,8 @@ def test_historical_dataset_acquisition_runtime_docs_exist_and_cover_required_to
     assert "Phase 4.8 - Research Asset Lifecycle Runtime & Time & Entity Alignment Certification" in project_status_text
     assert "docs/architecture/HISTORICAL_DATASET_ACQUISITION_RUNTIME.md" in project_status_text
     assert "docs/reports/PHASE4_7B_HISTORICAL_DATASET_ACQUISITION_RUNTIME.md" in project_status_text
+    assert "Universal Market Framework" in next_action_text
     assert "Phase 5.7 - Research Intelligence" in next_action_text
-    assert "Phase 5.6 - Validation And Hardening" in next_action_text
     assert "docs/architecture/HISTORICAL_DATASET_ACQUISITION_RUNTIME.md" in master_index_text
     assert "docs/architecture/HISTORICAL_DATASET_ACQUISITION_RUNTIME.md" in retention_index_text
     assert "docs/reports/PHASE4_7B_HISTORICAL_DATASET_ACQUISITION_RUNTIME.md" in retention_index_text

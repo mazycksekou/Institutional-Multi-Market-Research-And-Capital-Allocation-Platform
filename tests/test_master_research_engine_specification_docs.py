@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 from pathlib import Path
 
@@ -61,8 +61,8 @@ def test_master_research_engine_specification_docs_exist_and_cover_required_topi
     assert "Phase 4.5E - Canonical Engineering Specification Rename & Research Asset Runtime Framework" in project_status_text
     assert "docs/architecture/UNIVERSAL_FEATURE_REGISTRY.md" in project_status_text
     assert "docs/architecture/UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md" in project_status_text
+    assert "Universal Market Framework" in next_action_text
     assert "Phase 5.7 - Research Intelligence" in next_action_text
-    assert "Phase 5.6 - Validation And Hardening" in next_action_text
 
 
 def test_master_research_engine_specification_docs_do_not_depend_on_runtime_code() -> None:

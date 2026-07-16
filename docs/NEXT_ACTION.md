@@ -2,7 +2,7 @@
 
 ## Next Phase
 
-`Phase 5.7 - Research Intelligence`
+`Universal Market Framework`
 
 ## Execution Policy
 
@@ -10,25 +10,22 @@ Follow `docs/architecture/REPOSITORY_OS.md` for discovery, validation, and owner
 
 ## Previous Phase
 
-`Phase 5.6 - Validation And Hardening` certified the complete NFL research pipeline from the historical dataset through baseline backtesting. It added deterministic pipeline validation, normalized cross-layer dashboard contracts, persisted validation artifacts, and NFL P0 readiness for Research Intelligence on top of frozen, certified inputs.
+`Phase 5.7 - Research Intelligence` built the first deterministic explanatory layer on top of the certified and hardened NFL research pipeline. It added reproducible research summaries, evidence packages, queryable intelligence rows, persisted intelligence artifacts, and NFL P0 readiness for Universal Market Framework expansion on top of frozen, certified inputs.
 
 ## Objective
 
-Build the first Research Intelligence layer on top of the certified and hardened NFL research pipeline.
-Treat the certified and hardened NFL pipeline as immutable evidence while building Research Intelligence outputs.
-Reuse only persisted certified evidence from the historical dataset, feature snapshots, mathematical engines, signals, decision rows, baseline backtests, and pipeline validation artifacts.
-Preserve deterministic execution, point-in-time safety, lineage, provenance, certification, reproducibility, and queryability while synthesizing research outputs.
-Treat the certified schedule, results, odds, weather, injuries, team-statistics, feature, math, signal, decision, baseline-backtest, and pipeline-validation evidence as immutable inputs to this phase.
-Preserve the canonical local-first storage, dashboard, readiness, and validation owners without reopening acquisition or hardening scope unless a blocker is proven inside the certified evidence chain.
-Do not ingest paid or live data, do not add new markets, and do not introduce paper trading or live execution in this phase.
+Build the first reusable Universal Market Framework on top of the certified NFL research pipeline and the deterministic Research Intelligence layer.
+Treat the certified NFL evidence chain and its Research Intelligence outputs as immutable reference behavior while extracting reusable market-agnostic contracts.
+Generalize only the canonical ownership seams required to support future markets without changing certified NFL outputs, lineage, provenance, certification, reproducibility, or point-in-time safety.
+Preserve the canonical local-first storage, dashboard, readiness, and validation owners while establishing the shared framework that later market profiles can adopt.
+Do not ingest paid or live data, do not add paper trading or live execution, and do not bypass the certified NFL reference path in this phase.
 
 ## Allowed Actions
 
-- Reuse the canonical market profile framework, research engine specification, storage, validation, lineage, certification, lifecycle, feature registry, math engine population owners, reusable signal owners, decision-row owner, baseline-backtesting owner, and pipeline-validation owner.
-- Build read-only research-intelligence summaries, query helpers, and dashboard-ready intelligence snapshots from the certified NFL evidence chain.
-- Reuse persisted backtest metrics, benchmark comparisons, validation artifacts, and readiness snapshots as research inputs.
-- Preserve dataset-batch references, dataset-row references, feature references, math references, signal references, decision references, backtest references, validation references, source certification references, and field-level provenance links.
-- Preserve the canonical evidence chain without introducing a new connector, acquisition, dataset, feature, math, signal, decision, backtest, or pipeline-validation framework.
+- Reuse the canonical market profile framework, research engine specification, storage, validation, lineage, certification, lifecycle, feature registry, math engine, signal, decision, baseline-backtesting, pipeline-validation, and research-intelligence owners.
+- Extract shared contracts, registries, and dashboard-ready framework surfaces from the certified NFL path without mutating the certified NFL outputs.
+- Preserve dataset-batch references, dataset-row references, feature references, math references, signal references, decision references, backtest references, validation references, research-intelligence references, source certification references, and field-level provenance links.
+- Preserve the canonical evidence chain without introducing a new connector, acquisition, certified dataset, feature engine, signal engine, decision engine, backtest engine, or Research Intelligence engine for the NFL path.
 - Update project status, roadmap, and document indexes when this phase completes.
 
 ## Forbidden Actions
@@ -36,23 +33,22 @@ Do not ingest paid or live data, do not add new markets, and do not introduce pa
 - Do not ingest paid or live data.
 - Do not implement connectors.
 - Do not implement new provider connectors.
-- Do not implement the Universal Market Framework.
 - Do not implement prediction markets.
 - Do not implement Zero-DTE options.
 - Do not implement walk-forward validation yet.
 - Do not implement paper trading yet.
 - Do not implement live execution.
-- Do not add additional markets.
+- Do not activate additional markets before the shared framework contract is in place.
 - Do not add machine learning, optimization, or parameter tuning.
 - Do not add provider-specific runtime ownership.
-- Do not reopen player statistics, betting splits, officials, coaching, or other enrichment assets as blockers for Research Intelligence on the certified NFL path.
+- Do not reopen player statistics, betting splits, officials, coaching, or other enrichment assets as blockers for Universal Market Framework work on the certified NFL path.
 - Do not make uncontrolled network calls or require secrets in tests.
 
 ## Expected Deliverables
 
-- Deterministic Research Intelligence evidence built only from the certified NFL pipeline.
-- Queryable research summaries that preserve lineage, provenance, certification, and point-in-time context.
-- Dashboard-ready intelligence readiness reporting on top of the hardened NFL research engine path.
+- Shared Universal Market Framework contracts derived from the certified NFL research path.
+- Preserved deterministic NFL outputs and readiness evidence while framework seams are generalized.
+- Dashboard-ready framework and readiness reporting that keeps the certified NFL path as the reference implementation.
 
 ## Validation Commands
 

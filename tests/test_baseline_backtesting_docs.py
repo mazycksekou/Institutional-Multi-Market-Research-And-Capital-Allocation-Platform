@@ -71,17 +71,16 @@ def test_baseline_backtesting_docs_exist_and_cover_required_topics() -> None:
     assert "docs/architecture/BASELINE_BACKTESTING_LAYER.md" in project_status_text
     assert "docs/reports/PHASE5_5_BASELINE_BACKTESTING.md" in project_status_text
 
+    assert "Universal Market Framework" in next_action_text
     assert "Phase 5.7 - Research Intelligence" in next_action_text
-    assert "Phase 5.6 - Validation And Hardening" in next_action_text
     assert "Research Intelligence" in next_action_text
-    assert "certified and hardened NFL pipeline" in next_action_text
+    assert "certified and hardened NFL research pipeline" in next_action_text
 
     assert "Phase 5.5 completed baseline backtesting from frozen, certified inputs." in roadmap_text
     assert "Phase 5.6 completed pipeline validation and hardening on the production research engine path." in roadmap_text
-    assert "Phase 5.7 begins Research Intelligence on top of the certified NFL pipeline." in roadmap_text
+    assert "Phase 5.7 completed deterministic Research Intelligence on top of the certified NFL pipeline." in roadmap_text
 
     assert "docs/architecture/BASELINE_BACKTESTING_LAYER.md" in master_index_text
-    assert "docs/reports/PHASE5_5_BASELINE_BACKTESTING.md" in master_index_text
     assert "docs/architecture/BASELINE_BACKTESTING_LAYER.md" in retention_index_text
     assert "docs/reports/PHASE5_5_BASELINE_BACKTESTING.md" in retention_index_text
 

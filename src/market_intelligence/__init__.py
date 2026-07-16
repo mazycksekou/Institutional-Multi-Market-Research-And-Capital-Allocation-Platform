@@ -88,6 +88,15 @@ from .research_asset_coverage_planner import (
     build_worldview_query_surface,
     get_research_asset_coverage_planner_snapshot_for_dashboard,
 )
+from .research_intelligence import (
+    DEFAULT_RESEARCH_INTELLIGENCE_DATASET_ID,
+    DEFAULT_RESEARCH_INTELLIGENCE_DATASET_NAME,
+    DEFAULT_RESEARCH_INTELLIGENCE_STORAGE_PATH,
+    RESEARCH_INTELLIGENCE_RUNTIME_VERSION,
+    RESEARCH_INTELLIGENCE_SCHEMA_VERSION,
+    build_research_intelligence_snapshot,
+    get_research_intelligence_snapshot_for_dashboard,
+)
 
 __all__ = [
     "STANDARD_REPORT_FIELDS",
@@ -163,6 +172,13 @@ __all__ = [
     "build_research_asset_coverage_registry",
     "build_worldview_query_surface",
     "get_research_asset_coverage_planner_snapshot_for_dashboard",
+    "DEFAULT_RESEARCH_INTELLIGENCE_DATASET_ID",
+    "DEFAULT_RESEARCH_INTELLIGENCE_DATASET_NAME",
+    "DEFAULT_RESEARCH_INTELLIGENCE_STORAGE_PATH",
+    "RESEARCH_INTELLIGENCE_RUNTIME_VERSION",
+    "RESEARCH_INTELLIGENCE_SCHEMA_VERSION",
+    "build_research_intelligence_snapshot",
+    "get_research_intelligence_snapshot_for_dashboard",
     "DEFAULT_MARKET_PROFILE_CATALOG",
     "NFL_AS_SPORTS_PROFILE_INSTANCE",
     "OPTIONS_0DTE_PROFILE",

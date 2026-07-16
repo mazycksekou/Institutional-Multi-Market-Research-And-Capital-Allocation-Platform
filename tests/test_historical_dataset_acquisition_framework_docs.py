@@ -79,8 +79,8 @@ def test_historical_dataset_acquisition_framework_docs_exist_and_cover_required_
     assert "Readiness for Phase 4.7" in report_text
 
     assert "Phase 4.7B - Historical Dataset Acquisition Runtime" in project_status_text
+    assert "Universal Market Framework" in next_action_text
     assert "Phase 5.7 - Research Intelligence" in next_action_text
-    assert "Phase 5.6 - Validation And Hardening" in next_action_text
     assert "docs/architecture/HISTORICAL_DATASET_ACQUISITION_FRAMEWORK.md" in project_status_text
     assert "docs/reports/PHASE4_6_MINIMUM_CERTIFIED_HISTORICAL_DATASET_ACQUISITION_FRAMEWORK.md" in project_status_text
     assert "certified and hardened nfl research pipeline" in next_action_text.lower()

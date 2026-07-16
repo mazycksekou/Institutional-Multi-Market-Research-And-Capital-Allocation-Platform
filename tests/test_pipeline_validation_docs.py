@@ -62,28 +62,27 @@ def test_pipeline_validation_docs_exist_and_cover_required_topics() -> None:
     assert "Worldview / Research Query Engine Review" in report_text
     assert "Pipeline certified and ready for Research Intelligence." in report_text
 
-    assert "Phase 5.6 - Validation And Hardening (complete)" in project_status_text
+    assert "Phase 5.7 - Research Intelligence (complete)" in project_status_text
     assert "Phase 5.7 - Research Intelligence" in project_status_text
     assert "docs/architecture/PIPELINE_VALIDATION_AND_HARDENING_LAYER.md" in project_status_text
     assert "docs/reports/PHASE5_6_PIPELINE_VALIDATION_AND_HARDENING.md" in project_status_text
 
+    assert "Universal Market Framework" in next_action_text
     assert "Phase 5.7 - Research Intelligence" in next_action_text
-    assert "Phase 5.6 - Validation And Hardening" in next_action_text
-    assert "Build the first Research Intelligence layer" in next_action_text
+    assert "Build the first reusable Universal Market Framework" in next_action_text
     assert "certified and hardened NFL research pipeline" in next_action_text
-    assert "Do not add additional markets." in next_action_text
+    assert "Do not activate additional markets before the shared framework contract is in place." in next_action_text
 
     assert "Phase 5.6 completed pipeline validation and hardening on the production research engine path." in roadmap_text
-    assert "Phase 5.7 begins Research Intelligence on top of the certified NFL pipeline." in roadmap_text
+    assert "Phase 5.7 completed deterministic Research Intelligence on top of the certified NFL pipeline." in roadmap_text
 
     assert "docs/architecture/PIPELINE_VALIDATION_AND_HARDENING_LAYER.md" in master_index_text
-    assert "docs/reports/PHASE5_6_PIPELINE_VALIDATION_AND_HARDENING.md" in master_index_text
     assert "docs/architecture/PIPELINE_VALIDATION_AND_HARDENING_LAYER.md" in retention_index_text
     assert "docs/reports/PHASE5_6_PIPELINE_VALIDATION_AND_HARDENING.md" in retention_index_text
 
     assert "pipeline-validation-layer rollup" in p0_text.lower()
     assert "pipeline validation and hardening are complete in Phase 5.6" in p0_text
-    assert "begin Research Intelligence in Phase 5.7" in p0_text
+    assert "Research Intelligence is complete in Phase 5.7" in p0_text
 
 
 def test_pipeline_validation_docs_do_not_depend_on_runtime_code() -> None:

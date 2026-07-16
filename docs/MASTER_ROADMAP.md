@@ -48,7 +48,7 @@ The repository does **not** skip discovery, blueprinting, validation, or reprodu
 
 The historical research database now follows a shared chain that future markets can reuse:
 
-Provider -> Raw Acquisition Cache -> Integrity Validation -> Normalization -> Research Asset Certification -> Dataset Certification -> Historical Research Database -> Master Research Engine Specification -> Universal Feature Registry -> Universal Math Engine Contracts -> Research Asset Runtime Framework -> Historical Dataset Acquisition Framework -> Historical Research Asset Certification Runtime -> Research Asset Lifecycle Runtime -> Research Asset Source Discovery And Connector Mapping -> Research Asset Population -> Historical Dataset Population -> Feature Population -> Mathematical Engine Population -> Signal Population -> Decision Rows -> Backtesting
+Provider -> Raw Acquisition Cache -> Integrity Validation -> Normalization -> Research Asset Certification -> Dataset Certification -> Historical Research Database -> Master Research Engine Specification -> Universal Feature Registry -> Universal Math Engine Contracts -> Research Asset Runtime Framework -> Historical Dataset Acquisition Framework -> Historical Research Asset Certification Runtime -> Research Asset Lifecycle Runtime -> Research Asset Source Discovery And Connector Mapping -> Research Asset Population -> Historical Dataset Population -> Feature Population -> Mathematical Engine Population -> Signal Population -> Decision Rows -> Backtesting -> Pipeline Validation -> Research Intelligence
 
 Phase 4.4 established the event-centric historical acquisition foundation.
 Phase 4.5A defined the master research engine specification.
@@ -76,7 +76,8 @@ Phase 5.3 completed reusable signals.
 Phase 5.4 completed the decision-row generation layer from the certified signal layer.
 Phase 5.5 completed baseline backtesting from frozen, certified inputs.
 Phase 5.6 completed pipeline validation and hardening on the production research engine path.
-Phase 5.7 begins Research Intelligence on top of the certified NFL pipeline.
+Phase 5.7 completed deterministic Research Intelligence on top of the certified NFL pipeline.
+The next governed step is the Universal Market Framework so the certified NFL pattern can be generalized without mutating the hardened NFL path.
 Later phases continue with paper trading, incremental live updates, Worldview Intelligence, and controlled production deployment.
 
 Deferred enrichment lanes after the first minimum-schema dataset path remains stable:
@@ -121,7 +122,8 @@ Current NFL work is in Phase 5:
 - Phase 5.4 completed the decision-row generation layer from the certified signal layer.
 - Phase 5.5 completed baseline backtesting against the minimum certified schema.
 - Phase 5.6 completed pipeline validation and hardening on the production research engine path.
-- Phase 5.7 will build Research Intelligence on the certified NFL pipeline.
+- Phase 5.7 completed Research Intelligence on the certified NFL pipeline.
+- Universal Market Framework work is next and should generalize the certified NFL research chain without changing the certified NFL outputs.
 - Phase 4.9I and Phase 4.9J remain deferred enrichment asset lanes after the first baseline dataset path is established.
 
 The master research engine specification is already the canonical name for the broader research-engine scope. If the repository later needs an even broader top-level research asset registry, that should be treated as a separate future phase rather than another rename of this specification.
