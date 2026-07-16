@@ -54,9 +54,11 @@ def test_nfl_schedule_research_asset_population_docs_exist_and_cover_required_to
     assert "docs/architecture/NFL_SCHEDULE_RESEARCH_ASSET.md" in project_status_text
     assert "docs/reports/PHASE4_9A_NFL_SCHEDULE_RESEARCH_ASSET_POPULATION.md" in project_status_text
 
+    assert "NFL Production Completion" in next_action_text
     assert "Universal Market Framework" in next_action_text
     assert "Phase 5.7 - Research Intelligence" in next_action_text
-    assert "do not implement connectors." in next_action_text.lower()
+    assert "Do not implement another sport." in next_action_text
+    assert "Close only verified NFL production gaps" in next_action_text
     assert "certified and hardened nfl research pipeline" in next_action_text.lower()
 
     assert "Phase 4.9A populates the NFL schedule research asset." in roadmap_text

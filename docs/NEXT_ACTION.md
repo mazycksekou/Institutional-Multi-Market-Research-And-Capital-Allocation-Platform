@@ -2,7 +2,7 @@
 
 ## Next Phase
 
-`Supported sports, prediction markets, and Zero-DTE research implementations`
+`NFL Production Completion`
 
 ## Execution Policy
 
@@ -13,44 +13,43 @@ Follow `docs/architecture/REPOSITORY_OS.md` for discovery, validation, and owner
 `Phase 5.7 - Research Intelligence` built the deterministic explanatory layer on top of the certified and hardened NFL research pipeline.
 `Universal Market Framework` built the first reusable market-agnostic framework surface on top of the certified NFL research pipeline and deterministic Research Intelligence layer. It preserves the NFL chain as immutable reference behavior while exposing reusable profile contracts, lifecycle gates, readiness surfaces, parity evidence, and dashboard/query interfaces for future market onboarding.
 
-Historical handoff objective preserved for audit compatibility: Build the first reusable Universal Market Framework on top of the certified NFL research pipeline and the deterministic Research Intelligence layer.
-
 ## Objective
 
-Use the Universal Market Framework as the governed onboarding boundary for future supported sports, prediction markets, and Zero-DTE research implementations.
-Future implementation must satisfy the reusable profile contracts, lifecycle gates, readiness surfaces, parity checks, and dashboard/query interfaces before activating a new market profile.
-The certified NFL evidence chain and Research Intelligence outputs remain immutable reference behavior.
-Do not ingest paid or live data, do not add paper trading or live execution, and do not bypass the certified NFL reference path in the next phase.
+Audit the certified NFL implementation against production-complete requirements.
+Reuse the Universal Market Framework as the canonical reusable foundation.
+Close only verified NFL production gaps while preserving all certified NFL reference behavior, lineage, provenance, determinism, and point-in-time integrity.
+Do not implement another sport, prediction markets, Zero-DTE options, Worldview, capital allocation, paper trading, or live execution in this phase.
 
 ## Allowed Actions
 
-- Reuse the canonical market profile framework, research engine specification, storage, validation, lineage, certification, lifecycle, feature registry, math engine, signal, decision, baseline-backtesting, pipeline-validation, and research-intelligence owners.
-- Extract shared contracts, registries, and dashboard-ready framework surfaces from the certified NFL path without mutating the certified NFL outputs.
+- Reuse the canonical Universal Market Framework contracts, registries, lifecycle gates, readiness surfaces, dashboard/query interfaces, and certified NFL reference owners.
+- Audit NFL production readiness across certified research completeness, deterministic feature coverage, dashboard completeness, reporting completeness, query completeness, validation completeness, and documentation completeness.
+- Close only verified NFL-specific production gaps that sit above the Universal Market Framework and do not duplicate reusable framework logic.
 - Preserve dataset-batch references, dataset-row references, feature references, math references, signal references, decision references, backtest references, validation references, research-intelligence references, source certification references, and field-level provenance links.
-- Preserve the canonical evidence chain without introducing a new connector, acquisition, certified dataset, feature engine, signal engine, decision engine, backtest engine, or Research Intelligence engine for the NFL path.
 - Update project status, roadmap, and document indexes when this phase completes.
+- Keep `docs/PRODUCT_SPEC.md`, `docs/BUSINESS_STRATEGY.md`, and `docs/INTELLECTUAL_PROPERTY_REGISTER.md` as non-authoritative placeholders; update only references or indexes if required.
 
 ## Forbidden Actions
 
-- Do not ingest paid or live data.
-- Do not implement connectors.
-- Do not implement new provider connectors.
+- Do not implement another sport.
 - Do not implement prediction markets.
 - Do not implement Zero-DTE options.
-- Do not implement walk-forward validation yet.
-- Do not implement paper trading yet.
+- Do not implement Worldview Intelligence.
+- Do not implement cross-market intelligence.
+- Do not implement universal risk and capital allocation.
 - Do not implement live execution.
-- Do not activate additional markets before the shared framework contract is in place.
-- Do not add machine learning, optimization, or parameter tuning.
-- Do not add provider-specific runtime ownership.
-- Do not reopen player statistics, betting splits, officials, coaching, or other enrichment assets as blockers for Universal Market Framework work on the certified NFL path.
+- Do not implement paper trading.
+- Do not duplicate Universal Market Framework logic or create NFL-only replacements for reusable framework assets.
+- Do not populate `docs/PRODUCT_SPEC.md`, `docs/BUSINESS_STRATEGY.md`, or `docs/INTELLECTUAL_PROPERTY_REGISTER.md`.
 - Do not make uncontrolled network calls or require secrets in tests.
 
 ## Expected Deliverables
 
-- Shared Universal Market Framework contracts derived from the certified NFL research path.
-- Preserved deterministic NFL outputs and readiness evidence while framework seams are generalized.
-- Dashboard-ready framework and readiness reporting that keeps the certified NFL path as the reference implementation.
+- A verified audit of the certified NFL implementation against production-complete requirements.
+- Closed verified NFL production gaps that preserve certified NFL reference behavior and reuse the Universal Market Framework.
+- Completed NFL-specific dashboard, reporting, query, validation, and documentation surfaces that do not create parallel reusable systems.
+- Updated project status, roadmap, and document indexes when the phase completes.
+- Sequencing handoff to the `Covariance and Time-Dependent Risk Capability Audit` after NFL production validation completes.
 
 ## Validation Commands
 

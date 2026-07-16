@@ -65,9 +65,11 @@ def test_research_asset_lifecycle_runtime_docs_exist_and_cover_required_topics()
     assert "Phase 4.9F - NFL Weather Research Asset Population" in project_status_text
     assert "docs/architecture/RESEARCH_ASSET_LIFECYCLE_RUNTIME.md" in project_status_text
     assert "docs/reports/PHASE4_8_RESEARCH_ASSET_LIFECYCLE_RUNTIME_AND_TIME_ENTITY_ALIGNMENT_CERTIFICATION.md" in project_status_text
+    assert "NFL Production Completion" in next_action_text
     assert "Universal Market Framework" in next_action_text
     assert "Phase 5.7 - Research Intelligence" in next_action_text
-    assert "Do not implement connectors." in next_action_text
+    assert "Do not implement another sport." in next_action_text
+    assert "Close only verified NFL production gaps" in next_action_text
     assert "Research Intelligence" in next_action_text
     assert "certified and hardened NFL research pipeline" in next_action_text
 

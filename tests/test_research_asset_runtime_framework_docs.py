@@ -143,7 +143,8 @@ def test_research_asset_runtime_framework_docs_exist_and_cover_required_topics()
     assert "docs/reports/PHASE4_5D_RESEARCH_ASSET_RUNTIME_FRAMEWORK.md" in project_status_text
     assert "certified and hardened nfl research pipeline" in next_action_text.lower()
     assert "immutable reference behavior" in next_action_text.lower()
-    assert "do not add provider-specific runtime ownership" in next_action_text.lower()
+    assert "Close only verified NFL production gaps" in next_action_text
+    assert "do not duplicate universal market framework logic" in next_action_text.lower()
 
     assert "Phase 4.5D established the research asset runtime framework." in roadmap_text
     assert "Phase 4.5E renamed the master research engine specification and the research asset runtime framework" in roadmap_text

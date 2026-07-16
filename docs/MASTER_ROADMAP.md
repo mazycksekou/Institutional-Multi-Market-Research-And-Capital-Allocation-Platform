@@ -8,16 +8,39 @@ The repository does **not** skip discovery, blueprinting, validation, or reprodu
 ## Long-Term Platform Sequence
 
 Universal Market Framework
--> supported sports, prediction markets, and Zero-DTE research implementations
+-> NFL Production Completion
+-> Covariance and Time-Dependent Risk Capability Audit
+-> additional sports
+-> prediction markets
+-> Zero-DTE options
 -> Worldview Intelligence
--> Cross-Market Intelligence and Opportunity Ranking
--> Capital Allocation, Treasury, and Risk
--> Unified Paper Trading
--> Controlled Live Execution
--> Institutional Readiness and Proprietary-Evidence Packaging
--> Autonomous Development Platform
+-> cross-market intelligence
+-> universal risk and capital allocation
+-> paper trading
+-> controlled live execution
+-> production/IP custody
+-> institutional readiness
+-> autonomous development
 
-These are roadmap lanes only. They are not implementation authorization for the Universal Market Framework phase.
+These are roadmap lanes only. They are not implementation authorization beyond the active governed phase in `docs/NEXT_ACTION.md`.
+
+## Post-NFL Production Audit Lane
+
+Immediately after complete NFL production validation, the next governed lane is the `Covariance and Time-Dependent Risk Capability Audit`.
+
+The audit must inspect the repository before implementation and determine existing, partial, missing, duplicated, or deferred support for:
+
+- covariance and correlation
+- rolling and exponentially weighted covariance
+- covariance stability and regime detection
+- cross-market and strategy covariance
+- holding-period and forecast-horizon risk
+- confidence and freshness decay
+- overnight, weekend, event, expiration, and liquidity risk
+- time-to-event and time-to-expiration risk
+- risk-horizon normalization and attribution
+
+Do not implement these capabilities during the sequencing correction or during NFL Production Completion unless a later governed phase explicitly activates them.
 
 ## Universal Market Lifecycle
 
@@ -93,7 +116,9 @@ Phase 5.6 completed pipeline validation and hardening on the production research
 Phase 5.7 completed deterministic Research Intelligence on top of the certified NFL pipeline.
 The next governed step is the Universal Market Framework, preserved here as the Phase 5.7 historical handoff statement.
 The Universal Market Framework completed the governed extraction of reusable market-agnostic contracts, registries, lifecycle interfaces, readiness surfaces, and dashboard/query interfaces without mutating the hardened NFL path.
-Later roadmap lanes continue with supported sports, prediction markets, and Zero-DTE research implementations, Worldview Intelligence, Cross-Market Intelligence and Opportunity Ranking, Capital Allocation, Treasury, and Risk, Unified Paper Trading, Controlled Live Execution, Institutional Readiness and Proprietary-Evidence Packaging, and the Autonomous Development Platform.
+The next governed step after Universal Market Framework completion is NFL Production Completion so the certified NFL reference implementation can be audited against production-complete requirements without duplicating reusable framework logic.
+After complete NFL production validation, the next governed lane is the Covariance and Time-Dependent Risk Capability Audit, which remains inspection-only until explicitly activated for implementation.
+Later roadmap lanes continue with additional sports, prediction markets, Zero-DTE options, Worldview Intelligence, cross-market intelligence, universal risk and capital allocation, paper trading, controlled live execution, production/IP custody, institutional readiness, and autonomous development.
 
 Deferred enrichment lanes after the first minimum-schema dataset path remains stable:
 
@@ -104,7 +129,7 @@ Phase 4.9J populates the NFL betting splits research asset.
 
 ## Current Phase Focus
 
-Current NFL work is in Phase 5:
+Current NFL work follows the certified Phase 5 chain and the completed Universal Market Framework:
 
 - Phase 4.1 established the NFL discovery and capability audit.
 - Phase 4.2 defines the NFL research blueprint and the permanent roadmap rule.
@@ -139,6 +164,8 @@ Current NFL work is in Phase 5:
 - Phase 5.6 completed pipeline validation and hardening on the production research engine path.
 - Phase 5.7 completed Research Intelligence on the certified NFL pipeline.
 - Universal Market Framework generalized the certified NFL research chain without changing certified NFL outputs.
+- NFL Production Completion is the active governed phase and should audit the certified NFL implementation against production-complete requirements while reusing the Universal Market Framework.
+- Covariance and Time-Dependent Risk Capability Audit follows NFL production validation and remains inspection-only until a later governed phase activates implementation.
 - Phase 4.9I and Phase 4.9J remain deferred enrichment asset lanes after the first baseline dataset path is established.
 
 The master research engine specification is already the canonical name for the broader research-engine scope. If the repository later needs an even broader top-level research asset registry, that should be treated as a separate future phase rather than another rename of this specification.

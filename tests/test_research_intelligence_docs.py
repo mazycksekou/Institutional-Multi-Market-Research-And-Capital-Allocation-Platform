@@ -68,16 +68,19 @@ def test_research_intelligence_docs_exist_and_cover_required_topics() -> None:
 
     assert "Phase 5.7 - Research Intelligence (complete)" in project_status_text
     assert "Universal Market Framework" in project_status_text
+    assert "NFL Production Completion" in project_status_text
     assert "docs/architecture/RESEARCH_INTELLIGENCE_LAYER.md" in project_status_text
     assert "docs/reports/PHASE5_7_RESEARCH_INTELLIGENCE.md" in project_status_text
 
-    assert "Universal Market Framework" in next_action_text
+    assert "NFL Production Completion" in next_action_text
     assert "Universal Market Framework" in next_action_text
     assert "deterministic Research Intelligence layer" in next_action_text
-    assert "do not add paper trading or live execution" in next_action_text
+    assert "Do not implement paper trading." in next_action_text
+    assert "Do not implement live execution." in next_action_text
 
     assert "Phase 5.7 completed deterministic Research Intelligence on top of the certified NFL pipeline." in roadmap_text
     assert "The next governed step is the Universal Market Framework" in roadmap_text
+    assert "Covariance and Time-Dependent Risk Capability Audit" in roadmap_text
 
     assert "docs/architecture/RESEARCH_INTELLIGENCE_LAYER.md" in master_index_text
     assert "docs/architecture/RESEARCH_INTELLIGENCE_LAYER.md" in retention_index_text

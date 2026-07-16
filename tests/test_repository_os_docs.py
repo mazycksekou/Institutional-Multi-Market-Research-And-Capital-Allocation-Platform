@@ -82,8 +82,10 @@ def test_repository_os_documents_exist_and_reference_canonical_governance() -> N
     assert "docs/MASTER_DOCUMENT_INDEX.md" in repository_os_text
     assert "docs/DOCUMENT_RETENTION_INDEX.md" in repository_os_text
 
+    assert "NFL Production Completion" in next_action_text
     assert "Universal Market Framework" in next_action_text
     assert "Phase 5.7 - Research Intelligence" in next_action_text
+    assert "Covariance and Time-Dependent Risk Capability Audit" in next_action_text
     assert "sole sequencing source" in next_action_text.lower()
     assert "canonical execution policy" in status_policy_text.lower()
     assert "sole sequencing source" in status_policy_text.lower()

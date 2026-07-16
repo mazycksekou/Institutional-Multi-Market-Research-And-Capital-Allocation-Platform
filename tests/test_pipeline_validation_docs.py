@@ -67,11 +67,13 @@ def test_pipeline_validation_docs_exist_and_cover_required_topics() -> None:
     assert "docs/architecture/PIPELINE_VALIDATION_AND_HARDENING_LAYER.md" in project_status_text
     assert "docs/reports/PHASE5_6_PIPELINE_VALIDATION_AND_HARDENING.md" in project_status_text
 
+    assert "NFL Production Completion" in next_action_text
     assert "Universal Market Framework" in next_action_text
     assert "Phase 5.7 - Research Intelligence" in next_action_text
-    assert "Build the first reusable Universal Market Framework" in next_action_text
+    assert "production-complete requirements" in next_action_text
+    assert "Close only verified NFL production gaps" in next_action_text
     assert "certified and hardened NFL research pipeline" in next_action_text
-    assert "Do not activate additional markets before the shared framework contract is in place." in next_action_text
+    assert "Do not implement another sport." in next_action_text
 
     assert "Phase 5.6 completed pipeline validation and hardening on the production research engine path." in roadmap_text
     assert "Phase 5.7 completed deterministic Research Intelligence on top of the certified NFL pipeline." in roadmap_text

@@ -55,6 +55,9 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "Phase 4.5C - Universal Math Engine Contracts" in project_status_text
     assert "Phase 4.3.6" in project_status_text
     assert "Phase 4.3.7" in project_status_text
+    assert "NFL Production Completion" in project_status_text
+    assert "Universal Market Framework (complete)" in project_status_text
+    assert "Covariance and Time-Dependent Risk Capability Audit" in project_status_text
     assert "master research engine specification" in project_status_text.lower()
     assert "latest validation status" in project_status_text.lower()
     assert "latest full gate result" in project_status_text.lower()
@@ -86,10 +89,13 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "docs/reports/PHASE5_4_DECISION_ROW_GENERATION.md" in project_status_text
     assert "docs/reports/PHASE5_5_BASELINE_BACKTESTING.md" in project_status_text
 
+    assert "NFL Production Completion" in next_action_text
     assert "Universal Market Framework" in next_action_text
     assert "Phase 5.7 - Research Intelligence" in next_action_text
+    assert "Covariance and Time-Dependent Risk Capability Audit" in next_action_text
     assert "Research Intelligence" in next_action_text
     assert "certified and hardened nfl research pipeline" in next_action_text.lower()
+    assert "production-complete requirements" in next_action_text.lower()
     assert "validation commands" in next_action_text.lower()
 
     assert "Every new session begins with `docs/PROJECT_STATUS.md`." in status_policy_text
@@ -129,6 +135,10 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "Phase 5.5 completed baseline backtesting from frozen, certified inputs." in roadmap_text
     assert "Phase 5.6 completed pipeline validation and hardening on the production research engine path." in roadmap_text
     assert "Phase 5.7 completed deterministic Research Intelligence on top of the certified NFL pipeline." in roadmap_text
+    assert "NFL Production Completion" in roadmap_text
+    assert "Covariance and Time-Dependent Risk Capability Audit" in roadmap_text
+    assert "additional sports" in roadmap_text
+    assert "universal risk and capital allocation" in roadmap_text
     assert "docs/PROJECT_STATUS.md" in roadmap_text
     assert "docs/NEXT_ACTION.md" in roadmap_text
     assert "docs/architecture/REPOSITORY_OS.md" in roadmap_text

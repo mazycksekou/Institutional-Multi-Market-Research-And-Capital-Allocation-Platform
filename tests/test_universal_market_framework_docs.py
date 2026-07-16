@@ -57,6 +57,8 @@ def test_universal_market_framework_roadmap_sequence_and_mission_are_preserved()
     roadmap = _read(DOCS / "MASTER_ROADMAP.md")
 
     assert "## Mission" in project_status
+    assert "NFL Production Completion" in project_status
+    assert "Covariance and Time-Dependent Risk Capability Audit" in project_status
     assert (
         "Build a deterministic, explainable, auditable, institutional-grade\n"
         "multi-market research and capital allocation platform"
@@ -64,14 +66,20 @@ def test_universal_market_framework_roadmap_sequence_and_mission_are_preserved()
 
     expected_sequence = (
         "Universal Market Framework\n"
-        "-> supported sports, prediction markets, and Zero-DTE research implementations\n"
+        "-> NFL Production Completion\n"
+        "-> Covariance and Time-Dependent Risk Capability Audit\n"
+        "-> additional sports\n"
+        "-> prediction markets\n"
+        "-> Zero-DTE options\n"
         "-> Worldview Intelligence\n"
-        "-> Cross-Market Intelligence and Opportunity Ranking\n"
-        "-> Capital Allocation, Treasury, and Risk\n"
-        "-> Unified Paper Trading\n"
-        "-> Controlled Live Execution\n"
-        "-> Institutional Readiness and Proprietary-Evidence Packaging\n"
-        "-> Autonomous Development Platform"
+        "-> cross-market intelligence\n"
+        "-> universal risk and capital allocation\n"
+        "-> paper trading\n"
+        "-> controlled live execution\n"
+        "-> production/IP custody\n"
+        "-> institutional readiness\n"
+        "-> autonomous development"
     )
     assert expected_sequence in roadmap
     assert "These are roadmap lanes only" in roadmap
+    assert "Immediately after complete NFL production validation" in roadmap
