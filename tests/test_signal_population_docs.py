@@ -40,10 +40,10 @@ def test_signal_population_docs_exist_and_cover_required_topics() -> None:
     assert "Worldview / Research Query Engine Review" in report_text
     assert "signal_ready" in report_text
     assert "Phase 5.3 - Reusable Signals" in project_status_text
-    assert "Phase 5.4 - Decision Row Generation" in next_action_text
-    assert "Phase 5.5 - Baseline Backtesting" in next_action_text
-    assert "Phase 5.4 - Decision Row Generation" in next_action_text
-    assert "frozen, certified inputs" in next_action_text.lower()
+    assert "Phase 5.7 - Research Intelligence" in next_action_text
+    assert "Phase 5.6 - Validation And Hardening" in next_action_text
+    assert "Research Intelligence" in next_action_text
+    assert "certified and hardened nfl pipeline" in next_action_text.lower()
     assert "Phase 5.3 completed reusable signals." in roadmap_text
     assert "Phase 5.4 completed the decision-row generation layer from the certified signal layer." in roadmap_text
     assert "docs/architecture/SIGNAL_POPULATION_LAYER.md" in master_index_text

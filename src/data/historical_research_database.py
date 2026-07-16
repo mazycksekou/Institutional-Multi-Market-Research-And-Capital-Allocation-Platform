@@ -3952,6 +3952,7 @@ def build_historical_dataset_population_dashboard_snapshot(
             latest_certification.get("certification_status"),
             "missing",
         )
+        dataset_certification_id = _normalize_text(latest_certification.get("certification_id"))
         readiness_state = _normalize_text(latest_batch.get("readiness_state"), "missing")
         join_validation_status = (
             "validated"
@@ -3998,6 +3999,7 @@ def build_historical_dataset_population_dashboard_snapshot(
             "provenance_completeness": bool(int(latest_batch.get("provenance_completeness") or 0)),
             "lineage_completeness": bool(int(latest_batch.get("lineage_completeness") or 0)),
             "dataset_certification_status": dataset_certification_status,
+            "dataset_certification_id": dataset_certification_id,
             "lifecycle_state": _normalize_text(latest_lifecycle.get("lifecycle_state"), "missing"),
             "readiness_state": readiness_state,
             "unresolved_blockers": unresolved_blockers,
@@ -4057,6 +4059,7 @@ def get_historical_dataset_population_snapshot_for_dashboard(
             "provenance_completeness": False,
             "lineage_completeness": False,
             "dataset_certification_status": "missing",
+            "dataset_certification_id": "",
             "lifecycle_state": "missing",
             "readiness_state": "missing",
             "unresolved_blockers": [str(exc)],

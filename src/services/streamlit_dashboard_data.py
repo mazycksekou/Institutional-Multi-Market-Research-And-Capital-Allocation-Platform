@@ -57,6 +57,9 @@ from src.backtesting.baseline_backtesting import (
 from src.backtesting.decision_row_population import (
     get_decision_row_population_snapshot_for_dashboard as _get_decision_row_population_snapshot_for_dashboard,
 )
+from src.backtesting.pipeline_validation import (
+    get_pipeline_validation_snapshot_for_dashboard as _get_pipeline_validation_snapshot_for_dashboard,
+)
 from src.data.source_event_links import (
     build_source_event_link_resolver_snapshot,
     describe_source_event_link_resolver,
@@ -3959,6 +3962,18 @@ def get_baseline_backtest_snapshot_for_dashboard(
         backend=backend,
         backtest_run_id=backtest_run_id,
         decision_batch_id=decision_batch_id,
+    )
+
+
+def get_pipeline_validation_snapshot_for_dashboard(
+    storage_path: str | Path | None = None,
+    *,
+    backend: str = "sqlite",
+) -> dict[str, Any]:
+    """Return a canonical Phase 5.6 pipeline validation snapshot."""
+    return _get_pipeline_validation_snapshot_for_dashboard(
+        storage_path=storage_path,
+        backend=backend,
     )
 
 

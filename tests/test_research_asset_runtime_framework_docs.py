@@ -135,13 +135,14 @@ def test_research_asset_runtime_framework_docs_exist_and_cover_required_topics()
     assert "Readiness for Phase 4.7" in report_text
 
     assert "Phase 4.5E - Canonical Engineering Specification Rename & Research Asset Runtime Framework" in project_status_text
-    assert "Phase 5.5 - Baseline Backtesting" in next_action_text
+    assert "Phase 5.7 - Research Intelligence" in next_action_text
+    assert "Phase 5.6 - Validation And Hardening" in next_action_text
     assert "docs/architecture/RESEARCH_ASSET_RUNTIME_FRAMEWORK.md" in project_status_text
     assert "docs/architecture/HISTORICAL_DATASET_ACQUISITION_FRAMEWORK.md" in project_status_text
     assert "docs/contracts/RESEARCH_ASSET_CONTRACT.md" in project_status_text
     assert "docs/reports/PHASE4_5D_RESEARCH_ASSET_RUNTIME_FRAMEWORK.md" in project_status_text
-    assert "minimum certified schema first" in next_action_text.lower()
-    assert "do not extend beyond baseline backtesting" in next_action_text.lower()
+    assert "certified and hardened nfl research pipeline" in next_action_text.lower()
+    assert "immutable evidence" in next_action_text.lower()
     assert "do not add provider-specific runtime ownership" in next_action_text.lower()
 
     assert "Phase 4.5D established the research asset runtime framework." in roadmap_text

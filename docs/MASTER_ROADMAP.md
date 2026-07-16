@@ -75,7 +75,8 @@ Phase 5.2 completed reusable mathematical engines.
 Phase 5.3 completed reusable signals.
 Phase 5.4 completed the decision-row generation layer from the certified signal layer.
 Phase 5.5 completed baseline backtesting from frozen, certified inputs.
-Phase 5.6 performs validation and hardening on the production research engine path.
+Phase 5.6 completed pipeline validation and hardening on the production research engine path.
+Phase 5.7 begins Research Intelligence on top of the certified NFL pipeline.
 Later phases continue with paper trading, incremental live updates, Worldview Intelligence, and controlled production deployment.
 
 Deferred enrichment lanes after the first minimum-schema dataset path remains stable:
@@ -119,7 +120,8 @@ Current NFL work is in Phase 5:
 - Phase 5.3 completed reusable signals.
 - Phase 5.4 completed the decision-row generation layer from the certified signal layer.
 - Phase 5.5 completed baseline backtesting against the minimum certified schema.
-- Phase 5.6 will perform validation and hardening on the production research engine path.
+- Phase 5.6 completed pipeline validation and hardening on the production research engine path.
+- Phase 5.7 will build Research Intelligence on the certified NFL pipeline.
 - Phase 4.9I and Phase 4.9J remain deferred enrichment asset lanes after the first baseline dataset path is established.
 
 The master research engine specification is already the canonical name for the broader research-engine scope. If the repository later needs an even broader top-level research asset registry, that should be treated as a separate future phase rather than another rename of this specification.

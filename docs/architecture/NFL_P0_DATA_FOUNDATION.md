@@ -62,7 +62,7 @@ Normalization converts canonical NFL P0 rows into the storage-ready shape:
 
 The dashboard helper exposes a readiness snapshot for the NFL P0 foundation without owning the underlying storage.
 The dashboard layer stays thin and only reports readiness.
-That readiness snapshot now also includes the feature-layer rollup exposed by Phase 5.1B, the math-layer rollup exposed by Phase 5.2, the signal and decision rollups from Phases 5.3 and 5.4, and the baseline-backtest-layer rollup exposed by Phase 5.5 so the P0 view can report when the reusable historical replay path is available.
+That readiness snapshot now also includes the feature-layer rollup exposed by Phase 5.1B, the math-layer rollup exposed by Phase 5.2, the signal and decision rollups from Phases 5.3 and 5.4, the baseline-backtest-layer rollup exposed by Phase 5.5, and the pipeline-validation-layer rollup exposed by Phase 5.6 so the P0 view can report when the certified research path is ready for Research Intelligence.
 
 ## Deferred work
 
@@ -86,4 +86,5 @@ The remaining governed phases are:
 - reusable signals are complete in Phase 5.3
 - decision rows are complete in Phase 5.4
 - baseline backtesting is complete in Phase 5.5
-- validate and harden the production research engine path in Phase 5.6 before expanding beyond the P0 team/game foundation
+- pipeline validation and hardening are complete in Phase 5.6
+- begin Research Intelligence in Phase 5.7 on top of the certified and hardened P0 team/game foundation

@@ -47,7 +47,8 @@ def test_nfl_odds_research_asset_population_docs_exist_and_cover_required_topics
     assert "Worldview Intelligence Review" in report_text
 
     assert "Phase 5.3 - Reusable Signals" in project_status_text
-    assert "Phase 5.5 - Baseline Backtesting" in next_action_text
+    assert "Phase 5.7 - Research Intelligence" in next_action_text
+    assert "Phase 5.6 - Validation And Hardening" in next_action_text
     assert "docs/architecture/NFL_ODDS_RESEARCH_ASSET.md" in project_status_text
     assert "docs/reports/PHASE4_9E_NFL_ODDS_RESEARCH_ASSET_POPULATION.md" in project_status_text
     assert "docs/architecture/NFL_ODDS_RESEARCH_ASSET.md" in master_index_text

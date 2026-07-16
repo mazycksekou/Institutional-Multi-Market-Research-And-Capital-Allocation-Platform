@@ -62,7 +62,9 @@ def test_feature_snapshot_population_docs_exist_and_cover_required_topics() -> N
 
     assert "Phase 5.3 - Reusable Signals" in project_status_text
     assert "Phase 5.3 - Reusable Signals" in project_status_text
-    assert "Phase 5.5 - Baseline Backtesting" in next_action_text
+    assert "Phase 5.7 - Research Intelligence" in next_action_text
+    assert "Phase 5.6 - Validation And Hardening" in next_action_text
+    assert "certified and hardened nfl pipeline" in next_action_text.lower()
     assert "Phase 5.1B completed the reusable feature snapshot population layer" in roadmap_text
     assert "Phase 5.2 completed reusable mathematical engines." in roadmap_text
 

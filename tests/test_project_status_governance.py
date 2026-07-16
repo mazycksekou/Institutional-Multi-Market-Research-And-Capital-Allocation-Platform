@@ -86,11 +86,10 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "docs/reports/PHASE5_4_DECISION_ROW_GENERATION.md" in project_status_text
     assert "docs/reports/PHASE5_5_BASELINE_BACKTESTING.md" in project_status_text
 
-    assert "Phase 5.5 - Baseline Backtesting" in next_action_text
+    assert "Phase 5.7 - Research Intelligence" in next_action_text
     assert "Phase 5.6 - Validation And Hardening" in next_action_text
-    assert "Phase 5.4 - Decision Row Generation" in next_action_text
-    assert "decision rows" in next_action_text.lower()
-    assert "frozen, certified inputs" in next_action_text.lower()
+    assert "Research Intelligence" in next_action_text
+    assert "certified and hardened nfl pipeline" in next_action_text.lower()
     assert "validation commands" in next_action_text.lower()
 
     assert "Every new session begins with `docs/PROJECT_STATUS.md`." in status_policy_text
@@ -128,6 +127,8 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "Phase 5.3 completed reusable signals." in roadmap_text
     assert "Phase 5.4 completed the decision-row generation layer from the certified signal layer." in roadmap_text
     assert "Phase 5.5 completed baseline backtesting from frozen, certified inputs." in roadmap_text
+    assert "Phase 5.6 completed pipeline validation and hardening on the production research engine path." in roadmap_text
+    assert "Phase 5.7 begins Research Intelligence on top of the certified NFL pipeline." in roadmap_text
     assert "docs/PROJECT_STATUS.md" in roadmap_text
     assert "docs/NEXT_ACTION.md" in roadmap_text
     assert "docs/architecture/REPOSITORY_OS.md" in roadmap_text

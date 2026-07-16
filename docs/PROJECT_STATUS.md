@@ -7,9 +7,9 @@ Canonical live status for the repository and the required starting document for 
 - current branch: `feature/nfl-backtesting`
 - current HEAD: live branch tip (exact hash is reported in the task final report)
 - remote tracking branch: `origin/feature/nfl-backtesting`
-- active phase: `Phase 5.5 - Baseline Backtesting (complete)`
+- active phase: `Phase 5.6 - Validation And Hardening (complete)`
 - active market profile: `sports:nfl`
-- active implementation lane: `NFL P0 profile-aware foundation + event-centric historical research database + master research engine specification + universal feature registry + universal math engine contracts + research asset runtime framework + historical dataset acquisition framework + historical dataset acquisition runtime + research asset source discovery and connector mapping framework + historical research asset certification runtime + research asset lifecycle runtime + NFL schedule research asset population + research asset coverage planner and provider selection framework + first production NFL schedule connector + certified NFL results research asset + certified NFL odds research asset + certified NFL weather research asset + certified NFL injuries research asset + certified NFL team statistics research asset + deterministic historical dataset population layer + deterministic feature snapshot population layer + deterministic mathematical engine population layer + deterministic signal population layer + deterministic decision row generation layer + deterministic baseline backtesting layer`
+- active implementation lane: `NFL P0 profile-aware foundation + event-centric historical research database + master research engine specification + universal feature registry + universal math engine contracts + research asset runtime framework + historical dataset acquisition framework + historical dataset acquisition runtime + research asset source discovery and connector mapping framework + historical research asset certification runtime + research asset lifecycle runtime + NFL schedule research asset population + research asset coverage planner and provider selection framework + first production NFL schedule connector + certified NFL results research asset + certified NFL odds research asset + certified NFL weather research asset + certified NFL injuries research asset + certified NFL team statistics research asset + deterministic historical dataset population layer + deterministic feature snapshot population layer + deterministic mathematical engine population layer + deterministic signal population layer + deterministic decision row generation layer + deterministic baseline backtesting layer + deterministic pipeline validation and hardening layer`
 - completed phases:
   - `Phase 4.3.6 - Profile-Aware NFL P0 Validation`
   - `Phase 4.3.7 - Minimum Backtest Row Contract`
@@ -36,8 +36,9 @@ Canonical live status for the repository and the required starting document for 
   - `Phase 5.3 - Reusable Signals`
   - `Phase 5.4 - Decision Row Generation`
   - `Phase 5.5 - Baseline Backtesting`
-- current phase objective: Phase 5.5 is complete; the next objective is to validate and harden the production research engine path before any Research Intelligence, paper trading, or live execution expansion.
-- next phase: `Phase 5.6 - Validation And Hardening`
+  - `Phase 5.6 - Validation And Hardening`
+- current phase objective: Phase 5.6 is complete; the next objective is to build Research Intelligence on top of the certified and hardened NFL pipeline before any additional-market, paper-trading, or live-execution expansion.
+- next phase: `Phase 5.7 - Research Intelligence`
 - current blockers: None
 - latest validation status:
   - Phase 4.7C runtime validation passed: compileall, certification runtime tests, smoke, architecture, document lifecycle, and ops checks are green.
@@ -55,7 +56,8 @@ Canonical live status for the repository and the required starting document for 
   - Phase 5.2 mathematical engine population code changes are complete and validated: focused math-engine runtime tests, focused math-engine documentation tests, adjacent historical dataset, feature snapshot, and NFL P0 regressions, compileall, root markdown, OpenAPI, architecture, audit lifecycle, document lifecycle advisory with one warning and no clear violations, ops checks, repository preflight checks, smoke, and the full repository test suite are green; the branch is clean, synchronized, and pushed.
   - Phase 5.3 reusable signals code changes are complete and validated: focused signal runtime tests, focused signal documentation tests, adjacent math-engine, feature snapshot, lifecycle, and governance regressions, compileall, root markdown, OpenAPI, architecture, audit lifecycle, document lifecycle advisory with one warning and no clear violations, ops checks, repository preflight checks, smoke, and the full repository test suite are green.
   - Phase 5.5 baseline backtesting code changes are complete and validated: focused signal, decision, and baseline-backtesting runtime tests, focused baseline-backtesting documentation tests, compileall, smoke, root markdown, OpenAPI contract, architecture, audit lifecycle, document lifecycle advisory with one warning and no clear violations, ops checks, repository preflight checks, git diff checks, and the full repository test suite are green.
-- latest full gate result: `passed for the completed Phase 5.5 gate; document lifecycle remains advisory with one warning and no clear violations`
+  - Phase 5.6 pipeline validation and hardening code changes are complete and validated: focused pipeline-validation runtime tests, adjacent feature, signal, decision, baseline-backtesting, and NFL P0 regressions, compileall, smoke, root markdown, OpenAPI contract, architecture, audit lifecycle, document lifecycle, ops checks, repository preflight checks, git diff checks, and the full repository test suite are green.
+- latest full gate result: `passed for the completed Phase 5.6 gate`
 - latest pushed commit: live branch tip (exact hash is reported in the task final report)
 
 ## Active Canonical Rules
@@ -113,6 +115,7 @@ Read these only when you need more detail than the project status page provides:
 - `docs/architecture/HISTORICAL_DATASET_ACQUISITION_RUNTIME.md`
 - `docs/architecture/HISTORICAL_DATASET_POPULATION_LAYER.md`
 - `docs/architecture/BASELINE_BACKTESTING_LAYER.md`
+- `docs/architecture/PIPELINE_VALIDATION_AND_HARDENING_LAYER.md`
 - `docs/architecture/DECISION_ROW_POPULATION_LAYER.md`
 - `docs/architecture/SIGNAL_POPULATION_LAYER.md`
 - `docs/architecture/NFL_SCHEDULE_CONNECTOR.md`
@@ -139,6 +142,7 @@ Read these only when you need more detail than the project status page provides:
 - `docs/reports/PHASE4_9H_NFL_TEAM_STATISTICS_RESEARCH_ASSET_POPULATION.md`
 - `docs/reports/PHASE5_0_HISTORICAL_DATASET_POPULATION_LAYER.md`
 - `docs/reports/PHASE5_5_BASELINE_BACKTESTING.md`
+- `docs/reports/PHASE5_6_PIPELINE_VALIDATION_AND_HARDENING.md`
 - `docs/reports/PHASE5_3_REUSABLE_SIGNALS.md`
 - `docs/reports/PHASE5_4_DECISION_ROW_GENERATION.md`
 - `docs/contracts/MINIMUM_BACKTEST_ROW_CONTRACT.md`
@@ -159,4 +163,4 @@ Read these only when you need more detail than the project status page provides:
 
 ## Next Recommended Codex Task
 
-`Phase 5.6 - Validation And Hardening`
+`Phase 5.7 - Research Intelligence`

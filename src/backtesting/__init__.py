@@ -33,6 +33,12 @@ from .decision_row_population import (
     validate_decision_registry,
     validate_decision_rows,
 )
+from .pipeline_validation import (
+    PIPELINE_VALIDATION_RUNTIME_VERSION,
+    PIPELINE_VALIDATION_SCHEMA_VERSION,
+    build_pipeline_validation_snapshot,
+    get_pipeline_validation_snapshot_for_dashboard,
+)
 from .replay import build_replay_plan, plan_replay_rows
 from .simulation import build_simulation_plan, run_simulation_plan
 
@@ -55,9 +61,13 @@ __all__ = [
     "build_decision_snapshot_context",
     "build_decision_snapshot_context_id",
     "build_decision_value_identity",
+    "build_pipeline_validation_snapshot",
     "get_decision_definition",
     "get_baseline_backtest_snapshot_for_dashboard",
     "get_decision_row_population_snapshot_for_dashboard",
+    "get_pipeline_validation_snapshot_for_dashboard",
+    "PIPELINE_VALIDATION_RUNTIME_VERSION",
+    "PIPELINE_VALIDATION_SCHEMA_VERSION",
     "plan_replay_rows",
     "run_baseline_backtest",
     "run_simulation_plan",

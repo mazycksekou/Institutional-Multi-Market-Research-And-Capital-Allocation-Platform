@@ -226,6 +226,17 @@ def _load_json_mapping(value: Any) -> dict[str, Any]:
     return dict(parsed) if isinstance(parsed, Mapping) else {}
 
 
+def _normalize_bool(value: Any, default: bool = False) -> bool:
+    if isinstance(value, bool):
+        return value
+    text = _normalize_text(value).lower()
+    if text in {"1", "true", "yes"}:
+        return True
+    if text in {"0", "false", "no"}:
+        return False
+    return default
+
+
 def _load_json_list(value: Any) -> list[Any]:
     if isinstance(value, list):
         return list(value)
@@ -2058,6 +2069,48 @@ def build_feature_snapshot_population_dashboard_snapshot(
         readiness_state = _normalize_text(latest_batch.get("readiness"), "missing")
         validation_state = _normalize_text(latest_batch.get("validation_state"), "missing")
         status = _normalize_text(latest_batch.get("status"), "missing")
+        batch_summary_payload = _load_json_mapping(latest_batch.get("summary_json"))
+        dataset_certification_status = _normalize_text(
+            latest_batch.get("dataset_certification_status")
+            or batch_summary_payload.get("dataset_certification_status")
+            or source_dataset_snapshot.get("dataset_certification_status"),
+            "missing",
+        )
+        dataset_certification_id = _normalize_text(
+            latest_batch.get("dataset_certification_id")
+            or latest_batch.get("source_dataset_certification_id")
+            or latest_batch.get("certification_id")
+            or batch_summary_payload.get("source_dataset_certification_id")
+            or source_dataset_snapshot.get("dataset_certification_id"),
+        )
+        point_in_time_validation_status = _normalize_text(
+            latest_batch.get("point_in_time_validation_status")
+            or batch_summary_payload.get("source_dataset_point_in_time_status")
+            or source_dataset_snapshot.get("point_in_time_validation_status"),
+            "missing",
+        )
+        lineage_completeness = _normalize_bool(
+            latest_batch.get("lineage_completeness")
+            if latest_batch.get("lineage_completeness") not in (None, "")
+            else batch_summary_payload.get("source_dataset_lineage_completeness")
+            if batch_summary_payload.get("source_dataset_lineage_completeness") not in (None, "")
+            else source_dataset_snapshot.get("lineage_completeness"),
+            default=False,
+        )
+        provenance_completeness = _normalize_bool(
+            latest_batch.get("provenance_completeness")
+            if latest_batch.get("provenance_completeness") not in (None, "")
+            else batch_summary_payload.get("source_dataset_provenance_completeness")
+            if batch_summary_payload.get("source_dataset_provenance_completeness") not in (None, "")
+            else source_dataset_snapshot.get("provenance_completeness"),
+            default=False,
+        )
+        lifecycle_state = _normalize_text(
+            latest_batch.get("lifecycle_state")
+            or latest_batch.get("readiness")
+            or source_dataset_snapshot.get("lifecycle_state"),
+            "missing",
+        )
         ok = bool(feature_rows) and status == "certified" and readiness_state == "feature_ready" and validation_state == "validated"
         join_diagnostics = {
             "feature_row_count": feature_row_count,
@@ -2090,6 +2143,14 @@ def build_feature_snapshot_population_dashboard_snapshot(
                 "source_dataset_batch_id": _normalize_text(latest_batch.get("dataset_batch_id")),
                 "source_dataset_version_id": _normalize_text(latest_batch.get("dataset_version_id")),
                 "source_dataset_certification_id": _normalize_text(latest_batch.get("certification_id")),
+                "dataset_certification_status": dataset_certification_status,
+                "dataset_certification_id": dataset_certification_id,
+                "point_in_time_validation_status": point_in_time_validation_status,
+                "lineage_completeness": lineage_completeness,
+                "provenance_completeness": provenance_completeness,
+                "readiness": readiness_state,
+                "validation_state": validation_state,
+                "lifecycle_state": lifecycle_state,
                 "idempotent_reuse": idempotent_reuse,
             }
         )
@@ -2144,6 +2205,14 @@ def get_feature_snapshot_population_snapshot_for_dashboard(
             "feature_lineage_edges": [],
             "join_diagnostics": {},
             "source_dataset_snapshot": {},
+            "dataset_certification_status": "missing",
+            "dataset_certification_id": "",
+            "point_in_time_validation_status": "missing",
+            "lineage_completeness": False,
+            "provenance_completeness": False,
+            "readiness": "missing",
+            "validation_state": "missing",
+            "lifecycle_state": "missing",
             "storage": {},
             "warnings": [str(exc)],
         }

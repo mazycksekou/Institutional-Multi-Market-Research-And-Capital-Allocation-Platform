@@ -67,16 +67,18 @@ def test_baseline_backtesting_docs_exist_and_cover_required_topics() -> None:
 
     assert "Phase 5.5 - Baseline Backtesting" in project_status_text
     assert "Phase 5.6 - Validation And Hardening" in project_status_text
+    assert "Phase 5.7 - Research Intelligence" in project_status_text
     assert "docs/architecture/BASELINE_BACKTESTING_LAYER.md" in project_status_text
     assert "docs/reports/PHASE5_5_BASELINE_BACKTESTING.md" in project_status_text
 
+    assert "Phase 5.7 - Research Intelligence" in next_action_text
     assert "Phase 5.6 - Validation And Hardening" in next_action_text
-    assert "Phase 5.5 - Baseline Backtesting" in next_action_text
-    assert "Phase 5.4 - Decision Row Generation" in next_action_text
-    assert "do not start Research Intelligence in this phase" in next_action_text
+    assert "Research Intelligence" in next_action_text
+    assert "certified and hardened NFL pipeline" in next_action_text
 
     assert "Phase 5.5 completed baseline backtesting from frozen, certified inputs." in roadmap_text
-    assert "Phase 5.6 performs validation and hardening on the production research engine path." in roadmap_text
+    assert "Phase 5.6 completed pipeline validation and hardening on the production research engine path." in roadmap_text
+    assert "Phase 5.7 begins Research Intelligence on top of the certified NFL pipeline." in roadmap_text
 
     assert "docs/architecture/BASELINE_BACKTESTING_LAYER.md" in master_index_text
     assert "docs/reports/PHASE5_5_BASELINE_BACKTESTING.md" in master_index_text

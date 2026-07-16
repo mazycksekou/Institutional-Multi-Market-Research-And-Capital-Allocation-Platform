@@ -49,6 +49,7 @@ This index points readers to the current truth and the durable historical entry 
 - `docs/architecture/NFL_TEAM_STATISTICS_RESEARCH_ASSET.md` - NFL Team Statistics Research Asset
 - `docs/architecture/NFL_WEATHER_RESEARCH_ASSET.md` - NFL Weather Research Asset
 - `docs/architecture/OPENAPI_CONTRACT_GOVERNANCE.md` - OpenAPI Contract Governance
+- `docs/architecture/PIPELINE_VALIDATION_AND_HARDENING_LAYER.md` - Pipeline Validation And Hardening Layer
 - `docs/architecture/PRODUCTION_READINESS.md` - Production Readiness
 - `docs/architecture/PROVIDER_OWNERSHIP_MAP.md` - Provider Ownership Map
 - `docs/architecture/REPOSITORY_INDEPENDENCE_SCORECARD.md` - Repository Independence Scorecard
@@ -141,33 +142,6 @@ This index points readers to the current truth and the durable historical entry 
 ### DISCOVERY REPORT
 - `docs/discovery/COMPLETE_DATA_PLATFORM_DISCOVERY.md` - Complete Data Platform Discovery
 
-### DOCUMENT
-- `docs/reports/PROJECT_ENTRYPOINT_AUDIT.md` - Project Entrypoint Audit
-- `docs/reports/PROJECT_STATUS_GOVERNANCE_DISCOVERY.md` - Project Status Governance Discovery
-- `docs/reports/PHASE4_4_EVENT_CENTRIC_HISTORICAL_ACQUISITION.md` - Phase 4.4 Event-Centric Historical Acquisition
-- `docs/reports/PHASE4_5A_MASTER_RESEARCH_ENGINE_SPECIFICATION.md` - Phase 4.5A Master Research Engine Specification
-- `docs/reports/PHASE4_5B_UNIVERSAL_FEATURE_REGISTRY.md` - Phase 4.5B Universal Feature Registry
-- `docs/reports/PHASE4_5C_UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md` - Phase 4.5C Universal Mathematical Engine Contracts
-- `docs/reports/PHASE4_5D_RESEARCH_ASSET_RUNTIME_FRAMEWORK.md` - Phase 4.5D Research Asset Runtime Framework
-- `docs/reports/PHASE4_6_MINIMUM_CERTIFIED_HISTORICAL_DATASET_ACQUISITION_FRAMEWORK.md` - Phase 4.6 Minimum Certified Historical Dataset Acquisition Framework
-- `docs/reports/PHASE4_7A_RESEARCH_ASSET_SOURCE_DISCOVERY_AND_CONNECTOR_MAPPING.md` - Phase 4.7A Research Asset Source Discovery And Connector Mapping
-- `docs/reports/PHASE4_7B_HISTORICAL_DATASET_ACQUISITION_RUNTIME.md` - Phase 4.7B Historical Dataset Acquisition Runtime
-- `docs/reports/PHASE4_7C_HISTORICAL_RESEARCH_ASSET_CERTIFICATION_RUNTIME.md` - Phase 4.7C Historical Research Asset Certification Runtime
-- `docs/reports/PHASE4_8_RESEARCH_ASSET_LIFECYCLE_RUNTIME_AND_TIME_ENTITY_ALIGNMENT_CERTIFICATION.md` - Phase 4.8 Research Asset Lifecycle Runtime And Time And Entity Alignment Certification
-- `docs/reports/PHASE4_9A_NFL_SCHEDULE_RESEARCH_ASSET_POPULATION.md` - Phase 4.9A NFL Schedule Research Asset Population
-- `docs/reports/PHASE4_9B_RESEARCH_ASSET_COVERAGE_PLANNER_AND_PROVIDER_SELECTION_FRAMEWORK.md` - Phase 4.9B Research Asset Coverage Planner And Provider Selection Framework
-- `docs/reports/PHASE4_9D_NFL_RESULTS_RESEARCH_ASSET_POPULATION.md` - Phase 4.9D NFL Results Research Asset Population
-- `docs/reports/PHASE4_9E_NFL_ODDS_RESEARCH_ASSET_POPULATION.md` - Phase 4.9E NFL Odds Research Asset Population
-- `docs/reports/PHASE4_9F_NFL_WEATHER_RESEARCH_ASSET_POPULATION.md` - Phase 4.9F NFL Weather Research Asset Population
-- `docs/reports/PHASE4_9G_NFL_INJURIES_RESEARCH_ASSET_POPULATION.md` - Phase 4.9G NFL Injuries Research Asset Population
-- `docs/reports/PHASE4_9H_NFL_TEAM_STATISTICS_RESEARCH_ASSET_POPULATION.md` - Phase 4.9H NFL Team Statistics Research Asset Population
-- `docs/reports/PHASE5_0_HISTORICAL_DATASET_POPULATION_LAYER.md` - Phase 5.0 Historical Dataset Population Layer
-- `docs/reports/PHASE5_1B_FEATURE_SNAPSHOT_POPULATION.md` - Phase 5.1B Feature Snapshot Population
-- `docs/reports/PHASE5_2_REUSABLE_MATHEMATICAL_ENGINES.md` - Phase 5.2 Reusable Mathematical Engines
-- `docs/reports/PHASE5_3_REUSABLE_SIGNALS.md` - Phase 5.3 Reusable Signals
-- `docs/reports/PHASE5_4_DECISION_ROW_GENERATION.md` - Phase 5.4 Decision Row Generation
-- `docs/reports/PHASE5_5_BASELINE_BACKTESTING.md` - Phase 5.5 Baseline Backtesting
-
 ### GAP ANALYSIS
 - `docs/reports/gap_analysis/COMPLETE_GAP_ANALYSIS.md` - Complete Gap Analysis
 - `docs/reports/gap_analysis/IMPLEMENTATION_READINESS_REPORT.md` - Implementation Readiness Report
@@ -221,6 +195,18 @@ This index points readers to the current truth and the durable historical entry 
 - `docs/development/CONTRIBUTING.md` - Contributing
 - `docs/development/ENGINEERING_STANDARDS.md` - Engineering Standards
 - `docs/development/ONBOARDING.md` - Developer Onboarding
+
+### DOCUMENT
+- `docs/reports/PHASE4_7A_RESEARCH_ASSET_SOURCE_DISCOVERY_AND_CONNECTOR_MAPPING.md` - Phase 4.7A Research Asset Source Discovery And Connector Mapping
+- `docs/reports/PHASE4_9A_NFL_SCHEDULE_RESEARCH_ASSET_POPULATION.md` - Phase 4.9A - NFL Schedule Research Asset Population
+- `docs/reports/PHASE4_9B_RESEARCH_ASSET_COVERAGE_PLANNER_AND_PROVIDER_SELECTION_FRAMEWORK.md` - Phase 4.9B - Research Asset Coverage Planner And Provider Selection Framework
+- `docs/reports/PHASE4_9D_NFL_RESULTS_RESEARCH_ASSET_POPULATION.md` - Phase 4.9D - NFL Results Research Asset Population
+- `docs/reports/PHASE5_1B_FEATURE_SNAPSHOT_POPULATION.md` - Phase 5.1B - Feature Snapshot Population
+- `docs/reports/PHASE5_2_REUSABLE_MATHEMATICAL_ENGINES.md` - Phase 5.2 - Reusable Mathematical Engines
+- `docs/reports/PHASE5_3_REUSABLE_SIGNALS.md` - Phase 5.3 - Reusable Signals
+- `docs/reports/PHASE5_4_DECISION_ROW_GENERATION.md` - Phase 5.4 - Decision Row Generation
+- `docs/reports/PHASE5_5_BASELINE_BACKTESTING.md` - Phase 5.5 - Baseline Backtesting
+- `docs/reports/PHASE5_6_PIPELINE_VALIDATION_AND_HARDENING.md` - Phase 5.6 - Pipeline Validation And Hardening
 
 ## Historical Entry Points
 

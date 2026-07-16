@@ -1573,6 +1573,21 @@ def build_nfl_p0_dashboard_snapshot(
             "status": "baseline_backtest_snapshot_error",
             "warnings": [str(exc)],
         }
+    try:
+        from src.backtesting.pipeline_validation import build_pipeline_validation_snapshot
+
+        pipeline_validation_snapshot = build_pipeline_validation_snapshot(
+            storage_path=storage_path,
+            backend=backend,
+            include_layer_snapshots=False,
+            persist_artifacts=True,
+        )
+    except Exception as exc:
+        pipeline_validation_snapshot = {
+            "ok": False,
+            "status": "pipeline_validation_snapshot_error",
+            "warnings": [str(exc)],
+        }
     snapshot["table_counts"] = {name: details.get("row_count", 0) for name, details in snapshot.get("table_readiness", {}).items()}
     snapshot["dataset_readiness"] = {
         "status": snapshot.get("status"),
@@ -1660,6 +1675,22 @@ def build_nfl_p0_dashboard_snapshot(
         "point_in_time_ok": baseline_backtest_snapshot.get("point_in_time_ok", False),
         "readiness": baseline_backtest_snapshot.get("readiness", "blocked"),
         "lifecycle_state": baseline_backtest_snapshot.get("lifecycle_state", "missing"),
+        "dataset_certification_status": baseline_backtest_snapshot.get("dataset_certification_status", "missing"),
+        "validation_state": baseline_backtest_snapshot.get("validation_state", "missing"),
+        "artifact_integrity_ok": baseline_backtest_snapshot.get("artifact_integrity_ok", False),
+    }
+    snapshot["pipeline_validation_layer_readiness"] = {
+        "status": pipeline_validation_snapshot.get("status", "missing"),
+        "dataset_id": pipeline_validation_snapshot.get("dataset_id", ""),
+        "pipeline_validation_run_id": pipeline_validation_snapshot.get("pipeline_validation_run_id", ""),
+        "readiness": pipeline_validation_snapshot.get("readiness", "blocked"),
+        "lifecycle_state": pipeline_validation_snapshot.get("lifecycle_state", "missing"),
+        "artifact_integrity_ok": pipeline_validation_snapshot.get("artifact_integrity_ok", False),
+        "error_check_count": pipeline_validation_snapshot.get("validation_summary", {}).get("error_check_count", 0),
+        "error_checks_passed": pipeline_validation_snapshot.get("validation_summary", {}).get("error_checks_passed", 0),
+        "warning_check_count": pipeline_validation_snapshot.get("validation_summary", {}).get("warning_check_count", 0),
+        "warning_checks_passed": pipeline_validation_snapshot.get("validation_summary", {}).get("warning_checks_passed", 0),
+        "unresolved_blockers": pipeline_validation_snapshot.get("unresolved_blockers", []),
     }
     snapshot["readiness_summary"] = {
         "table_readiness_ready": len(snapshot.get("ready_tables", [])),
@@ -1671,6 +1702,7 @@ def build_nfl_p0_dashboard_snapshot(
         "signal_population_status": signal_layer_snapshot.get("status", "missing"),
         "decision_row_population_status": decision_layer_snapshot.get("status", "missing"),
         "baseline_backtest_status": baseline_backtest_snapshot.get("status", "missing"),
+        "pipeline_validation_status": pipeline_validation_snapshot.get("status", "missing"),
     }
     return snapshot
 

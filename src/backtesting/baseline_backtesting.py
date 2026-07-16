@@ -595,6 +595,11 @@ def _write_text(path: Path, text: str) -> None:
     path.write_text(text, encoding="utf-8")
 
 
+def _path_exists(path_value: Any) -> bool:
+    path_text = _normalize_text(path_value)
+    return bool(path_text) and Path(path_text).exists()
+
+
 def _write_artifacts(
     *,
     artifact_root: Path,
@@ -654,12 +659,20 @@ def _backtest_missing_snapshot(
         "dataset_name": DEFAULT_BASELINE_BACKTEST_DATASET_NAME,
         "decision_batch_id": decision_batch_id,
         "backtest_run_id": "",
+        "validation_state": "missing",
+        "dataset_certification_status": "missing",
+        "dataset_certification_id": "",
+        "source_decision_dataset_id": "",
+        "source_decision_population_summary_id": "",
+        "source_decision_batch_lineage_id": "",
         "sample_size": 0,
         "backtest_rows": [],
         "backtest_report": {},
         "benchmark_comparison": {},
         "validation": {"ok": False},
         "artifact_references": {},
+        "artifact_integrity_ok": False,
+        "artifact_integrity_checks": {},
         "storage": storage.health(),
         "warnings": list(warnings),
         "idempotent_reuse": False,
@@ -753,6 +766,13 @@ def build_baseline_backtest_dashboard_snapshot(
         validation = dict(results.get("validation") or {})
         artifact_references = dict(results.get("artifact_references") or {})
         warnings = list(results.get("warnings") or [])
+        artifact_integrity_checks = {
+            "report_json_exists": _path_exists(artifact_references.get("report_json_path")),
+            "report_markdown_exists": _path_exists(artifact_references.get("report_markdown_path")),
+            "dashboard_json_exists": _path_exists(artifact_references.get("dashboard_json_path")),
+        } if artifact_references else {}
+        artifact_integrity_ok = bool(artifact_integrity_checks) and all(artifact_integrity_checks.values())
+        source_decision_dataset_certification_id = _normalize_text(run_row.get("source_decision_dataset_certification_id"))
         settled_rows = [
             dict(row)
             for row in backtest_rows
@@ -767,6 +787,12 @@ def build_baseline_backtest_dashboard_snapshot(
             "dataset_name": _normalize_text(run_row.get("dataset_name"), DEFAULT_BASELINE_BACKTEST_DATASET_NAME),
             "decision_batch_id": _normalize_text(run_row.get("decision_batch_id")),
             "backtest_run_id": _normalize_text(run_row.get("backtest_run_id")),
+            "validation_state": _normalize_text(run_row.get("validation_state"), "missing"),
+            "dataset_certification_status": "certified" if source_decision_dataset_certification_id else "missing",
+            "dataset_certification_id": source_decision_dataset_certification_id,
+            "source_decision_dataset_id": _normalize_text(run_row.get("source_decision_dataset_id")),
+            "source_decision_population_summary_id": _normalize_text(run_row.get("source_decision_population_summary_id")),
+            "source_decision_batch_lineage_id": _normalize_text(run_row.get("source_decision_batch_lineage_id")),
             "strategy_name": _normalize_text(run_row.get("strategy_name"), DEFAULT_BASELINE_BACKTEST_STRATEGY_NAME),
             "sample_size": _normalize_int(run_row.get("sample_size"), 0),
             "wins": _normalize_int(run_row.get("wins"), 0),
@@ -782,6 +808,8 @@ def build_baseline_backtest_dashboard_snapshot(
             "backtest_rows": backtest_rows,
             "settled_backtest_rows": settled_rows,
             "artifact_references": artifact_references,
+            "artifact_integrity_ok": artifact_integrity_ok,
+            "artifact_integrity_checks": artifact_integrity_checks,
             "storage": storage.health(),
             "warnings": warnings,
             "idempotent_reuse": bool(idempotent_reuse),

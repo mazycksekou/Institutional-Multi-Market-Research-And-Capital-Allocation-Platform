@@ -82,7 +82,7 @@ def test_repository_os_documents_exist_and_reference_canonical_governance() -> N
     assert "docs/MASTER_DOCUMENT_INDEX.md" in repository_os_text
     assert "docs/DOCUMENT_RETENTION_INDEX.md" in repository_os_text
 
-    assert "Phase 5.5 - Baseline Backtesting" in next_action_text
+    assert "Phase 5.7 - Research Intelligence" in next_action_text
     assert "Phase 5.6 - Validation And Hardening" in next_action_text
     assert "sole sequencing source" in next_action_text.lower()
     assert "canonical execution policy" in status_policy_text.lower()
