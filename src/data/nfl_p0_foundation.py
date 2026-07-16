@@ -1560,6 +1560,19 @@ def build_nfl_p0_dashboard_snapshot(
             "status": "decision_row_population_snapshot_error",
             "warnings": [str(exc)],
         }
+    try:
+        from src.backtesting.baseline_backtesting import build_baseline_backtest_dashboard_snapshot
+
+        baseline_backtest_snapshot = build_baseline_backtest_dashboard_snapshot(
+            storage_path=storage_path,
+            backend=backend,
+        )
+    except Exception as exc:
+        baseline_backtest_snapshot = {
+            "ok": False,
+            "status": "baseline_backtest_snapshot_error",
+            "warnings": [str(exc)],
+        }
     snapshot["table_counts"] = {name: details.get("row_count", 0) for name, details in snapshot.get("table_readiness", {}).items()}
     snapshot["dataset_readiness"] = {
         "status": snapshot.get("status"),
@@ -1634,6 +1647,20 @@ def build_nfl_p0_dashboard_snapshot(
         "dataset_certification_status": decision_layer_snapshot.get("dataset_certification_status", "missing"),
         "lifecycle_state": decision_layer_snapshot.get("lifecycle_state", "missing"),
     }
+    snapshot["baseline_backtest_layer_readiness"] = {
+        "status": baseline_backtest_snapshot.get("status", "missing"),
+        "dataset_id": baseline_backtest_snapshot.get("dataset_id", ""),
+        "decision_batch_id": baseline_backtest_snapshot.get("decision_batch_id", ""),
+        "backtest_run_id": baseline_backtest_snapshot.get("backtest_run_id", ""),
+        "sample_size": baseline_backtest_snapshot.get("sample_size", 0),
+        "wins": baseline_backtest_snapshot.get("wins", 0),
+        "losses": baseline_backtest_snapshot.get("losses", 0),
+        "pushes": baseline_backtest_snapshot.get("pushes", 0),
+        "roi_percent": baseline_backtest_snapshot.get("roi_percent", 0.0),
+        "point_in_time_ok": baseline_backtest_snapshot.get("point_in_time_ok", False),
+        "readiness": baseline_backtest_snapshot.get("readiness", "blocked"),
+        "lifecycle_state": baseline_backtest_snapshot.get("lifecycle_state", "missing"),
+    }
     snapshot["readiness_summary"] = {
         "table_readiness_ready": len(snapshot.get("ready_tables", [])),
         "table_readiness_missing": len(snapshot.get("missing_tables", [])),
@@ -1643,6 +1670,7 @@ def build_nfl_p0_dashboard_snapshot(
         "math_engine_population_status": math_layer_snapshot.get("status", "missing"),
         "signal_population_status": signal_layer_snapshot.get("status", "missing"),
         "decision_row_population_status": decision_layer_snapshot.get("status", "missing"),
+        "baseline_backtest_status": baseline_backtest_snapshot.get("status", "missing"),
     }
     return snapshot
 

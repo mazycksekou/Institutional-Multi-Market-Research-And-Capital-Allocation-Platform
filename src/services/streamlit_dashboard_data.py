@@ -51,6 +51,9 @@ from src.backtesting.historical_bridge import (
     run_sqlite_historical_backtest,
     summarize_sqlite_historical_backtest,
 )
+from src.backtesting.baseline_backtesting import (
+    get_baseline_backtest_snapshot_for_dashboard as _get_baseline_backtest_snapshot_for_dashboard,
+)
 from src.backtesting.decision_row_population import (
     get_decision_row_population_snapshot_for_dashboard as _get_decision_row_population_snapshot_for_dashboard,
 )
@@ -3940,6 +3943,22 @@ def get_decision_row_population_snapshot_for_dashboard(
         backend=backend,
         dataset_id=dataset_id,
         batch_id=batch_id,
+    )
+
+
+def get_baseline_backtest_snapshot_for_dashboard(
+    storage_path: str | Path | None = None,
+    *,
+    backend: str = "sqlite",
+    backtest_run_id: str | None = None,
+    decision_batch_id: str | None = None,
+) -> dict[str, Any]:
+    """Return a canonical Phase 5.5 baseline backtest snapshot."""
+    return _get_baseline_backtest_snapshot_for_dashboard(
+        storage_path=storage_path,
+        backend=backend,
+        backtest_run_id=backtest_run_id,
+        decision_batch_id=decision_batch_id,
     )
 
 

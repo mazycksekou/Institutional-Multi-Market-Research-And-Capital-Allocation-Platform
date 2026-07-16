@@ -188,6 +188,27 @@ def test_signal_population_materializes_reusable_signals_and_reuses_persisted_st
     assert p0_dashboard["signal_layer_readiness"]["signal_definition_count"] == 10
     assert p0_dashboard["readiness_summary"]["signal_population_status"] == "certified"
 
+    storage = LocalStorageEngine(storage_path)
+    try:
+        dataset_rows = {
+            row["dataset_row_id"]: dict(row)
+            for row in storage.fetch("historical_dataset_rows", order_by="dataset_row_id ASC")
+        }
+    finally:
+        storage.close()
+
+    for row in first["signal_rows"]:
+        dataset_row = dataset_rows[row["dataset_row_id"]]
+        signal_context = json.loads(row["signal_context_json"])
+        assert signal_context["market_type"] == dataset_row["market_type"]
+        assert signal_context["selection"] == dataset_row["selection"]
+        if dataset_row["target_team_id"]:
+            assert row["target_team_id"] == dataset_row["target_team_id"]
+        if dataset_row["opponent_team_id"]:
+            assert row["opponent_team_id"] == dataset_row["opponent_team_id"]
+        else:
+            assert row["opponent_team_id"] == dataset_row["away_team_id"]
+
 
 def test_signal_population_ignores_raw_mutations_after_math_certification(tmp_path: Path) -> None:
     storage_path = tmp_path / "signal_population_raw_mutation.sqlite"

@@ -328,6 +328,16 @@ def test_decision_row_population_materializes_reusable_decision_rows_and_reuses_
     assert p0_dashboard["decision_layer_readiness"]["decision_definition_count"] == 1
     assert p0_dashboard["readiness_summary"]["decision_row_population_status"] == "certified"
 
+    for row in first["decision_rows"]:
+        decision_context = json.loads(row["decision_context_json"])
+        signal_context = decision_context["source_signal_context"]
+        assert signal_context["market_type"] in {"moneyline", "spread", "total"}
+        assert signal_context["selection"] == row["selection"]
+        if row["market_type"] == "decision":
+            assert row["selection"] == signal_context["selection"]
+        assert row["target_team_id"]
+        assert row["opponent_team_id"]
+
 
 def test_decision_row_population_rejects_missing_signal_layer(tmp_path: Path) -> None:
     result = build_decision_row_population(storage_path=tmp_path / "decision_population_missing.sqlite")

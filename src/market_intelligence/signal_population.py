@@ -242,6 +242,92 @@ def _load_json_list(value: Any) -> list[Any]:
     return []
 
 
+def _resolve_target_team_id(payload: Mapping[str, Any]) -> str:
+    return _normalize_text(
+        payload.get("target_team_id")
+        or payload.get("home_team_id")
+        or payload.get("away_team_id")
+    )
+
+
+def _resolve_opponent_team_id(
+    payload: Mapping[str, Any],
+    *,
+    target_team_id: str | None = None,
+) -> str:
+    target = _normalize_text(target_team_id or payload.get("target_team_id"))
+    opponent = _normalize_text(payload.get("opponent_team_id"))
+    if opponent:
+        return opponent
+    home_team_id = _normalize_text(payload.get("home_team_id"))
+    away_team_id = _normalize_text(payload.get("away_team_id"))
+    if target and target == home_team_id and away_team_id:
+        return away_team_id
+    if target and target == away_team_id and home_team_id:
+        return home_team_id
+    return _normalize_text(away_team_id or home_team_id)
+
+
+def _load_math_context(row: Mapping[str, Any]) -> dict[str, Any]:
+    payload = _load_json_mapping(row.get("engine_context_json"))
+    if not payload:
+        payload = dict(row)
+    result = dict(payload)
+    for field in (
+        "dataset_row_id",
+        "decision_context_id",
+        "feature_context_id",
+        "event_id",
+        "game_id",
+        "season",
+        "week",
+        "home_team_id",
+        "away_team_id",
+        "team_side",
+        "target_team_id",
+        "opponent_team_id",
+        "home_team",
+        "away_team",
+        "market_type",
+        "selection",
+        "book",
+        "scheduled_kickoff_time",
+        "decision_cutoff_time",
+        "cutoff_policy_version",
+        "point_in_time_status",
+        "predictor_outcome_separation_status",
+        "decision_readiness_status",
+        "source_feature_dataset_id",
+        "source_feature_dataset_name",
+        "source_feature_batch_id",
+        "source_feature_version_id",
+        "source_feature_certification_id",
+        "source_feature_dataset_certification_id",
+        "source_feature_population_summary_id",
+        "source_feature_evidence_package_id",
+        "source_feature_batch_lineage_id",
+        "source_feature_row_count",
+        "source_feature_snapshot_count",
+        "source_feature_definition_count",
+        "source_math_dataset_id",
+        "source_math_dataset_name",
+        "source_math_batch_id",
+        "source_math_version_id",
+        "source_math_certification_id",
+        "source_math_dataset_certification_id",
+        "source_math_population_summary_id",
+        "source_math_evidence_package_id",
+        "source_math_batch_lineage_id",
+        "source_math_row_count",
+        "source_math_snapshot_count",
+        "source_math_definition_count",
+    ):
+        value = row.get(field)
+        if field not in result or result.get(field) in (None, ""):
+            result[field] = value
+    return result
+
+
 def _stable_id(prefix: str, *parts: Any) -> str:
     seed = "|".join(_normalize_text(part) for part in (prefix, *parts))
     return hashlib.sha256(seed.encode("utf-8")).hexdigest()[:24]
@@ -444,11 +530,16 @@ class SignalSnapshotContext:
     dataset_row_id: str
     decision_context_id: str
     event_id: str
+    game_id: str
     season: int
     week: int
     home_team_id: str
     away_team_id: str
     team_side: str
+    target_team_id: str
+    opponent_team_id: str
+    home_team: str
+    away_team: str
     market_type: str
     selection: str
     book: str
@@ -458,6 +549,7 @@ class SignalSnapshotContext:
     point_in_time_status: str
     predictor_outcome_separation_status: str
     decision_readiness_status: str
+    feature_context_id: str
     source_feature_dataset_id: str
     source_feature_dataset_name: str
     source_feature_batch_id: str
@@ -490,11 +582,16 @@ class SignalSnapshotContext:
             "dataset_row_id": self.dataset_row_id,
             "decision_context_id": self.decision_context_id,
             "event_id": self.event_id,
+            "game_id": self.game_id,
             "season": self.season,
             "week": self.week,
             "home_team_id": self.home_team_id,
             "away_team_id": self.away_team_id,
             "team_side": self.team_side,
+            "target_team_id": self.target_team_id,
+            "opponent_team_id": self.opponent_team_id,
+            "home_team": self.home_team,
+            "away_team": self.away_team,
             "market_type": self.market_type,
             "selection": self.selection,
             "book": self.book,
@@ -504,6 +601,7 @@ class SignalSnapshotContext:
             "point_in_time_status": self.point_in_time_status,
             "predictor_outcome_separation_status": self.predictor_outcome_separation_status,
             "decision_readiness_status": self.decision_readiness_status,
+            "feature_context_id": self.feature_context_id,
             "source_feature_dataset_id": self.source_feature_dataset_id,
             "source_feature_dataset_name": self.source_feature_dataset_name,
             "source_feature_batch_id": self.source_feature_batch_id,
@@ -815,26 +913,38 @@ def build_signal_snapshot_context(
     context_rows: Sequence[Mapping[str, Any]],
 ) -> SignalSnapshotContext:
     representative_row = dict(context_rows[0]) if context_rows else dict(math_rows[0])
+    representative = _load_math_context(representative_row)
+    target_team_id = _resolve_target_team_id(representative)
+    opponent_team_id = _resolve_opponent_team_id(
+        representative,
+        target_team_id=target_team_id,
+    )
     return SignalSnapshotContext(
         dataset_id=dataset_id,
         batch_id=batch_id,
-        dataset_row_id=_normalize_text(representative_row.get("dataset_row_id")),
-        decision_context_id=_normalize_text(representative_row.get("decision_context_id")),
-        event_id=_normalize_text(representative_row.get("event_id")),
-        season=_normalize_int(representative_row.get("season")),
-        week=_normalize_int(representative_row.get("week")),
-        home_team_id=_normalize_text(representative_row.get("home_team_id")),
-        away_team_id=_normalize_text(representative_row.get("away_team_id")),
-        team_side=_normalize_text(representative_row.get("team_side")),
-        market_type=_normalize_text(representative_row.get("market_type")),
-        selection=_normalize_text(representative_row.get("selection")),
-        book=_normalize_text(representative_row.get("book"), "consensus"),
-        scheduled_kickoff_time=_to_iso8601_utc(representative_row.get("scheduled_kickoff_time")),
-        decision_cutoff_time=_to_iso8601_utc(representative_row.get("decision_cutoff_time")),
-        cutoff_policy_version=_normalize_text(representative_row.get("cutoff_policy_version"), HISTORICAL_DATASET_CUTOFF_POLICY_ID),
-        point_in_time_status=_normalize_text(representative_row.get("point_in_time_status"), "safe"),
-        predictor_outcome_separation_status=_normalize_text(representative_row.get("predictor_outcome_separation_status"), "separated"),
-        decision_readiness_status=_normalize_text(representative_row.get("decision_readiness_status"), "decision_ready"),
+        dataset_row_id=_normalize_text(representative.get("dataset_row_id")),
+        decision_context_id=_normalize_text(representative.get("decision_context_id")),
+        event_id=_normalize_text(representative.get("event_id")),
+        game_id=_normalize_text(representative.get("game_id") or representative.get("event_id")),
+        season=_normalize_int(representative.get("season")),
+        week=_normalize_int(representative.get("week")),
+        home_team_id=_normalize_text(representative.get("home_team_id")),
+        away_team_id=_normalize_text(representative.get("away_team_id")),
+        team_side=_normalize_text(representative.get("team_side")),
+        target_team_id=target_team_id,
+        opponent_team_id=opponent_team_id,
+        home_team=_normalize_text(representative.get("home_team")),
+        away_team=_normalize_text(representative.get("away_team")),
+        market_type=_normalize_text(representative.get("market_type")),
+        selection=_normalize_text(representative.get("selection")),
+        book=_normalize_text(representative.get("book"), "consensus"),
+        scheduled_kickoff_time=_to_iso8601_utc(representative.get("scheduled_kickoff_time")),
+        decision_cutoff_time=_to_iso8601_utc(representative.get("decision_cutoff_time")),
+        cutoff_policy_version=_normalize_text(representative.get("cutoff_policy_version"), HISTORICAL_DATASET_CUTOFF_POLICY_ID),
+        point_in_time_status=_normalize_text(representative.get("point_in_time_status"), "safe"),
+        predictor_outcome_separation_status=_normalize_text(representative.get("predictor_outcome_separation_status"), "separated"),
+        decision_readiness_status=_normalize_text(representative.get("decision_readiness_status"), "decision_ready"),
+        feature_context_id=_normalize_text(representative.get("feature_context_id")),
         source_feature_dataset_id=_normalize_text(summary_row.get("source_feature_dataset_id"), DEFAULT_MATH_ENGINE_DATASET_ID),
         source_feature_dataset_name=_normalize_text(summary_row.get("source_feature_dataset_name"), DEFAULT_SIGNAL_DATASET_NAME),
         source_feature_batch_id=_normalize_text(summary_row.get("source_feature_batch_id")),
@@ -925,6 +1035,102 @@ def _signal_freshness_map(summary_row: Mapping[str, Any]) -> dict[str, Any]:
     return freshness
 
 
+def _merge_source_mappings(
+    rows: Sequence[Mapping[str, Any]],
+    column: str,
+    *,
+    normalize_values: bool = False,
+) -> dict[str, Any]:
+    merged: dict[str, Any] = {}
+    for row in rows:
+        mapping = _load_json_mapping(row.get(column))
+        for key, value in mapping.items():
+            key_text = _normalize_text(key)
+            if not key_text:
+                continue
+            if normalize_values:
+                value_text = _normalize_text(value)
+                if not value_text:
+                    continue
+                merged.setdefault(key_text, value_text)
+                continue
+            if value in (None, ""):
+                continue
+            merged.setdefault(key_text, value)
+    return merged
+
+
+def _max_freshness_seconds(freshness: Mapping[str, Any]) -> float | int | None:
+    values: list[float] = []
+    for value in freshness.values():
+        if value in (None, ""):
+            continue
+        number = _normalize_float(value, float("nan"))
+        if math.isnan(number) or math.isinf(number):
+            continue
+        values.append(number)
+    if not values:
+        return None
+    return int(max(values))
+
+
+def _source_feature_maps_from_math_lookup(
+    math_lookup: Mapping[str, Mapping[str, Any]],
+    summary_row: Mapping[str, Any],
+) -> dict[str, dict[str, Any]]:
+    context_rows = [dict(row) for row in math_lookup.values() if isinstance(row, Mapping)]
+    fallback_ids = _load_json_mapping(summary_row.get("source_feature_ids_json")) or _load_json_mapping(summary_row.get("source_feature_snapshot_ids_json"))
+    return {
+        "source_feature_ids": _merge_source_mappings(context_rows, "source_feature_ids_json", normalize_values=True) or fallback_ids,
+        "source_feature_snapshot_ids": _merge_source_mappings(context_rows, "source_feature_snapshot_ids_json", normalize_values=True) or _load_json_mapping(summary_row.get("source_feature_snapshot_ids_json")),
+        "source_feature_lineage_ids": _merge_source_mappings(context_rows, "source_feature_lineage_ids_json", normalize_values=True) or _load_json_mapping(summary_row.get("source_feature_lineage_ids_json")),
+        "source_feature_certification_ids": _merge_source_mappings(context_rows, "source_feature_certification_ids_json", normalize_values=True) or _load_json_mapping(summary_row.get("source_feature_certification_ids_json")),
+        "source_feature_dataset_certification_ids": _merge_source_mappings(context_rows, "source_feature_dataset_certification_ids_json", normalize_values=True) or _load_json_mapping(summary_row.get("source_feature_dataset_certification_ids_json")),
+        "source_feature_alignment_certification_ids": _merge_source_mappings(context_rows, "source_feature_alignment_certification_ids_json", normalize_values=True) or _load_json_mapping(summary_row.get("source_feature_alignment_certification_ids_json")),
+        "source_feature_missingness": _merge_source_mappings(context_rows, "source_feature_missingness_json") or _load_json_mapping(summary_row.get("source_feature_missingness_json")),
+        "source_feature_freshness": _merge_source_mappings(context_rows, "source_feature_freshness_json") or _load_json_mapping(summary_row.get("source_feature_freshness_json")),
+        "source_feature_value_types": _merge_source_mappings(context_rows, "source_feature_value_types_json", normalize_values=True) or _load_json_mapping(summary_row.get("source_feature_value_types_json")),
+        "source_feature_values": _merge_source_mappings(context_rows, "source_feature_values_json") or _load_json_mapping(summary_row.get("source_feature_values_json")),
+    }
+
+
+def _apply_signal_summary_source_feature_maps(
+    summary_row: dict[str, Any],
+    signal_rows: Sequence[Mapping[str, Any]],
+) -> None:
+    fallback_ids = _load_json_mapping(summary_row.get("source_feature_ids_json")) or _load_json_mapping(summary_row.get("source_feature_snapshot_ids_json"))
+    summary_row["source_feature_ids_json"] = _as_json(
+        _merge_source_mappings(signal_rows, "source_feature_ids_json", normalize_values=True) or fallback_ids
+    )
+    summary_row["source_feature_snapshot_ids_json"] = _as_json(
+        _merge_source_mappings(signal_rows, "source_feature_snapshot_ids_json", normalize_values=True) or _load_json_mapping(summary_row.get("source_feature_snapshot_ids_json"))
+    )
+    summary_row["source_feature_lineage_ids_json"] = _as_json(
+        _merge_source_mappings(signal_rows, "source_feature_lineage_ids_json", normalize_values=True) or _load_json_mapping(summary_row.get("source_feature_lineage_ids_json"))
+    )
+    summary_row["source_feature_certification_ids_json"] = _as_json(
+        _merge_source_mappings(signal_rows, "source_feature_certification_ids_json", normalize_values=True) or _load_json_mapping(summary_row.get("source_feature_certification_ids_json"))
+    )
+    summary_row["source_feature_dataset_certification_ids_json"] = _as_json(
+        _merge_source_mappings(signal_rows, "source_feature_dataset_certification_ids_json", normalize_values=True) or _load_json_mapping(summary_row.get("source_feature_dataset_certification_ids_json"))
+    )
+    summary_row["source_feature_alignment_certification_ids_json"] = _as_json(
+        _merge_source_mappings(signal_rows, "source_feature_alignment_certification_ids_json", normalize_values=True) or _load_json_mapping(summary_row.get("source_feature_alignment_certification_ids_json"))
+    )
+    summary_row["source_feature_missingness_json"] = _as_json(
+        _merge_source_mappings(signal_rows, "source_feature_missingness_json") or _load_json_mapping(summary_row.get("source_feature_missingness_json"))
+    )
+    summary_row["source_feature_freshness_json"] = _as_json(
+        _merge_source_mappings(signal_rows, "source_feature_freshness_json") or _load_json_mapping(summary_row.get("source_feature_freshness_json"))
+    )
+    summary_row["source_feature_value_types_json"] = _as_json(
+        _merge_source_mappings(signal_rows, "source_feature_value_types_json", normalize_values=True) or _load_json_mapping(summary_row.get("source_feature_value_types_json"))
+    )
+    summary_row["source_feature_values_json"] = _as_json(
+        _merge_source_mappings(signal_rows, "source_feature_values_json") or _load_json_mapping(summary_row.get("source_feature_values_json"))
+    )
+
+
 def _signal_source_maps(
     *,
     definition: SignalDefinition,
@@ -932,6 +1138,7 @@ def _signal_source_maps(
     summary_row: Mapping[str, Any],
     math_lookup: Mapping[str, Mapping[str, Any]],
 ) -> dict[str, Any]:
+    source_feature_maps = _source_feature_maps_from_math_lookup(math_lookup, summary_row)
     source_math_snapshot_ids: dict[str, str] = {}
     source_math_lineage_ids: dict[str, str] = {}
     source_math_certification_ids: dict[str, str] = {}
@@ -964,16 +1171,6 @@ def _signal_source_maps(
             "freshness_seconds": _signal_freshness_map(summary_row),
         }
 
-    source_feature_snapshot_ids = _load_json_mapping(summary_row.get("source_feature_snapshot_ids_json"))
-    source_feature_lineage_ids = _load_json_mapping(summary_row.get("source_feature_lineage_ids_json"))
-    source_feature_certification_ids = _load_json_mapping(summary_row.get("source_feature_certification_ids_json"))
-    source_feature_dataset_certification_ids = _load_json_mapping(summary_row.get("source_feature_dataset_certification_ids_json"))
-    source_feature_alignment_certification_ids = _load_json_mapping(summary_row.get("source_feature_alignment_certification_ids_json"))
-    source_feature_missingness = _load_json_mapping(summary_row.get("source_feature_missingness_json"))
-    source_feature_freshness = _load_json_mapping(summary_row.get("source_feature_freshness_json"))
-    source_feature_value_types = _load_json_mapping(summary_row.get("source_feature_value_types_json"))
-    source_feature_values = _load_json_mapping(summary_row.get("source_feature_values_json"))
-
     return {
         "source_math_output_ids": source_math_output_ids,
         "source_math_snapshot_ids": source_math_snapshot_ids,
@@ -981,19 +1178,19 @@ def _signal_source_maps(
         "source_math_certification_ids": source_math_certification_ids,
         "source_math_dataset_certification_ids": source_math_dataset_certification_ids,
         "source_math_missingness": source_math_missingness,
-        "source_math_freshness": source_feature_freshness,
+        "source_math_freshness": source_feature_maps["source_feature_freshness"],
         "source_math_value_types": source_math_value_types,
         "source_math_values": source_math_values,
-        "source_feature_ids": source_feature_snapshot_ids,
-        "source_feature_snapshot_ids": source_feature_snapshot_ids,
-        "source_feature_lineage_ids": source_feature_lineage_ids,
-        "source_feature_certification_ids": source_feature_certification_ids,
-        "source_feature_dataset_certification_ids": source_feature_dataset_certification_ids,
-        "source_feature_alignment_certification_ids": source_feature_alignment_certification_ids,
-        "source_feature_missingness": source_feature_missingness,
-        "source_feature_freshness": source_feature_freshness,
-        "source_feature_value_types": source_feature_value_types,
-        "source_feature_values": source_feature_values,
+        "source_feature_ids": source_feature_maps["source_feature_ids"],
+        "source_feature_snapshot_ids": source_feature_maps["source_feature_snapshot_ids"],
+        "source_feature_lineage_ids": source_feature_maps["source_feature_lineage_ids"],
+        "source_feature_certification_ids": source_feature_maps["source_feature_certification_ids"],
+        "source_feature_dataset_certification_ids": source_feature_maps["source_feature_dataset_certification_ids"],
+        "source_feature_alignment_certification_ids": source_feature_maps["source_feature_alignment_certification_ids"],
+        "source_feature_missingness": source_feature_maps["source_feature_missingness"],
+        "source_feature_freshness": source_feature_maps["source_feature_freshness"],
+        "source_feature_value_types": source_feature_maps["source_feature_value_types"],
+        "source_feature_values": source_feature_maps["source_feature_values"],
     }
 
 
@@ -1008,7 +1205,7 @@ def _signal_value_and_missingness(
     source_math_values = dict(sources["source_math_values"])
     source_math_snapshot_ids = dict(sources["source_math_snapshot_ids"])
     source_math_missingness = dict(sources["source_math_missingness"])
-    source_math_freshness = _signal_freshness_map(summary_row)
+    source_feature_freshness = dict(sources["source_feature_freshness"])
     direct_values = [value for value in source_math_values.values() if value not in (None, "")]
     if definition.signal_id == "signal.sports.market.consensus_probability":
         row = math_lookup.get("math.sports.nfl.market.break_even_probability")
@@ -1054,7 +1251,7 @@ def _signal_value_and_missingness(
             return None, "missing_required", "missing confidence_grade math output", sources
         return _math_value(row), _math_missingness(row), "", sources
     if definition.signal_id == "signal.sports.data_quality.freshness_state":
-        freshness_seconds = _math_freshness_value(summary_row)
+        freshness_seconds = _max_freshness_seconds(source_feature_freshness)
         freshness_state = _freshness_state_from_seconds(freshness_seconds if isinstance(freshness_seconds, (int, float)) else None)
         return freshness_state, "present" if freshness_state != "missing" else "missing_required", "", sources
     if definition.signal_id == "signal.sports.regime.state":
@@ -1065,7 +1262,8 @@ def _signal_value_and_missingness(
             pricing_gap,
             confidence_score,
         )
-        freshness_state = _freshness_state_from_seconds(_math_freshness_value(summary_row) if isinstance(_math_freshness_value(summary_row), (int, float)) else None)
+        freshness_seconds = _max_freshness_seconds(source_feature_freshness)
+        freshness_state = _freshness_state_from_seconds(freshness_seconds if isinstance(freshness_seconds, (int, float)) else None)
         if any(math.isnan(value) for value in (pricing_gap, confidence_score)):
             return None, "missing_required", "missing math inputs for regime state", sources
         value = _regime_state(market_state, freshness_state, confidence_score, pricing_gap)
@@ -1315,6 +1513,7 @@ def _signal_row_payload_and_values(
     signal_context["classification"] = definition.classification
     signal_context["value_type"] = definition.value_type
     signal_context["created_at"] = created_at
+    signal_context["signal_context_id"] = build_signal_snapshot_context_id(context)
     signal_context["source_math"] = {
         "summary_snapshot_id": context.source_math_population_summary_id,
         "batch_id": context.source_math_batch_id,
@@ -1432,18 +1631,18 @@ def _signal_row_payload_and_values(
         "source_math_definition_count": context.source_math_definition_count,
         "dataset_row_id": context.dataset_row_id,
         "decision_context_id": context.decision_context_id,
-        "feature_context_id": _normalize_text(summary_row.get("feature_context_id")),
+        "feature_context_id": context.feature_context_id,
         "event_id": context.event_id,
-        "game_id": _normalize_text(summary_row.get("game_id") or context.event_id),
+        "game_id": context.game_id,
         "season": context.season,
         "week": context.week,
         "home_team_id": context.home_team_id,
         "away_team_id": context.away_team_id,
         "team_side": context.team_side,
-        "target_team_id": _normalize_text(summary_row.get("target_team_id") or context.home_team_id or context.away_team_id),
-        "opponent_team_id": _normalize_text(summary_row.get("opponent_team_id")),
-        "home_team": _normalize_text(summary_row.get("home_team")),
-        "away_team": _normalize_text(summary_row.get("away_team")),
+        "target_team_id": context.target_team_id or context.home_team_id or context.away_team_id,
+        "opponent_team_id": context.opponent_team_id,
+        "home_team": context.home_team,
+        "away_team": context.away_team,
         "selection": definition.signal_id,
         "book": context.book,
         "scheduled_kickoff_time": context.scheduled_kickoff_time,
@@ -2175,16 +2374,7 @@ def _load_signal_population_snapshot(
         signal_batch_id,
         _as_json([row["snapshot_id"] for row in signal_rows_payload]),
     )
-    summary_row["source_feature_ids_json"] = _as_json(_load_json_mapping(source_math_summary.get("source_feature_snapshot_ids_json")))
-    summary_row["source_feature_snapshot_ids_json"] = _as_json(_load_json_mapping(source_math_summary.get("source_feature_snapshot_ids_json")))
-    summary_row["source_feature_lineage_ids_json"] = _as_json(_load_json_mapping(source_math_summary.get("source_feature_lineage_ids_json")))
-    summary_row["source_feature_certification_ids_json"] = _as_json(_load_json_mapping(source_math_summary.get("source_feature_certification_ids_json")))
-    summary_row["source_feature_dataset_certification_ids_json"] = _as_json(_load_json_mapping(source_math_summary.get("source_feature_dataset_certification_ids_json")))
-    summary_row["source_feature_alignment_certification_ids_json"] = _as_json(_load_json_mapping(source_math_summary.get("source_feature_alignment_certification_ids_json")))
-    summary_row["source_feature_missingness_json"] = _as_json(_load_json_mapping(source_math_summary.get("source_feature_missingness_json")))
-    summary_row["source_feature_freshness_json"] = _as_json(_load_json_mapping(source_math_summary.get("source_feature_freshness_json")))
-    summary_row["source_feature_value_types_json"] = _as_json(_load_json_mapping(source_math_summary.get("source_feature_value_types_json")))
-    summary_row["source_feature_values_json"] = _as_json(_load_json_mapping(source_math_summary.get("source_feature_values_json")))
+    _apply_signal_summary_source_feature_maps(summary_row, signal_rows_payload)
     summary_row["source_math_output_ids_json"] = _as_json(
         {
             definition.signal_id: {
@@ -3257,16 +3447,7 @@ def build_signal_population(
             signal_batch_id,
             _as_json([row.get("snapshot_id") for row in signal_rows]),
         )
-        summary_row["source_feature_ids_json"] = _as_json(_load_json_mapping(math_summary.get("source_feature_snapshot_ids_json")))
-        summary_row["source_feature_snapshot_ids_json"] = _as_json(_load_json_mapping(math_summary.get("source_feature_snapshot_ids_json")))
-        summary_row["source_feature_lineage_ids_json"] = _as_json(_load_json_mapping(math_summary.get("source_feature_lineage_ids_json")))
-        summary_row["source_feature_certification_ids_json"] = _as_json(_load_json_mapping(math_summary.get("source_feature_certification_ids_json")))
-        summary_row["source_feature_dataset_certification_ids_json"] = _as_json(_load_json_mapping(math_summary.get("source_feature_dataset_certification_ids_json")))
-        summary_row["source_feature_alignment_certification_ids_json"] = _as_json(_load_json_mapping(math_summary.get("source_feature_alignment_certification_ids_json")))
-        summary_row["source_feature_missingness_json"] = _as_json(_load_json_mapping(math_summary.get("source_feature_missingness_json")))
-        summary_row["source_feature_freshness_json"] = _as_json(_load_json_mapping(math_summary.get("source_feature_freshness_json")))
-        summary_row["source_feature_value_types_json"] = _as_json(_load_json_mapping(math_summary.get("source_feature_value_types_json")))
-        summary_row["source_feature_values_json"] = _as_json(_load_json_mapping(math_summary.get("source_feature_values_json")))
+        _apply_signal_summary_source_feature_maps(summary_row, signal_rows)
         summary_row["source_math_output_ids_json"] = _as_json(
             {
                 definition.signal_id: {

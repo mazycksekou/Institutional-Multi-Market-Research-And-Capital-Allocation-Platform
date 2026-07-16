@@ -10,6 +10,12 @@ from .backtest_report_contracts import (
     BacktestPerformanceBucketContract,
     BacktestReportContract,
 )
+from .baseline_backtesting import (
+    BASELINE_BACKTEST_SCHEMA_VERSION,
+    build_baseline_backtest_dashboard_snapshot,
+    get_baseline_backtest_snapshot_for_dashboard,
+    run_baseline_backtest,
+)
 from .contracts import BacktestDatasetContract, ReplayPlanContract, SimulationPlanContract
 from .datasets import build_backtest_dataset_contract, validate_backtest_dataset_order
 from .leakage import assert_no_future_timestamps, detect_future_timestamps
@@ -33,11 +39,13 @@ from .simulation import build_simulation_plan, run_simulation_plan
 __all__ = [
     "BacktestDatasetContract",
     "BACKTEST_REPORT_SCHEMA_VERSION",
+    "BASELINE_BACKTEST_SCHEMA_VERSION",
     "BacktestPerformanceBucketContract",
     "BacktestReportContract",
     "ReplayPlanContract",
     "SimulationPlanContract",
     "assert_no_future_timestamps",
+    "build_baseline_backtest_dashboard_snapshot",
     "build_decision_row_population",
     "build_decision_row_population_dashboard_snapshot",
     "build_backtest_dataset_contract",
@@ -48,8 +56,10 @@ __all__ = [
     "build_decision_snapshot_context_id",
     "build_decision_value_identity",
     "get_decision_definition",
+    "get_baseline_backtest_snapshot_for_dashboard",
     "get_decision_row_population_snapshot_for_dashboard",
     "plan_replay_rows",
+    "run_baseline_backtest",
     "run_simulation_plan",
     "list_decision_definition_ids",
     "list_decision_definitions",

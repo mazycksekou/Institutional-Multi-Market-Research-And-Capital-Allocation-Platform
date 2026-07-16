@@ -234,6 +234,68 @@ def _load_json_list(value: Any) -> list[Any]:
     return []
 
 
+def _load_signal_context(row: Mapping[str, Any]) -> dict[str, Any]:
+    payload = _load_json_mapping(row.get("signal_context_json"))
+    if not payload:
+        return dict(row)
+    result = dict(payload)
+    for field in (
+        "dataset_row_id",
+        "decision_context_id",
+        "signal_context_id",
+        "event_id",
+        "game_id",
+        "season",
+        "week",
+        "home_team_id",
+        "away_team_id",
+        "team_side",
+        "target_team_id",
+        "opponent_team_id",
+        "home_team",
+        "away_team",
+        "market_type",
+        "selection",
+        "book",
+        "scheduled_kickoff_time",
+        "decision_cutoff_time",
+        "cutoff_policy_version",
+        "point_in_time_status",
+        "predictor_outcome_separation_status",
+        "decision_readiness_status",
+        "feature_context_id",
+    ):
+        if field not in result or result.get(field) in (None, ""):
+            result[field] = row.get(field)
+    return result
+
+
+def _resolve_target_team_id(payload: Mapping[str, Any]) -> str:
+    return _normalize_text(
+        payload.get("target_team_id")
+        or payload.get("home_team_id")
+        or payload.get("away_team_id")
+    )
+
+
+def _resolve_opponent_team_id(
+    payload: Mapping[str, Any],
+    *,
+    target_team_id: str | None = None,
+) -> str:
+    target = _normalize_text(target_team_id or payload.get("target_team_id"))
+    opponent = _normalize_text(payload.get("opponent_team_id"))
+    if opponent:
+        return opponent
+    home_team_id = _normalize_text(payload.get("home_team_id"))
+    away_team_id = _normalize_text(payload.get("away_team_id"))
+    if target and target == home_team_id and away_team_id:
+        return away_team_id
+    if target and target == away_team_id and home_team_id:
+        return home_team_id
+    return _normalize_text(away_team_id or home_team_id)
+
+
 def _stable_id(prefix: str, *parts: Any) -> str:
     seed = "|".join(_normalize_text(part) for part in (prefix, *parts))
     return hashlib.sha256(seed.encode("utf-8")).hexdigest()[:24]
@@ -376,11 +438,16 @@ class DecisionSnapshotContext:
     decision_context_id: str
     source_signal_context_id: str
     event_id: str
+    game_id: str
     season: int
     week: int
     home_team_id: str
     away_team_id: str
     team_side: str
+    target_team_id: str
+    opponent_team_id: str
+    home_team: str
+    away_team: str
     market_type: str
     selection: str
     book: str
@@ -435,11 +502,16 @@ class DecisionSnapshotContext:
             "decision_context_id": self.decision_context_id,
             "source_signal_context_id": self.source_signal_context_id,
             "event_id": self.event_id,
+            "game_id": self.game_id,
             "season": self.season,
             "week": self.week,
             "home_team_id": self.home_team_id,
             "away_team_id": self.away_team_id,
             "team_side": self.team_side,
+            "target_team_id": self.target_team_id,
+            "opponent_team_id": self.opponent_team_id,
+            "home_team": self.home_team,
+            "away_team": self.away_team,
             "market_type": self.market_type,
             "selection": self.selection,
             "book": self.book,
@@ -922,7 +994,8 @@ def build_decision_snapshot_context(
 ) -> DecisionSnapshotContext:
     if not context_rows:
         raise ValueError("context_rows are required")
-    representative = dict(context_rows[0])
+    representative_row = dict(context_rows[0])
+    representative = _load_signal_context(representative_row)
     source_feature_dataset_id = _normalize_text(representative.get("source_feature_dataset_id"), DEFAULT_SIGNAL_DATASET_ID)
     source_feature_dataset_name = _normalize_text(representative.get("source_feature_dataset_name"), "nfl_feature_snapshots")
     source_feature_batch_id = _normalize_text(representative.get("source_feature_batch_id"))
@@ -959,7 +1032,12 @@ def build_decision_snapshot_context(
     source_signal_row_count = _normalize_int(summary_row.get("signal_count"), len(signal_rows))
     source_signal_snapshot_count = _normalize_int(summary_row.get("signal_count"), len(signal_rows))
     source_signal_definition_count = len(list_signal_definition_ids())
-    source_signal_context_id = _normalize_text(representative.get("signal_context_id"))
+    source_signal_context_id = _normalize_text(representative.get("signal_context_id") or representative_row.get("signal_context_id"))
+    target_team_id = _resolve_target_team_id(representative)
+    opponent_team_id = _resolve_opponent_team_id(
+        representative,
+        target_team_id=target_team_id,
+    )
     return DecisionSnapshotContext(
         dataset_id=dataset_id,
         batch_id=batch_id,
@@ -967,11 +1045,16 @@ def build_decision_snapshot_context(
         decision_context_id=_normalize_text(representative.get("decision_context_id")),
         source_signal_context_id=source_signal_context_id,
         event_id=_normalize_text(representative.get("event_id")),
+        game_id=_normalize_text(representative.get("game_id") or representative.get("event_id")),
         season=_normalize_int(representative.get("season")),
         week=_normalize_int(representative.get("week")),
         home_team_id=_normalize_text(representative.get("home_team_id")),
         away_team_id=_normalize_text(representative.get("away_team_id")),
         team_side=_normalize_text(representative.get("team_side")),
+        target_team_id=target_team_id,
+        opponent_team_id=opponent_team_id,
+        home_team=_normalize_text(representative.get("home_team")),
+        away_team=_normalize_text(representative.get("away_team")),
         market_type=_normalize_text(representative.get("market_type")),
         selection=_normalize_text(representative.get("selection")),
         book=_normalize_text(representative.get("book"), "consensus"),
@@ -1126,10 +1209,14 @@ def _decision_row_payload_and_values(
         _as_json(value),
         decision_readiness_status,
     )
-    target_team_id = _normalize_text(context_rows[0].get("target_team_id") or context.home_team_id or context.away_team_id)
-    opponent_team_id = _normalize_text(context_rows[0].get("opponent_team_id"))
-    home_team = _normalize_text(context_rows[0].get("home_team"))
-    away_team = _normalize_text(context_rows[0].get("away_team"))
+    representative_signal_context = _load_signal_context(context_rows[0])
+    target_team_id = _resolve_target_team_id(representative_signal_context) or context.target_team_id
+    opponent_team_id = _resolve_opponent_team_id(
+        representative_signal_context,
+        target_team_id=target_team_id,
+    ) or context.opponent_team_id
+    home_team = _normalize_text(representative_signal_context.get("home_team") or context.home_team)
+    away_team = _normalize_text(representative_signal_context.get("away_team") or context.away_team)
     decision_context_json = {
         **context.as_dict(),
         "decision_snapshot_context_id": decision_snapshot_context_id,
@@ -1141,7 +1228,7 @@ def _decision_row_payload_and_values(
         "source_signal_values": dict(source_maps["source_signal_values"]),
         "source_feature_values": dict(source_maps["source_feature_values"]),
         "source_math_values": dict(source_maps["source_math_values"]),
-        "source_signal_context": dict(source_signal_snapshot.get("signal_population_summary") or {}),
+        "source_signal_context": representative_signal_context,
     }
     decision_definition_json = definition.as_dict()
     payload = {
@@ -1239,7 +1326,7 @@ def _decision_row_payload_and_values(
         "source_signal_context_id": context.source_signal_context_id,
         "decision_snapshot_context_id": decision_snapshot_context_id,
         "event_id": context.event_id,
-        "game_id": _normalize_text(context.event_id),
+        "game_id": _normalize_text(representative_signal_context.get("game_id") or context.game_id or context.event_id),
         "season": context.season,
         "week": context.week,
         "home_team_id": context.home_team_id,
@@ -1498,16 +1585,16 @@ def _decision_summary_row(
         "source_signal_context_id": context.source_signal_context_id,
         "decision_snapshot_context_id": summary_snapshot_id,
         "event_id": context.event_id,
-        "game_id": _normalize_text(context.event_id),
+        "game_id": context.game_id or _normalize_text(context.event_id),
         "season": context.season,
         "week": context.week,
         "home_team_id": context.home_team_id,
         "away_team_id": context.away_team_id,
         "team_side": context.team_side,
-        "target_team_id": _normalize_text(context_rows[0].get("target_team_id") or context.home_team_id or context.away_team_id),
-        "opponent_team_id": _normalize_text(context_rows[0].get("opponent_team_id")),
-        "home_team": _normalize_text(context_rows[0].get("home_team")),
-        "away_team": _normalize_text(context_rows[0].get("away_team")),
+        "target_team_id": context.target_team_id,
+        "opponent_team_id": context.opponent_team_id,
+        "home_team": context.home_team,
+        "away_team": context.away_team,
         "market_type": context.market_type,
         "selection": context.selection,
         "book": context.book,

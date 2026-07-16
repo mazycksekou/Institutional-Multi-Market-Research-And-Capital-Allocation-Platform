@@ -84,8 +84,10 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "docs/reports/PHASE4_9A_NFL_SCHEDULE_RESEARCH_ASSET_POPULATION.md" in project_status_text
     assert "docs/reports/PHASE4_9E_NFL_ODDS_RESEARCH_ASSET_POPULATION.md" in project_status_text
     assert "docs/reports/PHASE5_4_DECISION_ROW_GENERATION.md" in project_status_text
+    assert "docs/reports/PHASE5_5_BASELINE_BACKTESTING.md" in project_status_text
 
     assert "Phase 5.5 - Baseline Backtesting" in next_action_text
+    assert "Phase 5.6 - Validation And Hardening" in next_action_text
     assert "Phase 5.4 - Decision Row Generation" in next_action_text
     assert "decision rows" in next_action_text.lower()
     assert "frozen, certified inputs" in next_action_text.lower()
@@ -125,6 +127,7 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "Phase 5.2 completed reusable mathematical engines." in roadmap_text
     assert "Phase 5.3 completed reusable signals." in roadmap_text
     assert "Phase 5.4 completed the decision-row generation layer from the certified signal layer." in roadmap_text
+    assert "Phase 5.5 completed baseline backtesting from frozen, certified inputs." in roadmap_text
     assert "docs/PROJECT_STATUS.md" in roadmap_text
     assert "docs/NEXT_ACTION.md" in roadmap_text
     assert "docs/architecture/REPOSITORY_OS.md" in roadmap_text
@@ -168,6 +171,7 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "docs/reports/PHASE4_9A_NFL_SCHEDULE_RESEARCH_ASSET_POPULATION.md" in retention_index_text
     assert "docs/reports/PHASE4_9E_NFL_ODDS_RESEARCH_ASSET_POPULATION.md" in retention_index_text
     assert "docs/reports/PHASE5_4_DECISION_ROW_GENERATION.md" in retention_index_text
+    assert "docs/reports/PHASE5_5_BASELINE_BACKTESTING.md" in retention_index_text
 
 
 def test_project_status_governance_has_no_duplicate_status_files() -> None:

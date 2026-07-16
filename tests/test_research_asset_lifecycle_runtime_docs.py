@@ -66,6 +66,7 @@ def test_research_asset_lifecycle_runtime_docs_exist_and_cover_required_topics()
     assert "docs/architecture/RESEARCH_ASSET_LIFECYCLE_RUNTIME.md" in project_status_text
     assert "docs/reports/PHASE4_8_RESEARCH_ASSET_LIFECYCLE_RUNTIME_AND_TIME_ENTITY_ALIGNMENT_CERTIFICATION.md" in project_status_text
     assert "Phase 5.5 - Baseline Backtesting" in next_action_text
+    assert "Phase 5.6 - Validation And Hardening" in next_action_text
     assert "Do not implement connectors." in next_action_text
     assert "decision rows" in next_action_text.lower()
     assert "frozen, certified inputs" in next_action_text.lower()
@@ -79,7 +80,7 @@ def test_research_asset_lifecycle_runtime_docs_exist_and_cover_required_topics()
     assert "Phase 5.2 completed reusable mathematical engines." in roadmap_text
     assert "Phase 5.3 completed reusable signals." in roadmap_text
     assert "Phase 5.4 completed the decision-row generation layer from the certified signal layer." in roadmap_text
-    assert "Phase 5.5 begins baseline backtesting from frozen, certified inputs." in roadmap_text
+    assert "Phase 5.5 completed baseline backtesting from frozen, certified inputs." in roadmap_text
     assert "Phase 5.6 performs validation and hardening on the production research engine path." in roadmap_text
 
     assert "docs/architecture/RESEARCH_ASSET_LIFECYCLE_RUNTIME.md" in master_index_text
