@@ -15,12 +15,12 @@ research.
 - current branch: `feature/nfl-backtesting`
 - current HEAD: live branch tip (exact hash is reported in the task final report)
 - remote tracking branch: `origin/feature/nfl-backtesting`
-- active phase: `Covariance and Time-Dependent Risk Capability Audit`
+- active phase: `Data Identity, Reconciliation and Lakehouse Foundation`
 - previous completed active phase: `NFL Production Completion (complete)`
 - previous completed active phase before that: `Universal Market Framework (complete)`
 - previous completed active phase before that: `Phase 5.7 - Research Intelligence (complete)`
 - active market profile: `sports:nfl`
-- active implementation lane: `NFL P0 profile-aware foundation + event-centric historical research database + master research engine specification + universal feature registry + universal math engine contracts + research asset runtime framework + historical dataset acquisition framework + historical dataset acquisition runtime + research asset source discovery and connector mapping framework + historical research asset certification runtime + research asset lifecycle runtime + NFL schedule research asset population + research asset coverage planner and provider selection framework + first production NFL schedule connector + certified NFL results research asset + certified NFL odds research asset + certified NFL weather research asset + certified NFL injuries research asset + certified NFL team statistics research asset + deterministic historical dataset population layer + deterministic feature snapshot population layer + deterministic mathematical engine population layer + deterministic signal population layer + deterministic decision row generation layer + deterministic baseline backtesting layer + deterministic pipeline validation and hardening layer + deterministic Research Intelligence layer + Universal Market Framework + NFL Production Completion + Covariance and Time-Dependent Risk Capability Audit`
+- active implementation lane: `NFL P0 profile-aware foundation + event-centric historical research database + master research engine specification + universal feature registry + universal math engine contracts + research asset runtime framework + historical dataset acquisition framework + historical dataset acquisition runtime + research asset source discovery and connector mapping framework + historical research asset certification runtime + research asset lifecycle runtime + NFL schedule research asset population + research asset coverage planner and provider selection framework + first production NFL schedule connector + certified NFL results research asset + certified NFL odds research asset + certified NFL weather research asset + certified NFL injuries research asset + certified NFL team statistics research asset + deterministic historical dataset population layer + deterministic feature snapshot population layer + deterministic mathematical engine population layer + deterministic signal population layer + deterministic decision row generation layer + deterministic baseline backtesting layer + deterministic pipeline validation and hardening layer + deterministic Research Intelligence layer + Universal Market Framework + NFL Production Completion + Data Identity, Reconciliation and Lakehouse Foundation`
 - completed phases:
   - `Phase 4.3.6 - Profile-Aware NFL P0 Validation`
   - `Phase 4.3.7 - Minimum Backtest Row Contract`
@@ -51,8 +51,9 @@ research.
   - `Phase 5.7 - Research Intelligence`
   - `Universal Market Framework`
 - `NFL Production Completion`
-- current phase objective: Covariance and Time-Dependent Risk Capability Audit is active; inspect the repository before implementation and determine existing, partial, missing, duplicated, or deferred support for covariance, correlation, time-dependent risk, and risk-horizon normalization without implementing those capabilities yet.
-- next phase: `additional sports`
+- current phase objective: Data Identity, Reconciliation and Lakehouse Foundation is active; audit existing ingestion, normalization, identity, matching, reconciliation, quality-control, and physical-storage capabilities before implementation; reuse the acquisition, `LocalStorageEngine`, local-platform, historical-research-database, certification, lifecycle, lineage, and validation owners; add only missing shared identity, reconciliation, quarantine, revision-aware, and lakehouse capabilities; map Bronze, Silver, and Gold onto the existing lifecycle rather than replacing it; implement Parquet-based analytical storage and Delta-compatible interfaces; defer Spark until measured data scale proves distributed execution is required; do not ingest the vendor dataset in this phase.
+- next phase: `First Controlled NFL Vendor Ingest`
+- governed handoff after the active phase: `First Controlled NFL Vendor Ingest -> Covariance and Time-Dependent Risk Capability Audit`
 - current blockers: None
 - latest validation status:
   - Phase 4.7C runtime validation passed: compileall, certification runtime tests, smoke, architecture, document lifecycle, and ops checks are green.
@@ -75,6 +76,7 @@ research.
   - Universal Market Framework code changes are complete and validated: focused universal-market-framework parity tests, adjacent market-profile and Research Intelligence regressions, compileall, smoke, root markdown, OpenAPI contract, architecture, audit lifecycle, document lifecycle, ops checks, repository preflight checks, git diff checks, and the full repository test suite are green.
   - Sequencing correction code changes are complete and validated: targeted governance and documentation tests, root markdown, document lifecycle, and git diff checks align the active phase to NFL Production Completion and the following governed lane to the Covariance and Time-Dependent Risk Capability Audit without beginning NFL implementation.
 - NFL Production Completion code changes are complete and validated: focused NFL-production-completion runtime tests, adjacent Universal Market Framework, Streamlit dashboard, and NFL P0 readiness regressions, compileall, smoke, root markdown, OpenAPI contract, architecture, audit lifecycle, document lifecycle, ops checks, repository preflight checks, git diff checks, and the full repository test suite are green.
+  - Data platform sequencing correction code changes are complete and validated: targeted governance tests, root markdown, architecture, document lifecycle, and git diff checks realign the active phase to Data Identity, Reconciliation and Lakehouse Foundation, insert First Controlled NFL Vendor Ingest before covariance work, and preserve the canonical long-term sequence without beginning implementation.
 - latest full gate result: `passed for the completed NFL Production Completion gate`
 - latest pushed commit: live branch tip (exact hash is reported in the task final report)
 
@@ -185,4 +187,4 @@ Read these only when you need more detail than the project status page provides:
 
 ## Next Recommended Codex Task
 
-`Covariance and Time-Dependent Risk Capability Audit`
+`Data Identity, Reconciliation and Lakehouse Foundation`

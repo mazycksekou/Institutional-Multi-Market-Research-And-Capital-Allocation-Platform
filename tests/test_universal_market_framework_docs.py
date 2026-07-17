@@ -58,6 +58,8 @@ def test_universal_market_framework_roadmap_sequence_and_mission_are_preserved()
 
     assert "## Mission" in project_status
     assert "NFL Production Completion" in project_status
+    assert "Data Identity, Reconciliation and Lakehouse Foundation" in project_status
+    assert "First Controlled NFL Vendor Ingest" in project_status
     assert "Covariance and Time-Dependent Risk Capability Audit" in project_status
     assert (
         "Build a deterministic, explainable, auditable, institutional-grade\n"
@@ -67,7 +69,10 @@ def test_universal_market_framework_roadmap_sequence_and_mission_are_preserved()
     expected_sequence = (
         "Universal Market Framework\n"
         "-> NFL Production Completion\n"
+        "-> Data Identity, Reconciliation and Lakehouse Foundation\n"
+        "-> First Controlled NFL Vendor Ingest\n"
         "-> Covariance and Time-Dependent Risk Capability Audit\n"
+        "-> Implement only covariance and risk capabilities confirmed missing by that audit\n"
         "-> additional sports\n"
         "-> prediction markets\n"
         "-> Zero-DTE options\n"
@@ -76,7 +81,7 @@ def test_universal_market_framework_roadmap_sequence_and_mission_are_preserved()
         "-> universal risk and capital allocation\n"
         "-> paper trading\n"
         "-> controlled live execution\n"
-        "-> production/IP custody\n"
+        "-> production platform and IP custody\n"
         "-> institutional readiness\n"
         "-> autonomous development"
     )

@@ -9,7 +9,10 @@ The repository does **not** skip discovery, blueprinting, validation, or reprodu
 
 Universal Market Framework
 -> NFL Production Completion
+-> Data Identity, Reconciliation and Lakehouse Foundation
+-> First Controlled NFL Vendor Ingest
 -> Covariance and Time-Dependent Risk Capability Audit
+-> Implement only covariance and risk capabilities confirmed missing by that audit
 -> additional sports
 -> prediction markets
 -> Zero-DTE options
@@ -18,17 +21,31 @@ Universal Market Framework
 -> universal risk and capital allocation
 -> paper trading
 -> controlled live execution
--> production/IP custody
+-> production platform and IP custody
 -> institutional readiness
 -> autonomous development
 
 These are roadmap lanes only. They are not implementation authorization beyond the active governed phase in `docs/NEXT_ACTION.md`.
 
-## Post-NFL Production Audit Lane
+## Post-NFL Production Data Platform And Risk Lane
 
-Immediately after complete NFL production validation, the next governed lane is the `Covariance and Time-Dependent Risk Capability Audit`.
+Immediately after complete NFL production validation, the next governed lanes are:
 
-The audit must inspect the repository before implementation and determine existing, partial, missing, duplicated, or deferred support for:
+- `Data Identity, Reconciliation and Lakehouse Foundation`
+- `First Controlled NFL Vendor Ingest`
+- `Covariance and Time-Dependent Risk Capability Audit`
+
+The data identity foundation phase must:
+
+- audit existing ingestion, normalization, identity, matching, reconciliation, quality-control, and physical-storage capabilities before implementation
+- reuse the acquisition, `LocalStorageEngine`, local-platform, historical-research-database, certification, lifecycle, lineage, and validation owners
+- add only missing shared identity, reconciliation, quarantine, revision-aware, and lakehouse capabilities
+- map Bronze, Silver, and Gold onto the existing lifecycle rather than replacing it
+- implement Parquet-based analytical storage and Delta-compatible interfaces
+- defer Spark until measured data scale proves distributed execution is required
+- avoid ingesting the vendor dataset in that phase
+
+The covariance audit must still inspect the repository before implementation and determine existing, partial, missing, duplicated, or deferred support for:
 
 - covariance and correlation
 - rolling and exponentially weighted covariance
@@ -40,7 +57,7 @@ The audit must inspect the repository before implementation and determine existi
 - time-to-event and time-to-expiration risk
 - risk-horizon normalization and attribution
 
-Do not implement these capabilities during the sequencing correction or during NFL Production Completion unless a later governed phase explicitly activates them.
+Do not implement these capabilities during the sequencing correction, during the data identity foundation phase, or during the first controlled NFL vendor ingest unless a later governed phase explicitly activates them.
 
 ## Universal Market Lifecycle
 
@@ -117,8 +134,9 @@ Phase 5.7 completed deterministic Research Intelligence on top of the certified 
 The next governed step is the Universal Market Framework, preserved here as the Phase 5.7 historical handoff statement.
 The Universal Market Framework completed the governed extraction of reusable market-agnostic contracts, registries, lifecycle interfaces, readiness surfaces, and dashboard/query interfaces without mutating the hardened NFL path.
 The next governed step after Universal Market Framework completion is NFL Production Completion so the certified NFL reference implementation can be audited against production-complete requirements without duplicating reusable framework logic.
-After complete NFL production validation, the next governed lane is the Covariance and Time-Dependent Risk Capability Audit, which remains inspection-only until explicitly activated for implementation.
-Later roadmap lanes continue with additional sports, prediction markets, Zero-DTE options, Worldview Intelligence, cross-market intelligence, universal risk and capital allocation, paper trading, controlled live execution, production/IP custody, institutional readiness, and autonomous development.
+After complete NFL production validation, the next governed lanes are Data Identity, Reconciliation and Lakehouse Foundation, then First Controlled NFL Vendor Ingest, then the Covariance and Time-Dependent Risk Capability Audit.
+Only after that audit completes should the repository implement the covariance and risk capabilities confirmed missing by the audit.
+Later roadmap lanes continue with additional sports, prediction markets, Zero-DTE options, Worldview Intelligence, cross-market intelligence, universal risk and capital allocation, paper trading, controlled live execution, production platform and IP custody, institutional readiness, and autonomous development.
 
 Deferred enrichment lanes after the first minimum-schema dataset path remains stable:
 
@@ -164,8 +182,10 @@ Current NFL work follows the certified Phase 5 chain and the completed Universal
 - Phase 5.6 completed pipeline validation and hardening on the production research engine path.
 - Phase 5.7 completed Research Intelligence on the certified NFL pipeline.
 - Universal Market Framework generalized the certified NFL research chain without changing certified NFL outputs.
-- NFL Production Completion is the active governed phase and should audit the certified NFL implementation against production-complete requirements while reusing the Universal Market Framework.
-- Covariance and Time-Dependent Risk Capability Audit follows NFL production validation and remains inspection-only until a later governed phase activates implementation.
+- Data Identity, Reconciliation and Lakehouse Foundation is the active governed phase and should audit existing ingestion, normalization, identity, matching, reconciliation, quality-control, and physical-storage capabilities before implementation while reusing the existing acquisition, storage, certification, lifecycle, lineage, and validation owners.
+- First Controlled NFL Vendor Ingest follows the data identity foundation phase and should begin only after the shared identity, reconciliation, quarantine, revision-aware, and lakehouse capabilities are ready.
+- Covariance and Time-Dependent Risk Capability Audit follows the first controlled NFL vendor ingest and remains inspection-only until a later governed phase activates implementation.
+- Implement only covariance and risk capabilities confirmed missing by that audit follows the audit.
 - Phase 4.9I and Phase 4.9J remain deferred enrichment asset lanes after the first baseline dataset path is established.
 
 The master research engine specification is already the canonical name for the broader research-engine scope. If the repository later needs an even broader top-level research asset registry, that should be treated as a separate future phase rather than another rename of this specification.

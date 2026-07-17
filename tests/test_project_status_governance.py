@@ -57,6 +57,8 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "Phase 4.3.7" in project_status_text
     assert "NFL Production Completion" in project_status_text
     assert "Universal Market Framework (complete)" in project_status_text
+    assert "Data Identity, Reconciliation and Lakehouse Foundation" in project_status_text
+    assert "First Controlled NFL Vendor Ingest" in project_status_text
     assert "Covariance and Time-Dependent Risk Capability Audit" in project_status_text
     assert "master research engine specification" in project_status_text.lower()
     assert "latest validation status" in project_status_text.lower()
@@ -89,13 +91,17 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "docs/reports/PHASE5_4_DECISION_ROW_GENERATION.md" in project_status_text
     assert "docs/reports/PHASE5_5_BASELINE_BACKTESTING.md" in project_status_text
 
+    assert "Data Identity, Reconciliation and Lakehouse Foundation" in next_action_text
+    assert "First Controlled NFL Vendor Ingest" in next_action_text
     assert "NFL Production Completion" in next_action_text
     assert "Universal Market Framework" in next_action_text
     assert "Phase 5.7 - Research Intelligence" in next_action_text
     assert "Covariance and Time-Dependent Risk Capability Audit" in next_action_text
     assert "Research Intelligence" in next_action_text
-    assert "certified and hardened nfl research pipeline" in next_action_text.lower()
-    assert "production-complete requirements" in next_action_text.lower()
+    assert "parquet-based analytical storage" in next_action_text.lower()
+    assert "delta-compatible interfaces" in next_action_text.lower()
+    assert "do not ingest the vendor dataset in this phase" in next_action_text.lower()
+    assert "bronze, silver, and gold" in next_action_text.lower()
     assert "validation commands" in next_action_text.lower()
 
     assert "Every new session begins with `docs/PROJECT_STATUS.md`." in status_policy_text
@@ -136,7 +142,10 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "Phase 5.6 completed pipeline validation and hardening on the production research engine path." in roadmap_text
     assert "Phase 5.7 completed deterministic Research Intelligence on top of the certified NFL pipeline." in roadmap_text
     assert "NFL Production Completion" in roadmap_text
+    assert "Data Identity, Reconciliation and Lakehouse Foundation" in roadmap_text
+    assert "First Controlled NFL Vendor Ingest" in roadmap_text
     assert "Covariance and Time-Dependent Risk Capability Audit" in roadmap_text
+    assert "Implement only covariance and risk capabilities confirmed missing by that audit" in roadmap_text
     assert "additional sports" in roadmap_text
     assert "universal risk and capital allocation" in roadmap_text
     assert "docs/PROJECT_STATUS.md" in roadmap_text
