@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import atexit
 import importlib
+import shutil
+import tempfile
 from pathlib import Path
 
 from src.backtesting import build_pipeline_validation_snapshot
@@ -27,7 +30,11 @@ from src.services.streamlit_dashboard_data import (
 from src.storage import LocalStorageEngine
 
 
-def _build_phase55_chain(storage_path: Path) -> None:
+_PHASE55_TEMPLATE_STORAGE_PATH: Path | None = None
+_PHASE55_TEMPLATE_ROOT: Path | None = None
+
+
+def _populate_phase55_chain(storage_path: Path) -> None:
     for builder in (
         build_nfl_schedule_research_asset_population,
         build_nfl_results_research_asset_population,
@@ -44,6 +51,35 @@ def _build_phase55_chain(storage_path: Path) -> None:
     assert build_signal_population(storage_path=storage_path)["ok"] is True
     assert build_decision_row_population(storage_path=storage_path)["ok"] is True
     assert run_baseline_backtest(storage_path=storage_path)["ok"] is True
+
+
+def _build_phase55_chain(storage_path: Path) -> None:
+    global _PHASE55_TEMPLATE_ROOT, _PHASE55_TEMPLATE_STORAGE_PATH
+
+    target_path = Path(storage_path).expanduser().resolve()
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    if _PHASE55_TEMPLATE_STORAGE_PATH is None or not _PHASE55_TEMPLATE_STORAGE_PATH.exists():
+        template_dir = Path(tempfile.mkdtemp(prefix="phase55_chain_"))
+        template_path = template_dir / "phase55_template.sqlite"
+        _populate_phase55_chain(template_path)
+        _PHASE55_TEMPLATE_ROOT = template_dir
+        _PHASE55_TEMPLATE_STORAGE_PATH = template_path
+
+    if target_path.exists():
+        target_path.unlink()
+    shutil.copy2(_PHASE55_TEMPLATE_STORAGE_PATH, target_path)
+
+
+def _cleanup_phase55_template_cache() -> None:
+    global _PHASE55_TEMPLATE_ROOT, _PHASE55_TEMPLATE_STORAGE_PATH
+
+    if _PHASE55_TEMPLATE_ROOT is not None and _PHASE55_TEMPLATE_ROOT.exists():
+        shutil.rmtree(_PHASE55_TEMPLATE_ROOT, ignore_errors=True)
+    _PHASE55_TEMPLATE_ROOT = None
+    _PHASE55_TEMPLATE_STORAGE_PATH = None
+
+
+atexit.register(_cleanup_phase55_template_cache)
 
 
 def test_pipeline_validation_certifies_full_nfl_chain_and_surfaces_dashboard_readiness(

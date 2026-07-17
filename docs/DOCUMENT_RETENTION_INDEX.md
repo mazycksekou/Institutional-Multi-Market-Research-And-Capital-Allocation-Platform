@@ -2,9 +2,9 @@
 
 This register classifies every tracked document under `docs/` so the repository can keep durable knowledge, archive historical evidence, and identify temporary work products that should eventually be consolidated or deleted.
 
-- scanned_files: 1201
-- working: 91
-- active: 146
+- scanned_files: 1203
+- working: 92
+- active: 147
 - decision_captured: 14
 - consolidated: 6
 - archived: 944
@@ -30,6 +30,7 @@ This register classifies every tracked document under `docs/` so the repository 
 | docs/architecture/BASELINE_BACKTESTING_LAYER.md | Baseline Backtesting Layer | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/PROJECT_STATUS.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/architecture/CANONICAL_OWNERSHIP_MAP.md | Canonical Ownership Map | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/architecture/DOCUMENTATION_MAP.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/architecture/CHANGE_IMPACT_MATRIX.md | Change Impact Matrix | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; tests/test_repository_os_docs.py | Current authoritative documentation | KEEP ACTIVE |
+| docs/architecture/DATA_IDENTITY_RECONCILIATION_AND_LAKEHOUSE_FOUNDATION.md | Data Identity, Reconciliation And Lakehouse Foundation | ARCHITECTURE DOCUMENT | ACTIVE | docs/PROJECT_STATUS.md; src/market_intelligence/data_identity_lakehouse_foundation.py; tests/test_data_identity_lakehouse_foundation_docs.py | Current authoritative documentation | KEEP ACTIVE |
 | docs/architecture/COMPLETE_STORAGE_BLUEPRINT.md | Complete Storage Blueprint | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/architecture/CONFIGURATION_MAP.md | Configuration Map | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/architecture/CONNECTOR_OWNERSHIP_MAP.md | Connector Ownership Map | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
@@ -1206,6 +1207,7 @@ This register classifies every tracked document under `docs/` so the repository 
 | docs/reports/PHASE5_6_PIPELINE_VALIDATION_AND_HARDENING.md | Phase 5.6 - Pipeline Validation And Hardening | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; docs/PROJECT_STATUS.md; tests/test_pipeline_validation_docs.py | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/PHASE5_7_RESEARCH_INTELLIGENCE.md | Phase 5.7 - Research Intelligence | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; docs/PROJECT_STATUS.md; tests/test_research_intelligence_docs.py | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/PHASE5_8_NFL_PRODUCTION_COMPLETION.md | Phase 5.8 - NFL Production Completion | DOCUMENT | WORKING | docs/PROJECT_STATUS.md; src/market_intelligence/nfl_production_completion.py; tests/test_nfl_production_completion_docs.py | Temporary work product or active discovery artifact | KEEP ACTIVE |
+| docs/reports/PHASE5_9_DATA_IDENTITY_RECONCILIATION_AND_LAKEHOUSE_FOUNDATION.md | Phase 5.9 - Data Identity, Reconciliation And Lakehouse Foundation | DOCUMENT | WORKING | docs/PROJECT_STATUS.md; src/market_intelligence/data_identity_lakehouse_foundation.py; tests/test_data_identity_lakehouse_foundation_docs.py | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/PROFILE_AWARE_NFL_P0_VALIDATION.md | Profile-Aware NFL P0 Validation | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/PROJECT_ENTRYPOINT_AUDIT.md | Project Entrypoint Audit | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; tests/test_project_status_governance.py | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/PROJECT_STATUS_GOVERNANCE_DISCOVERY.md | Project Status Governance Discovery | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; docs/reports/MASTER_DOC_CONSOLIDATION_AUDIT.md; tests/test_project_status_governance.py | Temporary work product or active discovery artifact | KEEP ACTIVE |

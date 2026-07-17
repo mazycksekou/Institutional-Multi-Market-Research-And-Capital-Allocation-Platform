@@ -15,12 +15,13 @@ research.
 - current branch: `feature/nfl-backtesting`
 - current HEAD: live branch tip (exact hash is reported in the task final report)
 - remote tracking branch: `origin/feature/nfl-backtesting`
-- active phase: `Data Identity, Reconciliation and Lakehouse Foundation`
-- previous completed active phase: `NFL Production Completion (complete)`
+- active phase: `First Controlled NFL Vendor Ingest`
+- previous completed active phase: `Data Identity, Reconciliation and Lakehouse Foundation (complete)`
+- previous completed active phase before that: `NFL Production Completion (complete)`
 - previous completed active phase before that: `Universal Market Framework (complete)`
 - previous completed active phase before that: `Phase 5.7 - Research Intelligence (complete)`
 - active market profile: `sports:nfl`
-- active implementation lane: `NFL P0 profile-aware foundation + event-centric historical research database + master research engine specification + universal feature registry + universal math engine contracts + research asset runtime framework + historical dataset acquisition framework + historical dataset acquisition runtime + research asset source discovery and connector mapping framework + historical research asset certification runtime + research asset lifecycle runtime + NFL schedule research asset population + research asset coverage planner and provider selection framework + first production NFL schedule connector + certified NFL results research asset + certified NFL odds research asset + certified NFL weather research asset + certified NFL injuries research asset + certified NFL team statistics research asset + deterministic historical dataset population layer + deterministic feature snapshot population layer + deterministic mathematical engine population layer + deterministic signal population layer + deterministic decision row generation layer + deterministic baseline backtesting layer + deterministic pipeline validation and hardening layer + deterministic Research Intelligence layer + Universal Market Framework + NFL Production Completion + Data Identity, Reconciliation and Lakehouse Foundation`
+- active implementation lane: `NFL P0 profile-aware foundation + event-centric historical research database + master research engine specification + universal feature registry + universal math engine contracts + research asset runtime framework + historical dataset acquisition framework + historical dataset acquisition runtime + research asset source discovery and connector mapping framework + historical research asset certification runtime + research asset lifecycle runtime + NFL schedule research asset population + research asset coverage planner and provider selection framework + first production NFL schedule connector + certified NFL results research asset + certified NFL odds research asset + certified NFL weather research asset + certified NFL injuries research asset + certified NFL team statistics research asset + deterministic historical dataset population layer + deterministic feature snapshot population layer + deterministic mathematical engine population layer + deterministic signal population layer + deterministic decision row generation layer + deterministic baseline backtesting layer + deterministic pipeline validation and hardening layer + deterministic Research Intelligence layer + Universal Market Framework + NFL Production Completion + Data Identity, Reconciliation and Lakehouse Foundation + First Controlled NFL Vendor Ingest`
 - completed phases:
   - `Phase 4.3.6 - Profile-Aware NFL P0 Validation`
   - `Phase 4.3.7 - Minimum Backtest Row Contract`
@@ -50,10 +51,11 @@ research.
   - `Phase 5.6 - Validation And Hardening`
   - `Phase 5.7 - Research Intelligence`
   - `Universal Market Framework`
-- `NFL Production Completion`
-- current phase objective: Data Identity, Reconciliation and Lakehouse Foundation is active; audit existing ingestion, normalization, identity, matching, reconciliation, quality-control, and physical-storage capabilities before implementation; reuse the acquisition, `LocalStorageEngine`, local-platform, historical-research-database, certification, lifecycle, lineage, and validation owners; add only missing shared identity, reconciliation, quarantine, revision-aware, and lakehouse capabilities; map Bronze, Silver, and Gold onto the existing lifecycle rather than replacing it; implement Parquet-based analytical storage and Delta-compatible interfaces; defer Spark until measured data scale proves distributed execution is required; do not ingest the vendor dataset in this phase.
-- next phase: `First Controlled NFL Vendor Ingest`
-- governed handoff after the active phase: `First Controlled NFL Vendor Ingest -> Covariance and Time-Dependent Risk Capability Audit`
+  - `NFL Production Completion`
+  - `Data Identity, Reconciliation and Lakehouse Foundation`
+- current phase objective: First Controlled NFL Vendor Ingest is active; reuse the completed shared identity, reconciliation, quarantine, revision-aware, and lakehouse foundation; onboard only the first controlled NFL vendor slice through the canonical acquisition, certification, lifecycle, lineage, and validation owners; preserve all certified NFL reference behavior and parity evidence; keep covariance, additional markets, paper trading, and live execution out of scope in this phase.
+- next phase: `Covariance and Time-Dependent Risk Capability Audit`
+- governed handoff after the active phase: `Covariance and Time-Dependent Risk Capability Audit -> Implement only covariance and risk capabilities confirmed missing by that audit`
 - current blockers: None
 - latest validation status:
   - Phase 4.7C runtime validation passed: compileall, certification runtime tests, smoke, architecture, document lifecycle, and ops checks are green.
@@ -138,6 +140,7 @@ Read these only when you need more detail than the project status page provides:
 - `docs/architecture/PIPELINE_VALIDATION_AND_HARDENING_LAYER.md`
 - `docs/architecture/RESEARCH_INTELLIGENCE_LAYER.md`
 - `docs/architecture/NFL_PRODUCTION_COMPLETION.md`
+- `docs/architecture/DATA_IDENTITY_RECONCILIATION_AND_LAKEHOUSE_FOUNDATION.md`
 - `docs/architecture/DECISION_ROW_POPULATION_LAYER.md`
 - `docs/architecture/SIGNAL_POPULATION_LAYER.md`
 - `docs/architecture/NFL_SCHEDULE_CONNECTOR.md`
@@ -167,6 +170,7 @@ Read these only when you need more detail than the project status page provides:
 - `docs/reports/PHASE5_6_PIPELINE_VALIDATION_AND_HARDENING.md`
 - `docs/reports/PHASE5_7_RESEARCH_INTELLIGENCE.md`
 - `docs/reports/PHASE5_8_NFL_PRODUCTION_COMPLETION.md`
+- `docs/reports/PHASE5_9_DATA_IDENTITY_RECONCILIATION_AND_LAKEHOUSE_FOUNDATION.md`
 - `docs/reports/PHASE5_3_REUSABLE_SIGNALS.md`
 - `docs/reports/PHASE5_4_DECISION_ROW_GENERATION.md`
 - `docs/contracts/MINIMUM_BACKTEST_ROW_CONTRACT.md`
@@ -187,4 +191,4 @@ Read these only when you need more detail than the project status page provides:
 
 ## Next Recommended Codex Task
 
-`Data Identity, Reconciliation and Lakehouse Foundation`
+`First Controlled NFL Vendor Ingest`

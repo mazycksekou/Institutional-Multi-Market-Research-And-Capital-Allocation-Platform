@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import hashlib
+import importlib
 import json
 import sqlite3
+import sys
 from dataclasses import asdict, is_dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -12,8 +15,27 @@ try:  # pragma: no cover - optional backend
 except Exception:  # pragma: no cover - import-safe fallback
     _duckdb = None  # type: ignore
 
+def _import_pyarrow_modules() -> tuple[Any, Any]:
+    try:  # pragma: no cover - optional backend
+        return importlib.import_module("pyarrow"), importlib.import_module("pyarrow.parquet")
+    except Exception:
+        base_site_packages = Path(sys.base_prefix) / "Lib" / "site-packages"
+        if base_site_packages.exists():
+            base_path = str(base_site_packages)
+            if base_path not in sys.path:
+                sys.path.append(base_path)
+            try:  # pragma: no cover - optional backend
+                return importlib.import_module("pyarrow"), importlib.import_module("pyarrow.parquet")
+            except Exception:
+                pass
+    return None, None
+
+
+_pyarrow, _pyarrow_parquet = _import_pyarrow_modules()
+
 
 LOCAL_STORAGE_SCHEMA_VERSION = "src.storage.local_store.v1"
+PARQUET_STORAGE_INTERFACE_VERSION = "src.storage.local_store.parquet.v1"
 SUPPORTED_LOCAL_STORAGE_BACKENDS = ("sqlite", "duckdb")
 
 
@@ -28,6 +50,10 @@ def backend_available(backend: str) -> bool:
     if backend_name == "duckdb":
         return _duckdb is not None
     return False
+
+
+def parquet_available() -> bool:
+    return _pyarrow is not None and _pyarrow_parquet is not None
 
 
 def _json_default(value: Any) -> Any:
@@ -56,6 +82,47 @@ def _normalize_value(value: Any) -> Any:
     if isinstance(value, (Mapping, list, tuple, set)):
         return json.dumps(value, default=_json_default, sort_keys=True, ensure_ascii=False)
     return str(value)
+
+
+def _normalize_parquet_value(value: Any) -> Any:
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        if value.tzinfo is None:
+            value = value.replace(tzinfo=timezone.utc)
+        return value.replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    if isinstance(value, Path):
+        return str(value)
+    if is_dataclass(value):
+        value = asdict(value)
+    elif hasattr(value, "as_dict"):
+        value = value.as_dict()
+    if isinstance(value, set):
+        value = sorted(value)
+    if isinstance(value, tuple):
+        value = list(value)
+    if isinstance(value, Mapping):
+        return json.dumps(dict(value), default=_json_default, sort_keys=True, ensure_ascii=False)
+    if isinstance(value, list):
+        return json.dumps(list(value), default=_json_default, sort_keys=True, ensure_ascii=False)
+    if isinstance(value, (str, int, float, bool)):
+        return value
+    return str(value)
+
+
+def _canonicalize_parquet_rows(rows: Sequence[Mapping[str, Any]]) -> tuple[list[dict[str, Any]], list[str], str]:
+    columns = sorted({str(key) for row in rows for key in dict(row)})
+    normalized_rows: list[dict[str, Any]] = []
+    for row in rows:
+        payload = {column: _normalize_parquet_value(dict(row).get(column)) for column in columns}
+        normalized_rows.append(payload)
+    normalized_rows.sort(
+        key=lambda item: json.dumps(item, sort_keys=True, ensure_ascii=False, default=str)
+    )
+    content_digest = hashlib.sha256(
+        json.dumps(normalized_rows, sort_keys=True, ensure_ascii=False, default=str).encode("utf-8")
+    ).hexdigest()
+    return normalized_rows, columns, content_digest
 
 
 def _quote_identifier(name: str) -> str:
@@ -1310,6 +1377,234 @@ TABLE_DEFINITIONS: dict[str, list[tuple[str, str]]] = {
         ("lineage_reference_json", "TEXT"),
         ("details_json", "TEXT"),
     ],
+    "identity_mappings": [
+        ("mapping_id", "TEXT PRIMARY KEY"),
+        ("internal_identifier", "TEXT"),
+        ("external_identifier", "TEXT"),
+        ("entity_type", "TEXT"),
+        ("entity_name", "TEXT"),
+        ("canonical_key", "TEXT"),
+        ("mapping_status", "TEXT"),
+        ("match_method", "TEXT"),
+        ("confidence", "REAL"),
+        ("review_state", "TEXT"),
+        ("mapping_version", "TEXT"),
+        ("approval_reference", "TEXT"),
+        ("approval_evidence_json", "TEXT"),
+        ("valid_from", "TEXT"),
+        ("valid_to", "TEXT"),
+        ("revision_number", "INTEGER"),
+        ("is_latest", "INTEGER"),
+        ("event_time", "TEXT"),
+        ("published_at", "TEXT"),
+        ("observed_at", "TEXT"),
+        ("processed_at", "TEXT"),
+        ("source_published_at", "TEXT"),
+        ("system_observed_at", "TEXT"),
+        ("lineage_reference_json", "TEXT"),
+        ("source_payload_json", "TEXT"),
+        ("notes_json", "TEXT"),
+    ],
+    "identity_match_candidates": [
+        ("candidate_id", "TEXT PRIMARY KEY"),
+        ("entity_type", "TEXT"),
+        ("internal_identifier", "TEXT"),
+        ("external_identifier", "TEXT"),
+        ("candidate_internal_identifier", "TEXT"),
+        ("candidate_name", "TEXT"),
+        ("candidate_rank", "INTEGER"),
+        ("match_method", "TEXT"),
+        ("confidence", "REAL"),
+        ("decision_status", "TEXT"),
+        ("review_state", "TEXT"),
+        ("reasons_json", "TEXT"),
+        ("canonical_key", "TEXT"),
+        ("event_time", "TEXT"),
+        ("published_at", "TEXT"),
+        ("observed_at", "TEXT"),
+        ("processed_at", "TEXT"),
+        ("source_published_at", "TEXT"),
+        ("system_observed_at", "TEXT"),
+        ("lineage_reference_json", "TEXT"),
+        ("source_payload_json", "TEXT"),
+    ],
+    "identity_reconciliation_results": [
+        ("reconciliation_id", "TEXT PRIMARY KEY"),
+        ("reconciliation_scope", "TEXT"),
+        ("entity_type", "TEXT"),
+        ("internal_identifier", "TEXT"),
+        ("external_identifier", "TEXT"),
+        ("reconciliation_status", "TEXT"),
+        ("decision_status", "TEXT"),
+        ("decision_explanation", "TEXT"),
+        ("freshness_seconds", "INTEGER"),
+        ("timestamp_agreement_status", "TEXT"),
+        ("outlier_status", "TEXT"),
+        ("quality_score", "REAL"),
+        ("accepted_evidence_json", "TEXT"),
+        ("rejected_evidence_json", "TEXT"),
+        ("provider_reliability_json", "TEXT"),
+        ("observation_identity_json", "TEXT"),
+        ("event_time", "TEXT"),
+        ("published_at", "TEXT"),
+        ("observed_at", "TEXT"),
+        ("processed_at", "TEXT"),
+        ("source_published_at", "TEXT"),
+        ("system_observed_at", "TEXT"),
+        ("valid_from", "TEXT"),
+        ("valid_to", "TEXT"),
+        ("revision_number", "INTEGER"),
+        ("is_latest", "INTEGER"),
+        ("lineage_reference_json", "TEXT"),
+        ("source_payload_json", "TEXT"),
+    ],
+    "data_quality_events": [
+        ("quality_event_id", "TEXT PRIMARY KEY"),
+        ("dataset_table", "TEXT"),
+        ("record_identifier", "TEXT"),
+        ("entity_type", "TEXT"),
+        ("internal_identifier", "TEXT"),
+        ("external_identifier", "TEXT"),
+        ("quality_event_type", "TEXT"),
+        ("severity", "TEXT"),
+        ("decision_status", "TEXT"),
+        ("decision_explanation", "TEXT"),
+        ("review_state", "TEXT"),
+        ("event_time", "TEXT"),
+        ("published_at", "TEXT"),
+        ("observed_at", "TEXT"),
+        ("processed_at", "TEXT"),
+        ("source_published_at", "TEXT"),
+        ("system_observed_at", "TEXT"),
+        ("details_json", "TEXT"),
+        ("lineage_reference_json", "TEXT"),
+        ("source_payload_json", "TEXT"),
+    ],
+    "quarantine_records": [
+        ("quarantine_id", "TEXT PRIMARY KEY"),
+        ("dataset_table", "TEXT"),
+        ("record_identifier", "TEXT"),
+        ("entity_type", "TEXT"),
+        ("internal_identifier", "TEXT"),
+        ("external_identifier", "TEXT"),
+        ("quarantine_reason", "TEXT"),
+        ("decision_status", "TEXT"),
+        ("review_state", "TEXT"),
+        ("release_state", "TEXT"),
+        ("match_candidate_ids_json", "TEXT"),
+        ("event_time", "TEXT"),
+        ("published_at", "TEXT"),
+        ("observed_at", "TEXT"),
+        ("processed_at", "TEXT"),
+        ("source_published_at", "TEXT"),
+        ("system_observed_at", "TEXT"),
+        ("details_json", "TEXT"),
+        ("lineage_reference_json", "TEXT"),
+        ("source_payload_json", "TEXT"),
+    ],
+    "manual_review_queue": [
+        ("review_id", "TEXT PRIMARY KEY"),
+        ("entity_type", "TEXT"),
+        ("internal_identifier", "TEXT"),
+        ("external_identifier", "TEXT"),
+        ("review_state", "TEXT"),
+        ("decision_status", "TEXT"),
+        ("priority", "TEXT"),
+        ("recommended_action", "TEXT"),
+        ("candidate_ids_json", "TEXT"),
+        ("approval_reference", "TEXT"),
+        ("opened_at", "TEXT"),
+        ("closed_at", "TEXT"),
+        ("details_json", "TEXT"),
+        ("lineage_reference_json", "TEXT"),
+        ("source_payload_json", "TEXT"),
+    ],
+    "mapping_approvals": [
+        ("approval_id", "TEXT PRIMARY KEY"),
+        ("mapping_id", "TEXT"),
+        ("internal_identifier", "TEXT"),
+        ("external_identifier", "TEXT"),
+        ("entity_type", "TEXT"),
+        ("approval_state", "TEXT"),
+        ("approval_role", "TEXT"),
+        ("approval_reference", "TEXT"),
+        ("approval_evidence_json", "TEXT"),
+        ("approved_at", "TEXT"),
+        ("valid_from", "TEXT"),
+        ("valid_to", "TEXT"),
+        ("details_json", "TEXT"),
+    ],
+    "lakehouse_partitions": [
+        ("partition_id", "TEXT PRIMARY KEY"),
+        ("layer_name", "TEXT"),
+        ("dataset_table", "TEXT"),
+        ("dataset_identifier", "TEXT"),
+        ("market_profile", "TEXT"),
+        ("partition_key_json", "TEXT"),
+        ("partition_values_json", "TEXT"),
+        ("partition_columns_json", "TEXT"),
+        ("file_path", "TEXT"),
+        ("deterministic_file_id", "TEXT"),
+        ("content_digest", "TEXT"),
+        ("file_checksum", "TEXT"),
+        ("schema_version", "TEXT"),
+        ("row_count", "INTEGER"),
+        ("file_size_bytes", "INTEGER"),
+        ("delta_table_name", "TEXT"),
+        ("delta_metadata_json", "TEXT"),
+        ("compaction_group", "TEXT"),
+        ("roundtrip_row_count", "INTEGER"),
+        ("roundtrip_ok", "INTEGER"),
+        ("metadata_json", "TEXT"),
+    ],
+    "data_identity_foundation_runs": [
+        ("data_identity_foundation_run_id", "TEXT PRIMARY KEY"),
+        ("dataset_id", "TEXT"),
+        ("dataset_name", "TEXT"),
+        ("owner", "TEXT"),
+        ("sport", "TEXT"),
+        ("feature_pack", "TEXT"),
+        ("storage_location", "TEXT"),
+        ("readiness", "TEXT"),
+        ("update_frequency", "TEXT"),
+        ("validation_state", "TEXT"),
+        ("status", "TEXT"),
+        ("nfl_production_completion_run_id", "TEXT"),
+        ("universal_market_framework_run_id", "TEXT"),
+        ("research_intelligence_run_id", "TEXT"),
+        ("pipeline_validation_run_id", "TEXT"),
+        ("backtest_run_id", "TEXT"),
+        ("audit_item_count", "INTEGER"),
+        ("blocking_gap_count", "INTEGER"),
+        ("warning_gap_count", "INTEGER"),
+        ("identity_mapping_count", "INTEGER"),
+        ("reconciliation_result_count", "INTEGER"),
+        ("lakehouse_partition_count", "INTEGER"),
+        ("artifact_root", "TEXT"),
+        ("report_json_path", "TEXT"),
+        ("report_markdown_path", "TEXT"),
+        ("dashboard_json_path", "TEXT"),
+        ("results_json", "TEXT"),
+        ("payload_json", "TEXT"),
+    ],
+    "data_identity_foundation_audit_items": [
+        ("audit_item_id", "TEXT PRIMARY KEY"),
+        ("data_identity_foundation_run_id", "TEXT"),
+        ("requirement_id", "TEXT"),
+        ("requirement_name", "TEXT"),
+        ("initial_classification", "TEXT"),
+        ("final_classification", "TEXT"),
+        ("blocking_if_incomplete", "INTEGER"),
+        ("status", "TEXT"),
+        ("validation_state", "TEXT"),
+        ("canonical_owner", "TEXT"),
+        ("summary", "TEXT"),
+        ("implemented_changes_json", "TEXT"),
+        ("source_snapshot_ids_json", "TEXT"),
+        ("source_artifact_paths_json", "TEXT"),
+        ("lineage_reference_json", "TEXT"),
+        ("details_json", "TEXT"),
+    ],
     "research_runs": [
         ("research_run_id", "TEXT PRIMARY KEY"),
         ("dataset_id", "TEXT"),
@@ -1551,6 +1846,52 @@ class LocalStorageEngine:
     def upsert(self, table_name: str, row: Mapping[str, Any], *, key_columns: Sequence[str]) -> None:
         self.replace(table_name, row, key_columns=key_columns)
 
+    def write_parquet_rows(
+        self,
+        path: str | Path,
+        rows: Sequence[Mapping[str, Any]],
+        *,
+        compression: str = "zstd",
+    ) -> dict[str, Any]:
+        if not parquet_available():
+            raise RuntimeError("pyarrow is required for parquet storage operations")
+        output_path = Path(path).expanduser().resolve()
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        normalized_rows, columns, content_digest = _canonicalize_parquet_rows(rows)
+        table = _pyarrow.Table.from_pylist(normalized_rows)  # type: ignore[union-attr]
+        _pyarrow_parquet.write_table(  # type: ignore[union-attr]
+            table,
+            str(output_path),
+            compression=compression,
+            use_dictionary=False,
+            write_statistics=True,
+            data_page_version="1.0",
+        )
+        file_bytes = output_path.read_bytes()
+        file_checksum = hashlib.sha256(file_bytes).hexdigest()
+        return {
+            "ok": True,
+            "path": str(output_path),
+            "row_count": len(normalized_rows),
+            "column_count": len(columns),
+            "columns": columns,
+            "content_digest": content_digest,
+            "file_checksum": file_checksum,
+            "file_size_bytes": len(file_bytes),
+            "compression": compression,
+            "schema_version": PARQUET_STORAGE_INTERFACE_VERSION,
+        }
+
+    def read_parquet_rows(self, path: str | Path) -> list[dict[str, Any]]:
+        if not parquet_available():
+            raise RuntimeError("pyarrow is required for parquet storage operations")
+        input_path = Path(path).expanduser().resolve()
+        if not input_path.exists():
+            return []
+        table = _pyarrow_parquet.read_table(str(input_path))  # type: ignore[union-attr]
+        rows = table.to_pylist()
+        return [dict(row) for row in rows]
+
     def health(self) -> dict[str, Any]:
         tables = {}
         for table_name in self.list_tables():
@@ -1568,6 +1909,10 @@ class LocalStorageEngine:
                 "sqlite": True,
                 "duckdb": backend_available("duckdb"),
             },
+            "parquet": {
+                "available": parquet_available(),
+                "schema_version": PARQUET_STORAGE_INTERFACE_VERSION,
+            },
         }
 
 
@@ -1583,7 +1928,9 @@ def create_local_storage_engine(
 __all__ = [
     "LOCAL_STORAGE_SCHEMA_VERSION",
     "LocalStorageEngine",
+    "PARQUET_STORAGE_INTERFACE_VERSION",
     "SUPPORTED_LOCAL_STORAGE_BACKENDS",
     "backend_available",
     "create_local_storage_engine",
+    "parquet_available",
 ]

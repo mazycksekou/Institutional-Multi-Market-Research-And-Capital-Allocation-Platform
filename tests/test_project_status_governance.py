@@ -55,6 +55,8 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "Phase 4.5C - Universal Math Engine Contracts" in project_status_text
     assert "Phase 4.3.6" in project_status_text
     assert "Phase 4.3.7" in project_status_text
+    assert "First Controlled NFL Vendor Ingest" in project_status_text
+    assert "Data Identity, Reconciliation and Lakehouse Foundation (complete)" in project_status_text
     assert "NFL Production Completion" in project_status_text
     assert "Universal Market Framework (complete)" in project_status_text
     assert "Data Identity, Reconciliation and Lakehouse Foundation" in project_status_text
@@ -78,6 +80,7 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "docs/architecture/UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md" in project_status_text
     assert "docs/architecture/RESEARCH_ASSET_RUNTIME_FRAMEWORK.md" in project_status_text
     assert "docs/architecture/DECISION_ROW_POPULATION_LAYER.md" in project_status_text
+    assert "docs/architecture/DATA_IDENTITY_RECONCILIATION_AND_LAKEHOUSE_FOUNDATION.md" in project_status_text
     assert "docs/contracts/RESEARCH_ASSET_CONTRACT.md" in project_status_text
     assert "docs/reports/PHASE4_5A_MASTER_RESEARCH_ENGINE_SPECIFICATION.md" in project_status_text
     assert "docs/reports/PHASE4_5B_UNIVERSAL_FEATURE_REGISTRY.md" in project_status_text
@@ -90,6 +93,7 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "docs/reports/PHASE4_9E_NFL_ODDS_RESEARCH_ASSET_POPULATION.md" in project_status_text
     assert "docs/reports/PHASE5_4_DECISION_ROW_GENERATION.md" in project_status_text
     assert "docs/reports/PHASE5_5_BASELINE_BACKTESTING.md" in project_status_text
+    assert "docs/reports/PHASE5_9_DATA_IDENTITY_RECONCILIATION_AND_LAKEHOUSE_FOUNDATION.md" in project_status_text
 
     assert "Data Identity, Reconciliation and Lakehouse Foundation" in next_action_text
     assert "First Controlled NFL Vendor Ingest" in next_action_text
@@ -98,10 +102,12 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "Phase 5.7 - Research Intelligence" in next_action_text
     assert "Covariance and Time-Dependent Risk Capability Audit" in next_action_text
     assert "Research Intelligence" in next_action_text
+    assert "activate only the first controlled nfl vendor ingest" in next_action_text.lower()
+    assert "identity-binding" in next_action_text.lower()
     assert "parquet-based analytical storage" in next_action_text.lower()
     assert "delta-compatible interfaces" in next_action_text.lower()
-    assert "do not ingest the vendor dataset in this phase" in next_action_text.lower()
     assert "bronze, silver, and gold" in next_action_text.lower()
+    assert "do not create a parallel ingestion, storage, certification, lifecycle, identity, or reconciliation framework." in next_action_text.lower()
     assert "validation commands" in next_action_text.lower()
 
     assert "Every new session begins with `docs/PROJECT_STATUS.md`." in status_policy_text
@@ -174,6 +180,7 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "docs/architecture/UNIVERSAL_MATHEMATICAL_ENGINE_CONTRACTS.md" in master_index_text
     assert "docs/architecture/RESEARCH_ASSET_RUNTIME_FRAMEWORK.md" in master_index_text
     assert "docs/architecture/DECISION_ROW_POPULATION_LAYER.md" in master_index_text
+    assert "docs/architecture/DATA_IDENTITY_RECONCILIATION_AND_LAKEHOUSE_FOUNDATION.md" in master_index_text
     assert "docs/architecture/HISTORICAL_RESEARCH_DATABASE.md" in master_index_text
     assert "docs/contracts/RESEARCH_ASSET_CONTRACT.md" in master_index_text
 
@@ -192,6 +199,8 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "docs/reports/PHASE4_9E_NFL_ODDS_RESEARCH_ASSET_POPULATION.md" in retention_index_text
     assert "docs/reports/PHASE5_4_DECISION_ROW_GENERATION.md" in retention_index_text
     assert "docs/reports/PHASE5_5_BASELINE_BACKTESTING.md" in retention_index_text
+    assert "docs/architecture/DATA_IDENTITY_RECONCILIATION_AND_LAKEHOUSE_FOUNDATION.md" in retention_index_text
+    assert "docs/reports/PHASE5_9_DATA_IDENTITY_RECONCILIATION_AND_LAKEHOUSE_FOUNDATION.md" in retention_index_text
 
 
 def test_project_status_governance_has_no_duplicate_status_files() -> None:

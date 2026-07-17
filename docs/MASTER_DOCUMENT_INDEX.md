@@ -20,6 +20,7 @@ This index points readers to the current truth and the durable historical entry 
 - `docs/architecture/CONNECTOR_OWNERSHIP_MAP.md` - Connector Ownership Map
 - `docs/architecture/DATA_FLOW_MAP.md` - Data Flow Map
 - `docs/architecture/DECISION_ROW_POPULATION_LAYER.md` - Decision Row Population Layer
+- `docs/architecture/DATA_IDENTITY_RECONCILIATION_AND_LAKEHOUSE_FOUNDATION.md` - Data Identity, Reconciliation And Lakehouse Foundation
 - `docs/architecture/DEPENDENCY_FLOW_MAP.md` - Dependency Flow Map
 - `docs/architecture/DOCUMENTATION_GOVERNANCE.md` - Documentation Governance
 - `docs/architecture/DOCUMENTATION_MAP.md` - Documentation Map

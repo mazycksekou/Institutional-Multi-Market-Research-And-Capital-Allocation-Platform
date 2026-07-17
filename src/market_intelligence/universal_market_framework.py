@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import hashlib
 import json
 from datetime import UTC, datetime
@@ -15,6 +16,7 @@ DEFAULT_UNIVERSAL_MARKET_FRAMEWORK_ARTIFACT_ROOT = Path(
     "data/backtests/universal_market_framework_artifacts"
 )
 NFL_REFERENCE_PROFILE_ID = "sports:nfl"
+_UNIVERSAL_MARKET_FRAMEWORK_SNAPSHOT_CACHE: dict[tuple[Any, ...], dict[str, Any]] = {}
 
 
 _CANONICAL_OWNER_INTERFACES: tuple[dict[str, str], ...] = (
@@ -246,13 +248,44 @@ def _write_artifacts(
     }
 
 
+def _snapshot_cache_key(
+    storage_path: str | Path | None,
+    *,
+    backend: str,
+    artifact_root: str | Path | None,
+    persist_artifacts: bool,
+) -> tuple[Any, ...]:
+    resolved = Path(storage_path or DEFAULT_RESEARCH_INTELLIGENCE_STORAGE_PATH).expanduser().resolve()
+    stat = resolved.stat() if resolved.exists() else None
+    resolved_artifact_root = Path(artifact_root or DEFAULT_UNIVERSAL_MARKET_FRAMEWORK_ARTIFACT_ROOT).expanduser().resolve()
+    return (
+        str(resolved),
+        getattr(stat, "st_mtime_ns", 0),
+        getattr(stat, "st_size", 0),
+        backend,
+        str(resolved_artifact_root),
+        persist_artifacts,
+    )
+
+
 def build_universal_market_framework_snapshot(
     storage_path: str | Path | None = None,
     *,
     backend: str = "sqlite",
     artifact_root: str | Path | None = None,
     persist_artifacts: bool = True,
+    research_snapshot: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
+    cache_key = _snapshot_cache_key(
+        storage_path,
+        backend=backend,
+        artifact_root=artifact_root,
+        persist_artifacts=persist_artifacts,
+    )
+    cached_snapshot = _UNIVERSAL_MARKET_FRAMEWORK_SNAPSHOT_CACHE.get(cache_key)
+    if cached_snapshot is not None:
+        return copy.deepcopy(cached_snapshot)
+
     from src.market_intelligence.market_profiles import (
         build_market_profile_catalog,
         validate_market_profile_catalog,
@@ -262,14 +295,16 @@ def build_universal_market_framework_snapshot(
     storage = Path(storage_path or DEFAULT_RESEARCH_INTELLIGENCE_STORAGE_PATH)
     catalog = build_market_profile_catalog()
     catalog_validation = validate_market_profile_catalog()
-    research_snapshot = build_research_intelligence_snapshot(
-        storage_path=storage,
-        backend=backend,
-        include_layer_snapshots=False,
-        persist_artifacts=False,
-    )
+    research_snapshot_payload = dict(research_snapshot or {})
+    if not research_snapshot_payload:
+        research_snapshot_payload = build_research_intelligence_snapshot(
+            storage_path=storage,
+            backend=backend,
+            include_layer_snapshots=False,
+            persist_artifacts=False,
+        )
     registry_rows = _profile_registry_rows(catalog)
-    reference_parity = _reference_parity(research_snapshot)
+    reference_parity = _reference_parity(research_snapshot_payload)
     active_non_reference_profiles = [
         row["profile_id"]
         for row in registry_rows
@@ -299,7 +334,7 @@ def build_universal_market_framework_snapshot(
             "severity": "error",
             "ok": bool(reference_parity.get("ok")),
             "expected": "universal_market_framework_ready",
-            "actual": research_snapshot.get("readiness"),
+            "actual": research_snapshot_payload.get("readiness"),
         },
         {
             "check_id": "no_non_reference_market_activated",
@@ -347,6 +382,14 @@ def build_universal_market_framework_snapshot(
         "generated_at": _utc_now(),
         "reference_profile_id": NFL_REFERENCE_PROFILE_ID,
         "reference_implementation": "certified_nfl_research_chain_through_research_intelligence",
+        "reference_research_intelligence": {
+            "research_intelligence_run_id": reference_parity.get("research_intelligence_run_id"),
+            "status": research_snapshot_payload.get("status"),
+            "readiness": research_snapshot_payload.get("readiness"),
+            "validation_state": research_snapshot_payload.get("validation_state"),
+            "lineage_summary": dict(research_snapshot_payload.get("lineage_summary") or {}),
+            "certification_summary": dict(research_snapshot_payload.get("certification_summary") or {}),
+        },
         "profile_contract_registry": registry_rows,
         "canonical_owner_interfaces": list(_CANONICAL_OWNER_INTERFACES),
         "onboarding_lifecycle_interfaces": dashboard_views["onboarding_gate_summary"],
@@ -384,6 +427,7 @@ def build_universal_market_framework_snapshot(
             for key, path in artifact_references.items()
             if key != "artifact_root"
         )
+    _UNIVERSAL_MARKET_FRAMEWORK_SNAPSHOT_CACHE[cache_key] = copy.deepcopy(snapshot)
     return snapshot
 
 

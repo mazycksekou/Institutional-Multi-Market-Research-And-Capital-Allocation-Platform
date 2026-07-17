@@ -2,6 +2,7 @@ from __future__ import annotations
 
 """Canonical Phase 5.7 Research Intelligence snapshot."""
 
+import copy
 import hashlib
 import json
 from collections import Counter
@@ -29,6 +30,7 @@ DEFAULT_RESEARCH_INTELLIGENCE_MARKET = "sports:nfl"
 DEFAULT_RESEARCH_INTELLIGENCE_MARKET_TYPE = "historical_research_intelligence"
 RESEARCH_INTELLIGENCE_RUN_TABLE = "research_intelligence_runs"
 RESEARCH_INTELLIGENCE_OPPORTUNITY_TABLE = "research_intelligence_opportunities"
+_RESEARCH_INTELLIGENCE_SNAPSHOT_CACHE: dict[tuple[Any, ...], dict[str, Any]] = {}
 
 
 def _normalize_text(value: Any, default: str = "") -> str:
@@ -139,6 +141,30 @@ def _resolve_artifact_root(storage_path: Path, artifact_root: str | Path | None)
         root = storage_path.resolve().parent / "research_intelligence_artifacts"
     root.mkdir(parents=True, exist_ok=True)
     return root
+
+
+def _snapshot_cache_key(
+    storage_path: str | Path | None,
+    *,
+    backend: str,
+    backtest_run_id: str | None,
+    artifact_root: str | Path | None,
+    include_layer_snapshots: bool,
+    persist_artifacts: bool,
+) -> tuple[Any, ...]:
+    resolved = Path(storage_path or DEFAULT_RESEARCH_INTELLIGENCE_STORAGE_PATH).expanduser().resolve()
+    stat = resolved.stat() if resolved.exists() else None
+    resolved_artifact_root = _resolve_artifact_root(resolved, artifact_root)
+    return (
+        str(resolved),
+        getattr(stat, "st_mtime_ns", 0),
+        getattr(stat, "st_size", 0),
+        backend,
+        _normalize_text(backtest_run_id),
+        str(resolved_artifact_root),
+        include_layer_snapshots,
+        persist_artifacts,
+    )
 
 
 def _layer_timestamp(snapshot: Mapping[str, Any]) -> datetime | None:
@@ -764,7 +790,6 @@ def _write_artifacts(
     report_json_path = run_root / "report.json"
     report_markdown_path = run_root / "summary.md"
     dashboard_json_path = run_root / "dashboard.json"
-    report_payload = json.loads(_as_json(dict(snapshot)))
     dashboard_payload = {
         "research_intelligence_run_id": snapshot.get("research_intelligence_run_id"),
         "status": snapshot.get("status"),
@@ -778,6 +803,29 @@ def _write_artifacts(
         "validation_summary": snapshot.get("validation_summary"),
     }
     top_opportunities = list(snapshot.get("opportunity_summaries") or [])[:3]
+    report_payload = {
+        "research_intelligence_run_id": snapshot.get("research_intelligence_run_id"),
+        "schema_version": snapshot.get("schema_version"),
+        "research_intelligence_version": snapshot.get("research_intelligence_version"),
+        "status": snapshot.get("status"),
+        "readiness": snapshot.get("readiness"),
+        "lifecycle_state": snapshot.get("lifecycle_state"),
+        "validation_timestamp": snapshot.get("validation_timestamp"),
+        "lineage_summary": snapshot.get("lineage_summary"),
+        "certification_summary": snapshot.get("certification_summary"),
+        "research_summary": snapshot.get("research_summary"),
+        "historical_comparison_summary": snapshot.get("historical_comparison_summary"),
+        "signal_agreement_summary": snapshot.get("signal_agreement_summary"),
+        "feature_contribution_summary": snapshot.get("feature_contribution_summary"),
+        "evidence_aggregation_summary": snapshot.get("evidence_aggregation_summary"),
+        "validation_summary": snapshot.get("validation_summary"),
+        "validation_checks": snapshot.get("validation_checks"),
+        "top_opportunity_summaries": top_opportunities,
+        "opportunity_count": len(list(snapshot.get("opportunity_summaries") or [])),
+        "supporting_evidence_package_count": len(list(snapshot.get("supporting_evidence_packages") or [])),
+        "warnings": snapshot.get("warnings"),
+        "unresolved_blockers": snapshot.get("unresolved_blockers"),
+    }
     markdown_lines = [
         f"# Phase 5.7 Research Intelligence `{research_intelligence_run_id}`",
         "",
@@ -867,6 +915,18 @@ def build_research_intelligence_snapshot(
     include_layer_snapshots: bool = True,
     persist_artifacts: bool = True,
 ) -> dict[str, Any]:
+    cache_key = _snapshot_cache_key(
+        storage_path,
+        backend=backend,
+        backtest_run_id=backtest_run_id,
+        artifact_root=artifact_root,
+        include_layer_snapshots=include_layer_snapshots,
+        persist_artifacts=persist_artifacts,
+    )
+    cached_snapshot = _RESEARCH_INTELLIGENCE_SNAPSHOT_CACHE.get(cache_key)
+    if cached_snapshot is not None:
+        return copy.deepcopy(cached_snapshot)
+
     from src.backtesting.baseline_backtesting import build_baseline_backtest_dashboard_snapshot
     from src.backtesting.decision_row_population import build_decision_row_population_dashboard_snapshot
     from src.backtesting.pipeline_validation import build_pipeline_validation_snapshot
@@ -1418,6 +1478,7 @@ def build_research_intelligence_snapshot(
             )
             storage.upsert(RESEARCH_INTELLIGENCE_RUN_TABLE, run_row, key_columns=("research_intelligence_run_id",))
 
+        _RESEARCH_INTELLIGENCE_SNAPSHOT_CACHE[cache_key] = copy.deepcopy(snapshot)
         return snapshot
     finally:
         storage.close()

@@ -35,7 +35,7 @@ Immediately after complete NFL production validation, the next governed lanes ar
 - `First Controlled NFL Vendor Ingest`
 - `Covariance and Time-Dependent Risk Capability Audit`
 
-The data identity foundation phase must:
+The data identity foundation phase is complete and validated. It:
 
 - audit existing ingestion, normalization, identity, matching, reconciliation, quality-control, and physical-storage capabilities before implementation
 - reuse the acquisition, `LocalStorageEngine`, local-platform, historical-research-database, certification, lifecycle, lineage, and validation owners
@@ -44,6 +44,14 @@ The data identity foundation phase must:
 - implement Parquet-based analytical storage and Delta-compatible interfaces
 - defer Spark until measured data scale proves distributed execution is required
 - avoid ingesting the vendor dataset in that phase
+
+The first controlled NFL vendor ingest phase must:
+
+- reuse the completed shared identity, reconciliation, quarantine, revision-aware, and lakehouse capabilities
+- reuse the canonical acquisition, certification, lifecycle, lineage, validation, and dashboard owners
+- onboard only the first controlled NFL vendor slice needed to prove the shared contracts under governed ingest conditions
+- preserve certified NFL reference behavior, parity evidence, lineage, provenance, determinism, and point-in-time safety
+- avoid covariance implementation, additional markets, paper trading, and live execution in that phase
 
 The covariance audit must still inspect the repository before implementation and determine existing, partial, missing, duplicated, or deferred support for:
 
@@ -182,8 +190,8 @@ Current NFL work follows the certified Phase 5 chain and the completed Universal
 - Phase 5.6 completed pipeline validation and hardening on the production research engine path.
 - Phase 5.7 completed Research Intelligence on the certified NFL pipeline.
 - Universal Market Framework generalized the certified NFL research chain without changing certified NFL outputs.
-- Data Identity, Reconciliation and Lakehouse Foundation is the active governed phase and should audit existing ingestion, normalization, identity, matching, reconciliation, quality-control, and physical-storage capabilities before implementation while reusing the existing acquisition, storage, certification, lifecycle, lineage, and validation owners.
-- First Controlled NFL Vendor Ingest follows the data identity foundation phase and should begin only after the shared identity, reconciliation, quarantine, revision-aware, and lakehouse capabilities are ready.
+- Data Identity, Reconciliation and Lakehouse Foundation is complete and validated above the certified NFL production chain.
+- First Controlled NFL Vendor Ingest is the active governed phase and should begin only after the shared identity, reconciliation, quarantine, revision-aware, and lakehouse capabilities are ready.
 - Covariance and Time-Dependent Risk Capability Audit follows the first controlled NFL vendor ingest and remains inspection-only until a later governed phase activates implementation.
 - Implement only covariance and risk capabilities confirmed missing by that audit follows the audit.
 - Phase 4.9I and Phase 4.9J remain deferred enrichment asset lanes after the first baseline dataset path is established.

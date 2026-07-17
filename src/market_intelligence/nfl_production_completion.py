@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import hashlib
 import json
 from datetime import UTC, datetime
@@ -23,6 +24,7 @@ NFL_PRODUCTION_COMPLETION_RUN_TABLE = "nfl_production_completion_runs"
 NFL_PRODUCTION_COMPLETION_AUDIT_TABLE = "nfl_production_completion_audit_items"
 NFL_PRODUCTION_COMPLETION_REFERENCE_PROFILE_ID = "sports:nfl"
 NFL_PRODUCTION_COMPLETION_NEXT_PHASE = "Covariance and Time-Dependent Risk Capability Audit"
+_NFL_PRODUCTION_COMPLETION_SNAPSHOT_CACHE: dict[tuple[Any, ...], dict[str, Any]] = {}
 
 COMPLETE_AND_VALIDATED = "complete_and_validated"
 COMPLETE_BUT_UNVALIDATED = "complete_but_unvalidated"
@@ -169,7 +171,11 @@ def _document_summary() -> dict[str, Any]:
         "project_status_report_reference": "docs/reports/PHASE5_8_NFL_PRODUCTION_COMPLETION.md" in project_status_text,
         "next_action_advanced": NFL_PRODUCTION_COMPLETION_NEXT_PHASE in next_action_text,
         "next_action_records_completed_phase": "NFL Production Completion" in next_action_text,
-        "p0_rollup_updated": "NFL Production Completion" in p0_text and NFL_PRODUCTION_COMPLETION_NEXT_PHASE in p0_text,
+        "p0_rollup_updated": "NFL Production Completion" in p0_text
+        and (
+            NFL_PRODUCTION_COMPLETION_NEXT_PHASE in p0_text
+            or "First Controlled NFL Vendor Ingest" in p0_text
+        ),
         "master_index_updated": "docs/architecture/NFL_PRODUCTION_COMPLETION.md" in master_index_text,
         "retention_index_updated": "docs/architecture/NFL_PRODUCTION_COMPLETION.md" in retention_index_text
         and "docs/reports/PHASE5_8_NFL_PRODUCTION_COMPLETION.md" in retention_index_text,
@@ -226,8 +232,28 @@ def _write_artifacts(
     report_json_path = run_root / "report.json"
     report_markdown_path = run_root / "summary.md"
     dashboard_json_path = run_root / "dashboard.json"
+    report_payload = {
+        "nfl_production_completion_run_id": snapshot.get("nfl_production_completion_run_id"),
+        "schema_version": snapshot.get("schema_version"),
+        "nfl_production_completion_version": snapshot.get("nfl_production_completion_version"),
+        "status": snapshot.get("status"),
+        "readiness": snapshot.get("readiness"),
+        "lifecycle_state": snapshot.get("lifecycle_state"),
+        "validation_state": snapshot.get("validation_state"),
+        "reference_profile_id": snapshot.get("reference_profile_id"),
+        "next_governed_phase": snapshot.get("next_governed_phase"),
+        "nfl_reference_parity": snapshot.get("nfl_reference_parity"),
+        "production_audit_results": snapshot.get("production_audit_results"),
+        "production_gap_register": snapshot.get("production_gap_register"),
+        "lineage_summary": snapshot.get("lineage_summary"),
+        "certification_summary": snapshot.get("certification_summary"),
+        "reporting_surface_summary": snapshot.get("reporting_surface_summary"),
+        "validation_summary": snapshot.get("validation_summary"),
+        "warnings": snapshot.get("warnings"),
+        "unresolved_blockers": snapshot.get("unresolved_blockers"),
+    }
     report_json_path.write_text(
-        json.dumps(snapshot, indent=2, sort_keys=True, default=str) + "\n",
+        json.dumps(report_payload, indent=2, sort_keys=True, default=str) + "\n",
         encoding="utf-8",
     )
     dashboard_json_path.write_text(
@@ -254,6 +280,28 @@ def _write_artifacts(
         "report_markdown_path": str(report_markdown_path),
         "dashboard_json_path": str(dashboard_json_path),
     }
+
+
+def _snapshot_cache_key(
+    storage_path: str | Path | None,
+    *,
+    backend: str,
+    artifact_root: str | Path | None,
+    include_layer_snapshots: bool,
+    persist_artifacts: bool,
+) -> tuple[Any, ...]:
+    resolved = Path(storage_path or DEFAULT_NFL_PRODUCTION_COMPLETION_STORAGE_PATH).expanduser().resolve()
+    stat = resolved.stat() if resolved.exists() else None
+    resolved_artifact_root = Path(artifact_root or DEFAULT_NFL_PRODUCTION_COMPLETION_ARTIFACT_ROOT).expanduser().resolve()
+    return (
+        str(resolved),
+        getattr(stat, "st_mtime_ns", 0),
+        getattr(stat, "st_size", 0),
+        backend,
+        str(resolved_artifact_root),
+        include_layer_snapshots,
+        persist_artifacts,
+    )
 
 
 def _missing_snapshot(
@@ -308,6 +356,17 @@ def build_nfl_production_completion_snapshot(
     include_layer_snapshots: bool = True,
     persist_artifacts: bool = True,
 ) -> dict[str, Any]:
+    cache_key = _snapshot_cache_key(
+        storage_path,
+        backend=backend,
+        artifact_root=artifact_root,
+        include_layer_snapshots=include_layer_snapshots,
+        persist_artifacts=persist_artifacts,
+    )
+    cached_snapshot = _NFL_PRODUCTION_COMPLETION_SNAPSHOT_CACHE.get(cache_key)
+    if cached_snapshot is not None:
+        return copy.deepcopy(cached_snapshot)
+
     from src.backtesting.baseline_backtesting import build_baseline_backtest_dashboard_snapshot
     from src.backtesting.decision_row_population import build_decision_row_population_dashboard_snapshot
     from src.backtesting.pipeline_validation import build_pipeline_validation_snapshot
@@ -329,7 +388,29 @@ def build_nfl_production_completion_snapshot(
         backend=backend,
     )
     try:
-        dataset_snapshot = _safe_call(
+        pipeline_validation_snapshot = _safe_call(
+            "pipeline_validation",
+            lambda: build_pipeline_validation_snapshot(
+                storage_path=storage.path,
+                backend=backend,
+                include_layer_snapshots=True,
+                persist_artifacts=True,
+            ),
+        )
+        pipeline_layer_snapshots = dict(pipeline_validation_snapshot.get("layer_snapshots") or {})
+
+        def _layer_or_fallback(
+            layer_key: str,
+            fallback_name: str,
+            builder,
+        ) -> dict[str, Any]:
+            layer_snapshot = pipeline_layer_snapshots.get(layer_key)
+            if isinstance(layer_snapshot, Mapping) and layer_snapshot:
+                return dict(layer_snapshot)
+            return _safe_call(fallback_name, builder)
+
+        dataset_snapshot = _layer_or_fallback(
+            "dataset",
             "historical_dataset_population",
             lambda: build_historical_dataset_population_dashboard_snapshot(
                 storage_path=storage.path,
@@ -337,7 +418,8 @@ def build_nfl_production_completion_snapshot(
                 profile_id=NFL_PRODUCTION_COMPLETION_REFERENCE_PROFILE_ID,
             ),
         )
-        feature_snapshot = _safe_call(
+        feature_snapshot = _layer_or_fallback(
+            "feature",
             "feature_snapshot_population",
             lambda: build_feature_snapshot_population_dashboard_snapshot(
                 storage_path=storage.path,
@@ -345,41 +427,36 @@ def build_nfl_production_completion_snapshot(
                 dataset_id="dataset.sports.nfl.historical_dataset",
             ),
         )
-        math_snapshot = _safe_call(
+        math_snapshot = _layer_or_fallback(
+            "math",
             "math_engine_population",
             lambda: build_math_engine_population_dashboard_snapshot(
                 storage_path=storage.path,
                 backend=backend,
             ),
         )
-        signal_snapshot = _safe_call(
+        signal_snapshot = _layer_or_fallback(
+            "signal",
             "signal_population",
             lambda: get_signal_population_snapshot_for_dashboard(
                 storage_path=storage.path,
                 backend=backend,
             ),
         )
-        decision_snapshot = _safe_call(
+        decision_snapshot = _layer_or_fallback(
+            "decision",
             "decision_row_population",
             lambda: build_decision_row_population_dashboard_snapshot(
                 storage_path=storage.path,
                 backend=backend,
             ),
         )
-        backtest_snapshot = _safe_call(
+        backtest_snapshot = _layer_or_fallback(
+            "backtest",
             "baseline_backtesting",
             lambda: build_baseline_backtest_dashboard_snapshot(
                 storage_path=storage.path,
                 backend=backend,
-            ),
-        )
-        pipeline_validation_snapshot = _safe_call(
-            "pipeline_validation",
-            lambda: build_pipeline_validation_snapshot(
-                storage_path=storage.path,
-                backend=backend,
-                include_layer_snapshots=False,
-                persist_artifacts=True,
             ),
         )
         research_intelligence_snapshot = _safe_call(
@@ -388,7 +465,7 @@ def build_nfl_production_completion_snapshot(
                 storage_path=storage.path,
                 backend=backend,
                 include_layer_snapshots=False,
-                persist_artifacts=True,
+                persist_artifacts=persist_artifacts,
             ),
         )
         universal_market_framework_snapshot = _safe_call(
@@ -396,7 +473,8 @@ def build_nfl_production_completion_snapshot(
             lambda: build_universal_market_framework_snapshot(
                 storage_path=storage.path,
                 backend=backend,
-                persist_artifacts=True,
+                persist_artifacts=persist_artifacts,
+                research_snapshot=research_intelligence_snapshot,
             ),
         )
         asset_snapshots = {
@@ -926,69 +1004,24 @@ def build_nfl_production_completion_snapshot(
         provisional_error_checks = [check for check in provisional_validation_checks if check["severity"] == "error"]
         provisional_warning_checks = [check for check in provisional_validation_checks if check["severity"] == "warning"]
         provisional_ok = all(check["ok"] for check in provisional_error_checks)
-        preliminary_snapshot: dict[str, Any] = {
-            "ok": provisional_ok,
-            "status": "completed" if provisional_ok else "blocked",
-            "readiness": "covariance_and_time_dependent_risk_audit_ready" if provisional_ok else "blocked",
-            "lifecycle_state": "nfl_production_complete" if provisional_ok else "blocked",
-            "validation_state": "validated" if provisional_ok else "blocked",
-            "schema_version": NFL_PRODUCTION_COMPLETION_SCHEMA_VERSION,
-            "dataset_id": DEFAULT_NFL_PRODUCTION_COMPLETION_DATASET_ID,
-            "dataset_name": DEFAULT_NFL_PRODUCTION_COMPLETION_DATASET_NAME,
-            "nfl_production_completion_run_id": run_id,
-            "nfl_production_completion_version": NFL_PRODUCTION_COMPLETION_RUNTIME_VERSION,
-            "generated_at": _utc_now(),
-            "reference_profile_id": NFL_PRODUCTION_COMPLETION_REFERENCE_PROFILE_ID,
-            "next_governed_phase": NFL_PRODUCTION_COMPLETION_NEXT_PHASE,
-            "nfl_reference_parity": reference_parity,
-            "production_audit_results": audit_results,
-            "production_gap_register": dashboard_views["production_gap_register"],
-            "dashboard_views": dashboard_views,
-            "query_interfaces": query_interfaces,
-            "validation_checks": provisional_validation_checks,
-            "validation_summary": {
-                "error_check_count": len(provisional_error_checks),
-                "error_checks_passed": sum(1 for check in provisional_error_checks if check["ok"]),
-                "warning_check_count": len(provisional_warning_checks),
-                "warning_checks_passed": sum(1 for check in provisional_warning_checks if check["ok"]),
-            },
-            "lineage_summary": lineage_summary,
-            "certification_summary": certification_summary,
-            "reporting_surface_summary": dashboard_views["reporting_surface_summary"],
-            "artifact_references": {},
-            "artifact_integrity_ok": False,
-            "storage": storage.health(),
-            "warnings": [],
-            "unresolved_blockers": [gap["requirement_id"] for gap in provisional_blocking_gaps],
-            "layer_snapshots": {},
-        }
-        if persist_artifacts:
-            current_artifact_references = _write_artifacts(
-                artifact_root=Path(artifact_root or DEFAULT_NFL_PRODUCTION_COMPLETION_ARTIFACT_ROOT),
-                run_id=run_id,
-                snapshot=preliminary_snapshot,
-            )
-            current_artifact_integrity_ok = all(
-                _path_exists(path)
-                for key, path in current_artifact_references.items()
-                if key != "artifact_root"
-            )
-        reporting_artifact_paths = [
-            str(path)
-            for key, path in current_artifact_references.items()
-            if key != "artifact_root"
-        ]
+        current_artifact_references: dict[str, str] = {}
+        current_artifact_integrity_ok = False
+        reporting_artifact_paths: list[str] = []
         reporting_surfaces_ok = (
             _normalize_bool(backtest_snapshot.get("artifact_integrity_ok"))
             and _normalize_bool(pipeline_validation_snapshot.get("artifact_integrity_ok"))
             and _normalize_bool(research_intelligence_snapshot.get("artifact_integrity_ok"))
             and _normalize_bool(universal_market_framework_snapshot.get("artifact_integrity_ok"))
-            and (current_artifact_integrity_ok if persist_artifacts else False)
+            and persist_artifacts
         )
-        reporting_classification = _classify(
-            reporting_surfaces_ok,
-            validated=persist_artifacts and current_artifact_integrity_ok,
-            missing=not persist_artifacts,
+        reporting_classification = (
+            DEFERRED_NON_BLOCKING
+            if not persist_artifacts
+            else _classify(
+                reporting_surfaces_ok,
+                validated=True,
+                missing=False,
+            )
         )
         audit_results.insert(
             11,
@@ -1091,16 +1124,24 @@ def build_nfl_production_completion_snapshot(
             "current_artifact_paths": reporting_artifact_paths,
         }
         snapshot = {
-            **preliminary_snapshot,
             "ok": ok,
             "status": "completed" if ok else "blocked",
             "readiness": "covariance_and_time_dependent_risk_audit_ready" if ok else "blocked",
             "lifecycle_state": "nfl_production_complete" if ok else "blocked",
             "validation_state": "validated" if ok else "blocked",
+            "schema_version": NFL_PRODUCTION_COMPLETION_SCHEMA_VERSION,
+            "dataset_id": DEFAULT_NFL_PRODUCTION_COMPLETION_DATASET_ID,
+            "dataset_name": DEFAULT_NFL_PRODUCTION_COMPLETION_DATASET_NAME,
+            "nfl_production_completion_run_id": run_id,
+            "nfl_production_completion_version": NFL_PRODUCTION_COMPLETION_RUNTIME_VERSION,
             "generated_at": _utc_now(),
+            "reference_profile_id": NFL_PRODUCTION_COMPLETION_REFERENCE_PROFILE_ID,
+            "next_governed_phase": NFL_PRODUCTION_COMPLETION_NEXT_PHASE,
+            "nfl_reference_parity": reference_parity,
             "production_audit_results": audit_results,
             "production_gap_register": dashboard_views["production_gap_register"],
             "dashboard_views": dashboard_views,
+            "query_interfaces": query_interfaces,
             "validation_checks": validation_checks,
             "validation_summary": {
                 "error_check_count": len(error_checks),
@@ -1108,10 +1149,12 @@ def build_nfl_production_completion_snapshot(
                 "warning_check_count": len(warning_checks),
                 "warning_checks_passed": sum(1 for check in warning_checks if check["ok"]),
             },
+            "lineage_summary": lineage_summary,
+            "certification_summary": certification_summary,
             "reporting_surface_summary": reporting_surface_summary,
             "artifact_references": current_artifact_references,
             "artifact_integrity_ok": current_artifact_integrity_ok,
-            "storage": storage.health(),
+            "storage": {},
             "warnings": [],
             "unresolved_blockers": [gap["requirement_id"] for gap in blocking_gaps],
             "layer_snapshots": (
@@ -1149,6 +1192,21 @@ def build_nfl_production_completion_snapshot(
                 for key, path in current_artifact_references.items()
                 if key != "artifact_root"
             ]
+            for result in audit_results:
+                if result["requirement_id"] != "reporting_surfaces":
+                    continue
+                result["details"]["current_artifact_integrity_ok"] = snapshot["artifact_integrity_ok"]
+                result["details"]["persist_artifacts"] = persist_artifacts
+                result["source_artifact_paths"] = list(snapshot["reporting_surface_summary"]["current_artifact_paths"])
+                if snapshot["artifact_integrity_ok"]:
+                    result["classification"] = COMPLETE_AND_VALIDATED
+                    result["status"] = "ready"
+                    result["validation_state"] = _validation_state(COMPLETE_AND_VALIDATED)
+                    break
+                result["classification"] = PARTIAL
+                result["status"] = PARTIAL
+                result["validation_state"] = _validation_state(PARTIAL)
+                break
 
         for result in audit_results:
             audit_row = {
@@ -1258,6 +1316,7 @@ def build_nfl_production_completion_snapshot(
         }
         storage.upsert(NFL_PRODUCTION_COMPLETION_RUN_TABLE, run_row, key_columns=("nfl_production_completion_run_id",))
         snapshot["storage"] = storage.health()
+        _NFL_PRODUCTION_COMPLETION_SNAPSHOT_CACHE[cache_key] = copy.deepcopy(snapshot)
         return snapshot
     finally:
         storage.close()

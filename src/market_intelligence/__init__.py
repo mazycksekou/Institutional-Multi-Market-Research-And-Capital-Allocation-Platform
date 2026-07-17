@@ -107,6 +107,17 @@ from .nfl_production_completion import (
     build_nfl_production_completion_snapshot,
     get_nfl_production_completion_snapshot_for_dashboard,
 )
+from .data_identity_lakehouse_foundation import (
+    DATA_IDENTITY_FOUNDATION_NEXT_PHASE,
+    DATA_IDENTITY_FOUNDATION_RUNTIME_VERSION,
+    DATA_IDENTITY_FOUNDATION_SCHEMA_VERSION,
+    DEFAULT_DATA_IDENTITY_FOUNDATION_ARTIFACT_ROOT,
+    DEFAULT_DATA_IDENTITY_FOUNDATION_DATASET_ID,
+    DEFAULT_DATA_IDENTITY_FOUNDATION_DATASET_NAME,
+    DEFAULT_DATA_IDENTITY_FOUNDATION_STORAGE_PATH,
+    build_data_identity_foundation_snapshot,
+    get_data_identity_foundation_snapshot_for_dashboard,
+)
 from .universal_market_framework import (
     DEFAULT_UNIVERSAL_MARKET_FRAMEWORK_ARTIFACT_ROOT,
     NFL_REFERENCE_PROFILE_ID,
@@ -205,6 +216,15 @@ __all__ = [
     "NFL_PRODUCTION_COMPLETION_SCHEMA_VERSION",
     "build_nfl_production_completion_snapshot",
     "get_nfl_production_completion_snapshot_for_dashboard",
+    "DATA_IDENTITY_FOUNDATION_NEXT_PHASE",
+    "DATA_IDENTITY_FOUNDATION_RUNTIME_VERSION",
+    "DATA_IDENTITY_FOUNDATION_SCHEMA_VERSION",
+    "DEFAULT_DATA_IDENTITY_FOUNDATION_ARTIFACT_ROOT",
+    "DEFAULT_DATA_IDENTITY_FOUNDATION_DATASET_ID",
+    "DEFAULT_DATA_IDENTITY_FOUNDATION_DATASET_NAME",
+    "DEFAULT_DATA_IDENTITY_FOUNDATION_STORAGE_PATH",
+    "build_data_identity_foundation_snapshot",
+    "get_data_identity_foundation_snapshot_for_dashboard",
     "DEFAULT_UNIVERSAL_MARKET_FRAMEWORK_ARTIFACT_ROOT",
     "NFL_REFERENCE_PROFILE_ID",
     "UNIVERSAL_MARKET_FRAMEWORK_RUNTIME_VERSION",

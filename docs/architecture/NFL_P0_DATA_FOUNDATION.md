@@ -62,7 +62,7 @@ Normalization converts canonical NFL P0 rows into the storage-ready shape:
 
 The dashboard helper exposes a readiness snapshot for the NFL P0 foundation without owning the underlying storage.
 The dashboard layer stays thin and only reports readiness.
-That readiness snapshot now also includes the feature-layer rollup exposed by Phase 5.1B, the math-layer rollup exposed by Phase 5.2, the signal and decision rollups from Phases 5.3 and 5.4, the baseline-backtest-layer rollup exposed by Phase 5.5, the pipeline-validation-layer rollup exposed by Phase 5.6, the research-intelligence-layer rollup exposed by Phase 5.7, the Universal Market Framework rollup, and the NFL Production Completion rollup so the P0 view can report when the certified research path is ready for the Covariance and Time-Dependent Risk Capability Audit.
+That readiness snapshot now also includes the feature-layer rollup exposed by Phase 5.1B, the math-layer rollup exposed by Phase 5.2, the signal and decision rollups from Phases 5.3 and 5.4, the baseline-backtest-layer rollup exposed by Phase 5.5, the pipeline-validation-layer rollup exposed by Phase 5.6, the research-intelligence-layer rollup exposed by Phase 5.7, the Universal Market Framework rollup, the NFL Production Completion rollup, and the Data Identity, Reconciliation and Lakehouse Foundation rollup so the P0 view can report when the certified research path is ready for First Controlled NFL Vendor Ingest.
 
 ## Deferred work
 
@@ -90,4 +90,5 @@ The remaining governed phases are:
 - Research Intelligence is complete in Phase 5.7 on top of the certified and hardened P0 team/game foundation
 - Universal Market Framework is complete on top of the certified NFL P0 evidence chain
 - NFL Production Completion is complete and extends the P0 rollup through production certification
-- the next governed step is the Covariance and Time-Dependent Risk Capability Audit
+- Data Identity, Reconciliation and Lakehouse Foundation is complete and extends the P0 rollup through shared identity, reconciliation, quarantine, revision, and lakehouse readiness
+- the next governed step is First Controlled NFL Vendor Ingest

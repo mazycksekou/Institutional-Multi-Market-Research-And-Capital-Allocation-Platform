@@ -1632,6 +1632,23 @@ def build_nfl_p0_dashboard_snapshot(
             "status": "nfl_production_completion_snapshot_error",
             "warnings": [str(exc)],
         }
+    try:
+        from src.market_intelligence.data_identity_lakehouse_foundation import (
+            build_data_identity_foundation_snapshot,
+        )
+
+        data_identity_foundation_snapshot = build_data_identity_foundation_snapshot(
+            storage_path=storage_path,
+            backend=backend,
+            include_layer_snapshots=False,
+            persist_artifacts=True,
+        )
+    except Exception as exc:
+        data_identity_foundation_snapshot = {
+            "ok": False,
+            "status": "data_identity_foundation_snapshot_error",
+            "warnings": [str(exc)],
+        }
     snapshot["table_counts"] = {name: details.get("row_count", 0) for name, details in snapshot.get("table_readiness", {}).items()}
     snapshot["dataset_readiness"] = {
         "status": snapshot.get("status"),
@@ -1793,6 +1810,34 @@ def build_nfl_p0_dashboard_snapshot(
         "next_governed_phase": nfl_production_completion_snapshot.get("next_governed_phase", ""),
         "unresolved_blockers": nfl_production_completion_snapshot.get("unresolved_blockers", []),
     }
+    snapshot["data_identity_foundation_layer_readiness"] = {
+        "status": data_identity_foundation_snapshot.get("status", "missing"),
+        "dataset_id": data_identity_foundation_snapshot.get("dataset_id", ""),
+        "data_identity_foundation_run_id": data_identity_foundation_snapshot.get(
+            "data_identity_foundation_run_id", ""
+        ),
+        "readiness": data_identity_foundation_snapshot.get("readiness", "blocked"),
+        "lifecycle_state": data_identity_foundation_snapshot.get("lifecycle_state", "missing"),
+        "validation_state": data_identity_foundation_snapshot.get("validation_state", "missing"),
+        "artifact_integrity_ok": data_identity_foundation_snapshot.get("artifact_integrity_ok", False),
+        "error_check_count": data_identity_foundation_snapshot.get("validation_summary", {}).get(
+            "error_check_count", 0
+        ),
+        "error_checks_passed": data_identity_foundation_snapshot.get("validation_summary", {}).get(
+            "error_checks_passed", 0
+        ),
+        "warning_check_count": data_identity_foundation_snapshot.get("validation_summary", {}).get(
+            "warning_check_count", 0
+        ),
+        "warning_checks_passed": data_identity_foundation_snapshot.get("validation_summary", {}).get(
+            "warning_checks_passed", 0
+        ),
+        "next_governed_phase": data_identity_foundation_snapshot.get("next_governed_phase", ""),
+        "first_vendor_ingest_readiness": data_identity_foundation_snapshot.get(
+            "first_vendor_ingest_readiness", {}
+        ),
+        "unresolved_blockers": data_identity_foundation_snapshot.get("unresolved_blockers", []),
+    }
     snapshot["readiness_summary"] = {
         "table_readiness_ready": len(snapshot.get("ready_tables", [])),
         "table_readiness_missing": len(snapshot.get("missing_tables", [])),
@@ -1807,6 +1852,7 @@ def build_nfl_p0_dashboard_snapshot(
         "research_intelligence_status": research_intelligence_snapshot.get("status", "missing"),
         "universal_market_framework_status": universal_market_framework_snapshot.get("status", "missing"),
         "nfl_production_completion_status": nfl_production_completion_snapshot.get("status", "missing"),
+        "data_identity_foundation_status": data_identity_foundation_snapshot.get("status", "missing"),
     }
     return snapshot
 

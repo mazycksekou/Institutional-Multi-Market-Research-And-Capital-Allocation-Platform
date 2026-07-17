@@ -2,6 +2,7 @@ from __future__ import annotations
 
 """Canonical Phase 5.6 pipeline validation and hardening snapshot."""
 
+import copy
 import hashlib
 import json
 from datetime import datetime, timezone
@@ -28,6 +29,7 @@ PIPELINE_VALIDATION_RUNTIME_VERSION = "phase5.6.pipeline_validation.v1"
 DEFAULT_PIPELINE_VALIDATION_DATASET_ID = "dataset.sports.nfl.pipeline_validation"
 DEFAULT_PIPELINE_VALIDATION_DATASET_NAME = "nfl_pipeline_validation"
 DEFAULT_PIPELINE_VALIDATION_STORAGE_PATH = DEFAULT_BASELINE_BACKTEST_STORAGE_PATH
+_PIPELINE_VALIDATION_SNAPSHOT_CACHE: dict[tuple[Any, ...], dict[str, Any]] = {}
 
 
 def _normalize_text(value: Any, default: str = "") -> str:
@@ -125,6 +127,28 @@ def _resolve_artifact_root(storage_path: Path, artifact_root: str | Path | None)
     return root
 
 
+def _snapshot_cache_key(
+    storage_path: str | Path | None,
+    *,
+    backend: str,
+    artifact_root: str | Path | None,
+    include_layer_snapshots: bool,
+    persist_artifacts: bool,
+) -> tuple[Any, ...]:
+    resolved = Path(storage_path or DEFAULT_PIPELINE_VALIDATION_STORAGE_PATH).expanduser().resolve()
+    stat = resolved.stat() if resolved.exists() else None
+    resolved_artifact_root = _resolve_artifact_root(resolved, artifact_root)
+    return (
+        str(resolved),
+        getattr(stat, "st_mtime_ns", 0),
+        getattr(stat, "st_size", 0),
+        backend,
+        str(resolved_artifact_root),
+        include_layer_snapshots,
+        persist_artifacts,
+    )
+
+
 def _layer_timestamp(snapshot: Mapping[str, Any]) -> datetime | None:
     candidate_paths = (
         ("created_at",),
@@ -210,7 +234,40 @@ def _write_artifacts(
         f"- Backtest sample size: `{snapshot.get('performance_summary', {}).get('sample_size', 0)}`",
         f"- Backtest ROI percent: `{snapshot.get('performance_summary', {}).get('roi_percent', 0.0)}`",
     ]
-    report_payload = json.loads(_as_json(dict(snapshot)))
+    layer_snapshot_summaries = {
+        layer_name: {
+            "status": layer_snapshot.get("status"),
+            "readiness": layer_snapshot.get("readiness"),
+            "batch_id": layer_snapshot.get("batch_id"),
+            "dataset_id": layer_snapshot.get("dataset_id"),
+            "dataset_certification_status": layer_snapshot.get("dataset_certification_status"),
+            "backtest_run_id": layer_snapshot.get("backtest_run_id"),
+            "sample_size": layer_snapshot.get("sample_size"),
+            "artifact_integrity_ok": layer_snapshot.get("artifact_integrity_ok"),
+        }
+        for layer_name, layer_snapshot in dict(snapshot.get("layer_snapshots") or {}).items()
+        if isinstance(layer_snapshot, Mapping)
+    }
+    report_payload = {
+        "pipeline_validation_run_id": snapshot.get("pipeline_validation_run_id"),
+        "schema_version": snapshot.get("schema_version"),
+        "pipeline_validation_version": snapshot.get("pipeline_validation_version"),
+        "status": snapshot.get("status"),
+        "readiness": snapshot.get("readiness"),
+        "lifecycle_state": snapshot.get("lifecycle_state"),
+        "validation_timestamp": snapshot.get("validation_timestamp"),
+        "dataset_id": snapshot.get("dataset_id"),
+        "dataset_name": snapshot.get("dataset_name"),
+        "lineage_summary": snapshot.get("lineage_summary"),
+        "certification_summary": snapshot.get("certification_summary"),
+        "performance_summary": snapshot.get("performance_summary"),
+        "validation_summary": snapshot.get("validation_summary"),
+        "validation_checks": snapshot.get("validation_checks"),
+        "unresolved_blockers": snapshot.get("unresolved_blockers"),
+        "warnings": snapshot.get("warnings"),
+        "source_backtest_artifact_references": snapshot.get("source_backtest_artifact_references"),
+        "layer_snapshot_summaries": layer_snapshot_summaries,
+    }
     _write_text(report_json_path, json.dumps(report_payload, indent=2, sort_keys=True) + "\n")
     _write_text(report_markdown_path, "\n".join(markdown_lines) + "\n")
     _write_text(dashboard_json_path, json.dumps(dashboard_payload, indent=2, sort_keys=True) + "\n")
@@ -230,6 +287,17 @@ def build_pipeline_validation_snapshot(
     include_layer_snapshots: bool = True,
     persist_artifacts: bool = True,
 ) -> dict[str, Any]:
+    cache_key = _snapshot_cache_key(
+        storage_path,
+        backend=backend,
+        artifact_root=artifact_root,
+        include_layer_snapshots=include_layer_snapshots,
+        persist_artifacts=persist_artifacts,
+    )
+    cached_snapshot = _PIPELINE_VALIDATION_SNAPSHOT_CACHE.get(cache_key)
+    if cached_snapshot is not None:
+        return copy.deepcopy(cached_snapshot)
+
     storage = create_local_storage_engine(
         storage_path or DEFAULT_PIPELINE_VALIDATION_STORAGE_PATH,
         backend=backend,
@@ -412,6 +480,7 @@ def build_pipeline_validation_snapshot(
             )
             snapshot["artifact_references"] = artifact_references
             snapshot["artifact_integrity_ok"] = all(_path_exists(path) for key, path in artifact_references.items() if key != "artifact_root")
+        _PIPELINE_VALIDATION_SNAPSHOT_CACHE[cache_key] = copy.deepcopy(snapshot)
         return snapshot
     finally:
         storage.close()
