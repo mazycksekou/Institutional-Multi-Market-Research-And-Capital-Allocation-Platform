@@ -43,6 +43,7 @@ This index points readers to the current truth and the durable historical entry 
 - `docs/architecture/NFL_INJURIES_RESEARCH_ASSET.md` - NFL Injuries Research Asset
 - `docs/architecture/NFL_ODDS_RESEARCH_ASSET.md` - NFL Odds Research Asset
 - `docs/architecture/NFL_P0_DATA_FOUNDATION.md` - Canonical ownership
+- `docs/architecture/NFL_PRODUCTION_COMPLETION.md` - NFL Production Completion
 - `docs/architecture/NFL_RESULTS_RESEARCH_ASSET.md` - NFL Results Research Asset
 - `docs/architecture/NFL_SCHEDULE_CONNECTOR.md` - NFL Schedule Connector
 - `docs/architecture/NFL_SCHEDULE_RESEARCH_ASSET.md` - NFL Schedule Research Asset

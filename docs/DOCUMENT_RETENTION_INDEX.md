@@ -2,9 +2,9 @@
 
 This register classifies every tracked document under `docs/` so the repository can keep durable knowledge, archive historical evidence, and identify temporary work products that should eventually be consolidated or deleted.
 
-- scanned_files: 1199
-- working: 90
-- active: 145
+- scanned_files: 1201
+- working: 91
+- active: 146
 - decision_captured: 14
 - consolidated: 6
 - archived: 944
@@ -58,6 +58,7 @@ This register classifies every tracked document under `docs/` so the repository 
 | docs/architecture/NFL_INJURIES_RESEARCH_ASSET.md | NFL Injuries Research Asset | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/MASTER_ROADMAP.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/architecture/NFL_ODDS_RESEARCH_ASSET.md | NFL Odds Research Asset | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/MASTER_ROADMAP.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/architecture/NFL_P0_DATA_FOUNDATION.md | Canonical ownership | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/PROJECT_STATUS.md | Current authoritative documentation | KEEP ACTIVE |
+| docs/architecture/NFL_PRODUCTION_COMPLETION.md | NFL Production Completion | ARCHITECTURE DOCUMENT | ACTIVE | docs/PROJECT_STATUS.md; src/market_intelligence/nfl_production_completion.py; tests/test_nfl_production_completion_docs.py | Current authoritative documentation | KEEP ACTIVE |
 | docs/architecture/NFL_RESULTS_RESEARCH_ASSET.md | NFL Results Research Asset | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/PROJECT_STATUS.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/architecture/NFL_SCHEDULE_CONNECTOR.md | NFL Schedule Connector | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/PROJECT_STATUS.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/architecture/NFL_SCHEDULE_RESEARCH_ASSET.md | NFL Schedule Research Asset | ARCHITECTURE DOCUMENT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/PROJECT_STATUS.md | Current authoritative documentation | KEEP ACTIVE |
@@ -1039,7 +1040,7 @@ This register classifies every tracked document under `docs/` so the repository 
 | docs/archive/milestones/LEGACY_CLEANUP_SUMMARY.md | Legacy Cleanup Summary | MILESTONE SUMMARY | CONSOLIDATED | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/reports/MASTER_DOC_CONSOLIDATION_AUDIT.md | Milestone summary replacing multiple interim reports | KEEP ACTIVE |
 | docs/archive/milestones/PHASE2_EXECUTIVE_SUMMARY.md | Phase 2 Executive Summary | MILESTONE SUMMARY | CONSOLIDATED | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/reports/MASTER_DOC_CONSOLIDATION_AUDIT.md | Milestone summary replacing multiple interim reports | KEEP ACTIVE |
 | docs/archive/milestones/REPOSITORY_MODERNIZATION_SUMMARY.md | Repository Modernization Summary | MILESTONE SUMMARY | CONSOLIDATED | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/reports/MASTER_DOC_CONSOLIDATION_AUDIT.md | Milestone summary replacing multiple interim reports | KEEP ACTIVE |
-| docs/BUSINESS_STRATEGY.md | Business Strategy | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; tests/test_universal_market_framework_docs.py | Temporary work product or active discovery artifact | KEEP ACTIVE |
+| docs/BUSINESS_STRATEGY.md | Business Strategy | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; docs/NEXT_ACTION.md; tests/test_universal_market_framework_docs.py | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/catalogs/COMPLETE_FEATURE_CATALOG.md | Complete Feature Catalog | CATALOG | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/architecture/MASTER_RESEARCH_ENGINE_SPECIFICATION.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/catalogs/COMPLETE_METRIC_CATALOG.md | Complete Metric Catalog | CATALOG | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/architecture/MASTER_RESEARCH_ENGINE_SPECIFICATION.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/catalogs/COMPLETE_PROVIDER_CATALOG.md | Complete Provider Catalog | CATALOG | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/architecture/MASTER_RESEARCH_ENGINE_SPECIFICATION.md | Current authoritative documentation | KEEP ACTIVE |
@@ -1092,7 +1093,7 @@ This register classifies every tracked document under `docs/` so the repository 
 | docs/discovery/NFL_PROVIDER_INVENTORY.md | NFL Provider Inventory | DISCOVERY REPORT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; docs/discovery/NFL_REPOSITORY_DISCOVERY.md; docs/reports/PHASE4_7A_RESEARCH_ASSET_SOURCE_DISCOVERY_AND_CONNECTOR_MAPPING.md | Temporary work product or active discovery artifact | ARCHIVE |
 | docs/discovery/NFL_REPOSITORY_DISCOVERY.md | NFL Repository Discovery | DISCOVERY REPORT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | ARCHIVE |
 | docs/DOCUMENT_RETENTION_INDEX.md | Document Retention Index | INDEX | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/PROJECT_STATUS.md | Current authoritative documentation | KEEP ACTIVE |
-| docs/INTELLECTUAL_PROPERTY_REGISTER.md | Intellectual Property Register | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; tests/test_universal_market_framework_docs.py | Temporary work product or active discovery artifact | KEEP ACTIVE |
+| docs/INTELLECTUAL_PROPERTY_REGISTER.md | Intellectual Property Register | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; docs/NEXT_ACTION.md; tests/test_universal_market_framework_docs.py | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/MASTER_DOCUMENT_INDEX.md | Master Document Index | INDEX | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/PROJECT_STATUS.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/MASTER_ROADMAP.md | Long-Term Platform Sequence | ARCHITECTURE DOCUMENT | ACTIVE | docs/BUSINESS_STRATEGY.md; docs/DOCUMENT_RETENTION_INDEX.md; docs/INTELLECTUAL_PROPERTY_REGISTER.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/NEXT_ACTION.md | Next Action | ARCHITECTURE DOCUMENT | ACTIVE | docs/BUSINESS_STRATEGY.md; docs/DOCUMENT_RETENTION_INDEX.md; docs/INTELLECTUAL_PROPERTY_REGISTER.md | Current authoritative documentation | KEEP ACTIVE |
@@ -1108,7 +1109,7 @@ This register classifies every tracked document under `docs/` so the repository 
 | docs/operations/RENDER_PERSISTENT_STORAGE_AND_CRON.md | Render Persistent Storage And Cron | RUNBOOK | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/operations/SECURITY_REVIEW.md | Security Review | RUNBOOK | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/operations/VALIDATION_RUNBOOK.md | Validation Runbook | RUNBOOK | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/architecture/REPOSITORY_INDEPENDENCE_SCORECARD.md | Current authoritative documentation | KEEP ACTIVE |
-| docs/PRODUCT_SPEC.md | Product Spec | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; tests/test_universal_market_framework_docs.py | Temporary work product or active discovery artifact | KEEP ACTIVE |
+| docs/PRODUCT_SPEC.md | Product Spec | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; docs/NEXT_ACTION.md; tests/test_universal_market_framework_docs.py | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/PROJECT_STATUS.md | Mission | ARCHITECTURE DOCUMENT | ACTIVE | docs/BUSINESS_STRATEGY.md; docs/DOCUMENT_RETENTION_INDEX.md; docs/INTELLECTUAL_PROPERTY_REGISTER.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/reports/audits/AUDIT_RETENTION_REGISTER.md | Audit Retention Register | AUDIT REPORT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/reports/audits/AUDIT_RETENTION_REGISTER.md | Current authoritative documentation | KEEP ACTIVE |
 | docs/reports/audits/MISSING_GOVERNANCE_REPORT.md | Missing Governance Report | AUDIT REPORT | ACTIVE | docs/DOCUMENT_RETENTION_INDEX.md; docs/MASTER_DOCUMENT_INDEX.md; docs/reports/audits/AUDIT_RETENTION_REGISTER.md | Current authoritative documentation | KEEP ACTIVE |
@@ -1204,6 +1205,7 @@ This register classifies every tracked document under `docs/` so the repository 
 | docs/reports/PHASE5_5_BASELINE_BACKTESTING.md | Phase 5.5 - Baseline Backtesting | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; docs/PROJECT_STATUS.md; tests/test_baseline_backtesting_docs.py | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/PHASE5_6_PIPELINE_VALIDATION_AND_HARDENING.md | Phase 5.6 - Pipeline Validation And Hardening | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; docs/PROJECT_STATUS.md; tests/test_pipeline_validation_docs.py | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/PHASE5_7_RESEARCH_INTELLIGENCE.md | Phase 5.7 - Research Intelligence | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; docs/PROJECT_STATUS.md; tests/test_research_intelligence_docs.py | Temporary work product or active discovery artifact | KEEP ACTIVE |
+| docs/reports/PHASE5_8_NFL_PRODUCTION_COMPLETION.md | Phase 5.8 - NFL Production Completion | DOCUMENT | WORKING | docs/PROJECT_STATUS.md; src/market_intelligence/nfl_production_completion.py; tests/test_nfl_production_completion_docs.py | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/PROFILE_AWARE_NFL_P0_VALIDATION.md | Profile-Aware NFL P0 Validation | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/PROJECT_ENTRYPOINT_AUDIT.md | Project Entrypoint Audit | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; tests/test_project_status_governance.py | Temporary work product or active discovery artifact | KEEP ACTIVE |
 | docs/reports/PROJECT_STATUS_GOVERNANCE_DISCOVERY.md | Project Status Governance Discovery | DOCUMENT | WORKING | docs/DOCUMENT_RETENTION_INDEX.md; docs/reports/MASTER_DOC_CONSOLIDATION_AUDIT.md; tests/test_project_status_governance.py | Temporary work product or active discovery artifact | KEEP ACTIVE |

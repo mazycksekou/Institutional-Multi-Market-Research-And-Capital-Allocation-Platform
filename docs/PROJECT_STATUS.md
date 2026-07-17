@@ -15,11 +15,12 @@ research.
 - current branch: `feature/nfl-backtesting`
 - current HEAD: live branch tip (exact hash is reported in the task final report)
 - remote tracking branch: `origin/feature/nfl-backtesting`
-- active phase: `NFL Production Completion`
-- previous completed active phase: `Universal Market Framework (complete)`
+- active phase: `Covariance and Time-Dependent Risk Capability Audit`
+- previous completed active phase: `NFL Production Completion (complete)`
+- previous completed active phase before that: `Universal Market Framework (complete)`
 - previous completed active phase before that: `Phase 5.7 - Research Intelligence (complete)`
 - active market profile: `sports:nfl`
-- active implementation lane: `NFL P0 profile-aware foundation + event-centric historical research database + master research engine specification + universal feature registry + universal math engine contracts + research asset runtime framework + historical dataset acquisition framework + historical dataset acquisition runtime + research asset source discovery and connector mapping framework + historical research asset certification runtime + research asset lifecycle runtime + NFL schedule research asset population + research asset coverage planner and provider selection framework + first production NFL schedule connector + certified NFL results research asset + certified NFL odds research asset + certified NFL weather research asset + certified NFL injuries research asset + certified NFL team statistics research asset + deterministic historical dataset population layer + deterministic feature snapshot population layer + deterministic mathematical engine population layer + deterministic signal population layer + deterministic decision row generation layer + deterministic baseline backtesting layer + deterministic pipeline validation and hardening layer + deterministic Research Intelligence layer + Universal Market Framework + NFL Production Completion`
+- active implementation lane: `NFL P0 profile-aware foundation + event-centric historical research database + master research engine specification + universal feature registry + universal math engine contracts + research asset runtime framework + historical dataset acquisition framework + historical dataset acquisition runtime + research asset source discovery and connector mapping framework + historical research asset certification runtime + research asset lifecycle runtime + NFL schedule research asset population + research asset coverage planner and provider selection framework + first production NFL schedule connector + certified NFL results research asset + certified NFL odds research asset + certified NFL weather research asset + certified NFL injuries research asset + certified NFL team statistics research asset + deterministic historical dataset population layer + deterministic feature snapshot population layer + deterministic mathematical engine population layer + deterministic signal population layer + deterministic decision row generation layer + deterministic baseline backtesting layer + deterministic pipeline validation and hardening layer + deterministic Research Intelligence layer + Universal Market Framework + NFL Production Completion + Covariance and Time-Dependent Risk Capability Audit`
 - completed phases:
   - `Phase 4.3.6 - Profile-Aware NFL P0 Validation`
   - `Phase 4.3.7 - Minimum Backtest Row Contract`
@@ -49,8 +50,9 @@ research.
   - `Phase 5.6 - Validation And Hardening`
   - `Phase 5.7 - Research Intelligence`
   - `Universal Market Framework`
-- current phase objective: NFL Production Completion is active; audit the certified NFL implementation against production-complete requirements, reuse the Universal Market Framework, close only verified NFL production gaps, and preserve all certified NFL reference behavior.
-- next phase: `Covariance and Time-Dependent Risk Capability Audit`
+- `NFL Production Completion`
+- current phase objective: Covariance and Time-Dependent Risk Capability Audit is active; inspect the repository before implementation and determine existing, partial, missing, duplicated, or deferred support for covariance, correlation, time-dependent risk, and risk-horizon normalization without implementing those capabilities yet.
+- next phase: `additional sports`
 - current blockers: None
 - latest validation status:
   - Phase 4.7C runtime validation passed: compileall, certification runtime tests, smoke, architecture, document lifecycle, and ops checks are green.
@@ -72,7 +74,8 @@ research.
   - Phase 5.7 Research Intelligence code changes are complete and validated: focused research-intelligence runtime tests, adjacent pipeline-validation and NFL P0 regressions, compileall, smoke, root markdown, OpenAPI contract, architecture, audit lifecycle, document lifecycle, ops checks, repository preflight checks, git diff checks, and the full repository test suite are green.
   - Universal Market Framework code changes are complete and validated: focused universal-market-framework parity tests, adjacent market-profile and Research Intelligence regressions, compileall, smoke, root markdown, OpenAPI contract, architecture, audit lifecycle, document lifecycle, ops checks, repository preflight checks, git diff checks, and the full repository test suite are green.
   - Sequencing correction code changes are complete and validated: targeted governance and documentation tests, root markdown, document lifecycle, and git diff checks align the active phase to NFL Production Completion and the following governed lane to the Covariance and Time-Dependent Risk Capability Audit without beginning NFL implementation.
-- latest full gate result: `passed for the completed Universal Market Framework gate`
+- NFL Production Completion code changes are complete and validated: focused NFL-production-completion runtime tests, adjacent Universal Market Framework, Streamlit dashboard, and NFL P0 readiness regressions, compileall, smoke, root markdown, OpenAPI contract, architecture, audit lifecycle, document lifecycle, ops checks, repository preflight checks, git diff checks, and the full repository test suite are green.
+- latest full gate result: `passed for the completed NFL Production Completion gate`
 - latest pushed commit: live branch tip (exact hash is reported in the task final report)
 
 ## Active Canonical Rules
@@ -132,6 +135,7 @@ Read these only when you need more detail than the project status page provides:
 - `docs/architecture/BASELINE_BACKTESTING_LAYER.md`
 - `docs/architecture/PIPELINE_VALIDATION_AND_HARDENING_LAYER.md`
 - `docs/architecture/RESEARCH_INTELLIGENCE_LAYER.md`
+- `docs/architecture/NFL_PRODUCTION_COMPLETION.md`
 - `docs/architecture/DECISION_ROW_POPULATION_LAYER.md`
 - `docs/architecture/SIGNAL_POPULATION_LAYER.md`
 - `docs/architecture/NFL_SCHEDULE_CONNECTOR.md`
@@ -160,6 +164,7 @@ Read these only when you need more detail than the project status page provides:
 - `docs/reports/PHASE5_5_BASELINE_BACKTESTING.md`
 - `docs/reports/PHASE5_6_PIPELINE_VALIDATION_AND_HARDENING.md`
 - `docs/reports/PHASE5_7_RESEARCH_INTELLIGENCE.md`
+- `docs/reports/PHASE5_8_NFL_PRODUCTION_COMPLETION.md`
 - `docs/reports/PHASE5_3_REUSABLE_SIGNALS.md`
 - `docs/reports/PHASE5_4_DECISION_ROW_GENERATION.md`
 - `docs/contracts/MINIMUM_BACKTEST_ROW_CONTRACT.md`
@@ -180,4 +185,4 @@ Read these only when you need more detail than the project status page provides:
 
 ## Next Recommended Codex Task
 
-`NFL Production Completion`
+`Covariance and Time-Dependent Risk Capability Audit`

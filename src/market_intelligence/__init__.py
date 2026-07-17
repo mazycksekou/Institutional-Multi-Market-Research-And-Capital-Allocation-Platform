@@ -97,6 +97,16 @@ from .research_intelligence import (
     build_research_intelligence_snapshot,
     get_research_intelligence_snapshot_for_dashboard,
 )
+from .nfl_production_completion import (
+    DEFAULT_NFL_PRODUCTION_COMPLETION_ARTIFACT_ROOT,
+    DEFAULT_NFL_PRODUCTION_COMPLETION_DATASET_ID,
+    DEFAULT_NFL_PRODUCTION_COMPLETION_DATASET_NAME,
+    DEFAULT_NFL_PRODUCTION_COMPLETION_STORAGE_PATH,
+    NFL_PRODUCTION_COMPLETION_RUNTIME_VERSION,
+    NFL_PRODUCTION_COMPLETION_SCHEMA_VERSION,
+    build_nfl_production_completion_snapshot,
+    get_nfl_production_completion_snapshot_for_dashboard,
+)
 from .universal_market_framework import (
     DEFAULT_UNIVERSAL_MARKET_FRAMEWORK_ARTIFACT_ROOT,
     NFL_REFERENCE_PROFILE_ID,
@@ -187,6 +197,14 @@ __all__ = [
     "RESEARCH_INTELLIGENCE_SCHEMA_VERSION",
     "build_research_intelligence_snapshot",
     "get_research_intelligence_snapshot_for_dashboard",
+    "DEFAULT_NFL_PRODUCTION_COMPLETION_ARTIFACT_ROOT",
+    "DEFAULT_NFL_PRODUCTION_COMPLETION_DATASET_ID",
+    "DEFAULT_NFL_PRODUCTION_COMPLETION_DATASET_NAME",
+    "DEFAULT_NFL_PRODUCTION_COMPLETION_STORAGE_PATH",
+    "NFL_PRODUCTION_COMPLETION_RUNTIME_VERSION",
+    "NFL_PRODUCTION_COMPLETION_SCHEMA_VERSION",
+    "build_nfl_production_completion_snapshot",
+    "get_nfl_production_completion_snapshot_for_dashboard",
     "DEFAULT_UNIVERSAL_MARKET_FRAMEWORK_ARTIFACT_ROOT",
     "NFL_REFERENCE_PROFILE_ID",
     "UNIVERSAL_MARKET_FRAMEWORK_RUNTIME_VERSION",

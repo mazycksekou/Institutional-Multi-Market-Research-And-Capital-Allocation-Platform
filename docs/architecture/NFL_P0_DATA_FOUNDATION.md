@@ -62,7 +62,7 @@ Normalization converts canonical NFL P0 rows into the storage-ready shape:
 
 The dashboard helper exposes a readiness snapshot for the NFL P0 foundation without owning the underlying storage.
 The dashboard layer stays thin and only reports readiness.
-That readiness snapshot now also includes the feature-layer rollup exposed by Phase 5.1B, the math-layer rollup exposed by Phase 5.2, the signal and decision rollups from Phases 5.3 and 5.4, the baseline-backtest-layer rollup exposed by Phase 5.5, the pipeline-validation-layer rollup exposed by Phase 5.6, and the research-intelligence-layer rollup exposed by Phase 5.7 so the P0 view can report when the certified research path is ready for the Universal Market Framework.
+That readiness snapshot now also includes the feature-layer rollup exposed by Phase 5.1B, the math-layer rollup exposed by Phase 5.2, the signal and decision rollups from Phases 5.3 and 5.4, the baseline-backtest-layer rollup exposed by Phase 5.5, the pipeline-validation-layer rollup exposed by Phase 5.6, the research-intelligence-layer rollup exposed by Phase 5.7, the Universal Market Framework rollup, and the NFL Production Completion rollup so the P0 view can report when the certified research path is ready for the Covariance and Time-Dependent Risk Capability Audit.
 
 ## Deferred work
 
@@ -88,4 +88,6 @@ The remaining governed phases are:
 - baseline backtesting is complete in Phase 5.5
 - pipeline validation and hardening are complete in Phase 5.6
 - Research Intelligence is complete in Phase 5.7 on top of the certified and hardened P0 team/game foundation
-- the next governed step is the Universal Market Framework on top of the certified NFL P0 evidence chain
+- Universal Market Framework is complete on top of the certified NFL P0 evidence chain
+- NFL Production Completion is complete and extends the P0 rollup through production certification
+- the next governed step is the Covariance and Time-Dependent Risk Capability Audit
