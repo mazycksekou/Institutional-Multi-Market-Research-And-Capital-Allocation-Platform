@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 import hashlib
-import importlib
 import json
 import sqlite3
-import sys
 from dataclasses import asdict, is_dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -15,27 +13,17 @@ try:  # pragma: no cover - optional backend
 except Exception:  # pragma: no cover - import-safe fallback
     _duckdb = None  # type: ignore
 
-def _import_pyarrow_modules() -> tuple[Any, Any]:
-    try:  # pragma: no cover - optional backend
-        return importlib.import_module("pyarrow"), importlib.import_module("pyarrow.parquet")
-    except Exception:
-        base_site_packages = Path(sys.base_prefix) / "Lib" / "site-packages"
-        if base_site_packages.exists():
-            base_path = str(base_site_packages)
-            if base_path not in sys.path:
-                sys.path.append(base_path)
-            try:  # pragma: no cover - optional backend
-                return importlib.import_module("pyarrow"), importlib.import_module("pyarrow.parquet")
-            except Exception:
-                pass
-    return None, None
-
-
-_pyarrow, _pyarrow_parquet = _import_pyarrow_modules()
+try:  # pragma: no cover - optional backend
+    import pyarrow as _pyarrow  # type: ignore
+    import pyarrow.parquet as _pyarrow_parquet  # type: ignore
+except Exception:  # pragma: no cover - import-safe fallback
+    _pyarrow = None  # type: ignore
+    _pyarrow_parquet = None  # type: ignore
 
 
 LOCAL_STORAGE_SCHEMA_VERSION = "src.storage.local_store.v1"
 PARQUET_STORAGE_INTERFACE_VERSION = "src.storage.local_store.parquet.v1"
+PARQUET_RUNTIME_DEPENDENCY = "pyarrow==24.0.0"
 SUPPORTED_LOCAL_STORAGE_BACKENDS = ("sqlite", "duckdb")
 
 
@@ -54,6 +42,26 @@ def backend_available(backend: str) -> bool:
 
 def parquet_available() -> bool:
     return _pyarrow is not None and _pyarrow_parquet is not None
+
+
+def parquet_installed_version() -> str:
+    if _pyarrow is None:
+        return ""
+    return str(getattr(_pyarrow, "__version__", "") or "")
+
+
+def parquet_dependency_error(context: str) -> RuntimeError:
+    operation = str(context or "Parquet operations").strip() or "Parquet operations"
+    return RuntimeError(
+        f"{operation} requires the repository runtime dependency "
+        f"`{PARQUET_RUNTIME_DEPENDENCY}`. Install `requirements.txt` in the active "
+        "environment; do not rely on globally installed packages."
+    )
+
+
+def require_parquet_support(context: str) -> None:
+    if not parquet_available():
+        raise parquet_dependency_error(context)
 
 
 def _json_default(value: Any) -> Any:
@@ -1853,8 +1861,7 @@ class LocalStorageEngine:
         *,
         compression: str = "zstd",
     ) -> dict[str, Any]:
-        if not parquet_available():
-            raise RuntimeError("pyarrow is required for parquet storage operations")
+        require_parquet_support("Parquet storage write operations")
         output_path = Path(path).expanduser().resolve()
         output_path.parent.mkdir(parents=True, exist_ok=True)
         normalized_rows, columns, content_digest = _canonicalize_parquet_rows(rows)
@@ -1883,8 +1890,7 @@ class LocalStorageEngine:
         }
 
     def read_parquet_rows(self, path: str | Path) -> list[dict[str, Any]]:
-        if not parquet_available():
-            raise RuntimeError("pyarrow is required for parquet storage operations")
+        require_parquet_support("Parquet storage read operations")
         input_path = Path(path).expanduser().resolve()
         if not input_path.exists():
             return []
@@ -1912,6 +1918,8 @@ class LocalStorageEngine:
             "parquet": {
                 "available": parquet_available(),
                 "schema_version": PARQUET_STORAGE_INTERFACE_VERSION,
+                "runtime_dependency": PARQUET_RUNTIME_DEPENDENCY,
+                "installed_version": parquet_installed_version(),
             },
         }
 
@@ -1929,8 +1937,12 @@ __all__ = [
     "LOCAL_STORAGE_SCHEMA_VERSION",
     "LocalStorageEngine",
     "PARQUET_STORAGE_INTERFACE_VERSION",
+    "PARQUET_RUNTIME_DEPENDENCY",
     "SUPPORTED_LOCAL_STORAGE_BACKENDS",
     "backend_available",
     "create_local_storage_engine",
     "parquet_available",
+    "parquet_dependency_error",
+    "parquet_installed_version",
+    "require_parquet_support",
 ]

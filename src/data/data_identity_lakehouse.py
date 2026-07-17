@@ -13,6 +13,8 @@ from src.storage.local_store import (
     LocalStorageEngine,
     create_local_storage_engine,
     parquet_available,
+    parquet_installed_version,
+    require_parquet_support,
 )
 
 
@@ -1655,8 +1657,7 @@ class DataIdentityLakehouseRuntime:
         return [(values_lookup[key], groups[key]) for key in sorted(groups)]
 
     def publish_lakehouse_views(self) -> dict[str, Any]:
-        if not parquet_available():
-            raise RuntimeError("pyarrow is required for lakehouse parquet publishing")
+        require_parquet_support("Lakehouse parquet publishing")
         datasets: list[tuple[str, str, list[dict[str, Any]]]] = [
             (BRONZE, "raw_records", self._fetch("raw_records", order_by="created_at ASC, record_id ASC")),
             (SILVER, "historical_events", self._fetch("historical_events", order_by="event_start_time ASC, event_id ASC")),
@@ -1803,7 +1804,20 @@ class DataIdentityLakehouseRuntime:
             self.store.table_exists(name)
             for name in ("data_quality_events", "quarantine_records", "manual_review_queue", "mapping_approvals")
         )
-        has_parquet_manifests = self.store.table_exists("lakehouse_partitions") and self.store.count("lakehouse_partitions") > 0
+        lakehouse_partitions = self._fetch("lakehouse_partitions", order_by="layer_name ASC, dataset_table ASC, partition_id ASC")
+        parquet_dependency_ready = parquet_available()
+        parquet_roundtrip_ok = bool(lakehouse_partitions) and all(
+            _normalize_bool(row.get("roundtrip_ok"))
+            for row in lakehouse_partitions
+        )
+        has_validated_parquet_manifests = (
+            parquet_dependency_ready and bool(lakehouse_partitions) and parquet_roundtrip_ok
+        )
+        parquet_classification = (
+            "complete_and_validated"
+            if has_validated_parquet_manifests
+            else ("partial" if lakehouse_partitions else "missing")
+        )
         return [
             {
                 "requirement_id": "canonical_identity_foundation",
@@ -1833,17 +1847,17 @@ class DataIdentityLakehouseRuntime:
             {
                 "requirement_id": "bronze_silver_gold_mapping",
                 "initial_classification": "partial",
-                "final_classification": "complete_and_validated" if has_parquet_manifests else "missing",
+                "final_classification": parquet_classification,
             },
             {
                 "requirement_id": "parquet_analytical_storage",
                 "initial_classification": "missing",
-                "final_classification": "complete_and_validated" if has_parquet_manifests else "missing",
+                "final_classification": parquet_classification,
             },
             {
                 "requirement_id": "delta_compatible_interfaces",
                 "initial_classification": "missing",
-                "final_classification": "complete_and_validated" if has_parquet_manifests else "missing",
+                "final_classification": parquet_classification,
             },
             {
                 "requirement_id": "security_and_governance",
@@ -1853,7 +1867,11 @@ class DataIdentityLakehouseRuntime:
             {
                 "requirement_id": "readiness_surfaces",
                 "initial_classification": "partial",
-                "final_classification": "complete_and_validated" if has_identity_rows and has_parquet_manifests else "partial",
+                "final_classification": (
+                    "complete_and_validated"
+                    if has_identity_rows and has_validated_parquet_manifests
+                    else "partial"
+                ),
             },
         ]
 
@@ -1877,12 +1895,28 @@ class DataIdentityLakehouseRuntime:
                 0,
             ) + 1
         open_reviews = [row for row in manual_reviews if _normalize_text(row.get("review_state")) == "open"]
+        parquet_dependency_ready = parquet_available()
+        parquet_roundtrip_ok = bool(lakehouse_partitions) and all(
+            _normalize_bool(row.get("roundtrip_ok"))
+            for row in lakehouse_partitions
+        )
+        bronze_silver_gold_ready = (
+            parquet_dependency_ready
+            and parquet_roundtrip_ok
+            and all(layer_counts.get(layer, 0) > 0 for layer in (BRONZE, SILVER, GOLD))
+        )
+        parquet_readiness_status = (
+            "ready"
+            if parquet_dependency_ready and parquet_roundtrip_ok and lakehouse_partitions
+            else ("blocked" if not parquet_dependency_ready or lakehouse_partitions else "missing")
+        )
         readiness = (
             bool(mappings)
             and bool(reconciliations)
+            and parquet_dependency_ready
             and bool(lakehouse_partitions)
             and not open_reviews
-            and all(_normalize_bool(row.get("roundtrip_ok")) for row in lakehouse_partitions)
+            and parquet_roundtrip_ok
         )
         return {
             "ok": readiness,
@@ -1916,21 +1950,24 @@ class DataIdentityLakehouseRuntime:
                 "open_manual_review_count": len(open_reviews),
             },
             "bronze_silver_gold_readiness": {
-                "status": "ready" if layer_counts.get(BRONZE) and layer_counts.get(SILVER) and layer_counts.get(GOLD) else "blocked",
+                "status": "ready" if bronze_silver_gold_ready else "blocked",
                 "layer_counts": layer_counts,
+                "dependency_available": parquet_dependency_ready,
             },
             "parquet_readiness": {
-                "status": "ready" if lakehouse_partitions else "missing",
+                "status": parquet_readiness_status,
                 "partition_count": len(lakehouse_partitions),
-                "roundtrip_ok": all(_normalize_bool(row.get("roundtrip_ok")) for row in lakehouse_partitions),
-                "parquet_available": parquet_available(),
+                "roundtrip_ok": parquet_roundtrip_ok,
+                "parquet_available": parquet_dependency_ready,
+                "installed_version": parquet_installed_version(),
             },
             "delta_compatibility": {
-                "status": "ready" if lakehouse_partitions else "missing",
+                "status": "ready" if parquet_readiness_status == "ready" else parquet_readiness_status,
                 "spark_required": False,
                 "delta_compatible_partition_count": len(
                     [row for row in lakehouse_partitions if _parse_json_mapping(row.get("delta_metadata_json")).get("delta_compatible")]
                 ),
+                "dependency_available": parquet_dependency_ready,
             },
             "spark_deferral_evidence": {
                 "status": "deferred",
@@ -1953,7 +1990,7 @@ class DataIdentityLakehouseRuntime:
                     "purpose": "Inspect deterministic Parquet partition manifests and Delta-compatible metadata.",
                 },
             ],
-            "lakehouse_readiness_state": "ready" if lakehouse_partitions else "missing",
+            "lakehouse_readiness_state": parquet_readiness_status,
             "first_vendor_ingest_readiness_state": "ready" if readiness else "blocked",
             "storage": self.store.health(),
         }
