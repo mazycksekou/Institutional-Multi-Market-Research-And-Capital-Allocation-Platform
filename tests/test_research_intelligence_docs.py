@@ -66,7 +66,8 @@ def test_research_intelligence_docs_exist_and_cover_required_topics() -> None:
     assert "Worldview / Research Query Engine Review" in report_text
     assert "ready for Universal Market Framework" in report_text
 
-    assert "Phase 5.7 - Research Intelligence (complete)" in project_status_text
+    assert "Phase 5.7 - Research Intelligence" in project_status_text
+    assert "Portable External Research-Data Storage" in project_status_text
     assert "Universal Market Framework" in project_status_text
     assert "NFL Production Completion" in project_status_text
     assert "docs/architecture/RESEARCH_INTELLIGENCE_LAYER.md" in project_status_text

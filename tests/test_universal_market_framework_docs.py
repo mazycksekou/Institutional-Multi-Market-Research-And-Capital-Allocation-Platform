@@ -71,6 +71,7 @@ def test_universal_market_framework_roadmap_sequence_and_mission_are_preserved()
         "-> NFL Production Completion\n"
         "-> Data Identity, Reconciliation and Lakehouse Foundation\n"
         "-> First Controlled NFL Vendor Ingest\n"
+        "-> Portable External Research-Data Storage\n"
         "-> Covariance and Time-Dependent Risk Capability Audit\n"
         "-> Implement only covariance and risk capabilities confirmed missing by that audit\n"
         "-> additional sports\n"

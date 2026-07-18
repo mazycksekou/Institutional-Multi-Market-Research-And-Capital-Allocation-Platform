@@ -71,14 +71,16 @@ def test_data_identity_lakehouse_foundation_docs_exist_and_cover_required_topics
     assert "docs/reports/PHASE5_9_DATA_IDENTITY_RECONCILIATION_AND_LAKEHOUSE_FOUNDATION.md" in project_status_text
 
     assert "First Controlled NFL Vendor Ingest" in next_action_text
+    assert "Portable External Research-Data Storage" in next_action_text
     assert "Data Identity, Reconciliation and Lakehouse Foundation" in next_action_text
     assert "Covariance and Time-Dependent Risk Capability Audit" in next_action_text
-    assert "Activate only the first controlled NFL vendor ingest" in next_action_text
+    assert "Activate only portable external research-data storage" in next_action_text
     assert "Do not implement covariance or the risk engine." in next_action_text
     assert "Do not create a parallel ingestion, storage, certification, lifecycle, identity, or reconciliation framework." in next_action_text
 
     assert "The data identity foundation phase is complete and validated." in roadmap_text
     assert "The first controlled NFL vendor ingest phase must:" in roadmap_text
+    assert "The portable external research-data storage phase must:" in roadmap_text
     assert "Covariance and Time-Dependent Risk Capability Audit" in roadmap_text
 
     assert "docs/architecture/DATA_IDENTITY_RECONCILIATION_AND_LAKEHOUSE_FOUNDATION.md" in master_index_text

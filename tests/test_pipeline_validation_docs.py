@@ -62,8 +62,8 @@ def test_pipeline_validation_docs_exist_and_cover_required_topics() -> None:
     assert "Worldview / Research Query Engine Review" in report_text
     assert "Pipeline certified and ready for Research Intelligence." in report_text
 
-    assert "Phase 5.7 - Research Intelligence (complete)" in project_status_text
     assert "Phase 5.7 - Research Intelligence" in project_status_text
+    assert "Portable External Research-Data Storage" in project_status_text
     assert "docs/architecture/PIPELINE_VALIDATION_AND_HARDENING_LAYER.md" in project_status_text
     assert "docs/reports/PHASE5_6_PIPELINE_VALIDATION_AND_HARDENING.md" in project_status_text
 

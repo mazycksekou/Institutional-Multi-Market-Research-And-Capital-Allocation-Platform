@@ -67,10 +67,11 @@ def test_nfl_production_completion_docs_exist_and_cover_required_topics() -> Non
 
     assert "Data Identity, Reconciliation and Lakehouse Foundation" in next_action_text
     assert "First Controlled NFL Vendor Ingest" in next_action_text
+    assert "Portable External Research-Data Storage" in next_action_text
     assert "Covariance and Time-Dependent Risk Capability Audit" in next_action_text
     assert "NFL Production Completion" in next_action_text
     assert "Universal Market Framework" in next_action_text
-    assert "Activate only the first controlled NFL vendor ingest" in next_action_text
+    assert "Activate only portable external research-data storage" in next_action_text
     assert "Do not implement covariance or the risk engine." in next_action_text
     assert "Do not implement paper trading." in next_action_text
     assert "Do not implement live execution." in next_action_text
