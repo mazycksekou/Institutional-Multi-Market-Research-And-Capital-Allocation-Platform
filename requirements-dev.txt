@@ -2,6 +2,5 @@ pytest
 pytest-cov
 requests
 python-dotenv
-rich
+rich>=13.8.0,<14
 tabulate
-
