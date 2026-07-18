@@ -10,11 +10,18 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from src.data.data_paths import (
+    AUTOMATION_DATA_DIR_ENV,
+    RESEARCH_DATA_ROOT_ENV,
+    get_automation_data_dir,
+    get_runtime_data_path,
+    get_storage_health,
+    resolve_base_data_dir,
+)
 from src.providers.policy.allowlist import classify_provider
 from src.security.policy import locked_safety_flags
 
 
-AUTOMATION_DATA_DIR_ENV = "AUTOMATION_DATA_DIR"
 EXECUTION_ATTEMPT_BLOCKED = "execution_attempt_blocked"
 
 _SECRET_KEYS = (
@@ -59,48 +66,6 @@ _RAW_PAYLOAD_KEYS = {
 
 def utc_now_iso() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
-
-
-def _repo_root() -> Path:
-    return Path(__file__).resolve().parents[2]
-
-
-def _configured_root() -> Path | None:
-    raw = os.getenv(AUTOMATION_DATA_DIR_ENV)
-    if raw is None or not raw.strip():
-        return None
-    return Path(raw.strip()).expanduser()
-
-
-def get_automation_data_dir() -> Path:
-    root = _configured_root() or (_repo_root() / "data")
-    root = root.resolve()
-    root.mkdir(parents=True, exist_ok=True)
-    return root
-
-
-def resolve_base_data_dir(base_data_dir: str | Path | None = None) -> Path:
-    if base_data_dir is None:
-        return get_automation_data_dir()
-    path = Path(base_data_dir).expanduser()
-    if str(path).replace("\\", "/").rstrip("/") == "data":
-        return get_automation_data_dir()
-    path = path.resolve()
-    path.mkdir(parents=True, exist_ok=True)
-    return path
-
-
-def get_runtime_data_path(*parts: str | os.PathLike[str]) -> Path:
-    root = get_automation_data_dir()
-    path = root
-    for part in parts:
-        part_path = Path(part)
-        if part_path.is_absolute():
-            raise ValueError(f"runtime data path part must be relative: {part}")
-        path = path / part_path
-    resolved = path.resolve()
-    resolved.relative_to(root.resolve())
-    return resolved
 
 
 def sanitize_filename(value: str) -> str:
@@ -822,36 +787,6 @@ def persist_pattern_review_queue(items: Sequence[Mapping[str, Any]], *, base_dat
     )
 
 
-def get_storage_health() -> dict[str, Any]:
-    root = get_automation_data_dir()
-    probe = root / ".automation_data_dir_probe"
-    read_ok = False
-    write_ok = False
-    try:
-        root.mkdir(parents=True, exist_ok=True)
-        probe.write_text("ok", encoding="utf-8")
-        write_ok = True
-        read_ok = probe.read_text(encoding="utf-8") == "ok"
-    except Exception:
-        read_ok = False
-        write_ok = False
-    finally:
-        try:
-            probe.unlink()
-        except Exception:
-            pass
-    return {
-        "env_var": AUTOMATION_DATA_DIR_ENV,
-        "data_dir": str(root),
-        "backend": "file",
-        "configured": _configured_root() is not None,
-        "render_persistent_disk_expected": False,
-        "persistence_warning": None,
-        "read_ok": bool(read_ok),
-        "write_ok": bool(write_ok),
-    }
-
-
 def read_existing_outputs(*, base_data_dir: str | None = None, asset_classes: Sequence[str] | None = None, limit: int = 200) -> dict[str, Any]:
     from src.providers.institutional_cross_asset_adapters import (
         read_existing_outputs as legacy_read_existing_outputs,
@@ -865,6 +800,7 @@ def read_existing_outputs(*, base_data_dir: str | None = None, asset_classes: Se
 
 __all__ = [
     "AUTOMATION_DATA_DIR_ENV",
+    "RESEARCH_DATA_ROOT_ENV",
     "EXECUTION_ATTEMPT_BLOCKED",
     "build_calibration_by_asset_class",
     "build_context_bucket",

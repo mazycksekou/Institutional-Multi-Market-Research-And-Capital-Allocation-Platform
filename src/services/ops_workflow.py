@@ -16,7 +16,14 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
-from src.data.data_paths import AUTOMATION_DATA_DIR_ENV, get_automation_data_dir, get_collector_scheduler_dir, get_runtime_data_path, get_storage_health
+from src.data.data_paths import (
+    AUTOMATION_DATA_DIR_ENV,
+    RESEARCH_DATA_ROOT_ENV,
+    get_automation_data_dir,
+    get_collector_scheduler_dir,
+    get_runtime_data_path,
+    get_storage_health,
+)
 
 
 DEFAULT_APP_BASE_URL = "https://betting-stock-api-code-integration.onrender.com"
@@ -289,7 +296,10 @@ def get_ops_config() -> dict[str, Any]:
         "app_base_url": (os.getenv("APP_BASE_URL") or "").strip() or None,
         "default_app_base_url": DEFAULT_APP_BASE_URL,
         "app_base_url_configured": bool((os.getenv("APP_BASE_URL") or "").strip()),
+        "research_data_root_configured": bool((os.getenv(RESEARCH_DATA_ROOT_ENV) or "").strip()),
         "automation_data_dir_configured": bool((os.getenv(AUTOMATION_DATA_DIR_ENV) or "").strip()),
+        "storage_root_configured": bool(storage.get("configured")),
+        "storage_root_configured_via_env_var": storage.get("configured_via_env_var"),
         "collector_cron_token_configured": bool((os.getenv("COLLECTOR_CRON_TOKEN") or "").strip()),
         "render_api_key_configured": bool((os.getenv("RENDER_API_KEY") or "").strip()),
         "storage": storage,
@@ -477,8 +487,10 @@ def check_local_environment() -> dict[str, Any]:
         "run_tests": Path("scripts/run_tests.ps1").exists(),
     }
     warnings: list[str] = []
-    if not bool(storage.get("configured")):
-        warnings.append("AUTOMATION_DATA_DIR_unset_using_local_data_fallback")
+    if not bool(storage.get("safe_fallback_prevented")):
+        warnings.append("RESEARCH_DATA_ROOT_unset_repo_local_fallback_blocked")
+    if not bool(storage.get("repository_independent", True)):
+        warnings.append("RESEARCH_DATA_ROOT_points_inside_repository")
     missing_commits = [name for name, present in dict(context.get("required_commits_present", {})).items() if not present]
     if missing_commits:
         warnings.append("required_commits_missing")
@@ -654,7 +666,12 @@ def _latest_cycle_summary(cycle: dict[str, Any]) -> dict[str, Any]:
 def classify_cron_state(latest_cycle: dict[str, Any] | None, recent_cycles: list[dict[str, Any]] | None = None, *, storage: dict[str, Any] | None = None) -> dict[str, Any]:
     recent = list(recent_cycles or [])
     latest = dict(latest_cycle or (recent[0] if recent else {}))
-    if storage and (not storage.get("read_ok") or not storage.get("write_ok") or (_is_render_runtime() and storage.get("persistence_warning"))):
+    if storage and (
+        not storage.get("storage_ready", True)
+        or not storage.get("read_ok")
+        or not storage.get("write_ok")
+        or (_is_render_runtime() and storage.get("persistence_warning"))
+    ):
         return {"status": "storage_problem", "recommended_action": "fix storage path or persistent disk before trusting cron reports"}
     if not latest:
         return {"status": "local_report_unavailable", "recommended_action": "check Render cron service, APP_BASE_URL, token, and report paths"}
@@ -990,6 +1007,8 @@ def check_safety_flags(payloads: list[Any] | tuple[Any, ...] | Any) -> dict[str,
 def _storage_problem(storage: dict[str, Any] | None) -> bool:
     if not isinstance(storage, dict):
         return False
+    if not storage.get("storage_ready", True):
+        return True
     if not storage.get("read_ok") or not storage.get("write_ok"):
         return True
     if _is_render_runtime():
@@ -1051,7 +1070,7 @@ def classify_blockers(report: dict[str, Any]) -> dict[str, Any]:
         elif primary == "local_sandbox_network_unavailable":
             action = "rerun Render check from a network-enabled environment or use dashboard logs"
         elif primary == "storage_problem":
-            action = "fix AUTOMATION_DATA_DIR and Render persistent disk configuration"
+            action = f"fix {RESEARCH_DATA_ROOT_ENV} (or legacy {AUTOMATION_DATA_DIR_ENV}) and Render persistent disk configuration"
         elif primary == "safety_failure":
             action = "stop and fix enabled execution/provider-write flags"
         elif primary == "local_render_state_mismatch":
