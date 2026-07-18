@@ -63,6 +63,10 @@ Only tiny deterministic fixtures belong in tests/fixtures/.
 The `data/` tree is for local runtime state, generated outputs, and ignored artifacts.
 It is not a source-of-truth package layer.
 
+## ResearchData Root
+Set `RESEARCH_DATA_ROOT` to the portable external storage location that should own runtime ResearchData.
+`AUTOMATION_DATA_DIR` remains a compatibility alias for existing workflows, but repository-local `data/` fallback is not storage-ready for portable runtime or migration work.
+
 ## R2 Object Storage Archive Policy
 R2 object storage is the archive layer for large local market data bundles.
 R2 is not the live application database.

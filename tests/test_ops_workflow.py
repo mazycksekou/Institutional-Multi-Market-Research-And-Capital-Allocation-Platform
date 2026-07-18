@@ -7,7 +7,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from src.services.streamlit_dashboard_facade import ops_workflow
-from src.services.streamlit_dashboard_facade import AUTOMATION_DATA_DIR_ENV
+from src.services.streamlit_dashboard_facade import AUTOMATION_DATA_DIR_ENV, RESEARCH_DATA_ROOT_ENV
 
 
 class _FakeResponse:
@@ -124,6 +124,29 @@ class TestOpsWorkflow(unittest.TestCase):
                 config = ops_workflow.get_ops_config()
         self.assertEqual(Path(config["storage"]["data_dir"]), Path(tmp).resolve())
 
+    def test_storage_report_uses_research_data_root_when_set(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            with patch.dict(os.environ, {RESEARCH_DATA_ROOT_ENV: tmp}, clear=True):
+                config = ops_workflow.get_ops_config()
+        self.assertEqual(Path(config["storage"]["data_dir"]), Path(tmp).resolve())
+        self.assertTrue(config["storage_root_configured"])
+        self.assertTrue(config["research_data_root_configured"])
+        self.assertEqual(config["storage_root_configured_via_env_var"], RESEARCH_DATA_ROOT_ENV)
+
+    def test_classify_blockers_flags_storage_not_ready_even_when_io_works(self):
+        report = {
+            "storage_status": {
+                "configured": False,
+                "storage_ready": False,
+                "read_ok": True,
+                "write_ok": True,
+                "data_dir": "C:/repo/data",
+            }
+        }
+        classified = ops_workflow.classify_blockers(report)
+        self.assertEqual(classified["primary"], "storage_problem")
+        self.assertTrue(classified["has_critical"])
+
     def test_ops_report_writes_latest_items_and_daily(self):
         with tempfile.TemporaryDirectory() as tmp:
             with patch.dict(os.environ, {AUTOMATION_DATA_DIR_ENV: tmp}, clear=False):
@@ -158,23 +181,25 @@ class TestOpsWorkflow(unittest.TestCase):
         self.assertNotIn("top-secret-render-key", encoded)
 
     def test_outcome_reconcile_mode_reports_mismatch_warning(self):
-        with patch(
-            'src.services.ops_workflow.check_outcome_reconciliation',
-            return_value={
-                "ok": True,
-                "status": "local_render_state_mismatch",
-                "local_package_count": 32,
-                "render_outcomes_count": 4,
-                "would_insert_count": 32,
-                "unmatched_count": 0,
-                "provider_write": False,
-                "execution_allowed": False,
-                "execution_allowed_count": 0,
-                "raw_payload_included": False,
-                "secrets_included": False,
-            },
-        ):
-            report = ops_workflow.run_ops_check(mode="outcome-reconcile", base_url="https://example.test", write_report=False)
+        with tempfile.TemporaryDirectory() as tmp:
+            with patch.dict(os.environ, {RESEARCH_DATA_ROOT_ENV: tmp}, clear=True):
+                with patch(
+                    'src.services.ops_workflow.check_outcome_reconciliation',
+                    return_value={
+                        "ok": True,
+                        "status": "local_render_state_mismatch",
+                        "local_package_count": 32,
+                        "render_outcomes_count": 4,
+                        "would_insert_count": 32,
+                        "unmatched_count": 0,
+                        "provider_write": False,
+                        "execution_allowed": False,
+                        "execution_allowed_count": 0,
+                        "raw_payload_included": False,
+                        "secrets_included": False,
+                    },
+                ):
+                    report = ops_workflow.run_ops_check(mode="outcome-reconcile", base_url="https://example.test", write_report=False)
 
         self.assertEqual(report["outcome_reconciliation_status"]["status"], "local_render_state_mismatch")
         self.assertEqual(report["blocker_classification"]["primary"], "local_render_state_mismatch")

@@ -25,6 +25,8 @@ def _compact_storage_health(payload: dict[str, Any]) -> dict[str, Any]:
         storage = {}
     return {
         "env_var": storage.get("env_var", "AUTOMATION_DATA_DIR"),
+        "canonical_env_var": storage.get("canonical_env_var"),
+        "configured_via_env_var": storage.get("configured_via_env_var"),
         "data_dir": storage.get("data_dir"),
         "backend": storage.get("backend", payload.get("storage_backend", "file")),
         "configured": bool(storage.get("configured", False)),
@@ -32,6 +34,8 @@ def _compact_storage_health(payload: dict[str, Any]) -> dict[str, Any]:
         "persistence_warning": storage.get("persistence_warning") or payload.get("persistence_warning_if_ephemeral"),
         "read_ok": bool(storage.get("read_ok", True)),
         "write_ok": bool(storage.get("write_ok", True)),
+        "storage_ready": bool(storage.get("storage_ready", False)),
+        "migration_ready": bool(storage.get("migration_ready", storage.get("storage_ready", False))),
     }
 
 
