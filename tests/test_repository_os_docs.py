@@ -84,6 +84,7 @@ def test_repository_os_documents_exist_and_reference_canonical_governance() -> N
 
     assert "Data Identity, Reconciliation and Lakehouse Foundation" in next_action_text
     assert "First Controlled NFL Vendor Ingest" in next_action_text
+    assert "Portable External Research-Data Storage" in next_action_text
     assert "NFL Production Completion" in next_action_text
     assert "Universal Market Framework" in next_action_text
     assert "Phase 5.7 - Research Intelligence" in next_action_text
@@ -95,6 +96,7 @@ def test_repository_os_documents_exist_and_reference_canonical_governance() -> N
     assert "sole sequencing source" in status_policy_text.lower()
     assert "canonical execution policy" in roadmap_text.lower()
     assert "sole sequencing source" in roadmap_text.lower()
+    assert "Portable External Research-Data Storage" in roadmap_text
     assert "canonical execution policy" in project_status_text.lower()
     assert "sole sequencing source" in project_status_text.lower()
     assert "docs/architecture/REPOSITORY_OS.md" in master_index_text

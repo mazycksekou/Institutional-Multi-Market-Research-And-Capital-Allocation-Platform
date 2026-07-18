@@ -12,7 +12,13 @@ from typing import Iterable
 
 ROOT = Path(__file__).resolve().parents[1]
 PYTHON = sys.executable
-ACCEPTED_BRANCHES = {"phase-6-api-slimming", "feature/nfl-backtesting", "main"}
+ACCEPTED_BRANCHES = {
+    "phase-6-api-slimming",
+    "feature/external-research-data-storage",
+    "feature/nfl-backtesting",
+    "main",
+}
+DEFAULT_BRANCH = "feature/external-research-data-storage"
 
 
 def _base_env() -> dict[str, str]:
@@ -45,8 +51,8 @@ def _pytest_env() -> dict[str, str]:
     env = _base_env()
     branch = _current_branch()
     if branch not in ACCEPTED_BRANCHES:
-        env["GITHUB_HEAD_REF"] = "feature/nfl-backtesting"
-        env["GITHUB_REF_NAME"] = "feature/nfl-backtesting"
+        env["GITHUB_HEAD_REF"] = DEFAULT_BRANCH
+        env["GITHUB_REF_NAME"] = DEFAULT_BRANCH
     return env
 
 

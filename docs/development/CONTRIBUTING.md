@@ -4,7 +4,7 @@ Thanks for keeping the repository disciplined and reviewable.
 
 ## Before You Start
 
-- Work from `phase-6-api-slimming`
+- Work from `main` for clean-state verification or the currently governed task branch such as `feature/external-research-data-storage`
 - Confirm `git status` is clean
 - Read the relevant architecture and contract docs before changing behavior
 - Check the [Branch Governance Policy](./BRANCH_GOVERNANCE_POLICY.md) before deciding whether the work belongs on the current branch

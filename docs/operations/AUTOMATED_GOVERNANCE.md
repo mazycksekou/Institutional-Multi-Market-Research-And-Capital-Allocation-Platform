@@ -47,7 +47,7 @@ GitHub Actions is an optional automation wrapper that runs the same local script
 
 - Workflow file: `.github/workflows/repository-validation.yml`
 - Workflow name: `Repository Validation`
-- Trigger: push and pull requests targeting `phase-6-api-slimming` and `main`
+- Trigger: push and pull requests targeting `main`, the transition branch `feature/nfl-backtesting`, and the active governed branch `feature/external-research-data-storage`
 - Purpose: provide an automated reminder and status signal without duplicating validation logic
 - The workflow should mirror the pinned runtime Python version documented in [Dependency Reproducibility](./DEPENDENCY_REPRODUCIBILITY.md)
 - The workflow must continue to call the repository scripts rather than reimplementing checks in YAML

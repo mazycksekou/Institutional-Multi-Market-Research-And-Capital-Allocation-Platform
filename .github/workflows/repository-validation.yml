@@ -5,10 +5,12 @@ on:
     branches:
       - main
       - feature/nfl-backtesting
+      - feature/external-research-data-storage
   pull_request:
     branches:
       - main
       - feature/nfl-backtesting
+      - feature/external-research-data-storage
 
 permissions:
   contents: read

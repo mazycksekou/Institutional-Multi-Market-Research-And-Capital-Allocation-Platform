@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from src.data.research_asset_lifecycle_runtime import (
@@ -241,5 +242,78 @@ def test_research_asset_lifecycle_runtime_certifies_alignment_and_lifecycle_rows
             profile_id="sports:nfl",
         )
         assert helper_snapshot_for_dashboard["status"] in {"ready", "partial"}
+    finally:
+        runtime.close()
+
+
+def test_research_asset_lifecycle_runtime_uses_stored_identity_json_for_followup_states(
+    tmp_path: Path,
+) -> None:
+    runtime = ResearchAssetLifecycleRuntime(storage_path=tmp_path / "research_asset_identity.sqlite")
+    identity = build_research_asset_identity_contract(
+        asset_id="dataset.sports.nfl.oddswarehouse.source_events",
+        asset_family="dataset",
+        market_profile="sports:nfl",
+        market="historical",
+        league="NFL",
+        sport="football",
+        season="2009",
+        week_or_date="2009-09-10..2009-09-20",
+        event_id="oddswarehouse_pilot",
+        game_id="",
+        market_id="historical_events",
+        selection="",
+        provider="oddswarehouse",
+        connector="connector.manual_import.oddswarehouse_nfl_basic",
+        schema_version="src.data.oddswarehouse_nfl_basic_ingest.v1",
+        lineage_version="oddswarehouse.nfl_basic.2009.pilot.v1",
+        asset_name="OddsWarehouse NFL Source Events",
+        asset_type="source_event_snapshot",
+        participant_id="",
+        team_id="",
+        market_type="historical_events",
+    )
+    try:
+        first = runtime.record_lifecycle_state(
+            identity=identity,
+            lifecycle_state="discovered",
+            lifecycle_reason="initial discovery",
+            source_bundle={
+                "source_name": "OddsWarehouse NFL Basic",
+                "source_type": "controlled_vendor_workbook",
+                "source_key": "oddswarehouse_nfl_basic",
+                "provider": "oddswarehouse",
+            },
+            raw_acquisition_result={"batch_id": "oddswarehouse.batch.test"},
+            created_at="2026-07-17T00:00:00Z",
+        )
+        second = runtime.record_lifecycle_state(
+            identity=identity,
+            lifecycle_state="source_identified",
+            lifecycle_reason="source confirmed",
+            source_bundle={
+                "source_name": "OddsWarehouse NFL Basic",
+                "source_type": "controlled_vendor_workbook",
+                "source_key": "oddswarehouse_nfl_basic",
+                "provider": "oddswarehouse",
+            },
+            raw_acquisition_result={"batch_id": "oddswarehouse.batch.test"},
+            created_at="2026-07-17T00:01:00Z",
+        )
+
+        assert first["ok"] is True
+        assert second["ok"] is True
+        assert second["research_asset_lifecycle"]["lifecycle_state"] == "source_identified"
+
+        stored_rows = runtime.store.fetch(
+            "research_asset_lifecycles",
+            where="asset_id = ?",
+            params=[identity.asset_id],
+            limit=1,
+        )
+        assert stored_rows
+        stored_identity = json.loads(stored_rows[0]["identity_json"])
+        assert stored_identity["schema_version"] == "src.data.oddswarehouse_nfl_basic_ingest.v1"
+        assert stored_rows[0]["schema_version"] == "src.data.research_asset_lifecycle_runtime.v1"
     finally:
         runtime.close()

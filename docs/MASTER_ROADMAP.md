@@ -11,6 +11,7 @@ Universal Market Framework
 -> NFL Production Completion
 -> Data Identity, Reconciliation and Lakehouse Foundation
 -> First Controlled NFL Vendor Ingest
+-> Portable External Research-Data Storage
 -> Covariance and Time-Dependent Risk Capability Audit
 -> Implement only covariance and risk capabilities confirmed missing by that audit
 -> additional sports
@@ -33,6 +34,7 @@ Immediately after complete NFL production validation, the next governed lanes ar
 
 - `Data Identity, Reconciliation and Lakehouse Foundation`
 - `First Controlled NFL Vendor Ingest`
+- `Portable External Research-Data Storage`
 - `Covariance and Time-Dependent Risk Capability Audit`
 
 The data identity foundation phase is complete and validated. It:
@@ -53,6 +55,14 @@ The first controlled NFL vendor ingest phase must:
 - preserve certified NFL reference behavior, parity evidence, lineage, provenance, determinism, and point-in-time safety
 - avoid covariance implementation, additional markets, paper trading, and live execution in that phase
 
+The portable external research-data storage phase must:
+
+- reuse the completed shared identity, reconciliation, quarantine, revision-aware, lakehouse, and First Controlled NFL Vendor Ingest capabilities
+- reuse the canonical acquisition, storage, certification, lifecycle, lineage, validation, and dashboard owners
+- externalize only the storage roots, configuration, and portability seams required to make repository-owned historical, lakehouse, and research artifacts portable
+- preserve certified NFL reference behavior, Bronze, Silver, and Gold mapping, lineage, provenance, determinism, and point-in-time safety
+- avoid covariance implementation, additional markets, paper trading, and live execution in that phase
+
 The covariance audit must still inspect the repository before implementation and determine existing, partial, missing, duplicated, or deferred support for:
 
 - covariance and correlation
@@ -65,7 +75,7 @@ The covariance audit must still inspect the repository before implementation and
 - time-to-event and time-to-expiration risk
 - risk-horizon normalization and attribution
 
-Do not implement these capabilities during the sequencing correction, during the data identity foundation phase, or during the first controlled NFL vendor ingest unless a later governed phase explicitly activates them.
+Do not implement these capabilities during the sequencing correction, during the data identity foundation phase, during the first controlled NFL vendor ingest, or during the portable external research-data storage phase unless a later governed phase explicitly activates them.
 
 ## Universal Market Lifecycle
 
@@ -142,7 +152,7 @@ Phase 5.7 completed deterministic Research Intelligence on top of the certified 
 The next governed step is the Universal Market Framework, preserved here as the Phase 5.7 historical handoff statement.
 The Universal Market Framework completed the governed extraction of reusable market-agnostic contracts, registries, lifecycle interfaces, readiness surfaces, and dashboard/query interfaces without mutating the hardened NFL path.
 The next governed step after Universal Market Framework completion is NFL Production Completion so the certified NFL reference implementation can be audited against production-complete requirements without duplicating reusable framework logic.
-After complete NFL production validation, the next governed lanes are Data Identity, Reconciliation and Lakehouse Foundation, then First Controlled NFL Vendor Ingest, then the Covariance and Time-Dependent Risk Capability Audit.
+After complete NFL production validation, the next governed lanes are Data Identity, Reconciliation and Lakehouse Foundation, then First Controlled NFL Vendor Ingest, then Portable External Research-Data Storage, then the Covariance and Time-Dependent Risk Capability Audit.
 Only after that audit completes should the repository implement the covariance and risk capabilities confirmed missing by the audit.
 Later roadmap lanes continue with additional sports, prediction markets, Zero-DTE options, Worldview Intelligence, cross-market intelligence, universal risk and capital allocation, paper trading, controlled live execution, production platform and IP custody, institutional readiness, and autonomous development.
 
@@ -191,8 +201,9 @@ Current NFL work follows the certified Phase 5 chain and the completed Universal
 - Phase 5.7 completed Research Intelligence on the certified NFL pipeline.
 - Universal Market Framework generalized the certified NFL research chain without changing certified NFL outputs.
 - Data Identity, Reconciliation and Lakehouse Foundation is complete and validated above the certified NFL production chain.
-- First Controlled NFL Vendor Ingest is the active governed phase and should begin only after the shared identity, reconciliation, quarantine, revision-aware, and lakehouse capabilities are ready.
-- Covariance and Time-Dependent Risk Capability Audit follows the first controlled NFL vendor ingest and remains inspection-only until a later governed phase activates implementation.
+- First Controlled NFL Vendor Ingest is complete and validated on top of the shared identity, reconciliation, quarantine, revision-aware, and lakehouse capabilities.
+- Portable External Research-Data Storage is the active governed phase and should begin only after the first controlled vendor slice is certified and portable-storage work is the remaining governed gap.
+- Covariance and Time-Dependent Risk Capability Audit follows portable external research-data storage and remains inspection-only until a later governed phase activates implementation.
 - Implement only covariance and risk capabilities confirmed missing by that audit follows the audit.
 - Phase 4.9I and Phase 4.9J remain deferred enrichment asset lanes after the first baseline dataset path is established.
 
@@ -200,7 +211,7 @@ The master research engine specification is already the canonical name for the b
 
 ## Current Project Status
 
-- Active branch: `feature/nfl-backtesting`
+- Active branch: `feature/external-research-data-storage`
 - Active market profile: `sports:nfl`
 - Canonical project status: `docs/PROJECT_STATUS.md`
 - Canonical next action: `docs/NEXT_ACTION.md`

@@ -1659,13 +1659,28 @@ class DataIdentityLakehouseRuntime:
     def publish_lakehouse_views(self) -> dict[str, Any]:
         require_parquet_support("Lakehouse parquet publishing")
         datasets: list[tuple[str, str, list[dict[str, Any]]]] = [
-            (BRONZE, "raw_records", self._fetch("raw_records", order_by="created_at ASC, record_id ASC")),
+            (BRONZE, "raw_records", self._fetch("raw_records", order_by="record_id ASC")),
             (SILVER, "historical_events", self._fetch("historical_events", order_by="event_start_time ASC, event_id ASC")),
+            (
+                SILVER,
+                "historical_event_participants",
+                self._fetch("historical_event_participants", order_by="event_id ASC, team_role ASC, participant_id ASC"),
+            ),
+            (
+                SILVER,
+                "historical_source_event_links",
+                self._fetch("historical_source_event_links", order_by="event_id ASC, link_id ASC"),
+            ),
             (SILVER, "historical_markets", self._fetch("historical_markets", order_by="event_id ASC, market_id ASC")),
             (SILVER, "historical_selections", self._fetch("historical_selections", order_by="event_id ASC, market_id ASC, selection_id ASC")),
             (SILVER, "identity_mappings", self._fetch("identity_mappings", order_by="entity_type ASC, provider ASC, external_identifier ASC, revision_number ASC")),
             (SILVER, "identity_reconciliation_results", self._fetch("identity_reconciliation_results", order_by="provider ASC, internal_identifier ASC, revision_number ASC")),
             (GOLD, "historical_dataset_rows", self._fetch("historical_dataset_rows", order_by="event_start_time ASC, dataset_row_id ASC")),
+            (
+                GOLD,
+                "historical_event_market_selections",
+                self._fetch("historical_event_market_selections", order_by="event_id ASC, market_id ASC, dataset_row_id ASC"),
+            ),
             (GOLD, "feature_snapshots", self._fetch("feature_snapshots", order_by="created_at ASC, snapshot_id ASC")),
         ]
         partition_rows: list[dict[str, Any]] = []
@@ -1687,6 +1702,8 @@ class DataIdentityLakehouseRuntime:
                         _normalize_text(
                             row.get("record_id")
                             or row.get("dataset_row_id")
+                            or row.get("participant_id")
+                            or row.get("link_id")
                             or row.get("market_id")
                             or row.get("selection_id")
                             or row.get("event_id")

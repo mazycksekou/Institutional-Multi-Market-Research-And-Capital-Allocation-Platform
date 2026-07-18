@@ -42,7 +42,8 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
 
     assert "required starting document" in project_status_text.lower()
     assert "repository homepage" in project_status_text.lower()
-    assert "feature/nfl-backtesting" in project_status_text
+    assert "feature/external-research-data-storage" in project_status_text
+    assert "validated canonical branch: `main`" in project_status_text
     assert "sports:nfl" in project_status_text
     assert "Phase 4.9A - NFL Schedule Research Asset Population" in project_status_text
     assert "Phase 4.9C - First Production Connector (NFL Schedule)" in project_status_text
@@ -56,6 +57,7 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "Phase 4.3.6" in project_status_text
     assert "Phase 4.3.7" in project_status_text
     assert "First Controlled NFL Vendor Ingest" in project_status_text
+    assert "Portable External Research-Data Storage" in project_status_text
     assert "Data Identity, Reconciliation and Lakehouse Foundation (complete)" in project_status_text
     assert "NFL Production Completion" in project_status_text
     assert "Universal Market Framework (complete)" in project_status_text
@@ -97,12 +99,13 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
 
     assert "Data Identity, Reconciliation and Lakehouse Foundation" in next_action_text
     assert "First Controlled NFL Vendor Ingest" in next_action_text
+    assert "Portable External Research-Data Storage" in next_action_text
     assert "NFL Production Completion" in next_action_text
     assert "Universal Market Framework" in next_action_text
     assert "Phase 5.7 - Research Intelligence" in next_action_text
     assert "Covariance and Time-Dependent Risk Capability Audit" in next_action_text
     assert "Research Intelligence" in next_action_text
-    assert "activate only the first controlled nfl vendor ingest" in next_action_text.lower()
+    assert "activate only portable external research-data storage" in next_action_text.lower()
     assert "identity-binding" in next_action_text.lower()
     assert "parquet-based analytical storage" in next_action_text.lower()
     assert "delta-compatible interfaces" in next_action_text.lower()
@@ -150,6 +153,7 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "NFL Production Completion" in roadmap_text
     assert "Data Identity, Reconciliation and Lakehouse Foundation" in roadmap_text
     assert "First Controlled NFL Vendor Ingest" in roadmap_text
+    assert "Portable External Research-Data Storage" in roadmap_text
     assert "Covariance and Time-Dependent Risk Capability Audit" in roadmap_text
     assert "Implement only covariance and risk capabilities confirmed missing by that audit" in roadmap_text
     assert "additional sports" in roadmap_text

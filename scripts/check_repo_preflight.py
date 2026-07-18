@@ -9,7 +9,13 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[1]
-ACCEPTED_BRANCHES = {"phase-6-api-slimming", "feature/nfl-backtesting", "main"}
+ACCEPTED_BRANCHES = {
+    "phase-6-api-slimming",
+    "feature/external-research-data-storage",
+    "feature/nfl-backtesting",
+    "main",
+}
+DEFAULT_EXPECTED_BRANCH = "feature/external-research-data-storage"
 ALLOWED_MODES = {"start-task", "end-task", "before-commit", "before-push"}
 
 if str(ROOT) not in sys.path:
@@ -155,7 +161,7 @@ def collect_repo_preflight_report(
     ahead = git["ahead"]
     behind = git["behind"]
 
-    expected_branch = branch if branch in ACCEPTED_BRANCHES else "phase-6-api-slimming"
+    expected_branch = branch if branch in ACCEPTED_BRANCHES else DEFAULT_EXPECTED_BRANCH
     expected_upstream = f"origin/{expected_branch}"
 
     if branch not in ACCEPTED_BRANCHES:

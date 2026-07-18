@@ -1539,7 +1539,22 @@ class ResearchAssetLifecycleRuntime:
         created_at = _normalize_text(created_at, _utc_now_iso())
         lifecycle_state = _normalize_state(lifecycle_state)
         existing_row = self._existing_lifecycle_row(identity_contract.asset_id)
-        existing_identity = ResearchAssetIdentityContract.from_mapping(existing_row) if existing_row else identity_contract
+        existing_identity = identity_contract
+        if existing_row is not None:
+            stored_identity_payload: Mapping[str, Any] | None = None
+            identity_json = _normalize_text(existing_row.get("identity_json"))
+            if identity_json:
+                try:
+                    parsed_identity = json.loads(identity_json)
+                except json.JSONDecodeError:
+                    parsed_identity = None
+                if isinstance(parsed_identity, Mapping):
+                    stored_identity_payload = parsed_identity
+            existing_identity = (
+                ResearchAssetIdentityContract.from_mapping(stored_identity_payload)
+                if stored_identity_payload is not None
+                else ResearchAssetIdentityContract.from_mapping(existing_row)
+            )
         if existing_row is not None:
             existing_contract_validation = validate_research_asset_identity_contract(existing_identity)
             if not existing_contract_validation["ok"]:

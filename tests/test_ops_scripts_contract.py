@@ -41,6 +41,7 @@ class TestOpsScriptsContract(unittest.TestCase):
         self.assertIn('python-version: "3.12"', text)
         self.assertIn("main", text)
         self.assertIn("feature/nfl-backtesting", text)
+        self.assertIn("feature/external-research-data-storage", text)
         self.assertIn("python scripts/run_quality_gates.py --install", text)
 
     def test_canonical_quality_gate_is_documented(self):

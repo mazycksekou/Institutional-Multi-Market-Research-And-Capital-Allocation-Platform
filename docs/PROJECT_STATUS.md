@@ -12,16 +12,18 @@ research.
 
 - repository homepage: `docs/PROJECT_STATUS.md`
 - required starting document: `docs/PROJECT_STATUS.md`
-- current branch: `feature/nfl-backtesting`
-- current HEAD: live branch tip (exact hash is reported in the task final report)
-- remote tracking branch: `origin/feature/nfl-backtesting`
-- active phase: `First Controlled NFL Vendor Ingest`
-- previous completed active phase: `Data Identity, Reconciliation and Lakehouse Foundation (complete)`
+- current branch: `feature/external-research-data-storage`
+- current HEAD: branch cut from the validated canonical main tip (exact hash is reported in the task final report)
+- remote tracking branch: `not yet pushed; configure origin/feature/external-research-data-storage on first push`
+- validated canonical branch: `main`
+- validated canonical HEAD: branch-consolidation main tip (exact hash is reported in the task final report)
+- active phase: `Portable External Research-Data Storage`
+- previous completed active phase: `First Controlled NFL Vendor Ingest (complete)`
+- previous completed active phase before that: `Data Identity, Reconciliation and Lakehouse Foundation (complete)`
 - previous completed active phase before that: `NFL Production Completion (complete)`
 - previous completed active phase before that: `Universal Market Framework (complete)`
-- previous completed active phase before that: `Phase 5.7 - Research Intelligence (complete)`
 - active market profile: `sports:nfl`
-- active implementation lane: `NFL P0 profile-aware foundation + event-centric historical research database + master research engine specification + universal feature registry + universal math engine contracts + research asset runtime framework + historical dataset acquisition framework + historical dataset acquisition runtime + research asset source discovery and connector mapping framework + historical research asset certification runtime + research asset lifecycle runtime + NFL schedule research asset population + research asset coverage planner and provider selection framework + first production NFL schedule connector + certified NFL results research asset + certified NFL odds research asset + certified NFL weather research asset + certified NFL injuries research asset + certified NFL team statistics research asset + deterministic historical dataset population layer + deterministic feature snapshot population layer + deterministic mathematical engine population layer + deterministic signal population layer + deterministic decision row generation layer + deterministic baseline backtesting layer + deterministic pipeline validation and hardening layer + deterministic Research Intelligence layer + Universal Market Framework + NFL Production Completion + Data Identity, Reconciliation and Lakehouse Foundation + First Controlled NFL Vendor Ingest`
+- active implementation lane: `NFL P0 profile-aware foundation + event-centric historical research database + master research engine specification + universal feature registry + universal math engine contracts + research asset runtime framework + historical dataset acquisition framework + historical dataset acquisition runtime + research asset source discovery and connector mapping framework + historical research asset certification runtime + research asset lifecycle runtime + NFL schedule research asset population + research asset coverage planner and provider selection framework + first production NFL schedule connector + certified NFL results research asset + certified NFL odds research asset + certified NFL weather research asset + certified NFL injuries research asset + certified NFL team statistics research asset + deterministic historical dataset population layer + deterministic feature snapshot population layer + deterministic mathematical engine population layer + deterministic signal population layer + deterministic decision row generation layer + deterministic baseline backtesting layer + deterministic pipeline validation and hardening layer + deterministic Research Intelligence layer + Universal Market Framework + NFL Production Completion + Data Identity, Reconciliation and Lakehouse Foundation + First Controlled NFL Vendor Ingest + Portable External Research-Data Storage`
 - completed phases:
   - `Phase 4.3.6 - Profile-Aware NFL P0 Validation`
   - `Phase 4.3.7 - Minimum Backtest Row Contract`
@@ -53,7 +55,7 @@ research.
   - `Universal Market Framework`
   - `NFL Production Completion`
   - `Data Identity, Reconciliation and Lakehouse Foundation`
-- current phase objective: First Controlled NFL Vendor Ingest is active; reuse the completed shared identity, reconciliation, quarantine, revision-aware, and lakehouse foundation; onboard only the first controlled NFL vendor slice through the canonical acquisition, certification, lifecycle, lineage, and validation owners; preserve all certified NFL reference behavior and parity evidence; keep covariance, additional markets, paper trading, and live execution out of scope in this phase.
+- current phase objective: Portable External Research-Data Storage is active; reuse the completed shared identity, reconciliation, quarantine, revision-aware, lakehouse, and First Controlled NFL Vendor Ingest owners; externalize repository-owned historical, lakehouse, and research-artifact storage through canonical storage and configuration surfaces; preserve all certified NFL reference behavior and parity evidence; keep covariance, additional markets, paper trading, and live execution out of scope in this phase.
 - next phase: `Covariance and Time-Dependent Risk Capability Audit`
 - governed handoff after the active phase: `Covariance and Time-Dependent Risk Capability Audit -> Implement only covariance and risk capabilities confirmed missing by that audit`
 - current blockers: None
@@ -77,11 +79,12 @@ research.
   - Phase 5.7 Research Intelligence code changes are complete and validated: focused research-intelligence runtime tests, adjacent pipeline-validation and NFL P0 regressions, compileall, smoke, root markdown, OpenAPI contract, architecture, audit lifecycle, document lifecycle, ops checks, repository preflight checks, git diff checks, and the full repository test suite are green.
   - Universal Market Framework code changes are complete and validated: focused universal-market-framework parity tests, adjacent market-profile and Research Intelligence regressions, compileall, smoke, root markdown, OpenAPI contract, architecture, audit lifecycle, document lifecycle, ops checks, repository preflight checks, git diff checks, and the full repository test suite are green.
   - Data Identity, Reconciliation and Lakehouse Foundation validation remediation is complete and validated: the Parquet runtime dependency is now declared in `requirements.txt`, the global-install fallback was removed, clean-environment requirements-only installation exposes `pyarrow` deterministically, focused lakehouse and pipeline-validation regressions are green, smoke is green, the workflow-equivalent `scripts/run_quality_gates.py` path is green, and the full repository test suite is green again.
+  - First Controlled NFL Vendor Ingest code changes are complete and validated: focused OddsWarehouse ingest tests, focused lakehouse and research-asset-lifecycle regressions, compileall, smoke, root markdown, OpenAPI contract, architecture, audit lifecycle, document lifecycle, ops checks, repository preflight checks, git diff checks, and the full repository test suite are green.
   - Sequencing correction code changes are complete and validated: targeted governance and documentation tests, root markdown, document lifecycle, and git diff checks align the active phase to NFL Production Completion and the following governed lane to the Covariance and Time-Dependent Risk Capability Audit without beginning NFL implementation.
 - NFL Production Completion code changes are complete and validated: focused NFL-production-completion runtime tests, adjacent Universal Market Framework, Streamlit dashboard, and NFL P0 readiness regressions, compileall, smoke, root markdown, OpenAPI contract, architecture, audit lifecycle, document lifecycle, ops checks, repository preflight checks, git diff checks, and the full repository test suite are green.
   - Data platform sequencing correction code changes are complete and validated: targeted governance tests, root markdown, architecture, document lifecycle, and git diff checks realign the active phase to Data Identity, Reconciliation and Lakehouse Foundation, insert First Controlled NFL Vendor Ingest before covariance work, and preserve the canonical long-term sequence without beginning implementation.
-- latest full gate result: `passed for the completed Data Identity, Reconciliation and Lakehouse Foundation gate after Parquet dependency remediation`
-- latest pushed commit: live branch tip (exact hash is reported in the task final report)
+- latest full gate result: `passed for the completed First Controlled NFL Vendor Ingest integration candidate and repository branch-consolidation handoff`
+- latest pushed commit: validated canonical main tip (exact hash is reported in the task final report)
 
 ## Active Canonical Rules
 
@@ -192,4 +195,4 @@ Read these only when you need more detail than the project status page provides:
 
 ## Next Recommended Codex Task
 
-`First Controlled NFL Vendor Ingest`
+`Portable External Research-Data Storage`
