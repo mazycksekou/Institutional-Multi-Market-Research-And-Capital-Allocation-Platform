@@ -156,6 +156,54 @@ def test_data_identity_runtime_preserves_revisions_and_blocks_ambiguous_matches(
         runtime.close()
 
 
+def test_data_identity_runtime_ignores_fallback_processing_timestamps_for_same_mapping(
+    tmp_path: Path,
+) -> None:
+    runtime = DataIdentityLakehouseRuntime(
+        storage_path=tmp_path / "identity_runtime_timestamps.sqlite",
+        lakehouse_root=tmp_path / "lakehouse",
+    )
+    try:
+        first = runtime.register_identity_mapping(
+            provider="repository",
+            external_identifier="OddsWarehouse",
+            internal_identifier="oddswarehouse",
+            entity_type="provider",
+            entity_name="OddsWarehouse",
+            source_payload={
+                "provider_id": "oddswarehouse",
+                "created_at": "2026-08-06T12:00:00Z",
+            },
+            approval_reference="dataset.sports.nfl.oddswarehouse.raw_acquisition_cache.v001",
+        )
+        repeated = runtime.register_identity_mapping(
+            provider="repository",
+            external_identifier="OddsWarehouse",
+            internal_identifier="oddswarehouse",
+            entity_type="provider",
+            entity_name="OddsWarehouse",
+            source_payload={
+                "provider_id": "oddswarehouse",
+                "created_at": "2026-08-06T12:05:00Z",
+            },
+            approval_reference="dataset.sports.nfl.oddswarehouse.raw_acquisition_cache.v002",
+        )
+
+        rows = runtime.store.fetch(
+            "identity_mappings",
+            where="provider = ? AND entity_type = ? AND external_identifier = ?",
+            params=["repository", "provider", "OddsWarehouse"],
+            order_by="revision_number ASC",
+        )
+
+        assert repeated["mapping_id"] == first["mapping_id"]
+        assert len(rows) == 1
+        assert rows[0]["mapping_status"] == "accepted"
+        assert int(rows[0]["is_latest"] or 0) == 1
+    finally:
+        runtime.close()
+
+
 def test_data_identity_foundation_updates_p0_and_service_exports(
     tmp_path: Path,
 ) -> None:

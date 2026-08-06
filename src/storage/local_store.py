@@ -133,6 +133,11 @@ def _canonicalize_parquet_rows(rows: Sequence[Mapping[str, Any]]) -> tuple[list[
     return normalized_rows, columns, content_digest
 
 
+def parquet_rows_content_digest(rows: Sequence[Mapping[str, Any]]) -> str:
+    _, _, content_digest = _canonicalize_parquet_rows(rows)
+    return content_digest
+
+
 def _quote_identifier(name: str) -> str:
     clean = str(name).replace('"', '""')
     return f'"{clean}"'
@@ -2048,5 +2053,6 @@ __all__ = [
     "parquet_available",
     "parquet_dependency_error",
     "parquet_installed_version",
+    "parquet_rows_content_digest",
     "require_parquet_support",
 ]
