@@ -14,6 +14,7 @@ from src.storage.local_store import (
     create_local_storage_engine,
     parquet_available,
     parquet_installed_version,
+    parquet_rows_content_digest,
     require_parquet_support,
 )
 
@@ -285,15 +286,57 @@ def _lakehouse_partition_value(row: Mapping[str, Any], field_name: str) -> str:
             or row.get("published_at")
         )
         return stamp[:10] if stamp else "unknown"
+    if field_name == "publication_batch":
+        for key in (
+            "batch_id",
+            "dataset_batch_id",
+            "source_dataset_batch_id",
+            "source_feature_batch_id",
+            "source_math_batch_id",
+            "source_signal_batch_id",
+            "source_bundle_id",
+        ):
+            value = _normalize_text(row.get(key))
+            if value:
+                return value
+        for field in (
+            "source_payload_json",
+            "payload_json",
+            "metadata_json",
+            "source_metadata_json",
+            "context_json",
+            "observation_identity_json",
+        ):
+            payload = _parse_json_mapping(row.get(field))
+            for key in (
+                "batch_id",
+                "dataset_batch_id",
+                "source_dataset_batch_id",
+                "source_feature_batch_id",
+                "source_math_batch_id",
+                "source_signal_batch_id",
+                "source_bundle_id",
+                "approval_reference",
+                "version_id",
+                "snapshot_id",
+            ):
+                value = _normalize_text(payload.get(key))
+                if value:
+                    return value
+        for key in ("approval_reference", "version_id", "snapshot_id"):
+            value = _normalize_text(row.get(key))
+            if value:
+                return value
+        return "unbatched"
     return _normalize_text(row.get(field_name), "unknown")
 
 
 def _partition_columns_for_table(layer_name: str, table_name: str) -> tuple[str, ...]:
     if layer_name == BRONZE:
-        return ("market_family", "sport_or_profile", "dataset", "provider", "acquisition_date")
+        return ("market_family", "sport_or_profile", "dataset", "provider", "acquisition_date", "publication_batch")
     if layer_name == SILVER:
-        return ("market_family", "sport_or_profile", "dataset", "provider", "season")
-    return ("market_family", "sport_or_profile", "dataset", "provider", "season")
+        return ("market_family", "sport_or_profile", "dataset", "provider", "season", "publication_batch")
+    return ("market_family", "sport_or_profile", "dataset", "provider", "season", "publication_batch")
 
 
 def _safe_partition_path_token(value: str) -> str:
@@ -450,11 +493,30 @@ class DataIdentityLakehouseRuntime:
             "lineage_reference_json": _as_json(dict(lineage_reference or {})),
             "notes_json": _as_json(dict(notes or {})),
         }
+        explicit_validity_window = (
+            valid_from is not None
+            or valid_to is not None
+            or _normalize_text(dict(source_payload or {}).get("valid_from"))
+            or _normalize_text(dict(source_payload or {}).get("valid_to"))
+        )
+        semantic_payload = {
+            "internal_identifier": comparable_payload["internal_identifier"],
+            "entity_name": comparable_payload["entity_name"],
+            "canonical_key": comparable_payload["canonical_key"],
+            "mapping_status": comparable_payload["mapping_status"],
+            "match_method": comparable_payload["match_method"],
+            "confidence": comparable_payload["confidence"],
+            "review_state": comparable_payload["review_state"],
+            "mapping_version": comparable_payload["mapping_version"],
+        }
+        if explicit_validity_window:
+            semantic_payload["valid_from"] = comparable_payload["valid_from"]
+            semantic_payload["valid_to"] = comparable_payload["valid_to"]
         if latest and _normalize_bool(latest.get("is_latest")):
             same_payload = all(
                 str(latest.get(field, "")) == str(value)
-                for field, value in comparable_payload.items()
-            ) and _normalize_text(latest.get("internal_identifier")) == internal_id
+                for field, value in semantic_payload.items()
+            )
             if same_payload:
                 return dict(latest)
         current_revision = _normalize_int(latest.get("revision_number"), 0)
@@ -1157,6 +1219,13 @@ class DataIdentityLakehouseRuntime:
         }
 
     def _seed_identity_rows_from_certified_outputs(self) -> list[dict[str, Any]]:
+        def seeded_approval_reference(row: Mapping[str, Any]) -> str:
+            for key in ("batch_id", "dataset_batch_id", "source_bundle_id", "version_id", "snapshot_id"):
+                value = _normalize_text(row.get(key))
+                if value:
+                    return value
+            return "foundation_seed"
+
         rows: list[dict[str, Any]] = []
         schedule_rows = self._fetch("nfl_schedule", order_by="kickoff_time ASC, game_id ASC")
         odds_rows = self._fetch("nfl_odds_snapshots", order_by="game_id ASC, odds_snapshot_id ASC")
@@ -1309,6 +1378,7 @@ class DataIdentityLakehouseRuntime:
                     entity_name=_normalize_text(provider_row.get("provider_name") or provider_id),
                     canonical_key=provider_id,
                     source_payload=provider_row,
+                    approval_reference=seeded_approval_reference(provider_row),
                     approval_evidence={"source_table": "provider_metadata", "provider_id": provider_id},
                     dataset_id="provider_metadata",
                     dataset_name="provider_metadata",
@@ -1335,6 +1405,7 @@ class DataIdentityLakehouseRuntime:
                         entity_name=sport,
                         canonical_key=sport,
                         source_payload=event_row,
+                        approval_reference=seeded_approval_reference(event_row),
                         approval_evidence={"source_table": "historical_events", "sport": sport},
                         dataset_id=_normalize_text(event_row.get("dataset_id")),
                         dataset_name=_normalize_text(event_row.get("dataset_name")),
@@ -1353,6 +1424,7 @@ class DataIdentityLakehouseRuntime:
                         entity_name=league,
                         canonical_key=league,
                         source_payload=event_row,
+                        approval_reference=seeded_approval_reference(event_row),
                         approval_evidence={"source_table": "historical_events", "league": league},
                         dataset_id=_normalize_text(event_row.get("dataset_id")),
                         dataset_name=_normalize_text(event_row.get("dataset_name")),
@@ -1373,6 +1445,7 @@ class DataIdentityLakehouseRuntime:
                             entity_name=team_name or team_id,
                             canonical_key=team_id,
                             source_payload=event_row,
+                            approval_reference=seeded_approval_reference(event_row),
                             approval_evidence={"source_table": "historical_events", "team_id": team_id},
                             dataset_id=_normalize_text(event_row.get("dataset_id")),
                             dataset_name=_normalize_text(event_row.get("dataset_name")),
@@ -1392,6 +1465,7 @@ class DataIdentityLakehouseRuntime:
                         entity_name=venue_name or venue_id,
                         canonical_key=venue_id,
                         source_payload=event_row,
+                        approval_reference=seeded_approval_reference(event_row),
                         approval_evidence={"source_table": "historical_events", "venue_id": venue_id},
                         dataset_id=_normalize_text(event_row.get("dataset_id")),
                         dataset_name=_normalize_text(event_row.get("dataset_name")),
@@ -1409,6 +1483,7 @@ class DataIdentityLakehouseRuntime:
                         entity_name=_normalize_text(event_row.get("event_key") or event_row.get("game_id")),
                         canonical_key=_composite_key(event_row, ("sport", "league", "event_date", "home_team", "away_team")),
                         source_payload=event_row,
+                        approval_reference=seeded_approval_reference(event_row),
                         approval_evidence={"source_table": "historical_events", "event_id": event_row.get("event_id")},
                         dataset_id=_normalize_text(event_row.get("dataset_id")),
                         dataset_name=_normalize_text(event_row.get("dataset_name")),
@@ -1430,6 +1505,7 @@ class DataIdentityLakehouseRuntime:
                         entity_name=market_family,
                         canonical_key=market_family,
                         source_payload=market_row,
+                        approval_reference=seeded_approval_reference(market_row),
                         approval_evidence={"source_table": "historical_markets", "market_family": market_family},
                         dataset_id=_normalize_text(market_row.get("dataset_id")),
                         dataset_name=_normalize_text(market_row.get("dataset_name")),
@@ -1451,6 +1527,7 @@ class DataIdentityLakehouseRuntime:
                         entity_name=_normalize_text(market_row.get("market_name") or market_row.get("market_label") or market_id),
                         canonical_key=_composite_key(market_row, ("event_id", "market_type", "book", "line_value")),
                         source_payload=market_row,
+                        approval_reference=seeded_approval_reference(market_row),
                         approval_evidence={"source_table": "historical_markets", "market_id": market_id},
                         dataset_id=_normalize_text(market_row.get("dataset_id")),
                         dataset_name=_normalize_text(market_row.get("dataset_name")),
@@ -1474,6 +1551,7 @@ class DataIdentityLakehouseRuntime:
                         entity_name=_normalize_text(selection_row.get("selection") or selection_id),
                         canonical_key=_composite_key(selection_row, ("event_id", "market_type", "selection", "book", "line_value")),
                         source_payload=selection_row,
+                        approval_reference=seeded_approval_reference(selection_row),
                         approval_evidence={"source_table": "historical_selections", "selection_id": selection_id},
                         dataset_id=_normalize_text(selection_row.get("dataset_id")),
                         dataset_name=_normalize_text(selection_row.get("dataset_name")),
@@ -1489,6 +1567,7 @@ class DataIdentityLakehouseRuntime:
                         entity_name=_normalize_text(selection_row.get("selection") or selection_id),
                         canonical_key=_normalize_text(selection_row.get("market_id")),
                         source_payload=selection_row,
+                        approval_reference=seeded_approval_reference(selection_row),
                         approval_evidence={"source_table": "historical_selections", "selection_id": selection_id},
                         dataset_id=_normalize_text(selection_row.get("dataset_id")),
                         dataset_name=_normalize_text(selection_row.get("dataset_name")),
@@ -1656,6 +1735,15 @@ class DataIdentityLakehouseRuntime:
             groups.setdefault(partition_key, []).append(dict(row))
         return [(values_lookup[key], groups[key]) for key in sorted(groups)]
 
+    def _existing_partition_manifest(self, partition_id: str) -> dict[str, Any]:
+        rows = self.store.fetch(
+            "lakehouse_partitions",
+            where="partition_id = ?",
+            params=[partition_id],
+            limit=1,
+        )
+        return dict(rows[0]) if rows else {}
+
     def publish_lakehouse_views(self) -> dict[str, Any]:
         require_parquet_support("Lakehouse parquet publishing")
         datasets: list[tuple[str, str, list[dict[str, Any]]]] = [
@@ -1684,6 +1772,8 @@ class DataIdentityLakehouseRuntime:
             (GOLD, "feature_snapshots", self._fetch("feature_snapshots", order_by="created_at ASC, snapshot_id ASC")),
         ]
         partition_rows: list[dict[str, Any]] = []
+        created_partition_count = 0
+        reused_partition_count = 0
         for layer_name, table_name, rows in datasets:
             if not rows:
                 continue
@@ -1694,27 +1784,8 @@ class DataIdentityLakehouseRuntime:
                     or grouped_rows[0].get("dataset_name")
                     or table_name
                 )
-                content_seed = {
-                    "layer_name": layer_name,
-                    "table_name": table_name,
-                    "partition_values": partition_values,
-                    "row_ids": [
-                        _normalize_text(
-                            row.get("record_id")
-                            or row.get("dataset_row_id")
-                            or row.get("participant_id")
-                            or row.get("link_id")
-                            or row.get("market_id")
-                            or row.get("selection_id")
-                            or row.get("event_id")
-                            or row.get("mapping_id")
-                            or row.get("reconciliation_id")
-                            or row.get("snapshot_id")
-                        )
-                        for row in grouped_rows
-                    ],
-                }
-                deterministic_file_id = _stable_id("lakehouse.file", content_seed)
+                partition_id = _stable_id("lakehouse.partition", layer_name, table_name, partition_values)
+                deterministic_file_id = _stable_id("lakehouse.file", partition_id)
                 partition_path = _lakehouse_partition_path(
                     self.lakehouse_root,
                     layer_name,
@@ -1722,9 +1793,20 @@ class DataIdentityLakehouseRuntime:
                     partition_values,
                 )
                 output_path = partition_path / f"{_stable_digest('lakehouse.file.path', deterministic_file_id, length=16)}.parquet"
+                content_digest = parquet_rows_content_digest(grouped_rows)
+                existing_manifest = self._existing_partition_manifest(partition_id)
+                existing_path = Path(existing_manifest.get("file_path") or "").expanduser().resolve() if existing_manifest.get("file_path") else None
+                if existing_manifest and _normalize_text(existing_manifest.get("content_digest")) == content_digest and existing_path and existing_path.exists():
+                    partition_rows.append(existing_manifest)
+                    reused_partition_count += 1
+                    continue
+                if existing_manifest and _normalize_text(existing_manifest.get("content_digest")) and _normalize_text(existing_manifest.get("content_digest")) != content_digest:
+                    raise ValueError(
+                        f"lakehouse partition conflict for {layer_name}.{table_name} at {partition_values}: "
+                        "same partition identity resolved to different content"
+                    )
                 parquet_result = self.store.write_parquet_rows(output_path, grouped_rows)
                 roundtrip_rows = self.store.read_parquet_rows(output_path)
-                partition_id = _stable_id("lakehouse.partition", layer_name, table_name, partition_values, deterministic_file_id)
                 delta_table_name = f"{layer_name}.{table_name}".replace("-", "_")
                 manifest_row = {
                     "partition_id": partition_id,
@@ -1756,7 +1838,7 @@ class DataIdentityLakehouseRuntime:
                     "partition_columns_json": _as_json(list(partition_columns)),
                     "file_path": str(output_path),
                     "deterministic_file_id": deterministic_file_id,
-                    "content_digest": parquet_result["content_digest"],
+                    "content_digest": content_digest,
                     "file_checksum": parquet_result["file_checksum"],
                     "schema_version": DATA_IDENTITY_LAKEHOUSE_SCHEMA_VERSION,
                     "row_count": parquet_result["row_count"],
@@ -1791,8 +1873,8 @@ class DataIdentityLakehouseRuntime:
                             "partition_values": partition_values,
                         }
                     ),
-                    "snapshot_id": deterministic_file_id,
-                    "lineage_id": _stable_id("lakehouse.partition.lineage", partition_id, parquet_result["content_digest"]),
+                    "snapshot_id": partition_id,
+                    "lineage_id": _stable_id("lakehouse.partition.lineage", partition_id, content_digest),
                     "version_id": DATA_IDENTITY_LAKEHOUSE_RUNTIME_VERSION,
                     "quality_score": 1.0 if len(roundtrip_rows) == parquet_result["row_count"] else 0.0,
                     "created_at": _utc_now(),
@@ -1801,10 +1883,13 @@ class DataIdentityLakehouseRuntime:
                 }
                 self._persist_row("lakehouse_partitions", manifest_row, key_columns=("partition_id",))
                 partition_rows.append(manifest_row)
+                created_partition_count += 1
         return {
             "ok": True,
             "status": "published",
             "partition_count": len(partition_rows),
+            "created_partition_count": created_partition_count,
+            "reused_partition_count": reused_partition_count,
             "layer_counts": {
                 BRONZE: len([row for row in partition_rows if row["layer_name"] == BRONZE]),
                 SILVER: len([row for row in partition_rows if row["layer_name"] == SILVER]),

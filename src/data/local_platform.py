@@ -768,11 +768,31 @@ class LocalDataPlatform:
     def register_dataset(self, dataset: DatasetContract | Mapping[str, Any]) -> dict[str, Any]:
         contract = dataset if isinstance(dataset, DatasetContract) else DatasetContract.from_mapping(dataset)
         existing = self.read_dataset(contract.dataset_id)
-        version_count = len(existing.get("versions", [])) if existing else 0
-        latest_version_number = existing.get("latest_version_number", 0) if existing else 0
-        latest_snapshot_id = existing.get("latest_snapshot_id") if existing else ""
-        latest_feature_snapshot_id = existing.get("latest_feature_snapshot_id") if existing else ""
-        latest_validation_id = existing.get("latest_validation_id") if existing else ""
+        versions = list(existing.get("versions", [])) if existing else []
+        version_count = len(versions)
+        latest_version_row = (
+            max(versions, key=lambda row: int(row.get("version_number") or 0))
+            if versions
+            else {}
+        )
+        latest_version_number = max(
+            (int(row.get("version_number") or 0) for row in versions),
+            default=int(existing.get("latest_version_number") or 0) if existing else 0,
+        )
+        latest_snapshot_id = (
+            str(latest_version_row.get("snapshot_id") or "")
+            or (str(existing.get("latest_snapshot_id") or "") if existing else "")
+        )
+        latest_validation_id = (
+            str(latest_version_row.get("validation_id") or "")
+            or (str(existing.get("latest_validation_id") or "") if existing else "")
+        )
+        feature_snapshots = list(existing.get("feature_snapshots", [])) if existing else []
+        latest_feature_snapshot_id = (
+            str(feature_snapshots[0].get("snapshot_id") or "")
+            if feature_snapshots
+            else (str(existing.get("latest_feature_snapshot_id") or "") if existing else "")
+        )
         row = self._registry_row(
             contract,
             latest_version_number=latest_version_number,

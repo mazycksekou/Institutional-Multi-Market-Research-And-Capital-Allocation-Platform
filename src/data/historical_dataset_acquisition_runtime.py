@@ -108,6 +108,23 @@ def _bundle_metadata(source_bundle: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
+def _source_bundle_digest(source_bundle: Mapping[str, Any]) -> str:
+    payload = {
+        "dataset_id": _normalize_text(source_bundle.get("dataset_id")),
+        "dataset_version": _normalize_text(source_bundle.get("dataset_version")),
+        "source_name": _normalize_text(source_bundle.get("source_name")),
+        "source_type": _normalize_text(source_bundle.get("source_type")),
+        "source_key": _normalize_text(source_bundle.get("source_key")),
+        "provider": _normalize_text(source_bundle.get("provider")),
+        "provider_sources": list(source_bundle.get("provider_sources") or []),
+        "provider_versions": list(source_bundle.get("provider_versions") or []),
+        "source_bundle_id": _normalize_text(source_bundle.get("source_bundle_id")),
+        "source_tables": _bundle_tables(source_bundle),
+        "metadata": _bundle_metadata(source_bundle),
+    }
+    return hashlib.sha256(_as_json(payload).encode("utf-8")).hexdigest()
+
+
 def _row_identifier(table_name: str, row: Mapping[str, Any], index: int) -> str:
     for key in (
         "record_id",
@@ -331,6 +348,7 @@ class RawAcquisitionCacheContract:
             "profile": profile.as_dict(),
             "source_tables": sorted(str(name) for name in _bundle_tables(source_bundle)),
             "source_bundle_id": source_bundle_id,
+            "source_bundle_digest": _source_bundle_digest(source_bundle),
             "provider_sources": list(provider_sources),
             "provider_versions": list(provider_versions),
             "source_table_count": len(_bundle_tables(source_bundle)),
@@ -505,6 +523,126 @@ class HistoricalDatasetAcquisitionRuntime:
     def _source_rows(self, source_bundle: Mapping[str, Any]) -> dict[str, list[dict[str, Any]]]:
         return _bundle_tables(source_bundle)
 
+    @staticmethod
+    def _version_metadata_payload(version_row: Mapping[str, Any]) -> dict[str, Any]:
+        for field_name in ("metadata_json", "payload_json"):
+            raw = version_row.get(field_name)
+            if not isinstance(raw, str) or not raw.strip():
+                continue
+            try:
+                parsed = json.loads(raw)
+            except json.JSONDecodeError:
+                continue
+            if isinstance(parsed, Mapping):
+                return dict(parsed)
+        return {}
+
+    def _find_reusable_stage_result(
+        self,
+        *,
+        contract: RawAcquisitionCacheContract,
+        source_bundle: Mapping[str, Any],
+        profile_id: str,
+    ) -> dict[str, Any] | None:
+        source_bundle_id = _normalize_text(contract.source_bundle_id)
+        if not source_bundle_id:
+            return None
+        source_bundle_digest = _source_bundle_digest(source_bundle)
+        version_rows = self.platform.store.fetch(
+            "dataset_versions",
+            where="dataset_id = ?",
+            params=[contract.dataset_id],
+            order_by="version_number DESC",
+        )
+        for version_row in version_rows:
+            metadata = self._version_metadata_payload(version_row)
+            if _normalize_text(metadata.get("source_bundle_id")) != source_bundle_id:
+                continue
+            if _normalize_text(metadata.get("source_bundle_digest")) != source_bundle_digest:
+                continue
+            version_id = _normalize_text(version_row.get("version_id"))
+            snapshot_id = _normalize_text(version_row.get("snapshot_id"))
+            lineage_id = _normalize_text(version_row.get("lineage_id"))
+            validation_id = _normalize_text(version_row.get("validation_id"))
+            raw_rows = self.platform.store.fetch(
+                "raw_records",
+                where="dataset_id = ? AND version_id = ?",
+                params=[contract.dataset_id, version_id],
+                order_by="row_index ASC",
+            )
+            validation_rows = self.platform.store.fetch(
+                "validation_results",
+                where="validation_id = ?",
+                params=[validation_id],
+                limit=1,
+            )
+            validation_row = dict(validation_rows[0]) if validation_rows else {}
+            validation_payload = {}
+            try:
+                validation_payload = json.loads(validation_row.get("validation_json") or "{}")
+            except json.JSONDecodeError:
+                validation_payload = {}
+            normalization_request = self.build_normalization_request(
+                contract=contract,
+                source_bundle=source_bundle,
+                raw_rows=raw_rows,
+                validation=validation_payload,
+                version_id=version_id,
+                snapshot_id=snapshot_id,
+                lineage_id=lineage_id,
+                dataset_version=version_id,
+            )
+            certification_request = self.build_certification_request(
+                contract=contract,
+                source_bundle=source_bundle,
+                raw_rows=raw_rows,
+                validation=validation_payload,
+                version_id=version_id,
+                snapshot_id=snapshot_id,
+                lineage_id=lineage_id,
+                dataset_version=version_id,
+            )
+            readiness_snapshot = self.build_readiness_snapshot(
+                profile_id=profile_id,
+                dataset_id=contract.dataset_id,
+                source_bundle=source_bundle,
+                normalization_request=normalization_request,
+                certification_request=certification_request,
+                validation=validation_payload,
+            )
+            provider_rows = self.platform.store.fetch(
+                "provider_metadata",
+                where="provider_id = ?",
+                params=[contract.provider],
+                limit=1,
+            )
+            lineage_edges = self.platform.store.fetch(
+                "lineage_edges",
+                where="dataset_id = ? AND version_id = ?",
+                params=[contract.dataset_id, version_id],
+                order_by="step_index ASC",
+            )
+            return {
+                "ok": bool(validation_payload.get("ok")),
+                "status": "raw_cache_reused" if validation_payload.get("ok") else "raw_cache_reuse_blocked",
+                "contract": contract.as_dict(),
+                "dataset_contract": contract.to_dataset_contract().as_dict(),
+                "dataset_registry": self.platform.read_dataset(contract.dataset_id).get("registry") or {},
+                "dataset_version": dict(version_row),
+                "validation": validation_payload,
+                "validation_result": validation_row,
+                "raw_record_count": len(raw_rows),
+                "raw_records": raw_rows,
+                "lineage_edges": lineage_edges,
+                "normalization_request": normalization_request,
+                "certification_request": certification_request,
+                "source_bundle": dict(source_bundle),
+                "provider_metadata": dict(provider_rows[0]) if provider_rows else {},
+                "readiness_snapshot": readiness_snapshot,
+                "replay_status": "IDEMPOTENT_REUSE",
+            }
+        return None
+
     def _raw_records_for_bundle(
         self,
         *,
@@ -542,8 +680,19 @@ class HistoricalDatasetAcquisitionRuntime:
         contract = self.build_contract(profile_id=profile_id, source_bundle=source_bundle, dataset_name=dataset_name)
         dataset_contract = contract.to_dataset_contract()
         self.platform.register_dataset(dataset_contract)
+        reusable = self._find_reusable_stage_result(
+            contract=contract,
+            source_bundle=source_bundle,
+            profile_id=profile_id,
+        )
+        if reusable is not None:
+            return reusable
         current = self.platform.read_dataset(contract.dataset_id)
-        version_number = int(current.get("latest_version_number") or 0) + 1
+        current_versions = list(current.get("versions") or [])
+        version_number = max(
+            (int(row.get("version_number") or 0) for row in current_versions),
+            default=int(current.get("latest_version_number") or 0),
+        ) + 1
         version_id = f"{contract.dataset_id}.v{version_number:03d}"
         snapshot_id = f"{contract.dataset_id}.snapshot.v{version_number:03d}"
         lineage_id = f"{contract.dataset_id}.lineage.v{version_number:03d}"
@@ -672,6 +821,7 @@ class HistoricalDatasetAcquisitionRuntime:
             "source_bundle": dict(source_bundle),
             "provider_metadata": provider_row,
             "readiness_snapshot": readiness_snapshot,
+            "replay_status": "NEW_PUBLICATION",
         }
 
     def _provider_metadata_row(

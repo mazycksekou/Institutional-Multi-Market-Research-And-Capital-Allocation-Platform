@@ -14,7 +14,7 @@ from typing import Any, Mapping, Sequence
 from xml.etree import ElementTree as ET
 
 from src.data.data_identity_lakehouse import DataIdentityLakehouseRuntime
-from src.data.data_paths import get_runtime_data_path
+from src.data.data_paths import get_runtime_data_path, get_storage_health
 from src.data.historical_dataset_acquisition_runtime import HistoricalDatasetAcquisitionRuntime
 from src.data.historical_research_asset_certification_runtime import (
     HistoricalResearchAssetCertificationRuntime,
@@ -30,11 +30,13 @@ from src.storage.local_store import LocalStorageEngine, create_local_storage_eng
 
 
 ODDSWAREHOUSE_NFL_BASIC_SCHEMA_VERSION = "src.data.oddswarehouse_nfl_basic_ingest.v1"
+ODDSWAREHOUSE_NFL_BASIC_PARSER_VERSION = "src.data.oddswarehouse_nfl_basic_ingest.parser.v2"
 ODDSWAREHOUSE_NFL_BASIC_PROVIDER_ID = "oddswarehouse"
 ODDSWAREHOUSE_NFL_BASIC_PROVIDER_NAME = "OddsWarehouse"
 ODDSWAREHOUSE_NFL_BASIC_PRODUCT_ID = "nfl_basic"
+ODDSWAREHOUSE_NFL_BASIC_SOURCE_DATASET_ID = "oddswarehouse.nfl_basic"
 ODDSWAREHOUSE_NFL_BASIC_SOURCE_NAME = "OddsWarehouse NFL Basic"
-ODDSWAREHOUSE_NFL_BASIC_SOURCE_TYPE = "controlled_vendor_workbook"
+ODDSWAREHOUSE_NFL_BASIC_SOURCE_TYPE = "controlled_vendor_file"
 ODDSWAREHOUSE_NFL_BASIC_SOURCE_KEY = "oddswarehouse_nfl_basic"
 ODDSWAREHOUSE_NFL_BASIC_CONNECTOR_ID = "connector.manual_import.oddswarehouse_nfl_basic"
 ODDSWAREHOUSE_NFL_BASIC_CONNECTOR_NAME = "OddsWarehouse NFL Basic Manual Import"
@@ -340,6 +342,244 @@ def _parse_xlsx_workbook(path: Path) -> dict[str, Any]:
                 "cells": cells,
             }
     return workbook_report
+
+
+def _source_format_for_path(path: Path) -> str:
+    suffix = path.suffix.lower()
+    if suffix == ".xlsx":
+        return "xlsx"
+    if suffix == ".csv":
+        return "csv"
+    raise ValueError(f"Unsupported OddsWarehouse source format: {path.suffix or '<none>'}")
+
+
+def _row_dicts_from_matrix(
+    rows: Sequence[Sequence[str]],
+    header: Sequence[str],
+    *,
+    source_format: str,
+) -> list[dict[str, Any]]:
+    row_dicts: list[dict[str, Any]] = []
+    for row_index, row in enumerate(rows, start=2):
+        payload = {
+            header[index]: row[index]
+            for index in range(min(len(header), len(row)))
+        }
+        payload["_source_format"] = source_format
+        payload["_physical_row_number"] = row_index
+        row_dicts.append(payload)
+    return row_dicts
+
+
+def _profile_companion_csv_evidence(path: Path) -> dict[str, Any]:
+    csv_text = path.read_text(encoding="utf-8", errors="replace")
+    csv_lines = csv_text.splitlines()
+    parsed_csv = list(csv.reader(csv_lines))
+    csv_header = parsed_csv[0] if parsed_csv else []
+    csv_drift_examples: list[dict[str, Any]] = []
+    for index, row in enumerate(parsed_csv[1:6], start=2):
+        if len(row) != len(EXPECTED_HEADERS):
+            csv_drift_examples.append(
+                {
+                    "line_number": index,
+                    "field_count": len(row),
+                    "leading_fields": row[:15],
+                }
+            )
+    return {
+        "path": str(path),
+        "line_count": len(csv_lines),
+        "parsed_row_count_including_header": len(parsed_csv),
+        "header_field_count": len(csv_header),
+        "field_count_first_ten_rows": [len(row) for row in parsed_csv[:10]],
+        "header_tokens": csv_header,
+        "drift_examples": csv_drift_examples,
+        "raw_preview": csv_lines[:3],
+        "contains_split_multiword_headers": any(
+            token in {"Game", "Away", "Spread", "Open", "MoneyLine", "Close", "Home", "Under"}
+            for token in csv_header
+        ),
+        "schema_fingerprint": _stable_digest(csv_header, [len(row) for row in parsed_csv[:10]]),
+    }
+
+
+def _profile_canonical_csv_source(path: Path) -> dict[str, Any]:
+    csv_text = path.read_text(encoding="utf-8", errors="replace")
+    csv_lines = csv_text.splitlines()
+    parsed_csv = list(csv.reader(csv_lines))
+    header = parsed_csv[0] if parsed_csv else []
+    data_rows: list[list[str]] = []
+    invalid_rows: list[dict[str, Any]] = []
+    for index, row in enumerate(parsed_csv[1:], start=2):
+        if not any(_normalize_text(cell) for cell in row):
+            continue
+        if len(row) != len(EXPECTED_HEADERS):
+            invalid_rows.append(
+                {
+                    "line_number": index,
+                    "field_count": len(row),
+                    "leading_fields": row[:15],
+                }
+            )
+            continue
+        data_rows.append(row)
+    inferred_types = _infer_workbook_types(data_rows, header)
+    row_dicts = _row_dicts_from_matrix(data_rows, header, source_format="csv")
+    team_names = sorted(
+        {
+            _normalize_text(row[2])
+            for row in data_rows
+            if len(row) >= 15
+        }
+        | {
+            _normalize_text(row[14])
+            for row in data_rows
+            if len(row) >= 15
+        }
+    )
+    duplicate_game_ids = sorted(
+        game_id
+        for game_id, count in Counter(_normalize_text(row[0]) for row in data_rows if row).items()
+        if count > 1
+    )
+    duplicate_matchups = sorted(
+        matchup
+        for matchup, count in Counter(
+            "|".join([_normalize_text(row[1]), _normalize_text(row[2]), _normalize_text(row[14])])
+            for row in data_rows
+            if len(row) >= 15
+        ).items()
+        if count > 1
+    )
+    return {
+        "path": str(path),
+        "format": "csv",
+        "logical_data_row_count": len(data_rows),
+        "physical_row_count_including_header": len(parsed_csv),
+        "logical_column_count": len(header),
+        "physical_column_count": max((len(row) for row in parsed_csv), default=0),
+        "headers": header,
+        "rows": row_dicts,
+        "inferred_types": inferred_types,
+        "date_coverage": {
+            "min": min((_normalize_text(row.get("Date")) for row in row_dicts), default=""),
+            "max": max((_normalize_text(row.get("Date")) for row in row_dicts), default=""),
+        },
+        "duplicate_game_ids": duplicate_game_ids,
+        "duplicate_matchups": duplicate_matchups,
+        "null_counts": _null_counts(data_rows, header),
+        "team_names": team_names,
+        "schema_fingerprint": _stable_digest(header, [row["inferred_type"] for row in inferred_types]),
+        "invalid_rows": invalid_rows,
+        "line_count": len(csv_lines),
+    }
+
+
+def _profile_oddswarehouse_source(
+    source_path: str | Path,
+    *,
+    companion_evidence_path: str | Path | None = None,
+) -> dict[str, Any]:
+    source_file = Path(source_path).expanduser().resolve()
+    source_format = _source_format_for_path(source_file)
+    if source_format == "xlsx":
+        workbook_profile = _parse_xlsx_workbook(source_file)
+        sheet_payload = workbook_profile["sheets"].get(ODDSWAREHOUSE_NFL_BASIC_EXPECTED_SHEET, {})
+        header = list(sheet_payload.get("header") or [])
+        rows = list(sheet_payload.get("rows") or [])
+        inferred_types = _infer_workbook_types(rows, header)
+        row_dicts = _row_dicts_from_matrix(rows, header, source_format="xlsx")
+        source_profile = {
+            "path": str(source_file),
+            "format": "xlsx",
+            "sheet_names": workbook_profile["sheet_names"],
+            "sheet_name": ODDSWAREHOUSE_NFL_BASIC_EXPECTED_SHEET,
+            "physical_row_count_including_header": sheet_payload.get("physical_row_count_including_header", 0),
+            "logical_data_row_count": sheet_payload.get("logical_data_row_count", 0),
+            "physical_column_count": sheet_payload.get("physical_column_count", 0),
+            "logical_column_count": sheet_payload.get("logical_column_count", 0),
+            "headers": header,
+            "rows": row_dicts,
+            "cells": sheet_payload.get("cells", []),
+            "inferred_types": inferred_types,
+            "date_coverage": {
+                "min": min((_normalize_text(row.get("Date")) for row in row_dicts), default=""),
+                "max": max((_normalize_text(row.get("Date")) for row in row_dicts), default=""),
+            },
+            "duplicate_game_ids": sorted(
+                game_id
+                for game_id, count in Counter(_normalize_text(row[0]) for row in rows if row).items()
+                if count > 1
+            ),
+            "duplicate_matchups": sorted(
+                matchup
+                for matchup, count in Counter(
+                    "|".join([_normalize_text(row[1]), _normalize_text(row[2]), _normalize_text(row[14])])
+                    for row in rows
+                    if len(row) >= 15
+                ).items()
+                if count > 1
+            ),
+            "null_counts": _null_counts(rows, header),
+            "team_names": sorted(
+                {
+                    _normalize_text(row[2])
+                    for row in rows
+                    if len(row) >= 15
+                }
+                | {
+                    _normalize_text(row[14])
+                    for row in rows
+                    if len(row) >= 15
+                }
+            ),
+            "schema_fingerprint": _stable_digest(header, [row["inferred_type"] for row in inferred_types]),
+        }
+    else:
+        source_profile = _profile_canonical_csv_source(source_file)
+
+    companion_profile = {}
+    files = {
+        source_file.name: {
+            "filename": source_file.name,
+            "size_bytes": source_file.stat().st_size,
+            "sha256": _sha256(source_file),
+            "format": source_format,
+            "source_role": "primary_source",
+        }
+    }
+    if companion_evidence_path is not None:
+        companion_file = Path(companion_evidence_path).expanduser().resolve()
+        companion_profile = _profile_companion_csv_evidence(companion_file)
+        files[companion_file.name] = {
+            "filename": companion_file.name,
+            "size_bytes": companion_file.stat().st_size,
+            "sha256": _sha256(companion_file),
+            "format": "csv",
+            "source_role": "companion_evidence",
+        }
+    return {
+        "files": files,
+        "source": source_profile,
+        "companion_evidence": companion_profile,
+    }
+
+
+def _apply_deterministic_row_limit(
+    rows: Sequence[Mapping[str, Any]],
+    *,
+    limit: int | None,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    normalized_limit = int(limit) if limit is not None else None
+    if normalized_limit is not None and normalized_limit < 1:
+        raise ValueError("--limit must be a positive integer")
+    selected_rows = [dict(row) for row in (rows[:normalized_limit] if normalized_limit is not None else rows)]
+    return selected_rows, {
+        "selection_rule": f"head:{normalized_limit}" if normalized_limit is not None else "all_rows",
+        "available_row_count": len(rows),
+        "selected_row_count": len(selected_rows),
+        "limit": normalized_limit,
+    }
 
 
 def _infer_workbook_types(rows: Sequence[Sequence[str]], header: Sequence[str]) -> list[dict[str, Any]]:
@@ -659,6 +899,154 @@ def validate_oddswarehouse_workbook_profile(profile: Mapping[str, Any]) -> dict[
     }
 
 
+def validate_oddswarehouse_source_profile(profile: Mapping[str, Any]) -> dict[str, Any]:
+    source = dict(profile.get("source") or {})
+    rows = [dict(row) for row in source.get("rows") or []]
+    errors: list[str] = []
+    warnings: list[str] = []
+    row_results: list[dict[str, Any]] = []
+
+    if tuple(source.get("headers") or ()) != EXPECTED_HEADERS:
+        errors.append("schema_headers_mismatch")
+    if int(source.get("logical_column_count") or 0) != len(EXPECTED_HEADERS):
+        errors.append("schema_column_count_mismatch")
+    if source.get("format") == "xlsx" and source.get("sheet_name") != ODDSWAREHOUSE_NFL_BASIC_EXPECTED_SHEET:
+        errors.append("unexpected_sheet_name")
+    if source.get("format") == "xlsx" and int(source.get("logical_data_row_count") or 0) != 30:
+        warnings.append("pilot_row_count_differs_from_expected_30")
+    if source.get("format") == "csv" and list(source.get("invalid_rows") or []):
+        errors.append("csv_row_field_count_mismatch")
+
+    seen_event_keys: set[str] = set()
+    duplicate_event_keys: set[str] = set()
+    seen_market_selection_stage: set[str] = set()
+    duplicate_market_selection_stage: set[str] = set()
+
+    for row in rows:
+        row_errors: list[str] = []
+        game_id = _normalize_text(row.get("Game ID"))
+        date_value = _normalize_text(row.get("Date"))
+        away_team = _normalize_text(row.get("Away Team"))
+        home_team = _normalize_text(row.get("Home Team"))
+        if not game_id:
+            row_errors.append("missing_game_id")
+        if not re.fullmatch(r"\d{8}", date_value):
+            row_errors.append("invalid_date_format")
+        if not away_team or not home_team:
+            row_errors.append("missing_team_name")
+        if away_team == home_team and away_team:
+            row_errors.append("same_team_both_sides")
+        away_score = _normalize_int(row.get("Away Score"))
+        home_score = _normalize_int(row.get("Home Score"))
+        if away_score is None or away_score < 0:
+            row_errors.append("invalid_away_score")
+        if home_score is None or home_score < 0:
+            row_errors.append("invalid_home_score")
+        numeric_fields = (
+            "Away Spread Open",
+            "Away Spread Open Odds",
+            "Away Spread Close",
+            "Away Spread Close Odds",
+            "Away MoneyLine Open",
+            "Away MoneyLine Close",
+            "Over Open",
+            "Over Open Odds",
+            "Over Close",
+            "Over Close Odds",
+            "Home Spread Open",
+            "Home Spread Open Odds",
+            "Home Spread Close",
+            "Home Spread Close Odds",
+            "Home MoneyLine Open",
+            "Home MoneyLine Close",
+            "Under Open",
+            "Under Open Odds",
+            "Under Close",
+            "Under Close Odds",
+        )
+        for field_name in numeric_fields:
+            if _normalize_float(row.get(field_name), None) is None:
+                row_errors.append(f"non_numeric_{field_name}")
+        american_fields = (
+            "Away Spread Open Odds",
+            "Away Spread Close Odds",
+            "Away MoneyLine Open",
+            "Away MoneyLine Close",
+            "Over Open Odds",
+            "Over Close Odds",
+            "Home Spread Open Odds",
+            "Home Spread Close Odds",
+            "Home MoneyLine Open",
+            "Home MoneyLine Close",
+            "Under Open Odds",
+            "Under Close Odds",
+        )
+        for field_name in american_fields:
+            odds_value = _normalize_int(row.get(field_name))
+            if odds_value == 0:
+                row_errors.append(f"zero_american_odds_{field_name}")
+        spread_open_sum = round(
+            _safe_float(row.get("Away Spread Open")) + _safe_float(row.get("Home Spread Open")),
+            6,
+        )
+        spread_close_sum = round(
+            _safe_float(row.get("Away Spread Close")) + _safe_float(row.get("Home Spread Close")),
+            6,
+        )
+        if spread_open_sum != 0:
+            row_errors.append("spread_open_not_symmetric")
+        if spread_close_sum != 0:
+            row_errors.append("spread_close_not_symmetric")
+        if round(_safe_float(row.get("Over Open")) - _safe_float(row.get("Under Open")), 6) != 0:
+            row_errors.append("total_open_not_symmetric")
+        if round(_safe_float(row.get("Over Close")) - _safe_float(row.get("Under Close")), 6) != 0:
+            row_errors.append("total_close_not_symmetric")
+
+        event_key = f"{date_value}|{away_team}|{home_team}"
+        if event_key in seen_event_keys:
+            duplicate_event_keys.add(event_key)
+        seen_event_keys.add(event_key)
+        for market_type, selection_labels in {
+            "spread": ("away", "home"),
+            "moneyline": ("away", "home"),
+            "total": ("over", "under"),
+        }.items():
+            for source_stage in ("OPEN", "CLOSE"):
+                for selection_label in selection_labels:
+                    duplicate_key = f"{event_key}|{market_type}|{selection_label}|{source_stage}"
+                    if duplicate_key in seen_market_selection_stage:
+                        duplicate_market_selection_stage.add(duplicate_key)
+                    seen_market_selection_stage.add(duplicate_key)
+
+        row_results.append(
+            {
+                "game_id": game_id,
+                "ok": not row_errors,
+                "errors": row_errors,
+            }
+        )
+
+    if duplicate_event_keys:
+        errors.append("duplicate_canonical_event_mapping")
+    if duplicate_market_selection_stage:
+        errors.append("duplicate_market_selection_stage")
+
+    companion_profile = dict(profile.get("companion_evidence") or {})
+    if companion_profile and int(companion_profile.get("header_field_count") or 0) != 71:
+        warnings.append("companion_csv_header_field_count_differs_from_expected_71")
+
+    return {
+        "ok": not errors and all(row["ok"] for row in row_results),
+        "status": "validated" if not errors and all(row["ok"] for row in row_results) else "blocked",
+        "errors": errors,
+        "warnings": warnings,
+        "row_results": row_results,
+        "duplicate_event_keys": sorted(duplicate_event_keys),
+        "duplicate_market_selection_stage": sorted(duplicate_market_selection_stage),
+        "validated_row_count": len(row_results),
+    }
+
+
 def _bronze_raw_dir(batch_id: str) -> Path:
     return _bronze_raw_dir_for_root(batch_id, ODDSWAREHOUSE_NFL_BASIC_BRONZE_RAW_ROOT)
 
@@ -681,6 +1069,22 @@ def _bronze_raw_dir_for_root(batch_id: str, bronze_raw_root: str | Path) -> Path
     )
 
 
+def _copy_bronze_artifacts(
+    batch_id: str,
+    source_paths: Sequence[Path],
+    *,
+    bronze_raw_root: str | Path | None = None,
+) -> list[str]:
+    output_dir = _bronze_raw_dir_for_root(batch_id, bronze_raw_root or ODDSWAREHOUSE_NFL_BASIC_BRONZE_RAW_ROOT)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    copied_paths: list[str] = []
+    for source_path in source_paths:
+        target_path = output_dir / source_path.name
+        shutil.copy2(source_path, target_path)
+        copied_paths.append(str(target_path))
+    return copied_paths
+
+
 def _copy_bronze_files(
     batch_id: str,
     workbook_path: Path,
@@ -688,21 +1092,18 @@ def _copy_bronze_files(
     *,
     bronze_raw_root: str | Path | None = None,
 ) -> list[str]:
-    output_dir = _bronze_raw_dir_for_root(batch_id, bronze_raw_root or ODDSWAREHOUSE_NFL_BASIC_BRONZE_RAW_ROOT)
-    output_dir.mkdir(parents=True, exist_ok=True)
-    copied_paths: list[str] = []
-    for source_path in (workbook_path, csv_path):
-        target_path = output_dir / source_path.name
-        shutil.copy2(source_path, target_path)
-        copied_paths.append(str(target_path))
-    return copied_paths
+    return _copy_bronze_artifacts(
+        batch_id,
+        [workbook_path, csv_path],
+        bronze_raw_root=bronze_raw_root,
+    )
 
 
-def _source_bundle_from_profile(profile: Mapping[str, Any], batch_id: str, acquired_at: str) -> dict[str, Any]:
-    workbook = dict(profile.get("workbook") or {})
-    csv_profile = dict(profile.get("csv") or {})
-    workbook_rows = [dict(row) for row in workbook.get("rows") or []]
-    workbook_cells = [
+def _source_bundle_from_source_profile(profile: Mapping[str, Any], batch_id: str, acquired_at: str) -> dict[str, Any]:
+    source = dict(profile.get("source") or {})
+    companion_profile = dict(profile.get("companion_evidence") or {})
+    source_rows = [dict(row) for row in source.get("rows") or []]
+    source_cells = [
         {
             "sheet_name": cell.get("sheet_name"),
             "row_number": cell.get("row_number"),
@@ -710,7 +1111,7 @@ def _source_bundle_from_profile(profile: Mapping[str, Any], batch_id: str, acqui
             "cell_reference": cell.get("cell_reference"),
             "cell_value": cell.get("cell_value"),
         }
-        for cell in workbook.get("cells") or []
+        for cell in source.get("cells") or []
         if _normalize_text(cell.get("cell_value")) or cell.get("row_number") == 1
     ]
     file_artifacts = [
@@ -718,31 +1119,20 @@ def _source_bundle_from_profile(profile: Mapping[str, Any], batch_id: str, acqui
             "file_name": file_name,
             "file_sha256": file_info["sha256"],
             "size_bytes": file_info["size_bytes"],
-            "source_role": (
-                "authoritative_pilot_structured_input"
-                if file_name.endswith(".xlsx")
-                else "accompanying_source_artifact"
-            ),
-            "validation_status": (
-                "eligible_for_normalization"
-                if file_name.endswith(".xlsx")
-                else "malformed_schema"
-            ),
-            "normalization_status": (
-                "allowed"
-                if file_name.endswith(".xlsx")
-                else "blocked"
-            ),
+            "source_role": file_info.get("source_role"),
+            "validation_status": "eligible_for_normalization" if file_info.get("source_role") == "primary_source" else "malformed_schema",
+            "normalization_status": "allowed" if file_info.get("source_role") == "primary_source" else "blocked",
             "quarantine_reason": (
                 ""
-                if file_name.endswith(".xlsx")
+                if file_info.get("source_role") == "primary_source"
                 else "unquoted multiword headers and team names produce positional column drift"
             ),
             "schema_fingerprint": (
-                workbook.get("schema_fingerprint")
-                if file_name.endswith(".xlsx")
-                else csv_profile.get("schema_fingerprint")
+                source.get("schema_fingerprint")
+                if file_info.get("source_role") == "primary_source"
+                else companion_profile.get("schema_fingerprint")
             ),
+            "source_format": file_info.get("format"),
         }
         for file_name, file_info in (profile.get("files") or {}).items()
     ]
@@ -754,7 +1144,7 @@ def _source_bundle_from_profile(profile: Mapping[str, Any], batch_id: str, acqui
             "line_number": example.get("line_number"),
             "leading_fields_json": _as_json(example.get("leading_fields") or []),
         }
-        for index, example in enumerate(csv_profile.get("drift_examples") or [], start=1)
+        for index, example in enumerate(companion_profile.get("drift_examples") or [], start=1)
     ]
     return {
         "dataset_id": "dataset.sports.nfl.oddswarehouse.raw_acquisition_cache",
@@ -770,15 +1160,15 @@ def _source_bundle_from_profile(profile: Mapping[str, Any], batch_id: str, acqui
         "connector_id": ODDSWAREHOUSE_NFL_BASIC_CONNECTOR_ID,
         "connector_name": ODDSWAREHOUSE_NFL_BASIC_CONNECTOR_NAME,
         "connector_role": "controlled_manual_import",
-        "execution_mode": "manual_workbook_pilot",
+        "execution_mode": "manual_bounded_ingest",
         "provider_role": "controlled_vendor_pilot",
         "source_family": "odds_data",
         "source_access_type": "manual_import",
-        "provider_capability": _provider_capability(workbook.get("headers") or EXPECTED_HEADERS),
+        "provider_capability": _provider_capability(source.get("headers") or EXPECTED_HEADERS),
         "source_tables": {
             "file_artifacts": file_artifacts,
-            "workbook_rows": workbook_rows,
-            "workbook_cells": workbook_cells,
+            "source_rows": source_rows,
+            "source_cells": source_cells,
             "csv_evidence": csv_evidence,
         },
     }
@@ -833,21 +1223,101 @@ def _selection_result(
     return ("unknown", None)
 
 
-def _persist_rows(
+_SEMANTIC_STAGE_IGNORE_FIELDS = {
+    "dataset_id",
+    "dataset_name",
+    "market_profile",
+    "profile_id",
+    "profile_family",
+    "stage_name",
+    "batch_id",
+    "source_file",
+    "source_snapshot_time",
+    "snapshot_time",
+    "decision_time",
+    "certified_at",
+    "source_metadata_json",
+    "context_json",
+    "payload_json",
+    "created_at",
+    "updated_at",
+    "snapshot_id",
+    "lineage_id",
+    "version_id",
+    "completeness_score",
+}
+
+
+def _source_event_scope_from_row(row: Mapping[str, Any]) -> str:
+    return f"{ODDSWAREHOUSE_NFL_BASIC_PROVIDER_ID}|{ODDSWAREHOUSE_NFL_BASIC_PRODUCT_ID}|{_normalize_text(row.get('Game ID'))}"
+
+
+def _semantic_stage_row(row: Mapping[str, Any]) -> dict[str, Any]:
+    return {
+        str(key): value
+        for key, value in dict(row).items()
+        if str(key) not in _SEMANTIC_STAGE_IGNORE_FIELDS
+    }
+
+
+def _classify_stage_row(
+    store: LocalStorageEngine,
+    table_name: str,
+    row: Mapping[str, Any],
+    *,
+    key_columns: Sequence[str],
+) -> tuple[str, dict[str, Any] | None]:
+    where = " AND ".join(f"{column} = ?" for column in key_columns)
+    params = [row.get(column) for column in key_columns]
+    existing_rows = store.fetch(table_name, where=where, params=params, limit=1)
+    if not existing_rows:
+        return "NEW", None
+    existing_row = dict(existing_rows[0])
+    if _semantic_stage_row(existing_row) == _semantic_stage_row(row):
+        return "EXACT_DUPLICATE", existing_row
+    return "CONFLICT", existing_row
+
+
+def _persist_classified_rows(
     store: LocalStorageEngine,
     table_name: str,
     rows: Sequence[Mapping[str, Any]],
     *,
     key_columns: Sequence[str],
-) -> None:
+) -> dict[str, Any]:
     columns = set(store.table_columns(table_name))
+    counts = {
+        "NEW": 0,
+        "EXACT_DUPLICATE": 0,
+        "REVISION": 0,
+        "CONFLICT": 0,
+        "REJECTED": 0,
+    }
+    source_event_statuses: dict[str, list[str]] = defaultdict(list)
     for row in rows:
         filtered = {
             str(key): value
             for key, value in dict(row).items()
             if str(key) in columns
         }
-        store.upsert(table_name, filtered, key_columns=key_columns)
+        classification, existing_row = _classify_stage_row(
+            store,
+            table_name,
+            filtered,
+            key_columns=key_columns,
+        )
+        counts[classification] += 1
+        source_event_statuses[_normalize_text(filtered.get("source_event_id"))].append(classification)
+        if classification == "NEW":
+            store.upsert(table_name, filtered, key_columns=key_columns)
+            continue
+        if classification == "CONFLICT" and existing_row is not None:
+            source_event_statuses[_normalize_text(filtered.get("source_event_id"))].append("CONFLICT")
+    return {
+        "table_name": table_name,
+        "counts": counts,
+        "source_event_statuses": source_event_statuses,
+    }
 
 
 def _stage_base(
@@ -1575,40 +2045,42 @@ def _register_identity_and_quality(
     runtime.seed_from_certified_outputs()
     reconciliation_result = runtime.reconcile_certified_outputs()
 
-    runtime.record_quality_event(
-        dataset_table="raw_records",
-        record_identifier=f"{batch_id}:csv",
-        entity_type="vendor_entity",
-        provider=ODDSWAREHOUSE_NFL_BASIC_PROVIDER_ID,
-        internal_identifier=f"{batch_id}:csv",
-        external_identifier="NFL_Basic sample provider oddwarehouse.csv",
-        quality_event_type="malformed_schema",
-        severity="warning",
-        decision_status="quarantined",
-        decision_explanation="CSV kept as source evidence only because unquoted multiword tokens cause positional drift.",
-        review_state="approved_no_normalization",
-        details={
-            "header_field_count": csv_profile.get("header_field_count"),
-            "schema_fingerprint": csv_profile.get("schema_fingerprint"),
-        },
-        processed_at=created_at,
-    )
-    runtime.record_quarantine_record(
-        dataset_table="raw_records",
-        record_identifier=f"{batch_id}:csv",
-        entity_type="vendor_entity",
-        provider=ODDSWAREHOUSE_NFL_BASIC_PROVIDER_ID,
-        internal_identifier=f"{batch_id}:csv",
-        external_identifier="NFL_Basic sample provider oddwarehouse.csv",
-        quarantine_reason="malformed_schema",
-        decision_status="quarantined",
-        review_state="approved_no_normalization",
-        release_state="blocked_original_source_retained",
-        details={
-            "reason": "unquoted multiword headers and team names produce positional column drift",
-        },
-        processed_at=created_at,
-    )
+    if csv_profile:
+        evidence_name = Path(str(csv_profile.get("path") or "NFL_Basic sample provider oddwarehouse.csv")).name
+        runtime.record_quality_event(
+            dataset_table="raw_records",
+            record_identifier=f"{batch_id}:csv",
+            entity_type="vendor_entity",
+            provider=ODDSWAREHOUSE_NFL_BASIC_PROVIDER_ID,
+            internal_identifier=f"{batch_id}:csv",
+            external_identifier=evidence_name,
+            quality_event_type="malformed_schema",
+            severity="warning",
+            decision_status="quarantined",
+            decision_explanation="CSV kept as source evidence only because unquoted multiword tokens cause positional drift.",
+            review_state="approved_no_normalization",
+            details={
+                "header_field_count": csv_profile.get("header_field_count"),
+                "schema_fingerprint": csv_profile.get("schema_fingerprint"),
+            },
+            processed_at=created_at,
+        )
+        runtime.record_quarantine_record(
+            dataset_table="raw_records",
+            record_identifier=f"{batch_id}:csv",
+            entity_type="vendor_entity",
+            provider=ODDSWAREHOUSE_NFL_BASIC_PROVIDER_ID,
+            internal_identifier=f"{batch_id}:csv",
+            external_identifier=evidence_name,
+            quarantine_reason="malformed_schema",
+            decision_status="quarantined",
+            review_state="approved_no_normalization",
+            release_state="blocked_original_source_retained",
+            details={
+                "reason": "unquoted multiword headers and team names produce positional column drift",
+            },
+            processed_at=created_at,
+        )
     if normalized_payload.get("unresolved_mappings"):
         for team_name in normalized_payload["unresolved_mappings"]:
             runtime.record_quality_event(
@@ -1825,13 +2297,115 @@ def _deterministic_replay_check(workbook_rows: Sequence[Mapping[str, Any]]) -> d
     }
 
 
+def _primary_source_file_info(profile: Mapping[str, Any]) -> dict[str, Any]:
+    files = dict(profile.get("files") or {})
+    for file_info in files.values():
+        if file_info.get("source_role") == "primary_source":
+            return dict(file_info)
+    return {}
+
+
+def _selected_rows_digest(rows: Sequence[Mapping[str, Any]]) -> str:
+    payload = [
+        {header: row.get(header) for header in EXPECTED_HEADERS}
+        for row in rows
+    ]
+    return hashlib.sha256(_as_json(payload).encode("utf-8")).hexdigest()
+
+
+def _build_acquisition_id(
+    profile: Mapping[str, Any],
+    *,
+    selected_rows: Sequence[Mapping[str, Any]],
+    selection: Mapping[str, Any],
+) -> str:
+    source = dict(profile.get("source") or {})
+    primary_file = _primary_source_file_info(profile)
+    companion_files = [
+        dict(file_info)
+        for file_info in (profile.get("files") or {}).values()
+        if file_info.get("source_role") == "companion_evidence"
+    ]
+    return _stable_id(
+        "oddswarehouse_acquisition",
+        ODDSWAREHOUSE_NFL_BASIC_SOURCE_DATASET_ID,
+        source.get("format"),
+        primary_file.get("sha256"),
+        [file_info.get("sha256") for file_info in companion_files],
+        ODDSWAREHOUSE_NFL_BASIC_SCHEMA_VERSION,
+        ODDSWAREHOUSE_NFL_BASIC_PARSER_VERSION,
+        selection.get("selection_rule"),
+        selection.get("selected_row_count"),
+        _selected_rows_digest(selected_rows),
+    )
+
+
+def _build_run_id(acquisition_id: str, started_at: str) -> str:
+    return _stable_id("oddswarehouse_run", acquisition_id, started_at)
+
+
+def _source_row_classification_counts(
+    selected_rows: Sequence[Mapping[str, Any]],
+    persistence_results: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    combined_statuses: dict[str, list[str]] = defaultdict(list)
+    for result in persistence_results:
+        for source_event_id, statuses in (result.get("source_event_statuses") or {}).items():
+            combined_statuses[_normalize_text(source_event_id)].extend(str(status) for status in statuses)
+
+    counts = {
+        "NEW": 0,
+        "EXACT_DUPLICATE": 0,
+        "REVISION": 0,
+        "CONFLICT": 0,
+        "REJECTED": 0,
+    }
+    row_classifications: list[dict[str, Any]] = []
+    for row in selected_rows:
+        source_event_id = _source_event_scope_from_row(row)
+        statuses = combined_statuses.get(source_event_id, [])
+        if any(status == "CONFLICT" for status in statuses):
+            classification = "CONFLICT"
+        elif any(status == "REJECTED" for status in statuses):
+            classification = "REJECTED"
+        elif any(status == "NEW" for status in statuses):
+            classification = "NEW"
+        else:
+            classification = "EXACT_DUPLICATE"
+        counts[classification] += 1
+        row_classifications.append(
+            {
+                "source_event_id": source_event_id,
+                "game_id": _normalize_text(row.get("Game ID")),
+                "classification": classification,
+            }
+        )
+    return {
+        "counts": counts,
+        "rows": row_classifications,
+    }
+
+
+def _replay_status_from_counts(counts: Mapping[str, Any]) -> str:
+    if int(counts.get("CONFLICT") or 0) > 0:
+        return "CONFLICT"
+    if int(counts.get("REJECTED") or 0) > 0:
+        return "REJECTED"
+    if int(counts.get("NEW") or 0) == 0:
+        return "IDEMPOTENT_REUSE"
+    if int(counts.get("EXACT_DUPLICATE") or 0) > 0:
+        return "INCREMENTAL_APPEND"
+    return "NEW_PUBLICATION"
+
+
 def run_oddswarehouse_nfl_basic_pilot(
-    workbook_path: str | Path,
-    csv_path: str | Path,
+    source_path: str | Path,
+    companion_evidence_path: str | Path | None = None,
     *,
     storage_path: str | Path | None = None,
     lakehouse_root: str | Path | None = None,
     bronze_raw_root: str | Path | None = None,
+    limit: int | None = None,
 ) -> dict[str, Any]:
     get_nfl_p0_market_profile()
     effective_storage_path = Path(storage_path or ODDSWAREHOUSE_NFL_BASIC_STORAGE_PATH).expanduser().resolve()
@@ -1841,25 +2415,43 @@ def run_oddswarehouse_nfl_basic_pilot(
     effective_lakehouse_root.mkdir(parents=True, exist_ok=True)
     effective_bronze_root.mkdir(parents=True, exist_ok=True)
 
-    workbook_file = Path(workbook_path).expanduser().resolve()
-    csv_file = Path(csv_path).expanduser().resolve()
-    profile = profile_oddswarehouse_nfl_basic_inputs(workbook_file, csv_file)
-    validation = validate_oddswarehouse_workbook_profile(profile)
-    created_at = _utc_now_iso()
-    batch_id = _stable_id(
-        "oddswarehouse_batch",
-        ODDSWAREHOUSE_NFL_BASIC_PROVIDER_ID,
-        ODDSWAREHOUSE_NFL_BASIC_PRODUCT_ID,
-        profile["files"][workbook_file.name]["sha256"],
-        profile["files"][csv_file.name]["sha256"],
+    source_file = Path(source_path).expanduser().resolve()
+    companion_file = Path(companion_evidence_path).expanduser().resolve() if companion_evidence_path is not None else None
+    profile = _profile_oddswarehouse_source(
+        source_file,
+        companion_evidence_path=companion_file,
     )
-    bronze_files = _copy_bronze_files(
+    validation = validate_oddswarehouse_source_profile(profile)
+    started_at = _utc_now_iso()
+    selected_rows, selection = _apply_deterministic_row_limit(
+        profile["source"]["rows"],
+        limit=limit,
+    )
+    acquisition_id = _build_acquisition_id(
+        profile,
+        selected_rows=selected_rows,
+        selection=selection,
+    )
+    batch_id = acquisition_id
+    run_id = _build_run_id(acquisition_id, started_at)
+    bronze_files = _copy_bronze_artifacts(
         batch_id,
-        workbook_file,
-        csv_file,
+        [path for path in (source_file, companion_file) if path is not None],
         bronze_raw_root=effective_bronze_root,
     )
-    source_bundle = _source_bundle_from_profile(profile, batch_id, created_at)
+    selected_profile = {
+        **dict(profile),
+        "source": {
+            **dict(profile.get("source") or {}),
+            "rows": selected_rows,
+            "logical_data_row_count": selection["selected_row_count"],
+            "selected_row_count": selection["selected_row_count"],
+            "available_row_count": selection["available_row_count"],
+            "selection_rule": selection["selection_rule"],
+        },
+        "selection": selection,
+    }
+    source_bundle = _source_bundle_from_source_profile(selected_profile, batch_id, started_at)
     with HistoricalDatasetAcquisitionRuntime(effective_storage_path) as acquisition_runtime:
         raw_acquisition_result = acquisition_runtime.stage_raw_acquisition_cache(
             source_bundle,
@@ -1867,40 +2459,51 @@ def run_oddswarehouse_nfl_basic_pilot(
             dataset_name="oddswarehouse_nfl_basic_raw_acquisition_cache",
         )
     normalized = normalize_oddswarehouse_workbook_rows(
-        profile["workbook"]["rows"],
+        selected_rows,
         batch_id=batch_id,
-        created_at=created_at,
-        source_file=workbook_file.name,
+        created_at=started_at,
+        source_file=source_file.name,
     )
     store = create_local_storage_engine(effective_storage_path)
     try:
         store.ensure_schema()
         acquisition_batch_row = _acquisition_batch_row(
             batch_id=batch_id,
-            created_at=created_at,
-            source_file=workbook_file.name,
-            source_count=2,
+            created_at=started_at,
+            source_file=source_file.name,
+            source_count=len(profile["files"]),
             event_count=len(normalized["event_rows"]),
             market_count=len(normalized["market_rows"]),
             selection_count=len(normalized["selection_rows"]),
             gold_count=len(normalized["gold_rows"]),
-            workbook_profile=profile["workbook"],
-            csv_profile=profile["csv"],
+            workbook_profile=selected_profile["source"],
+            csv_profile=selected_profile.get("companion_evidence") or {},
         )
-        _persist_rows(store, "historical_acquisition_batches", [acquisition_batch_row], key_columns=("batch_id",))
-        _persist_rows(store, "historical_events", normalized["event_rows"], key_columns=("event_id",))
-        _persist_rows(store, "historical_event_participants", normalized["participant_rows"], key_columns=("participant_id",))
-        _persist_rows(store, "historical_source_event_links", normalized["event_link_rows"], key_columns=("link_id",))
-        _persist_rows(store, "historical_markets", normalized["market_rows"], key_columns=("market_id",))
-        _persist_rows(store, "historical_selections", normalized["selection_rows"], key_columns=("selection_id",))
-        _persist_rows(
-            store,
-            "historical_event_market_selections",
-            normalized["gold_rows"],
-            key_columns=("dataset_row_id",),
-        )
+        persistence_results = [
+            _persist_classified_rows(store, "historical_acquisition_batches", [acquisition_batch_row], key_columns=("batch_id",)),
+            _persist_classified_rows(store, "historical_events", normalized["event_rows"], key_columns=("event_id",)),
+            _persist_classified_rows(store, "historical_event_participants", normalized["participant_rows"], key_columns=("participant_id",)),
+            _persist_classified_rows(store, "historical_source_event_links", normalized["event_link_rows"], key_columns=("link_id",)),
+            _persist_classified_rows(store, "historical_markets", normalized["market_rows"], key_columns=("market_id",)),
+            _persist_classified_rows(store, "historical_selections", normalized["selection_rows"], key_columns=("selection_id",)),
+            _persist_classified_rows(
+                store,
+                "historical_event_market_selections",
+                normalized["gold_rows"],
+                key_columns=("dataset_row_id",),
+            ),
+        ]
     finally:
         store.close()
+
+    source_row_counts = _source_row_classification_counts(selected_rows, persistence_results[1:])
+    if source_row_counts["counts"]["CONFLICT"] > 0:
+        validation = {
+            **validation,
+            "ok": False,
+            "status": "blocked",
+            "errors": list(validation.get("errors") or []) + ["canonical_row_conflict"],
+        }
 
     identity_runtime = DataIdentityLakehouseRuntime(
         storage_path=effective_storage_path,
@@ -1910,10 +2513,10 @@ def run_oddswarehouse_nfl_basic_pilot(
         identity_result = _register_identity_and_quality(
             runtime=identity_runtime,
             batch_id=batch_id,
-            created_at=created_at,
+            created_at=started_at,
             normalized_payload=normalized,
-            workbook_profile=profile["workbook"],
-            csv_profile=profile["csv"],
+            workbook_profile=selected_profile["source"],
+            csv_profile=selected_profile.get("companion_evidence") or {},
         )
     finally:
         identity_runtime.close()
@@ -1921,20 +2524,23 @@ def run_oddswarehouse_nfl_basic_pilot(
     certification_results = _certify_assets(
         storage_path=effective_storage_path,
         batch_id=batch_id,
-        created_at=created_at,
+        created_at=started_at,
         raw_acquisition_result=raw_acquisition_result,
         normalized_payload=normalized,
     )
     lifecycle_results = _record_lifecycle(
         storage_path=effective_storage_path,
         batch_id=batch_id,
-        created_at=created_at,
+        created_at=started_at,
         raw_acquisition_result=raw_acquisition_result,
         certification_results=certification_results,
         normalized_payload=normalized,
     )
-    replay_result = _deterministic_replay_check(profile["workbook"]["rows"])
+    replay_result = _deterministic_replay_check(selected_rows)
 
+    primary_source_file = _primary_source_file_info(profile)
+    storage_health = get_storage_health()
+    replay_status = _replay_status_from_counts(source_row_counts["counts"])
     market_counts = {
         "historical_markets": len(normalized["market_rows"]),
         "historical_selections": len(normalized["selection_rows"]),
@@ -1943,15 +2549,33 @@ def run_oddswarehouse_nfl_basic_pilot(
     report = {
         "ok": validation["ok"] and not normalized["unresolved_mappings"] and certification_results["ok"] and replay_result["ok"],
         "status": "ready" if validation["ok"] and not normalized["unresolved_mappings"] and certification_results["ok"] and replay_result["ok"] else "partially_ready",
+        "source_dataset_id": ODDSWAREHOUSE_NFL_BASIC_SOURCE_DATASET_ID,
         "provider_id": ODDSWAREHOUSE_NFL_BASIC_PROVIDER_ID,
         "product_id": ODDSWAREHOUSE_NFL_BASIC_PRODUCT_ID,
+        "acquisition_id": acquisition_id,
+        "run_id": run_id,
         "batch_id": batch_id,
+        "source_format": selected_profile["source"]["format"],
+        "source_path": selected_profile["source"]["path"],
+        "source_sha256": primary_source_file.get("sha256"),
+        "schema_version": ODDSWAREHOUSE_NFL_BASIC_SCHEMA_VERSION,
+        "parser_version": ODDSWAREHOUSE_NFL_BASIC_PARSER_VERSION,
         "storage_path": str(effective_storage_path),
         "lakehouse_root": str(effective_lakehouse_root),
         "bronze_raw_root": str(_bronze_raw_dir_for_root(batch_id, effective_bronze_root)),
+        "storage_health": storage_health,
+        "selection": selection,
+        "selected_row_count": selection["selected_row_count"],
+        "new_row_count": source_row_counts["counts"]["NEW"],
+        "exact_duplicate_count": source_row_counts["counts"]["EXACT_DUPLICATE"],
+        "revision_count": source_row_counts["counts"]["REVISION"],
+        "conflict_count": source_row_counts["counts"]["CONFLICT"],
+        "rejected_count": source_row_counts["counts"]["REJECTED"],
+        "quarantined_count": (1 if selected_profile.get("companion_evidence") else 0) + len(normalized["unresolved_mappings"]),
+        "replay_status": replay_status,
         "files": profile["files"],
-        "workbook_profile": profile["workbook"],
-        "csv_profile": profile["csv"],
+        "source_profile": selected_profile["source"],
+        "companion_evidence_profile": selected_profile.get("companion_evidence") or {},
         "validation": validation,
         "raw_acquisition_result": raw_acquisition_result,
         "bronze_file_copies": bronze_files,
@@ -1966,6 +2590,7 @@ def run_oddswarehouse_nfl_basic_pilot(
             "historical_event_market_selections": len(normalized["gold_rows"]),
         },
         "market_transformation_counts": market_counts,
+        "source_row_classifications": source_row_counts,
         "identity_mapping_results": {
             "resolved_team_mappings": len(normalized["team_mappings"]),
             "unresolved_team_mappings": normalized["unresolved_mappings"],
@@ -1973,13 +2598,15 @@ def run_oddswarehouse_nfl_basic_pilot(
         "identity_runtime": identity_result,
         "certification_results": certification_results,
         "lifecycle_results": lifecycle_results,
+        "created_partition_count": int(identity_result["lakehouse_result"].get("created_partition_count") or 0),
+        "reused_partition_count": int(identity_result["lakehouse_result"].get("reused_partition_count") or 0),
         "parquet_roundtrip_result": identity_result["lakehouse_result"]["ok"]
         and bool(identity_result["readiness_snapshot"]["parquet_readiness"]["roundtrip_ok"]),
         "deterministic_replay_result": replay_result,
         "metadata_gaps": [
-            "Exact kickoff time is unavailable from the source workbook and remains unset.",
-            "Sportsbook identity is unknown in the supplied pilot files.",
-            "Market-source methodology is unknown in the supplied pilot files.",
+            "Exact kickoff time is unavailable from the source file and remains unset.",
+            "Sportsbook identity is unknown in the supplied source evidence.",
+            "Market-source methodology is unknown in the supplied source evidence.",
         ],
         "pilot_readiness": "ready" if validation["ok"] and not normalized["unresolved_mappings"] else "partially_ready",
         "additional_file_readiness": "ready_with_schema_validation" if validation["ok"] else "manual_review_required",
