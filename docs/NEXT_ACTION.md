@@ -66,6 +66,11 @@ Do not implement covariance, another market, Worldview, capital allocation, pape
   -> Covariance and Time-Dependent Risk Capability Audit
   -> Implement only covariance and risk capabilities confirmed missing by that audit
 
+## Current Execution Checkpoint
+
+The active bounded remediation inside `Portable External Research-Data Storage` is the historical-state compatibility and preflight atomicity hardening for the controlled OddsWarehouse ingest path.
+The next governed operational step after merge is B-005: rerun the bounded 100-row acquisition, exact replay, and 101-row overlap against the existing FantomHD history without cleaning prior `v003`/`v004`/`v005` evidence and without processing the full CSV.
+
 ## Validation Commands
 
 - `python -m compileall src tests scripts`

@@ -395,6 +395,27 @@ def _report_replay_status(
     return "duplicate_rejected"
 
 
+def _derive_partial_state(
+    *,
+    prior_publication_exists: bool,
+    raw_acquisition_result: Mapping[str, Any],
+    bronze_actions: Sequence[Mapping[str, Any]],
+) -> tuple[bool, str]:
+    if prior_publication_exists:
+        return (False, "")
+    if raw_acquisition_result.get("status") != "raw_cache_reused":
+        return (False, "")
+    reuse_match_type = _normalize_text(raw_acquisition_result.get("reuse_match_type"))
+    if reuse_match_type not in {"source_bundle_id", "legacy_source_bundle_id"}:
+        return (False, "")
+    actions: list[str] = []
+    if any(action.get("status") == "reused" for action in bronze_actions):
+        actions.append("reused_bronze_artifacts")
+    suffix = f":{reuse_match_type}" if reuse_match_type else ""
+    actions.append(f"reused_raw_acquisition_cache{suffix}")
+    return (True, ",".join(actions))
+
+
 def _provider_capability(schema_headers: Sequence[str]) -> dict[str, Any]:
     return {
         "provider_id": ODDSWAREHOUSE_NFL_BASIC_PROVIDER_ID,
@@ -1430,7 +1451,14 @@ def _copy_bronze_files(
     )
 
 
-def _source_bundle_from_source_profile(profile: Mapping[str, Any], source_bundle_id: str, acquired_at: str) -> dict[str, Any]:
+def _source_bundle_from_source_profile(
+    profile: Mapping[str, Any],
+    source_bundle_id: str,
+    acquired_at: str,
+    *,
+    acquisition_id: str = "",
+    batch_id: str = "",
+) -> dict[str, Any]:
     source = dict(profile.get("source") or {})
     companion_profile = dict(profile.get("companion_evidence") or {})
     source_rows = [dict(row) for row in source.get("rows") or []]
@@ -1487,6 +1515,8 @@ def _source_bundle_from_source_profile(profile: Mapping[str, Any], source_bundle
         "provider_sources": [ODDSWAREHOUSE_NFL_BASIC_SOURCE_NAME],
         "provider_versions": [ODDSWAREHOUSE_NFL_BASIC_DATASET_VERSION],
         "source_bundle_id": source_bundle_id,
+        "acquisition_id": _normalize_text(acquisition_id),
+        "batch_id": _normalize_text(batch_id or acquisition_id),
         "acquisition_timestamp": acquired_at,
         "connector_id": ODDSWAREHOUSE_NFL_BASIC_CONNECTOR_ID,
         "connector_name": ODDSWAREHOUSE_NFL_BASIC_CONNECTOR_NAME,
@@ -1583,9 +1613,25 @@ def _source_event_scope_from_row(row: Mapping[str, Any]) -> str:
     return f"{ODDSWAREHOUSE_NFL_BASIC_PROVIDER_ID}|{ODDSWAREHOUSE_NFL_BASIC_PRODUCT_ID}|{_normalize_text(row.get('Game ID'))}"
 
 
+def _semantic_stage_value(value: Any) -> Any:
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        return _normalize_text(value)
+    if isinstance(value, bool):
+        return 1 if value else 0
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float):
+        return round(value, 6)
+    if isinstance(value, (Mapping, list, tuple, set)):
+        return _as_json(value)
+    return str(value)
+
+
 def _semantic_stage_row(row: Mapping[str, Any]) -> dict[str, Any]:
     return {
-        str(key): value
+        str(key): _semantic_stage_value(value)
         for key, value in dict(row).items()
         if str(key) not in _SEMANTIC_STAGE_IGNORE_FIELDS
     }
@@ -2652,6 +2698,7 @@ def _execute_governed_publication(
     validation: Mapping[str, Any],
     normalized_payload: Mapping[str, Any],
     raw_acquisition_result: Mapping[str, Any],
+    preflight_only: bool = False,
 ) -> dict[str, Any]:
     store = create_local_storage_engine(storage_path)
     try:
@@ -2722,6 +2769,17 @@ def _execute_governed_publication(
             },
             "certification_results": {"ok": False, "asset_results": []},
             "lifecycle_results": {"ok": False, "lifecycle_rows": []},
+        }
+
+    if preflight_only:
+        return {
+            "source_row_counts": source_row_counts,
+            "identity_result": {
+                "lakehouse_result": {"ok": True, "created_partition_count": 0, "reused_partition_count": 0},
+                "readiness_snapshot": {"parquet_readiness": {"roundtrip_ok": False}},
+            },
+            "certification_results": {"ok": True, "asset_results": []},
+            "lifecycle_results": {"ok": True, "lifecycle_rows": []},
         }
 
     identity_runtime = DataIdentityLakehouseRuntime(
@@ -2797,6 +2855,7 @@ def _preflight_governed_publication(
             validation=validation,
             normalized_payload=normalized_payload,
             raw_acquisition_result=raw_acquisition_result,
+            preflight_only=True,
         )
 
 
@@ -3118,6 +3177,13 @@ def run_oddswarehouse_nfl_basic_pilot(
             selected_rows=selected_rows,
             selection=selection,
         )
+        source_bundle = _source_bundle_from_source_profile(
+            selected_profile,
+            source_bundle_id,
+            started_at,
+            acquisition_id=acquisition_id,
+            batch_id=batch_id,
+        )
 
         failure_stage = "validate_selection"
         validation = validate_oddswarehouse_source_profile(selected_profile)
@@ -3134,41 +3200,27 @@ def run_oddswarehouse_nfl_basic_pilot(
 
         prior_publication_state = _existing_batch_state(effective_storage_path, batch_id)
 
-        failure_stage = "stage_bronze"
-        bronze_actions = _copy_bronze_artifacts(
-            source_artifact_id,
-            [
-                {
-                    "source_path": path,
-                    "source_role": "primary_source" if path == source_file else "companion_evidence",
-                    "source_format": path.suffix.lstrip("."),
-                }
-                for path in (source_file, companion_file)
-                if path is not None
-            ],
-            bronze_raw_root=effective_bronze_root,
-        )
-
-        failure_stage = "stage_raw_acquisition"
-        source_bundle = _source_bundle_from_source_profile(selected_profile, source_bundle_id, started_at)
-        with HistoricalDatasetAcquisitionRuntime(effective_storage_path) as acquisition_runtime:
-            raw_acquisition_result = acquisition_runtime.stage_raw_acquisition_cache(
-                source_bundle,
-                profile_id=ODDSWAREHOUSE_NFL_BASIC_PROFILE_ID,
-                dataset_name="oddswarehouse_nfl_basic_raw_acquisition_cache",
-            )
-
-        if not prior_publication_state["batch_exists"]:
-            partial_actions = []
-            if raw_acquisition_result.get("status") == "raw_cache_reused":
-                if any(action.get("status") == "reused" for action in bronze_actions):
-                    partial_actions.append("reused_bronze_artifacts")
-                reuse_match_type = _normalize_text(raw_acquisition_result.get("reuse_match_type"))
-                suffix = f":{reuse_match_type}" if reuse_match_type else ""
-                partial_actions.append(f"reused_raw_acquisition_cache{suffix}")
-            if partial_actions:
-                partial_state_detected = True
-                partial_state_action = ",".join(partial_actions)
+        raw_acquisition_result = {
+            "ok": True,
+            "status": "raw_cache_pending",
+            "source_bundle": dict(source_bundle),
+            "replay_status": "PENDING_PUBLICATION",
+            "reuse_match_type": "",
+        }
+        if effective_storage_path.exists():
+            with HistoricalDatasetAcquisitionRuntime(effective_storage_path) as acquisition_runtime:
+                reusable_raw_acquisition = acquisition_runtime.find_reusable_raw_acquisition_cache(
+                    source_bundle,
+                    profile_id=ODDSWAREHOUSE_NFL_BASIC_PROFILE_ID,
+                    dataset_name="oddswarehouse_nfl_basic_raw_acquisition_cache",
+                )
+            if reusable_raw_acquisition is not None:
+                raw_acquisition_result = dict(reusable_raw_acquisition)
+                partial_state_detected, partial_state_action = _derive_partial_state(
+                    prior_publication_exists=bool(prior_publication_state.get("batch_exists")),
+                    raw_acquisition_result=raw_acquisition_result,
+                    bronze_actions=bronze_actions,
+                )
 
         failure_stage = "preflight_publication"
         preflight_result = _preflight_governed_publication(
@@ -3191,6 +3243,34 @@ def run_oddswarehouse_nfl_basic_pilot(
                 "errors": list(validation.get("errors") or []) + ["canonical_row_conflict"],
             }
             raise ValueError("canonical_row_conflict")
+
+        failure_stage = "stage_raw_acquisition"
+        with HistoricalDatasetAcquisitionRuntime(effective_storage_path) as acquisition_runtime:
+            raw_acquisition_result = acquisition_runtime.stage_raw_acquisition_cache(
+                source_bundle,
+                profile_id=ODDSWAREHOUSE_NFL_BASIC_PROFILE_ID,
+                dataset_name="oddswarehouse_nfl_basic_raw_acquisition_cache",
+            )
+
+        failure_stage = "stage_bronze"
+        bronze_actions = _copy_bronze_artifacts(
+            source_artifact_id,
+            [
+                {
+                    "source_path": path,
+                    "source_role": "primary_source" if path == source_file else "companion_evidence",
+                    "source_format": path.suffix.lstrip("."),
+                }
+                for path in (source_file, companion_file)
+                if path is not None
+            ],
+            bronze_raw_root=effective_bronze_root,
+        )
+        partial_state_detected, partial_state_action = _derive_partial_state(
+            prior_publication_exists=bool(prior_publication_state.get("batch_exists")),
+            raw_acquisition_result=raw_acquisition_result,
+            bronze_actions=bronze_actions,
+        )
 
         publication_started = True
         failure_stage = "persist_canonical_rows"
