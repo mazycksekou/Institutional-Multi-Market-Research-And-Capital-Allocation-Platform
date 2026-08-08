@@ -1,17 +1,20 @@
 from __future__ import annotations
 
+import json
 import os
 import subprocess
 import sys
 import zipfile
 from pathlib import Path, PurePosixPath, PureWindowsPath
 
+import src.data.oddswarehouse_nfl_basic_ingest as oddswarehouse_ingest
 from scripts.run_oddswarehouse_nfl_basic_pilot import build_parser
 from src.data.historical_dataset_acquisition_runtime import HistoricalDatasetAcquisitionRuntime
 from src.data.oddswarehouse_nfl_basic_ingest import (
     EXPECTED_HEADERS,
     _apply_deterministic_row_limit,
     _build_acquisition_id,
+    _build_source_bundle_id,
     _deterministic_replay_check,
     _profile_oddswarehouse_source,
     _selected_source_profile,
@@ -116,6 +119,45 @@ def _row_with(base: dict[str, object], **overrides: object) -> dict[str, object]
     row = dict(base)
     row.update(overrides)
     return row
+
+
+def _repeated_team_workbook_rows() -> list[dict[str, object]]:
+    base = _sample_workbook_rows()[0]
+    return [
+        base,
+        _row_with(
+            base,
+            **{
+                "Game ID": 195,
+                "Date": "20090927",
+                "Away Team": "Washington",
+                "Away Score": 17,
+                "Away Spread Open": 2.5,
+                "Away Spread Open Odds": -110,
+                "Away Spread Close": 2.0,
+                "Away Spread Close Odds": -108,
+                "Away MoneyLine Open": 130,
+                "Away MoneyLine Close": 125,
+                "Over Open": 39.5,
+                "Over Open Odds": -110,
+                "Over Close": 40.0,
+                "Over Close Odds": -105,
+                "Home Team": "Detroit",
+                "Home Score": 10,
+                "Home Spread Open": -2.5,
+                "Home Spread Open Odds": -110,
+                "Home Spread Close": -2.0,
+                "Home Spread Close Odds": -112,
+                "Home MoneyLine Open": -150,
+                "Home MoneyLine Close": -145,
+                "Under Open": 39.5,
+                "Under Open Odds": -110,
+                "Under Close": 40.0,
+                "Under Close Odds": -115,
+            },
+        ),
+        _sample_workbook_rows()[1],
+    ]
 
 
 def _xlsx_column_name(index: int) -> str:
@@ -311,6 +353,32 @@ def test_normalize_oddswarehouse_workbook_rows_preserves_historical_identity_and
     assert gold_rows[("total", "over")]["line_movement"] == -1.0
 
 
+def test_normalize_oddswarehouse_workbook_rows_maps_pk_spreads_to_zero() -> None:
+    row = _row_with(
+        _sample_workbook_rows()[0],
+        **{
+            "Away Spread Open": "PK",
+            "Away Spread Close": "+0",
+            "Home Spread Open": "PK",
+            "Home Spread Close": "-0",
+        },
+    )
+    profile = {"source": {"headers": EXPECTED_HEADERS, "logical_column_count": len(EXPECTED_HEADERS), "format": "csv", "rows": [row]}}
+    validation = validate_oddswarehouse_source_profile(profile)
+    normalized = normalize_oddswarehouse_workbook_rows(
+        validation["accepted_rows"],
+        batch_id="oddswarehouse.batch.pk",
+        created_at="2026-08-08T00:00:00Z",
+        source_file="NFL_Basic.csv",
+    )
+
+    assert validation["ok"] is True
+    spread_markets = [item for item in normalized["market_rows"] if item["market_type"] == "spread"]
+    spread_selections = [item for item in normalized["selection_rows"] if item["market_type"] == "spread"]
+    assert {item["line_value"] for item in spread_markets} == {0.0}
+    assert {item["line_value"] for item in spread_selections} == {0.0}
+
+
 def test_oddswarehouse_replay_check_ignores_run_specific_lineage_tokens() -> None:
     replay = _deterministic_replay_check([_sample_workbook_rows()[0]])
 
@@ -388,6 +456,22 @@ def test_deterministic_row_limit_skips_invalid_csv_rows_and_reports_scan_metadat
     assert selection["selected_row_count"] == 2
     assert selection["skipped_invalid_row_count"] == 1
     assert selection["inspected_physical_row_count"] == 3
+
+
+def test_validate_oddswarehouse_source_profile_rejects_unknown_spread_token() -> None:
+    row = _row_with(
+        _sample_workbook_rows()[0],
+        **{
+            "Away Spread Open": "PICK",
+            "Home Spread Open": "-0",
+        },
+    )
+    profile = {"source": {"headers": EXPECTED_HEADERS, "logical_column_count": len(EXPECTED_HEADERS), "format": "csv", "rows": [row]}}
+
+    validation = validate_oddswarehouse_source_profile(profile)
+
+    assert validation["ok"] is False
+    assert "non_numeric_Away Spread Open" in validation["rejected_rows"][0]["errors"]
 
 
 def test_historical_week_resolution_supports_dates_beyond_week_two() -> None:
@@ -525,8 +609,9 @@ def test_retry_after_incomplete_acquisition_reuses_raw_artifact(tmp_path: Path, 
     profile = _profile_oddswarehouse_source(csv_path)
     selected_rows, selection = _apply_deterministic_row_limit(profile["source"], limit=2)
     acquisition_id = _build_acquisition_id(profile, selected_rows=selected_rows, selection=selection)
+    source_bundle_id = _build_source_bundle_id(profile, selected_rows=selected_rows, selection=selection)
     selected_profile = _selected_source_profile(profile, selected_rows=selected_rows, selection=selection)
-    source_bundle = _source_bundle_from_source_profile(selected_profile, acquisition_id, "2026-08-06T00:00:00Z")
+    source_bundle = _source_bundle_from_source_profile(selected_profile, source_bundle_id, "2026-08-06T00:00:00Z")
 
     with HistoricalDatasetAcquisitionRuntime(storage_path=storage_path) as runtime:
         staged = runtime.stage_raw_acquisition_cache(
@@ -548,6 +633,7 @@ def test_retry_after_incomplete_acquisition_reuses_raw_artifact(tmp_path: Path, 
     assert report["acquisition_id"] == acquisition_id
     assert report["prior_incomplete_acquisition_detected"] is True
     assert report["raw_acquisition_result"]["status"] == "raw_cache_reused"
+    assert report["raw_acquisition_result"]["reuse_match_type"] == "source_bundle_id"
     assert report["replay_status"] == "resumed"
     assert "reused_raw_acquisition_cache" in (report["partial_state_action"] or "")
 
@@ -636,3 +722,146 @@ def test_canonical_csv_exact_replay_and_overlapping_sample_are_idempotent(
     assert overlap["new_row_count"] == 1
     assert overlap["exact_duplicate_count"] == 2
     assert overlap["created_partition_count"] > 0
+
+
+def test_exact_replay_with_repeated_team_aliases_reuses_identity_mappings_and_preserves_run_reports(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    rows = _repeated_team_workbook_rows()
+    csv_path = tmp_path / "NFL_Basic.csv"
+    storage_root = tmp_path / "research-data"
+    storage_root.mkdir()
+    monkeypatch.setenv("RESEARCH_DATA_ROOT", str(storage_root))
+    monkeypatch.delenv("AUTOMATION_DATA_DIR", raising=False)
+    _write_canonical_csv(csv_path, rows)
+
+    storage_path = storage_root / "historical" / "oddswarehouse.sqlite"
+    lakehouse_root = storage_root / "lakehouse" / "oddswarehouse"
+    bronze_root = storage_root / "bronze" / "oddswarehouse"
+
+    first = run_oddswarehouse_nfl_basic_pilot(
+        csv_path,
+        storage_path=storage_path,
+        lakehouse_root=lakehouse_root,
+        bronze_raw_root=bronze_root,
+        limit=3,
+    )
+    second = run_oddswarehouse_nfl_basic_pilot(
+        csv_path,
+        storage_path=storage_path,
+        lakehouse_root=lakehouse_root,
+        bronze_raw_root=bronze_root,
+        limit=3,
+    )
+
+    store = create_local_storage_engine(storage_path)
+    try:
+        washington_rows = store.fetch(
+            "identity_mappings",
+            where="provider = ? AND entity_type = ? AND external_identifier = ?",
+            params=["oddswarehouse", "team", "Washington"],
+            order_by="revision_number ASC",
+        )
+        assert len(washington_rows) == 1
+    finally:
+        store.close()
+
+    assert first["replay_status"] == "created"
+    assert second["replay_status"] == "reused"
+    assert second["exact_duplicate_count"] == 3
+    assert second["created_partition_count"] == 0
+    assert first["report_path"] != second["report_path"]
+    assert first["acquisition_report_path"] == second["acquisition_report_path"]
+    assert Path(first["report_path"]).exists()
+    assert Path(second["report_path"]).exists()
+    assert Path(first["acquisition_report_path"]).exists()
+    with Path(first["report_path"]).open("r", encoding="utf-8") as handle:
+        first_report = json.load(handle)
+    with Path(second["report_path"]).open("r", encoding="utf-8") as handle:
+        second_report = json.load(handle)
+    assert first_report["run_id"] == first["run_id"]
+    assert second_report["run_id"] == second["run_id"]
+
+
+def test_same_content_different_filename_reuses_bronze_and_raw_artifacts(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    rows = _sample_workbook_rows()[:2]
+    csv_path = tmp_path / "NFL_Basic.csv"
+    renamed_csv_path = tmp_path / "NFL_Basic_copy.csv"
+    storage_root = tmp_path / "research-data"
+    storage_root.mkdir()
+    monkeypatch.setenv("RESEARCH_DATA_ROOT", str(storage_root))
+    monkeypatch.delenv("AUTOMATION_DATA_DIR", raising=False)
+    _write_canonical_csv(csv_path, rows)
+    _write_canonical_csv(renamed_csv_path, rows)
+
+    storage_path = storage_root / "historical" / "oddswarehouse.sqlite"
+    lakehouse_root = storage_root / "lakehouse" / "oddswarehouse"
+    bronze_root = storage_root / "bronze" / "oddswarehouse"
+
+    first = run_oddswarehouse_nfl_basic_pilot(
+        csv_path,
+        storage_path=storage_path,
+        lakehouse_root=lakehouse_root,
+        bronze_raw_root=bronze_root,
+        limit=2,
+    )
+    second = run_oddswarehouse_nfl_basic_pilot(
+        renamed_csv_path,
+        storage_path=storage_path,
+        lakehouse_root=lakehouse_root,
+        bronze_raw_root=bronze_root,
+        limit=2,
+    )
+
+    assert second["acquisition_id"] == first["acquisition_id"]
+    assert second["raw_acquisition_result"]["status"] == "raw_cache_reused"
+    assert second["raw_acquisition_result"]["reuse_match_type"] == "source_bundle_id"
+    assert second["bronze_file_actions"][0]["status"] == "reused"
+    bronze_files = sorted(path.name for path in bronze_root.rglob("*") if path.is_file())
+    assert bronze_files == ["primary_source.csv"]
+
+
+def test_preflight_publication_failure_leaves_canonical_state_unpublished(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    rows = _sample_workbook_rows()[:2]
+    csv_path = tmp_path / "NFL_Basic.csv"
+    storage_root = tmp_path / "research-data"
+    storage_root.mkdir()
+    monkeypatch.setenv("RESEARCH_DATA_ROOT", str(storage_root))
+    monkeypatch.delenv("AUTOMATION_DATA_DIR", raising=False)
+    _write_canonical_csv(csv_path, rows)
+
+    def _boom(**_: object) -> dict[str, object]:
+        raise RuntimeError("simulated_preflight_failure")
+
+    monkeypatch.setattr(oddswarehouse_ingest, "_preflight_governed_publication", _boom)
+
+    report = run_oddswarehouse_nfl_basic_pilot(
+        csv_path,
+        storage_path=storage_root / "historical" / "oddswarehouse.sqlite",
+        lakehouse_root=storage_root / "lakehouse" / "oddswarehouse",
+        bronze_raw_root=storage_root / "bronze" / "oddswarehouse",
+        limit=2,
+    )
+
+    store = create_local_storage_engine(Path(report["storage_path"]))
+    try:
+        assert store.count("historical_events") == 0
+        assert store.count("historical_markets") == 0
+        assert store.count("historical_selections") == 0
+        assert store.count("historical_certifications") == 0
+        assert store.count("research_asset_lifecycles") == 0
+        assert store.count("lakehouse_partitions") == 0
+    finally:
+        store.close()
+
+    assert report["ok"] is False
+    assert report["failure_stage"] == "preflight_publication"
+    assert report["publication_started"] is False
+    assert report["publication_committed"] is False

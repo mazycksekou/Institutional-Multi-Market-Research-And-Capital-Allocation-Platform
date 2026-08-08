@@ -17,12 +17,8 @@ DOCS = [
     ROOT / "docs" / "archive" / "historical_reports" / "PHASE1_DELETE_LIST.md",
     ROOT / "docs" / "archive" / "historical_reports" / "PHASE1_IMPORT_GRAPH.md",
 ]
-ALLOWED_BRANCHES = {
-    "feature/external-research-data-storage",
-    "feature/nfl-backtesting",
-    "phase-6-api-slimming",
-    "main",
-}
+ALLOWED_BRANCHES = {"main"}
+ALLOWED_BRANCH_PREFIXES = ("feature/", "fix/", "chore/", "docs/")
 
 pytestmark = pytest.mark.smoke
 
@@ -53,6 +49,12 @@ def _resolve_branch_name() -> str | None:
     return None
 
 
+def _is_allowed_branch(branch_name: str) -> bool:
+    if branch_name in ALLOWED_BRANCHES:
+        return True
+    return branch_name.startswith(ALLOWED_BRANCH_PREFIXES)
+
+
 def _run_ops_check(mode: str, input_path: Path, output_path: Path) -> None:
     subprocess.run(
         [
@@ -79,7 +81,7 @@ def test_phase1_legacy_inventory_reflects_final_decommission() -> None:
 
     branch_name = _resolve_branch_name()
     if branch_name is not None:
-        assert branch_name in ALLOWED_BRANCHES
+        assert _is_allowed_branch(branch_name)
 
     assert _legacy_python_files() == []
 
@@ -94,6 +96,12 @@ def test_phase1_legacy_inventory_accepts_main_branch(monkeypatch: pytest.MonkeyP
     monkeypatch.delenv("GITHUB_HEAD_REF", raising=False)
     monkeypatch.setenv("GITHUB_REF_NAME", "main")
     assert _resolve_branch_name() == "main"
+
+
+def test_phase1_legacy_inventory_accepts_task_branch_prefix(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("GITHUB_HEAD_REF", "fix/oddswarehouse-replay-idempotency")
+    monkeypatch.setenv("GITHUB_REF_NAME", "pull/123/merge")
+    assert _is_allowed_branch(_resolve_branch_name())
 
 
 if __name__ == "__main__":

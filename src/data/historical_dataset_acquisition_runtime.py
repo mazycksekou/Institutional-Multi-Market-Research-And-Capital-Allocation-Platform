@@ -108,6 +108,28 @@ def _bundle_metadata(source_bundle: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
+def _canonical_bundle_table_row(table_name: str, row: Mapping[str, Any]) -> dict[str, Any]:
+    ignored_fields = set()
+    if table_name == "file_artifacts":
+        ignored_fields.update({"file_name", "source_path", "target_path", "observed_path"})
+    return {
+        str(key): value
+        for key, value in dict(row).items()
+        if str(key) not in ignored_fields
+    }
+
+
+def _bundle_semantic_tables(source_bundle: Mapping[str, Any]) -> dict[str, list[dict[str, Any]]]:
+    tables = _bundle_tables(source_bundle)
+    return {
+        table_name: [
+            _canonical_bundle_table_row(table_name, row)
+            for row in rows
+        ]
+        for table_name, rows in tables.items()
+    }
+
+
 def _source_bundle_digest(source_bundle: Mapping[str, Any]) -> str:
     payload = {
         "dataset_id": _normalize_text(source_bundle.get("dataset_id")),
@@ -118,8 +140,7 @@ def _source_bundle_digest(source_bundle: Mapping[str, Any]) -> str:
         "provider": _normalize_text(source_bundle.get("provider")),
         "provider_sources": list(source_bundle.get("provider_sources") or []),
         "provider_versions": list(source_bundle.get("provider_versions") or []),
-        "source_bundle_id": _normalize_text(source_bundle.get("source_bundle_id")),
-        "source_tables": _bundle_tables(source_bundle),
+        "source_tables": _bundle_semantic_tables(source_bundle),
         "metadata": _bundle_metadata(source_bundle),
     }
     return hashlib.sha256(_as_json(payload).encode("utf-8")).hexdigest()
@@ -545,8 +566,6 @@ class HistoricalDatasetAcquisitionRuntime:
         profile_id: str,
     ) -> dict[str, Any] | None:
         source_bundle_id = _normalize_text(contract.source_bundle_id)
-        if not source_bundle_id:
-            return None
         source_bundle_digest = _source_bundle_digest(source_bundle)
         version_rows = self.platform.store.fetch(
             "dataset_versions",
@@ -554,12 +573,17 @@ class HistoricalDatasetAcquisitionRuntime:
             params=[contract.dataset_id],
             order_by="version_number DESC",
         )
+        candidates: list[tuple[dict[str, Any], str]] = []
         for version_row in version_rows:
             metadata = self._version_metadata_payload(version_row)
-            if _normalize_text(metadata.get("source_bundle_id")) != source_bundle_id:
-                continue
             if _normalize_text(metadata.get("source_bundle_digest")) != source_bundle_digest:
                 continue
+            existing_bundle_id = _normalize_text(metadata.get("source_bundle_id"))
+            if source_bundle_id and existing_bundle_id == source_bundle_id:
+                candidates.insert(0, (dict(version_row), "source_bundle_id"))
+                continue
+            candidates.append((dict(version_row), "content_digest"))
+        for version_row, reuse_match_type in candidates:
             version_id = _normalize_text(version_row.get("version_id"))
             snapshot_id = _normalize_text(version_row.get("snapshot_id"))
             lineage_id = _normalize_text(version_row.get("lineage_id"))
@@ -640,6 +664,7 @@ class HistoricalDatasetAcquisitionRuntime:
                 "provider_metadata": dict(provider_rows[0]) if provider_rows else {},
                 "readiness_snapshot": readiness_snapshot,
                 "replay_status": "IDEMPOTENT_REUSE",
+                "reuse_match_type": reuse_match_type,
             }
         return None
 
@@ -822,6 +847,7 @@ class HistoricalDatasetAcquisitionRuntime:
             "provider_metadata": provider_row,
             "readiness_snapshot": readiness_snapshot,
             "replay_status": "NEW_PUBLICATION",
+            "reuse_match_type": "new_publication",
         }
 
     def _provider_metadata_row(

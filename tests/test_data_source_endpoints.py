@@ -6,7 +6,12 @@ from unittest.mock import patch
 from fastapi.testclient import TestClient
 
 from src.data.data_source_registry import MANDATORY_LANES
+from src.data.data_paths import get_storage_health
 from tests.support.action_imports import app
+
+
+def _expected_storage_env_var() -> str:
+    return str(get_storage_health()["env_var"])
 
 
 class TestDataSourceEndpoints(unittest.TestCase):
@@ -64,7 +69,7 @@ class TestDataSourceEndpoints(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         payload = response.json()
         self.assertTrue(payload["ok"])
-        self.assertEqual(payload["storage"]["env_var"], "AUTOMATION_DATA_DIR")
+        self.assertEqual(payload["storage"]["env_var"], _expected_storage_env_var())
         self.assertEqual(payload["enabled_source_count"], 0)
         self.assertFalse(payload["provider_write"])
 

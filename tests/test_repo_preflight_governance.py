@@ -8,7 +8,7 @@ from scripts import check_repo_preflight as preflight
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def _clean_git_state(*, branch: str = "feature/external-research-data-storage") -> dict[str, object]:
+def _clean_git_state(*, branch: str = "fix/oddswarehouse-replay-idempotency") -> dict[str, object]:
     return {
         "branch": branch,
         "head": "deadbeef1234567890",
@@ -44,8 +44,8 @@ class TestRepoPreflightGovernance(unittest.TestCase):
         self.assertEqual(report["clear_violations"], [])
         self.assertTrue(report["working_tree_clean"])
         self.assertTrue(report["index_clean"])
-        self.assertEqual(report["branch"], "feature/external-research-data-storage")
-        self.assertEqual(report["upstream"], "origin/feature/external-research-data-storage")
+        self.assertEqual(report["branch"], "fix/oddswarehouse-replay-idempotency")
+        self.assertEqual(report["upstream"], "origin/fix/oddswarehouse-replay-idempotency")
         self.assertEqual(report["checks"]["root_markdown"]["status"], "ok")
 
     def test_clean_state_report_accepts_main_after_merge(self) -> None:
@@ -92,6 +92,21 @@ class TestRepoPreflightGovernance(unittest.TestCase):
         self.assertTrue(report["ok"])
         self.assertEqual(report["branch"], "feature/nfl-backtesting")
         self.assertEqual(report["upstream"], "origin/feature/nfl-backtesting")
+
+    def test_clean_state_report_accepts_fix_branch(self) -> None:
+        with (
+            patch.object(preflight, "_git_state", return_value=_clean_git_state(branch="fix/oddswarehouse-history")),
+            patch.object(preflight, "_check_root_markdown", return_value={"status": "ok", "offenders": []}),
+            patch.object(preflight, "_check_openapi", return_value={"ok": True, "errors": []}),
+            patch.object(preflight, "_check_architecture", return_value={"root_markdown_offenders": [], "ignored_source_files": [], "legacy_import_issues": []}),
+            patch.object(preflight, "_check_audit_lifecycle", return_value={"clear_violations": []}),
+            patch.object(preflight, "_check_document_lifecycle", return_value={"clear_violations": []}),
+        ):
+            report = preflight.collect_repo_preflight_report(ROOT, mode="start-task", include_ops=False)
+
+        self.assertTrue(report["ok"])
+        self.assertEqual(report["branch"], "fix/oddswarehouse-history")
+        self.assertEqual(report["upstream"], "origin/fix/oddswarehouse-history")
 
     def test_dirty_state_is_reported_as_clear_violation(self) -> None:
         dirty_state = _clean_git_state()

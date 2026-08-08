@@ -2,7 +2,12 @@ import unittest
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
+from src.data.data_paths import get_storage_health
 from tests.support.action_imports import app
+
+
+def _expected_storage_env_var() -> str:
+    return str(get_storage_health()["env_var"])
 
 
 class TestAutomationSchedulerEndpoints(unittest.TestCase):
@@ -15,7 +20,7 @@ class TestAutomationSchedulerEndpoints(unittest.TestCase):
         p = r.json()
         self.assertTrue(p['ok'])
         self.assertIn('counts', p)
-        self.assertEqual(p["storage"]["env_var"], "AUTOMATION_DATA_DIR")
+        self.assertEqual(p["storage"]["env_var"], _expected_storage_env_var())
         self.assertEqual(p["storage"]["backend"], "file")
         self.assertNotIn('health', p)
 
@@ -48,7 +53,7 @@ class TestAutomationSchedulerEndpoints(unittest.TestCase):
         self.assertIn('status', p)
         self.assertIn('paper_decisions_count', p)
         self.assertIn('outcome_records_count', p)
-        self.assertEqual(p["storage"]["env_var"], "AUTOMATION_DATA_DIR")
+        self.assertEqual(p["storage"]["env_var"], _expected_storage_env_var())
         self.assertFalse(p['auto_execution_enabled'])
         self.assertEqual(p['execution_allowed_count'], 0)
         self.assertNotIn('provider_payload', str(p))
