@@ -4,14 +4,18 @@ import os
 import subprocess
 import sys
 import zipfile
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 
 from scripts.run_oddswarehouse_nfl_basic_pilot import build_parser
+from src.data.historical_dataset_acquisition_runtime import HistoricalDatasetAcquisitionRuntime
 from src.data.oddswarehouse_nfl_basic_ingest import (
     EXPECTED_HEADERS,
     _apply_deterministic_row_limit,
+    _build_acquisition_id,
     _deterministic_replay_check,
     _profile_oddswarehouse_source,
+    _selected_source_profile,
+    _source_bundle_from_source_profile,
     normalize_oddswarehouse_workbook_rows,
     run_oddswarehouse_nfl_basic_pilot,
     validate_oddswarehouse_source_profile,
@@ -106,6 +110,12 @@ def _sample_workbook_rows() -> list[dict[str, object]]:
             "Under Close Odds": -112,
         },
     ]
+
+
+def _row_with(base: dict[str, object], **overrides: object) -> dict[str, object]:
+    row = dict(base)
+    row.update(overrides)
+    return row
 
 
 def _xlsx_column_name(index: int) -> str:
@@ -266,6 +276,7 @@ def test_normalize_oddswarehouse_workbook_rows_preserves_historical_identity_and
     )
 
     assert normalized["unresolved_mappings"] == []
+    assert normalized["quarantined_rows"] == []
     assert len(normalized["event_rows"]) == 1
     assert len(normalized["participant_rows"]) == 2
     assert len(normalized["event_link_rows"]) == 1
@@ -313,8 +324,13 @@ def test_build_parser_accepts_mac_and_windows_source_paths() -> None:
     mac_args = parser.parse_args(["--source", "/Volumes/FantomHD/NFL_Basic.csv", "--limit", "100"])
     windows_args = parser.parse_args(["--source", r"D:\NFL_Basic.csv", "--limit", "100"])
 
-    assert mac_args.source.name == "NFL_Basic.csv"
-    assert windows_args.source.name == "NFL_Basic.csv"
+    mac_source = str(mac_args.source).replace("\\", "/")
+    windows_source = str(windows_args.source)
+
+    assert PurePosixPath(mac_source).as_posix() == "/Volumes/FantomHD/NFL_Basic.csv"
+    assert PurePosixPath(mac_source).name == "NFL_Basic.csv"
+    assert str(PureWindowsPath(windows_source)) == r"D:\NFL_Basic.csv"
+    assert PureWindowsPath(windows_source).name == "NFL_Basic.csv"
     assert mac_args.limit == 100
     assert windows_args.limit == 100
 
@@ -347,6 +363,54 @@ def test_deterministic_row_limit_selects_stable_first_rows() -> None:
     assert [row["Game ID"] for row in first] == [95, 96]
     assert [row["Game ID"] for row in second] == [95, 96]
     assert first_selection == second_selection
+
+
+def test_deterministic_row_limit_skips_invalid_csv_rows_and_reports_scan_metadata(tmp_path: Path) -> None:
+    rows = _sample_workbook_rows()[:2]
+    csv_path = tmp_path / "NFL_Basic.csv"
+    csv_path.write_text(
+        "\n".join(
+            [
+                ",".join(EXPECTED_HEADERS),
+                ",".join(str(rows[0][header]) for header in EXPECTED_HEADERS),
+                "broken,row",
+                ",".join(str(rows[1][header]) for header in EXPECTED_HEADERS),
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    profile = _profile_oddswarehouse_source(csv_path)
+    selected_rows, selection = _apply_deterministic_row_limit(profile["source"], limit=2)
+
+    assert [row["Game ID"] for row in selected_rows] == ["95", "96"]
+    assert selection["selected_row_count"] == 2
+    assert selection["skipped_invalid_row_count"] == 1
+    assert selection["inspected_physical_row_count"] == 3
+
+
+def test_historical_week_resolution_supports_dates_beyond_week_two() -> None:
+    rows = [
+        _row_with(_sample_workbook_rows()[0], **{"Date": "20090910"}),
+        _row_with(_sample_workbook_rows()[1], **{"Game ID": 196, "Date": "20090921"}),
+        _row_with(_sample_workbook_rows()[2], **{"Game ID": 197, "Date": "20100103"}),
+    ]
+
+    normalized = normalize_oddswarehouse_workbook_rows(
+        rows,
+        batch_id="oddswarehouse.batch.historical",
+        created_at="2026-08-06T00:00:00Z",
+        source_file="NFL_Basic.csv",
+    )
+
+    weeks = {row["game_id"]: row["week"] for row in normalized["event_rows"]}
+    seasons = {row["game_id"]: row["season"] for row in normalized["event_rows"]}
+
+    assert weeks["95"] == 1
+    assert weeks["196"] == 2
+    assert weeks["197"] == 17
+    assert seasons == {"95": 2009, "196": 2009, "197": 2009}
 
 
 def test_xlsx_and_canonical_csv_sources_produce_equivalent_canonical_rows(tmp_path: Path) -> None:
@@ -417,6 +481,77 @@ def test_xlsx_source_keeps_malformed_companion_csv_as_quarantined_evidence(
         store.close()
 
 
+def test_validation_failure_returns_structured_report_without_publication(tmp_path: Path, monkeypatch) -> None:
+    csv_path = tmp_path / "NFL_Basic.csv"
+    storage_root = tmp_path / "research-data"
+    storage_root.mkdir()
+    monkeypatch.setenv("RESEARCH_DATA_ROOT", str(storage_root))
+    monkeypatch.delenv("AUTOMATION_DATA_DIR", raising=False)
+    csv_path.write_text("Bad,Header\n1,2\n", encoding="utf-8")
+
+    storage_path = storage_root / "historical" / "oddswarehouse.sqlite"
+    report = run_oddswarehouse_nfl_basic_pilot(
+        csv_path,
+        storage_path=storage_path,
+        lakehouse_root=storage_root / "lakehouse" / "oddswarehouse",
+        bronze_raw_root=storage_root / "bronze" / "oddswarehouse",
+        limit=1,
+    )
+
+    assert report["ok"] is False
+    assert report["status"] == "failed"
+    assert report["failure_stage"] == "validate_selection"
+    assert report["replay_status"] == "failed_before_publication"
+    assert report["publication_started"] is False
+    assert report["publication_committed"] is False
+    assert report["bronze_file_copies"] == []
+    assert storage_path.exists() is False
+    assert Path(report["report_path"]).exists()
+
+
+def test_retry_after_incomplete_acquisition_reuses_raw_artifact(tmp_path: Path, monkeypatch) -> None:
+    rows = _sample_workbook_rows()[:2]
+    csv_path = tmp_path / "NFL_Basic.csv"
+    storage_root = tmp_path / "research-data"
+    storage_root.mkdir()
+    monkeypatch.setenv("RESEARCH_DATA_ROOT", str(storage_root))
+    monkeypatch.delenv("AUTOMATION_DATA_DIR", raising=False)
+    _write_canonical_csv(csv_path, rows)
+
+    storage_path = storage_root / "historical" / "oddswarehouse.sqlite"
+    lakehouse_root = storage_root / "lakehouse" / "oddswarehouse"
+    bronze_root = storage_root / "bronze" / "oddswarehouse"
+
+    profile = _profile_oddswarehouse_source(csv_path)
+    selected_rows, selection = _apply_deterministic_row_limit(profile["source"], limit=2)
+    acquisition_id = _build_acquisition_id(profile, selected_rows=selected_rows, selection=selection)
+    selected_profile = _selected_source_profile(profile, selected_rows=selected_rows, selection=selection)
+    source_bundle = _source_bundle_from_source_profile(selected_profile, acquisition_id, "2026-08-06T00:00:00Z")
+
+    with HistoricalDatasetAcquisitionRuntime(storage_path=storage_path) as runtime:
+        staged = runtime.stage_raw_acquisition_cache(
+            source_bundle,
+            profile_id="sports:nfl",
+            dataset_name="oddswarehouse_nfl_basic_raw_acquisition_cache",
+        )
+
+    assert staged["status"] == "raw_cache_ready"
+
+    report = run_oddswarehouse_nfl_basic_pilot(
+        csv_path,
+        storage_path=storage_path,
+        lakehouse_root=lakehouse_root,
+        bronze_raw_root=bronze_root,
+        limit=2,
+    )
+
+    assert report["acquisition_id"] == acquisition_id
+    assert report["prior_incomplete_acquisition_detected"] is True
+    assert report["raw_acquisition_result"]["status"] == "raw_cache_reused"
+    assert report["replay_status"] == "resumed"
+    assert "reused_raw_acquisition_cache" in (report["partial_state_action"] or "")
+
+
 def test_canonical_csv_exact_replay_and_overlapping_sample_are_idempotent(
     tmp_path: Path,
     monkeypatch,
@@ -471,9 +606,10 @@ def test_canonical_csv_exact_replay_and_overlapping_sample_are_idempotent(
     assert first["exact_duplicate_count"] == 0
     assert first["storage_health"]["configured_via_env_var"] == "RESEARCH_DATA_ROOT"
     assert first["storage_health"]["repository_independent"] is True
+    assert first["replay_status"] == "created"
     assert second["acquisition_id"] == first["acquisition_id"]
     assert second["raw_acquisition_result"]["replay_status"] == "IDEMPOTENT_REUSE"
-    assert second["replay_status"] == "IDEMPOTENT_REUSE"
+    assert second["replay_status"] == "reused"
     assert second["selected_row_count"] == 2
     assert second["new_row_count"] == 0
     assert second["exact_duplicate_count"] == 2
@@ -495,7 +631,7 @@ def test_canonical_csv_exact_replay_and_overlapping_sample_are_idempotent(
         store.close()
 
     assert overlap["acquisition_id"] != first["acquisition_id"]
-    assert overlap["replay_status"] == "INCREMENTAL_APPEND"
+    assert overlap["replay_status"] == "created"
     assert overlap["selected_row_count"] == 3
     assert overlap["new_row_count"] == 1
     assert overlap["exact_duplicate_count"] == 2
