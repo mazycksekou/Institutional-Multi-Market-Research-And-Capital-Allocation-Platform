@@ -42,7 +42,20 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
 
     assert "required starting document" in project_status_text.lower()
     assert "repository homepage" in project_status_text.lower()
-    assert "feature/external-research-data-storage" in project_status_text
+    assert "current branch: `main`" in project_status_text
+    assert "active phase: `Portable External Research-Data Storage`" in project_status_text
+    assert "next phase: `Covariance and Time-Dependent Risk Capability Audit`" in project_status_text
+    assert (
+        "governed handoff after the active phase: "
+        "`Covariance and Time-Dependent Risk Capability Audit -> "
+        "Implement only covariance and risk capabilities confirmed missing by that audit`"
+        in project_status_text
+    )
+    assert (
+        "`Portable External Research-Data Storage -> "
+        "B-005 real-drive historical-state verification`"
+        in project_status_text
+    )
     assert "validated canonical branch: `main`" in project_status_text
     assert "sports:nfl" in project_status_text
     assert "Phase 4.9A - NFL Schedule Research Asset Population" in project_status_text
