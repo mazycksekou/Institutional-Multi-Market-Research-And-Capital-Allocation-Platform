@@ -731,6 +731,158 @@ def test_retry_after_incomplete_acquisition_reuses_legacy_raw_cache_fingerprint(
     assert report["replay_status"] == "resumed"
 
 
+def test_resume_partial_publication_reuses_raw_bundle_and_replaces_legacy_partitions(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    rows = _sample_workbook_rows()[:2]
+    csv_path = tmp_path / "NFL_Basic.csv"
+    storage_root = tmp_path / "research-data"
+    storage_root.mkdir()
+    monkeypatch.setenv("RESEARCH_DATA_ROOT", str(storage_root))
+    monkeypatch.delenv("AUTOMATION_DATA_DIR", raising=False)
+    _write_canonical_csv(csv_path, rows)
+
+    storage_path = storage_root / "historical" / "oddswarehouse.sqlite"
+    lakehouse_root = storage_root / "lakehouse" / "oddswarehouse"
+    bronze_root = storage_root / "bronze" / "oddswarehouse"
+
+    profile = _profile_oddswarehouse_source(csv_path)
+    selected_rows, selection = _apply_deterministic_row_limit(profile["source"], limit=2)
+    acquisition_id = _build_acquisition_id(profile, selected_rows=selected_rows, selection=selection)
+    source_bundle_id = _build_source_bundle_id(profile, selected_rows=selected_rows, selection=selection)
+    selected_profile = _selected_source_profile(profile, selected_rows=selected_rows, selection=selection)
+    source_bundle = _source_bundle_from_source_profile(
+        selected_profile,
+        source_bundle_id,
+        "2026-08-06T00:00:00Z",
+        acquisition_id=acquisition_id,
+        batch_id=acquisition_id,
+    )
+    oddswarehouse_ingest.get_nfl_p0_market_profile()
+    partial_normalized = normalize_oddswarehouse_workbook_rows(
+        [selected_rows[0]],
+        batch_id=acquisition_id,
+        created_at="2026-08-06T00:00:00Z",
+        source_file=csv_path.name,
+    )
+
+    with HistoricalDatasetAcquisitionRuntime(storage_path=storage_path) as runtime:
+        staged = runtime.stage_raw_acquisition_cache(
+            source_bundle,
+            profile_id="sports:nfl",
+            dataset_name="oddswarehouse_nfl_basic_raw_acquisition_cache",
+        )
+
+    assert staged["status"] == "raw_cache_ready"
+
+    store = create_local_storage_engine(storage_path)
+    try:
+        store.ensure_schema()
+        batch_row = oddswarehouse_ingest._acquisition_batch_row(
+            batch_id=acquisition_id,
+            created_at="2026-08-06T00:00:00Z",
+            source_file=csv_path.name,
+            source_count=len(selected_profile.get("files") or {}),
+            event_count=len(partial_normalized["event_rows"]),
+            market_count=len(partial_normalized["market_rows"]),
+            selection_count=len(partial_normalized["selection_rows"]),
+            gold_count=len(partial_normalized["gold_rows"]),
+            rejected_row_count=1,
+            workbook_profile=selected_profile["source"],
+            csv_profile=selected_profile.get("companion_evidence") or {},
+        )
+        store.upsert("historical_acquisition_batches", batch_row, key_columns=("batch_id",))
+        table_rows = {
+            "historical_events": (partial_normalized["event_rows"], ("event_id",)),
+            "historical_event_participants": (partial_normalized["participant_rows"], ("participant_id",)),
+            "historical_source_event_links": (partial_normalized["event_link_rows"], ("link_id",)),
+            "historical_markets": (partial_normalized["market_rows"], ("market_id",)),
+            "historical_selections": (partial_normalized["selection_rows"], ("selection_id",)),
+            "historical_event_market_selections": (partial_normalized["gold_rows"], ("dataset_row_id",)),
+        }
+        for table_name, (table_rows_payload, key_columns) in table_rows.items():
+            columns = set(store.table_columns(table_name))
+            for row in table_rows_payload:
+                filtered = {
+                    field: value
+                    for field, value in _legacy_stage_row(dict(row)).items()
+                    if field in columns
+                }
+                filtered["source_type"] = "controlled_vendor_workbook"
+                store.upsert(table_name, filtered, key_columns=key_columns)
+    finally:
+        store.close()
+
+    identity_runtime = DataIdentityLakehouseRuntime(
+        storage_path=storage_path,
+        lakehouse_root=lakehouse_root,
+    )
+    try:
+        legacy_publish = oddswarehouse_ingest._register_identity_and_quality(
+            runtime=identity_runtime,
+            batch_id=acquisition_id,
+            created_at="2026-08-06T00:00:00Z",
+            normalized_payload=partial_normalized,
+            workbook_profile=selected_profile["source"],
+            csv_profile=selected_profile.get("companion_evidence") or {},
+        )
+        assert legacy_publish["lakehouse_result"]["ok"] is True
+    finally:
+        identity_runtime.close()
+
+    report = run_oddswarehouse_nfl_basic_pilot(
+        csv_path,
+        storage_path=storage_path,
+        lakehouse_root=lakehouse_root,
+        bronze_raw_root=bronze_root,
+        limit=2,
+    )
+
+    store = create_local_storage_engine(storage_path)
+    try:
+        batch_rows = store.fetch(
+            "historical_acquisition_batches",
+            where="batch_id = ?",
+            params=[acquisition_id],
+            limit=1,
+        )
+        raw_partitions = [
+            row
+            for row in store.fetch(
+                "lakehouse_partitions",
+                where="dataset_table = ?",
+                params=["raw_records"],
+                order_by="partition_id ASC",
+            )
+            if json.loads(row["partition_values_json"]).get("publication_batch") in {acquisition_id, source_bundle_id}
+        ]
+        assert len(batch_rows) == 1
+        assert len(raw_partitions) == 1
+        batch_row = dict(batch_rows[0])
+        raw_partition_values = json.loads(raw_partitions[0]["partition_values_json"])
+        assert batch_row["event_count"] == 2
+        assert batch_row["market_count"] == 12
+        assert batch_row["selection_count"] == 24
+        assert batch_row["certified_row_count"] == 12
+        assert batch_row["rejected_row_count"] == 0
+        assert raw_partition_values["publication_batch"] == source_bundle_id
+        assert store.count("historical_events") == 2
+        assert store.count("historical_markets") == 12
+        assert store.count("historical_selections") == 24
+    finally:
+        store.close()
+
+    assert report["ok"] is True
+    assert report["acquisition_id"] == acquisition_id
+    assert report["prior_incomplete_acquisition_detected"] is True
+    assert report["raw_acquisition_result"]["status"] == "raw_cache_reused"
+    assert report["replay_status"] == "resumed"
+    assert report["new_row_count"] == 1
+    assert report["exact_duplicate_count"] == 1
+    assert report["conflict_count"] == 0
+
+
 def test_canonical_csv_exact_replay_and_overlapping_sample_are_idempotent(
     tmp_path: Path,
     monkeypatch,
@@ -960,6 +1112,91 @@ def test_preflight_publication_failure_leaves_canonical_state_unpublished(
     assert report["publication_committed"] is False
     assert report["bronze_file_copies"] == []
     assert Path(report["bronze_raw_root"]).exists() is False
+
+
+def test_publish_failure_after_raw_reuse_leaves_canonical_and_lakehouse_state_unchanged(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    rows = _sample_workbook_rows()[:2]
+    csv_path = tmp_path / "NFL_Basic.csv"
+    storage_root = tmp_path / "research-data"
+    storage_root.mkdir()
+    monkeypatch.setenv("RESEARCH_DATA_ROOT", str(storage_root))
+    monkeypatch.delenv("AUTOMATION_DATA_DIR", raising=False)
+    _write_canonical_csv(csv_path, rows)
+
+    storage_path = storage_root / "historical" / "oddswarehouse.sqlite"
+    lakehouse_root = storage_root / "lakehouse" / "oddswarehouse"
+    bronze_root = storage_root / "bronze" / "oddswarehouse"
+
+    profile = _profile_oddswarehouse_source(csv_path)
+    selected_rows, selection = _apply_deterministic_row_limit(profile["source"], limit=2)
+    source_bundle_id = _build_source_bundle_id(profile, selected_rows=selected_rows, selection=selection)
+    selected_profile = _selected_source_profile(profile, selected_rows=selected_rows, selection=selection)
+    source_bundle = _source_bundle_from_source_profile(
+        selected_profile,
+        source_bundle_id,
+        "2026-08-06T00:00:00Z",
+    )
+    oddswarehouse_ingest.get_nfl_p0_market_profile()
+
+    with HistoricalDatasetAcquisitionRuntime(storage_path=storage_path) as runtime:
+        staged = runtime.stage_raw_acquisition_cache(
+            source_bundle,
+            profile_id="sports:nfl",
+            dataset_name="oddswarehouse_nfl_basic_raw_acquisition_cache",
+        )
+    assert staged["status"] == "raw_cache_ready"
+
+    bronze_actions = oddswarehouse_ingest._copy_bronze_artifacts(
+        oddswarehouse_ingest._build_source_artifact_id(profile),
+        [
+            {
+                "source_path": csv_path,
+                "source_role": "primary_source",
+                "source_format": "csv",
+            }
+        ],
+        bronze_raw_root=bronze_root,
+    )
+    assert any(action["status"] == "created" for action in bronze_actions)
+    bronze_files_before = sorted(path for path in bronze_root.rglob("*") if path.is_file())
+
+    def _boom(self) -> dict[str, object]:
+        raise RuntimeError("simulated_publish_failure")
+
+    monkeypatch.setattr(DataIdentityLakehouseRuntime, "publish_lakehouse_views", _boom)
+
+    report = run_oddswarehouse_nfl_basic_pilot(
+        csv_path,
+        storage_path=storage_path,
+        lakehouse_root=lakehouse_root,
+        bronze_raw_root=bronze_root,
+        limit=2,
+    )
+
+    store = create_local_storage_engine(storage_path)
+    try:
+        assert store.count("historical_events") == 0
+        assert store.count("historical_markets") == 0
+        assert store.count("historical_selections") == 0
+        assert store.count("historical_event_market_selections") == 0
+        assert store.count("lakehouse_partitions") == 0
+    finally:
+        store.close()
+
+    bronze_files_after = sorted(path for path in bronze_root.rglob("*") if path.is_file())
+    assert bronze_files_after == bronze_files_before
+    assert _lakehouse_parquet_files(lakehouse_root) == []
+    assert report["ok"] is False
+    assert report["failure_stage"] == "persist_canonical_rows"
+    assert report["failure_type"] == "RuntimeError"
+    assert report["failure_message"] == "simulated_publish_failure"
+    assert report["publication_started"] is True
+    assert report["publication_committed"] is False
+    assert report["raw_acquisition_result"]["status"] == "raw_cache_reused"
+    assert report["bronze_file_actions"][0]["status"] == "reused"
 
 
 def test_legacy_semantic_stage_rows_replay_without_conflict(tmp_path: Path) -> None:

@@ -247,7 +247,35 @@ def _timestamp_contract(
     }
 
 
-def _lakehouse_partition_value(row: Mapping[str, Any], field_name: str) -> str:
+def _publication_batch_candidate_keys(*, layer_name: str, table_name: str) -> tuple[str, ...]:
+    if layer_name == BRONZE and table_name == "raw_records":
+        return (
+            "source_bundle_id",
+            "batch_id",
+            "dataset_batch_id",
+            "source_dataset_batch_id",
+            "source_feature_batch_id",
+            "source_math_batch_id",
+            "source_signal_batch_id",
+        )
+    return (
+        "batch_id",
+        "dataset_batch_id",
+        "source_dataset_batch_id",
+        "source_feature_batch_id",
+        "source_math_batch_id",
+        "source_signal_batch_id",
+        "source_bundle_id",
+    )
+
+
+def _lakehouse_partition_value(
+    row: Mapping[str, Any],
+    field_name: str,
+    *,
+    layer_name: str = "",
+    table_name: str = "",
+) -> str:
     if field_name == "market_family":
         return _normalize_text(
             row.get("market_family")
@@ -287,15 +315,11 @@ def _lakehouse_partition_value(row: Mapping[str, Any], field_name: str) -> str:
         )
         return stamp[:10] if stamp else "unknown"
     if field_name == "publication_batch":
-        for key in (
-            "batch_id",
-            "dataset_batch_id",
-            "source_dataset_batch_id",
-            "source_feature_batch_id",
-            "source_math_batch_id",
-            "source_signal_batch_id",
-            "source_bundle_id",
-        ):
+        candidate_keys = _publication_batch_candidate_keys(
+            layer_name=layer_name,
+            table_name=table_name,
+        )
+        for key in candidate_keys:
             value = _normalize_text(row.get(key))
             if value:
                 return value
@@ -309,13 +333,7 @@ def _lakehouse_partition_value(row: Mapping[str, Any], field_name: str) -> str:
         ):
             payload = _parse_json_mapping(row.get(field))
             for key in (
-                "batch_id",
-                "dataset_batch_id",
-                "source_dataset_batch_id",
-                "source_feature_batch_id",
-                "source_math_batch_id",
-                "source_signal_batch_id",
-                "source_bundle_id",
+                *candidate_keys,
                 "approval_reference",
                 "version_id",
                 "snapshot_id",
@@ -1809,7 +1827,12 @@ class DataIdentityLakehouseRuntime:
         values_lookup: dict[tuple[str, ...], dict[str, str]] = {}
         for row in rows:
             partition_values = {
-                column: _lakehouse_partition_value(row, column)
+                column: _lakehouse_partition_value(
+                    row,
+                    column,
+                    layer_name=layer_name,
+                    table_name=table_name,
+                )
                 for column in partition_columns
             }
             partition_key = tuple(partition_values[column] for column in partition_columns)

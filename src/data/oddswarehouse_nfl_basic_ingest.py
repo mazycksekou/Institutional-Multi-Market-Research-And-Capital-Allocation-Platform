@@ -3,6 +3,7 @@ from __future__ import annotations
 import csv
 import hashlib
 import json
+import os
 import re
 import shutil
 import tempfile
@@ -352,6 +353,67 @@ def _existing_batch_state(storage_path: Path, batch_id: str) -> dict[str, Any]:
     }
 
 
+def _rejected_source_event_ids(
+    validation: Mapping[str, Any],
+    normalized_payload: Mapping[str, Any],
+) -> list[str]:
+    return [
+        _normalize_text(item.get("source_event_id"))
+        for item in validation.get("rejected_rows") or []
+    ] + [
+        _normalize_text(item.get("source_event_id"))
+        for item in normalized_payload.get("quarantined_rows") or []
+    ]
+
+
+def _current_batch_summary(
+    *,
+    normalized_payload: Mapping[str, Any],
+    validation: Mapping[str, Any],
+) -> dict[str, int]:
+    rejected_source_event_ids = _rejected_source_event_ids(validation, normalized_payload)
+    return {
+        "event_count": len(normalized_payload.get("event_rows") or []),
+        "market_count": len(normalized_payload.get("market_rows") or []),
+        "selection_count": len(normalized_payload.get("selection_rows") or []),
+        "certified_row_count": len(normalized_payload.get("gold_rows") or []),
+        "rejected_row_count": len([item for item in rejected_source_event_ids if item]),
+    }
+
+
+def _should_resume_incomplete_publication(
+    *,
+    prior_publication_state: Mapping[str, Any],
+    normalized_payload: Mapping[str, Any],
+    validation: Mapping[str, Any],
+) -> bool:
+    if not prior_publication_state.get("batch_exists"):
+        return False
+    batch_row = dict(prior_publication_state.get("batch_row") or {})
+    if not batch_row:
+        return False
+    current_summary = _current_batch_summary(
+        normalized_payload=normalized_payload,
+        validation=validation,
+    )
+    return any(
+        int(batch_row.get(field_name) or 0) != expected_value
+        for field_name, expected_value in current_summary.items()
+    )
+
+
+def _resume_publication_tokens(
+    *,
+    batch_id: str,
+    source_bundle_id: str,
+) -> tuple[str, ...]:
+    tokens = [
+        _normalize_text(batch_id),
+        _normalize_text(source_bundle_id),
+    ]
+    return tuple(token for token in dict.fromkeys(tokens) if token)
+
+
 def _write_ingest_report(report: Mapping[str, Any]) -> dict[str, Any]:
     payload = dict(report)
     ODDSWAREHOUSE_NFL_BASIC_REPORT_ROOT.mkdir(parents=True, exist_ok=True)
@@ -406,15 +468,18 @@ def _derive_partial_state(
     prior_publication_exists: bool,
     raw_acquisition_result: Mapping[str, Any],
     bronze_actions: Sequence[Mapping[str, Any]],
+    resume_publication: bool = False,
 ) -> tuple[bool, str]:
-    if prior_publication_exists:
-        return (False, "")
-    if raw_acquisition_result.get("status") != "raw_cache_reused":
-        return (False, "")
-    reuse_match_type = _normalize_text(raw_acquisition_result.get("reuse_match_type"))
-    if reuse_match_type not in {"source_bundle_id", "legacy_source_bundle_id"}:
+    if prior_publication_exists and not resume_publication:
         return (False, "")
     actions: list[str] = []
+    if resume_publication:
+        actions.append("resumed_incomplete_batch_publication")
+    if raw_acquisition_result.get("status") != "raw_cache_reused":
+        return (bool(actions), ",".join(actions))
+    reuse_match_type = _normalize_text(raw_acquisition_result.get("reuse_match_type"))
+    if reuse_match_type not in {"source_bundle_id", "legacy_source_bundle_id"}:
+        return (bool(actions), ",".join(actions))
     if any(action.get("status") == "reused" for action in bronze_actions):
         actions.append("reused_bronze_artifacts")
     suffix = f":{reuse_match_type}" if reuse_match_type else ""
@@ -2683,13 +2748,7 @@ def _execute_governed_publication(
     store = create_local_storage_engine(storage_path)
     try:
         store.ensure_schema()
-        rejected_source_event_ids = [
-            _normalize_text(item.get("source_event_id"))
-            for item in validation.get("rejected_rows") or []
-        ] + [
-            _normalize_text(item.get("source_event_id"))
-            for item in normalized_payload.get("quarantined_rows") or []
-        ]
+        rejected_source_event_ids = _rejected_source_event_ids(validation, normalized_payload)
         acquisition_batch_row = _acquisition_batch_row(
             batch_id=batch_id,
             created_at=created_at,
@@ -2804,6 +2863,221 @@ def _execute_governed_publication(
 def _copy_directory_if_exists(source_dir: Path, target_dir: Path) -> None:
     if source_dir.exists():
         shutil.copytree(source_dir, target_dir, dirs_exist_ok=True)
+
+
+def _remove_path_if_exists(path: Path) -> None:
+    if not path.exists():
+        return
+    if path.is_dir():
+        shutil.rmtree(path, ignore_errors=True)
+        return
+    path.unlink(missing_ok=True)
+
+
+def _publication_workspace_root(storage_path: Path, lakehouse_root: Path) -> Path:
+    return Path(
+        os.path.commonpath(
+            [
+                str(storage_path.expanduser().resolve().parent),
+                str(lakehouse_root.expanduser().resolve().parent),
+            ]
+        )
+    )
+
+
+def _reset_resume_publication_workspace(
+    *,
+    storage_path: Path,
+    lakehouse_root: Path,
+    batch_id: str,
+    publication_tokens: Sequence[str],
+) -> None:
+    normalized_batch_id = _normalize_text(batch_id)
+    normalized_tokens = {
+        _normalize_text(token)
+        for token in publication_tokens
+        if _normalize_text(token)
+    }
+    if not normalized_batch_id and not normalized_tokens:
+        return
+    store = create_local_storage_engine(storage_path, auto_initialize=False)
+    try:
+        if normalized_batch_id and store.table_exists("historical_acquisition_batches"):
+            store.execute(
+                "DELETE FROM historical_acquisition_batches WHERE batch_id = ?",
+                [normalized_batch_id],
+            )
+        if not store.table_exists("lakehouse_partitions"):
+            return
+        partition_rows = store.fetch("lakehouse_partitions", order_by="partition_id ASC")
+        for partition_row in partition_rows:
+            partition_values: dict[str, Any] = {}
+            payload = partition_row.get("partition_values_json")
+            if isinstance(payload, str):
+                try:
+                    parsed = json.loads(payload)
+                except json.JSONDecodeError:
+                    parsed = {}
+                if isinstance(parsed, Mapping):
+                    partition_values = {str(key): value for key, value in parsed.items()}
+            publication_batch = _normalize_text(partition_values.get("publication_batch"))
+            if publication_batch not in normalized_tokens:
+                continue
+            file_path_text = _normalize_text(partition_row.get("file_path"))
+            if file_path_text:
+                file_path = Path(file_path_text).expanduser()
+                _remove_path_if_exists(file_path)
+            store.execute(
+                "DELETE FROM lakehouse_partitions WHERE partition_id = ?",
+                [_normalize_text(partition_row.get("partition_id"))],
+            )
+    finally:
+        store.close()
+
+
+def _promote_publication_state(
+    *,
+    staged_storage_path: Path,
+    staged_lakehouse_root: Path,
+    storage_path: Path,
+    lakehouse_root: Path,
+) -> None:
+    token = _stable_digest(
+        "oddswarehouse.publication.promote",
+        str(storage_path),
+        str(lakehouse_root),
+        datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
+    )[:12]
+    storage_backup = storage_path.with_name(f".{storage_path.name}.backup.{token}")
+    lakehouse_backup = lakehouse_root.with_name(f".{lakehouse_root.name}.backup.{token}")
+    _remove_path_if_exists(storage_backup)
+    _remove_path_if_exists(lakehouse_backup)
+
+    storage_backed_up = False
+    lakehouse_backed_up = False
+    promoted_storage = False
+    promoted_lakehouse = False
+    try:
+        if storage_path.exists():
+            storage_backup.parent.mkdir(parents=True, exist_ok=True)
+            storage_path.rename(storage_backup)
+            storage_backed_up = True
+        if lakehouse_root.exists():
+            lakehouse_backup.parent.mkdir(parents=True, exist_ok=True)
+            lakehouse_root.rename(lakehouse_backup)
+            lakehouse_backed_up = True
+
+        storage_path.parent.mkdir(parents=True, exist_ok=True)
+        staged_storage_path.rename(storage_path)
+        promoted_storage = True
+
+        lakehouse_root.parent.mkdir(parents=True, exist_ok=True)
+        if staged_lakehouse_root.exists():
+            staged_lakehouse_root.rename(lakehouse_root)
+        else:
+            lakehouse_root.mkdir(parents=True, exist_ok=True)
+        promoted_lakehouse = True
+    except Exception:
+        if promoted_storage and storage_path.exists():
+            _remove_path_if_exists(storage_path)
+        if promoted_lakehouse and lakehouse_root.exists():
+            _remove_path_if_exists(lakehouse_root)
+        if storage_backed_up and storage_backup.exists():
+            storage_backup.rename(storage_path)
+        if lakehouse_backed_up and lakehouse_backup.exists():
+            lakehouse_backup.rename(lakehouse_root)
+        raise
+    finally:
+        if promoted_storage and storage_backed_up and storage_backup.exists():
+            _remove_path_if_exists(storage_backup)
+        if promoted_lakehouse and lakehouse_backed_up and lakehouse_backup.exists():
+            _remove_path_if_exists(lakehouse_backup)
+
+
+def _rebase_staged_lakehouse_manifests(
+    *,
+    staged_storage_path: Path,
+    staged_lakehouse_root: Path,
+    actual_lakehouse_root: Path,
+) -> None:
+    staged_root_text = str(staged_lakehouse_root.expanduser().resolve())
+    actual_root_text = str(actual_lakehouse_root.expanduser().resolve())
+    if staged_root_text == actual_root_text:
+        return
+    store = create_local_storage_engine(staged_storage_path, auto_initialize=False)
+    try:
+        if not store.table_exists("lakehouse_partitions"):
+            return
+        for row in store.fetch("lakehouse_partitions", order_by="partition_id ASC"):
+            updated = dict(row)
+            for field_name in ("storage_location", "file_path", "metadata_json", "payload_json"):
+                value = updated.get(field_name)
+                if not isinstance(value, str) or staged_root_text not in value:
+                    continue
+                updated[field_name] = value.replace(staged_root_text, actual_root_text)
+            store.upsert("lakehouse_partitions", updated, key_columns=("partition_id",))
+    finally:
+        store.close()
+
+
+def _execute_atomic_governed_publication(
+    *,
+    storage_path: Path,
+    lakehouse_root: Path,
+    batch_id: str,
+    created_at: str,
+    source_file: Path,
+    selected_profile: Mapping[str, Any],
+    validation: Mapping[str, Any],
+    normalized_payload: Mapping[str, Any],
+    raw_acquisition_result: Mapping[str, Any],
+    resume_publication_tokens: Sequence[str] = (),
+) -> dict[str, Any]:
+    workspace_root = _publication_workspace_root(storage_path, lakehouse_root)
+    workspace_root.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(
+        prefix="oddswarehouse-publication-",
+        dir=workspace_root,
+    ) as temp_dir_name:
+        temp_dir = Path(temp_dir_name)
+        temp_storage_path = temp_dir / storage_path.name
+        if storage_path.exists():
+            shutil.copy2(storage_path, temp_storage_path)
+        temp_lakehouse_root = temp_dir / "lakehouse"
+        _copy_directory_if_exists(lakehouse_root, temp_lakehouse_root)
+        if resume_publication_tokens:
+            _reset_resume_publication_workspace(
+                storage_path=temp_storage_path,
+                lakehouse_root=temp_lakehouse_root,
+                batch_id=batch_id,
+                publication_tokens=resume_publication_tokens,
+            )
+        publication_result = _execute_governed_publication(
+            storage_path=temp_storage_path,
+            lakehouse_root=temp_lakehouse_root,
+            batch_id=batch_id,
+            created_at=created_at,
+            source_file=source_file,
+            selected_profile=selected_profile,
+            validation=validation,
+            normalized_payload=normalized_payload,
+            raw_acquisition_result=raw_acquisition_result,
+            preflight_only=False,
+        )
+        if int(publication_result.get("source_row_counts", {}).get("counts", {}).get("CONFLICT") or 0) > 0:
+            return publication_result
+        _rebase_staged_lakehouse_manifests(
+            staged_storage_path=temp_storage_path,
+            staged_lakehouse_root=temp_lakehouse_root,
+            actual_lakehouse_root=lakehouse_root,
+        )
+        _promote_publication_state(
+            staged_storage_path=temp_storage_path,
+            staged_lakehouse_root=temp_lakehouse_root,
+            storage_path=storage_path,
+            lakehouse_root=lakehouse_root,
+        )
+        return publication_result
 
 
 def _preflight_governed_publication(
@@ -3129,6 +3403,7 @@ def run_oddswarehouse_nfl_basic_pilot(
     prior_publication_state = {"batch_exists": False, "batch_row": {}}
     partial_state_detected = False
     partial_state_action = ""
+    resume_publication = False
 
     try:
         failure_stage = "profile_source"
@@ -3183,6 +3458,11 @@ def run_oddswarehouse_nfl_basic_pilot(
         )
 
         prior_publication_state = _existing_batch_state(effective_storage_path, batch_id)
+        resume_publication = _should_resume_incomplete_publication(
+            prior_publication_state=prior_publication_state,
+            normalized_payload=normalized,
+            validation=validation,
+        )
 
         raw_acquisition_result = {
             "ok": True,
@@ -3204,6 +3484,7 @@ def run_oddswarehouse_nfl_basic_pilot(
                     prior_publication_exists=bool(prior_publication_state.get("batch_exists")),
                     raw_acquisition_result=raw_acquisition_result,
                     bronze_actions=bronze_actions,
+                    resume_publication=resume_publication,
                 )
 
         failure_stage = "preflight_publication"
@@ -3254,11 +3535,12 @@ def run_oddswarehouse_nfl_basic_pilot(
             prior_publication_exists=bool(prior_publication_state.get("batch_exists")),
             raw_acquisition_result=raw_acquisition_result,
             bronze_actions=bronze_actions,
+            resume_publication=resume_publication,
         )
 
         publication_started = True
         failure_stage = "persist_canonical_rows"
-        publication_result = _execute_governed_publication(
+        publication_result = _execute_atomic_governed_publication(
             storage_path=effective_storage_path,
             lakehouse_root=effective_lakehouse_root,
             batch_id=batch_id,
@@ -3268,6 +3550,14 @@ def run_oddswarehouse_nfl_basic_pilot(
             validation=validation,
             normalized_payload=normalized,
             raw_acquisition_result=raw_acquisition_result,
+            resume_publication_tokens=(
+                _resume_publication_tokens(
+                    batch_id=batch_id,
+                    source_bundle_id=source_bundle_id,
+                )
+                if resume_publication
+                else ()
+            ),
         )
         source_row_counts = dict(publication_result.get("source_row_counts") or source_row_counts)
         if source_row_counts["counts"]["CONFLICT"] > 0:
@@ -3286,13 +3576,7 @@ def run_oddswarehouse_nfl_basic_pilot(
     except Exception as exc:
         failure_type = exc.__class__.__name__
         failure_message = str(exc)
-        rejected_source_event_ids = [
-            _normalize_text(item.get("source_event_id"))
-            for item in validation.get("rejected_rows") or []
-        ] + [
-            _normalize_text(item.get("source_event_id"))
-            for item in normalized.get("quarantined_rows") or []
-        ]
+        rejected_source_event_ids = _rejected_source_event_ids(validation, normalized)
         source_row_counts = {
             "counts": {
                 "NEW": 0,
