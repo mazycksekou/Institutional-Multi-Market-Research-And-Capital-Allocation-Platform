@@ -117,3 +117,28 @@ def test_historical_dataset_acquisition_runtime_reuses_identical_source_bundle(t
         assert int(dataset_registry.get("latest_version_number") or 0) == 2
     finally:
         runtime.close()
+
+
+def test_historical_dataset_acquisition_runtime_reuses_identical_content_with_different_bundle_identity(
+    tmp_path: Path,
+) -> None:
+    storage_path = tmp_path / "historical_acquisition_runtime_content_reuse.sqlite"
+    fixture = build_nfl_p0_fixture(2)
+    renamed_fixture = {
+        **fixture,
+        "source_bundle_id": "oddswarehouse.bundle.renamed",
+        "acquisition_timestamp": "2026-08-08T12:05:00Z",
+    }
+
+    runtime = HistoricalDatasetAcquisitionRuntime(storage_path=storage_path)
+    try:
+        first = runtime.stage_raw_acquisition_cache(fixture, profile_id="sports:nfl")
+        second = runtime.stage_raw_acquisition_cache(renamed_fixture, profile_id="sports:nfl")
+
+        assert first["status"] == "raw_cache_ready"
+        assert second["status"] == "raw_cache_reused"
+        assert second["replay_status"] == "IDEMPOTENT_REUSE"
+        assert second["reuse_match_type"] == "content_digest"
+        assert second["dataset_version"]["version_id"] == first["dataset_version"]["version_id"]
+    finally:
+        runtime.close()

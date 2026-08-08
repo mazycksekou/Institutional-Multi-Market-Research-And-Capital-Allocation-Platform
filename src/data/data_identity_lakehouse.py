@@ -418,6 +418,81 @@ class DataIdentityLakehouseRuntime:
         )
         return dict(rows[0]) if rows else {}
 
+    def _find_mapping_revisions(
+        self,
+        *,
+        provider: str,
+        entity_type: str,
+        external_identifier: str,
+    ) -> list[dict[str, Any]]:
+        if not self.store.table_exists("identity_mappings"):
+            return []
+        rows = self.store.fetch(
+            "identity_mappings",
+            where="provider = ? AND entity_type = ? AND external_identifier = ?",
+            params=[provider, entity_type, external_identifier],
+            order_by="revision_number DESC, created_at DESC",
+        )
+        return [dict(row) for row in rows]
+
+    @staticmethod
+    def _semantic_mapping_payload(
+        row: Mapping[str, Any],
+        *,
+        explicit_validity_window: bool,
+    ) -> dict[str, Any]:
+        payload = {
+            "internal_identifier": _normalize_text(row.get("internal_identifier")),
+            "entity_name": _normalize_text(row.get("entity_name")),
+            "canonical_key": _normalize_text(row.get("canonical_key")),
+            "mapping_status": _normalize_text(row.get("mapping_status"), "accepted"),
+            "match_method": _normalize_text(row.get("match_method"), "approved_existing_mapping"),
+            "confidence": round(_normalize_float(row.get("confidence"), 100.0), 4),
+            "review_state": _normalize_text(row.get("review_state"), "approved"),
+            "mapping_version": _normalize_text(row.get("mapping_version"), DATA_IDENTITY_LAKEHOUSE_RUNTIME_VERSION),
+        }
+        if explicit_validity_window:
+            payload["valid_from"] = _to_iso(row.get("valid_from"))
+            payload["valid_to"] = _to_iso(row.get("valid_to"))
+        return payload
+
+    @classmethod
+    def _semantic_mapping_matches(
+        cls,
+        existing_row: Mapping[str, Any],
+        semantic_payload: Mapping[str, Any],
+        *,
+        explicit_validity_window: bool,
+    ) -> bool:
+        existing_payload = cls._semantic_mapping_payload(
+            existing_row,
+            explicit_validity_window=explicit_validity_window,
+        )
+        if not explicit_validity_window:
+            return existing_payload == dict(semantic_payload)
+        for key in (
+            "internal_identifier",
+            "entity_name",
+            "canonical_key",
+            "match_method",
+            "confidence",
+            "review_state",
+            "mapping_version",
+            "valid_from",
+        ):
+            if str(existing_payload.get(key, "")) != str(semantic_payload.get(key, "")):
+                return False
+        existing_status = _normalize_text(existing_payload.get("mapping_status"), "accepted")
+        requested_status = _normalize_text(semantic_payload.get("mapping_status"), "accepted")
+        if existing_status != requested_status and not (
+            existing_status == "superseded" and requested_status == "accepted"
+        ):
+            return False
+        requested_valid_to = _to_iso(semantic_payload.get("valid_to"))
+        if requested_valid_to and str(existing_payload.get("valid_to", "")) != requested_valid_to:
+            return False
+        return True
+
     def register_identity_mapping(
         self,
         *,
@@ -462,11 +537,12 @@ class DataIdentityLakehouseRuntime:
             raise ValueError("external_identifier is required")
         if not internal_id:
             raise ValueError("internal_identifier is required")
-        latest = self._find_latest_mapping(
+        existing_rows = self._find_mapping_revisions(
             provider=provider_name,
             entity_type=entity,
             external_identifier=external_id,
         )
+        latest = next((row for row in existing_rows if _normalize_bool(row.get("is_latest"))), {})
         approval_payload = dict(approval_evidence or {})
         timestamp_payload = _timestamp_contract(
             source_payload,
@@ -512,16 +588,22 @@ class DataIdentityLakehouseRuntime:
         if explicit_validity_window:
             semantic_payload["valid_from"] = comparable_payload["valid_from"]
             semantic_payload["valid_to"] = comparable_payload["valid_to"]
-        if latest and _normalize_bool(latest.get("is_latest")):
-            same_payload = all(
-                str(latest.get(field, "")) == str(value)
-                for field, value in semantic_payload.items()
-            )
-            if same_payload:
-                return dict(latest)
-        current_revision = _normalize_int(latest.get("revision_number"), 0)
+        for existing_row in existing_rows:
+            if self._semantic_mapping_matches(
+                existing_row,
+                semantic_payload,
+                explicit_validity_window=explicit_validity_window,
+            ):
+                return dict(existing_row)
+        new_valid_from = _to_iso(comparable_payload.get("valid_from"))
+        latest_valid_from = _to_iso(latest.get("valid_from"))
+        new_is_latest = bool(is_latest)
+        if explicit_validity_window and new_valid_from and latest_valid_from and new_valid_from < latest_valid_from:
+            new_is_latest = False
+        timestamp_payload["is_latest"] = 1 if new_is_latest else 0
+        current_revision = max((_normalize_int(row.get("revision_number"), 0) for row in existing_rows), default=0)
         revision = max(current_revision + 1, _normalize_int(revision_number, current_revision + 1))
-        if latest and _normalize_bool(latest.get("is_latest")):
+        if latest and _normalize_bool(latest.get("is_latest")) and new_is_latest:
             latest_row = dict(latest)
             latest_row["is_latest"] = 0
             latest_row["mapping_status"] = "superseded"

@@ -204,6 +204,64 @@ def test_data_identity_runtime_ignores_fallback_processing_timestamps_for_same_m
         runtime.close()
 
 
+def test_data_identity_runtime_reuses_matching_historical_revision_without_reordering_latest(
+    tmp_path: Path,
+) -> None:
+    runtime = DataIdentityLakehouseRuntime(
+        storage_path=tmp_path / "identity_runtime_historical_revisions.sqlite",
+        lakehouse_root=tmp_path / "lakehouse",
+    )
+    try:
+        older = runtime.register_identity_mapping(
+            provider="oddswarehouse",
+            external_identifier="Washington",
+            internal_identifier="WAS",
+            entity_type="team",
+            entity_name="Washington Redskins",
+            canonical_key="nfl.franchise.washington",
+            valid_from="1937-01-01",
+            source_payload={"valid_from": "1937-01-01"},
+            approval_reference="oddswarehouse.batch.001",
+        )
+        newer = runtime.register_identity_mapping(
+            provider="oddswarehouse",
+            external_identifier="Washington",
+            internal_identifier="WAS",
+            entity_type="team",
+            entity_name="Washington Redskins",
+            canonical_key="nfl.franchise.washington",
+            valid_from="2020-07-13",
+            source_payload={"valid_from": "2020-07-13"},
+            approval_reference="oddswarehouse.batch.002",
+        )
+        replayed_older = runtime.register_identity_mapping(
+            provider="oddswarehouse",
+            external_identifier="Washington",
+            internal_identifier="WAS",
+            entity_type="team",
+            entity_name="Washington Redskins",
+            canonical_key="nfl.franchise.washington",
+            valid_from="1937-01-01",
+            source_payload={"valid_from": "1937-01-01", "created_at": "2026-08-08T12:10:00Z"},
+            approval_reference="oddswarehouse.batch.003",
+        )
+
+        rows = runtime.store.fetch(
+            "identity_mappings",
+            where="provider = ? AND entity_type = ? AND external_identifier = ?",
+            params=["oddswarehouse", "team", "Washington"],
+            order_by="revision_number ASC",
+        )
+
+        assert older["mapping_id"] == replayed_older["mapping_id"]
+        assert len(rows) == 2
+        assert int(rows[0]["is_latest"] or 0) == 0
+        assert int(rows[1]["is_latest"] or 0) == 1
+        assert rows[1]["mapping_id"] == newer["mapping_id"]
+    finally:
+        runtime.close()
+
+
 def test_data_identity_foundation_updates_p0_and_service_exports(
     tmp_path: Path,
 ) -> None:

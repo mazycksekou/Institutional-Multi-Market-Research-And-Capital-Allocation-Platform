@@ -9,13 +9,9 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[1]
-ACCEPTED_BRANCHES = {
-    "phase-6-api-slimming",
-    "feature/external-research-data-storage",
-    "feature/nfl-backtesting",
-    "main",
-}
-DEFAULT_EXPECTED_BRANCH = "feature/external-research-data-storage"
+ACCEPTED_BRANCHES = {"main"}
+ACCEPTED_BRANCH_PREFIXES = ("feature/", "fix/", "chore/", "docs/")
+DEFAULT_EXPECTED_BRANCH = "main"
 ALLOWED_MODES = {"start-task", "end-task", "before-commit", "before-push"}
 
 if str(ROOT) not in sys.path:
@@ -43,6 +39,14 @@ def _run_git(args: list[str], root: Path = ROOT, timeout: int = 10) -> tuple[int
         return 127, f"{exc.__class__.__name__}: {exc}"
     output = (completed.stdout or completed.stderr or "").strip()
     return int(completed.returncode), output
+
+
+def _is_accepted_branch(branch: str | None) -> bool:
+    if not branch:
+        return False
+    if branch in ACCEPTED_BRANCHES:
+        return True
+    return branch.startswith(ACCEPTED_BRANCH_PREFIXES)
 
 
 def _git_value(args: list[str], root: Path = ROOT) -> str | None:
@@ -161,12 +165,15 @@ def collect_repo_preflight_report(
     ahead = git["ahead"]
     behind = git["behind"]
 
-    expected_branch = branch if branch in ACCEPTED_BRANCHES else DEFAULT_EXPECTED_BRANCH
+    expected_branch = branch if _is_accepted_branch(branch) else DEFAULT_EXPECTED_BRANCH
     expected_upstream = f"origin/{expected_branch}"
 
-    if branch not in ACCEPTED_BRANCHES:
+    if not _is_accepted_branch(branch):
         allowed = ", ".join(sorted(repr(item) for item in ACCEPTED_BRANCHES))
-        clear_violations.append(f"branch mismatch: expected one of [{allowed}], found {branch!r}")
+        prefixes = ", ".join(repr(item) for item in ACCEPTED_BRANCH_PREFIXES)
+        clear_violations.append(
+            f"branch mismatch: expected one of [{allowed}] or prefixes [{prefixes}], found {branch!r}"
+        )
     if not head:
         clear_violations.append("HEAD could not be resolved")
     if not upstream:
@@ -226,6 +233,7 @@ def collect_repo_preflight_report(
         "expected_branch": expected_branch,
         "expected_upstream": expected_upstream,
         "accepted_branches": sorted(ACCEPTED_BRANCHES),
+        "accepted_branch_prefixes": list(ACCEPTED_BRANCH_PREFIXES),
         "branch": branch,
         "head": head,
         "upstream": upstream,
