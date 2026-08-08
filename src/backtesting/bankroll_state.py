@@ -50,6 +50,7 @@ def save_bankroll_state(state: dict[str, Any], path: Path | None = None) -> Path
     root.mkdir(parents=True, exist_ok=True)
     data = _redact(state)
     p = path or (root / f"{data.get('bankroll_id', 'bankroll')}.json")
+    p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(json.dumps(data, indent=2, sort_keys=True), encoding="utf-8")
     return p
 
