@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import subprocess
 import sys
 import zipfile
@@ -9,6 +10,8 @@ from pathlib import Path, PurePosixPath, PureWindowsPath
 
 import src.data.oddswarehouse_nfl_basic_ingest as oddswarehouse_ingest
 from scripts.run_oddswarehouse_nfl_basic_pilot import build_parser
+from src.data.data_identity_lakehouse import DataIdentityLakehouseRuntime
+from src.data.historical_canonical_compatibility import LINEAGE_METADATA, SEMANTIC_REUSE
 from src.data.historical_dataset_acquisition_runtime import (
     HistoricalDatasetAcquisitionRuntime,
     _legacy_source_bundle_digest,
@@ -986,6 +989,7 @@ def test_legacy_semantic_stage_rows_replay_without_conflict(tmp_path: Path) -> N
                     for field, value in _legacy_stage_row(dict(row)).items()
                     if field in columns
                 }
+                filtered["source_type"] = "controlled_vendor_workbook"
                 store.upsert(table_name, filtered, key_columns=key_columns)
             result = oddswarehouse_ingest._persist_classified_rows(
                 store,
@@ -995,5 +999,102 @@ def test_legacy_semantic_stage_rows_replay_without_conflict(tmp_path: Path) -> N
             )
             assert result["counts"]["CONFLICT"] == 0
             assert result["counts"]["EXACT_DUPLICATE"] == len(rows)
+            assert all(item["decision"] == SEMANTIC_REUSE for item in result["compatibility_diagnostics"])
+            assert all(
+                any(
+                    diff["field_name"] == "source_type"
+                    and diff["classification"] == LINEAGE_METADATA
+                    for diff in item["differences"]
+                )
+                for item in result["compatibility_diagnostics"]
+            )
     finally:
         store.close()
+
+
+def test_exact_replay_reuses_legacy_workbook_source_type_state(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    rows = _sample_workbook_rows()[:2]
+    csv_path = tmp_path / "NFL_Basic.csv"
+    storage_root = tmp_path / "research-data"
+    storage_root.mkdir()
+    monkeypatch.setenv("RESEARCH_DATA_ROOT", str(storage_root))
+    monkeypatch.delenv("AUTOMATION_DATA_DIR", raising=False)
+    _write_canonical_csv(csv_path, rows)
+
+    storage_path = storage_root / "historical" / "oddswarehouse.sqlite"
+    lakehouse_root = storage_root / "lakehouse" / "oddswarehouse"
+    bronze_root = storage_root / "bronze" / "oddswarehouse"
+
+    first = run_oddswarehouse_nfl_basic_pilot(
+        csv_path,
+        storage_path=storage_path,
+        lakehouse_root=lakehouse_root,
+        bronze_raw_root=bronze_root,
+        limit=2,
+    )
+    parquet_before = _lakehouse_parquet_files(lakehouse_root)
+
+    store = create_local_storage_engine(storage_path)
+    try:
+        legacy_tables = (
+            "historical_events",
+            "historical_event_participants",
+            "historical_source_event_links",
+            "historical_markets",
+            "historical_selections",
+            "historical_event_market_selections",
+            "identity_mappings",
+            "identity_reconciliation_results",
+            "historical_dataset_rows",
+            "feature_snapshots",
+        )
+        for table_name in legacy_tables:
+            if not store.table_exists(table_name):
+                continue
+            text_columns = [
+                row[1]
+                for row in store.connection.execute(f"PRAGMA table_info({table_name})").fetchall()
+                if str(row[2]).upper() == "TEXT"
+            ]
+            for column_name in text_columns:
+                store.connection.execute(
+                    f"UPDATE {table_name} SET {column_name} = REPLACE({column_name}, 'controlled_vendor_file', 'controlled_vendor_workbook')"
+                )
+        store.connection.commit()
+        shutil.rmtree(lakehouse_root, ignore_errors=True)
+        if store.table_exists("lakehouse_partitions"):
+            store.connection.execute("DELETE FROM lakehouse_partitions")
+            store.connection.commit()
+    finally:
+        store.close()
+    identity_runtime = DataIdentityLakehouseRuntime(
+        storage_path=storage_path,
+        lakehouse_root=lakehouse_root,
+    )
+    try:
+        legacy_publish = identity_runtime.publish_lakehouse_views()
+        assert legacy_publish["ok"] is True
+    finally:
+        identity_runtime.close()
+
+    replay = run_oddswarehouse_nfl_basic_pilot(
+        csv_path,
+        storage_path=storage_path,
+        lakehouse_root=lakehouse_root,
+        bronze_raw_root=bronze_root,
+        limit=2,
+    )
+    parquet_after = _lakehouse_parquet_files(lakehouse_root)
+
+    assert first["ok"] is True
+    assert replay["ok"] is True
+    assert replay["replay_status"] == "reused"
+    assert replay["raw_acquisition_result"]["status"] == "raw_cache_reused"
+    assert replay["new_row_count"] == 0
+    assert replay["exact_duplicate_count"] == 2
+    assert replay["conflict_count"] == 0
+    assert replay["created_partition_count"] == 0
+    assert parquet_after == parquet_before

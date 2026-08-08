@@ -17,6 +17,12 @@ from xml.etree import ElementTree as ET
 from src.data.data_identity_lakehouse import DataIdentityLakehouseRuntime
 from src.data.data_paths import get_runtime_data_path, get_storage_health
 from src.data.historical_dataset_acquisition_runtime import HistoricalDatasetAcquisitionRuntime
+from src.data.historical_canonical_compatibility import (
+    DEFAULT_HISTORICAL_STAGE_COMPATIBILITY_POLICY,
+    GOVERNED_REVISION,
+    SEMANTIC_REUSE,
+    compare_historical_canonical_rows,
+)
 from src.data.historical_research_asset_certification_runtime import (
     HistoricalResearchAssetCertificationRuntime,
     ResearchAssetCertificationContract,
@@ -1584,58 +1590,8 @@ def _selection_result(
     return ("unknown", None)
 
 
-_SEMANTIC_STAGE_IGNORE_FIELDS = {
-    "dataset_id",
-    "dataset_name",
-    "market_profile",
-    "profile_id",
-    "profile_family",
-    "stage_name",
-    "batch_id",
-    "source_file",
-    "source_snapshot_time",
-    "snapshot_time",
-    "decision_time",
-    "certified_at",
-    "source_metadata_json",
-    "context_json",
-    "payload_json",
-    "created_at",
-    "updated_at",
-    "snapshot_id",
-    "lineage_id",
-    "version_id",
-    "completeness_score",
-}
-
-
 def _source_event_scope_from_row(row: Mapping[str, Any]) -> str:
     return f"{ODDSWAREHOUSE_NFL_BASIC_PROVIDER_ID}|{ODDSWAREHOUSE_NFL_BASIC_PRODUCT_ID}|{_normalize_text(row.get('Game ID'))}"
-
-
-def _semantic_stage_value(value: Any) -> Any:
-    if value is None:
-        return ""
-    if isinstance(value, str):
-        return _normalize_text(value)
-    if isinstance(value, bool):
-        return 1 if value else 0
-    if isinstance(value, int):
-        return value
-    if isinstance(value, float):
-        return round(value, 6)
-    if isinstance(value, (Mapping, list, tuple, set)):
-        return _as_json(value)
-    return str(value)
-
-
-def _semantic_stage_row(row: Mapping[str, Any]) -> dict[str, Any]:
-    return {
-        str(key): _semantic_stage_value(value)
-        for key, value in dict(row).items()
-        if str(key) not in _SEMANTIC_STAGE_IGNORE_FIELDS
-    }
-
 
 def _classify_stage_row(
     store: LocalStorageEngine,
@@ -1643,16 +1599,28 @@ def _classify_stage_row(
     row: Mapping[str, Any],
     *,
     key_columns: Sequence[str],
-) -> tuple[str, dict[str, Any] | None]:
+) -> tuple[str, dict[str, Any] | None, dict[str, Any]]:
     where = " AND ".join(f"{column} = ?" for column in key_columns)
     params = [row.get(column) for column in key_columns]
     existing_rows = store.fetch(table_name, where=where, params=params, limit=1)
     if not existing_rows:
-        return "NEW", None
+        return "NEW", None, {
+            "decision": "NEW_PUBLICATION",
+            "differences": [],
+            "semantic_difference_fields": [],
+            "metadata_difference_fields": [],
+        }
     existing_row = dict(existing_rows[0])
-    if _semantic_stage_row(existing_row) == _semantic_stage_row(row):
-        return "EXACT_DUPLICATE", existing_row
-    return "CONFLICT", existing_row
+    compatibility = compare_historical_canonical_rows(
+        existing_row,
+        row,
+        policy=DEFAULT_HISTORICAL_STAGE_COMPATIBILITY_POLICY,
+    )
+    if compatibility["decision"] == SEMANTIC_REUSE:
+        return "EXACT_DUPLICATE", existing_row, compatibility
+    if compatibility["decision"] == GOVERNED_REVISION:
+        return "REVISION", existing_row, compatibility
+    return "CONFLICT", existing_row, compatibility
 
 
 def _persist_classified_rows(
@@ -1671,13 +1639,14 @@ def _persist_classified_rows(
         "REJECTED": 0,
     }
     source_event_statuses: dict[str, list[str]] = defaultdict(list)
+    compatibility_diagnostics: list[dict[str, Any]] = []
     for row in rows:
         filtered = {
             str(key): value
             for key, value in dict(row).items()
             if str(key) in columns
         }
-        classification, existing_row = _classify_stage_row(
+        classification, existing_row, compatibility = _classify_stage_row(
             store,
             table_name,
             filtered,
@@ -1685,6 +1654,16 @@ def _persist_classified_rows(
         )
         counts[classification] += 1
         source_event_statuses[_normalize_text(filtered.get("source_event_id"))].append(classification)
+        if classification in {"EXACT_DUPLICATE", "REVISION", "CONFLICT"}:
+            compatibility_diagnostics.append(
+                {
+                    "table_name": table_name,
+                    "key": {column: filtered.get(column) for column in key_columns},
+                    "classification": classification,
+                    "decision": compatibility.get("decision"),
+                    "differences": list(compatibility.get("differences") or []),
+                }
+            )
         if classification == "NEW":
             store.upsert(table_name, filtered, key_columns=key_columns)
             continue
@@ -1694,6 +1673,7 @@ def _persist_classified_rows(
         "table_name": table_name,
         "counts": counts,
         "source_event_statuses": source_event_statuses,
+        "compatibility_diagnostics": compatibility_diagnostics,
     }
 
 
@@ -3023,6 +3003,8 @@ def _source_row_classification_counts(
             classification = "REJECTED"
         elif any(status == "CONFLICT" for status in statuses):
             classification = "CONFLICT"
+        elif any(status == "REVISION" for status in statuses):
+            classification = "REVISION"
         elif any(status == "REJECTED" for status in statuses):
             classification = "REJECTED"
         elif any(status == "NEW" for status in statuses):
@@ -3046,6 +3028,8 @@ def _source_row_classification_counts(
 def _replay_status_from_counts(counts: Mapping[str, Any]) -> str:
     if int(counts.get("CONFLICT") or 0) > 0:
         return "CONFLICT"
+    if int(counts.get("REVISION") or 0) > 0:
+        return "REVISION"
     if int(counts.get("REJECTED") or 0) > 0:
         return "REJECTED"
     if int(counts.get("NEW") or 0) == 0:
