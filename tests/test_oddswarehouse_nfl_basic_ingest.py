@@ -9,7 +9,10 @@ from pathlib import Path, PurePosixPath, PureWindowsPath
 
 import src.data.oddswarehouse_nfl_basic_ingest as oddswarehouse_ingest
 from scripts.run_oddswarehouse_nfl_basic_pilot import build_parser
-from src.data.historical_dataset_acquisition_runtime import HistoricalDatasetAcquisitionRuntime
+from src.data.historical_dataset_acquisition_runtime import (
+    HistoricalDatasetAcquisitionRuntime,
+    _legacy_source_bundle_digest,
+)
 from src.data.oddswarehouse_nfl_basic_ingest import (
     EXPECTED_HEADERS,
     _apply_deterministic_row_limit,
@@ -307,6 +310,18 @@ def _canonicalized_output(normalized: dict[str, object]) -> dict[str, object]:
 
 def _lakehouse_parquet_files(root: Path) -> list[Path]:
     return sorted(root.rglob("*.parquet"))
+
+
+def _legacy_stage_row(row: dict[str, object]) -> dict[str, object]:
+    legacy: dict[str, object] = {}
+    for key, value in row.items():
+        if isinstance(value, str) and value == "":
+            legacy[key] = None
+        elif isinstance(value, float) and value.is_integer():
+            legacy[key] = int(value)
+        else:
+            legacy[key] = value
+    return legacy
 
 
 def test_normalize_oddswarehouse_workbook_rows_preserves_historical_identity_and_stage_only_timing() -> None:
@@ -638,6 +653,81 @@ def test_retry_after_incomplete_acquisition_reuses_raw_artifact(tmp_path: Path, 
     assert "reused_raw_acquisition_cache" in (report["partial_state_action"] or "")
 
 
+def test_retry_after_incomplete_acquisition_reuses_legacy_raw_cache_fingerprint(tmp_path: Path, monkeypatch) -> None:
+    rows = _sample_workbook_rows()[:2]
+    csv_path = tmp_path / "NFL_Basic.csv"
+    storage_root = tmp_path / "research-data"
+    storage_root.mkdir()
+    monkeypatch.setenv("RESEARCH_DATA_ROOT", str(storage_root))
+    monkeypatch.delenv("AUTOMATION_DATA_DIR", raising=False)
+    _write_canonical_csv(csv_path, rows)
+
+    storage_path = storage_root / "historical" / "oddswarehouse.sqlite"
+    lakehouse_root = storage_root / "lakehouse" / "oddswarehouse"
+    bronze_root = storage_root / "bronze" / "oddswarehouse"
+
+    profile = _profile_oddswarehouse_source(csv_path)
+    selected_rows, selection = _apply_deterministic_row_limit(profile["source"], limit=2)
+    acquisition_id = _build_acquisition_id(profile, selected_rows=selected_rows, selection=selection)
+    source_bundle_id = _build_source_bundle_id(profile, selected_rows=selected_rows, selection=selection)
+    selected_profile = _selected_source_profile(profile, selected_rows=selected_rows, selection=selection)
+    source_bundle = _source_bundle_from_source_profile(
+        selected_profile,
+        source_bundle_id,
+        "2026-08-06T00:00:00Z",
+        acquisition_id=acquisition_id,
+        batch_id=acquisition_id,
+    )
+
+    with HistoricalDatasetAcquisitionRuntime(storage_path=storage_path) as runtime:
+        staged = runtime.stage_raw_acquisition_cache(
+            source_bundle,
+            profile_id="sports:nfl",
+            dataset_name="oddswarehouse_nfl_basic_raw_acquisition_cache",
+        )
+        version_rows = runtime.platform.store.fetch(
+            "dataset_versions",
+            where="dataset_id = ?",
+            params=[staged["contract"]["dataset_id"]],
+            order_by="version_number ASC",
+        )
+        assert len(version_rows) == 1
+        version_row = dict(version_rows[0])
+        legacy_metadata = HistoricalDatasetAcquisitionRuntime._version_metadata_payload(version_row)
+        legacy_metadata["source_bundle_id"] = acquisition_id
+        legacy_metadata["source_bundle_digest"] = _legacy_source_bundle_digest(
+            source_bundle,
+            source_bundle_id=acquisition_id,
+        )
+        version_row["metadata_json"] = json.dumps(legacy_metadata, sort_keys=True)
+        runtime.platform.store.upsert("dataset_versions", version_row, key_columns=("version_id",))
+
+    report = run_oddswarehouse_nfl_basic_pilot(
+        csv_path,
+        storage_path=storage_path,
+        lakehouse_root=lakehouse_root,
+        bronze_raw_root=bronze_root,
+        limit=2,
+    )
+
+    store = create_local_storage_engine(storage_path)
+    try:
+        version_rows = store.fetch(
+            "dataset_versions",
+            where="dataset_id = ?",
+            params=["dataset.sports.nfl.oddswarehouse.raw_acquisition_cache"],
+            order_by="version_number ASC",
+        )
+        assert len(version_rows) == 1
+    finally:
+        store.close()
+
+    assert report["prior_incomplete_acquisition_detected"] is True
+    assert report["raw_acquisition_result"]["status"] == "raw_cache_reused"
+    assert report["raw_acquisition_result"]["reuse_match_type"] == "legacy_source_bundle_id"
+    assert report["replay_status"] == "resumed"
+
+
 def test_canonical_csv_exact_replay_and_overlapping_sample_are_idempotent(
     tmp_path: Path,
     monkeypatch,
@@ -865,3 +955,45 @@ def test_preflight_publication_failure_leaves_canonical_state_unpublished(
     assert report["failure_stage"] == "preflight_publication"
     assert report["publication_started"] is False
     assert report["publication_committed"] is False
+    assert report["bronze_file_copies"] == []
+    assert Path(report["bronze_raw_root"]).exists() is False
+
+
+def test_legacy_semantic_stage_rows_replay_without_conflict(tmp_path: Path) -> None:
+    normalized = normalize_oddswarehouse_workbook_rows(
+        [_sample_workbook_rows()[0]],
+        batch_id="oddswarehouse.batch.legacy",
+        created_at="2026-08-08T00:00:00Z",
+        source_file="NFL_Basic.csv",
+    )
+    storage_path = tmp_path / "legacy_stage.sqlite"
+    store = create_local_storage_engine(storage_path)
+    try:
+        store.ensure_schema()
+        table_rows = {
+            "historical_events": (normalized["event_rows"], ("event_id",)),
+            "historical_event_participants": (normalized["participant_rows"], ("participant_id",)),
+            "historical_source_event_links": (normalized["event_link_rows"], ("link_id",)),
+            "historical_markets": (normalized["market_rows"], ("market_id",)),
+            "historical_selections": (normalized["selection_rows"], ("selection_id",)),
+            "historical_event_market_selections": (normalized["gold_rows"], ("dataset_row_id",)),
+        }
+        for table_name, (rows, key_columns) in table_rows.items():
+            columns = set(store.table_columns(table_name))
+            for row in rows:
+                filtered = {
+                    field: value
+                    for field, value in _legacy_stage_row(dict(row)).items()
+                    if field in columns
+                }
+                store.upsert(table_name, filtered, key_columns=key_columns)
+            result = oddswarehouse_ingest._persist_classified_rows(
+                store,
+                table_name,
+                rows,
+                key_columns=key_columns,
+            )
+            assert result["counts"]["CONFLICT"] == 0
+            assert result["counts"]["EXACT_DUPLICATE"] == len(rows)
+    finally:
+        store.close()

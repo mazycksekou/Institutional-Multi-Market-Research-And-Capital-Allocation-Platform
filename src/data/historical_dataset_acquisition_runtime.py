@@ -108,6 +108,15 @@ def _bundle_metadata(source_bundle: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
+def _source_bundle_identity_candidates(source_bundle: Mapping[str, Any]) -> tuple[str, ...]:
+    candidates: list[str] = []
+    for key in ("source_bundle_id", "acquisition_id", "batch_id"):
+        candidate = _normalize_text(source_bundle.get(key))
+        if candidate and candidate not in candidates:
+            candidates.append(candidate)
+    return tuple(candidates)
+
+
 def _canonical_bundle_table_row(table_name: str, row: Mapping[str, Any]) -> dict[str, Any]:
     ignored_fields = set()
     if table_name == "file_artifacts":
@@ -130,6 +139,27 @@ def _bundle_semantic_tables(source_bundle: Mapping[str, Any]) -> dict[str, list[
     }
 
 
+def _legacy_source_bundle_digest(
+    source_bundle: Mapping[str, Any],
+    *,
+    source_bundle_id: str,
+) -> str:
+    payload = {
+        "dataset_id": _normalize_text(source_bundle.get("dataset_id")),
+        "dataset_version": _normalize_text(source_bundle.get("dataset_version")),
+        "source_name": _normalize_text(source_bundle.get("source_name")),
+        "source_type": _normalize_text(source_bundle.get("source_type")),
+        "source_key": _normalize_text(source_bundle.get("source_key")),
+        "provider": _normalize_text(source_bundle.get("provider")),
+        "provider_sources": list(source_bundle.get("provider_sources") or []),
+        "provider_versions": list(source_bundle.get("provider_versions") or []),
+        "source_bundle_id": _normalize_text(source_bundle_id),
+        "source_tables": _bundle_tables(source_bundle),
+        "metadata": _bundle_metadata(source_bundle),
+    }
+    return hashlib.sha256(_as_json(payload).encode("utf-8")).hexdigest()
+
+
 def _source_bundle_digest(source_bundle: Mapping[str, Any]) -> str:
     payload = {
         "dataset_id": _normalize_text(source_bundle.get("dataset_id")),
@@ -144,6 +174,52 @@ def _source_bundle_digest(source_bundle: Mapping[str, Any]) -> str:
         "metadata": _bundle_metadata(source_bundle),
     }
     return hashlib.sha256(_as_json(payload).encode("utf-8")).hexdigest()
+
+
+def _source_bundle_digest_candidates(source_bundle: Mapping[str, Any]) -> tuple[str, ...]:
+    candidates = [_source_bundle_digest(source_bundle)]
+    for source_bundle_id in _source_bundle_identity_candidates(source_bundle):
+        legacy_digest = _legacy_source_bundle_digest(
+            source_bundle,
+            source_bundle_id=source_bundle_id,
+        )
+        if legacy_digest not in candidates:
+            candidates.append(legacy_digest)
+    return tuple(candidates)
+
+
+def _semantic_tables_from_raw_records(raw_rows: Sequence[Mapping[str, Any]]) -> dict[str, list[dict[str, Any]]]:
+    tables: dict[str, list[dict[str, Any]]] = {}
+    for raw_row in raw_rows:
+        try:
+            wrapped_payload = json.loads(raw_row.get("payload_json") or "{}")
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(wrapped_payload, Mapping):
+            continue
+        table_name = _normalize_text(wrapped_payload.get("source_table"))
+        if not table_name:
+            continue
+        source_payload: dict[str, Any] = {}
+        raw_payload = wrapped_payload.get("payload_json")
+        if isinstance(raw_payload, str):
+            try:
+                parsed_payload = json.loads(raw_payload or "{}")
+            except json.JSONDecodeError:
+                parsed_payload = {}
+            if isinstance(parsed_payload, Mapping):
+                source_payload = dict(parsed_payload)
+        elif isinstance(raw_payload, Mapping):
+            source_payload = dict(raw_payload)
+        tables.setdefault(table_name, []).append(source_payload)
+    return _bundle_semantic_tables({"source_tables": tables})
+
+
+def _semantic_source_bundle_matches_raw_records(
+    source_bundle: Mapping[str, Any],
+    raw_rows: Sequence[Mapping[str, Any]],
+) -> bool:
+    return _bundle_semantic_tables(source_bundle) == _semantic_tables_from_raw_records(raw_rows)
 
 
 def _row_identifier(table_name: str, row: Mapping[str, Any], index: int) -> str:
@@ -565,25 +641,36 @@ class HistoricalDatasetAcquisitionRuntime:
         source_bundle: Mapping[str, Any],
         profile_id: str,
     ) -> dict[str, Any] | None:
-        source_bundle_id = _normalize_text(contract.source_bundle_id)
-        source_bundle_digest = _source_bundle_digest(source_bundle)
+        current_source_bundle_id = _normalize_text(contract.source_bundle_id)
+        source_bundle_ids = _source_bundle_identity_candidates(
+            {
+                **dict(source_bundle),
+                "source_bundle_id": current_source_bundle_id,
+            }
+        )
+        source_bundle_digests = _source_bundle_digest_candidates(source_bundle)
         version_rows = self.platform.store.fetch(
             "dataset_versions",
             where="dataset_id = ?",
             params=[contract.dataset_id],
             order_by="version_number DESC",
         )
-        candidates: list[tuple[dict[str, Any], str]] = []
+        candidates: list[tuple[dict[str, Any], str, bool]] = []
         for version_row in version_rows:
             metadata = self._version_metadata_payload(version_row)
-            if _normalize_text(metadata.get("source_bundle_digest")) != source_bundle_digest:
-                continue
             existing_bundle_id = _normalize_text(metadata.get("source_bundle_id"))
-            if source_bundle_id and existing_bundle_id == source_bundle_id:
-                candidates.insert(0, (dict(version_row), "source_bundle_id"))
+            existing_digest = _normalize_text(metadata.get("source_bundle_digest"))
+            bundle_match = existing_bundle_id in source_bundle_ids if existing_bundle_id else False
+            digest_match = existing_digest in source_bundle_digests if existing_digest else False
+            if bundle_match and digest_match:
+                direct_match_type = "source_bundle_id" if existing_bundle_id == current_source_bundle_id else "legacy_source_bundle_id"
+                candidates.insert(0, (dict(version_row), direct_match_type, True))
                 continue
-            candidates.append((dict(version_row), "content_digest"))
-        for version_row, reuse_match_type in candidates:
+            if digest_match:
+                candidates.append((dict(version_row), "content_digest", bundle_match))
+                continue
+            candidates.append((dict(version_row), "raw_row_semantic_match", bundle_match))
+        for version_row, reuse_match_type, bundle_match in candidates:
             version_id = _normalize_text(version_row.get("version_id"))
             snapshot_id = _normalize_text(version_row.get("snapshot_id"))
             lineage_id = _normalize_text(version_row.get("lineage_id"))
@@ -594,6 +681,10 @@ class HistoricalDatasetAcquisitionRuntime:
                 params=[contract.dataset_id, version_id],
                 order_by="row_index ASC",
             )
+            if reuse_match_type == "raw_row_semantic_match":
+                if not _semantic_source_bundle_matches_raw_records(source_bundle, raw_rows):
+                    continue
+                reuse_match_type = "legacy_source_bundle_id" if bundle_match else "raw_row_semantic_match"
             validation_rows = self.platform.store.fetch(
                 "validation_results",
                 where="validation_id = ?",
@@ -667,6 +758,23 @@ class HistoricalDatasetAcquisitionRuntime:
                 "reuse_match_type": reuse_match_type,
             }
         return None
+
+    def find_reusable_raw_acquisition_cache(
+        self,
+        source_bundle: Mapping[str, Any],
+        *,
+        profile_id: str = DEFAULT_HISTORICAL_DATASET_ACQUISITION_RUNTIME_PROFILE_ID,
+        dataset_name: str = DEFAULT_HISTORICAL_DATASET_ACQUISITION_RUNTIME_DATASET_NAME,
+    ) -> dict[str, Any] | None:
+        contract = self.build_contract(profile_id=profile_id, source_bundle=source_bundle, dataset_name=dataset_name)
+        if self.backend == "sqlite" and not self.storage_path.exists():
+            return None
+        self.platform.store.ensure_schema()
+        return self._find_reusable_stage_result(
+            contract=contract,
+            source_bundle=source_bundle,
+            profile_id=profile_id,
+        )
 
     def _raw_records_for_bundle(
         self,

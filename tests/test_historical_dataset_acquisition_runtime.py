@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from src.data.historical_dataset_acquisition_runtime import (
     HistoricalDatasetAcquisitionRuntime,
+    _legacy_source_bundle_digest,
     build_historical_dataset_acquisition_runtime_dashboard_snapshot,
     get_historical_dataset_acquisition_runtime_snapshot_for_dashboard,
 )
@@ -140,5 +142,39 @@ def test_historical_dataset_acquisition_runtime_reuses_identical_content_with_di
         assert second["replay_status"] == "IDEMPOTENT_REUSE"
         assert second["reuse_match_type"] == "content_digest"
         assert second["dataset_version"]["version_id"] == first["dataset_version"]["version_id"]
+    finally:
+        runtime.close()
+
+
+def test_historical_dataset_acquisition_runtime_reuses_legacy_fingerprint_contract(
+    tmp_path: Path,
+) -> None:
+    storage_path = tmp_path / "historical_acquisition_runtime_legacy_digest.sqlite"
+    fixture = build_nfl_p0_fixture(2)
+
+    runtime = HistoricalDatasetAcquisitionRuntime(storage_path=storage_path)
+    try:
+        first = runtime.stage_raw_acquisition_cache(fixture, profile_id="sports:nfl")
+        version_rows = runtime.platform.store.fetch(
+            "dataset_versions",
+            where="dataset_id = ?",
+            params=[first["contract"]["dataset_id"]],
+            order_by="version_number ASC",
+        )
+        assert len(version_rows) == 1
+        version_row = dict(version_rows[0])
+        legacy_metadata = HistoricalDatasetAcquisitionRuntime._version_metadata_payload(version_row)
+        legacy_metadata["source_bundle_digest"] = _legacy_source_bundle_digest(
+            fixture,
+            source_bundle_id=first["contract"]["source_bundle_id"],
+        )
+        version_row["metadata_json"] = json.dumps(legacy_metadata, sort_keys=True)
+        runtime.platform.store.upsert("dataset_versions", version_row, key_columns=("version_id",))
+
+        replayed = runtime.stage_raw_acquisition_cache(fixture, profile_id="sports:nfl")
+
+        assert replayed["status"] == "raw_cache_reused"
+        assert replayed["replay_status"] == "IDEMPOTENT_REUSE"
+        assert replayed["dataset_version"]["version_id"] == first["dataset_version"]["version_id"]
     finally:
         runtime.close()

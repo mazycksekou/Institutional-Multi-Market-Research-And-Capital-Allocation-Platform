@@ -12,11 +12,11 @@ research.
 
 - repository homepage: `docs/PROJECT_STATUS.md`
 - required starting document: `docs/PROJECT_STATUS.md`
-- current branch: `feature/external-research-data-storage`
-- current HEAD: branch cut from the validated canonical main tip (exact hash is reported in the task final report)
-- remote tracking branch: `not yet pushed; configure origin/feature/external-research-data-storage on first push`
+- current branch: `main`
+- current HEAD: latest canonical main tip (exact hash is reported in the latest merged task handoff)
+- remote tracking branch: `origin/main`
 - validated canonical branch: `main`
-- validated canonical HEAD: branch-consolidation main tip (exact hash is reported in the task final report)
+- validated canonical HEAD: latest merged main tip (exact hash is reported in the latest merged task handoff)
 - active phase: `Portable External Research-Data Storage`
 - previous completed active phase: `First Controlled NFL Vendor Ingest (complete)`
 - previous completed active phase before that: `Data Identity, Reconciliation and Lakehouse Foundation (complete)`
@@ -80,6 +80,7 @@ research.
   - Universal Market Framework code changes are complete and validated: focused universal-market-framework parity tests, adjacent market-profile and Research Intelligence regressions, compileall, smoke, root markdown, OpenAPI contract, architecture, audit lifecycle, document lifecycle, ops checks, repository preflight checks, git diff checks, and the full repository test suite are green.
   - Data Identity, Reconciliation and Lakehouse Foundation validation remediation is complete and validated: the Parquet runtime dependency is now declared in `requirements.txt`, the global-install fallback was removed, clean-environment requirements-only installation exposes `pyarrow` deterministically, focused lakehouse and pipeline-validation regressions are green, smoke is green, the workflow-equivalent `scripts/run_quality_gates.py` path is green, and the full repository test suite is green again.
   - First Controlled NFL Vendor Ingest code changes are complete and validated: focused OddsWarehouse ingest tests, focused lakehouse and research-asset-lifecycle regressions, compileall, smoke, root markdown, OpenAPI contract, architecture, audit lifecycle, document lifecycle, ops checks, repository preflight checks, git diff checks, and the full repository test suite are green.
+  - Portable External Research-Data Storage historical-state hardening is complete and validated for the bounded OddsWarehouse replay path: focused OddsWarehouse ingest tests, focused historical dataset acquisition runtime tests, adjacent data identity, reconciliation, lifecycle, certification, and data-path regressions, compileall, smoke, root markdown, OpenAPI contract, architecture, audit lifecycle, document lifecycle advisory with one warning and no clear violations, ops checks with an external `RESEARCH_DATA_ROOT`, and the canonical `scripts/run_quality_gates.py --install` full-suite run are green; the next governed step is B-005 real-drive verification against accumulated FantomHD state without cleanup or full-file ingestion.
   - Sequencing correction code changes are complete and validated: targeted governance and documentation tests, root markdown, document lifecycle, and git diff checks align the active phase to NFL Production Completion and the following governed lane to the Covariance and Time-Dependent Risk Capability Audit without beginning NFL implementation.
 - NFL Production Completion code changes are complete and validated: focused NFL-production-completion runtime tests, adjacent Universal Market Framework, Streamlit dashboard, and NFL P0 readiness regressions, compileall, smoke, root markdown, OpenAPI contract, architecture, audit lifecycle, document lifecycle, ops checks, repository preflight checks, git diff checks, and the full repository test suite are green.
   - Data platform sequencing correction code changes are complete and validated: targeted governance tests, root markdown, architecture, document lifecycle, and git diff checks realign the active phase to Data Identity, Reconciliation and Lakehouse Foundation, insert First Controlled NFL Vendor Ingest before covariance work, and preserve the canonical long-term sequence without beginning implementation.
@@ -195,4 +196,4 @@ Read these only when you need more detail than the project status page provides:
 
 ## Next Recommended Codex Task
 
-`Portable External Research-Data Storage`
+`Portable External Research-Data Storage -> B-005 real-drive historical-state verification`
