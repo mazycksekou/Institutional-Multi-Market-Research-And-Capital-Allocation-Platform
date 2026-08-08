@@ -4,7 +4,7 @@ import os
 import subprocess
 import sys
 import zipfile
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 
 from scripts.run_oddswarehouse_nfl_basic_pilot import build_parser
 from src.data.historical_dataset_acquisition_runtime import HistoricalDatasetAcquisitionRuntime
@@ -324,8 +324,13 @@ def test_build_parser_accepts_mac_and_windows_source_paths() -> None:
     mac_args = parser.parse_args(["--source", "/Volumes/FantomHD/NFL_Basic.csv", "--limit", "100"])
     windows_args = parser.parse_args(["--source", r"D:\NFL_Basic.csv", "--limit", "100"])
 
-    assert mac_args.source.name == "NFL_Basic.csv"
-    assert windows_args.source.name == "NFL_Basic.csv"
+    mac_source = str(mac_args.source).replace("\\", "/")
+    windows_source = str(windows_args.source)
+
+    assert PurePosixPath(mac_source).as_posix() == "/Volumes/FantomHD/NFL_Basic.csv"
+    assert PurePosixPath(mac_source).name == "NFL_Basic.csv"
+    assert str(PureWindowsPath(windows_source)) == r"D:\NFL_Basic.csv"
+    assert PureWindowsPath(windows_source).name == "NFL_Basic.csv"
     assert mac_args.limit == 100
     assert windows_args.limit == 100
 
