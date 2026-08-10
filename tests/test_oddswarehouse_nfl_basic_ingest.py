@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import io
 import json
 import os
 import shutil
@@ -611,6 +612,188 @@ def test_validation_failure_returns_structured_report_without_publication(tmp_pa
     assert Path(report["report_path"]).exists()
 
 
+def test_preflight_publication_is_read_only_and_avoids_lakehouse_copy(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    rows = _sample_workbook_rows()[:2]
+    csv_path = tmp_path / "NFL_Basic.csv"
+    _write_canonical_csv(csv_path, rows)
+    storage_path = tmp_path / "historical.sqlite"
+    lakehouse_root = tmp_path / "lakehouse"
+
+    profile = _profile_oddswarehouse_source(csv_path)
+    selected_rows, selection = _apply_deterministic_row_limit(profile["source"], limit=2)
+    acquisition_id = _build_acquisition_id(
+        profile,
+        selected_rows=selected_rows,
+        selection=selection,
+    )
+    selected_profile = _selected_source_profile(
+        profile,
+        selected_rows=selected_rows,
+        selection=selection,
+    )
+    validation = validate_oddswarehouse_source_profile(selected_profile)
+    normalized = normalize_oddswarehouse_workbook_rows(
+        selected_rows,
+        batch_id=acquisition_id,
+        created_at="2026-08-10T00:00:00Z",
+        source_file=csv_path.name,
+    )
+
+    def _unexpected_copytree(*args, **kwargs) -> None:
+        raise AssertionError("preflight should not copy the lakehouse directory")
+
+    monkeypatch.setattr(shutil, "copytree", _unexpected_copytree)
+
+    result = oddswarehouse_ingest._preflight_governed_publication(
+        storage_path=storage_path,
+        lakehouse_root=lakehouse_root,
+        batch_id=acquisition_id,
+        created_at="2026-08-10T00:00:00Z",
+        source_file=csv_path,
+        selected_profile=selected_profile,
+        validation=validation,
+        normalized_payload=normalized,
+        raw_acquisition_result={},
+    )
+
+    store = create_local_storage_engine(storage_path)
+    try:
+        assert store.count("historical_acquisition_batches") == 0
+        assert store.count("historical_events") == 0
+        assert store.count("historical_markets") == 0
+        assert store.count("historical_selections") == 0
+        assert store.count("lakehouse_partitions") == 0
+    finally:
+        store.close()
+
+    assert result["source_row_counts"]["counts"]["NEW"] == 2
+    assert result["classification_counts"]["NEW"] > 0
+    assert result["identity_result"]["lakehouse_result"]["created_partition_count"] == 0
+    assert result["publication_plan"]["affected_tables"]
+    assert result["publication_plan"]["affected_partition_scope"]
+    assert _lakehouse_parquet_files(lakehouse_root) == []
+
+
+def test_progress_events_report_stage_timings_and_scoped_partition_reuse(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    rows = _sample_workbook_rows()[:2]
+    csv_path = tmp_path / "NFL_Basic.csv"
+    storage_root = tmp_path / "research-data"
+    storage_root.mkdir()
+    monkeypatch.setenv("RESEARCH_DATA_ROOT", str(storage_root))
+    monkeypatch.delenv("AUTOMATION_DATA_DIR", raising=False)
+    _write_canonical_csv(csv_path, rows)
+
+    storage_path = storage_root / "historical" / "oddswarehouse.sqlite"
+    lakehouse_root = storage_root / "lakehouse" / "oddswarehouse"
+    bronze_root = storage_root / "bronze" / "oddswarehouse"
+
+    first = run_oddswarehouse_nfl_basic_pilot(
+        csv_path,
+        storage_path=storage_path,
+        lakehouse_root=lakehouse_root,
+        bronze_raw_root=bronze_root,
+        limit=2,
+    )
+    first_parquet_files = _lakehouse_parquet_files(lakehouse_root)
+    store = create_local_storage_engine(storage_path)
+    try:
+        first_partition_count = store.count("lakehouse_partitions")
+    finally:
+        store.close()
+
+    progress_stream = io.StringIO()
+    replay = run_oddswarehouse_nfl_basic_pilot(
+        csv_path,
+        storage_path=storage_path,
+        lakehouse_root=lakehouse_root,
+        bronze_raw_root=bronze_root,
+        limit=2,
+        progress_emit_interval_seconds=0.0,
+        progress_stream=progress_stream,
+    )
+
+    events = [
+        json.loads(line)
+        for line in progress_stream.getvalue().splitlines()
+        if line.strip()
+    ]
+    completed_stages = {
+        event["stage"]
+        for event in events
+        if event["status"] == "COMPLETED"
+    }
+    required_stages = {
+        "source_profiling",
+        "row_selection",
+        "validation",
+        "normalization",
+        "canonical_classification",
+        "sqlite_persistence",
+        "identity_mapping",
+        "reconciliation",
+        "parquet_partition_planning",
+        "parquet_writing",
+        "certification",
+        "lifecycle_recording",
+    }
+    planning_event = next(
+        event
+        for event in events
+        if event["stage"] == "parquet_partition_planning"
+        and event["status"] == "COMPLETED"
+    )
+
+    assert replay["ok"] is True
+    assert replay["progress_events"] == events
+    assert required_stages <= completed_stages
+    assert set(replay["stage_timings"]) == required_stages
+    assert planning_event["partitions_total"] == replay["reused_partition_count"]
+    assert planning_event["partitions_total"] < first_partition_count
+    assert replay["created_partition_count"] == 0
+    assert _lakehouse_parquet_files(lakehouse_root) == first_parquet_files
+    assert first["created_partition_count"] == first_partition_count
+
+
+def test_dataset_identity_uses_full_source_coverage_for_production_metadata(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    rows = [
+        _sample_workbook_rows()[0],
+        _sample_workbook_rows()[1],
+        _row_with(_sample_workbook_rows()[2], **{"Game ID": 2097, "Date": "20250907"}),
+    ]
+    csv_path = tmp_path / "NFL_Basic.csv"
+    storage_root = tmp_path / "research-data"
+    storage_root.mkdir()
+    monkeypatch.setenv("RESEARCH_DATA_ROOT", str(storage_root))
+    monkeypatch.delenv("AUTOMATION_DATA_DIR", raising=False)
+    _write_canonical_csv(csv_path, rows)
+
+    report = run_oddswarehouse_nfl_basic_pilot(
+        csv_path,
+        storage_path=storage_root / "historical" / "oddswarehouse.sqlite",
+        lakehouse_root=storage_root / "lakehouse" / "oddswarehouse",
+        bronze_raw_root=storage_root / "bronze" / "oddswarehouse",
+        limit=2,
+    )
+
+    assert report["ok"] is True
+    assert report["dataset_identity"]["dataset_id"] == "dataset.sports.nfl.oddswarehouse.nfl_basic.historical"
+    assert report["dataset_identity"]["dataset_alias"] == "dataset.sports.nfl.oddswarehouse.nfl_basic.current"
+    assert report["dataset_identity"]["report_catalog_name"] == "oddswarehouse_nfl_basic_historical"
+    assert report["dataset_identity"]["full_source_season_label"] == "2009-2025"
+    assert report["dataset_identity"]["selected_season_label"] == "2009"
+    assert report["dataset_identity"]["full_source_date_label"] == "20090920-20250907"
+    assert report["dataset_identity"]["selected_date_label"] == "20090920"
+
+
 def test_retry_after_incomplete_acquisition_reuses_raw_artifact(tmp_path: Path, monkeypatch) -> None:
     rows = _sample_workbook_rows()[:2]
     csv_path = tmp_path / "NFL_Basic.csv"
@@ -775,6 +958,7 @@ def test_resume_partial_publication_reuses_raw_bundle_and_replaces_legacy_partit
         )
 
     assert staged["status"] == "raw_cache_ready"
+    staged_version_id = staged["dataset_version"]["version_id"]
 
     store = create_local_storage_engine(storage_path)
     try:
@@ -859,8 +1043,15 @@ def test_resume_partial_publication_reuses_raw_bundle_and_replaces_legacy_partit
         ]
         assert len(batch_rows) == 1
         assert len(raw_partitions) == 1
+        version_rows = store.fetch(
+            "dataset_versions",
+            where="dataset_id = ?",
+            params=["dataset.sports.nfl.oddswarehouse.raw_acquisition_cache"],
+            order_by="version_number ASC",
+        )
         batch_row = dict(batch_rows[0])
         raw_partition_values = json.loads(raw_partitions[0]["partition_values_json"])
+        assert [row["version_id"] for row in version_rows] == [staged_version_id]
         assert batch_row["event_count"] == 2
         assert batch_row["market_count"] == 12
         assert batch_row["selection_count"] == 24
@@ -945,7 +1136,7 @@ def test_canonical_csv_exact_replay_and_overlapping_sample_are_idempotent(
     assert second["new_row_count"] == 0
     assert second["exact_duplicate_count"] == 2
     assert second["created_partition_count"] == 0
-    assert second["reused_partition_count"] >= first_partition_count
+    assert second["reused_partition_count"] > 0
     assert second_parquet_files == first_parquet_files
 
     overlap = run_oddswarehouse_nfl_basic_pilot(
@@ -1163,7 +1354,7 @@ def test_publish_failure_after_raw_reuse_leaves_canonical_and_lakehouse_state_un
     assert any(action["status"] == "created" for action in bronze_actions)
     bronze_files_before = sorted(path for path in bronze_root.rglob("*") if path.is_file())
 
-    def _boom(self) -> dict[str, object]:
+    def _boom(self, *args, **kwargs) -> dict[str, object]:
         raise RuntimeError("simulated_publish_failure")
 
     monkeypatch.setattr(DataIdentityLakehouseRuntime, "publish_lakehouse_views", _boom)
