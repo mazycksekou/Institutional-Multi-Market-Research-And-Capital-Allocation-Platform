@@ -2878,8 +2878,22 @@ def _register_identity_and_quality(
 ) -> dict[str, Any]:
     team_mapping_rows = list(normalized_payload.get("team_mappings") or [])
     event_rows = list(normalized_payload.get("event_rows") or [])
+    market_rows = list(normalized_payload.get("market_rows") or [])
     selection_rows = list(normalized_payload.get("selection_rows") or [])
     identity_mapping_rows: list[dict[str, Any]] = []
+    canonical_scope_rows = canonical_publication_scope or {}
+    scope_event_rows = [
+        dict(row)
+        for row in (canonical_scope_rows.get("historical_events") or event_rows)
+    ]
+    scope_market_rows = [
+        dict(row)
+        for row in (canonical_scope_rows.get("historical_markets") or market_rows)
+    ]
+    scope_selection_rows = [
+        dict(row)
+        for row in (canonical_scope_rows.get("historical_selections") or selection_rows)
+    ]
 
     if progress is not None:
         progress.start(
@@ -2937,20 +2951,36 @@ def _register_identity_and_quality(
     if progress is not None:
         progress.complete(rows_processed=len(identity_mapping_rows))
 
-    seed_result = runtime.seed_from_certified_outputs()
-    identity_mapping_rows.extend(seed_result.get("mappings") or [])
+    with runtime.store.transaction():
+        seed_result = runtime.seed_from_certified_outputs(
+            events=scope_event_rows,
+            markets=scope_market_rows,
+            selections=scope_selection_rows,
+        )
+        identity_mapping_rows.extend(seed_result.get("mappings") or [])
 
     if progress is not None:
         progress.start("reconciliation", rows_total=len(selection_rows))
-    reconciliation_result = runtime.reconcile_certified_outputs()
+    with runtime.store.transaction():
+        reconciliation_result = runtime.reconcile_certified_outputs(
+            selection_rows=scope_selection_rows,
+        )
     if progress is not None:
         progress.complete(rows_processed=len(reconciliation_result.get("reconciliation_rows") or []), rows_total=len(selection_rows))
 
-    publication_scope_rows: dict[str, list[dict[str, Any]]] = {
-        table_name: [dict(row) for row in rows]
-        for table_name, rows in (canonical_publication_scope or {}).items()
-        if rows
-    }
+    publication_scope_rows: dict[str, list[dict[str, Any]]]
+    if canonical_scope_rows:
+        publication_scope_rows = {
+            table_name: [dict(row) for row in rows]
+            for table_name, rows in canonical_scope_rows.items()
+            if rows
+        }
+    else:
+        publication_scope_rows = {
+            table_name: [dict(row) for row in rows]
+            for table_name, rows in _canonical_publication_rows(normalized_payload).items()
+            if rows
+        }
     if raw_rows:
         publication_scope_rows["raw_records"] = [dict(row) for row in raw_rows]
     if identity_mapping_rows:
