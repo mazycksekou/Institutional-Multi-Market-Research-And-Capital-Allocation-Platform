@@ -6,12 +6,14 @@ import json
 import os
 import re
 import shutil
+import sys
 import tempfile
 import zipfile
 from collections import Counter, defaultdict
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
+from time import monotonic
 from typing import Any, Mapping, Sequence
 from xml.etree import ElementTree as ET
 
@@ -49,9 +51,12 @@ ODDSWAREHOUSE_NFL_BASIC_SOURCE_KEY = "oddswarehouse_nfl_basic"
 ODDSWAREHOUSE_NFL_BASIC_CONNECTOR_ID = "connector.manual_import.oddswarehouse_nfl_basic"
 ODDSWAREHOUSE_NFL_BASIC_CONNECTOR_NAME = "OddsWarehouse NFL Basic Manual Import"
 ODDSWAREHOUSE_NFL_BASIC_PROFILE_ID = "sports:nfl"
-ODDSWAREHOUSE_NFL_BASIC_DATASET_VERSION = "oddswarehouse.nfl_basic.2009.pilot.v1"
+ODDSWAREHOUSE_NFL_BASIC_DATASET_ID = "dataset.sports.nfl.oddswarehouse.nfl_basic.historical"
+ODDSWAREHOUSE_NFL_BASIC_DATASET_ALIAS = "dataset.sports.nfl.oddswarehouse.nfl_basic.current"
+ODDSWAREHOUSE_NFL_BASIC_DATASET_VERSION = "oddswarehouse.nfl_basic.historical.v1"
+ODDSWAREHOUSE_NFL_BASIC_DATASET_REVISION = "r001"
 ODDSWAREHOUSE_NFL_BASIC_EXPECTED_SHEET = "NFL_Basic"
-ODDSWAREHOUSE_NFL_BASIC_PILOT_SEASON = 2009
+ODDSWAREHOUSE_NFL_BASIC_LEGACY_BRONZE_SEASON = 2009
 ODDSWAREHOUSE_NFL_BASIC_STORAGE_PATH = get_runtime_data_path(
     "historical",
     "oddswarehouse_nfl_basic_pilot",
@@ -70,6 +75,7 @@ ODDSWAREHOUSE_NFL_BASIC_REPORT_ROOT = get_runtime_data_path(
     "reports",
     "oddswarehouse_nfl_basic_pilot",
 )
+ODDSWAREHOUSE_PROGRESS_INTERVAL_SECONDS = 30.0
 
 EXPECTED_HEADERS: tuple[str, ...] = (
     "Game ID",
@@ -164,6 +170,154 @@ TEAM_MAPPINGS: dict[str, TeamMapping] = {
         TeamMapping("Washington", "WAS", "nfl.franchise.washington", "Washington Redskins", "Washington Commanders", "1937-01-01", ""),
     )
 }
+
+
+class _StageProgressTracker:
+    def __init__(
+        self,
+        *,
+        run_id: str = "",
+        emit_interval_seconds: float = ODDSWAREHOUSE_PROGRESS_INTERVAL_SECONDS,
+        stream: Any = None,
+    ) -> None:
+        self.run_id = _normalize_text(run_id, "pending")
+        self.emit_interval_seconds = max(0.0, float(emit_interval_seconds))
+        self.stream = stream if stream is not None else sys.stderr
+        self.stage_timings: dict[str, dict[str, Any]] = {}
+        self.progress_events: list[dict[str, Any]] = []
+        self._active_stage: str | None = None
+        self._active_started_at = 0.0
+        self._last_emitted_at = 0.0
+        self._rows_processed = 0
+        self._rows_total = 0
+        self._partitions_processed = 0
+        self._partitions_total = 0
+
+    def set_run_id(self, run_id: str) -> None:
+        normalized = _normalize_text(run_id)
+        if normalized:
+            self.run_id = normalized
+
+    def start(
+        self,
+        stage: str,
+        *,
+        rows_total: int = 0,
+        partitions_total: int = 0,
+    ) -> None:
+        self._active_stage = stage
+        self._active_started_at = monotonic()
+        self._last_emitted_at = self._active_started_at
+        self._rows_processed = 0
+        self._rows_total = max(0, int(rows_total))
+        self._partitions_processed = 0
+        self._partitions_total = max(0, int(partitions_total))
+
+    def update(
+        self,
+        *,
+        rows_processed: int | None = None,
+        rows_total: int | None = None,
+        partitions_processed: int | None = None,
+        partitions_total: int | None = None,
+        force: bool = False,
+    ) -> None:
+        if self._active_stage is None:
+            return
+        if rows_processed is not None:
+            self._rows_processed = max(0, int(rows_processed))
+        if rows_total is not None:
+            self._rows_total = max(0, int(rows_total))
+        if partitions_processed is not None:
+            self._partitions_processed = max(0, int(partitions_processed))
+        if partitions_total is not None:
+            self._partitions_total = max(0, int(partitions_total))
+        now = monotonic()
+        if not force and self.emit_interval_seconds and (now - self._last_emitted_at) < self.emit_interval_seconds:
+            return
+        self._last_emitted_at = now
+        self._emit("ACTIVE", elapsed_seconds=now - self._active_started_at)
+
+    def complete(
+        self,
+        *,
+        rows_processed: int | None = None,
+        rows_total: int | None = None,
+        partitions_processed: int | None = None,
+        partitions_total: int | None = None,
+    ) -> None:
+        if self._active_stage is None:
+            return
+        self.update(
+            rows_processed=rows_processed,
+            rows_total=rows_total,
+            partitions_processed=partitions_processed,
+            partitions_total=partitions_total,
+            force=True,
+        )
+        elapsed = monotonic() - self._active_started_at
+        self.stage_timings[self._active_stage] = {
+            "status": "COMPLETED",
+            "elapsed_seconds": round(elapsed, 4),
+            "rows_processed": self._rows_processed,
+            "rows_total": self._rows_total,
+            "partitions_processed": self._partitions_processed,
+            "partitions_total": self._partitions_total,
+        }
+        self._emit("COMPLETED", elapsed_seconds=elapsed)
+        self._active_stage = None
+
+    def fail(
+        self,
+        *,
+        interrupted: bool = False,
+        error: str = "",
+    ) -> None:
+        if self._active_stage is None:
+            return
+        elapsed = monotonic() - self._active_started_at
+        status = "INTERRUPTED" if interrupted else "FAILED"
+        self.stage_timings[self._active_stage] = {
+            "status": status,
+            "elapsed_seconds": round(elapsed, 4),
+            "rows_processed": self._rows_processed,
+            "rows_total": self._rows_total,
+            "partitions_processed": self._partitions_processed,
+            "partitions_total": self._partitions_total,
+            "error": error or None,
+        }
+        self._emit(status, elapsed_seconds=elapsed, error=error or None)
+        self._active_stage = None
+
+    def snapshot(self) -> dict[str, Any]:
+        return {
+            "stage_timings": dict(self.stage_timings),
+            "progress_events": list(self.progress_events),
+        }
+
+    def _emit(
+        self,
+        status: str,
+        *,
+        elapsed_seconds: float,
+        error: str | None = None,
+    ) -> None:
+        if self._active_stage is None:
+            return
+        payload = {
+            "run_id": self.run_id,
+            "stage": self._active_stage,
+            "status": status,
+            "elapsed_seconds": round(float(elapsed_seconds), 4),
+            "rows_processed": self._rows_processed,
+            "rows_total": self._rows_total,
+            "partitions_processed": self._partitions_processed,
+            "partitions_total": self._partitions_total,
+        }
+        if error:
+            payload["error"] = error
+        self.progress_events.append(payload)
+        print(_as_json(payload), file=self.stream, flush=True)
 
 
 def _normalize_text(value: Any, default: str = "") -> str:
@@ -292,6 +446,54 @@ def _season_coverage_from_rows(rows: Sequence[Mapping[str, Any]]) -> dict[str, A
     }
 
 
+def _date_coverage_from_rows(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    dates = sorted(
+        _normalize_text(row.get("Date"))
+        for row in rows
+        if _normalize_text(row.get("Date"))
+    )
+    return {
+        "min": dates[0] if dates else None,
+        "max": dates[-1] if dates else None,
+    }
+
+
+def _coverage_label(minimum: Any, maximum: Any) -> str:
+    minimum_text = _normalize_text(minimum)
+    maximum_text = _normalize_text(maximum)
+    if minimum_text and maximum_text:
+        return minimum_text if minimum_text == maximum_text else f"{minimum_text}-{maximum_text}"
+    return minimum_text or maximum_text or "unknown"
+
+
+def _dataset_metadata(
+    *,
+    source_profile: Mapping[str, Any],
+    selected_profile: Mapping[str, Any],
+) -> dict[str, Any]:
+    full_source_rows = list(source_profile.get("rows") or [])
+    selected_source_rows = list(selected_profile.get("rows") or [])
+    full_date_coverage = dict(source_profile.get("date_coverage") or {}) or _date_coverage_from_rows(full_source_rows)
+    full_season_coverage = dict(source_profile.get("season_coverage") or {}) or _season_coverage_from_rows(full_source_rows)
+    selected_date_coverage = dict(selected_profile.get("date_coverage") or {}) or _date_coverage_from_rows(selected_source_rows)
+    selected_season_coverage = dict(selected_profile.get("season_coverage") or {}) or _season_coverage_from_rows(selected_source_rows)
+    return {
+        "dataset_id": ODDSWAREHOUSE_NFL_BASIC_DATASET_ID,
+        "dataset_alias": ODDSWAREHOUSE_NFL_BASIC_DATASET_ALIAS,
+        "dataset_version": ODDSWAREHOUSE_NFL_BASIC_DATASET_VERSION,
+        "dataset_revision": ODDSWAREHOUSE_NFL_BASIC_DATASET_REVISION,
+        "report_catalog_name": "oddswarehouse_nfl_basic_historical",
+        "full_source_date_coverage": full_date_coverage,
+        "full_source_season_coverage": full_season_coverage,
+        "selected_date_coverage": selected_date_coverage,
+        "selected_season_coverage": selected_season_coverage,
+        "full_source_date_label": _coverage_label(full_date_coverage.get("min"), full_date_coverage.get("max")),
+        "full_source_season_label": _coverage_label(full_season_coverage.get("min"), full_season_coverage.get("max")),
+        "selected_date_label": _coverage_label(selected_date_coverage.get("min"), selected_date_coverage.get("max")),
+        "selected_season_label": _coverage_label(selected_season_coverage.get("min"), selected_season_coverage.get("max")),
+    }
+
+
 def _selected_source_profile(
     profile: Mapping[str, Any],
     *,
@@ -306,6 +508,7 @@ def _selected_source_profile(
     )
     return {
         **dict(profile),
+        "full_source": dict(source),
         "source": {
             **source,
             "rows": [dict(row) for row in selected_rows],
@@ -414,8 +617,96 @@ def _resume_publication_tokens(
     return tuple(token for token in dict.fromkeys(tokens) if token)
 
 
+def _report_row_preview(
+    rows: Sequence[Mapping[str, Any]] | None,
+    *,
+    fields: Sequence[str] = ("Game ID", "Date", "Away Team", "Home Team"),
+    limit: int = 5,
+) -> list[dict[str, Any]]:
+    preview: list[dict[str, Any]] = []
+    for row in list(rows or [])[: max(0, int(limit))]:
+        preview.append({field: row.get(field) for field in fields if field in row})
+    return preview
+
+
+def _report_safe_source_profile(profile: Mapping[str, Any]) -> dict[str, Any]:
+    payload = dict(profile)
+    payload["row_preview"] = _report_row_preview(profile.get("rows") or [])
+    payload["invalid_row_preview"] = _report_row_preview(profile.get("invalid_rows") or [])
+    payload["duplicate_header_row_preview"] = _report_row_preview(profile.get("duplicate_header_rows") or [])
+    payload["row_preview_count"] = len(payload["row_preview"])
+    payload["invalid_row_count"] = len(profile.get("invalid_rows") or [])
+    payload["duplicate_header_row_count"] = len(profile.get("duplicate_header_rows") or [])
+    payload.pop("rows", None)
+    payload.pop("cells", None)
+    payload.pop("invalid_rows", None)
+    payload.pop("duplicate_header_rows", None)
+    return payload
+
+
+def _report_safe_validation(validation: Mapping[str, Any]) -> dict[str, Any]:
+    payload = dict(validation)
+    accepted_rows = list(validation.get("accepted_rows") or [])
+    rejected_rows = list(validation.get("rejected_rows") or [])
+    payload["accepted_row_preview"] = _report_row_preview(accepted_rows)
+    payload["rejected_row_preview"] = [
+        {
+            "source_event_id": _normalize_text(row.get("source_event_id")),
+            "game_id": _normalize_text(row.get("Game ID")),
+            "errors": list(row.get("errors") or []),
+        }
+        for row in rejected_rows[:5]
+    ]
+    payload["accepted_row_count"] = len(accepted_rows)
+    payload["rejected_row_count"] = len(rejected_rows)
+    payload.pop("accepted_rows", None)
+    payload.pop("rejected_rows", None)
+    payload.pop("row_results", None)
+    return payload
+
+
+def _report_safe_source_bundle(source_bundle: Mapping[str, Any]) -> dict[str, Any]:
+    payload = dict(source_bundle)
+    source_tables = dict(payload.get("source_tables") or {})
+    payload["source_tables"] = {
+        "file_artifacts": len(source_tables.get("file_artifacts") or []),
+        "source_rows": len(source_tables.get("source_rows") or []),
+        "source_cells": len(source_tables.get("source_cells") or []),
+        "csv_evidence": len(source_tables.get("csv_evidence") or []),
+    }
+    return payload
+
+
+def _report_safe_raw_acquisition_result(raw_acquisition_result: Mapping[str, Any]) -> dict[str, Any]:
+    payload = dict(raw_acquisition_result)
+    payload["source_bundle"] = _report_safe_source_bundle(raw_acquisition_result.get("source_bundle") or {})
+    payload["raw_record_preview"] = [
+        {
+            "record_id": row.get("record_id"),
+            "dataset_id": row.get("dataset_id"),
+            "row_index": row.get("row_index"),
+        }
+        for row in list(raw_acquisition_result.get("raw_records") or [])[:5]
+    ]
+    payload["lineage_edge_count"] = len(raw_acquisition_result.get("lineage_edges") or [])
+    payload.pop("raw_records", None)
+    payload.pop("lineage_edges", None)
+    validation = raw_acquisition_result.get("validation")
+    if isinstance(validation, Mapping):
+        payload["validation"] = _report_safe_validation(validation)
+    return payload
+
+
 def _write_ingest_report(report: Mapping[str, Any]) -> dict[str, Any]:
     payload = dict(report)
+    if isinstance(payload.get("source_profile"), Mapping):
+        payload["source_profile"] = _report_safe_source_profile(payload["source_profile"])
+    if isinstance(payload.get("companion_evidence_profile"), Mapping):
+        payload["companion_evidence_profile"] = _report_safe_source_profile(payload["companion_evidence_profile"])
+    if isinstance(payload.get("validation"), Mapping):
+        payload["validation"] = _report_safe_validation(payload["validation"])
+    if isinstance(payload.get("raw_acquisition_result"), Mapping):
+        payload["raw_acquisition_result"] = _report_safe_raw_acquisition_result(payload["raw_acquisition_result"])
     ODDSWAREHOUSE_NFL_BASIC_REPORT_ROOT.mkdir(parents=True, exist_ok=True)
     run_token = _normalize_text(payload.get("run_id"))
     acquisition_token = _normalize_text(payload.get("acquisition_id"))
@@ -491,7 +782,7 @@ def _provider_capability(schema_headers: Sequence[str]) -> dict[str, Any]:
     return {
         "provider_id": ODDSWAREHOUSE_NFL_BASIC_PROVIDER_ID,
         "provider_name": ODDSWAREHOUSE_NFL_BASIC_PROVIDER_NAME,
-        "provider_role": "controlled_vendor_pilot",
+        "provider_role": "controlled_vendor_historical",
         "connector_id": ODDSWAREHOUSE_NFL_BASIC_CONNECTOR_ID,
         "connector_name": ODDSWAREHOUSE_NFL_BASIC_CONNECTOR_NAME,
         "connector_family": "manual_import",
@@ -507,14 +798,14 @@ def _provider_capability(schema_headers: Sequence[str]) -> dict[str, Any]:
         "supported_fields": list(schema_headers),
         "supported_markets": ["sports:nfl", "spread", "moneyline", "total"],
         "historical_depth": "historical",
-        "update_frequency": "manual / workbook pilot",
+        "update_frequency": "manual / governed historical file import",
         "point_in_time_safe": True,
         "licensing_notes": (
-            "Controlled pilot import from a manually supplied workbook. "
+            "Controlled historical import from a manually supplied file bundle. "
             "Sportsbook identity and methodology remain unknown in the source evidence."
         ),
         "cost_class": "manual_import",
-        "certification_readiness": "pilot_ready",
+        "certification_readiness": "historical_ready",
         "quality_score": 0.9,
         "quality_tier": "approved_manual_import",
         "source_aliases": [ODDSWAREHOUSE_NFL_BASIC_PROVIDER_ID, "oddwarehouse"],
@@ -1452,7 +1743,7 @@ def _bronze_raw_dir_for_root(artifact_id: str, bronze_raw_root: str | Path) -> P
         Path(bronze_raw_root)
         / f"provider={ODDSWAREHOUSE_NFL_BASIC_PROVIDER_ID}"
         / "league=nfl"
-        / f"season={ODDSWAREHOUSE_NFL_BASIC_PILOT_SEASON}"
+        / f"season={ODDSWAREHOUSE_NFL_BASIC_LEGACY_BRONZE_SEASON}"
         / f"product={ODDSWAREHOUSE_NFL_BASIC_PRODUCT_ID}"
         / f"a={_bounded_artifact_token(artifact_id)}"
     )
@@ -1593,7 +1884,7 @@ def _source_bundle_from_source_profile(
         "connector_name": ODDSWAREHOUSE_NFL_BASIC_CONNECTOR_NAME,
         "connector_role": "controlled_manual_import",
         "execution_mode": "manual_bounded_ingest",
-        "provider_role": "controlled_vendor_pilot",
+        "provider_role": "controlled_vendor_historical",
         "source_family": "odds_data",
         "source_access_type": "manual_import",
         "provider_capability": _provider_capability(source.get("headers") or EXPECTED_HEADERS),
@@ -1658,34 +1949,192 @@ def _selection_result(
 def _source_event_scope_from_row(row: Mapping[str, Any]) -> str:
     return f"{ODDSWAREHOUSE_NFL_BASIC_PROVIDER_ID}|{ODDSWAREHOUSE_NFL_BASIC_PRODUCT_ID}|{_normalize_text(row.get('Game ID'))}"
 
-def _classify_stage_row(
+def _classification_count_template() -> dict[str, int]:
+    return {
+        "NEW": 0,
+        "EXACT_DUPLICATE": 0,
+        "SEMANTIC_REUSE": 0,
+        "REVISION": 0,
+        "CONFLICT": 0,
+        "REJECTED": 0,
+    }
+
+
+def _row_key(row: Mapping[str, Any], key_columns: Sequence[str]) -> tuple[Any, ...]:
+    return tuple(row.get(column) for column in key_columns)
+
+
+def _filtered_table_rows(
     store: LocalStorageEngine,
     table_name: str,
-    row: Mapping[str, Any],
+    rows: Sequence[Mapping[str, Any]],
+) -> list[dict[str, Any]]:
+    columns = set(store.table_columns(table_name))
+    return [
+        {
+            str(key): value
+            for key, value in dict(row).items()
+            if str(key) in columns
+        }
+        for row in rows
+    ]
+
+
+def _fetch_existing_rows_by_key(
+    store: LocalStorageEngine,
+    table_name: str,
+    filtered_rows: Sequence[Mapping[str, Any]],
     *,
     key_columns: Sequence[str],
-) -> tuple[str, dict[str, Any] | None, dict[str, Any]]:
-    where = " AND ".join(f"{column} = ?" for column in key_columns)
-    params = [row.get(column) for column in key_columns]
-    existing_rows = store.fetch(table_name, where=where, params=params, limit=1)
-    if not existing_rows:
-        return "NEW", None, {
-            "decision": "NEW_PUBLICATION",
-            "differences": [],
-            "semantic_difference_fields": [],
-            "metadata_difference_fields": [],
-        }
-    existing_row = dict(existing_rows[0])
-    compatibility = compare_historical_canonical_rows(
-        existing_row,
-        row,
-        policy=DEFAULT_HISTORICAL_STAGE_COMPATIBILITY_POLICY,
+    chunk_size: int = 200,
+) -> dict[tuple[Any, ...], dict[str, Any]]:
+    keys = []
+    seen_keys: set[tuple[Any, ...]] = set()
+    for row in filtered_rows:
+        key = _row_key(row, key_columns)
+        if not key or key in seen_keys:
+            continue
+        seen_keys.add(key)
+        keys.append(key)
+    if not keys:
+        return {}
+    existing_lookup: dict[tuple[Any, ...], dict[str, Any]] = {}
+    for start in range(0, len(keys), chunk_size):
+        chunk = keys[start : start + chunk_size]
+        if len(key_columns) == 1:
+            where = f"{key_columns[0]} IN ({', '.join('?' for _ in chunk)})"
+            params = [key[0] for key in chunk]
+        else:
+            clauses: list[str] = []
+            params = []
+            for key in chunk:
+                clauses.append("(" + " AND ".join(f"{column} = ?" for column in key_columns) + ")")
+                params.extend(key)
+            where = " OR ".join(clauses)
+        for existing_row in store.fetch(table_name, where=where, params=params):
+            existing_lookup[_row_key(existing_row, key_columns)] = dict(existing_row)
+    return existing_lookup
+
+
+def _classify_rows_against_store(
+    store: LocalStorageEngine,
+    table_name: str,
+    rows: Sequence[Mapping[str, Any]],
+    *,
+    key_columns: Sequence[str],
+    progress: _StageProgressTracker | None = None,
+    progress_offset: int = 0,
+    progress_total: int | None = None,
+) -> dict[str, Any]:
+    filtered_rows = _filtered_table_rows(store, table_name, rows)
+    existing_lookup = _fetch_existing_rows_by_key(
+        store,
+        table_name,
+        filtered_rows,
+        key_columns=key_columns,
     )
-    if compatibility["decision"] == SEMANTIC_REUSE:
-        return "EXACT_DUPLICATE", existing_row, compatibility
-    if compatibility["decision"] == GOVERNED_REVISION:
-        return "REVISION", existing_row, compatibility
-    return "CONFLICT", existing_row, compatibility
+    counts = _classification_count_template()
+    source_event_statuses: dict[str, list[str]] = defaultdict(list)
+    compatibility_diagnostics: list[dict[str, Any]] = []
+    rows_to_write: list[dict[str, Any]] = []
+    expected_canonical_delta = {
+        "new": 0,
+        "reused": 0,
+        "revised": 0,
+        "conflicted": 0,
+    }
+    total_rows = len(filtered_rows)
+    for index, filtered in enumerate(filtered_rows, start=1):
+        existing_row = existing_lookup.get(_row_key(filtered, key_columns))
+        diagnostic_classification = ""
+        if existing_row is None:
+            classification = "NEW"
+            compatibility = {
+                "decision": "NEW_PUBLICATION",
+                "differences": [],
+                "semantic_difference_fields": [],
+                "metadata_difference_fields": [],
+            }
+            rows_to_write.append(filtered)
+            expected_canonical_delta["new"] += 1
+        elif table_name == "historical_acquisition_batches":
+            if dict(existing_row) == dict(filtered):
+                classification = "EXACT_DUPLICATE"
+                compatibility = {
+                    "decision": SEMANTIC_REUSE,
+                    "differences": [],
+                    "semantic_difference_fields": [],
+                    "metadata_difference_fields": [],
+                }
+                expected_canonical_delta["reused"] += 1
+            else:
+                classification = "REVISION"
+                compatibility = {
+                    "decision": GOVERNED_REVISION,
+                    "differences": [],
+                    "semantic_difference_fields": [],
+                    "metadata_difference_fields": [],
+                }
+                rows_to_write.append(filtered)
+                expected_canonical_delta["revised"] += 1
+        else:
+            compatibility = compare_historical_canonical_rows(
+                existing_row,
+                filtered,
+                policy=DEFAULT_HISTORICAL_STAGE_COMPATIBILITY_POLICY,
+            )
+            if compatibility["decision"] == SEMANTIC_REUSE:
+                classification = "EXACT_DUPLICATE"
+                if compatibility.get("differences"):
+                    counts["SEMANTIC_REUSE"] += 1
+                    diagnostic_classification = "SEMANTIC_REUSE"
+                expected_canonical_delta["reused"] += 1
+            elif compatibility["decision"] == GOVERNED_REVISION:
+                classification = "REVISION"
+                rows_to_write.append(filtered)
+                expected_canonical_delta["revised"] += 1
+            else:
+                classification = "CONFLICT"
+                expected_canonical_delta["conflicted"] += 1
+        counts[classification] += 1
+        source_event_statuses[_normalize_text(filtered.get("source_event_id"))].append(classification)
+        if classification in {"EXACT_DUPLICATE", "REVISION", "CONFLICT"} or diagnostic_classification:
+            compatibility_diagnostics.append(
+                {
+                    "table_name": table_name,
+                    "key": {column: filtered.get(column) for column in key_columns},
+                    "classification": diagnostic_classification or classification,
+                    "decision": compatibility.get("decision"),
+                    "differences": list(compatibility.get("differences") or []),
+                }
+            )
+        if progress is not None:
+            progress.update(
+                rows_processed=progress_offset + index,
+                rows_total=progress_total if progress_total is not None else total_rows,
+            )
+    return {
+        "table_name": table_name,
+        "counts": counts,
+        "source_event_statuses": source_event_statuses,
+        "compatibility_diagnostics": compatibility_diagnostics,
+        "rows_to_write": rows_to_write,
+        "expected_canonical_delta": expected_canonical_delta,
+    }
+
+
+def _persist_classification_plan(
+    store: LocalStorageEngine,
+    plan: Mapping[str, Any],
+    *,
+    key_columns: Sequence[str],
+) -> None:
+    rows_to_write = [dict(row) for row in plan.get("rows_to_write") or []]
+    if not rows_to_write:
+        return
+    with store.transaction():
+        for row in rows_to_write:
+            store.upsert(plan["table_name"], row, key_columns=key_columns)
 
 
 def _persist_classified_rows(
@@ -1695,51 +2144,14 @@ def _persist_classified_rows(
     *,
     key_columns: Sequence[str],
 ) -> dict[str, Any]:
-    columns = set(store.table_columns(table_name))
-    counts = {
-        "NEW": 0,
-        "EXACT_DUPLICATE": 0,
-        "REVISION": 0,
-        "CONFLICT": 0,
-        "REJECTED": 0,
-    }
-    source_event_statuses: dict[str, list[str]] = defaultdict(list)
-    compatibility_diagnostics: list[dict[str, Any]] = []
-    for row in rows:
-        filtered = {
-            str(key): value
-            for key, value in dict(row).items()
-            if str(key) in columns
-        }
-        classification, existing_row, compatibility = _classify_stage_row(
-            store,
-            table_name,
-            filtered,
-            key_columns=key_columns,
-        )
-        counts[classification] += 1
-        source_event_statuses[_normalize_text(filtered.get("source_event_id"))].append(classification)
-        if classification in {"EXACT_DUPLICATE", "REVISION", "CONFLICT"}:
-            compatibility_diagnostics.append(
-                {
-                    "table_name": table_name,
-                    "key": {column: filtered.get(column) for column in key_columns},
-                    "classification": classification,
-                    "decision": compatibility.get("decision"),
-                    "differences": list(compatibility.get("differences") or []),
-                }
-            )
-        if classification == "NEW":
-            store.upsert(table_name, filtered, key_columns=key_columns)
-            continue
-        if classification == "CONFLICT" and existing_row is not None:
-            source_event_statuses[_normalize_text(filtered.get("source_event_id"))].append("CONFLICT")
-    return {
-        "table_name": table_name,
-        "counts": counts,
-        "source_event_statuses": source_event_statuses,
-        "compatibility_diagnostics": compatibility_diagnostics,
-    }
+    plan = _classify_rows_against_store(
+        store,
+        table_name,
+        rows,
+        key_columns=key_columns,
+    )
+    _persist_classification_plan(store, plan, key_columns=key_columns)
+    return plan
 
 
 def _stage_base(
@@ -2429,7 +2841,7 @@ def _acquisition_batch_row(
             {
                 "sportsbook_identity": "unknown",
                 "methodology": "unknown",
-                "source_role": "authoritative_workbook_pilot",
+                "source_role": "authoritative_historical_source",
             }
         ),
         "provenance_json": _as_json(
@@ -2457,54 +2869,92 @@ def _register_identity_and_quality(
     normalized_payload: Mapping[str, Any],
     workbook_profile: Mapping[str, Any],
     csv_profile: Mapping[str, Any],
+    canonical_publication_scope: Mapping[str, Sequence[Mapping[str, Any]]] | None = None,
+    raw_rows: Sequence[Mapping[str, Any]] = (),
+    progress: _StageProgressTracker | None = None,
 ) -> dict[str, Any]:
     team_mapping_rows = list(normalized_payload.get("team_mappings") or [])
     event_rows = list(normalized_payload.get("event_rows") or [])
     selection_rows = list(normalized_payload.get("selection_rows") or [])
+    identity_mapping_rows: list[dict[str, Any]] = []
 
-    for team_row in team_mapping_rows:
-        runtime.register_identity_mapping(
-            provider=ODDSWAREHOUSE_NFL_BASIC_PROVIDER_ID,
-            external_identifier=_normalize_text(team_row.get("source_name")),
-            internal_identifier=_normalize_text(team_row.get("team_id")),
-            entity_type="team",
-            entity_name=_normalize_text(team_row.get("historical_display_name")),
-            canonical_key=_normalize_text(team_row.get("franchise_id")),
-            approval_reference=batch_id,
-            approval_evidence=team_row,
-            source_payload=team_row,
-            valid_from=team_row.get("valid_from"),
-            valid_to=team_row.get("valid_to"),
-            notes={
-                "historical_display_name": team_row.get("historical_display_name"),
-                "observation_date": team_row.get("effective_date"),
-                "valid_from": team_row.get("valid_from"),
-                "valid_to": team_row.get("valid_to"),
-            },
-            processed_at=created_at,
+    if progress is not None:
+        progress.start(
+            "identity_mapping",
+            rows_total=len(team_mapping_rows) + len(event_rows),
         )
+    for team_row in team_mapping_rows:
+        identity_mapping_rows.append(
+            runtime.register_identity_mapping(
+                provider=ODDSWAREHOUSE_NFL_BASIC_PROVIDER_ID,
+                external_identifier=_normalize_text(team_row.get("source_name")),
+                internal_identifier=_normalize_text(team_row.get("team_id")),
+                entity_type="team",
+                entity_name=_normalize_text(team_row.get("historical_display_name")),
+                canonical_key=_normalize_text(team_row.get("franchise_id")),
+                approval_reference=batch_id,
+                approval_evidence=team_row,
+                source_payload=team_row,
+                valid_from=team_row.get("valid_from"),
+                valid_to=team_row.get("valid_to"),
+                notes={
+                    "historical_display_name": team_row.get("historical_display_name"),
+                    "observation_date": team_row.get("effective_date"),
+                    "valid_from": team_row.get("valid_from"),
+                    "valid_to": team_row.get("valid_to"),
+                },
+                processed_at=created_at,
+            )
+        )
+        if progress is not None:
+            progress.update(rows_processed=len(identity_mapping_rows))
 
     for event_row in event_rows:
-        runtime.register_identity_mapping(
-            provider=ODDSWAREHOUSE_NFL_BASIC_PROVIDER_ID,
-            external_identifier=_normalize_text(event_row.get("source_event_id")),
-            internal_identifier=_normalize_text(event_row.get("event_id")),
-            entity_type="event",
-            entity_name=_normalize_text(event_row.get("event_key")),
-            canonical_key=_normalize_text(event_row.get("event_key")),
-            approval_reference=batch_id,
-            approval_evidence={
-                "event_date": event_row.get("event_date"),
-                "home_team_id": event_row.get("home_team_id"),
-                "away_team_id": event_row.get("away_team_id"),
-            },
-            source_payload=event_row,
-            valid_from=event_row.get("event_date"),
-            processed_at=created_at,
+        identity_mapping_rows.append(
+            runtime.register_identity_mapping(
+                provider=ODDSWAREHOUSE_NFL_BASIC_PROVIDER_ID,
+                external_identifier=_normalize_text(event_row.get("source_event_id")),
+                internal_identifier=_normalize_text(event_row.get("event_id")),
+                entity_type="event",
+                entity_name=_normalize_text(event_row.get("event_key")),
+                canonical_key=_normalize_text(event_row.get("event_key")),
+                approval_reference=batch_id,
+                approval_evidence={
+                    "event_date": event_row.get("event_date"),
+                    "home_team_id": event_row.get("home_team_id"),
+                    "away_team_id": event_row.get("away_team_id"),
+                },
+                source_payload=event_row,
+                valid_from=event_row.get("event_date"),
+                processed_at=created_at,
+            )
         )
+        if progress is not None:
+            progress.update(rows_processed=len(identity_mapping_rows))
+    if progress is not None:
+        progress.complete(rows_processed=len(identity_mapping_rows))
 
-    runtime.seed_from_certified_outputs()
+    seed_result = runtime.seed_from_certified_outputs()
+    identity_mapping_rows.extend(seed_result.get("mappings") or [])
+
+    if progress is not None:
+        progress.start("reconciliation", rows_total=len(selection_rows))
     reconciliation_result = runtime.reconcile_certified_outputs()
+    if progress is not None:
+        progress.complete(rows_processed=len(reconciliation_result.get("reconciliation_rows") or []), rows_total=len(selection_rows))
+
+    publication_scope_rows: dict[str, list[dict[str, Any]]] = {
+        table_name: [dict(row) for row in rows]
+        for table_name, rows in (canonical_publication_scope or {}).items()
+        if rows
+    }
+    if raw_rows:
+        publication_scope_rows["raw_records"] = [dict(row) for row in raw_rows]
+    if identity_mapping_rows:
+        publication_scope_rows["identity_mappings"] = [dict(row) for row in identity_mapping_rows]
+    reconciliation_rows = [dict(row) for row in reconciliation_result.get("reconciliation_rows") or []]
+    if reconciliation_rows:
+        publication_scope_rows["identity_reconciliation_results"] = reconciliation_rows
 
     if csv_profile:
         evidence_name = Path(str(csv_profile.get("path") or "NFL_Basic sample provider oddwarehouse.csv")).name
@@ -2580,13 +3030,18 @@ def _register_identity_and_quality(
                 details=dict(row),
                 processed_at=created_at,
             )
-    lakehouse_result = runtime.publish_lakehouse_views()
+    lakehouse_result = runtime.publish_lakehouse_views(
+        publication_scope=runtime.summarize_publication_scope(publication_scope_rows),
+        progress_reporter=progress,
+    )
     readiness_snapshot = runtime.build_readiness_snapshot()
     return {
         "reconciliation_result": reconciliation_result,
+        "seed_result": seed_result,
         "lakehouse_result": lakehouse_result,
         "readiness_snapshot": readiness_snapshot,
         "selection_row_count": len(selection_rows),
+        "publication_scope": runtime.summarize_publication_scope(publication_scope_rows),
     }
 
 
@@ -2627,7 +3082,7 @@ def _certify_assets(
                 asset_type="event_market_selection_gold",
                 source_table_name="historical_event_market_selections",
                 required_fields=("dataset_row_id", "event_id", "market_type", "selection", "open_american_odds", "close_american_odds"),
-                description="Backtest-ready pilot gold rows with open and close values aligned to settled outcomes.",
+                description="Backtest-ready gold rows with open and close values aligned to settled outcomes.",
             ),
         ]
         results = []
@@ -2664,10 +3119,16 @@ def _record_lifecycle(
     raw_acquisition_result: Mapping[str, Any],
     certification_results: Mapping[str, Any],
     normalized_payload: Mapping[str, Any],
+    selected_profile: Mapping[str, Any],
 ) -> dict[str, Any]:
     runtime = ResearchAssetLifecycleRuntime(storage_path=storage_path)
     try:
         lifecycle_rows = []
+        full_source_profile = selected_profile.get("full_source") or selected_profile.get("source") or {}
+        dataset_identity = _dataset_metadata(
+            source_profile=full_source_profile,
+            selected_profile=selected_profile.get("source") or {},
+        )
         asset_id_to_rows = {
             "dataset.sports.nfl.oddswarehouse.source_events": normalized_payload.get("event_rows") or [],
             "dataset.sports.nfl.oddswarehouse.market_observations": normalized_payload.get("selection_rows") or [],
@@ -2682,9 +3143,9 @@ def _record_lifecycle(
                 market=ODDSWAREHOUSE_NFL_BASIC_PROFILE_ID,
                 league="NFL",
                 sport="football",
-                season=str(ODDSWAREHOUSE_NFL_BASIC_PILOT_SEASON),
-                week_or_date="2009-09-10..2009-09-20",
-                event_id="oddswarehouse_pilot",
+                season=dataset_identity["full_source_season_label"],
+                week_or_date=dataset_identity["full_source_date_label"],
+                event_id="",
                 market_id=contract["source_table_name"],
                 selection="",
                 provider=ODDSWAREHOUSE_NFL_BASIC_PROVIDER_ID,
@@ -2699,9 +3160,9 @@ def _record_lifecycle(
                 market_type=contract["source_table_name"],
             ).as_dict()
             for state, reason in (
-                ("discovered", "OddsWarehouse pilot asset discovered from the controlled workbook import request."),
-                ("source_identified", "Authoritative workbook source identified for controlled vendor onboarding."),
-                ("raw_acquired", "Raw workbook and CSV evidence staged through the canonical acquisition runtime."),
+                ("discovered", "OddsWarehouse historical asset discovered from the governed source import request."),
+                ("source_identified", "Authoritative historical source identified for controlled vendor onboarding."),
+                ("raw_acquired", "Raw historical source evidence staged through the canonical acquisition runtime."),
                 ("normalized", "Canonical event, market, selection, and gold rows normalized through repository storage owners."),
             ):
                 lifecycle_rows.append(
@@ -2732,6 +3193,157 @@ def _record_lifecycle(
         runtime.close()
 
 
+def _publication_table_specs(
+    *,
+    batch_id: str,
+    created_at: str,
+    source_file: Path,
+    selected_profile: Mapping[str, Any],
+    validation: Mapping[str, Any],
+    normalized_payload: Mapping[str, Any],
+) -> tuple[list[tuple[str, Sequence[Mapping[str, Any]], tuple[str, ...]]], list[str]]:
+    rejected_source_event_ids = _rejected_source_event_ids(validation, normalized_payload)
+    acquisition_batch_row = _acquisition_batch_row(
+        batch_id=batch_id,
+        created_at=created_at,
+        source_file=source_file.name,
+        source_count=len(selected_profile.get("files") or {}),
+        event_count=len(normalized_payload.get("event_rows") or []),
+        market_count=len(normalized_payload.get("market_rows") or []),
+        selection_count=len(normalized_payload.get("selection_rows") or []),
+        gold_count=len(normalized_payload.get("gold_rows") or []),
+        rejected_row_count=len([item for item in rejected_source_event_ids if item]),
+        workbook_profile=selected_profile["source"],
+        csv_profile=selected_profile.get("companion_evidence") or {},
+    )
+    table_specs = [
+        ("historical_acquisition_batches", [acquisition_batch_row], ("batch_id",)),
+        ("historical_events", normalized_payload.get("event_rows") or [], ("event_id",)),
+        ("historical_event_participants", normalized_payload.get("participant_rows") or [], ("participant_id",)),
+        ("historical_source_event_links", normalized_payload.get("event_link_rows") or [], ("link_id",)),
+        ("historical_markets", normalized_payload.get("market_rows") or [], ("market_id",)),
+        ("historical_selections", normalized_payload.get("selection_rows") or [], ("selection_id",)),
+        ("historical_event_market_selections", normalized_payload.get("gold_rows") or [], ("dataset_row_id",)),
+    ]
+    return table_specs, rejected_source_event_ids
+
+
+def _canonical_publication_rows(normalized_payload: Mapping[str, Any]) -> dict[str, list[dict[str, Any]]]:
+    return {
+        "historical_events": [dict(row) for row in normalized_payload.get("event_rows") or []],
+        "historical_event_participants": [dict(row) for row in normalized_payload.get("participant_rows") or []],
+        "historical_source_event_links": [dict(row) for row in normalized_payload.get("event_link_rows") or []],
+        "historical_markets": [dict(row) for row in normalized_payload.get("market_rows") or []],
+        "historical_selections": [dict(row) for row in normalized_payload.get("selection_rows") or []],
+        "historical_event_market_selections": [dict(row) for row in normalized_payload.get("gold_rows") or []],
+    }
+
+
+def _build_publication_plan(
+    *,
+    storage_path: Path,
+    lakehouse_root: Path,
+    batch_id: str,
+    created_at: str,
+    source_file: Path,
+    selected_profile: Mapping[str, Any],
+    validation: Mapping[str, Any],
+    normalized_payload: Mapping[str, Any],
+    progress: _StageProgressTracker | None = None,
+) -> dict[str, Any]:
+    table_specs, rejected_source_event_ids = _publication_table_specs(
+        batch_id=batch_id,
+        created_at=created_at,
+        source_file=source_file,
+        selected_profile=selected_profile,
+        validation=validation,
+        normalized_payload=normalized_payload,
+    )
+    total_rows = sum(len(rows) for _, rows, _ in table_specs)
+    publication_plans: list[dict[str, Any]] = []
+    store = create_local_storage_engine(storage_path)
+    try:
+        store.ensure_schema()
+        if progress is not None:
+            progress.start("canonical_classification", rows_total=total_rows)
+        processed = 0
+        for table_name, rows, key_columns in table_specs:
+            plan = _classify_rows_against_store(
+                store,
+                table_name,
+                rows,
+                key_columns=key_columns,
+                progress=progress,
+                progress_offset=processed,
+                progress_total=total_rows,
+            )
+            plan["key_columns"] = tuple(key_columns)
+            publication_plans.append(plan)
+            processed += len(rows)
+        if progress is not None:
+            progress.complete(rows_processed=total_rows, rows_total=total_rows)
+    finally:
+        store.close()
+
+    source_row_counts = _source_row_classification_counts(
+        list(selected_profile.get("source", {}).get("rows") or []),
+        publication_plans[1:],
+        rejected_source_event_ids=rejected_source_event_ids,
+    )
+    classification_counts = _classification_count_template()
+    for plan in publication_plans:
+        for classification, count in (plan.get("counts") or {}).items():
+            classification_counts[classification] = classification_counts.get(classification, 0) + int(count or 0)
+    affected_rows_by_table = {
+        plan["table_name"]: [dict(row) for row in plan.get("rows_to_write") or []]
+        for plan in publication_plans
+        if plan.get("rows_to_write") and plan.get("table_name") != "historical_acquisition_batches"
+    }
+    identity_runtime = DataIdentityLakehouseRuntime(
+        storage_path=storage_path,
+        lakehouse_root=lakehouse_root,
+    )
+    try:
+        publication_scope = identity_runtime.summarize_publication_scope(affected_rows_by_table)
+    finally:
+        identity_runtime.close()
+    return {
+        "publication_plans": publication_plans,
+        "classification_counts": classification_counts,
+        "source_row_counts": source_row_counts,
+        "affected_rows_by_table": affected_rows_by_table,
+        "canonical_rows_by_table": _canonical_publication_rows(normalized_payload),
+        "affected_tables": sorted(affected_rows_by_table),
+        "affected_partition_scope": publication_scope,
+        "expected_canonical_deltas": {
+            plan["table_name"]: dict(plan.get("expected_canonical_delta") or {})
+            for plan in publication_plans
+        },
+    }
+
+
+def _persist_publication_plans(
+    store: LocalStorageEngine,
+    publication_plans: Sequence[Mapping[str, Any]],
+    *,
+    progress: _StageProgressTracker | None = None,
+) -> None:
+    total_rows = sum(len(plan.get("rows_to_write") or []) for plan in publication_plans)
+    if progress is not None:
+        progress.start("sqlite_persistence", rows_total=total_rows)
+    processed = 0
+    with store.transaction():
+        for plan in publication_plans:
+            key_columns = tuple(plan.get("key_columns") or ())
+            for row in plan.get("rows_to_write") or []:
+                store.upsert(plan["table_name"], row, key_columns=key_columns)
+                processed += 1
+                if progress is not None:
+                    progress.update(rows_processed=processed, rows_total=total_rows)
+    if progress is not None:
+        progress.complete(rows_processed=processed, rows_total=total_rows)
+
+
 def _execute_governed_publication(
     *,
     storage_path: Path,
@@ -2743,65 +3355,20 @@ def _execute_governed_publication(
     validation: Mapping[str, Any],
     normalized_payload: Mapping[str, Any],
     raw_acquisition_result: Mapping[str, Any],
+    publication_plan: Mapping[str, Any],
+    resume_publication: bool = False,
     preflight_only: bool = False,
+    progress: _StageProgressTracker | None = None,
 ) -> dict[str, Any]:
-    store = create_local_storage_engine(storage_path)
-    try:
-        store.ensure_schema()
-        rejected_source_event_ids = _rejected_source_event_ids(validation, normalized_payload)
-        acquisition_batch_row = _acquisition_batch_row(
-            batch_id=batch_id,
-            created_at=created_at,
-            source_file=source_file.name,
-            source_count=len(selected_profile.get("files") or {}),
-            event_count=len(normalized_payload.get("event_rows") or []),
-            market_count=len(normalized_payload.get("market_rows") or []),
-            selection_count=len(normalized_payload.get("selection_rows") or []),
-            gold_count=len(normalized_payload.get("gold_rows") or []),
-            rejected_row_count=len([item for item in rejected_source_event_ids if item]),
-            workbook_profile=selected_profile["source"],
-            csv_profile=selected_profile.get("companion_evidence") or {},
-        )
-        persistence_results = [
-            _persist_classified_rows(store, "historical_acquisition_batches", [acquisition_batch_row], key_columns=("batch_id",)),
-            _persist_classified_rows(store, "historical_events", normalized_payload.get("event_rows") or [], key_columns=("event_id",)),
-            _persist_classified_rows(
-                store,
-                "historical_event_participants",
-                normalized_payload.get("participant_rows") or [],
-                key_columns=("participant_id",),
-            ),
-            _persist_classified_rows(
-                store,
-                "historical_source_event_links",
-                normalized_payload.get("event_link_rows") or [],
-                key_columns=("link_id",),
-            ),
-            _persist_classified_rows(store, "historical_markets", normalized_payload.get("market_rows") or [], key_columns=("market_id",)),
-            _persist_classified_rows(
-                store,
-                "historical_selections",
-                normalized_payload.get("selection_rows") or [],
-                key_columns=("selection_id",),
-            ),
-            _persist_classified_rows(
-                store,
-                "historical_event_market_selections",
-                normalized_payload.get("gold_rows") or [],
-                key_columns=("dataset_row_id",),
-            ),
-        ]
-    finally:
-        store.close()
-
-    source_row_counts = _source_row_classification_counts(
-        list(selected_profile.get("source", {}).get("rows") or []),
-        persistence_results[1:],
-        rejected_source_event_ids=rejected_source_event_ids,
-    )
+    source_row_counts = dict(publication_plan.get("source_row_counts") or {})
+    classification_counts = dict(publication_plan.get("classification_counts") or {})
     if source_row_counts["counts"]["CONFLICT"] > 0:
         return {
             "source_row_counts": source_row_counts,
+            "classification_counts": classification_counts,
+            "affected_tables": list(publication_plan.get("affected_tables") or []),
+            "affected_partition_scope": dict(publication_plan.get("affected_partition_scope") or {}),
+            "expected_canonical_deltas": dict(publication_plan.get("expected_canonical_deltas") or {}),
             "identity_result": {
                 "lakehouse_result": {"ok": False, "created_partition_count": 0, "reused_partition_count": 0},
                 "readiness_snapshot": {"parquet_readiness": {"roundtrip_ok": False}},
@@ -2813,6 +3380,10 @@ def _execute_governed_publication(
     if preflight_only:
         return {
             "source_row_counts": source_row_counts,
+            "classification_counts": classification_counts,
+            "affected_tables": list(publication_plan.get("affected_tables") or []),
+            "affected_partition_scope": dict(publication_plan.get("affected_partition_scope") or {}),
+            "expected_canonical_deltas": dict(publication_plan.get("expected_canonical_deltas") or {}),
             "identity_result": {
                 "lakehouse_result": {"ok": True, "created_partition_count": 0, "reused_partition_count": 0},
                 "readiness_snapshot": {"parquet_readiness": {"roundtrip_ok": False}},
@@ -2820,6 +3391,17 @@ def _execute_governed_publication(
             "certification_results": {"ok": True, "asset_results": []},
             "lifecycle_results": {"ok": True, "lifecycle_rows": []},
         }
+
+    store = create_local_storage_engine(storage_path)
+    try:
+        store.ensure_schema()
+        _persist_publication_plans(
+            store,
+            publication_plan.get("publication_plans") or [],
+            progress=progress,
+        )
+    finally:
+        store.close()
 
     identity_runtime = DataIdentityLakehouseRuntime(
         storage_path=storage_path,
@@ -2833,10 +3415,19 @@ def _execute_governed_publication(
             normalized_payload=normalized_payload,
             workbook_profile=selected_profile["source"],
             csv_profile=selected_profile.get("companion_evidence") or {},
+            canonical_publication_scope=(
+                publication_plan.get("canonical_rows_by_table") or {}
+                if resume_publication
+                else publication_plan.get("affected_rows_by_table") or {}
+            ),
+            raw_rows=raw_acquisition_result.get("raw_records") or [],
+            progress=progress,
         )
     finally:
         identity_runtime.close()
 
+    if progress is not None:
+        progress.start("certification")
     certification_results = _certify_assets(
         storage_path=storage_path,
         batch_id=batch_id,
@@ -2844,6 +3435,9 @@ def _execute_governed_publication(
         raw_acquisition_result=raw_acquisition_result,
         normalized_payload=normalized_payload,
     )
+    if progress is not None:
+        progress.complete()
+        progress.start("lifecycle_recording")
     lifecycle_results = _record_lifecycle(
         storage_path=storage_path,
         batch_id=batch_id,
@@ -2851,9 +3445,16 @@ def _execute_governed_publication(
         raw_acquisition_result=raw_acquisition_result,
         certification_results=certification_results,
         normalized_payload=normalized_payload,
+        selected_profile=selected_profile,
     )
+    if progress is not None:
+        progress.complete()
     return {
         "source_row_counts": source_row_counts,
+        "classification_counts": classification_counts,
+        "affected_tables": list(publication_plan.get("affected_tables") or []),
+        "affected_partition_scope": dict(publication_plan.get("affected_partition_scope") or {}),
+        "expected_canonical_deltas": dict(publication_plan.get("expected_canonical_deltas") or {}),
         "identity_result": identity_result,
         "certification_results": certification_results,
         "lifecycle_results": lifecycle_results,
@@ -2898,15 +3499,11 @@ def _reset_resume_publication_workspace(
         for token in publication_tokens
         if _normalize_text(token)
     }
+    resolved_lakehouse_root = lakehouse_root.expanduser().resolve()
     if not normalized_batch_id and not normalized_tokens:
         return
     store = create_local_storage_engine(storage_path, auto_initialize=False)
     try:
-        if normalized_batch_id and store.table_exists("historical_acquisition_batches"):
-            store.execute(
-                "DELETE FROM historical_acquisition_batches WHERE batch_id = ?",
-                [normalized_batch_id],
-            )
         if not store.table_exists("lakehouse_partitions"):
             return
         partition_rows = store.fetch("lakehouse_partitions", order_by="partition_id ASC")
@@ -2925,8 +3522,13 @@ def _reset_resume_publication_workspace(
                 continue
             file_path_text = _normalize_text(partition_row.get("file_path"))
             if file_path_text:
-                file_path = Path(file_path_text).expanduser()
-                _remove_path_if_exists(file_path)
+                file_path = Path(file_path_text).expanduser().resolve()
+                try:
+                    inside_workspace = os.path.commonpath([str(file_path), str(resolved_lakehouse_root)]) == str(resolved_lakehouse_root)
+                except ValueError:
+                    inside_workspace = False
+                if inside_workspace:
+                    _remove_path_if_exists(file_path)
             store.execute(
                 "DELETE FROM lakehouse_partitions WHERE partition_id = ?",
                 [_normalize_text(partition_row.get("partition_id"))],
@@ -2949,49 +3551,56 @@ def _promote_publication_state(
         datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
     )[:12]
     storage_backup = storage_path.with_name(f".{storage_path.name}.backup.{token}")
-    lakehouse_backup = lakehouse_root.with_name(f".{lakehouse_root.name}.backup.{token}")
+    lakehouse_backup = lakehouse_root.parent / f".{lakehouse_root.name}.backup.{token}"
     _remove_path_if_exists(storage_backup)
     _remove_path_if_exists(lakehouse_backup)
 
     storage_backed_up = False
-    lakehouse_backed_up = False
     promoted_storage = False
-    promoted_lakehouse = False
+    promoted_files: list[Path] = []
+    backed_up_files: list[tuple[Path, Path]] = []
+    staged_files = sorted(path for path in staged_lakehouse_root.rglob("*.parquet")) if staged_lakehouse_root.exists() else []
     try:
         if storage_path.exists():
             storage_backup.parent.mkdir(parents=True, exist_ok=True)
             storage_path.rename(storage_backup)
             storage_backed_up = True
-        if lakehouse_root.exists():
-            lakehouse_backup.parent.mkdir(parents=True, exist_ok=True)
-            lakehouse_root.rename(lakehouse_backup)
-            lakehouse_backed_up = True
 
         storage_path.parent.mkdir(parents=True, exist_ok=True)
         staged_storage_path.rename(storage_path)
         promoted_storage = True
 
         lakehouse_root.parent.mkdir(parents=True, exist_ok=True)
-        if staged_lakehouse_root.exists():
-            staged_lakehouse_root.rename(lakehouse_root)
-        else:
-            lakehouse_root.mkdir(parents=True, exist_ok=True)
-        promoted_lakehouse = True
+        for staged_file in staged_files:
+            relative_path = staged_file.relative_to(staged_lakehouse_root)
+            target_path = lakehouse_root / relative_path
+            backup_path = lakehouse_backup / relative_path
+            if target_path.exists():
+                backup_path.parent.mkdir(parents=True, exist_ok=True)
+                target_path.rename(backup_path)
+                backed_up_files.append((target_path, backup_path))
+            target_path.parent.mkdir(parents=True, exist_ok=True)
+            staged_file.rename(target_path)
+            promoted_files.append(target_path)
     except Exception:
         if promoted_storage and storage_path.exists():
             _remove_path_if_exists(storage_path)
-        if promoted_lakehouse and lakehouse_root.exists():
-            _remove_path_if_exists(lakehouse_root)
         if storage_backed_up and storage_backup.exists():
             storage_backup.rename(storage_path)
-        if lakehouse_backed_up and lakehouse_backup.exists():
-            lakehouse_backup.rename(lakehouse_root)
+        for target_path in reversed(promoted_files):
+            _remove_path_if_exists(target_path)
+        for target_path, backup_path in reversed(backed_up_files):
+            if backup_path.exists():
+                backup_path.parent.mkdir(parents=True, exist_ok=True)
+                backup_path.rename(target_path)
         raise
     finally:
         if promoted_storage and storage_backed_up and storage_backup.exists():
             _remove_path_if_exists(storage_backup)
-        if promoted_lakehouse and lakehouse_backed_up and lakehouse_backup.exists():
+        if lakehouse_backup.exists():
             _remove_path_if_exists(lakehouse_backup)
+        if staged_lakehouse_root.exists():
+            _remove_path_if_exists(staged_lakehouse_root)
 
 
 def _rebase_staged_lakehouse_manifests(
@@ -3031,7 +3640,9 @@ def _execute_atomic_governed_publication(
     validation: Mapping[str, Any],
     normalized_payload: Mapping[str, Any],
     raw_acquisition_result: Mapping[str, Any],
+    publication_plan: Mapping[str, Any],
     resume_publication_tokens: Sequence[str] = (),
+    progress: _StageProgressTracker | None = None,
 ) -> dict[str, Any]:
     workspace_root = _publication_workspace_root(storage_path, lakehouse_root)
     workspace_root.mkdir(parents=True, exist_ok=True)
@@ -3044,7 +3655,6 @@ def _execute_atomic_governed_publication(
         if storage_path.exists():
             shutil.copy2(storage_path, temp_storage_path)
         temp_lakehouse_root = temp_dir / "lakehouse"
-        _copy_directory_if_exists(lakehouse_root, temp_lakehouse_root)
         if resume_publication_tokens:
             _reset_resume_publication_workspace(
                 storage_path=temp_storage_path,
@@ -3062,7 +3672,10 @@ def _execute_atomic_governed_publication(
             validation=validation,
             normalized_payload=normalized_payload,
             raw_acquisition_result=raw_acquisition_result,
+            publication_plan=publication_plan,
+            resume_publication=bool(resume_publication_tokens),
             preflight_only=False,
+            progress=progress,
         )
         if int(publication_result.get("source_row_counts", {}).get("counts", {}).get("CONFLICT") or 0) > 0:
             return publication_result
@@ -3091,26 +3704,37 @@ def _preflight_governed_publication(
     validation: Mapping[str, Any],
     normalized_payload: Mapping[str, Any],
     raw_acquisition_result: Mapping[str, Any],
+    progress: _StageProgressTracker | None = None,
 ) -> dict[str, Any]:
-    with tempfile.TemporaryDirectory(prefix="oddswarehouse-preflight-") as temp_dir_name:
-        temp_dir = Path(temp_dir_name)
-        temp_storage_path = temp_dir / "canonical_data.sqlite"
-        if storage_path.exists():
-            shutil.copy2(storage_path, temp_storage_path)
-        temp_lakehouse_root = temp_dir / "lakehouse"
-        _copy_directory_if_exists(lakehouse_root, temp_lakehouse_root)
-        return _execute_governed_publication(
-            storage_path=temp_storage_path,
-            lakehouse_root=temp_lakehouse_root,
-            batch_id=batch_id,
-            created_at=created_at,
-            source_file=source_file,
-            selected_profile=selected_profile,
-            validation=validation,
-            normalized_payload=normalized_payload,
-            raw_acquisition_result=raw_acquisition_result,
-            preflight_only=True,
-        )
+    publication_plan = _build_publication_plan(
+        storage_path=storage_path,
+        lakehouse_root=lakehouse_root,
+        batch_id=batch_id,
+        created_at=created_at,
+        source_file=source_file,
+        selected_profile=selected_profile,
+        validation=validation,
+        normalized_payload=normalized_payload,
+        progress=progress,
+    )
+    result = _execute_governed_publication(
+        storage_path=storage_path,
+        lakehouse_root=lakehouse_root,
+        batch_id=batch_id,
+        created_at=created_at,
+        source_file=source_file,
+        selected_profile=selected_profile,
+        validation=validation,
+        normalized_payload=normalized_payload,
+        raw_acquisition_result=raw_acquisition_result,
+        publication_plan=publication_plan,
+        preflight_only=True,
+        progress=progress,
+    )
+    return {
+        **result,
+        "publication_plan": publication_plan,
+    }
 
 
 def _semantic_replay_payload(normalized_payload: Mapping[str, Any]) -> dict[str, Any]:
@@ -3321,6 +3945,8 @@ def run_oddswarehouse_nfl_basic_pilot(
     lakehouse_root: str | Path | None = None,
     bronze_raw_root: str | Path | None = None,
     limit: int | None = None,
+    progress_emit_interval_seconds: float = ODDSWAREHOUSE_PROGRESS_INTERVAL_SECONDS,
+    progress_stream: Any | None = None,
 ) -> dict[str, Any]:
     get_nfl_p0_market_profile()
     effective_storage_path = Path(storage_path or ODDSWAREHOUSE_NFL_BASIC_STORAGE_PATH).expanduser().resolve()
@@ -3381,6 +4007,8 @@ def run_oddswarehouse_nfl_basic_pilot(
         },
         "rows": [],
     }
+    classification_counts = _classification_count_template()
+    publication_plan: dict[str, Any] = {}
     raw_acquisition_result: dict[str, Any] = {}
     identity_result: dict[str, Any] = {
         "lakehouse_result": {"ok": False, "created_partition_count": 0, "reused_partition_count": 0},
@@ -3404,16 +4032,24 @@ def run_oddswarehouse_nfl_basic_pilot(
     partial_state_detected = False
     partial_state_action = ""
     resume_publication = False
+    progress_tracker = _StageProgressTracker(
+        emit_interval_seconds=progress_emit_interval_seconds,
+        stream=progress_stream,
+    )
+    dataset_metadata: dict[str, Any] = {}
 
     try:
         failure_stage = "profile_source"
+        progress_tracker.start("source_profiling")
         profile = _profile_oddswarehouse_source(
             source_file,
             companion_evidence_path=companion_file,
         )
         primary_source_file = _primary_source_file_info(profile)
+        progress_tracker.complete()
 
         failure_stage = "select_rows"
+        progress_tracker.start("row_selection")
         selected_rows, selection = _apply_deterministic_row_limit(
             profile["source"],
             limit=limit,
@@ -3436,6 +4072,10 @@ def run_oddswarehouse_nfl_basic_pilot(
             selected_rows=selected_rows,
             selection=selection,
         )
+        dataset_metadata = _dataset_metadata(
+            source_profile=profile.get("source") or {},
+            selected_profile=selected_profile.get("source") or {},
+        )
         source_bundle = _source_bundle_from_source_profile(
             selected_profile,
             source_bundle_id,
@@ -3443,18 +4083,33 @@ def run_oddswarehouse_nfl_basic_pilot(
             acquisition_id=acquisition_id,
             batch_id=batch_id,
         )
+        progress_tracker.set_run_id(run_id)
+        progress_tracker.complete(
+            rows_processed=int(selection.get("selected_row_count") or 0),
+            rows_total=int(selection.get("selected_row_count") or 0),
+        )
 
         failure_stage = "validate_selection"
+        progress_tracker.start("validation", rows_total=int(selection.get("selected_row_count") or 0))
         validation = validate_oddswarehouse_source_profile(selected_profile)
         if not validation["ok"]:
             raise ValueError("; ".join(str(error) for error in validation.get("errors") or []) or "selected_rows_validation_blocked")
+        progress_tracker.complete(
+            rows_processed=int(validation.get("validated_row_count") or 0),
+            rows_total=int(selection.get("selected_row_count") or 0),
+        )
 
         failure_stage = "normalize_selection"
+        progress_tracker.start("normalization", rows_total=int(validation.get("validated_row_count") or 0))
         normalized = normalize_oddswarehouse_workbook_rows(
             validation["accepted_rows"],
             batch_id=batch_id,
             created_at=started_at,
             source_file=source_file.name,
+        )
+        progress_tracker.complete(
+            rows_processed=int(validation.get("validated_row_count") or 0),
+            rows_total=int(validation.get("validated_row_count") or 0),
         )
 
         prior_publication_state = _existing_batch_state(effective_storage_path, batch_id)
@@ -3498,8 +4153,11 @@ def run_oddswarehouse_nfl_basic_pilot(
             validation=validation,
             normalized_payload=normalized,
             raw_acquisition_result=raw_acquisition_result,
+            progress=progress_tracker,
         )
         source_row_counts = dict(preflight_result.get("source_row_counts") or source_row_counts)
+        classification_counts = dict(preflight_result.get("classification_counts") or classification_counts)
+        publication_plan = dict(preflight_result.get("publication_plan") or {})
         if source_row_counts["counts"]["CONFLICT"] > 0:
             validation = {
                 **validation,
@@ -3550,6 +4208,7 @@ def run_oddswarehouse_nfl_basic_pilot(
             validation=validation,
             normalized_payload=normalized,
             raw_acquisition_result=raw_acquisition_result,
+            publication_plan=publication_plan,
             resume_publication_tokens=(
                 _resume_publication_tokens(
                     batch_id=batch_id,
@@ -3558,8 +4217,10 @@ def run_oddswarehouse_nfl_basic_pilot(
                 if resume_publication
                 else ()
             ),
+            progress=progress_tracker,
         )
         source_row_counts = dict(publication_result.get("source_row_counts") or source_row_counts)
+        classification_counts = dict(publication_result.get("classification_counts") or classification_counts)
         if source_row_counts["counts"]["CONFLICT"] > 0:
             validation = {
                 **validation,
@@ -3573,9 +4234,25 @@ def run_oddswarehouse_nfl_basic_pilot(
         lifecycle_results = dict(publication_result.get("lifecycle_results") or lifecycle_results)
         publication_committed = True
         failure_stage = ""
+    except KeyboardInterrupt as exc:
+        failure_type = exc.__class__.__name__
+        failure_message = "ingest_interrupted"
+        progress_tracker.fail(interrupted=True, error=failure_message)
+        rejected_source_event_ids = _rejected_source_event_ids(validation, normalized)
+        source_row_counts = {
+            "counts": {
+                "NEW": 0,
+                "EXACT_DUPLICATE": 0,
+                "REVISION": 0,
+                "CONFLICT": 0,
+                "REJECTED": len([item for item in rejected_source_event_ids if item]),
+            },
+            "rows": [],
+        }
     except Exception as exc:
         failure_type = exc.__class__.__name__
         failure_message = str(exc)
+        progress_tracker.fail(error=failure_message)
         rejected_source_event_ids = _rejected_source_event_ids(validation, normalized)
         source_row_counts = {
             "counts": {
@@ -3596,6 +4273,7 @@ def run_oddswarehouse_nfl_basic_pilot(
         prior_publication_exists=bool(prior_publication_state.get("batch_exists")),
         prior_incomplete_detected=partial_state_detected,
     )
+    progress_snapshot = progress_tracker.snapshot()
     market_counts = {
         "historical_markets": len(normalized["market_rows"]),
         "historical_selections": len(normalized["selection_rows"]),
@@ -3611,6 +4289,9 @@ def run_oddswarehouse_nfl_basic_pilot(
             and int(source_row_counts["counts"].get("CONFLICT") or 0) == 0
         ),
         "status": (
+            "interrupted"
+            if failure_type == "KeyboardInterrupt"
+            else
             "failed"
             if not publication_committed and failure_message
             else "ready"
@@ -3633,15 +4314,18 @@ def run_oddswarehouse_nfl_basic_pilot(
         "source_sha256": primary_source_file.get("sha256"),
         "schema_version": ODDSWAREHOUSE_NFL_BASIC_SCHEMA_VERSION,
         "parser_version": ODDSWAREHOUSE_NFL_BASIC_PARSER_VERSION,
+        "dataset_identity": dataset_metadata,
         "storage_path": str(effective_storage_path),
         "lakehouse_root": str(effective_lakehouse_root),
         "bronze_raw_root": str(_bronze_raw_dir_for_root(source_artifact_id or "pending", effective_bronze_root)),
         "storage_health": storage_health,
         "selection": selection,
+        "selected_rows_digest": _selected_rows_digest(selected_rows) if selected_rows else "",
         "selected_row_count": int(selection.get("selected_row_count") or 0),
         "validated_row_count": int(validation.get("validated_row_count") or 0),
         "new_row_count": int(source_row_counts["counts"].get("NEW") or 0),
         "exact_duplicate_count": int(source_row_counts["counts"].get("EXACT_DUPLICATE") or 0),
+        "semantic_reuse_count": int(classification_counts.get("SEMANTIC_REUSE") or 0),
         "revision_count": int(source_row_counts["counts"].get("REVISION") or 0),
         "conflict_count": int(source_row_counts["counts"].get("CONFLICT") or 0),
         "rejected_count": int(source_row_counts["counts"].get("REJECTED") or 0),
@@ -3660,6 +4344,9 @@ def run_oddswarehouse_nfl_basic_pilot(
         "raw_acquisition_result": raw_acquisition_result,
         "bronze_file_copies": [action["target_path"] for action in bronze_actions],
         "bronze_file_actions": bronze_actions,
+        "affected_tables": publication_plan.get("affected_tables") or [],
+        "affected_partition_scope": publication_plan.get("affected_partition_scope") or {},
+        "expected_canonical_deltas": publication_plan.get("expected_canonical_deltas") or {},
         "silver_counts": {
             "historical_events": len(normalized["event_rows"]),
             "historical_event_participants": len(normalized["participant_rows"]),
@@ -3681,17 +4368,21 @@ def run_oddswarehouse_nfl_basic_pilot(
         "certification_results": certification_results,
         "lifecycle_results": lifecycle_results,
         "created_partition_count": int(identity_result.get("lakehouse_result", {}).get("created_partition_count") or 0),
+        "updated_partition_count": int(identity_result.get("lakehouse_result", {}).get("updated_partition_count") or 0),
         "reused_partition_count": int(identity_result.get("lakehouse_result", {}).get("reused_partition_count") or 0),
         "parquet_roundtrip_result": bool(
             identity_result.get("lakehouse_result", {}).get("ok")
             and identity_result.get("readiness_snapshot", {}).get("parquet_readiness", {}).get("roundtrip_ok")
         ),
         "deterministic_replay_result": replay_result,
+        "stage_timings": progress_snapshot["stage_timings"],
+        "progress_events": progress_snapshot["progress_events"],
         "metadata_gaps": [
             "Exact kickoff time is unavailable from the source file and remains unset.",
             "Sportsbook identity is unknown in the supplied source evidence.",
             "Market-source methodology is unknown in the supplied source evidence.",
         ],
+        "historical_readiness": "ready" if publication_committed and not normalized.get("quarantined_rows") else "partially_ready",
         "pilot_readiness": "ready" if publication_committed and not normalized.get("quarantined_rows") else "partially_ready",
         "additional_file_readiness": "ready_with_schema_validation" if validation.get("ok") else "manual_review_required",
     }

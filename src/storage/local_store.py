@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import sqlite3
+from contextlib import contextmanager
 from dataclasses import asdict, is_dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -1802,6 +1803,7 @@ class LocalStorageEngine:
         self.path = Path(database_path).expanduser().resolve()
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self._conn: sqlite3.Connection | Any | None = None
+        self._transaction_depth = 0
         if auto_initialize:
             self.ensure_schema()
 
@@ -1837,10 +1839,33 @@ class LocalStorageEngine:
         if callable(commit):
             commit()
 
+    def _rollback(self) -> None:
+        rollback = getattr(self.connection, "rollback", None)
+        if callable(rollback):
+            rollback()
+
+    @contextmanager
+    def transaction(self) -> Iterable["LocalStorageEngine"]:
+        outermost = self._transaction_depth == 0
+        if outermost:
+            self.connection.execute("BEGIN")
+        self._transaction_depth += 1
+        try:
+            yield self
+        except Exception:
+            self._transaction_depth = max(0, self._transaction_depth - 1)
+            if outermost:
+                self._rollback()
+            raise
+        else:
+            self._transaction_depth = max(0, self._transaction_depth - 1)
+            if outermost:
+                self._commit()
+
     def execute(self, sql: str, params: Sequence[Any] | None = None) -> Any:
         parameters = tuple(params or ())
         result = self.connection.execute(sql, parameters)
-        if not sql.lstrip().lower().startswith("select"):
+        if self._transaction_depth == 0 and not sql.lstrip().lower().startswith("select"):
             self._commit()
         return result
 

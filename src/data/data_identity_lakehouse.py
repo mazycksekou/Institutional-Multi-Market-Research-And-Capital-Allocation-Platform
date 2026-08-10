@@ -381,6 +381,46 @@ def _lakehouse_partition_path(
     )
 
 
+def _lakehouse_dataset_specs() -> list[tuple[str, str, str]]:
+    return [
+        (BRONZE, "raw_records", "record_id ASC"),
+        (SILVER, "historical_events", "event_start_time ASC, event_id ASC"),
+        (SILVER, "historical_event_participants", "event_id ASC, team_role ASC, participant_id ASC"),
+        (SILVER, "historical_source_event_links", "event_id ASC, link_id ASC"),
+        (SILVER, "historical_markets", "event_id ASC, market_id ASC"),
+        (SILVER, "historical_selections", "event_id ASC, market_id ASC, selection_id ASC"),
+        (
+            SILVER,
+            "identity_mappings",
+            "entity_type ASC, provider ASC, external_identifier ASC, revision_number ASC",
+        ),
+        (
+            SILVER,
+            "identity_reconciliation_results",
+            "provider ASC, internal_identifier ASC, revision_number ASC",
+        ),
+        (GOLD, "historical_dataset_rows", "event_start_time ASC, dataset_row_id ASC"),
+        (
+            GOLD,
+            "historical_event_market_selections",
+            "event_id ASC, market_id ASC, dataset_row_id ASC",
+        ),
+        (GOLD, "feature_snapshots", "created_at ASC, snapshot_id ASC"),
+    ]
+
+
+def _is_lakehouse_publishable_row(
+    layer_name: str,
+    table_name: str,
+    row: Mapping[str, Any],
+) -> bool:
+    if layer_name == SILVER and table_name == "identity_mappings":
+        # Internal repository mappings support runtime reconciliation but are not
+        # part of the externally published lakehouse surface for provider runs.
+        return _normalize_text(row.get("provider")) != "repository"
+    return True
+
+
 class DataIdentityLakehouseRuntime:
     def __init__(
         self,
@@ -1849,151 +1889,254 @@ class DataIdentityLakehouseRuntime:
         )
         return dict(rows[0]) if rows else {}
 
-    def publish_lakehouse_views(self) -> dict[str, Any]:
+    def summarize_publication_scope(
+        self,
+        affected_rows_by_table: Mapping[str, Sequence[Mapping[str, Any]]] | None,
+    ) -> dict[str, Any]:
+        if not affected_rows_by_table:
+            return {}
+        dataset_specs = {
+            table_name: layer_name
+            for layer_name, table_name, _ in _lakehouse_dataset_specs()
+        }
+        summary: dict[str, Any] = {}
+        for table_name, rows in affected_rows_by_table.items():
+            layer_name = dataset_specs.get(table_name)
+            if not layer_name or not rows:
+                continue
+            affected_groups = self._lakehouse_groups(layer_name, table_name, list(rows))
+            summary[table_name] = {
+                "layer_name": layer_name,
+                "row_count": len(rows),
+                "affected_partition_values": [partition_values for partition_values, _ in affected_groups],
+                "affected_partition_ids": [
+                    _stable_id("lakehouse.partition", layer_name, table_name, partition_values)
+                    for partition_values, _ in affected_groups
+                ],
+            }
+        return summary
+
+    def _scope_partition_filters(
+        self,
+        table_name: str,
+        publication_scope: Mapping[str, Any] | None,
+    ) -> set[tuple[tuple[str, str], ...]]:
+        if not publication_scope:
+            return set()
+        table_scope = publication_scope.get(table_name)
+        if not isinstance(table_scope, Mapping):
+            return set()
+        filters: set[tuple[tuple[str, str], ...]] = set()
+        for partition_values in table_scope.get("affected_partition_values") or []:
+            if not isinstance(partition_values, Mapping):
+                continue
+            filters.add(tuple(sorted((str(key), _normalize_text(value)) for key, value in partition_values.items())))
+        return filters
+
+    def _filtered_lakehouse_groups(
+        self,
+        layer_name: str,
+        table_name: str,
+        rows: Sequence[Mapping[str, Any]],
+        *,
+        publication_scope: Mapping[str, Any] | None = None,
+    ) -> list[tuple[dict[str, str], list[dict[str, Any]]]]:
+        groups = self._lakehouse_groups(layer_name, table_name, rows)
+        partition_filters = self._scope_partition_filters(table_name, publication_scope)
+        if not partition_filters:
+            return groups if publication_scope is None else []
+        filtered: list[tuple[dict[str, str], list[dict[str, Any]]]] = []
+        for partition_values, grouped_rows in groups:
+            partition_key = tuple(sorted((key, _normalize_text(value)) for key, value in partition_values.items()))
+            if partition_key in partition_filters:
+                filtered.append((partition_values, grouped_rows))
+        return filtered
+
+    def _write_partition_atomically(
+        self,
+        output_path: Path,
+        rows: Sequence[Mapping[str, Any]],
+    ) -> dict[str, Any]:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        temp_path = output_path.with_name(f".{output_path.name}.tmp")
+        if temp_path.exists():
+            temp_path.unlink()
+        parquet_result = self.store.write_parquet_rows(temp_path, rows)
+        roundtrip_rows = self.store.read_parquet_rows(temp_path)
+        if len(roundtrip_rows) != parquet_result["row_count"]:
+            temp_path.unlink(missing_ok=True)
+            raise ValueError(
+                f"lakehouse partition roundtrip mismatch for {output_path}: "
+                f"expected {parquet_result['row_count']} rows but read back {len(roundtrip_rows)}"
+            )
+        temp_path.replace(output_path)
+        return {
+            **parquet_result,
+            "path": str(output_path),
+            "roundtrip_row_count": len(roundtrip_rows),
+            "roundtrip_ok": True,
+        }
+
+    def publish_lakehouse_views(
+        self,
+        *,
+        publication_scope: Mapping[str, Any] | None = None,
+        progress_reporter: Any | None = None,
+    ) -> dict[str, Any]:
         require_parquet_support("Lakehouse parquet publishing")
-        datasets: list[tuple[str, str, list[dict[str, Any]]]] = [
-            (BRONZE, "raw_records", self._fetch("raw_records", order_by="record_id ASC")),
-            (SILVER, "historical_events", self._fetch("historical_events", order_by="event_start_time ASC, event_id ASC")),
-            (
-                SILVER,
-                "historical_event_participants",
-                self._fetch("historical_event_participants", order_by="event_id ASC, team_role ASC, participant_id ASC"),
-            ),
-            (
-                SILVER,
-                "historical_source_event_links",
-                self._fetch("historical_source_event_links", order_by="event_id ASC, link_id ASC"),
-            ),
-            (SILVER, "historical_markets", self._fetch("historical_markets", order_by="event_id ASC, market_id ASC")),
-            (SILVER, "historical_selections", self._fetch("historical_selections", order_by="event_id ASC, market_id ASC, selection_id ASC")),
-            (SILVER, "identity_mappings", self._fetch("identity_mappings", order_by="entity_type ASC, provider ASC, external_identifier ASC, revision_number ASC")),
-            (SILVER, "identity_reconciliation_results", self._fetch("identity_reconciliation_results", order_by="provider ASC, internal_identifier ASC, revision_number ASC")),
-            (GOLD, "historical_dataset_rows", self._fetch("historical_dataset_rows", order_by="event_start_time ASC, dataset_row_id ASC")),
-            (
-                GOLD,
-                "historical_event_market_selections",
-                self._fetch("historical_event_market_selections", order_by="event_id ASC, market_id ASC, dataset_row_id ASC"),
-            ),
-            (GOLD, "feature_snapshots", self._fetch("feature_snapshots", order_by="created_at ASC, snapshot_id ASC")),
-        ]
         partition_rows: list[dict[str, Any]] = []
         created_partition_count = 0
+        updated_partition_count = 0
         reused_partition_count = 0
-        for layer_name, table_name, rows in datasets:
+        candidate_groups: list[tuple[str, str, tuple[str, ...], dict[str, str], list[dict[str, Any]]]] = []
+        for layer_name, table_name, order_by in _lakehouse_dataset_specs():
+            rows = [
+                row
+                for row in self._fetch(table_name, order_by=order_by)
+                if _is_lakehouse_publishable_row(layer_name, table_name, row)
+            ]
             if not rows:
                 continue
             partition_columns = _partition_columns_for_table(layer_name, table_name)
-            for partition_values, grouped_rows in self._lakehouse_groups(layer_name, table_name, rows):
-                dataset_identifier = _normalize_text(
-                    grouped_rows[0].get("dataset_id")
-                    or grouped_rows[0].get("dataset_name")
-                    or table_name
+            for partition_values, grouped_rows in self._filtered_lakehouse_groups(
+                layer_name,
+                table_name,
+                rows,
+                publication_scope=publication_scope,
+            ):
+                candidate_groups.append((layer_name, table_name, partition_columns, partition_values, grouped_rows))
+        if progress_reporter is not None:
+            progress_reporter.start(
+                "parquet_partition_planning",
+                partitions_total=len(candidate_groups),
+            )
+            progress_reporter.complete(
+                partitions_processed=len(candidate_groups),
+                partitions_total=len(candidate_groups),
+            )
+            progress_reporter.start(
+                "parquet_writing",
+                partitions_total=len(candidate_groups),
+            )
+        for index, (layer_name, table_name, partition_columns, partition_values, grouped_rows) in enumerate(candidate_groups, start=1):
+            if progress_reporter is not None:
+                progress_reporter.update(
+                    partitions_processed=index - 1,
+                    partitions_total=len(candidate_groups),
                 )
-                partition_id = _stable_id("lakehouse.partition", layer_name, table_name, partition_values)
-                deterministic_file_id = _stable_id("lakehouse.file", partition_id)
-                partition_path = _lakehouse_partition_path(
-                    self.lakehouse_root,
-                    layer_name,
-                    table_name,
-                    partition_values,
-                )
-                output_path = partition_path / f"{_stable_digest('lakehouse.file.path', deterministic_file_id, length=16)}.parquet"
-                content_digest = parquet_rows_content_digest(grouped_rows)
-                existing_manifest = self._existing_partition_manifest(partition_id)
-                existing_path = Path(existing_manifest.get("file_path") or "").expanduser().resolve() if existing_manifest.get("file_path") else None
-                if existing_manifest and _normalize_text(existing_manifest.get("content_digest")) == content_digest and existing_path and existing_path.exists():
-                    partition_rows.append(existing_manifest)
-                    reused_partition_count += 1
-                    continue
-                if existing_manifest and _normalize_text(existing_manifest.get("content_digest")) and _normalize_text(existing_manifest.get("content_digest")) != content_digest:
-                    raise ValueError(
-                        f"lakehouse partition conflict for {layer_name}.{table_name} at {partition_values}: "
-                        "same partition identity resolved to different content"
-                    )
-                parquet_result = self.store.write_parquet_rows(output_path, grouped_rows)
-                roundtrip_rows = self.store.read_parquet_rows(output_path)
-                delta_table_name = f"{layer_name}.{table_name}".replace("-", "_")
-                manifest_row = {
-                    "partition_id": partition_id,
-                    "layer_name": layer_name,
-                    "dataset_table": table_name,
-                    "dataset_identifier": dataset_identifier,
-                    "dataset_id": dataset_identifier,
-                    "dataset_name": table_name,
-                    "owner": "src.data",
-                    "sport": _normalize_text(grouped_rows[0].get("sport"), "football"),
-                    "feature_pack": DATA_IDENTITY_LAKEHOUSE_RUNTIME_VERSION,
-                    "storage_location": str(self.lakehouse_root),
-                    "readiness": "ready",
-                    "update_frequency": "manual",
-                    "validation_state": "validated",
-                    "status": "active",
-                    "market_profile": _normalize_text(
-                        grouped_rows[0].get("market_profile")
-                        or grouped_rows[0].get("profile_id")
-                        or grouped_rows[0].get("market")
-                        or "sports:nfl"
-                    ),
-                    "provider": _normalize_text(grouped_rows[0].get("provider"), "repository"),
-                    "market": _normalize_text(grouped_rows[0].get("market"), "sports:nfl"),
-                    "market_type": f"lakehouse.{layer_name}",
-                    "asset_class": _normalize_text(grouped_rows[0].get("asset_class"), "historical"),
-                    "partition_key_json": _as_json(partition_values),
-                    "partition_values_json": _as_json(partition_values),
-                    "partition_columns_json": _as_json(list(partition_columns)),
-                    "file_path": str(output_path),
-                    "deterministic_file_id": deterministic_file_id,
-                    "content_digest": content_digest,
-                    "file_checksum": parquet_result["file_checksum"],
-                    "schema_version": DATA_IDENTITY_LAKEHOUSE_SCHEMA_VERSION,
-                    "row_count": parquet_result["row_count"],
-                    "file_size_bytes": parquet_result["file_size_bytes"],
-                    "delta_table_name": delta_table_name,
-                    "delta_metadata_json": _as_json(
-                        {
-                            "delta_compatible": True,
-                            "schema_evolution_ready": True,
-                            "versioned_table_ready": True,
-                            "corrections_upserts_ready": True,
-                            "time_travel_ready": True,
-                            "concurrent_write_contract": "deferred_to_future_delta_runtime",
-                            "spark_required": False,
-                        }
-                    ),
-                    "compaction_group": _stable_id("lakehouse.compaction_group", layer_name, table_name, partition_values),
-                    "roundtrip_row_count": len(roundtrip_rows),
-                    "roundtrip_ok": 1 if len(roundtrip_rows) == parquet_result["row_count"] else 0,
-                    "metadata_json": _as_json(
-                        {
-                            "layer_name": layer_name,
-                            "table_name": table_name,
-                            "partition_values": partition_values,
-                            "partition_columns": list(partition_columns),
-                            "parquet_schema_version": parquet_result["schema_version"],
-                        }
-                    ),
-                    "payload_json": _as_json(
-                        {
-                            "parquet_result": parquet_result,
-                            "partition_values": partition_values,
-                        }
-                    ),
-                    "snapshot_id": partition_id,
-                    "lineage_id": _stable_id("lakehouse.partition.lineage", partition_id, content_digest),
-                    "version_id": DATA_IDENTITY_LAKEHOUSE_RUNTIME_VERSION,
-                    "quality_score": 1.0 if len(roundtrip_rows) == parquet_result["row_count"] else 0.0,
-                    "created_at": _utc_now(),
-                    "updated_at": _utc_now(),
-                    "source": "data_identity_lakehouse_runtime",
-                }
-                self._persist_row("lakehouse_partitions", manifest_row, key_columns=("partition_id",))
-                partition_rows.append(manifest_row)
+            dataset_identifier = _normalize_text(
+                grouped_rows[0].get("dataset_id")
+                or grouped_rows[0].get("dataset_name")
+                or table_name
+            )
+            partition_id = _stable_id("lakehouse.partition", layer_name, table_name, partition_values)
+            deterministic_file_id = _stable_id("lakehouse.file", partition_id)
+            partition_path = _lakehouse_partition_path(
+                self.lakehouse_root,
+                layer_name,
+                table_name,
+                partition_values,
+            )
+            output_path = partition_path / f"{_stable_digest('lakehouse.file.path', deterministic_file_id, length=16)}.parquet"
+            content_digest = parquet_rows_content_digest(grouped_rows)
+            existing_manifest = self._existing_partition_manifest(partition_id)
+            existing_path = Path(existing_manifest.get("file_path") or "").expanduser().resolve() if existing_manifest.get("file_path") else None
+            if existing_manifest and _normalize_text(existing_manifest.get("content_digest")) == content_digest and existing_path and existing_path.exists():
+                partition_rows.append(existing_manifest)
+                reused_partition_count += 1
+                continue
+            parquet_result = self._write_partition_atomically(output_path, grouped_rows)
+            delta_table_name = f"{layer_name}.{table_name}".replace("-", "_")
+            manifest_row = {
+                "partition_id": partition_id,
+                "layer_name": layer_name,
+                "dataset_table": table_name,
+                "dataset_identifier": dataset_identifier,
+                "dataset_id": dataset_identifier,
+                "dataset_name": table_name,
+                "owner": "src.data",
+                "sport": _normalize_text(grouped_rows[0].get("sport"), "football"),
+                "feature_pack": DATA_IDENTITY_LAKEHOUSE_RUNTIME_VERSION,
+                "storage_location": str(self.lakehouse_root),
+                "readiness": "ready",
+                "update_frequency": "manual",
+                "validation_state": "validated",
+                "status": "active",
+                "market_profile": _normalize_text(
+                    grouped_rows[0].get("market_profile")
+                    or grouped_rows[0].get("profile_id")
+                    or grouped_rows[0].get("market")
+                    or "sports:nfl"
+                ),
+                "provider": _normalize_text(grouped_rows[0].get("provider"), "repository"),
+                "market": _normalize_text(grouped_rows[0].get("market"), "sports:nfl"),
+                "market_type": f"lakehouse.{layer_name}",
+                "asset_class": _normalize_text(grouped_rows[0].get("asset_class"), "historical"),
+                "partition_key_json": _as_json(partition_values),
+                "partition_values_json": _as_json(partition_values),
+                "partition_columns_json": _as_json(list(partition_columns)),
+                "file_path": str(output_path),
+                "deterministic_file_id": deterministic_file_id,
+                "content_digest": content_digest,
+                "file_checksum": parquet_result["file_checksum"],
+                "schema_version": DATA_IDENTITY_LAKEHOUSE_SCHEMA_VERSION,
+                "row_count": parquet_result["row_count"],
+                "file_size_bytes": parquet_result["file_size_bytes"],
+                "delta_table_name": delta_table_name,
+                "delta_metadata_json": _as_json(
+                    {
+                        "delta_compatible": True,
+                        "schema_evolution_ready": True,
+                        "versioned_table_ready": True,
+                        "corrections_upserts_ready": True,
+                        "time_travel_ready": True,
+                        "concurrent_write_contract": "deferred_to_future_delta_runtime",
+                        "spark_required": False,
+                    }
+                ),
+                "compaction_group": _stable_id("lakehouse.compaction_group", layer_name, table_name, partition_values),
+                "roundtrip_row_count": int(parquet_result["roundtrip_row_count"]),
+                "roundtrip_ok": 1 if parquet_result["roundtrip_ok"] else 0,
+                "metadata_json": _as_json(
+                    {
+                        "layer_name": layer_name,
+                        "table_name": table_name,
+                        "partition_values": partition_values,
+                        "partition_columns": list(partition_columns),
+                        "parquet_schema_version": parquet_result["schema_version"],
+                    }
+                ),
+                "payload_json": _as_json(
+                    {
+                        "parquet_result": parquet_result,
+                        "partition_values": partition_values,
+                    }
+                ),
+                "snapshot_id": partition_id,
+                "lineage_id": _stable_id("lakehouse.partition.lineage", partition_id, content_digest),
+                "version_id": DATA_IDENTITY_LAKEHOUSE_RUNTIME_VERSION,
+                "quality_score": 1.0 if parquet_result["roundtrip_ok"] else 0.0,
+                "created_at": _utc_now(),
+                "updated_at": _utc_now(),
+                "source": "data_identity_lakehouse_runtime",
+            }
+            self._persist_row("lakehouse_partitions", manifest_row, key_columns=("partition_id",))
+            partition_rows.append(manifest_row)
+            if existing_manifest:
+                updated_partition_count += 1
+            else:
                 created_partition_count += 1
+        if progress_reporter is not None:
+            progress_reporter.complete(
+                partitions_processed=len(candidate_groups),
+                partitions_total=len(candidate_groups),
+            )
         return {
             "ok": True,
             "status": "published",
             "partition_count": len(partition_rows),
             "created_partition_count": created_partition_count,
+            "updated_partition_count": updated_partition_count,
             "reused_partition_count": reused_partition_count,
             "layer_counts": {
                 BRONZE: len([row for row in partition_rows if row["layer_name"] == BRONZE]),
