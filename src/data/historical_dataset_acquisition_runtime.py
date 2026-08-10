@@ -219,7 +219,17 @@ def _semantic_source_bundle_matches_raw_records(
     source_bundle: Mapping[str, Any],
     raw_rows: Sequence[Mapping[str, Any]],
 ) -> bool:
-    return _bundle_semantic_tables(source_bundle) == _semantic_tables_from_raw_records(raw_rows)
+    source_tables = {
+        table_name: rows
+        for table_name, rows in _bundle_semantic_tables(source_bundle).items()
+        if rows
+    }
+    raw_tables = {
+        table_name: rows
+        for table_name, rows in _semantic_tables_from_raw_records(raw_rows).items()
+        if rows
+    }
+    return source_tables == raw_tables
 
 
 def _row_identifier(table_name: str, row: Mapping[str, Any], index: int) -> str:
@@ -670,6 +680,7 @@ class HistoricalDatasetAcquisitionRuntime:
                 candidates.append((dict(version_row), "content_digest", bundle_match))
                 continue
             candidates.append((dict(version_row), "raw_row_semantic_match", bundle_match))
+        reusable_matches: list[tuple[tuple[int, int, int, int], dict[str, Any]]] = []
         for version_row, reuse_match_type, bundle_match in candidates:
             version_id = _normalize_text(version_row.get("version_id"))
             snapshot_id = _normalize_text(version_row.get("snapshot_id"))
@@ -737,7 +748,7 @@ class HistoricalDatasetAcquisitionRuntime:
                 params=[contract.dataset_id, version_id],
                 order_by="step_index ASC",
             )
-            return {
+            reusable_result = {
                 "ok": bool(validation_payload.get("ok")),
                 "status": "raw_cache_reused" if validation_payload.get("ok") else "raw_cache_reuse_blocked",
                 "contract": contract.as_dict(),
@@ -757,7 +768,17 @@ class HistoricalDatasetAcquisitionRuntime:
                 "replay_status": "IDEMPOTENT_REUSE",
                 "reuse_match_type": reuse_match_type,
             }
-        return None
+            match_priority = (
+                0 if reusable_result["ok"] else 1,
+                0 if bundle_match else 1,
+                0 if reuse_match_type in {"source_bundle_id", "legacy_source_bundle_id"} else 1 if reuse_match_type == "content_digest" else 2,
+                int(version_row.get("version_number") or 0),
+            )
+            reusable_matches.append((match_priority, reusable_result))
+        if not reusable_matches:
+            return None
+        reusable_matches.sort(key=lambda item: item[0])
+        return reusable_matches[0][1]
 
     def find_reusable_raw_acquisition_cache(
         self,
