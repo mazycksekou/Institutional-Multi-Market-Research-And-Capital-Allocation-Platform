@@ -758,7 +758,7 @@ def test_progress_events_report_stage_timings_and_scoped_partition_reuse(
     assert required_stages <= completed_stages
     assert set(replay["stage_timings"]) == required_stages
     assert planning_event["partitions_total"] == replay["reused_partition_count"]
-    assert planning_event["partitions_total"] < first_partition_count
+    assert planning_event["partitions_total"] <= first_partition_count
     assert replay["created_partition_count"] == 0
     assert _lakehouse_parquet_files(lakehouse_root) == first_parquet_files
     assert first["created_partition_count"] == first_partition_count

@@ -262,6 +262,137 @@ def test_data_identity_runtime_reuses_matching_historical_revision_without_reord
         runtime.close()
 
 
+def test_data_identity_runtime_scopes_reconciliation_to_supplied_selection_rows(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    runtime = DataIdentityLakehouseRuntime(
+        storage_path=tmp_path / "identity_runtime_reconciliation_scope.sqlite",
+        lakehouse_root=tmp_path / "lakehouse",
+    )
+    try:
+        runtime.store.ensure_schema()
+        selection_row = {
+            "selection_id": "selection::scoped",
+            "market_id": "market::scoped",
+            "event_id": "event::scoped",
+            "provider": "oddswarehouse",
+            "book": "Circa",
+            "selection": "away",
+            "market_type": "spread",
+            "line_value": 3.5,
+            "odds": -108,
+            "source_selection_id": "selection::scoped",
+            "dataset_id": "dataset.sports.nfl.oddswarehouse.nfl_basic.historical",
+            "dataset_name": "oddswarehouse_nfl_basic",
+            "created_at": "2026-08-10T00:01:00Z",
+        }
+        original_fetch = runtime._fetch
+
+        def _guarded_fetch(table_name: str, **kwargs):
+            if table_name == "historical_selections":
+                raise AssertionError("scoped reconciliation should not refetch all historical selections")
+            return original_fetch(table_name, **kwargs)
+
+        monkeypatch.setattr(runtime, "_fetch", _guarded_fetch)
+
+        result = runtime.reconcile_certified_outputs(selection_rows=[selection_row])
+
+        assert result["ok"] is True
+        assert result["reconciliation_result_count"] == 1
+        assert runtime.store.count("identity_reconciliation_results") == 1
+    finally:
+        runtime.close()
+
+
+def test_data_identity_runtime_scopes_lakehouse_fetches_to_affected_partitions(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    runtime = DataIdentityLakehouseRuntime(
+        storage_path=tmp_path / "identity_runtime_lakehouse_scope.sqlite",
+        lakehouse_root=tmp_path / "lakehouse",
+    )
+    try:
+        runtime.store.ensure_schema()
+        common = {
+            "market_profile": "sports:nfl",
+            "provider": "oddswarehouse",
+            "asset_class": "historical",
+            "dataset_id": "dataset.sports.nfl.oddswarehouse.nfl_basic.historical",
+            "dataset_name": "oddswarehouse_nfl_basic",
+            "sport": "football",
+            "league": "NFL",
+        }
+        runtime.store.upsert(
+            "historical_events",
+            {
+                **common,
+                "event_id": "event::2009",
+                "event_start_time": "2009-09-10T20:20:00Z",
+                "event_date": "2009-09-10",
+                "season": "2009",
+                "batch_id": "batch::2009",
+                "home_team_id": "PIT",
+                "away_team_id": "TEN",
+                "source_event_id": "ow::2009",
+            },
+            key_columns=("event_id",),
+        )
+        runtime.store.upsert(
+            "historical_events",
+            {
+                **common,
+                "event_id": "event::2010",
+                "event_start_time": "2010-09-09T20:20:00Z",
+                "event_date": "2010-09-09",
+                "season": "2010",
+                "batch_id": "batch::2010",
+                "home_team_id": "NO",
+                "away_team_id": "MIN",
+                "source_event_id": "ow::2010",
+            },
+            key_columns=("event_id",),
+        )
+
+        fetch_calls: list[tuple[str, str | None]] = []
+        original_fetch = runtime.store.fetch
+
+        def _recording_fetch(table_name: str, **kwargs):
+            fetch_calls.append((table_name, kwargs.get("where")))
+            return original_fetch(table_name, **kwargs)
+
+        monkeypatch.setattr(runtime.store, "fetch", _recording_fetch)
+
+        publication_scope = {
+            "historical_events": {
+                "layer_name": "silver",
+                "row_count": 1,
+                "affected_partition_values": [
+                    {
+                        "market_family": "historical",
+                        "sport_or_profile": "sports:nfl",
+                        "dataset": "dataset.sports.nfl.oddswarehouse.nfl_basic.historical",
+                        "provider": "oddswarehouse",
+                        "season": "2009",
+                        "publication_batch": "batch::2009",
+                    }
+                ],
+            }
+        }
+
+        result = runtime.publish_lakehouse_views(publication_scope=publication_scope)
+
+        event_fetches = [where for table_name, where in fetch_calls if table_name == "historical_events"]
+        assert result["ok"] is True
+        assert result["partition_count"] == 1
+        assert event_fetches
+        assert event_fetches[-1]
+        assert "season" in event_fetches[-1]
+    finally:
+        runtime.close()
+
+
 def test_data_identity_foundation_updates_p0_and_service_exports(
     tmp_path: Path,
 ) -> None:

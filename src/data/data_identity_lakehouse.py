@@ -5,7 +5,7 @@ import hashlib
 import json
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Iterable, Mapping, Sequence
+from typing import AbstractSet, Any, Iterable, Mapping, Sequence
 
 from src.data.data_paths import get_runtime_data_path
 from src.data.source_event_links import resolve_source_event_link
@@ -164,6 +164,10 @@ def _stable_id(prefix: str, *parts: Any) -> str:
 def _stable_digest(*parts: Any, length: int = 20) -> str:
     payload = json.dumps(parts, sort_keys=True, separators=(",", ":"), default=str)
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()[: max(8, int(length))]
+
+
+def _quote_sql_identifier(name: str) -> str:
+    return f'"{str(name).replace(chr(34), chr(34) * 2)}"'
 
 
 def _normalize_token(value: Any) -> str:
@@ -357,6 +361,129 @@ def _partition_columns_for_table(layer_name: str, table_name: str) -> tuple[str,
     return ("market_family", "sport_or_profile", "dataset", "provider", "season", "publication_batch")
 
 
+def _sql_normalized_text(
+    column_name: str,
+    *,
+    available_columns: AbstractSet[str] | None = None,
+) -> str:
+    if available_columns is not None and column_name not in available_columns:
+        return "NULL"
+    return f"NULLIF(TRIM(CAST({_quote_sql_identifier(column_name)} AS TEXT)), '')"
+
+
+def _sql_json_extract_text(
+    column_name: str,
+    key_name: str,
+    *,
+    available_columns: AbstractSet[str] | None = None,
+) -> str:
+    if available_columns is not None and column_name not in available_columns:
+        return "NULL"
+    quoted_column = _quote_sql_identifier(column_name)
+    json_path = f"$.{key_name}"
+    return (
+        f"CASE WHEN json_valid({quoted_column}) "
+        f"THEN NULLIF(TRIM(CAST(json_extract({quoted_column}, '{json_path}') AS TEXT)), '') END"
+    )
+
+
+def _sql_coalesce(expressions: Sequence[str], *, default: str) -> str:
+    return f"COALESCE({', '.join([*expressions, default])})"
+
+
+def _lakehouse_partition_sql_expression(
+    field_name: str,
+    *,
+    layer_name: str = "",
+    table_name: str = "",
+    available_columns: AbstractSet[str] | None = None,
+) -> str:
+    if field_name == "market_family":
+        return _sql_coalesce(
+            [
+                _sql_normalized_text("market_family", available_columns=available_columns),
+                _sql_normalized_text("profile_family", available_columns=available_columns),
+                _sql_normalized_text("asset_class", available_columns=available_columns),
+            ],
+            default="'unknown'",
+        )
+    if field_name == "sport_or_profile":
+        return _sql_coalesce(
+            [
+                _sql_normalized_text("market_profile", available_columns=available_columns),
+                _sql_normalized_text("profile_id", available_columns=available_columns),
+                _sql_normalized_text("market", available_columns=available_columns),
+                _sql_normalized_text("sport", available_columns=available_columns),
+            ],
+            default="'unknown'",
+        )
+    if field_name == "dataset":
+        return _sql_coalesce(
+            [
+                _sql_normalized_text("dataset_id", available_columns=available_columns),
+                _sql_normalized_text("dataset_name", available_columns=available_columns),
+                _sql_normalized_text("dataset_identifier", available_columns=available_columns),
+            ],
+            default="'unknown'",
+        )
+    if field_name == "provider":
+        return _sql_coalesce(
+            [_sql_normalized_text("provider", available_columns=available_columns)],
+            default="'unknown'",
+        )
+    if field_name == "season":
+        return _sql_coalesce(
+            [_sql_normalized_text("season", available_columns=available_columns)],
+            default="'unknown'",
+        )
+    if field_name == "acquisition_date":
+        timestamp_expression = _sql_coalesce(
+            [
+                _sql_normalized_text("acquisition_timestamp", available_columns=available_columns),
+                _sql_normalized_text("observed_at", available_columns=available_columns),
+                _sql_normalized_text("processed_at", available_columns=available_columns),
+                _sql_normalized_text("created_at", available_columns=available_columns),
+                _sql_normalized_text("published_at", available_columns=available_columns),
+            ],
+            default="'unknown'",
+        )
+        return f"CASE WHEN {timestamp_expression} = 'unknown' THEN 'unknown' ELSE substr({timestamp_expression}, 1, 10) END"
+    if field_name == "publication_batch":
+        candidate_keys = _publication_batch_candidate_keys(
+            layer_name=layer_name,
+            table_name=table_name,
+        )
+        candidate_expressions = [
+            _sql_normalized_text(key_name, available_columns=available_columns)
+            for key_name in candidate_keys
+        ]
+        for json_field in (
+            "source_payload_json",
+            "payload_json",
+            "metadata_json",
+            "source_metadata_json",
+            "context_json",
+            "observation_identity_json",
+        ):
+            candidate_expressions.extend(
+                _sql_json_extract_text(
+                    json_field,
+                    key_name,
+                    available_columns=available_columns,
+                )
+                for key_name in (*candidate_keys, "approval_reference", "version_id", "snapshot_id")
+            )
+        candidate_expressions.extend(
+            _sql_normalized_text(key_name, available_columns=available_columns)
+            for key_name in ("approval_reference", "version_id", "snapshot_id")
+        )
+        return _sql_coalesce(candidate_expressions, default="'unbatched'")
+    return _sql_coalesce(
+        [_sql_normalized_text(field_name, available_columns=available_columns)],
+        default="'unknown'",
+    )
+
+
 def _safe_partition_path_token(value: str) -> str:
     raw = _normalize_text(value, "unknown")
     safe = "".join(character if character.isalnum() or character in {"-", "_", "."} else "_" for character in raw)
@@ -441,10 +568,24 @@ class DataIdentityLakehouseRuntime:
     def close(self) -> None:
         self.store.close()
 
-    def _fetch(self, table_name: str, *, order_by: str | None = None) -> list[dict[str, Any]]:
+    def _fetch(
+        self,
+        table_name: str,
+        *,
+        where: str | None = None,
+        params: Sequence[Any] | None = None,
+        order_by: str | None = None,
+        limit: int | None = None,
+    ) -> list[dict[str, Any]]:
         if not self.store.table_exists(table_name):
             return []
-        return self.store.fetch(table_name, order_by=order_by)
+        return self.store.fetch(
+            table_name,
+            where=where,
+            params=params,
+            order_by=order_by,
+            limit=limit,
+        )
 
     def _persist_row(
         self,
@@ -550,6 +691,36 @@ class DataIdentityLakehouseRuntime:
         if requested_valid_to and str(existing_payload.get("valid_to", "")) != requested_valid_to:
             return False
         return True
+
+    @staticmethod
+    def _semantic_reconciliation_payload(row: Mapping[str, Any]) -> dict[str, Any]:
+        return {
+            "reconciliation_scope": _normalize_text(row.get("reconciliation_scope")),
+            "entity_type": _normalize_text(row.get("entity_type")),
+            "provider": _normalize_text(row.get("provider")),
+            "internal_identifier": _normalize_text(row.get("internal_identifier")),
+            "external_identifier": _normalize_text(row.get("external_identifier")),
+            "reconciliation_status": _normalize_text(row.get("reconciliation_status")),
+            "decision_status": _normalize_text(row.get("decision_status")),
+            "decision_explanation": _normalize_text(row.get("decision_explanation")),
+            "freshness_seconds": max(0, _normalize_int(row.get("freshness_seconds"), 0)),
+            "timestamp_agreement_status": _normalize_text(row.get("timestamp_agreement_status")),
+            "outlier_status": _normalize_text(row.get("outlier_status")),
+            "quality_score": round(_normalize_float(row.get("quality_score")), 4),
+            "accepted_evidence_json": _normalize_text(row.get("accepted_evidence_json")),
+            "rejected_evidence_json": _normalize_text(row.get("rejected_evidence_json")),
+            "provider_reliability_json": _normalize_text(row.get("provider_reliability_json")),
+            "observation_identity_json": _normalize_text(row.get("observation_identity_json")),
+            "lineage_reference_json": _normalize_text(row.get("lineage_reference_json")),
+        }
+
+    @classmethod
+    def _semantic_reconciliation_matches(
+        cls,
+        existing_row: Mapping[str, Any],
+        semantic_payload: Mapping[str, Any],
+    ) -> bool:
+        return cls._semantic_reconciliation_payload(existing_row) == dict(semantic_payload)
 
     def register_identity_mapping(
         self,
@@ -854,28 +1025,26 @@ class DataIdentityLakehouseRuntime:
         is_latest: bool = True,
         **timestamps: Any,
     ) -> dict[str, Any]:
-        timestamp_payload = _timestamp_contract(
-            source_payload,
-            revision_number=revision_number,
-            is_latest=is_latest,
-            **timestamps,
-        )
+        normalized_scope = _normalize_text(reconciliation_scope)
+        normalized_entity_type = _normalize_text(entity_type)
+        normalized_provider = _normalize_text(provider)
+        normalized_internal_identifier = _normalize_text(internal_identifier)
+        normalized_external_identifier = _normalize_text(external_identifier)
         reconciliation_id = _stable_id(
             "identity.reconciliation",
-            reconciliation_scope,
-            entity_type,
-            provider,
-            internal_identifier,
-            external_identifier,
+            normalized_scope,
+            normalized_entity_type,
+            normalized_provider,
+            normalized_internal_identifier,
+            normalized_external_identifier,
             revision_number,
         )
-        row = {
-            "reconciliation_id": reconciliation_id,
-            "reconciliation_scope": _normalize_text(reconciliation_scope),
-            "entity_type": _normalize_text(entity_type),
-            "provider": _normalize_text(provider),
-            "internal_identifier": _normalize_text(internal_identifier),
-            "external_identifier": _normalize_text(external_identifier),
+        comparable_payload = {
+            "reconciliation_scope": normalized_scope,
+            "entity_type": normalized_entity_type,
+            "provider": normalized_provider,
+            "internal_identifier": normalized_internal_identifier,
+            "external_identifier": normalized_external_identifier,
             "reconciliation_status": _normalize_text(reconciliation_status),
             "decision_status": _normalize_text(decision_status),
             "decision_explanation": _normalize_text(decision_explanation),
@@ -888,6 +1057,43 @@ class DataIdentityLakehouseRuntime:
             "provider_reliability_json": _as_json(dict(provider_reliability or {})),
             "observation_identity_json": _as_json(dict(observation_identity or {})),
             "lineage_reference_json": _as_json(dict(lineage_reference or {})),
+        }
+        existing_rows = self._fetch(
+            "identity_reconciliation_results",
+            where="reconciliation_id = ?",
+            params=[reconciliation_id],
+            limit=1,
+        )
+        if existing_rows and self._semantic_reconciliation_matches(
+            existing_rows[0],
+            comparable_payload,
+        ):
+            return dict(existing_rows[0])
+        timestamp_payload = _timestamp_contract(
+            source_payload,
+            revision_number=revision_number,
+            is_latest=is_latest,
+            **timestamps,
+        )
+        row = {
+            "reconciliation_id": reconciliation_id,
+            "reconciliation_scope": comparable_payload["reconciliation_scope"],
+            "entity_type": comparable_payload["entity_type"],
+            "provider": comparable_payload["provider"],
+            "internal_identifier": comparable_payload["internal_identifier"],
+            "external_identifier": comparable_payload["external_identifier"],
+            "reconciliation_status": comparable_payload["reconciliation_status"],
+            "decision_status": comparable_payload["decision_status"],
+            "decision_explanation": comparable_payload["decision_explanation"],
+            "freshness_seconds": comparable_payload["freshness_seconds"],
+            "timestamp_agreement_status": comparable_payload["timestamp_agreement_status"],
+            "outlier_status": comparable_payload["outlier_status"],
+            "quality_score": comparable_payload["quality_score"],
+            "accepted_evidence_json": comparable_payload["accepted_evidence_json"],
+            "rejected_evidence_json": comparable_payload["rejected_evidence_json"],
+            "provider_reliability_json": comparable_payload["provider_reliability_json"],
+            "observation_identity_json": comparable_payload["observation_identity_json"],
+            "lineage_reference_json": comparable_payload["lineage_reference_json"],
             "source_payload_json": _as_json(dict(source_payload or {})),
             "schema_version": DATA_IDENTITY_LAKEHOUSE_SCHEMA_VERSION,
             "created_at": timestamp_payload["processed_at"],
@@ -1358,7 +1564,13 @@ class DataIdentityLakehouseRuntime:
             "review_id": manual_review["review_id"],
         }
 
-    def _seed_identity_rows_from_certified_outputs(self) -> list[dict[str, Any]]:
+    def _seed_identity_rows_from_certified_outputs(
+        self,
+        *,
+        events: Sequence[Mapping[str, Any]] | None = None,
+        markets: Sequence[Mapping[str, Any]] | None = None,
+        selections: Sequence[Mapping[str, Any]] | None = None,
+    ) -> list[dict[str, Any]]:
         def seeded_approval_reference(row: Mapping[str, Any]) -> str:
             for key in ("batch_id", "dataset_batch_id", "source_bundle_id", "version_id", "snapshot_id"):
                 value = _normalize_text(row.get(key))
@@ -1370,9 +1582,13 @@ class DataIdentityLakehouseRuntime:
         schedule_rows = self._fetch("nfl_schedule", order_by="kickoff_time ASC, game_id ASC")
         odds_rows = self._fetch("nfl_odds_snapshots", order_by="game_id ASC, odds_snapshot_id ASC")
         dataset_rows = self._fetch("historical_dataset_rows", order_by="event_start_time ASC, dataset_row_id ASC")
-        events = self._fetch("historical_events", order_by="event_start_time ASC, event_id ASC")
-        markets = self._fetch("historical_markets", order_by="event_id ASC, market_id ASC")
-        selections = self._fetch("historical_selections", order_by="event_id ASC, market_id ASC, selection_id ASC")
+        events = list(events) if events is not None else self._fetch("historical_events", order_by="event_start_time ASC, event_id ASC")
+        markets = list(markets) if markets is not None else self._fetch("historical_markets", order_by="event_id ASC, market_id ASC")
+        selections = (
+            list(selections)
+            if selections is not None
+            else self._fetch("historical_selections", order_by="event_id ASC, market_id ASC, selection_id ASC")
+        )
         providers = self._fetch("provider_metadata", order_by="provider_id ASC")
         if not events:
             events = [
@@ -1716,8 +1932,18 @@ class DataIdentityLakehouseRuntime:
                 )
         return rows
 
-    def seed_from_certified_outputs(self) -> dict[str, Any]:
-        mappings = self._seed_identity_rows_from_certified_outputs()
+    def seed_from_certified_outputs(
+        self,
+        *,
+        events: Sequence[Mapping[str, Any]] | None = None,
+        markets: Sequence[Mapping[str, Any]] | None = None,
+        selections: Sequence[Mapping[str, Any]] | None = None,
+    ) -> dict[str, Any]:
+        mappings = self._seed_identity_rows_from_certified_outputs(
+            events=events,
+            markets=markets,
+            selections=selections,
+        )
         return {
             "ok": True,
             "status": "seeded",
@@ -1725,8 +1951,16 @@ class DataIdentityLakehouseRuntime:
             "mappings": mappings,
         }
 
-    def reconcile_certified_outputs(self) -> dict[str, Any]:
-        rows = self._fetch("historical_selections", order_by="event_id ASC, market_id ASC, selection_id ASC")
+    def reconcile_certified_outputs(
+        self,
+        *,
+        selection_rows: Sequence[Mapping[str, Any]] | None = None,
+    ) -> dict[str, Any]:
+        rows = (
+            list(selection_rows)
+            if selection_rows is not None
+            else self._fetch("historical_selections", order_by="event_id ASC, market_id ASC, selection_id ASC")
+        )
         if not rows:
             rows = [
                 {
@@ -1952,6 +2186,46 @@ class DataIdentityLakehouseRuntime:
                 filtered.append((partition_values, grouped_rows))
         return filtered
 
+    def _fetch_partition_scoped_rows(
+        self,
+        layer_name: str,
+        table_name: str,
+        *,
+        order_by: str,
+        publication_scope: Mapping[str, Any] | None = None,
+    ) -> list[dict[str, Any]]:
+        if not self.store.table_exists(table_name):
+            return []
+        if publication_scope is None:
+            return self._fetch(table_name, order_by=order_by)
+        partition_filters = self._scope_partition_filters(table_name, publication_scope)
+        if not partition_filters:
+            return []
+        available_columns = frozenset(self.store.table_columns(table_name))
+        partition_columns = _partition_columns_for_table(layer_name, table_name)
+        where_clauses: list[str] = []
+        params: list[Any] = []
+        for partition_filter in sorted(partition_filters):
+            filter_values = dict(partition_filter)
+            predicates: list[str] = []
+            for column_name in partition_columns:
+                predicates.append(
+                    f"{_lakehouse_partition_sql_expression(column_name, layer_name=layer_name, table_name=table_name, available_columns=available_columns)} = ?"
+                )
+                params.append(
+                    filter_values.get(
+                        column_name,
+                        "unbatched" if column_name == "publication_batch" else "unknown",
+                    )
+                )
+            where_clauses.append(f"({' AND '.join(predicates)})")
+        return self._fetch(
+            table_name,
+            where=" OR ".join(where_clauses),
+            params=params,
+            order_by=order_by,
+        )
+
     def _write_partition_atomically(
         self,
         output_path: Path,
@@ -1992,7 +2266,12 @@ class DataIdentityLakehouseRuntime:
         for layer_name, table_name, order_by in _lakehouse_dataset_specs():
             rows = [
                 row
-                for row in self._fetch(table_name, order_by=order_by)
+                for row in self._fetch_partition_scoped_rows(
+                    layer_name,
+                    table_name,
+                    order_by=order_by,
+                    publication_scope=publication_scope,
+                )
                 if _is_lakehouse_publishable_row(layer_name, table_name, row)
             ]
             if not rows:
