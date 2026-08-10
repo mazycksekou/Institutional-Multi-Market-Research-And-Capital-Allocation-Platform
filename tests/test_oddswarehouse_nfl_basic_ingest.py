@@ -30,6 +30,10 @@ from src.data.oddswarehouse_nfl_basic_ingest import (
     run_oddswarehouse_nfl_basic_pilot,
     validate_oddswarehouse_source_profile,
 )
+from src.data.research_asset_lifecycle_runtime import (
+    ResearchAssetLifecycleRuntime,
+    build_research_asset_identity_contract,
+)
 from src.storage.local_store import create_local_storage_engine
 
 
@@ -792,6 +796,221 @@ def test_dataset_identity_uses_full_source_coverage_for_production_metadata(
     assert report["dataset_identity"]["selected_season_label"] == "2009"
     assert report["dataset_identity"]["full_source_date_label"] == "20090920-20250907"
     assert report["dataset_identity"]["selected_date_label"] == "20090920"
+
+
+def test_raw_acquisition_reuses_semantic_bundle_with_digest_drift_and_prefers_oldest_duplicate_version(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    rows = _sample_workbook_rows()[:2]
+    csv_path = tmp_path / "NFL_Basic.csv"
+    storage_root = tmp_path / "research-data"
+    storage_root.mkdir()
+    monkeypatch.setenv("RESEARCH_DATA_ROOT", str(storage_root))
+    monkeypatch.delenv("AUTOMATION_DATA_DIR", raising=False)
+    _write_canonical_csv(csv_path, rows)
+
+    storage_path = storage_root / "historical" / "oddswarehouse.sqlite"
+    profile = _profile_oddswarehouse_source(csv_path)
+    selected_rows, selection = _apply_deterministic_row_limit(profile["source"], limit=2)
+    source_bundle_id = _build_source_bundle_id(profile, selected_rows=selected_rows, selection=selection)
+    selected_profile = _selected_source_profile(profile, selected_rows=selected_rows, selection=selection)
+    source_bundle = _source_bundle_from_source_profile(
+        selected_profile,
+        source_bundle_id,
+        "2026-08-10T15:41:56Z",
+    )
+    oddswarehouse_ingest.get_nfl_p0_market_profile()
+
+    with HistoricalDatasetAcquisitionRuntime(storage_path=storage_path) as runtime:
+        first = runtime.stage_raw_acquisition_cache(
+            source_bundle,
+            profile_id="sports:nfl",
+            dataset_name="oddswarehouse_nfl_basic_raw_acquisition_cache",
+        )
+        assert first["status"] == "raw_cache_ready"
+
+        version_row = dict(
+            runtime.platform.store.fetch(
+                "dataset_versions",
+                where="version_id = ?",
+                params=[first["dataset_version"]["version_id"]],
+                limit=1,
+            )[0]
+        )
+        validation_row = dict(
+            runtime.platform.store.fetch(
+                "validation_results",
+                where="validation_id = ?",
+                params=[first["validation_result"]["validation_id"]],
+                limit=1,
+            )[0]
+        )
+        raw_rows = runtime.platform.store.fetch(
+            "raw_records",
+            where="dataset_id = ? AND version_id = ?",
+            params=[first["contract"]["dataset_id"], first["dataset_version"]["version_id"]],
+            order_by="row_index ASC",
+        )
+
+        original_metadata = HistoricalDatasetAcquisitionRuntime._version_metadata_payload(version_row)
+        drifted_metadata = dict(original_metadata)
+        drifted_metadata["source_bundle_digest"] = "legacy-digest-drift"
+        version_row["metadata_json"] = json.dumps(drifted_metadata, sort_keys=True)
+        runtime.platform.store.upsert("dataset_versions", version_row, key_columns=("version_id",))
+
+        duplicate_version_id = f"{first['contract']['dataset_id']}.v002"
+        duplicate_snapshot_id = f"{first['contract']['dataset_id']}.snapshot.v002"
+        duplicate_lineage_id = f"{first['contract']['dataset_id']}.lineage.v002"
+        duplicate_validation_id = f"{duplicate_version_id}.validation"
+        duplicate_created_at = "2026-08-10T15:42:56Z"
+
+        duplicate_validation_row = dict(validation_row)
+        duplicate_validation_row["validation_id"] = duplicate_validation_id
+        duplicate_validation_row["version_id"] = duplicate_version_id
+        duplicate_validation_row["snapshot_id"] = duplicate_snapshot_id
+        duplicate_validation_row["lineage_id"] = duplicate_lineage_id
+        duplicate_validation_row["created_at"] = duplicate_created_at
+        duplicate_validation_row["updated_at"] = duplicate_created_at
+        runtime.platform.store.upsert("validation_results", duplicate_validation_row, key_columns=("validation_id",))
+
+        duplicate_version_row = dict(version_row)
+        duplicate_version_row["version_id"] = duplicate_version_id
+        duplicate_version_row["version_number"] = 2
+        duplicate_version_row["validation_id"] = duplicate_validation_id
+        duplicate_version_row["snapshot_id"] = duplicate_snapshot_id
+        duplicate_version_row["lineage_id"] = duplicate_lineage_id
+        duplicate_version_row["created_at"] = duplicate_created_at
+        duplicate_version_row["updated_at"] = duplicate_created_at
+        duplicate_version_metadata = dict(original_metadata)
+        duplicate_version_row["metadata_json"] = json.dumps(duplicate_version_metadata, sort_keys=True)
+        runtime.platform.store.upsert("dataset_versions", duplicate_version_row, key_columns=("version_id",))
+
+        for raw_row in raw_rows:
+            duplicate_raw_row = dict(raw_row)
+            duplicate_raw_row["record_id"] = f"{raw_row['record_id']}.dup"
+            duplicate_raw_row["version_id"] = duplicate_version_id
+            duplicate_raw_row["snapshot_id"] = duplicate_snapshot_id
+            duplicate_raw_row["lineage_id"] = duplicate_lineage_id
+            duplicate_raw_row["created_at"] = duplicate_created_at
+            duplicate_raw_row["updated_at"] = duplicate_created_at
+            runtime.platform.store.upsert("raw_records", duplicate_raw_row, key_columns=("record_id",))
+
+        replay = runtime.stage_raw_acquisition_cache(
+            source_bundle,
+            profile_id="sports:nfl",
+            dataset_name="oddswarehouse_nfl_basic_raw_acquisition_cache",
+        )
+
+    assert replay["status"] == "raw_cache_reused"
+    assert replay["dataset_version"]["version_id"] == first["dataset_version"]["version_id"]
+    assert replay["reuse_match_type"] == "legacy_source_bundle_id"
+
+
+def test_production_historical_lifecycle_identity_preserves_legacy_pilot_rows(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    rows = [
+        _sample_workbook_rows()[0],
+        _sample_workbook_rows()[1],
+        _row_with(_sample_workbook_rows()[2], **{"Game ID": 2097, "Date": "20250907"}),
+    ]
+    csv_path = tmp_path / "NFL_Basic.csv"
+    storage_root = tmp_path / "research-data"
+    storage_root.mkdir()
+    monkeypatch.setenv("RESEARCH_DATA_ROOT", str(storage_root))
+    monkeypatch.delenv("AUTOMATION_DATA_DIR", raising=False)
+    _write_canonical_csv(csv_path, rows)
+
+    storage_path = storage_root / "historical" / "oddswarehouse.sqlite"
+    lakehouse_root = storage_root / "lakehouse" / "oddswarehouse"
+    bronze_root = storage_root / "bronze" / "oddswarehouse"
+
+    legacy_assets = (
+        (
+            "dataset.sports.nfl.oddswarehouse.source_events",
+            "OddsWarehouse NFL Source Events",
+            "source_event_snapshot",
+            "historical_events",
+        ),
+        (
+            "dataset.sports.nfl.oddswarehouse.market_observations",
+            "OddsWarehouse NFL Market Observations",
+            "market_observation_snapshot",
+            "historical_selections",
+        ),
+        (
+            "dataset.sports.nfl.oddswarehouse.event_market_selection_gold",
+            "OddsWarehouse NFL Event Market Selection Gold",
+            "event_market_selection_gold",
+            "historical_event_market_selections",
+        ),
+    )
+
+    runtime = ResearchAssetLifecycleRuntime(storage_path=storage_path)
+    try:
+        for asset_id, asset_name, asset_type, market_id in legacy_assets:
+            identity = build_research_asset_identity_contract(
+                asset_id=asset_id,
+                asset_family="dataset",
+                market_profile=oddswarehouse_ingest.ODDSWAREHOUSE_NFL_BASIC_PROFILE_ID,
+                market=oddswarehouse_ingest.ODDSWAREHOUSE_NFL_BASIC_PROFILE_ID,
+                league="NFL",
+                sport="football",
+                season="2009",
+                week_or_date="2009-09-10..2009-09-20",
+                event_id="oddswarehouse_pilot",
+                game_id="",
+                market_id=market_id,
+                selection="",
+                provider=oddswarehouse_ingest.ODDSWAREHOUSE_NFL_BASIC_PROVIDER_ID,
+                connector=oddswarehouse_ingest.ODDSWAREHOUSE_NFL_BASIC_CONNECTOR_ID,
+                schema_version=oddswarehouse_ingest.ODDSWAREHOUSE_NFL_BASIC_SCHEMA_VERSION,
+                lineage_version="oddswarehouse.nfl_basic.2009.pilot.v1",
+                asset_name=asset_name,
+                asset_type=asset_type,
+                participant_id="",
+                team_id="",
+                market_type=market_id,
+            )
+            runtime.record_lifecycle_state(
+                identity=identity.as_dict(),
+                lifecycle_state="research_asset_certified",
+                lifecycle_reason="legacy pilot evidence",
+                source_bundle={"source_name": "OddsWarehouse NFL Basic", "source_type": "controlled_vendor_workbook", "source_key": "oddswarehouse_nfl_basic", "provider": "oddswarehouse"},
+                raw_acquisition_result={"batch_id": "oddswarehouse.batch.legacy"},
+                created_at="2026-08-09T21:36:40Z",
+            )
+    finally:
+        runtime.close()
+
+    report = run_oddswarehouse_nfl_basic_pilot(
+        csv_path,
+        storage_path=storage_path,
+        lakehouse_root=lakehouse_root,
+        bronze_raw_root=bronze_root,
+        limit=2,
+    )
+
+    store = create_local_storage_engine(storage_path)
+    try:
+        lifecycle_rows = store.fetch(
+            "research_asset_lifecycles",
+            order_by="asset_id ASC",
+        )
+    finally:
+        store.close()
+
+    lifecycle_by_asset_id = {row["asset_id"]: dict(row) for row in lifecycle_rows}
+
+    assert report["ok"] is True
+    assert {asset_id for asset_id, *_ in legacy_assets} <= set(lifecycle_by_asset_id)
+    assert oddswarehouse_ingest.ODDSWAREHOUSE_NFL_BASIC_SOURCE_EVENTS_ASSET_ID in lifecycle_by_asset_id
+    assert oddswarehouse_ingest.ODDSWAREHOUSE_NFL_BASIC_MARKET_OBSERVATIONS_ASSET_ID in lifecycle_by_asset_id
+    assert oddswarehouse_ingest.ODDSWAREHOUSE_NFL_BASIC_GOLD_ASSET_ID in lifecycle_by_asset_id
+    assert lifecycle_by_asset_id[oddswarehouse_ingest.ODDSWAREHOUSE_NFL_BASIC_SOURCE_EVENTS_ASSET_ID]["season"] == "2009-2025"
+    assert lifecycle_by_asset_id[oddswarehouse_ingest.ODDSWAREHOUSE_NFL_BASIC_SOURCE_EVENTS_ASSET_ID]["week_or_date"] == "20090920-20250907"
 
 
 def test_retry_after_incomplete_acquisition_reuses_raw_artifact(tmp_path: Path, monkeypatch) -> None:

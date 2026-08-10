@@ -55,6 +55,9 @@ ODDSWAREHOUSE_NFL_BASIC_DATASET_ID = "dataset.sports.nfl.oddswarehouse.nfl_basic
 ODDSWAREHOUSE_NFL_BASIC_DATASET_ALIAS = "dataset.sports.nfl.oddswarehouse.nfl_basic.current"
 ODDSWAREHOUSE_NFL_BASIC_DATASET_VERSION = "oddswarehouse.nfl_basic.historical.v1"
 ODDSWAREHOUSE_NFL_BASIC_DATASET_REVISION = "r001"
+ODDSWAREHOUSE_NFL_BASIC_SOURCE_EVENTS_ASSET_ID = f"{ODDSWAREHOUSE_NFL_BASIC_DATASET_ID}.source_events"
+ODDSWAREHOUSE_NFL_BASIC_MARKET_OBSERVATIONS_ASSET_ID = f"{ODDSWAREHOUSE_NFL_BASIC_DATASET_ID}.market_observations"
+ODDSWAREHOUSE_NFL_BASIC_GOLD_ASSET_ID = f"{ODDSWAREHOUSE_NFL_BASIC_DATASET_ID}.event_market_selection_gold"
 ODDSWAREHOUSE_NFL_BASIC_EXPECTED_SHEET = "NFL_Basic"
 ODDSWAREHOUSE_NFL_BASIC_LEGACY_BRONZE_SEASON = 2009
 ODDSWAREHOUSE_NFL_BASIC_STORAGE_PATH = get_runtime_data_path(
@@ -791,9 +794,9 @@ def _provider_capability(schema_headers: Sequence[str]) -> dict[str, Any]:
         "source_family": "odds_data",
         "source_access_type": "manual_import",
         "supported_assets": [
-            "dataset.sports.nfl.oddswarehouse.source_events",
-            "dataset.sports.nfl.oddswarehouse.market_observations",
-            "dataset.sports.nfl.oddswarehouse.event_market_selection_gold",
+            ODDSWAREHOUSE_NFL_BASIC_SOURCE_EVENTS_ASSET_ID,
+            ODDSWAREHOUSE_NFL_BASIC_MARKET_OBSERVATIONS_ASSET_ID,
+            ODDSWAREHOUSE_NFL_BASIC_GOLD_ASSET_ID,
         ],
         "supported_fields": list(schema_headers),
         "supported_markets": ["sports:nfl", "spread", "moneyline", "total"],
@@ -3058,7 +3061,7 @@ def _certify_assets(
     try:
         asset_contracts = [
             ResearchAssetCertificationContract(
-                research_asset_id="dataset.sports.nfl.oddswarehouse.source_events",
+                research_asset_id=ODDSWAREHOUSE_NFL_BASIC_SOURCE_EVENTS_ASSET_ID,
                 research_asset_name="OddsWarehouse NFL Source Events",
                 asset_category="dataset",
                 asset_type="source_event_snapshot",
@@ -3067,7 +3070,7 @@ def _certify_assets(
                 description="Canonical event rows created from the authoritative OddsWarehouse workbook.",
             ),
             ResearchAssetCertificationContract(
-                research_asset_id="dataset.sports.nfl.oddswarehouse.market_observations",
+                research_asset_id=ODDSWAREHOUSE_NFL_BASIC_MARKET_OBSERVATIONS_ASSET_ID,
                 research_asset_name="OddsWarehouse NFL Market Observations",
                 asset_category="dataset",
                 asset_type="market_observation_snapshot",
@@ -3076,7 +3079,7 @@ def _certify_assets(
                 description="OPEN and CLOSE selection observations preserved without inventing timestamps.",
             ),
             ResearchAssetCertificationContract(
-                research_asset_id="dataset.sports.nfl.oddswarehouse.event_market_selection_gold",
+                research_asset_id=ODDSWAREHOUSE_NFL_BASIC_GOLD_ASSET_ID,
                 research_asset_name="OddsWarehouse NFL Event Market Selection Gold",
                 asset_category="dataset",
                 asset_type="event_market_selection_gold",
@@ -3130,9 +3133,9 @@ def _record_lifecycle(
             selected_profile=selected_profile.get("source") or {},
         )
         asset_id_to_rows = {
-            "dataset.sports.nfl.oddswarehouse.source_events": normalized_payload.get("event_rows") or [],
-            "dataset.sports.nfl.oddswarehouse.market_observations": normalized_payload.get("selection_rows") or [],
-            "dataset.sports.nfl.oddswarehouse.event_market_selection_gold": normalized_payload.get("gold_rows") or [],
+            ODDSWAREHOUSE_NFL_BASIC_SOURCE_EVENTS_ASSET_ID: normalized_payload.get("event_rows") or [],
+            ODDSWAREHOUSE_NFL_BASIC_MARKET_OBSERVATIONS_ASSET_ID: normalized_payload.get("selection_rows") or [],
+            ODDSWAREHOUSE_NFL_BASIC_GOLD_ASSET_ID: normalized_payload.get("gold_rows") or [],
         }
         for asset_result in certification_results.get("asset_results") or []:
             contract = asset_result["asset_contract"]
