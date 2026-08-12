@@ -738,28 +738,17 @@ def test_progress_events_report_stage_timings_and_scoped_partition_reuse(
         "validation",
         "normalization",
         "canonical_classification",
-        "sqlite_persistence",
-        "identity_mapping",
-        "reconciliation",
-        "parquet_partition_planning",
-        "parquet_writing",
-        "certification",
-        "lifecycle_recording",
     }
-    planning_event = next(
-        event
-        for event in events
-        if event["stage"] == "parquet_partition_planning"
-        and event["status"] == "COMPLETED"
-    )
 
     assert replay["ok"] is True
     assert replay["progress_events"] == events
     assert required_stages <= completed_stages
     assert set(replay["stage_timings"]) == required_stages
-    assert planning_event["partitions_total"] == replay["reused_partition_count"]
-    assert planning_event["partitions_total"] <= first_partition_count
+    assert replay["publication_started"] is False
+    assert replay["publication_committed"] is False
     assert replay["created_partition_count"] == 0
+    assert replay["updated_partition_count"] == 0
+    assert replay["reused_partition_count"] == 0
     assert _lakehouse_parquet_files(lakehouse_root) == first_parquet_files
     assert first["created_partition_count"] == first_partition_count
 
@@ -1354,8 +1343,11 @@ def test_canonical_csv_exact_replay_and_overlapping_sample_are_idempotent(
     assert second["selected_row_count"] == 2
     assert second["new_row_count"] == 0
     assert second["exact_duplicate_count"] == 2
+    assert second["publication_started"] is False
+    assert second["publication_committed"] is False
     assert second["created_partition_count"] == 0
-    assert second["reused_partition_count"] > 0
+    assert second["updated_partition_count"] == 0
+    assert second["reused_partition_count"] == 0
     assert second_parquet_files == first_parquet_files
 
     overlap = run_oddswarehouse_nfl_basic_pilot(
@@ -1425,7 +1417,11 @@ def test_exact_replay_with_repeated_team_aliases_reuses_identity_mappings_and_pr
     assert first["replay_status"] == "created"
     assert second["replay_status"] == "reused"
     assert second["exact_duplicate_count"] == 3
+    assert second["publication_started"] is False
+    assert second["publication_committed"] is False
     assert second["created_partition_count"] == 0
+    assert second["updated_partition_count"] == 0
+    assert second["reused_partition_count"] == 0
     assert first["report_path"] != second["report_path"]
     assert first["acquisition_report_path"] == second["acquisition_report_path"]
     assert Path(first["report_path"]).exists()
@@ -1476,6 +1472,11 @@ def test_same_content_different_filename_reuses_bronze_and_raw_artifacts(
     assert second["raw_acquisition_result"]["status"] == "raw_cache_reused"
     assert second["raw_acquisition_result"]["reuse_match_type"] == "source_bundle_id"
     assert second["bronze_file_actions"][0]["status"] == "reused"
+    assert second["publication_started"] is False
+    assert second["publication_committed"] is False
+    assert second["created_partition_count"] == 0
+    assert second["updated_partition_count"] == 0
+    assert second["reused_partition_count"] == 0
     bronze_files = sorted(path.name for path in bronze_root.rglob("*") if path.is_file())
     assert bronze_files == ["primary_source.csv"]
 
@@ -1743,5 +1744,9 @@ def test_exact_replay_reuses_legacy_workbook_source_type_state(
     assert replay["new_row_count"] == 0
     assert replay["exact_duplicate_count"] == 2
     assert replay["conflict_count"] == 0
+    assert replay["publication_started"] is False
+    assert replay["publication_committed"] is False
     assert replay["created_partition_count"] == 0
+    assert replay["updated_partition_count"] == 0
+    assert replay["reused_partition_count"] == 0
     assert parquet_after == parquet_before
