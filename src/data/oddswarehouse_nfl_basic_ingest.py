@@ -743,7 +743,10 @@ def _report_replay_status(
     publication_committed: bool,
     prior_publication_exists: bool,
     prior_incomplete_detected: bool,
+    reuse_without_publication: bool = False,
 ) -> str:
+    if reuse_without_publication:
+        return "reused" if prior_publication_exists else "duplicate_rejected"
     if not publication_committed:
         return "failed_before_publication"
     if int(counts.get("CONFLICT") or 0) > 0:
@@ -3970,6 +3973,23 @@ def _replay_status_from_counts(counts: Mapping[str, Any]) -> str:
     return "NEW_PUBLICATION"
 
 
+def _should_skip_publication_for_reuse(
+    *,
+    publication_plan: Mapping[str, Any],
+    prior_publication_exists: bool,
+    partial_state_detected: bool,
+    raw_acquisition_result: Mapping[str, Any],
+) -> bool:
+    if not prior_publication_exists or partial_state_detected:
+        return False
+    if _normalize_text(raw_acquisition_result.get("status")) != "raw_cache_reused":
+        return False
+    if publication_plan.get("affected_tables") or publication_plan.get("affected_partition_scope"):
+        return False
+    counts = dict((publication_plan.get("source_row_counts") or {}).get("counts") or {})
+    return int(counts.get("NEW") or 0) == 0 and int(counts.get("CONFLICT") or 0) == 0
+
+
 def run_oddswarehouse_nfl_basic_pilot(
     source_path: str | Path,
     companion_evidence_path: str | Path | None = None,
@@ -4061,6 +4081,7 @@ def run_oddswarehouse_nfl_basic_pilot(
     failure_message = ""
     publication_started = False
     publication_committed = False
+    reuse_without_publication = False
     prior_publication_state = {"batch_exists": False, "batch_row": {}}
     partial_state_detected = False
     partial_state_action = ""
@@ -4229,44 +4250,56 @@ def run_oddswarehouse_nfl_basic_pilot(
             resume_publication=resume_publication,
         )
 
-        publication_started = True
-        failure_stage = "persist_canonical_rows"
-        publication_result = _execute_atomic_governed_publication(
-            storage_path=effective_storage_path,
-            lakehouse_root=effective_lakehouse_root,
-            batch_id=batch_id,
-            created_at=started_at,
-            source_file=source_file,
-            selected_profile=selected_profile,
-            validation=validation,
-            normalized_payload=normalized,
-            raw_acquisition_result=raw_acquisition_result,
+        if _should_skip_publication_for_reuse(
             publication_plan=publication_plan,
-            resume_publication_tokens=(
-                _resume_publication_tokens(
-                    batch_id=batch_id,
-                    source_bundle_id=source_bundle_id,
-                )
-                if resume_publication
-                else ()
-            ),
-            progress=progress_tracker,
-        )
-        source_row_counts = dict(publication_result.get("source_row_counts") or source_row_counts)
-        classification_counts = dict(publication_result.get("classification_counts") or classification_counts)
-        if source_row_counts["counts"]["CONFLICT"] > 0:
-            validation = {
-                **validation,
-                "ok": False,
-                "status": "blocked",
-                "errors": list(validation.get("errors") or []) + ["canonical_row_conflict"],
-            }
-            raise ValueError("canonical_row_conflict")
-        identity_result = dict(publication_result.get("identity_result") or identity_result)
-        certification_results = dict(publication_result.get("certification_results") or certification_results)
-        lifecycle_results = dict(publication_result.get("lifecycle_results") or lifecycle_results)
-        publication_committed = True
-        failure_stage = ""
+            prior_publication_exists=bool(prior_publication_state.get("batch_exists")),
+            partial_state_detected=partial_state_detected,
+            raw_acquisition_result=raw_acquisition_result,
+        ):
+            reuse_without_publication = True
+            identity_result = dict(preflight_result.get("identity_result") or identity_result)
+            certification_results = dict(preflight_result.get("certification_results") or certification_results)
+            lifecycle_results = dict(preflight_result.get("lifecycle_results") or lifecycle_results)
+            failure_stage = ""
+        else:
+            publication_started = True
+            failure_stage = "persist_canonical_rows"
+            publication_result = _execute_atomic_governed_publication(
+                storage_path=effective_storage_path,
+                lakehouse_root=effective_lakehouse_root,
+                batch_id=batch_id,
+                created_at=started_at,
+                source_file=source_file,
+                selected_profile=selected_profile,
+                validation=validation,
+                normalized_payload=normalized,
+                raw_acquisition_result=raw_acquisition_result,
+                publication_plan=publication_plan,
+                resume_publication_tokens=(
+                    _resume_publication_tokens(
+                        batch_id=batch_id,
+                        source_bundle_id=source_bundle_id,
+                    )
+                    if resume_publication
+                    else ()
+                ),
+                progress=progress_tracker,
+            )
+            source_row_counts = dict(publication_result.get("source_row_counts") or source_row_counts)
+            classification_counts = dict(publication_result.get("classification_counts") or classification_counts)
+            if source_row_counts["counts"]["CONFLICT"] > 0:
+                validation = {
+                    **validation,
+                    "ok": False,
+                    "status": "blocked",
+                    "errors": list(validation.get("errors") or []) + ["canonical_row_conflict"],
+                }
+                raise ValueError("canonical_row_conflict")
+            identity_result = dict(publication_result.get("identity_result") or identity_result)
+            certification_results = dict(publication_result.get("certification_results") or certification_results)
+            lifecycle_results = dict(publication_result.get("lifecycle_results") or lifecycle_results)
+            publication_committed = True
+            failure_stage = ""
     except KeyboardInterrupt as exc:
         failure_type = exc.__class__.__name__
         failure_message = "ingest_interrupted"
@@ -4305,6 +4338,7 @@ def run_oddswarehouse_nfl_basic_pilot(
         publication_committed=publication_committed,
         prior_publication_exists=bool(prior_publication_state.get("batch_exists")),
         prior_incomplete_detected=partial_state_detected,
+        reuse_without_publication=reuse_without_publication,
     )
     progress_snapshot = progress_tracker.snapshot()
     market_counts = {
@@ -4314,7 +4348,7 @@ def run_oddswarehouse_nfl_basic_pilot(
     }
     report = {
         "ok": bool(
-            publication_committed
+            (publication_committed or reuse_without_publication)
             and validation.get("ok")
             and certification_results.get("ok")
             and replay_result.get("ok")
@@ -4326,9 +4360,9 @@ def run_oddswarehouse_nfl_basic_pilot(
             if failure_type == "KeyboardInterrupt"
             else
             "failed"
-            if not publication_committed and failure_message
+            if not (publication_committed or reuse_without_publication) and failure_message
             else "ready"
-            if publication_committed and not normalized.get("quarantined_rows") and int(source_row_counts["counts"].get("CONFLICT") or 0) == 0
+            if (publication_committed or reuse_without_publication) and not normalized.get("quarantined_rows") and int(source_row_counts["counts"].get("CONFLICT") or 0) == 0
             else "partially_ready"
         ),
         "failure_stage": failure_stage or None,
@@ -4415,8 +4449,8 @@ def run_oddswarehouse_nfl_basic_pilot(
             "Sportsbook identity is unknown in the supplied source evidence.",
             "Market-source methodology is unknown in the supplied source evidence.",
         ],
-        "historical_readiness": "ready" if publication_committed and not normalized.get("quarantined_rows") else "partially_ready",
-        "pilot_readiness": "ready" if publication_committed and not normalized.get("quarantined_rows") else "partially_ready",
+        "historical_readiness": "ready" if (publication_committed or reuse_without_publication) and not normalized.get("quarantined_rows") else "partially_ready",
+        "pilot_readiness": "ready" if (publication_committed or reuse_without_publication) and not normalized.get("quarantined_rows") else "partially_ready",
         "additional_file_readiness": "ready_with_schema_validation" if validation.get("ok") else "manual_review_required",
     }
     return _write_ingest_report(report)
