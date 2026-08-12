@@ -69,6 +69,12 @@ SILVER = "silver"
 GOLD = "gold"
 
 
+def _chunked(items: Sequence[Any], size: int) -> Iterable[Sequence[Any]]:
+    bounded_size = max(1, int(size))
+    for start in range(0, len(items), bounded_size):
+        yield items[start : start + bounded_size]
+
+
 def _normalize_text(value: Any, default: str = "") -> str:
     text = str(value if value is not None else default).strip()
     return text or default
@@ -722,7 +728,52 @@ class DataIdentityLakehouseRuntime:
     ) -> bool:
         return cls._semantic_reconciliation_payload(existing_row) == dict(semantic_payload)
 
-    def register_identity_mapping(
+    def _build_mapping_approval_row(
+        self,
+        *,
+        mapping_id: str,
+        internal_identifier: str,
+        external_identifier: str,
+        entity_type: str,
+        provider: str,
+        approval_state: str,
+        approval_role: str,
+        approval_reference: str,
+        approval_evidence: Mapping[str, Any] | None = None,
+        valid_from: Any = None,
+        valid_to: Any = None,
+        details: Mapping[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        approved_at = _utc_now()
+        return {
+            "approval_id": _stable_id("identity.approval", mapping_id, approval_state, approval_reference),
+            "mapping_id": _normalize_text(mapping_id),
+            "internal_identifier": _normalize_text(internal_identifier),
+            "external_identifier": _normalize_text(external_identifier),
+            "entity_type": _normalize_text(entity_type),
+            "provider": _normalize_text(provider),
+            "approval_state": _normalize_text(approval_state),
+            "approval_role": _normalize_text(approval_role),
+            "approval_reference": _normalize_text(approval_reference),
+            "approval_evidence_json": _as_json(dict(approval_evidence or {})),
+            "approved_at": approved_at,
+            "valid_from": _to_iso(valid_from or approved_at),
+            "valid_to": _to_iso(valid_to),
+            "details_json": _as_json(dict(details or {})),
+            "schema_version": DATA_IDENTITY_LAKEHOUSE_SCHEMA_VERSION,
+            "created_at": approved_at,
+            "updated_at": approved_at,
+            "source": "data_identity_lakehouse_runtime",
+            "market": "sports:nfl",
+            "market_type": "mapping_approval",
+            "asset_class": "historical",
+            "snapshot_id": mapping_id,
+            "lineage_id": _stable_id("identity.approval.lineage", mapping_id, approval_state),
+            "version_id": DATA_IDENTITY_LAKEHOUSE_RUNTIME_VERSION,
+            "quality_score": 1.0,
+        }
+
+    def _prepare_identity_mapping_registration(
         self,
         *,
         provider: str,
@@ -754,6 +805,7 @@ class DataIdentityLakehouseRuntime:
         snapshot_id: str = "",
         lineage_id: str = "",
         version_id: str = "",
+        existing_rows: Sequence[Mapping[str, Any]] | None = None,
         **timestamps: Any,
     ) -> dict[str, Any]:
         entity = _normalize_text(entity_type)
@@ -766,12 +818,16 @@ class DataIdentityLakehouseRuntime:
             raise ValueError("external_identifier is required")
         if not internal_id:
             raise ValueError("internal_identifier is required")
-        existing_rows = self._find_mapping_revisions(
-            provider=provider_name,
-            entity_type=entity,
-            external_identifier=external_id,
+        existing_revision_rows = (
+            [dict(row) for row in existing_rows]
+            if existing_rows is not None
+            else self._find_mapping_revisions(
+                provider=provider_name,
+                entity_type=entity,
+                external_identifier=external_id,
+            )
         )
-        latest = next((row for row in existing_rows if _normalize_bool(row.get("is_latest"))), {})
+        latest = next((row for row in existing_revision_rows if _normalize_bool(row.get("is_latest"))), {})
         approval_payload = dict(approval_evidence or {})
         timestamp_payload = _timestamp_contract(
             source_payload,
@@ -817,27 +873,35 @@ class DataIdentityLakehouseRuntime:
         if explicit_validity_window:
             semantic_payload["valid_from"] = comparable_payload["valid_from"]
             semantic_payload["valid_to"] = comparable_payload["valid_to"]
-        for existing_row in existing_rows:
+        for existing_row in existing_revision_rows:
             if self._semantic_mapping_matches(
                 existing_row,
                 semantic_payload,
                 explicit_validity_window=explicit_validity_window,
             ):
-                return dict(existing_row)
+                return {
+                    "result_row": dict(existing_row),
+                    "rows_to_persist": [],
+                    "approval_row": None,
+                }
         new_valid_from = _to_iso(comparable_payload.get("valid_from"))
         latest_valid_from = _to_iso(latest.get("valid_from"))
         new_is_latest = bool(is_latest)
         if explicit_validity_window and new_valid_from and latest_valid_from and new_valid_from < latest_valid_from:
             new_is_latest = False
         timestamp_payload["is_latest"] = 1 if new_is_latest else 0
-        current_revision = max((_normalize_int(row.get("revision_number"), 0) for row in existing_rows), default=0)
+        current_revision = max(
+            (_normalize_int(row.get("revision_number"), 0) for row in existing_revision_rows),
+            default=0,
+        )
         revision = max(current_revision + 1, _normalize_int(revision_number, current_revision + 1))
+        rows_to_persist: list[dict[str, Any]] = []
         if latest and _normalize_bool(latest.get("is_latest")) and new_is_latest:
             latest_row = dict(latest)
             latest_row["is_latest"] = 0
             latest_row["mapping_status"] = "superseded"
             latest_row["valid_to"] = timestamp_payload["valid_from"] or latest_row.get("valid_to") or _utc_now()
-            self._persist_row("identity_mappings", latest_row, key_columns=("mapping_id",))
+            rows_to_persist.append(latest_row)
         mapping_id = _stable_id("identity.mapping", provider_name, entity, external_id, revision)
         created_at = timestamp_payload["processed_at"] or _utc_now()
         row = {
@@ -873,22 +937,146 @@ class DataIdentityLakehouseRuntime:
             "updated_at": created_at,
             **timestamp_payload,
         }
-        self._persist_row("identity_mappings", row, key_columns=("mapping_id",))
+        rows_to_persist.append(row)
+        approval_row = None
         if approval_payload:
-            self.record_mapping_approval(
+            approval_row = self._build_mapping_approval_row(
                 mapping_id=mapping_id,
                 internal_identifier=internal_id,
                 external_identifier=external_id,
                 entity_type=entity,
                 provider=provider_name,
-                approval_state="approved" if comparable_payload["review_state"] == "approved" else comparable_payload["review_state"],
+                approval_state=(
+                    "approved"
+                    if comparable_payload["review_state"] == "approved"
+                    else comparable_payload["review_state"]
+                ),
                 approval_role="system",
                 approval_reference=comparable_payload["approval_reference"],
                 approval_evidence=approval_payload,
                 valid_from=row["valid_from"],
                 valid_to=row["valid_to"],
             )
-        return row
+        return {
+            "result_row": row,
+            "rows_to_persist": rows_to_persist,
+            "approval_row": approval_row,
+        }
+
+    def _prefetch_mapping_revisions(
+        self,
+        keys: Sequence[tuple[str, str, str]],
+    ) -> dict[tuple[str, str, str], list[dict[str, Any]]]:
+        cache: dict[tuple[str, str, str], list[dict[str, Any]]] = {
+            key: [] for key in keys
+        }
+        if not keys or not self.store.table_exists("identity_mappings"):
+            return cache
+        grouped: dict[tuple[str, str], list[str]] = {}
+        for provider, entity_type, external_identifier in keys:
+            grouped.setdefault(
+                (_normalize_text(provider), _normalize_text(entity_type)),
+                [],
+            ).append(_normalize_text(external_identifier))
+        for (provider, entity_type), external_ids in grouped.items():
+            unique_ids = sorted({external_id for external_id in external_ids if external_id})
+            for chunk in _chunked(unique_ids, 250):
+                placeholders = ", ".join(["?"] * len(chunk))
+                rows = self.store.fetch(
+                    "identity_mappings",
+                    where=(
+                        "provider = ? AND entity_type = ? "
+                        f"AND external_identifier IN ({placeholders})"
+                    ),
+                    params=[provider, entity_type, *chunk],
+                    order_by="external_identifier ASC, revision_number DESC, created_at DESC",
+                )
+                for row in rows:
+                    key = (
+                        provider,
+                        entity_type,
+                        _normalize_text(row.get("external_identifier")),
+                    )
+                    cache.setdefault(key, []).append(dict(row))
+        return cache
+
+    def register_identity_mapping(
+        self,
+        *,
+        provider: str,
+        external_identifier: str,
+        internal_identifier: str,
+        entity_type: str,
+        entity_name: str = "",
+        canonical_key: str = "",
+        mapping_status: str = "accepted",
+        match_method: str = "approved_existing_mapping",
+        confidence: float = 100.0,
+        review_state: str = "approved",
+        mapping_version: str = DATA_IDENTITY_LAKEHOUSE_RUNTIME_VERSION,
+        approval_reference: str = "foundation_seed",
+        approval_evidence: Mapping[str, Any] | None = None,
+        valid_from: Any = None,
+        valid_to: Any = None,
+        revision_number: int | None = None,
+        is_latest: bool = True,
+        source_payload: Mapping[str, Any] | None = None,
+        lineage_reference: Mapping[str, Any] | None = None,
+        notes: Mapping[str, Any] | None = None,
+        dataset_id: str = "",
+        dataset_name: str = "",
+        source: str = "data_identity_lakehouse_runtime",
+        market: str = "sports:nfl",
+        market_type: str = "identity_mapping",
+        asset_class: str = "historical",
+        snapshot_id: str = "",
+        lineage_id: str = "",
+        version_id: str = "",
+        existing_rows: Sequence[Mapping[str, Any]] | None = None,
+        **timestamps: Any,
+    ) -> dict[str, Any]:
+        prepared = self._prepare_identity_mapping_registration(
+            provider=provider,
+            external_identifier=external_identifier,
+            internal_identifier=internal_identifier,
+            entity_type=entity_type,
+            entity_name=entity_name,
+            canonical_key=canonical_key,
+            mapping_status=mapping_status,
+            match_method=match_method,
+            confidence=confidence,
+            review_state=review_state,
+            mapping_version=mapping_version,
+            approval_reference=approval_reference,
+            approval_evidence=approval_evidence,
+            valid_from=valid_from,
+            valid_to=valid_to,
+            revision_number=revision_number,
+            is_latest=is_latest,
+            source_payload=source_payload,
+            lineage_reference=lineage_reference,
+            notes=notes,
+            dataset_id=dataset_id,
+            dataset_name=dataset_name,
+            source=source,
+            market=market,
+            market_type=market_type,
+            asset_class=asset_class,
+            snapshot_id=snapshot_id,
+            lineage_id=lineage_id,
+            version_id=version_id,
+            existing_rows=existing_rows,
+            **timestamps,
+        )
+        for row in prepared["rows_to_persist"]:
+            self._persist_row("identity_mappings", row, key_columns=("mapping_id",))
+        if prepared["approval_row"] is not None:
+            self._persist_row(
+                "mapping_approvals",
+                prepared["approval_row"],
+                key_columns=("approval_id",),
+            )
+        return dict(prepared["result_row"])
 
     def record_mapping_approval(
         self,
@@ -906,34 +1094,20 @@ class DataIdentityLakehouseRuntime:
         valid_to: Any = None,
         details: Mapping[str, Any] | None = None,
     ) -> dict[str, Any]:
-        approved_at = _utc_now()
-        row = {
-            "approval_id": _stable_id("identity.approval", mapping_id, approval_state, approval_reference),
-            "mapping_id": _normalize_text(mapping_id),
-            "internal_identifier": _normalize_text(internal_identifier),
-            "external_identifier": _normalize_text(external_identifier),
-            "entity_type": _normalize_text(entity_type),
-            "provider": _normalize_text(provider),
-            "approval_state": _normalize_text(approval_state),
-            "approval_role": _normalize_text(approval_role),
-            "approval_reference": _normalize_text(approval_reference),
-            "approval_evidence_json": _as_json(dict(approval_evidence or {})),
-            "approved_at": approved_at,
-            "valid_from": _to_iso(valid_from or approved_at),
-            "valid_to": _to_iso(valid_to),
-            "details_json": _as_json(dict(details or {})),
-            "schema_version": DATA_IDENTITY_LAKEHOUSE_SCHEMA_VERSION,
-            "created_at": approved_at,
-            "updated_at": approved_at,
-            "source": "data_identity_lakehouse_runtime",
-            "market": "sports:nfl",
-            "market_type": "mapping_approval",
-            "asset_class": "historical",
-            "snapshot_id": mapping_id,
-            "lineage_id": _stable_id("identity.approval.lineage", mapping_id, approval_state),
-            "version_id": DATA_IDENTITY_LAKEHOUSE_RUNTIME_VERSION,
-            "quality_score": 1.0,
-        }
+        row = self._build_mapping_approval_row(
+            mapping_id=mapping_id,
+            internal_identifier=internal_identifier,
+            external_identifier=external_identifier,
+            entity_type=entity_type,
+            provider=provider,
+            approval_state=approval_state,
+            approval_role=approval_role,
+            approval_reference=approval_reference,
+            approval_evidence=approval_evidence,
+            valid_from=valid_from,
+            valid_to=valid_to,
+            details=details,
+        )
         self._persist_row("mapping_approvals", row, key_columns=("approval_id",))
         return row
 
@@ -1000,7 +1174,27 @@ class DataIdentityLakehouseRuntime:
         self._persist_row("identity_match_candidates", row, key_columns=("candidate_id",))
         return row
 
-    def record_reconciliation_result(
+    def _build_reconciliation_id(
+        self,
+        *,
+        reconciliation_scope: str,
+        entity_type: str,
+        provider: str,
+        internal_identifier: str,
+        external_identifier: str,
+        revision_number: int,
+    ) -> str:
+        return _stable_id(
+            "identity.reconciliation",
+            _normalize_text(reconciliation_scope),
+            _normalize_text(entity_type),
+            _normalize_text(provider),
+            _normalize_text(internal_identifier),
+            _normalize_text(external_identifier),
+            revision_number,
+        )
+
+    def _prepare_reconciliation_result_registration(
         self,
         *,
         reconciliation_scope: str,
@@ -1023,6 +1217,7 @@ class DataIdentityLakehouseRuntime:
         lineage_reference: Mapping[str, Any] | None = None,
         revision_number: int = 1,
         is_latest: bool = True,
+        existing_row: Mapping[str, Any] | None = None,
         **timestamps: Any,
     ) -> dict[str, Any]:
         normalized_scope = _normalize_text(reconciliation_scope)
@@ -1030,14 +1225,13 @@ class DataIdentityLakehouseRuntime:
         normalized_provider = _normalize_text(provider)
         normalized_internal_identifier = _normalize_text(internal_identifier)
         normalized_external_identifier = _normalize_text(external_identifier)
-        reconciliation_id = _stable_id(
-            "identity.reconciliation",
-            normalized_scope,
-            normalized_entity_type,
-            normalized_provider,
-            normalized_internal_identifier,
-            normalized_external_identifier,
-            revision_number,
+        reconciliation_id = self._build_reconciliation_id(
+            reconciliation_scope=normalized_scope,
+            entity_type=normalized_entity_type,
+            provider=normalized_provider,
+            internal_identifier=normalized_internal_identifier,
+            external_identifier=normalized_external_identifier,
+            revision_number=revision_number,
         )
         comparable_payload = {
             "reconciliation_scope": normalized_scope,
@@ -1058,17 +1252,23 @@ class DataIdentityLakehouseRuntime:
             "observation_identity_json": _as_json(dict(observation_identity or {})),
             "lineage_reference_json": _as_json(dict(lineage_reference or {})),
         }
-        existing_rows = self._fetch(
-            "identity_reconciliation_results",
-            where="reconciliation_id = ?",
-            params=[reconciliation_id],
-            limit=1,
-        )
-        if existing_rows and self._semantic_reconciliation_matches(
-            existing_rows[0],
+        current_row = dict(existing_row) if existing_row else {}
+        if not current_row:
+            existing_rows = self._fetch(
+                "identity_reconciliation_results",
+                where="reconciliation_id = ?",
+                params=[reconciliation_id],
+                limit=1,
+            )
+            current_row = dict(existing_rows[0]) if existing_rows else {}
+        if current_row and self._semantic_reconciliation_matches(
+            current_row,
             comparable_payload,
         ):
-            return dict(existing_rows[0])
+            return {
+                "result_row": current_row,
+                "row_to_persist": None,
+            }
         timestamp_payload = _timestamp_contract(
             source_payload,
             revision_number=revision_number,
@@ -1107,8 +1307,87 @@ class DataIdentityLakehouseRuntime:
             "version_id": DATA_IDENTITY_LAKEHOUSE_RUNTIME_VERSION,
             **timestamp_payload,
         }
-        self._persist_row("identity_reconciliation_results", row, key_columns=("reconciliation_id",))
-        return row
+        return {
+            "result_row": row,
+            "row_to_persist": row,
+        }
+
+    def _prefetch_reconciliation_rows(
+        self,
+        reconciliation_ids: Sequence[str],
+    ) -> dict[str, dict[str, Any]]:
+        cache: dict[str, dict[str, Any]] = {}
+        unique_ids = sorted({_normalize_text(value) for value in reconciliation_ids if _normalize_text(value)})
+        if not unique_ids or not self.store.table_exists("identity_reconciliation_results"):
+            return cache
+        for chunk in _chunked(unique_ids, 250):
+            placeholders = ", ".join(["?"] * len(chunk))
+            rows = self.store.fetch(
+                "identity_reconciliation_results",
+                where=f"reconciliation_id IN ({placeholders})",
+                params=list(chunk),
+            )
+            for row in rows:
+                cache[_normalize_text(row.get("reconciliation_id"))] = dict(row)
+        return cache
+
+    def record_reconciliation_result(
+        self,
+        *,
+        reconciliation_scope: str,
+        entity_type: str,
+        provider: str,
+        internal_identifier: str,
+        external_identifier: str,
+        reconciliation_status: str,
+        decision_status: str,
+        decision_explanation: str,
+        freshness_seconds: int,
+        timestamp_agreement_status: str,
+        outlier_status: str,
+        quality_score: float,
+        accepted_evidence: Sequence[Mapping[str, Any]] | None = None,
+        rejected_evidence: Sequence[Mapping[str, Any]] | None = None,
+        provider_reliability: Mapping[str, Any] | None = None,
+        observation_identity: Mapping[str, Any] | None = None,
+        source_payload: Mapping[str, Any] | None = None,
+        lineage_reference: Mapping[str, Any] | None = None,
+        revision_number: int = 1,
+        is_latest: bool = True,
+        existing_row: Mapping[str, Any] | None = None,
+        **timestamps: Any,
+    ) -> dict[str, Any]:
+        prepared = self._prepare_reconciliation_result_registration(
+            reconciliation_scope=reconciliation_scope,
+            entity_type=entity_type,
+            provider=provider,
+            internal_identifier=internal_identifier,
+            external_identifier=external_identifier,
+            reconciliation_status=reconciliation_status,
+            decision_status=decision_status,
+            decision_explanation=decision_explanation,
+            freshness_seconds=freshness_seconds,
+            timestamp_agreement_status=timestamp_agreement_status,
+            outlier_status=outlier_status,
+            quality_score=quality_score,
+            accepted_evidence=accepted_evidence,
+            rejected_evidence=rejected_evidence,
+            provider_reliability=provider_reliability,
+            observation_identity=observation_identity,
+            source_payload=source_payload,
+            lineage_reference=lineage_reference,
+            revision_number=revision_number,
+            is_latest=is_latest,
+            existing_row=existing_row,
+            **timestamps,
+        )
+        if prepared["row_to_persist"] is not None:
+            self._persist_row(
+                "identity_reconciliation_results",
+                prepared["row_to_persist"],
+                key_columns=("reconciliation_id",),
+            )
+        return dict(prepared["result_row"])
 
     def record_quality_event(
         self,
@@ -1570,6 +1849,7 @@ class DataIdentityLakehouseRuntime:
         events: Sequence[Mapping[str, Any]] | None = None,
         markets: Sequence[Mapping[str, Any]] | None = None,
         selections: Sequence[Mapping[str, Any]] | None = None,
+        progress_callback: Any = None,
     ) -> list[dict[str, Any]]:
         def seeded_approval_reference(row: Mapping[str, Any]) -> str:
             for key in ("batch_id", "dataset_batch_id", "source_bundle_id", "version_id", "snapshot_id"):
@@ -1578,19 +1858,20 @@ class DataIdentityLakehouseRuntime:
                     return value
             return "foundation_seed"
 
+        def queue_request(**kwargs: Any) -> None:
+            mapping_requests.append(kwargs)
+
         rows: list[dict[str, Any]] = []
-        schedule_rows = self._fetch("nfl_schedule", order_by="kickoff_time ASC, game_id ASC")
-        odds_rows = self._fetch("nfl_odds_snapshots", order_by="game_id ASC, odds_snapshot_id ASC")
-        dataset_rows = self._fetch("historical_dataset_rows", order_by="event_start_time ASC, dataset_row_id ASC")
-        events = list(events) if events is not None else self._fetch("historical_events", order_by="event_start_time ASC, event_id ASC")
-        markets = list(markets) if markets is not None else self._fetch("historical_markets", order_by="event_id ASC, market_id ASC")
-        selections = (
-            list(selections)
-            if selections is not None
-            else self._fetch("historical_selections", order_by="event_id ASC, market_id ASC, selection_id ASC")
-        )
+        mapping_requests: list[dict[str, Any]] = []
+        events = list(events) if events is not None else []
+        markets = list(markets) if markets is not None else []
+        selections = list(selections) if selections is not None else []
+        dataset_rows: list[dict[str, Any]] = []
+        odds_rows: list[dict[str, Any]] = []
         providers = self._fetch("provider_metadata", order_by="provider_id ASC")
+
         if not events:
+            schedule_rows = self._fetch("nfl_schedule", order_by="kickoff_time ASC, game_id ASC")
             events = [
                 {
                     "event_id": _normalize_text(row.get("game_id")),
@@ -1615,6 +1896,7 @@ class DataIdentityLakehouseRuntime:
                 for row in schedule_rows
             ]
         if not markets:
+            odds_rows = self._fetch("nfl_odds_snapshots", order_by="game_id ASC, odds_snapshot_id ASC")
             markets = [
                 {
                     "market_id": _normalize_text(row.get("odds_snapshot_id"))
@@ -1636,6 +1918,7 @@ class DataIdentityLakehouseRuntime:
                 for row in odds_rows
             ]
             if not markets:
+                dataset_rows = self._fetch("historical_dataset_rows", order_by="event_start_time ASC, dataset_row_id ASC")
                 markets = [
                     {
                         "market_id": _stable_id(
@@ -1663,6 +1946,8 @@ class DataIdentityLakehouseRuntime:
                     for row in dataset_rows
                 ]
         if not selections:
+            if not odds_rows:
+                odds_rows = self._fetch("nfl_odds_snapshots", order_by="game_id ASC, odds_snapshot_id ASC")
             selections = [
                 {
                     "selection_id": _normalize_text(row.get("odds_snapshot_id"))
@@ -1686,6 +1971,8 @@ class DataIdentityLakehouseRuntime:
                 for row in odds_rows
             ]
             if not selections:
+                if not dataset_rows:
+                    dataset_rows = self._fetch("historical_dataset_rows", order_by="event_start_time ASC, dataset_row_id ASC")
                 selections = [
                     {
                         "selection_id": _stable_id(
@@ -1725,21 +2012,19 @@ class DataIdentityLakehouseRuntime:
             provider_id = _normalize_text(provider_row.get("provider_id"))
             if not provider_id:
                 continue
-            rows.append(
-                self.register_identity_mapping(
-                    provider="repository",
-                    external_identifier=_normalize_text(provider_row.get("provider_name") or provider_id),
-                    internal_identifier=provider_id,
-                    entity_type="provider",
-                    entity_name=_normalize_text(provider_row.get("provider_name") or provider_id),
-                    canonical_key=provider_id,
-                    source_payload=provider_row,
-                    approval_reference=seeded_approval_reference(provider_row),
-                    approval_evidence={"source_table": "provider_metadata", "provider_id": provider_id},
-                    dataset_id="provider_metadata",
-                    dataset_name="provider_metadata",
-                    market_type="identity_mapping.provider",
-                )
+            queue_request(
+                provider="repository",
+                external_identifier=_normalize_text(provider_row.get("provider_name") or provider_id),
+                internal_identifier=provider_id,
+                entity_type="provider",
+                entity_name=_normalize_text(provider_row.get("provider_name") or provider_id),
+                canonical_key=provider_id,
+                source_payload=provider_row,
+                approval_reference=seeded_approval_reference(provider_row),
+                approval_evidence={"source_table": "provider_metadata", "provider_id": provider_id},
+                dataset_id="provider_metadata",
+                dataset_name="provider_metadata",
+                market_type="identity_mapping.provider",
             )
 
         seen_sports: set[str] = set()
@@ -1752,99 +2037,89 @@ class DataIdentityLakehouseRuntime:
             sport = _normalize_text(event_row.get("sport"))
             if sport and sport not in seen_sports:
                 seen_sports.add(sport)
-                rows.append(
-                    self.register_identity_mapping(
-                        provider="repository",
-                        external_identifier=sport,
-                        internal_identifier=f"sport::{sport}",
-                        entity_type="sport",
-                        entity_name=sport,
-                        canonical_key=sport,
-                        source_payload=event_row,
-                        approval_reference=seeded_approval_reference(event_row),
-                        approval_evidence={"source_table": "historical_events", "sport": sport},
-                        dataset_id=_normalize_text(event_row.get("dataset_id")),
-                        dataset_name=_normalize_text(event_row.get("dataset_name")),
-                        market_type="identity_mapping.sport",
-                    )
+                queue_request(
+                    provider="repository",
+                    external_identifier=sport,
+                    internal_identifier=f"sport::{sport}",
+                    entity_type="sport",
+                    entity_name=sport,
+                    canonical_key=sport,
+                    source_payload=event_row,
+                    approval_reference=seeded_approval_reference(event_row),
+                    approval_evidence={"source_table": "historical_events", "sport": sport},
+                    dataset_id=_normalize_text(event_row.get("dataset_id")),
+                    dataset_name=_normalize_text(event_row.get("dataset_name")),
+                    market_type="identity_mapping.sport",
                 )
             league = _normalize_text(event_row.get("league"))
             if league and league not in seen_leagues:
                 seen_leagues.add(league)
-                rows.append(
-                    self.register_identity_mapping(
-                        provider="repository",
-                        external_identifier=league,
-                        internal_identifier=f"league::{league}",
-                        entity_type="league",
-                        entity_name=league,
-                        canonical_key=league,
-                        source_payload=event_row,
-                        approval_reference=seeded_approval_reference(event_row),
-                        approval_evidence={"source_table": "historical_events", "league": league},
-                        dataset_id=_normalize_text(event_row.get("dataset_id")),
-                        dataset_name=_normalize_text(event_row.get("dataset_name")),
-                        market_type="identity_mapping.league",
-                    )
+                queue_request(
+                    provider="repository",
+                    external_identifier=league,
+                    internal_identifier=f"league::{league}",
+                    entity_type="league",
+                    entity_name=league,
+                    canonical_key=league,
+                    source_payload=event_row,
+                    approval_reference=seeded_approval_reference(event_row),
+                    approval_evidence={"source_table": "historical_events", "league": league},
+                    dataset_id=_normalize_text(event_row.get("dataset_id")),
+                    dataset_name=_normalize_text(event_row.get("dataset_name")),
+                    market_type="identity_mapping.league",
                 )
             for team_id_field, team_name_field in (("home_team_id", "home_team"), ("away_team_id", "away_team")):
                 team_id = _normalize_text(event_row.get(team_id_field))
                 team_name = _normalize_text(event_row.get(team_name_field))
                 if team_id and (team_id, team_name) not in seen_teams:
                     seen_teams.add((team_id, team_name))
-                    rows.append(
-                        self.register_identity_mapping(
-                            provider="repository",
-                            external_identifier=team_name or team_id,
-                            internal_identifier=team_id,
-                            entity_type="team",
-                            entity_name=team_name or team_id,
-                            canonical_key=team_id,
-                            source_payload=event_row,
-                            approval_reference=seeded_approval_reference(event_row),
-                            approval_evidence={"source_table": "historical_events", "team_id": team_id},
-                            dataset_id=_normalize_text(event_row.get("dataset_id")),
-                            dataset_name=_normalize_text(event_row.get("dataset_name")),
-                            market_type="identity_mapping.team",
-                        )
+                    queue_request(
+                        provider="repository",
+                        external_identifier=team_name or team_id,
+                        internal_identifier=team_id,
+                        entity_type="team",
+                        entity_name=team_name or team_id,
+                        canonical_key=team_id,
+                        source_payload=event_row,
+                        approval_reference=seeded_approval_reference(event_row),
+                        approval_evidence={"source_table": "historical_events", "team_id": team_id},
+                        dataset_id=_normalize_text(event_row.get("dataset_id")),
+                        dataset_name=_normalize_text(event_row.get("dataset_name")),
+                        market_type="identity_mapping.team",
                     )
             venue_id = _normalize_text(event_row.get("venue_id"))
             venue_name = _normalize_text(event_row.get("venue_name"))
             if venue_id and (venue_id, venue_name) not in seen_venues:
                 seen_venues.add((venue_id, venue_name))
-                rows.append(
-                    self.register_identity_mapping(
-                        provider="repository",
-                        external_identifier=venue_name or venue_id,
-                        internal_identifier=venue_id,
-                        entity_type="venue",
-                        entity_name=venue_name or venue_id,
-                        canonical_key=venue_id,
-                        source_payload=event_row,
-                        approval_reference=seeded_approval_reference(event_row),
-                        approval_evidence={"source_table": "historical_events", "venue_id": venue_id},
-                        dataset_id=_normalize_text(event_row.get("dataset_id")),
-                        dataset_name=_normalize_text(event_row.get("dataset_name")),
-                        market_type="identity_mapping.venue",
-                    )
+                queue_request(
+                    provider="repository",
+                    external_identifier=venue_name or venue_id,
+                    internal_identifier=venue_id,
+                    entity_type="venue",
+                    entity_name=venue_name or venue_id,
+                    canonical_key=venue_id,
+                    source_payload=event_row,
+                    approval_reference=seeded_approval_reference(event_row),
+                    approval_evidence={"source_table": "historical_events", "venue_id": venue_id},
+                    dataset_id=_normalize_text(event_row.get("dataset_id")),
+                    dataset_name=_normalize_text(event_row.get("dataset_name")),
+                    market_type="identity_mapping.venue",
                 )
             external_event_id = _normalize_text(event_row.get("source_event_id") or event_row.get("event_key") or event_row.get("game_id"))
             if _normalize_text(event_row.get("event_id")) and external_event_id:
-                rows.append(
-                    self.register_identity_mapping(
-                        provider=provider_name,
-                        external_identifier=external_event_id,
-                        internal_identifier=_normalize_text(event_row.get("event_id")),
-                        entity_type="event",
-                        entity_name=_normalize_text(event_row.get("event_key") or event_row.get("game_id")),
-                        canonical_key=_composite_key(event_row, ("sport", "league", "event_date", "home_team", "away_team")),
-                        source_payload=event_row,
-                        approval_reference=seeded_approval_reference(event_row),
-                        approval_evidence={"source_table": "historical_events", "event_id": event_row.get("event_id")},
-                        dataset_id=_normalize_text(event_row.get("dataset_id")),
-                        dataset_name=_normalize_text(event_row.get("dataset_name")),
-                        market_type="identity_mapping.event",
-                    )
+                queue_request(
+                    provider=provider_name,
+                    external_identifier=external_event_id,
+                    internal_identifier=_normalize_text(event_row.get("event_id")),
+                    entity_type="event",
+                    entity_name=_normalize_text(event_row.get("event_key") or event_row.get("game_id")),
+                    canonical_key=_composite_key(event_row, ("sport", "league", "event_date", "home_team", "away_team")),
+                    source_payload=event_row,
+                    approval_reference=seeded_approval_reference(event_row),
+                    approval_evidence={"source_table": "historical_events", "event_id": event_row.get("event_id")},
+                    dataset_id=_normalize_text(event_row.get("dataset_id")),
+                    dataset_name=_normalize_text(event_row.get("dataset_name")),
+                    market_type="identity_mapping.event",
                 )
 
         seen_market_families: set[str] = set()
@@ -1852,21 +2127,19 @@ class DataIdentityLakehouseRuntime:
             market_family = _normalize_text(market_row.get("market_family"))
             if market_family and market_family not in seen_market_families:
                 seen_market_families.add(market_family)
-                rows.append(
-                    self.register_identity_mapping(
-                        provider="repository",
-                        external_identifier=market_family,
-                        internal_identifier=f"market_family::{market_family}",
-                        entity_type="market_family",
-                        entity_name=market_family,
-                        canonical_key=market_family,
-                        source_payload=market_row,
-                        approval_reference=seeded_approval_reference(market_row),
-                        approval_evidence={"source_table": "historical_markets", "market_family": market_family},
-                        dataset_id=_normalize_text(market_row.get("dataset_id")),
-                        dataset_name=_normalize_text(market_row.get("dataset_name")),
-                        market_type="identity_mapping.market_family",
-                    )
+                queue_request(
+                    provider="repository",
+                    external_identifier=market_family,
+                    internal_identifier=f"market_family::{market_family}",
+                    entity_type="market_family",
+                    entity_name=market_family,
+                    canonical_key=market_family,
+                    source_payload=market_row,
+                    approval_reference=seeded_approval_reference(market_row),
+                    approval_evidence={"source_table": "historical_markets", "market_family": market_family},
+                    dataset_id=_normalize_text(market_row.get("dataset_id")),
+                    dataset_name=_normalize_text(market_row.get("dataset_name")),
+                    market_type="identity_mapping.market_family",
                 )
             market_id = _normalize_text(market_row.get("market_id"))
             external_market_id = _normalize_text(
@@ -1874,21 +2147,19 @@ class DataIdentityLakehouseRuntime:
                 or f"{market_row.get('event_id')}|{market_row.get('book')}|{market_row.get('market_type')}|{market_row.get('line_value')}"
             )
             if market_id and external_market_id:
-                rows.append(
-                    self.register_identity_mapping(
-                        provider=_normalize_text(market_row.get("provider"), "repository"),
-                        external_identifier=external_market_id,
-                        internal_identifier=market_id,
-                        entity_type="canonical_market",
-                        entity_name=_normalize_text(market_row.get("market_name") or market_row.get("market_label") or market_id),
-                        canonical_key=_composite_key(market_row, ("event_id", "market_type", "book", "line_value")),
-                        source_payload=market_row,
-                        approval_reference=seeded_approval_reference(market_row),
-                        approval_evidence={"source_table": "historical_markets", "market_id": market_id},
-                        dataset_id=_normalize_text(market_row.get("dataset_id")),
-                        dataset_name=_normalize_text(market_row.get("dataset_name")),
-                        market_type="identity_mapping.market",
-                    )
+                queue_request(
+                    provider=_normalize_text(market_row.get("provider"), "repository"),
+                    external_identifier=external_market_id,
+                    internal_identifier=market_id,
+                    entity_type="canonical_market",
+                    entity_name=_normalize_text(market_row.get("market_name") or market_row.get("market_label") or market_id),
+                    canonical_key=_composite_key(market_row, ("event_id", "market_type", "book", "line_value")),
+                    source_payload=market_row,
+                    approval_reference=seeded_approval_reference(market_row),
+                    approval_evidence={"source_table": "historical_markets", "market_id": market_id},
+                    dataset_id=_normalize_text(market_row.get("dataset_id")),
+                    dataset_name=_normalize_text(market_row.get("dataset_name")),
+                    market_type="identity_mapping.market",
                 )
 
         for selection_row in selections:
@@ -1898,38 +2169,94 @@ class DataIdentityLakehouseRuntime:
                 or f"{selection_row.get('market_id')}|{selection_row.get('selection')}|{selection_row.get('book')}|{selection_row.get('line_value')}"
             )
             if selection_id and external_selection_id:
-                rows.append(
-                    self.register_identity_mapping(
-                        provider=_normalize_text(selection_row.get("provider"), "repository"),
-                        external_identifier=external_selection_id,
-                        internal_identifier=selection_id,
-                        entity_type="selection_outcome",
-                        entity_name=_normalize_text(selection_row.get("selection") or selection_id),
-                        canonical_key=_composite_key(selection_row, ("event_id", "market_type", "selection", "book", "line_value")),
-                        source_payload=selection_row,
-                        approval_reference=seeded_approval_reference(selection_row),
-                        approval_evidence={"source_table": "historical_selections", "selection_id": selection_id},
-                        dataset_id=_normalize_text(selection_row.get("dataset_id")),
-                        dataset_name=_normalize_text(selection_row.get("dataset_name")),
-                        market_type="identity_mapping.selection",
-                    )
+                queue_request(
+                    provider=_normalize_text(selection_row.get("provider"), "repository"),
+                    external_identifier=external_selection_id,
+                    internal_identifier=selection_id,
+                    entity_type="selection_outcome",
+                    entity_name=_normalize_text(selection_row.get("selection") or selection_id),
+                    canonical_key=_composite_key(selection_row, ("event_id", "market_type", "selection", "book", "line_value")),
+                    source_payload=selection_row,
+                    approval_reference=seeded_approval_reference(selection_row),
+                    approval_evidence={"source_table": "historical_selections", "selection_id": selection_id},
+                    dataset_id=_normalize_text(selection_row.get("dataset_id")),
+                    dataset_name=_normalize_text(selection_row.get("dataset_name")),
+                    market_type="identity_mapping.selection",
                 )
-                rows.append(
-                    self.register_identity_mapping(
-                        provider=_normalize_text(selection_row.get("provider"), "repository"),
-                        external_identifier=external_selection_id,
-                        internal_identifier=selection_id,
-                        entity_type="vendor_entity",
-                        entity_name=_normalize_text(selection_row.get("selection") or selection_id),
-                        canonical_key=_normalize_text(selection_row.get("market_id")),
-                        source_payload=selection_row,
-                        approval_reference=seeded_approval_reference(selection_row),
-                        approval_evidence={"source_table": "historical_selections", "selection_id": selection_id},
-                        dataset_id=_normalize_text(selection_row.get("dataset_id")),
-                        dataset_name=_normalize_text(selection_row.get("dataset_name")),
-                        market_type="identity_mapping.vendor_entity",
-                    )
+                queue_request(
+                    provider=_normalize_text(selection_row.get("provider"), "repository"),
+                    external_identifier=external_selection_id,
+                    internal_identifier=selection_id,
+                    entity_type="vendor_entity",
+                    entity_name=_normalize_text(selection_row.get("selection") or selection_id),
+                    canonical_key=_normalize_text(selection_row.get("market_id")),
+                    source_payload=selection_row,
+                    approval_reference=seeded_approval_reference(selection_row),
+                    approval_evidence={"source_table": "historical_selections", "selection_id": selection_id},
+                    dataset_id=_normalize_text(selection_row.get("dataset_id")),
+                    dataset_name=_normalize_text(selection_row.get("dataset_name")),
+                    market_type="identity_mapping.vendor_entity",
                 )
+
+        request_keys = [
+            (
+                _normalize_text(request.get("provider"), "repository"),
+                _normalize_text(request.get("entity_type")),
+                _normalize_text(request.get("external_identifier")),
+            )
+            for request in mapping_requests
+        ]
+        existing_by_key = self._prefetch_mapping_revisions(request_keys)
+        pending_mapping_rows: list[dict[str, Any]] = []
+        pending_approval_rows: list[dict[str, Any]] = []
+        total_requests = len(mapping_requests)
+
+        for index, request in enumerate(mapping_requests, start=1):
+            key = (
+                _normalize_text(request.get("provider"), "repository"),
+                _normalize_text(request.get("entity_type")),
+                _normalize_text(request.get("external_identifier")),
+            )
+            prepared = self._prepare_identity_mapping_registration(
+                existing_rows=existing_by_key.get(key, []),
+                **request,
+            )
+            rows.append(dict(prepared["result_row"]))
+            persisted_rows = [dict(row) for row in prepared["rows_to_persist"]]
+            if persisted_rows:
+                pending_mapping_rows.extend(persisted_rows)
+                updated_rows = list(persisted_rows)
+                seen_mapping_ids = {
+                    _normalize_text(row.get("mapping_id"))
+                    for row in persisted_rows
+                }
+                for existing_row in existing_by_key.get(key, []):
+                    mapping_id = _normalize_text(existing_row.get("mapping_id"))
+                    if mapping_id not in seen_mapping_ids:
+                        updated_rows.append(dict(existing_row))
+                updated_rows.sort(
+                    key=lambda row: (
+                        _normalize_int(row.get("revision_number"), 0),
+                        _normalize_text(row.get("created_at")),
+                    ),
+                    reverse=True,
+                )
+                existing_by_key[key] = updated_rows
+            approval_row = prepared["approval_row"]
+            if approval_row is not None:
+                pending_approval_rows.append(dict(approval_row))
+            if len(pending_mapping_rows) >= 250:
+                self.store.upsert_many("identity_mappings", pending_mapping_rows)
+                pending_mapping_rows.clear()
+            if len(pending_approval_rows) >= 250:
+                self.store.upsert_many("mapping_approvals", pending_approval_rows)
+                pending_approval_rows.clear()
+            if callable(progress_callback):
+                progress_callback(index, total_requests)
+        if pending_mapping_rows:
+            self.store.upsert_many("identity_mappings", pending_mapping_rows)
+        if pending_approval_rows:
+            self.store.upsert_many("mapping_approvals", pending_approval_rows)
         return rows
 
     def seed_from_certified_outputs(
@@ -1938,16 +2265,19 @@ class DataIdentityLakehouseRuntime:
         events: Sequence[Mapping[str, Any]] | None = None,
         markets: Sequence[Mapping[str, Any]] | None = None,
         selections: Sequence[Mapping[str, Any]] | None = None,
+        progress_callback: Any = None,
     ) -> dict[str, Any]:
         mappings = self._seed_identity_rows_from_certified_outputs(
             events=events,
             markets=markets,
             selections=selections,
+            progress_callback=progress_callback,
         )
         return {
             "ok": True,
             "status": "seeded",
-            "identity_mapping_count": len(self._fetch("identity_mappings", order_by="mapping_id ASC")),
+            "identity_mapping_count": self.store.count("identity_mappings"),
+            "mapping_request_count": len(mappings),
             "mappings": mappings,
         }
 
@@ -1955,6 +2285,7 @@ class DataIdentityLakehouseRuntime:
         self,
         *,
         selection_rows: Sequence[Mapping[str, Any]] | None = None,
+        progress_callback: Any = None,
     ) -> dict[str, Any]:
         rows = (
             list(selection_rows)
@@ -2017,10 +2348,14 @@ class DataIdentityLakehouseRuntime:
             _normalize_text(row.get("provider_id") or row.get("provider")): dict(row)
             for row in self._fetch("provider_metadata", order_by="provider_id ASC")
         }
-        reconciliation_rows: list[dict[str, Any]] = []
+        reconciliation_requests: list[dict[str, Any]] = []
         for row in rows:
             provider_name = _normalize_text(row.get("provider"), "repository")
             provider_metadata = provider_rows.get(provider_name) or {}
+            external_identifier = _normalize_text(
+                row.get("source_selection_id")
+                or f"{row.get('market_id')}|{row.get('selection')}|{row.get('book')}|{row.get('line_value')}"
+            )
             observation_identity = {
                 "event_id": _normalize_text(row.get("event_id")),
                 "market_type": _normalize_text(row.get("market_type")),
@@ -2054,39 +2389,92 @@ class DataIdentityLakehouseRuntime:
                     )
                 except ValueError:
                     freshness_seconds = 0
-            reconciliation_rows.append(
-                self.record_reconciliation_result(
-                    reconciliation_scope="sportsbook_observation",
-                    entity_type="selection_outcome",
-                    provider=provider_name,
-                    internal_identifier=_normalize_text(row.get("selection_id")),
-                    external_identifier=_normalize_text(
-                        row.get("source_selection_id")
-                        or f"{row.get('market_id')}|{row.get('selection')}|{row.get('book')}|{row.get('line_value')}"
+            reconciliation_requests.append(
+                {
+                    "reconciliation_scope": "sportsbook_observation",
+                    "entity_type": "selection_outcome",
+                    "provider": provider_name,
+                    "internal_identifier": _normalize_text(row.get("selection_id")),
+                    "external_identifier": external_identifier,
+                    "reconciliation_status": "accepted",
+                    "decision_status": "accepted",
+                    "decision_explanation": (
+                        "Certified sportsbook observation preserved as an independent "
+                        "canonical selection outcome."
                     ),
-                    reconciliation_status="accepted",
-                    decision_status="accepted",
-                    decision_explanation="Certified sportsbook observation preserved as an independent canonical selection outcome.",
-                    freshness_seconds=freshness_seconds,
-                    timestamp_agreement_status="aligned",
-                    outlier_status="within_expected_range",
-                    quality_score=1.0,
-                    accepted_evidence=accepted_evidence,
-                    rejected_evidence=[],
-                    provider_reliability={
+                    "freshness_seconds": freshness_seconds,
+                    "timestamp_agreement_status": "aligned",
+                    "outlier_status": "within_expected_range",
+                    "quality_score": 1.0,
+                    "accepted_evidence": accepted_evidence,
+                    "rejected_evidence": [],
+                    "provider_reliability": {
                         "provider_id": _normalize_text(provider_metadata.get("provider_id") or provider_name),
                         "quality_score": _normalize_float(provider_metadata.get("quality_score"), 1.0),
                         "contract_version": _normalize_text(provider_metadata.get("contract_version")),
                     },
-                    observation_identity=observation_identity,
-                    source_payload=row,
-                    lineage_reference={"selection_id": _normalize_text(row.get("selection_id"))},
-                )
+                    "observation_identity": observation_identity,
+                    "source_payload": row,
+                    "lineage_reference": {"selection_id": _normalize_text(row.get("selection_id"))},
+                    "reconciliation_id": self._build_reconciliation_id(
+                        reconciliation_scope="sportsbook_observation",
+                        entity_type="selection_outcome",
+                        provider=provider_name,
+                        internal_identifier=_normalize_text(row.get("selection_id")),
+                        external_identifier=external_identifier,
+                        revision_number=1,
+                    ),
+                }
             )
+        existing_rows = self._prefetch_reconciliation_rows(
+            [
+                _normalize_text(request.get("reconciliation_id"))
+                for request in reconciliation_requests
+            ]
+        )
+        reconciliation_rows: list[dict[str, Any]] = []
+        rows_to_persist: list[dict[str, Any]] = []
+        total_requests = len(reconciliation_requests)
+        for index, request in enumerate(reconciliation_requests, start=1):
+            reconciliation_id = _normalize_text(request["reconciliation_id"])
+            prepared = self._prepare_reconciliation_result_registration(
+                reconciliation_scope=request["reconciliation_scope"],
+                entity_type=request["entity_type"],
+                provider=request["provider"],
+                internal_identifier=request["internal_identifier"],
+                external_identifier=request["external_identifier"],
+                reconciliation_status=request["reconciliation_status"],
+                decision_status=request["decision_status"],
+                decision_explanation=request["decision_explanation"],
+                freshness_seconds=request["freshness_seconds"],
+                timestamp_agreement_status=request["timestamp_agreement_status"],
+                outlier_status=request["outlier_status"],
+                quality_score=request["quality_score"],
+                accepted_evidence=request["accepted_evidence"],
+                rejected_evidence=request["rejected_evidence"],
+                provider_reliability=request["provider_reliability"],
+                observation_identity=request["observation_identity"],
+                source_payload=request["source_payload"],
+                lineage_reference=request["lineage_reference"],
+                existing_row=existing_rows.get(reconciliation_id),
+            )
+            reconciliation_rows.append(dict(prepared["result_row"]))
+            if prepared["row_to_persist"] is not None:
+                persisted = dict(prepared["row_to_persist"])
+                rows_to_persist.append(persisted)
+                existing_rows[reconciliation_id] = persisted
+            if len(rows_to_persist) >= 250:
+                self.store.upsert_many("identity_reconciliation_results", rows_to_persist)
+                rows_to_persist.clear()
+            if callable(progress_callback):
+                progress_callback(index, total_requests)
+        if rows_to_persist:
+            self.store.upsert_many("identity_reconciliation_results", rows_to_persist)
         return {
             "ok": True,
             "status": "reconciled",
             "reconciliation_result_count": len(reconciliation_rows),
+            "selection_row_count": len(rows),
             "reconciliation_rows": reconciliation_rows,
         }
 

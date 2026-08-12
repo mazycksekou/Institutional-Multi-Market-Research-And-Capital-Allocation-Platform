@@ -1945,11 +1945,27 @@ class LocalStorageEngine:
         self.execute(sql, [payload[column] for column in columns])
 
     def insert_many(self, table_name: str, rows: Iterable[Mapping[str, Any]]) -> int:
-        count = 0
-        for row in rows:
-            self.insert(table_name, row)
-            count += 1
-        return count
+        prepared_rows = [dict(row) for row in rows]
+        if not prepared_rows:
+            return 0
+        columns = [
+            column
+            for column in self.table_columns(table_name)
+            if any(column in row for row in prepared_rows)
+        ]
+        if not columns:
+            return 0
+        placeholders = ", ".join(["?"] * len(columns))
+        column_sql = ", ".join(_quote_identifier(column) for column in columns)
+        sql = f"INSERT INTO {_quote_identifier(table_name)} ({column_sql}) VALUES ({placeholders})"
+        payloads = [
+            tuple(_normalize_value(row.get(column)) for column in columns)
+            for row in prepared_rows
+        ]
+        self.connection.executemany(sql, payloads)
+        if self._transaction_depth == 0:
+            self._commit()
+        return len(payloads)
 
     def replace(self, table_name: str, row: Mapping[str, Any], *, key_columns: Sequence[str]) -> None:
         payload = dict(row)
@@ -1987,6 +2003,38 @@ class LocalStorageEngine:
 
     def upsert(self, table_name: str, row: Mapping[str, Any], *, key_columns: Sequence[str]) -> None:
         self.replace(table_name, row, key_columns=key_columns)
+
+    def upsert_many(
+        self,
+        table_name: str,
+        rows: Iterable[Mapping[str, Any]],
+        *,
+        key_columns: Sequence[str] | None = None,
+    ) -> int:
+        prepared_rows = [dict(row) for row in rows]
+        if not prepared_rows:
+            return 0
+        columns = [
+            column
+            for column in self.table_columns(table_name)
+            if any(column in row for row in prepared_rows)
+        ]
+        if not columns:
+            return 0
+        placeholders = ", ".join(["?"] * len(columns))
+        column_sql = ", ".join(_quote_identifier(column) for column in columns)
+        sql = (
+            f"INSERT OR REPLACE INTO {_quote_identifier(table_name)} "
+            f"({column_sql}) VALUES ({placeholders})"
+        )
+        payloads = [
+            tuple(_normalize_value(row.get(column)) for column in columns)
+            for row in prepared_rows
+        ]
+        self.connection.executemany(sql, payloads)
+        if self._transaction_depth == 0:
+            self._commit()
+        return len(payloads)
 
     def write_parquet_rows(
         self,
