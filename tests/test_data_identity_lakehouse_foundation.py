@@ -15,6 +15,74 @@ from src.storage.local_store import create_local_storage_engine
 from tests.test_pipeline_validation import _build_phase55_chain
 
 
+def _build_seed_fixture_rows(count: int = 8) -> tuple[list[dict[str, object]], list[dict[str, object]], list[dict[str, object]]]:
+    events: list[dict[str, object]] = []
+    markets: list[dict[str, object]] = []
+    selections: list[dict[str, object]] = []
+    for index in range(count):
+        event_id = f"event::{index}"
+        market_id = f"market::{index}"
+        selection_id = f"selection::{index}"
+        day = (index % 28) + 1
+        event_date = f"2026-09-{day:02d}"
+        events.append(
+            {
+                "event_id": event_id,
+                "event_key": f"Away {index} at Home {index}",
+                "event_date": event_date,
+                "event_start_time": f"{event_date}T20:20:00Z",
+                "home_team_id": f"HOME::{index}",
+                "home_team": f"Home {index}",
+                "away_team_id": f"AWAY::{index}",
+                "away_team": f"Away {index}",
+                "provider": "oddswarehouse",
+                "dataset_id": "dataset.sports.nfl.oddswarehouse.nfl_basic.historical",
+                "dataset_name": "oddswarehouse_nfl_basic",
+                "sport": "football",
+                "league": "NFL",
+                "source_event_id": f"ow-event-{index}",
+                "batch_id": "batch::seed",
+                "created_at": f"{event_date}T00:00:00Z",
+            }
+        )
+        markets.append(
+            {
+                "market_id": market_id,
+                "event_id": event_id,
+                "book": "Circa",
+                "market_family": "spread",
+                "market_type": "spread",
+                "market_name": "spread",
+                "market_label": "spread",
+                "line_value": 3.5,
+                "provider": "oddswarehouse",
+                "dataset_id": "dataset.sports.nfl.oddswarehouse.nfl_basic.historical",
+                "dataset_name": "oddswarehouse_nfl_basic",
+                "source_market_id": f"ow-market-{index}",
+                "batch_id": "batch::seed",
+                "created_at": f"{event_date}T00:00:00Z",
+            }
+        )
+        selections.append(
+            {
+                "selection_id": selection_id,
+                "market_id": market_id,
+                "event_id": event_id,
+                "book": "Circa",
+                "selection": "away",
+                "market_type": "spread",
+                "line_value": 3.5,
+                "provider": "oddswarehouse",
+                "dataset_id": "dataset.sports.nfl.oddswarehouse.nfl_basic.historical",
+                "dataset_name": "oddswarehouse_nfl_basic",
+                "source_selection_id": f"ow-selection-{index}",
+                "batch_id": "batch::seed",
+                "created_at": f"{event_date}T00:00:00Z",
+            }
+        )
+    return events, markets, selections
+
+
 def test_data_identity_foundation_completes_and_persists_lakehouse_readiness(
     tmp_path: Path,
 ) -> None:
@@ -301,6 +369,82 @@ def test_data_identity_runtime_scopes_reconciliation_to_supplied_selection_rows(
         assert result["ok"] is True
         assert result["reconciliation_result_count"] == 1
         assert runtime.store.count("identity_reconciliation_results") == 1
+    finally:
+        runtime.close()
+
+
+def test_data_identity_runtime_batches_seed_identity_mapping_fetches(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    runtime = DataIdentityLakehouseRuntime(
+        storage_path=tmp_path / "identity_runtime_seed_batch.sqlite",
+        lakehouse_root=tmp_path / "lakehouse",
+    )
+    try:
+        events, markets, selections = _build_seed_fixture_rows(40)
+        seeded = runtime.seed_from_certified_outputs(
+            events=events,
+            markets=markets,
+            selections=selections,
+        )
+        initial_count = runtime.store.count("identity_mappings")
+        fetch_calls = 0
+        original_fetch = runtime.store.fetch
+
+        def _recording_fetch(table_name: str, **kwargs):
+            nonlocal fetch_calls
+            if table_name == "identity_mappings":
+                fetch_calls += 1
+            return original_fetch(table_name, **kwargs)
+
+        monkeypatch.setattr(runtime.store, "fetch", _recording_fetch)
+
+        replay = runtime.seed_from_certified_outputs(
+            events=events,
+            markets=markets,
+            selections=selections,
+        )
+
+        assert seeded["ok"] is True
+        assert replay["ok"] is True
+        assert runtime.store.count("identity_mappings") == initial_count
+        assert replay["identity_mapping_count"] == initial_count
+        assert fetch_calls < 12
+    finally:
+        runtime.close()
+
+
+def test_data_identity_runtime_batches_reconciliation_fetches(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    runtime = DataIdentityLakehouseRuntime(
+        storage_path=tmp_path / "identity_runtime_reconciliation_batch.sqlite",
+        lakehouse_root=tmp_path / "lakehouse",
+    )
+    try:
+        _, _, selections = _build_seed_fixture_rows(40)
+        seeded = runtime.reconcile_certified_outputs(selection_rows=selections)
+        initial_count = runtime.store.count("identity_reconciliation_results")
+        fetch_calls = 0
+        original_fetch = runtime.store.fetch
+
+        def _recording_fetch(table_name: str, **kwargs):
+            nonlocal fetch_calls
+            if table_name == "identity_reconciliation_results":
+                fetch_calls += 1
+            return original_fetch(table_name, **kwargs)
+
+        monkeypatch.setattr(runtime.store, "fetch", _recording_fetch)
+
+        replay = runtime.reconcile_certified_outputs(selection_rows=selections)
+
+        assert seeded["ok"] is True
+        assert replay["ok"] is True
+        assert runtime.store.count("identity_reconciliation_results") == initial_count
+        assert replay["reconciliation_result_count"] == len(selections)
+        assert fetch_calls <= 2
     finally:
         runtime.close()
 

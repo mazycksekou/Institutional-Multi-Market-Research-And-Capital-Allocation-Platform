@@ -2953,23 +2953,44 @@ def _register_identity_and_quality(
             progress.update(rows_processed=len(identity_mapping_rows))
     if progress is not None:
         progress.complete(rows_processed=len(identity_mapping_rows))
+        progress.start("identity_seed")
 
     with runtime.store.transaction():
         seed_result = runtime.seed_from_certified_outputs(
             events=scope_event_rows,
             markets=scope_market_rows,
             selections=scope_selection_rows,
+            progress_callback=(
+                (lambda processed, total: progress.update(rows_processed=processed, rows_total=total))
+                if progress is not None
+                else None
+            ),
         )
         identity_mapping_rows.extend(seed_result.get("mappings") or [])
+    if progress is not None:
+        seed_total = int(seed_result.get("mapping_request_count") or len(seed_result.get("mappings") or []))
+        progress.complete(rows_processed=seed_total, rows_total=seed_total)
 
     if progress is not None:
-        progress.start("reconciliation", rows_total=len(selection_rows))
+        progress.start("reconciliation")
     with runtime.store.transaction():
         reconciliation_result = runtime.reconcile_certified_outputs(
             selection_rows=scope_selection_rows,
+            progress_callback=(
+                (lambda processed, total: progress.update(rows_processed=processed, rows_total=total))
+                if progress is not None
+                else None
+            ),
         )
     if progress is not None:
-        progress.complete(rows_processed=len(reconciliation_result.get("reconciliation_rows") or []), rows_total=len(selection_rows))
+        reconciliation_total = int(
+            reconciliation_result.get("selection_row_count")
+            or len(reconciliation_result.get("reconciliation_rows") or [])
+        )
+        progress.complete(
+            rows_processed=reconciliation_total,
+            rows_total=reconciliation_total,
+        )
 
     publication_scope_rows: dict[str, list[dict[str, Any]]]
     if canonical_scope_rows:
