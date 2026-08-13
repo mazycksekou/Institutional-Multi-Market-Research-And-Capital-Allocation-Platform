@@ -78,7 +78,34 @@ def main() -> int:
         bronze_raw_root=args.bronze_raw_root,
         limit=args.limit,
     )
-    print(json.dumps(report, indent=2, sort_keys=True))
+    summary = {
+        "ok": report.get("ok"),
+        "status": report.get("status"),
+        "failure_stage": report.get("failure_stage"),
+        "failure_type": report.get("failure_type"),
+        "failure_message": report.get("failure_message"),
+        "acquisition_id": report.get("acquisition_id"),
+        "run_id": report.get("run_id"),
+        "source_sha256": report.get("source_sha256"),
+        "selected_row_count": report.get("selected_row_count"),
+        "validated_row_count": report.get("validated_row_count"),
+        "new_row_count": report.get("new_row_count"),
+        "exact_duplicate_count": report.get("exact_duplicate_count"),
+        "semantic_reuse_count": report.get("semantic_reuse_count"),
+        "revision_count": report.get("revision_count"),
+        "conflict_count": report.get("conflict_count"),
+        "rejected_count": report.get("rejected_count"),
+        "quarantined_count": report.get("quarantined_count"),
+        "publication_started": report.get("publication_started"),
+        "publication_committed": report.get("publication_committed"),
+        "created_partition_count": report.get("created_partition_count"),
+        "updated_partition_count": report.get("updated_partition_count"),
+        "reused_partition_count": report.get("reused_partition_count"),
+        "replay_status": report.get("replay_status"),
+        "report_path": report.get("report_path"),
+        "acquisition_report_path": report.get("acquisition_report_path"),
+    }
+    print(json.dumps(summary, indent=2, sort_keys=True))
     return 0 if report.get("ok") else 1
 
 
