@@ -2,7 +2,7 @@
 
 ## Next Phase
 
-`Portable External Research-Data Storage`
+`Covariance and Time-Dependent Risk Capability Audit`
 
 ## Execution Policy
 
@@ -17,29 +17,29 @@ Close only verified NFL production gaps remained the governing closure rule for 
 `Data Identity, Reconciliation and Lakehouse Foundation` completed the shared identity, reconciliation, quarantine, revision-aware, and Parquet lakehouse contracts needed before vendor onboarding. It preserved certified NFL reference parity, produced deterministic readiness artifacts, and advanced the repository to First Controlled NFL Vendor Ingest readiness without ingesting vendor data in that phase.
 That completed foundation phase added Parquet-based analytical storage, Delta-compatible interfaces, Bronze, Silver, and Gold lifecycle mapping, and the deterministic Research Intelligence layer handoff needed before controlled vendor onboarding.
 `First Controlled NFL Vendor Ingest` completed the first controlled OddsWarehouse NFL Basic 2009 pilot ingest on top of the shared identity, reconciliation, quarantine, revision-aware, and lakehouse foundation. It reused the canonical acquisition, `LocalStorageEngine`, certification, lifecycle, lineage, and validation owners, preserved certified NFL reference behavior, and produced deterministic identity-binding, reconciliation, quarantine, Bronze, Silver, and Gold evidence for the first governed vendor slice.
+`Portable External Research-Data Storage` then completed the real FantomHD storage migration and historical-state hardening path for the authoritative OddsWarehouse NFL Basic source. The repository now owns the externally stored full 5,075-row historical dataset, exact 1,000-row replay is green, exact full replay is green, dataset certification is complete, and repository-owned retrieval is verified without reopening the provider CSV.
 
 ## Objective
 
-Activate only portable external research-data storage on top of the completed shared identity, reconciliation, quarantine, revision-aware, lakehouse, and First Controlled NFL Vendor Ingest foundation.
-Reuse the canonical acquisition, `LocalStorageEngine`, local-platform, historical-research-database, certification, lifecycle, lineage, validation, dashboard, and Universal Market Framework owners.
-Add only the configuration, external-root binding, storage portability, migration-safe persistence, and readiness work required to make repository-owned historical, lakehouse, and research artifacts portable beyond the current local-only layout.
-Preserve all certified NFL reference behavior, parity evidence, lineage, provenance, determinism, and point-in-time integrity.
-Do not implement covariance, another market, Worldview, capital allocation, paper trading, or live execution in this phase.
+Run only the Covariance and Time-Dependent Risk Capability Audit on top of the now-certified repository-owned OddsWarehouse NFL historical dataset and the completed NFL research pipeline.
+Reuse the canonical historical dataset, certification, lifecycle, lineage, validation, query, retrieval, dashboard, backtesting, and Universal Market Framework owners.
+Identify exactly which covariance and time-dependent risk capabilities are genuinely missing, where they belong, what evidence already exists, and what the smallest governed implementation surface would be.
+Preserve the certified OddsWarehouse dataset, certified NFL reference behavior, parity evidence, lineage, provenance, determinism, and point-in-time integrity.
+Do not implement the risk engine, another market, Worldview, capital allocation, paper trading, or live execution in this audit phase.
 
 ## Allowed Actions
 
-- Reuse the completed shared identity, reconciliation, quarantine, revision-aware, and lakehouse contracts.
-- Reuse the completed First Controlled NFL Vendor Ingest outputs as the storage-portability baseline.
-- Reuse the canonical acquisition, storage, certification, lifecycle, lineage, provenance, validation, and dashboard owners.
-- Externalize only the storage roots, configuration, portability seams, and readiness evidence required to make repository-owned data portable.
-- Preserve all certified NFL reference behavior, lineage, provenance, determinism, point-in-time integrity, and Bronze, Silver, and Gold lifecycle mapping while changing storage location mechanics only.
-- Extend dashboard, query, audit, and readiness surfaces only where the external-storage phase requires them.
+- Reuse the certified repository-owned OddsWarehouse historical dataset as the canonical audit input.
+- Reuse the canonical acquisition, storage, certification, lifecycle, lineage, provenance, validation, query, retrieval, dashboard, and Universal Market Framework owners.
+- Inspect current dataset coverage, feature readiness, backtesting inputs, and contract boundaries for covariance and time-dependent risk gaps only.
+- Produce bounded evidence, gap classification, and the governed implementation handoff for only the missing covariance and risk capabilities.
+- Preserve all certified NFL reference behavior, lineage, provenance, determinism, point-in-time integrity, and Bronze, Silver, and Gold lifecycle mapping during the audit.
 - Update project status, sequencing, and document indexes when the phase completes.
 - Keep `docs/PRODUCT_SPEC.md`, `docs/BUSINESS_STRATEGY.md`, and `docs/INTELLECTUAL_PROPERTY_REGISTER.md` as non-authoritative placeholders; update only references or indexes if required.
 
 ## Forbidden Actions
 
-- Do not implement covariance or the risk engine.
+- Do not implement covariance or the risk engine during the audit.
 - Do not implement another sport.
 - Do not implement prediction markets.
 - Do not implement Zero-DTE options.
@@ -49,27 +49,26 @@ Do not implement covariance, another market, Worldview, capital allocation, pape
 - Do not implement live execution.
 - Do not implement paper trading.
 - Do not duplicate Universal Market Framework logic or create NFL-only replacements for reusable framework assets.
-- Do not create a parallel ingestion, storage, certification, lifecycle, identity, or reconciliation framework.
-- Do not re-implement the controlled vendor ingest or broaden from the first controlled NFL vendor slice to additional vendors or markets in this phase.
-- Do not mutate certified NFL outputs merely to relocate storage.
+- Do not create a parallel ingestion, storage, certification, lifecycle, identity, reconciliation, or retrieval framework.
+- Do not re-implement the completed controlled vendor ingest, bounded replay, or dataset-certification workflow in this phase.
+- Do not mutate certified OddsWarehouse outputs unless the audit proves a reproducible repository defect that requires governed remediation.
 - Do not populate `docs/PRODUCT_SPEC.md`, `docs/BUSINESS_STRATEGY.md`, or `docs/INTELLECTUAL_PROPERTY_REGISTER.md`.
 - Do not make uncontrolled network calls or require secrets in tests.
 
 ## Expected Deliverables
 
-- A portable external research-data storage implementation that reuses the completed shared identity, reconciliation, quarantine, revision, lakehouse, and controlled vendor-ingest contracts.
-- Deterministic external-root configuration, migration-safe persistence, and readiness evidence for repository-owned historical, lakehouse, and research artifacts.
-- Preserved certified NFL parity and unchanged certified NFL reference behavior.
+- A bounded audit of covariance and time-dependent risk capability readiness on top of the certified repository-owned NFL dataset.
+- Explicit evidence of which covariance and risk capabilities already exist, which are missing, and where missing work belongs.
+- Preserved certified NFL parity and unchanged certified NFL reference behavior during the audit.
 - Updated project status, sequencing, and document indexes when the phase completes.
 - Phase handoff:
-  Portable External Research-Data Storage
-  -> Covariance and Time-Dependent Risk Capability Audit
+  Covariance and Time-Dependent Risk Capability Audit
   -> Implement only covariance and risk capabilities confirmed missing by that audit
 
 ## Current Execution Checkpoint
 
-The active bounded remediation inside `Portable External Research-Data Storage` is the historical-state compatibility and preflight atomicity hardening for the controlled OddsWarehouse ingest path.
-The next governed operational step after merge is B-005: rerun the bounded 100-row acquisition, exact replay, and 101-row overlap against the existing FantomHD history without cleaning prior `v003`/`v004`/`v005` evidence and without processing the full CSV.
+Portable External Research-Data Storage is complete: the repository-owned full OddsWarehouse NFL Basic historical dataset is ingested on FantomHD, exact 1,000-row replay is green, exact full replay is green, dataset certification is complete, and repository-owned retrieval is verified.
+The next governed operational step is to perform the Covariance and Time-Dependent Risk Capability Audit only, using the certified repository-owned dataset and current backtesting/runtime surfaces as evidence.
 
 ## Validation Commands
 

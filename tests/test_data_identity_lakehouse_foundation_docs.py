@@ -74,9 +74,9 @@ def test_data_identity_lakehouse_foundation_docs_exist_and_cover_required_topics
     assert "Portable External Research-Data Storage" in next_action_text
     assert "Data Identity, Reconciliation and Lakehouse Foundation" in next_action_text
     assert "Covariance and Time-Dependent Risk Capability Audit" in next_action_text
-    assert "Activate only portable external research-data storage" in next_action_text
-    assert "Do not implement covariance or the risk engine." in next_action_text
-    assert "Do not create a parallel ingestion, storage, certification, lifecycle, identity, or reconciliation framework." in next_action_text
+    assert "Run only the Covariance and Time-Dependent Risk Capability Audit" in next_action_text
+    assert "Do not implement covariance or the risk engine during the audit." in next_action_text
+    assert "Do not create a parallel ingestion, storage, certification, lifecycle, identity, reconciliation, or retrieval framework." in next_action_text
 
     assert "The data identity foundation phase is complete and validated." in roadmap_text
     assert "The first controlled NFL vendor ingest phase must:" in roadmap_text
