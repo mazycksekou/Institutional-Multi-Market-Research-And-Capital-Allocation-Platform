@@ -415,6 +415,52 @@ def test_data_identity_runtime_batches_seed_identity_mapping_fetches(
         runtime.close()
 
 
+def test_data_identity_runtime_batches_explicit_identity_mapping_registrations(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    runtime = DataIdentityLakehouseRuntime(
+        storage_path=tmp_path / "identity_runtime_explicit_batch.sqlite",
+        lakehouse_root=tmp_path / "lakehouse",
+    )
+    try:
+        requests = [
+            {
+                "provider": "oddswarehouse",
+                "external_identifier": f"TEAM-{index:03d}",
+                "internal_identifier": f"nfl.team.{index:03d}",
+                "entity_type": "team",
+                "entity_name": f"Team {index:03d}",
+                "canonical_key": f"franchise.{index:03d}",
+                "approval_reference": "test_batch",
+                "approval_evidence": {"row": index},
+                "source_payload": {"row": index},
+            }
+            for index in range(40)
+        ]
+        seeded = runtime.register_identity_mappings_batch(requests)
+        initial_count = runtime.store.count("identity_mappings")
+        fetch_calls = 0
+        original_fetch = runtime.store.fetch
+
+        def _recording_fetch(table_name: str, **kwargs):
+            nonlocal fetch_calls
+            if table_name == "identity_mappings":
+                fetch_calls += 1
+            return original_fetch(table_name, **kwargs)
+
+        monkeypatch.setattr(runtime.store, "fetch", _recording_fetch)
+
+        replay = runtime.register_identity_mappings_batch(requests)
+
+        assert len(seeded) == 40
+        assert len(replay) == 40
+        assert runtime.store.count("identity_mappings") == initial_count
+        assert fetch_calls <= 2
+    finally:
+        runtime.close()
+
+
 def test_data_identity_runtime_batches_reconciliation_fetches(
     tmp_path: Path,
     monkeypatch,

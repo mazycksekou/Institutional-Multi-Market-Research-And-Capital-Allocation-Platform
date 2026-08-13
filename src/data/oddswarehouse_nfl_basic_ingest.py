@@ -29,7 +29,9 @@ from src.data.historical_canonical_compatibility import (
 from src.data.historical_research_asset_certification_runtime import (
     HistoricalResearchAssetCertificationRuntime,
     ResearchAssetCertificationContract,
+    build_historical_dataset_certification_row,
 )
+from src.data.local_platform import DatasetContract, LocalDataPlatform
 from src.data.nfl_p0_foundation import get_nfl_p0_market_profile
 from src.data.odds_math import american_to_implied_probability, remove_two_way_vig
 from src.data.research_asset_lifecycle_runtime import (
@@ -79,6 +81,8 @@ ODDSWAREHOUSE_NFL_BASIC_REPORT_ROOT = get_runtime_data_path(
     "oddswarehouse_nfl_basic_pilot",
 )
 ODDSWAREHOUSE_PROGRESS_INTERVAL_SECONDS = 30.0
+NFL_PRESEASON_LOOKBACK_DAYS = 35
+NFL_POSTSEASON_LOOKAHEAD_DAYS = 35
 
 EXPECTED_HEADERS: tuple[str, ...] = (
     "Game ID",
@@ -173,6 +177,22 @@ TEAM_MAPPINGS: dict[str, TeamMapping] = {
         TeamMapping("Washington", "WAS", "nfl.franchise.washington", "Washington Redskins", "Washington Commanders", "1937-01-01", ""),
     )
 }
+
+TEAM_ALIAS_MAPPINGS: tuple[TeamMapping, ...] = (
+    TeamMapping("L.A. Rams", "LAR", "nfl.franchise.rams", "Los Angeles Rams", "Los Angeles Rams", "2016-01-01", ""),
+    TeamMapping("Los Angeles", "LAR", "nfl.franchise.rams", "Los Angeles Rams", "Los Angeles Rams", "2016-01-01", "2016-12-31"),
+    TeamMapping("L.A. Chargers", "LAC", "nfl.franchise.chargers", "Los Angeles Chargers", "Los Angeles Chargers", "2017-01-01", ""),
+    TeamMapping("Las Vegas", "LV", "nfl.franchise.raiders", "Las Vegas Raiders", "Las Vegas Raiders", "2020-01-01", ""),
+    TeamMapping("AFC", "AFC", "nfl.conference.afc", "AFC Pro Bowl Team", "AFC Pro Bowl Team", "1960-01-01", ""),
+    TeamMapping("NFC", "NFC", "nfl.conference.nfc", "NFC Pro Bowl Team", "NFC Pro Bowl Team", "1960-01-01", ""),
+    TeamMapping("Team Rice", "TEAM_RICE", "nfl.special_team.team_rice", "Team Rice", "Team Rice", "2014-01-01", ""),
+    TeamMapping("Team Sanders", "TEAM_SANDERS", "nfl.special_team.team_sanders", "Team Sanders", "Team Sanders", "2015-01-01", ""),
+)
+
+TEAM_MAPPING_VARIANTS: dict[str, tuple[TeamMapping, ...]] = {}
+for _mapping in (*TEAM_MAPPINGS.values(), *TEAM_ALIAS_MAPPINGS):
+    TEAM_MAPPING_VARIANTS.setdefault(_mapping.source_name, tuple())
+    TEAM_MAPPING_VARIANTS[_mapping.source_name] = (*TEAM_MAPPING_VARIANTS[_mapping.source_name], _mapping)
 
 
 class _StageProgressTracker:
@@ -369,7 +389,7 @@ def _normalize_int(value: Any, default: int | None = None) -> int | None:
 
 
 def _utc_now_iso() -> str:
-    return datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    return datetime.now(UTC).isoformat(timespec="microseconds").replace("+00:00", "Z")
 
 
 def _as_json(value: Any) -> str:
@@ -418,26 +438,71 @@ def _nfl_regular_season_week_count(season: int) -> int:
     return 18 if int(season) >= 2021 else 17
 
 
-def _regular_season_week_for_date(date_value: str) -> tuple[int | None, int | None, str | None]:
+def _mapping_effective_for_date(mapping: TeamMapping, event_date: date) -> bool:
+    start = _source_date_as_date(mapping.effective_start.replace("-", "")) if _normalize_text(mapping.effective_start) else None
+    end = _source_date_as_date(mapping.effective_end.replace("-", "")) if _normalize_text(mapping.effective_end) else None
+    if start is not None and event_date < start:
+        return False
+    if end is not None and event_date > end:
+        return False
+    return True
+
+
+def _resolve_team_mapping(source_name: str, date_value: str) -> TeamMapping | None:
+    candidates = TEAM_MAPPING_VARIANTS.get(_normalize_text(source_name), ())
+    if not candidates:
+        return None
+    if not re.fullmatch(r"\d{8}", _normalize_text(date_value)):
+        return candidates[0]
+    event_date = _source_date_as_date(date_value)
+    for mapping in candidates:
+        if _mapping_effective_for_date(mapping, event_date):
+            return mapping
+    return None
+
+
+def _season_context_for_date(date_value: str) -> tuple[int | None, str | None, int | None, str | None]:
     if not re.fullmatch(r"\d{8}", date_value):
-        return None, None, "invalid_date_format"
+        return None, None, None, "invalid_date_format"
     event_date = _source_date_as_date(date_value)
     season = _season_for_source_date(event_date)
     week_one_start = _nfl_regular_season_week_one_start(season)
-    delta_days = (event_date - week_one_start).days
-    if delta_days < 0:
+    preseason_start = week_one_start - timedelta(days=NFL_PRESEASON_LOOKBACK_DAYS)
+    if event_date < preseason_start:
+        return season, None, None, "before_supported_season_window"
+    if event_date < week_one_start:
+        preseason_week = max(1, ((event_date - preseason_start).days // 7) + 1)
+        return season, "preseason", preseason_week, None
+    regular_week_count = _nfl_regular_season_week_count(season)
+    regular_season_end = week_one_start + timedelta(days=regular_week_count * 7)
+    if event_date < regular_season_end:
+        regular_week = ((event_date - week_one_start).days // 7) + 1
+        return season, "regular", regular_week, None
+    postseason_end = regular_season_end + timedelta(days=NFL_POSTSEASON_LOOKAHEAD_DAYS)
+    if event_date < postseason_end:
+        postseason_week = regular_week_count + 1 + ((event_date - regular_season_end).days // 7)
+        return season, "postseason", postseason_week, None
+    return season, None, None, "outside_supported_season_window"
+
+
+def _regular_season_week_for_date(date_value: str) -> tuple[int | None, int | None, str | None]:
+    season, season_type, week, error = _season_context_for_date(date_value)
+    if season_type == "regular" and week is not None:
+        return season, week, None
+    if error:
+        return season, None, error
+    if season_type == "preseason":
         return season, None, "before_regular_season_window"
-    week = (delta_days // 7) + 1
-    if week > _nfl_regular_season_week_count(season):
+    if season_type == "postseason":
         return season, None, "outside_regular_season_window"
-    return season, week, None
+    return season, None, "outside_regular_season_window"
 
 
 def _season_coverage_from_rows(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
     seasons: list[int] = []
     for row in rows:
         date_value = _normalize_text(row.get("Date"))
-        season, _, error = _regular_season_week_for_date(date_value)
+        season, _, _, error = _season_context_for_date(date_value)
         if season is None or error == "invalid_date_format":
             continue
         seasons.append(season)
@@ -700,6 +765,99 @@ def _report_safe_raw_acquisition_result(raw_acquisition_result: Mapping[str, Any
     return payload
 
 
+def _report_safe_source_row_classifications(source_row_classifications: Mapping[str, Any]) -> dict[str, Any]:
+    payload = dict(source_row_classifications)
+    rows = list(source_row_classifications.get("rows") or [])
+    payload["row_count"] = len(rows)
+    payload["row_preview"] = rows[:20]
+    payload.pop("rows", None)
+    return payload
+
+
+def _report_safe_identity_runtime(identity_runtime: Mapping[str, Any]) -> dict[str, Any]:
+    payload = dict(identity_runtime)
+    seed_result = dict(identity_runtime.get("seed_result") or {})
+    reconciliation_result = dict(identity_runtime.get("reconciliation_result") or {})
+    lakehouse_result = dict(identity_runtime.get("lakehouse_result") or {})
+    publication_scope = dict(identity_runtime.get("publication_scope") or {})
+    payload["seed_summary"] = {
+        "ok": bool(seed_result.get("ok", True)),
+        "mapping_count": len(seed_result.get("mappings") or []),
+        "mapping_request_count": int(seed_result.get("mapping_request_count") or 0),
+        "identity_mapping_count": int(seed_result.get("identity_mapping_count") or 0),
+    }
+    payload["reconciliation_summary"] = {
+        "ok": bool(reconciliation_result.get("ok", True)),
+        "reconciliation_result_count": int(reconciliation_result.get("reconciliation_result_count") or 0),
+        "selection_row_count": int(reconciliation_result.get("selection_row_count") or 0),
+    }
+    payload["lakehouse_result"] = {
+        "ok": bool(lakehouse_result.get("ok", True)),
+        "created_partition_count": int(lakehouse_result.get("created_partition_count") or 0),
+        "updated_partition_count": int(lakehouse_result.get("updated_partition_count") or 0),
+        "reused_partition_count": int(lakehouse_result.get("reused_partition_count") or 0),
+        "created_partition_ids": list(lakehouse_result.get("created_partition_ids") or [])[:20],
+        "updated_partition_ids": list(lakehouse_result.get("updated_partition_ids") or [])[:20],
+        "reused_partition_ids": list(lakehouse_result.get("reused_partition_ids") or [])[:20],
+    }
+    payload["publication_scope"] = {}
+    for table_name, table_scope in publication_scope.items():
+        if isinstance(table_scope, Mapping):
+            payload["publication_scope"][str(table_name)] = {
+                "layer_name": table_scope.get("layer_name"),
+                "row_count": int(table_scope.get("row_count") or 0),
+                "affected_partition_count": len(table_scope.get("affected_partition_ids") or []),
+                "affected_partition_ids": list(table_scope.get("affected_partition_ids") or [])[:20],
+            }
+            continue
+        payload["publication_scope"][str(table_name)] = int(table_scope or 0)
+    payload.pop("seed_result", None)
+    payload.pop("reconciliation_result", None)
+    return payload
+
+
+def _report_safe_certification_results(certification_results: Mapping[str, Any]) -> dict[str, Any]:
+    payload = dict(certification_results)
+    asset_results = list(certification_results.get("asset_results") or [])
+    payload["asset_result_count"] = len(asset_results)
+    payload["asset_result_summaries"] = [
+        {
+            "ok": bool(result.get("ok", True)),
+            "research_asset_id": dict(result.get("asset_contract") or {}).get("research_asset_id"),
+            "research_asset_name": dict(result.get("asset_contract") or {}).get("research_asset_name"),
+            "source_table_name": dict(result.get("asset_contract") or {}).get("source_table_name"),
+            "certification_id": dict(result.get("research_asset_certification") or {}).get("certification_id"),
+            "certification_status": dict(result.get("research_asset_certification") or {}).get("certification_status"),
+            "valid_row_count": dict(result.get("research_asset_certification") or {}).get("valid_row_count"),
+            "invalid_row_count": dict(result.get("research_asset_certification") or {}).get("invalid_row_count"),
+            "coverage_score": dict(result.get("research_asset_certification") or {}).get("coverage_score"),
+            "certification_score": dict(result.get("research_asset_certification") or {}).get("certification_score"),
+        }
+        for result in asset_results
+    ]
+    payload.pop("asset_results", None)
+    return payload
+
+
+def _report_safe_lifecycle_results(lifecycle_results: Mapping[str, Any]) -> dict[str, Any]:
+    payload = dict(lifecycle_results)
+    lifecycle_rows = list(lifecycle_results.get("lifecycle_rows") or [])
+    payload["lifecycle_row_count"] = len(lifecycle_rows)
+    payload["lifecycle_row_preview"] = [
+        {
+            "asset_id": row.get("asset_id"),
+            "asset_type": row.get("asset_type"),
+            "lifecycle_state": row.get("lifecycle_state"),
+            "lifecycle_reason": row.get("lifecycle_reason"),
+            "created_at": row.get("created_at"),
+            "updated_at": row.get("updated_at"),
+        }
+        for row in lifecycle_rows[:20]
+    ]
+    payload.pop("lifecycle_rows", None)
+    return payload
+
+
 def _write_ingest_report(report: Mapping[str, Any]) -> dict[str, Any]:
     payload = dict(report)
     if isinstance(payload.get("source_profile"), Mapping):
@@ -710,6 +868,14 @@ def _write_ingest_report(report: Mapping[str, Any]) -> dict[str, Any]:
         payload["validation"] = _report_safe_validation(payload["validation"])
     if isinstance(payload.get("raw_acquisition_result"), Mapping):
         payload["raw_acquisition_result"] = _report_safe_raw_acquisition_result(payload["raw_acquisition_result"])
+    if isinstance(payload.get("source_row_classifications"), Mapping):
+        payload["source_row_classifications"] = _report_safe_source_row_classifications(payload["source_row_classifications"])
+    if isinstance(payload.get("identity_runtime"), Mapping):
+        payload["identity_runtime"] = _report_safe_identity_runtime(payload["identity_runtime"])
+    if isinstance(payload.get("certification_results"), Mapping):
+        payload["certification_results"] = _report_safe_certification_results(payload["certification_results"])
+    if isinstance(payload.get("lifecycle_results"), Mapping):
+        payload["lifecycle_results"] = _report_safe_lifecycle_results(payload["lifecycle_results"])
     ODDSWAREHOUSE_NFL_BASIC_REPORT_ROOT.mkdir(parents=True, exist_ok=True)
     run_token = _normalize_text(payload.get("run_id"))
     acquisition_token = _normalize_text(payload.get("acquisition_id"))
@@ -1657,13 +1823,13 @@ def validate_oddswarehouse_source_profile(profile: Mapping[str, Any]) -> dict[st
             row_errors.append("total_close_not_symmetric")
 
         if not row_errors:
-            away_team_resolved = TEAM_MAPPINGS.get(away_team)
-            home_team_resolved = TEAM_MAPPINGS.get(home_team)
+            away_team_resolved = _resolve_team_mapping(away_team, date_value)
+            home_team_resolved = _resolve_team_mapping(home_team, date_value)
             if away_team and away_team_resolved is None:
                 row_errors.append("unresolved_away_team_mapping")
             if home_team and home_team_resolved is None:
                 row_errors.append("unresolved_home_team_mapping")
-            _, _, week_error = _regular_season_week_for_date(date_value)
+            _, _, _, week_error = _season_context_for_date(date_value)
             if week_error is not None:
                 row_errors.append(f"week_resolution:{week_error}")
 
@@ -2275,8 +2441,8 @@ def normalize_oddswarehouse_workbook_rows(
         away_source_name = _normalize_text(workbook_row.get("Away Team"))
         home_source_name = _normalize_text(workbook_row.get("Home Team"))
         source_event_scope = f"{ODDSWAREHOUSE_NFL_BASIC_PROVIDER_ID}|{ODDSWAREHOUSE_NFL_BASIC_PRODUCT_ID}|{source_game_id}"
-        away_mapping = TEAM_MAPPINGS.get(away_source_name)
-        home_mapping = TEAM_MAPPINGS.get(home_source_name)
+        away_mapping = _resolve_team_mapping(away_source_name, source_date)
+        home_mapping = _resolve_team_mapping(home_source_name, source_date)
         if away_mapping is None:
             unresolved_mappings.append(away_source_name)
             quarantined_rows.append(
@@ -2301,8 +2467,8 @@ def normalize_oddswarehouse_workbook_rows(
                 }
             )
             continue
-        resolved_season, week, week_error = _regular_season_week_for_date(source_date)
-        if resolved_season is None or week is None:
+        resolved_season, season_type, week, week_error = _season_context_for_date(source_date)
+        if resolved_season is None or season_type is None or week is None:
             quarantined_rows.append(
                 {
                     "source_event_id": source_event_scope,
@@ -2353,7 +2519,7 @@ def normalize_oddswarehouse_workbook_rows(
                 "sport": "football",
                 "league": "NFL",
                 "season": resolved_season,
-                "season_type": "regular",
+                "season_type": season_type,
                 "week": week,
                 "game_id": source_game_id,
                 "event_date": event_date,
@@ -2903,54 +3069,62 @@ def _register_identity_and_quality(
             "identity_mapping",
             rows_total=len(team_mapping_rows) + len(event_rows),
         )
+    direct_mapping_requests: list[dict[str, Any]] = []
     for team_row in team_mapping_rows:
-        identity_mapping_rows.append(
-            runtime.register_identity_mapping(
-                provider=ODDSWAREHOUSE_NFL_BASIC_PROVIDER_ID,
-                external_identifier=_normalize_text(team_row.get("source_name")),
-                internal_identifier=_normalize_text(team_row.get("team_id")),
-                entity_type="team",
-                entity_name=_normalize_text(team_row.get("historical_display_name")),
-                canonical_key=_normalize_text(team_row.get("franchise_id")),
-                approval_reference=batch_id,
-                approval_evidence=team_row,
-                source_payload=team_row,
-                valid_from=team_row.get("valid_from"),
-                valid_to=team_row.get("valid_to"),
-                notes={
+        direct_mapping_requests.append(
+            {
+                "provider": ODDSWAREHOUSE_NFL_BASIC_PROVIDER_ID,
+                "external_identifier": _normalize_text(team_row.get("source_name")),
+                "internal_identifier": _normalize_text(team_row.get("team_id")),
+                "entity_type": "team",
+                "entity_name": _normalize_text(team_row.get("historical_display_name")),
+                "canonical_key": _normalize_text(team_row.get("franchise_id")),
+                "approval_reference": batch_id,
+                "approval_evidence": team_row,
+                "source_payload": team_row,
+                "valid_from": team_row.get("valid_from"),
+                "valid_to": team_row.get("valid_to"),
+                "notes": {
                     "historical_display_name": team_row.get("historical_display_name"),
                     "observation_date": team_row.get("effective_date"),
                     "valid_from": team_row.get("valid_from"),
                     "valid_to": team_row.get("valid_to"),
                 },
-                processed_at=created_at,
-            )
+                "processed_at": created_at,
+            }
         )
-        if progress is not None:
-            progress.update(rows_processed=len(identity_mapping_rows))
 
     for event_row in event_rows:
-        identity_mapping_rows.append(
-            runtime.register_identity_mapping(
-                provider=ODDSWAREHOUSE_NFL_BASIC_PROVIDER_ID,
-                external_identifier=_normalize_text(event_row.get("source_event_id")),
-                internal_identifier=_normalize_text(event_row.get("event_id")),
-                entity_type="event",
-                entity_name=_normalize_text(event_row.get("event_key")),
-                canonical_key=_normalize_text(event_row.get("event_key")),
-                approval_reference=batch_id,
-                approval_evidence={
+        direct_mapping_requests.append(
+            {
+                "provider": ODDSWAREHOUSE_NFL_BASIC_PROVIDER_ID,
+                "external_identifier": _normalize_text(event_row.get("source_event_id")),
+                "internal_identifier": _normalize_text(event_row.get("event_id")),
+                "entity_type": "event",
+                "entity_name": _normalize_text(event_row.get("event_key")),
+                "canonical_key": _normalize_text(event_row.get("event_key")),
+                "approval_reference": batch_id,
+                "approval_evidence": {
                     "event_date": event_row.get("event_date"),
                     "home_team_id": event_row.get("home_team_id"),
                     "away_team_id": event_row.get("away_team_id"),
                 },
-                source_payload=event_row,
-                valid_from=event_row.get("event_date"),
-                processed_at=created_at,
+                "source_payload": event_row,
+                "valid_from": event_row.get("event_date"),
+                "processed_at": created_at,
+            }
+        )
+    with runtime.store.transaction():
+        identity_mapping_rows.extend(
+            runtime.register_identity_mappings_batch(
+                direct_mapping_requests,
+                progress_callback=(
+                    (lambda processed, total: progress.update(rows_processed=processed, rows_total=total))
+                    if progress is not None
+                    else None
+                ),
             )
         )
-        if progress is not None:
-            progress.update(rows_processed=len(identity_mapping_rows))
     if progress is not None:
         progress.complete(rows_processed=len(identity_mapping_rows))
         progress.start("identity_seed")
@@ -3248,6 +3422,696 @@ def _record_lifecycle(
         }
     finally:
         runtime.close()
+
+
+def _safe_json_loads(value: Any) -> dict[str, Any]:
+    if not isinstance(value, str) or not value.strip():
+        return {}
+    try:
+        parsed = json.loads(value)
+    except json.JSONDecodeError:
+        return {}
+    return dict(parsed) if isinstance(parsed, Mapping) else {}
+
+
+def _iter_file_artifacts(payload: Mapping[str, Any]) -> list[dict[str, Any]]:
+    candidates = [
+        payload.get("file_artifacts"),
+        dict(payload.get("metadata") or {}).get("file_artifacts"),
+    ]
+    source_tables = payload.get("source_tables")
+    if isinstance(source_tables, Mapping):
+        candidates.append(dict(source_tables).get("file_artifacts"))
+    artifacts: list[dict[str, Any]] = []
+    for candidate in candidates:
+        if not isinstance(candidate, Sequence) or isinstance(candidate, (str, bytes)):
+            continue
+        for artifact in candidate:
+            if isinstance(artifact, Mapping):
+                artifacts.append(dict(artifact))
+    return artifacts
+
+
+def _extract_source_sha256(value: Any) -> str:
+    if isinstance(value, Mapping):
+        direct = _normalize_text(value.get("source_sha256") or value.get("file_sha256"))
+        if direct:
+            return direct
+        for artifact_payload in _iter_file_artifacts(value):
+            checksum = _normalize_text(artifact_payload.get("file_sha256"))
+            if checksum:
+                return checksum
+        for nested in value.values():
+            checksum = _extract_source_sha256(nested)
+            if checksum:
+                return checksum
+        return ""
+    if isinstance(value, Sequence) and not isinstance(value, (str, bytes)):
+        for item in value:
+            checksum = _extract_source_sha256(item)
+            if checksum:
+                return checksum
+        return ""
+    if isinstance(value, str):
+        text = value.strip()
+        for pattern in (
+            r'"source_sha256"\s*:\s*"([^"]+)"',
+            r'"file_sha256"\s*:\s*"([^"]+)"',
+            r'\\"source_sha256\\"\s*:\s*\\"([^\\"]+)\\"',
+            r'\\"file_sha256\\"\s*:\s*\\"([^\\"]+)\\"',
+        ):
+            match = re.search(pattern, text)
+            if match:
+                return _normalize_text(match.group(1))
+        if text.startswith("{") or text.startswith("["):
+            try:
+                return _extract_source_sha256(json.loads(text))
+            except json.JSONDecodeError:
+                return ""
+    return ""
+
+
+def _extract_source_row_identifier(value: Any) -> str:
+    if isinstance(value, Mapping):
+        direct = _normalize_text(value.get("source_event_id") or value.get("source_row_id") or value.get("Game ID") or value.get("game_id"))
+        if direct:
+            return direct
+        for nested in value.values():
+            identifier = _extract_source_row_identifier(nested)
+            if identifier:
+                return identifier
+        return ""
+    if isinstance(value, Sequence) and not isinstance(value, (str, bytes)):
+        for item in value:
+            identifier = _extract_source_row_identifier(item)
+            if identifier:
+                return identifier
+        return ""
+    if isinstance(value, str):
+        text = value.strip()
+        for pattern in (
+            r'"source_event_id"\s*:\s*"([^"]+)"',
+            r'"source_row_id"\s*:\s*"([^"]+)"',
+            r'"Game ID"\s*:\s*"([^"]+)"',
+            r'"game_id"\s*:\s*"([^"]+)"',
+            r'\\"source_event_id\\"\s*:\s*\\"([^\\"]+)\\"',
+            r'\\"source_row_id\\"\s*:\s*\\"([^\\"]+)\\"',
+            r'\\"Game ID\\"\s*:\s*\\"([^\\"]+)\\"',
+            r'\\"game_id\\"\s*:\s*\\"([^\\"]+)\\"',
+        ):
+            match = re.search(pattern, text)
+            if match:
+                return _normalize_text(match.group(1))
+        if text.startswith("{") or text.startswith("["):
+            try:
+                return _extract_source_row_identifier(json.loads(text))
+            except json.JSONDecodeError:
+                return ""
+    return ""
+
+
+def _oddswarehouse_historical_dataset_contract(storage_path: Path) -> DatasetContract:
+    return DatasetContract(
+        dataset_id=ODDSWAREHOUSE_NFL_BASIC_DATASET_ID,
+        dataset_name="oddswarehouse_nfl_basic_historical",
+        source_name=ODDSWAREHOUSE_NFL_BASIC_SOURCE_NAME,
+        source_type=ODDSWAREHOUSE_NFL_BASIC_SOURCE_TYPE,
+        market=ODDSWAREHOUSE_NFL_BASIC_PROFILE_ID,
+        sport="americanfootball_nfl",
+        asset_class="historical",
+        provider=ODDSWAREHOUSE_NFL_BASIC_PROVIDER_ID,
+        schema_version=ODDSWAREHOUSE_NFL_BASIC_SCHEMA_VERSION,
+        feature_pack=ODDSWAREHOUSE_NFL_BASIC_DATASET_VERSION,
+        storage_location=str(storage_path),
+        readiness="dataset_certified",
+        update_frequency="manual",
+        validation_state="validated",
+        owner="src.data",
+        status="active",
+        market_type="historical_event_market_selection_gold",
+        quality_score=1.0,
+        metadata={
+            "dataset_alias": ODDSWAREHOUSE_NFL_BASIC_DATASET_ALIAS,
+            "dataset_revision": ODDSWAREHOUSE_NFL_BASIC_DATASET_REVISION,
+            "report_catalog_name": "oddswarehouse_nfl_basic_historical",
+            "gold_table": "historical_event_market_selections",
+        },
+    )
+
+
+def _latest_oddswarehouse_batch_row(store: LocalStorageEngine, batch_id: str = "") -> dict[str, Any]:
+    if batch_id:
+        rows = store.fetch(
+            "historical_acquisition_batches",
+            where="batch_id = ?",
+            params=[batch_id],
+            order_by="created_at DESC",
+            limit=1,
+        )
+        return dict(rows[0]) if rows else {}
+    rows = store.fetch(
+        "historical_acquisition_batches",
+        where="version_id = ?",
+        params=[ODDSWAREHOUSE_NFL_BASIC_DATASET_VERSION],
+        order_by="created_at DESC",
+        limit=1,
+    )
+    return dict(rows[0]) if rows else {}
+
+
+def _latest_oddswarehouse_raw_version_row(store: LocalStorageEngine) -> dict[str, Any]:
+    rows = store.fetch(
+        "dataset_versions",
+        where="dataset_id = ?",
+        params=["dataset.sports.nfl.oddswarehouse.raw_acquisition_cache"],
+        order_by="version_number DESC",
+    )
+    for row in rows:
+        payload = dict(row)
+        if int(payload.get("raw_record_count") or 0) >= 5076:
+            return payload
+    return dict(rows[0]) if rows else {}
+
+
+def _oddswarehouse_source_sha_from_raw_version(
+    version_row: Mapping[str, Any],
+    *,
+    store: LocalStorageEngine | None = None,
+) -> str:
+    for payload in (
+        version_row.get("metadata_json"),
+        version_row.get("payload_json"),
+        _safe_json_loads(version_row.get("payload_json")).get("metadata_json"),
+    ):
+        checksum = _extract_source_sha256(payload)
+        if checksum:
+            return checksum
+    if store is not None:
+        version_id = _normalize_text(version_row.get("version_id"))
+        if version_id:
+            raw_rows = store.fetch(
+                "raw_records",
+                where="dataset_id = ? AND version_id = ?",
+                params=["dataset.sports.nfl.oddswarehouse.raw_acquisition_cache", version_id],
+                order_by="row_index ASC",
+                limit=10,
+            )
+            for raw_row in raw_rows:
+                checksum = _extract_source_sha256(raw_row.get("payload_json"))
+                if checksum:
+                    return checksum
+    return ""
+
+
+def _oddswarehouse_dataset_validation(
+    *,
+    batch_row: Mapping[str, Any],
+    asset_rows: Sequence[Mapping[str, Any]],
+    dataset_certification_row: Mapping[str, Any],
+    gold_row_count: int,
+    source_sha256: str,
+) -> dict[str, Any]:
+    validation_payload = _safe_json_loads(dataset_certification_row.get("validation_json"))
+    errors = list(validation_payload.get("invalid_assets") or [])
+    return {
+        "ok": _normalize_text(dataset_certification_row.get("certification_status")) == "certified",
+        "status": _normalize_text(dataset_certification_row.get("certification_status"), "missing"),
+        "errors": errors,
+        "warnings": [],
+        "row_count": gold_row_count,
+        "batch_id": _normalize_text(batch_row.get("batch_id")),
+        "dataset_version": ODDSWAREHOUSE_NFL_BASIC_DATASET_VERSION,
+        "source_sha256": source_sha256,
+        "research_asset_certification_count": len(asset_rows),
+        "date_coverage": _safe_json_loads(batch_row.get("coverage_json")).get("date_min"),
+        "validation": validation_payload,
+    }
+
+
+def certify_oddswarehouse_nfl_basic_historical_dataset(
+    *,
+    storage_path: str | Path | None = None,
+    batch_id: str = "",
+    created_at: str | None = None,
+) -> dict[str, Any]:
+    effective_storage_path = Path(storage_path or ODDSWAREHOUSE_NFL_BASIC_STORAGE_PATH).expanduser().resolve()
+    created_at = _normalize_text(created_at, _utc_now_iso())
+    store = create_local_storage_engine(effective_storage_path)
+    try:
+        batch_row = _latest_oddswarehouse_batch_row(store, batch_id=batch_id)
+        if not batch_row:
+            raise ValueError("oddswarehouse_full_batch_missing")
+        effective_batch_id = _normalize_text(batch_row.get("batch_id"))
+        asset_rows = [
+            dict(row)
+            for row in store.fetch(
+                "historical_research_asset_certifications",
+                where="batch_id = ?",
+                params=[effective_batch_id],
+                order_by="research_asset_id ASC",
+            )
+        ]
+        if not asset_rows:
+            raise ValueError("oddswarehouse_asset_certifications_missing")
+        raw_version_row = _latest_oddswarehouse_raw_version_row(store)
+        source_sha256 = _oddswarehouse_source_sha_from_raw_version(raw_version_row, store=store)
+        source_bundle = {
+            "source_name": ODDSWAREHOUSE_NFL_BASIC_SOURCE_NAME,
+            "source_type": ODDSWAREHOUSE_NFL_BASIC_SOURCE_TYPE,
+            "source_key": ODDSWAREHOUSE_NFL_BASIC_SOURCE_KEY,
+            "provider": ODDSWAREHOUSE_NFL_BASIC_PROVIDER_ID,
+            "source_file": _normalize_text(batch_row.get("source_file")),
+        }
+        raw_acquisition_result = {
+            "source_name": ODDSWAREHOUSE_NFL_BASIC_SOURCE_NAME,
+            "source_type": ODDSWAREHOUSE_NFL_BASIC_SOURCE_TYPE,
+            "source_key": ODDSWAREHOUSE_NFL_BASIC_SOURCE_KEY,
+            "provider": ODDSWAREHOUSE_NFL_BASIC_PROVIDER_ID,
+            "source_file": _normalize_text(batch_row.get("source_file")),
+            "source_sha256": source_sha256,
+            "dataset_version": _normalize_text(raw_version_row.get("version_id")),
+            "source_bundle_id": _normalize_text(_safe_json_loads(raw_version_row.get("metadata_json")).get("source_bundle_id")),
+        }
+        certification_row = build_historical_dataset_certification_row(
+            profile=get_nfl_p0_market_profile(),
+            dataset_version=ODDSWAREHOUSE_NFL_BASIC_DATASET_VERSION,
+            batch_id=effective_batch_id,
+            created_at=created_at,
+            source_bundle=source_bundle,
+            raw_acquisition_result=raw_acquisition_result,
+            asset_rows=asset_rows,
+        )
+        store.upsert("historical_certifications", certification_row, key_columns=("certification_id",))
+        gold_row_count = int(
+            store.connection.execute(
+                "SELECT COUNT(*) FROM historical_event_market_selections WHERE batch_id = ?",
+                [effective_batch_id],
+            ).fetchone()[0]
+        )
+        contract = _oddswarehouse_historical_dataset_contract(effective_storage_path)
+        platform = LocalDataPlatform(storage_path=effective_storage_path, dataset_owner="src.data")
+        try:
+            platform.register_dataset(contract)
+            validation = _oddswarehouse_dataset_validation(
+                batch_row=batch_row,
+                asset_rows=asset_rows,
+                dataset_certification_row=certification_row,
+                gold_row_count=gold_row_count,
+                source_sha256=source_sha256,
+            )
+            validation_row = platform.store_validation_result(
+                contract,
+                version_id=ODDSWAREHOUSE_NFL_BASIC_DATASET_VERSION,
+                snapshot_id=_normalize_text(certification_row.get("snapshot_id")),
+                lineage_id=_normalize_text(certification_row.get("lineage_id")),
+                validation=validation,
+                created_at=created_at,
+                updated_at=created_at,
+            )
+            existing_versions = platform.store.fetch(
+                "dataset_versions",
+                where="dataset_id = ?",
+                params=[contract.dataset_id],
+                order_by="version_number ASC",
+            )
+            existing_version_row = next(
+                (
+                    dict(row)
+                    for row in existing_versions
+                    if _normalize_text(row.get("version_id")) == ODDSWAREHOUSE_NFL_BASIC_DATASET_VERSION
+                ),
+                {},
+            )
+            version_number = int(existing_version_row.get("version_number") or max(len(existing_versions), 1))
+            checksum = hashlib.sha256(
+                _as_json(
+                    {
+                        "batch_id": effective_batch_id,
+                        "gold_row_count": gold_row_count,
+                        "dataset_certification_id": certification_row.get("certification_id"),
+                        "source_sha256": source_sha256,
+                        "asset_certification_ids": [
+                            _normalize_text(row.get("certification_id"))
+                            for row in asset_rows
+                        ],
+                    }
+                ).encode("utf-8")
+            ).hexdigest()
+            version_row = {
+                "version_id": ODDSWAREHOUSE_NFL_BASIC_DATASET_VERSION,
+                "dataset_id": contract.dataset_id,
+                "dataset_name": contract.dataset_name,
+                "owner": contract.owner,
+                "sport": contract.sport,
+                "feature_pack": contract.feature_pack,
+                "storage_location": contract.storage_location,
+                "readiness": "dataset_certified",
+                "update_frequency": contract.update_frequency,
+                "validation_state": "validated",
+                "status": "active",
+                "version_number": version_number,
+                "raw_record_count": int(batch_row.get("source_count") or 0),
+                "normalized_record_count": int(gold_row_count),
+                "feature_snapshot_count": 0,
+                "validation_id": validation_row["validation_id"],
+                "checksum": checksum,
+                "schema_version": contract.schema_version,
+                "created_at": created_at,
+                "updated_at": created_at,
+                "source": contract.source_name,
+                "provider": contract.provider,
+                "market": contract.market,
+                "market_type": contract.market_type,
+                "asset_class": contract.asset_class,
+                "snapshot_id": _normalize_text(certification_row.get("snapshot_id")),
+                "lineage_id": _normalize_text(certification_row.get("lineage_id")),
+                "quality_score": float(certification_row.get("quality_score") or 0.0),
+                "metadata_json": _as_json(
+                    {
+                        **dict(contract.metadata),
+                        "batch_id": effective_batch_id,
+                        "source_sha256": source_sha256,
+                        "certification_id": certification_row.get("certification_id"),
+                    }
+                ),
+                "payload_json": _as_json(
+                    {
+                        **contract.as_dict(),
+                        "batch_id": effective_batch_id,
+                        "source_sha256": source_sha256,
+                        "gold_row_count": gold_row_count,
+                        "certification_id": certification_row.get("certification_id"),
+                    }
+                ),
+            }
+            platform.store.upsert("dataset_versions", version_row, key_columns=("version_id",))
+            registry_contract = DatasetContract.from_mapping(
+                {
+                    **contract.as_dict(),
+                    "readiness": "dataset_certified",
+                    "validation_state": "validated",
+                    "status": "active",
+                    "quality_score": float(certification_row.get("quality_score") or 0.0),
+                }
+            )
+            registry_row = platform._registry_row(
+                registry_contract,
+                latest_version_number=version_number,
+                latest_snapshot_id=_normalize_text(certification_row.get("snapshot_id")),
+                latest_feature_snapshot_id=_normalize_text(
+                    (platform.read_dataset(contract.dataset_id).get("latest_feature_snapshot_id") or f"{contract.dataset_id}.feature.000")
+                ),
+                latest_validation_id=validation_row["validation_id"],
+                version_count=max(len(existing_versions), version_number),
+                validation_state="validated",
+            )
+            platform.store.upsert("dataset_registry", registry_row, key_columns=("dataset_id",))
+        finally:
+            platform.close()
+        lifecycle_runtime = ResearchAssetLifecycleRuntime(storage_path=effective_storage_path)
+        try:
+            coverage = _safe_json_loads(batch_row.get("coverage_json"))
+            identity = build_research_asset_identity_contract(
+                asset_id=ODDSWAREHOUSE_NFL_BASIC_DATASET_ID,
+                asset_family="dataset",
+                market_profile=ODDSWAREHOUSE_NFL_BASIC_PROFILE_ID,
+                market=ODDSWAREHOUSE_NFL_BASIC_PROFILE_ID,
+                league="NFL",
+                sport="football",
+                season=_coverage_label(
+                    (coverage.get("season_coverage") or {}).get("min"),
+                    (coverage.get("season_coverage") or {}).get("max"),
+                ),
+                week_or_date=_coverage_label(coverage.get("date_min"), coverage.get("date_max")),
+                provider=ODDSWAREHOUSE_NFL_BASIC_PROVIDER_ID,
+                connector=ODDSWAREHOUSE_NFL_BASIC_CONNECTOR_ID,
+                schema_version=ODDSWAREHOUSE_NFL_BASIC_SCHEMA_VERSION,
+                lineage_version=ODDSWAREHOUSE_NFL_BASIC_DATASET_VERSION,
+                asset_name="OddsWarehouse NFL Basic Historical Dataset",
+                asset_type="historical_dataset",
+                metadata={
+                    "batch_id": effective_batch_id,
+                    "source_sha256": source_sha256,
+                    "dataset_alias": ODDSWAREHOUSE_NFL_BASIC_DATASET_ALIAS,
+                },
+            )
+            lifecycle_result = lifecycle_runtime.record_dataset_certified(
+                identity=identity,
+                certification_result={
+                    "certification_id": certification_row["certification_id"],
+                    "certification_status": certification_row["certification_status"],
+                    "certification_state": certification_row["certification_status"],
+                    "batch_id": effective_batch_id,
+                    "version_id": ODDSWAREHOUSE_NFL_BASIC_DATASET_VERSION,
+                    "quality_score": certification_row.get("quality_score"),
+                    "coverage_score": certification_row.get("completeness_score"),
+                    "point_in_time_status": certification_row.get("point_in_time_status"),
+                    "summary": {
+                        "gold_row_count": gold_row_count,
+                        "source_sha256": source_sha256,
+                    },
+                },
+                source_bundle=source_bundle,
+                raw_acquisition_result=raw_acquisition_result,
+                created_at=created_at,
+            )
+        finally:
+            lifecycle_runtime.close()
+        return {
+            "ok": _normalize_text(certification_row.get("certification_status")) == "certified",
+            "status": _normalize_text(certification_row.get("certification_status"), "missing"),
+            "batch_id": effective_batch_id,
+            "source_sha256": source_sha256,
+            "dataset_contract": contract.as_dict(),
+            "dataset_certification": certification_row,
+            "dataset_registry": registry_row,
+            "dataset_version": version_row,
+            "dataset_validation": validation_row,
+            "research_asset_certifications": asset_rows,
+            "lifecycle_result": lifecycle_result,
+        }
+    finally:
+        store.close()
+
+
+def query_oddswarehouse_nfl_basic_dataset(
+    *,
+    storage_path: str | Path | None = None,
+    season: int | None = None,
+    date_from: str = "",
+    date_to: str = "",
+    event_id: str = "",
+    team: str = "",
+    sportsbook: str = "",
+    market_type: str = "",
+    selection: str = "",
+    dataset_version: str = "",
+    acquisition_id: str = "",
+    limit: int = 100,
+) -> dict[str, Any]:
+    effective_storage_path = Path(storage_path or ODDSWAREHOUSE_NFL_BASIC_STORAGE_PATH).expanduser().resolve()
+    store = create_local_storage_engine(effective_storage_path, auto_initialize=False)
+    try:
+        params: list[Any] = []
+        clauses = ["g.version_id = ?"]
+        params.append(_normalize_text(dataset_version, ODDSWAREHOUSE_NFL_BASIC_DATASET_VERSION))
+        if season is not None:
+            clauses.append("g.season = ?")
+            params.append(int(season))
+        if date_from:
+            clauses.append("g.event_date >= ?")
+            params.append(date_from)
+        if date_to:
+            clauses.append("g.event_date <= ?")
+            params.append(date_to)
+        if event_id:
+            clauses.append("g.event_id = ?")
+            params.append(event_id)
+        if team:
+            clauses.append(
+                "(g.home_team = ? OR g.away_team = ? OR g.selection = ? OR g.team_id = ? OR g.home_team_id = ? OR g.away_team_id = ?)"
+            )
+            params.extend([team, team, team, team, team, team])
+        if sportsbook:
+            clauses.append("'unknown' = ?")
+            params.append(sportsbook)
+        if market_type:
+            clauses.append("g.market_type = ?")
+            params.append(market_type)
+        if selection:
+            clauses.append("g.selection = ?")
+            params.append(selection)
+        if acquisition_id:
+            clauses.append("g.batch_id = ?")
+            params.append(acquisition_id)
+        query = f"""
+            SELECT
+                g.dataset_row_id,
+                g.event_id,
+                g.market_id,
+                g.selection,
+                g.market_type,
+                g.season,
+                g.event_date,
+                g.home_team,
+                g.away_team,
+                g.batch_id,
+                g.version_id,
+                g.certification_status,
+                g.point_in_time_status,
+                e.season_type,
+                e.week,
+                'unknown' AS sportsbook,
+                'unknown' AS sportsbook_id
+            FROM historical_event_market_selections AS g
+            JOIN historical_events AS e ON e.event_id = g.event_id
+            WHERE {' AND '.join(clauses)}
+            ORDER BY g.event_date ASC, g.event_id ASC, g.market_type ASC, g.selection ASC
+            LIMIT ?
+        """
+        params.append(max(1, int(limit)))
+        rows = [dict(row) for row in store.connection.execute(query, params).fetchall()]
+        return {
+            "ok": True,
+            "status": "ready",
+            "filters": {
+                "season": season,
+                "date_from": date_from or None,
+                "date_to": date_to or None,
+                "event_id": event_id or None,
+                "team": team or None,
+                "sportsbook": sportsbook or None,
+                "market_type": market_type or None,
+                "selection": selection or None,
+                "dataset_version": _normalize_text(dataset_version, ODDSWAREHOUSE_NFL_BASIC_DATASET_VERSION),
+                "acquisition_id": acquisition_id or None,
+            },
+            "row_count": len(rows),
+            "rows": rows,
+        }
+    finally:
+        store.close()
+
+
+def trace_oddswarehouse_nfl_basic_dataset_row(
+    dataset_row_id: str,
+    *,
+    storage_path: str | Path | None = None,
+) -> dict[str, Any]:
+    effective_storage_path = Path(storage_path or ODDSWAREHOUSE_NFL_BASIC_STORAGE_PATH).expanduser().resolve()
+    store = create_local_storage_engine(effective_storage_path, auto_initialize=False)
+    try:
+        gold_rows = store.fetch(
+            "historical_event_market_selections",
+            where="dataset_row_id = ?",
+            params=[dataset_row_id],
+            limit=1,
+        )
+        if not gold_rows:
+            return {"ok": False, "status": "missing", "dataset_row_id": dataset_row_id}
+        gold_row = dict(gold_rows[0])
+        event_rows = store.fetch("historical_events", where="event_id = ?", params=[gold_row["event_id"]], limit=1)
+        market_rows = store.fetch(
+            "historical_markets",
+            where="event_id = ? AND market_family = ?",
+            params=[gold_row["event_id"], gold_row["market_family"]],
+            order_by="source_stage ASC",
+        )
+        batch_rows = store.fetch(
+            "historical_acquisition_batches",
+            where="batch_id = ?",
+            params=[gold_row["batch_id"]],
+            limit=1,
+        )
+        if not event_rows or not market_rows or not batch_rows:
+            return {
+                "ok": False,
+                "status": "incomplete_lineage",
+                "dataset_row_id": dataset_row_id,
+                "gold_row": gold_row,
+            }
+        event_row = dict(event_rows[0])
+        market_row = dict(market_rows[0])
+        batch_row = dict(batch_rows[0])
+        selection_rows = [
+            dict(row)
+            for row in store.fetch(
+                "historical_selections",
+                where="event_id = ? AND market_family = ? AND selection = ?",
+                params=[gold_row["event_id"], gold_row["market_family"], gold_row["selection"]],
+                order_by="source_stage ASC",
+            )
+        ]
+        source_game_id = _normalize_text(event_row.get("game_id"))
+        source_event_id = _normalize_text(gold_row.get("source_event_id"))
+        raw_version_row = _latest_oddswarehouse_raw_version_row(store)
+        source_sha256 = _oddswarehouse_source_sha_from_raw_version(raw_version_row, store=store)
+        raw_rows = [
+            dict(row)
+            for row in store.fetch(
+                "raw_records",
+                where="dataset_id = ?",
+                params=["dataset.sports.nfl.oddswarehouse.raw_acquisition_cache"],
+                order_by="created_at DESC, row_index ASC",
+            )
+        ]
+        matched_raw_row: dict[str, Any] = {}
+        for raw_row in raw_rows:
+            raw_payload_text = str(raw_row.get("payload_json") or "")
+            candidate_identifier = _extract_source_row_identifier(raw_payload_text)
+            if (
+                candidate_identifier in {source_event_id, source_game_id}
+                or (source_event_id and source_event_id in raw_payload_text)
+                or (source_game_id and f'"Game ID": "{source_game_id}"' in raw_payload_text)
+                or (source_game_id and f'\\"Game ID\\": \\"{source_game_id}\\"' in raw_payload_text)
+            ):
+                matched_raw_row = {
+                    "record_id": raw_row.get("record_id"),
+                    "version_id": raw_row.get("version_id"),
+                    "row_index": raw_row.get("row_index"),
+                    "source_identifier": candidate_identifier,
+                }
+                break
+        dataset_certifications = [
+            dict(row)
+            for row in store.fetch(
+                "historical_certifications",
+                where="version_id = ? AND batch_id = ?",
+                params=[ODDSWAREHOUSE_NFL_BASIC_DATASET_VERSION, gold_row["batch_id"]],
+                order_by="created_at DESC",
+                limit=1,
+            )
+        ]
+        return {
+            "ok": True,
+            "status": "ready",
+            "dataset_row_id": dataset_row_id,
+            "gold_row": gold_row,
+            "silver_event": event_row,
+            "silver_market": market_row,
+            "silver_markets": [dict(row) for row in market_rows],
+            "silver_selections": selection_rows,
+            "bronze_raw_record": matched_raw_row,
+            "source_artifact": {
+                "source_name": ODDSWAREHOUSE_NFL_BASIC_SOURCE_NAME,
+                "source_file": batch_row.get("source_file"),
+                "source_sha256": source_sha256,
+                "raw_version_id": raw_version_row.get("version_id"),
+            },
+            "acquisition": {
+                "batch_id": batch_row.get("batch_id"),
+                "version_id": batch_row.get("version_id"),
+                "provider": batch_row.get("provider"),
+                "source_type": batch_row.get("source_type"),
+            },
+            "runtime": {
+                "parser_version": ODDSWAREHOUSE_NFL_BASIC_PARSER_VERSION,
+                "schema_version": ODDSWAREHOUSE_NFL_BASIC_SCHEMA_VERSION,
+            },
+            "dataset_certification": dataset_certifications[0] if dataset_certifications else {},
+        }
+    finally:
+        store.close()
 
 
 def _publication_table_specs(
@@ -4495,8 +5359,11 @@ __all__ = [
     "ODDSWAREHOUSE_NFL_BASIC_STORAGE_PATH",
     "TEAM_MAPPINGS",
     "TeamMapping",
+    "certify_oddswarehouse_nfl_basic_historical_dataset",
     "normalize_oddswarehouse_workbook_rows",
     "profile_oddswarehouse_nfl_basic_inputs",
+    "query_oddswarehouse_nfl_basic_dataset",
     "run_oddswarehouse_nfl_basic_pilot",
+    "trace_oddswarehouse_nfl_basic_dataset_row",
     "validate_oddswarehouse_workbook_profile",
 ]

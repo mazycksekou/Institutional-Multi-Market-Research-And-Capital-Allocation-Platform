@@ -753,6 +753,119 @@ def test_progress_events_report_stage_timings_and_scoped_partition_reuse(
     assert first["created_partition_count"] == first_partition_count
 
 
+def test_oddswarehouse_ingest_batches_direct_identity_mapping_registration(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    rows = _sample_workbook_rows()[:2]
+    csv_path = tmp_path / "NFL_Basic.csv"
+    storage_root = tmp_path / "research-data"
+    storage_root.mkdir()
+    monkeypatch.setenv("RESEARCH_DATA_ROOT", str(storage_root))
+    monkeypatch.delenv("AUTOMATION_DATA_DIR", raising=False)
+    _write_canonical_csv(csv_path, rows)
+
+    register_calls = 0
+    original_register = DataIdentityLakehouseRuntime.register_identity_mapping
+
+    def _recording_register(self, *args, **kwargs):
+        nonlocal register_calls
+        register_calls += 1
+        return original_register(self, *args, **kwargs)
+
+    monkeypatch.setattr(
+        DataIdentityLakehouseRuntime,
+        "register_identity_mapping",
+        _recording_register,
+    )
+
+    report = run_oddswarehouse_nfl_basic_pilot(
+        csv_path,
+        storage_path=storage_root / "historical" / "oddswarehouse.sqlite",
+        lakehouse_root=storage_root / "lakehouse" / "oddswarehouse",
+        bronze_raw_root=storage_root / "bronze" / "oddswarehouse",
+        limit=2,
+    )
+
+    assert report["ok"] is True
+    assert register_calls == 0
+
+
+def test_ingest_report_compacts_large_runtime_payloads(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    rows = _sample_workbook_rows()[:2]
+    csv_path = tmp_path / "NFL_Basic.csv"
+    storage_root = tmp_path / "research-data"
+    storage_root.mkdir()
+    monkeypatch.setenv("RESEARCH_DATA_ROOT", str(storage_root))
+    monkeypatch.delenv("AUTOMATION_DATA_DIR", raising=False)
+    _write_canonical_csv(csv_path, rows)
+
+    report = run_oddswarehouse_nfl_basic_pilot(
+        csv_path,
+        storage_path=storage_root / "historical" / "oddswarehouse.sqlite",
+        lakehouse_root=storage_root / "lakehouse" / "oddswarehouse",
+        bronze_raw_root=storage_root / "bronze" / "oddswarehouse",
+        limit=2,
+    )
+
+    persisted = json.loads(Path(report["report_path"]).read_text(encoding="utf-8"))
+
+    assert persisted["ok"] is True
+    assert "seed_result" not in persisted["identity_runtime"]
+    assert "reconciliation_result" not in persisted["identity_runtime"]
+    assert "lifecycle_rows" not in persisted["lifecycle_results"]
+    assert "asset_results" not in persisted["certification_results"]
+    assert "rows" not in persisted["source_row_classifications"]
+    assert persisted["identity_runtime"]["seed_summary"]["mapping_request_count"] >= 1
+    assert persisted["lifecycle_results"]["lifecycle_row_count"] >= 1
+    assert persisted["source_row_classifications"]["row_count"] == 2
+
+
+def test_cli_prints_bounded_summary_only(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    rows = _sample_workbook_rows()[:2]
+    csv_path = tmp_path / "NFL_Basic.csv"
+    storage_root = tmp_path / "research-data"
+    storage_root.mkdir()
+    monkeypatch.setenv("RESEARCH_DATA_ROOT", str(storage_root))
+    monkeypatch.delenv("AUTOMATION_DATA_DIR", raising=False)
+    _write_canonical_csv(csv_path, rows)
+
+    repo_root = Path(__file__).resolve().parents[1]
+    env = dict(os.environ)
+    env["RESEARCH_DATA_ROOT"] = str(storage_root)
+    env.pop("AUTOMATION_DATA_DIR", None)
+
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "scripts.run_oddswarehouse_nfl_basic_pilot",
+            "--source",
+            str(csv_path),
+            "--limit",
+            "2",
+        ],
+        cwd=repo_root,
+        check=True,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+
+    payload = json.loads(completed.stdout)
+    assert payload["ok"] is True
+    assert "report_path" in payload
+    assert "identity_runtime" not in payload
+    assert "validation" not in payload
+    assert "raw_acquisition_result" not in payload
+
+
 def test_dataset_identity_uses_full_source_coverage_for_production_metadata(
     tmp_path: Path,
     monkeypatch,
@@ -1750,3 +1863,156 @@ def test_exact_replay_reuses_legacy_workbook_source_type_state(
     assert replay["updated_partition_count"] == 0
     assert replay["reused_partition_count"] == 0
     assert parquet_after == parquet_before
+
+
+def test_historical_aliases_and_extended_season_windows_validate_and_normalize(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    rows = [
+        _row_with(
+            _sample_workbook_rows()[0],
+            **{
+                "Game ID": 3001,
+                "Date": "20200829",
+                "Away Team": "L.A. Rams",
+                "Home Team": "Las Vegas",
+            },
+        ),
+        _row_with(
+            _sample_workbook_rows()[1],
+            **{
+                "Game ID": 3002,
+                "Date": "20150125",
+                "Away Team": "Team Rice",
+                "Home Team": "Team Sanders",
+            },
+        ),
+        _row_with(
+            _sample_workbook_rows()[2],
+            **{
+                "Game ID": 3003,
+                "Date": "20100131",
+                "Away Team": "AFC",
+                "Home Team": "NFC",
+            },
+        ),
+    ]
+    csv_path = tmp_path / "NFL_Basic.csv"
+    storage_root = tmp_path / "research-data"
+    storage_root.mkdir()
+    monkeypatch.setenv("RESEARCH_DATA_ROOT", str(storage_root))
+    monkeypatch.delenv("AUTOMATION_DATA_DIR", raising=False)
+    _write_canonical_csv(csv_path, rows)
+
+    profile = _profile_oddswarehouse_source(csv_path)
+    validation = validate_oddswarehouse_source_profile(profile)
+
+    assert validation["ok"] is True
+    assert validation["rejected_rows"] == []
+    normalized = normalize_oddswarehouse_workbook_rows(
+        validation["accepted_rows"],
+        batch_id="oddswarehouse.batch.aliases",
+        created_at="2026-08-13T00:00:00Z",
+        source_file=csv_path.name,
+    )
+    event_rows = normalized["event_rows"]
+    participant_rows = normalized["participant_rows"]
+
+    assert {row["season_type"] for row in event_rows} == {"preseason", "postseason"}
+    assert {row["season"] for row in event_rows} == {2009, 2014, 2020}
+    assert {
+        row["team_id"]
+        for row in participant_rows
+    } >= {"LAR", "LV", "TEAM_RICE", "TEAM_SANDERS", "AFC", "NFC"}
+
+
+def test_dataset_certification_and_repository_owned_retrieval_use_canonical_state(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    rows = _sample_workbook_rows()
+    csv_path = tmp_path / "NFL_Basic.csv"
+    storage_root = tmp_path / "research-data"
+    storage_root.mkdir()
+    monkeypatch.setenv("RESEARCH_DATA_ROOT", str(storage_root))
+    monkeypatch.delenv("AUTOMATION_DATA_DIR", raising=False)
+    _write_canonical_csv(csv_path, rows)
+
+    storage_path = storage_root / "historical" / "oddswarehouse.sqlite"
+    lakehouse_root = storage_root / "lakehouse" / "oddswarehouse"
+    bronze_root = storage_root / "bronze" / "oddswarehouse"
+
+    report = run_oddswarehouse_nfl_basic_pilot(
+        csv_path,
+        storage_path=storage_path,
+        lakehouse_root=lakehouse_root,
+        bronze_raw_root=bronze_root,
+        limit=3,
+    )
+    certification = oddswarehouse_ingest.certify_oddswarehouse_nfl_basic_historical_dataset(
+        storage_path=storage_path,
+        batch_id=report["acquisition_id"],
+        created_at="2026-08-13T00:00:00Z",
+    )
+    query = oddswarehouse_ingest.query_oddswarehouse_nfl_basic_dataset(
+        storage_path=storage_path,
+        season=2009,
+        limit=10,
+    )
+    team_query = oddswarehouse_ingest.query_oddswarehouse_nfl_basic_dataset(
+        storage_path=storage_path,
+        team=query["rows"][0]["home_team"],
+        limit=10,
+    )
+    traced = oddswarehouse_ingest.trace_oddswarehouse_nfl_basic_dataset_row(
+        query["rows"][0]["dataset_row_id"],
+        storage_path=storage_path,
+    )
+
+    store = create_local_storage_engine(storage_path)
+    try:
+        certification_rows = store.fetch(
+            "historical_certifications",
+            where="version_id = ?",
+            params=[oddswarehouse_ingest.ODDSWAREHOUSE_NFL_BASIC_DATASET_VERSION],
+            order_by="created_at DESC",
+        )
+        dataset_rows = store.fetch(
+            "dataset_registry",
+            where="dataset_id = ?",
+            params=[oddswarehouse_ingest.ODDSWAREHOUSE_NFL_BASIC_DATASET_ID],
+            limit=1,
+        )
+        lifecycle_rows = store.fetch(
+            "research_asset_lifecycles",
+            where="asset_id = ?",
+            params=[oddswarehouse_ingest.ODDSWAREHOUSE_NFL_BASIC_DATASET_ID],
+            limit=1,
+        )
+        version_rows = store.fetch(
+            "dataset_versions",
+            where="version_id = ?",
+            params=[oddswarehouse_ingest.ODDSWAREHOUSE_NFL_BASIC_DATASET_VERSION],
+            limit=1,
+        )
+    finally:
+        store.close()
+
+    assert report["ok"] is True
+    assert certification["ok"] is True
+    assert certification["status"] == "certified"
+    assert certification_rows
+    assert dataset_rows
+    assert lifecycle_rows
+    assert version_rows
+    assert query["ok"] is True
+    assert query["row_count"] > 0
+    assert all(row["season"] == 2009 for row in query["rows"])
+    assert team_query["ok"] is True
+    assert team_query["row_count"] > 0
+    assert traced["ok"] is True
+    assert traced["dataset_certification"]["certification_status"] == "certified"
+    assert traced["source_artifact"]["source_sha256"]
+    assert traced["bronze_raw_record"]
+    assert lifecycle_rows[0]["lifecycle_state"] == "dataset_certified"

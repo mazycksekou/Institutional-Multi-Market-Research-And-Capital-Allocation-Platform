@@ -1078,6 +1078,79 @@ class DataIdentityLakehouseRuntime:
             )
         return dict(prepared["result_row"])
 
+    def register_identity_mappings_batch(
+        self,
+        mapping_requests: Sequence[Mapping[str, Any]],
+        *,
+        progress_callback: Any = None,
+    ) -> list[dict[str, Any]]:
+        requests = [dict(request) for request in mapping_requests]
+        if not requests:
+            return []
+
+        request_keys = [
+            (
+                _normalize_text(request.get("provider"), "repository"),
+                _normalize_text(request.get("entity_type")),
+                _normalize_text(request.get("external_identifier")),
+            )
+            for request in requests
+        ]
+        existing_by_key = self._prefetch_mapping_revisions(request_keys)
+        rows: list[dict[str, Any]] = []
+        pending_mapping_rows: list[dict[str, Any]] = []
+        pending_approval_rows: list[dict[str, Any]] = []
+        total_requests = len(requests)
+
+        for index, request in enumerate(requests, start=1):
+            key = (
+                _normalize_text(request.get("provider"), "repository"),
+                _normalize_text(request.get("entity_type")),
+                _normalize_text(request.get("external_identifier")),
+            )
+            prepared = self._prepare_identity_mapping_registration(
+                existing_rows=existing_by_key.get(key, []),
+                **request,
+            )
+            rows.append(dict(prepared["result_row"]))
+            persisted_rows = [dict(row) for row in prepared["rows_to_persist"]]
+            if persisted_rows:
+                pending_mapping_rows.extend(persisted_rows)
+                updated_rows = list(persisted_rows)
+                seen_mapping_ids = {
+                    _normalize_text(row.get("mapping_id"))
+                    for row in persisted_rows
+                }
+                for existing_row in existing_by_key.get(key, []):
+                    mapping_id = _normalize_text(existing_row.get("mapping_id"))
+                    if mapping_id not in seen_mapping_ids:
+                        updated_rows.append(dict(existing_row))
+                updated_rows.sort(
+                    key=lambda row: (
+                        _normalize_int(row.get("revision_number"), 0),
+                        _normalize_text(row.get("created_at")),
+                    ),
+                    reverse=True,
+                )
+                existing_by_key[key] = updated_rows
+            approval_row = prepared["approval_row"]
+            if approval_row is not None:
+                pending_approval_rows.append(dict(approval_row))
+            if len(pending_mapping_rows) >= 250:
+                self.store.upsert_many("identity_mappings", pending_mapping_rows)
+                pending_mapping_rows.clear()
+            if len(pending_approval_rows) >= 250:
+                self.store.upsert_many("mapping_approvals", pending_approval_rows)
+                pending_approval_rows.clear()
+            if callable(progress_callback):
+                progress_callback(index, total_requests)
+
+        if pending_mapping_rows:
+            self.store.upsert_many("identity_mappings", pending_mapping_rows)
+        if pending_approval_rows:
+            self.store.upsert_many("mapping_approvals", pending_approval_rows)
+        return rows
+
     def record_mapping_approval(
         self,
         *,
@@ -2198,65 +2271,12 @@ class DataIdentityLakehouseRuntime:
                     market_type="identity_mapping.vendor_entity",
                 )
 
-        request_keys = [
-            (
-                _normalize_text(request.get("provider"), "repository"),
-                _normalize_text(request.get("entity_type")),
-                _normalize_text(request.get("external_identifier")),
+        rows.extend(
+            self.register_identity_mappings_batch(
+                mapping_requests,
+                progress_callback=progress_callback,
             )
-            for request in mapping_requests
-        ]
-        existing_by_key = self._prefetch_mapping_revisions(request_keys)
-        pending_mapping_rows: list[dict[str, Any]] = []
-        pending_approval_rows: list[dict[str, Any]] = []
-        total_requests = len(mapping_requests)
-
-        for index, request in enumerate(mapping_requests, start=1):
-            key = (
-                _normalize_text(request.get("provider"), "repository"),
-                _normalize_text(request.get("entity_type")),
-                _normalize_text(request.get("external_identifier")),
-            )
-            prepared = self._prepare_identity_mapping_registration(
-                existing_rows=existing_by_key.get(key, []),
-                **request,
-            )
-            rows.append(dict(prepared["result_row"]))
-            persisted_rows = [dict(row) for row in prepared["rows_to_persist"]]
-            if persisted_rows:
-                pending_mapping_rows.extend(persisted_rows)
-                updated_rows = list(persisted_rows)
-                seen_mapping_ids = {
-                    _normalize_text(row.get("mapping_id"))
-                    for row in persisted_rows
-                }
-                for existing_row in existing_by_key.get(key, []):
-                    mapping_id = _normalize_text(existing_row.get("mapping_id"))
-                    if mapping_id not in seen_mapping_ids:
-                        updated_rows.append(dict(existing_row))
-                updated_rows.sort(
-                    key=lambda row: (
-                        _normalize_int(row.get("revision_number"), 0),
-                        _normalize_text(row.get("created_at")),
-                    ),
-                    reverse=True,
-                )
-                existing_by_key[key] = updated_rows
-            approval_row = prepared["approval_row"]
-            if approval_row is not None:
-                pending_approval_rows.append(dict(approval_row))
-            if len(pending_mapping_rows) >= 250:
-                self.store.upsert_many("identity_mappings", pending_mapping_rows)
-                pending_mapping_rows.clear()
-            if len(pending_approval_rows) >= 250:
-                self.store.upsert_many("mapping_approvals", pending_approval_rows)
-                pending_approval_rows.clear()
-            if callable(progress_callback):
-                progress_callback(index, total_requests)
-        if pending_mapping_rows:
-            self.store.upsert_many("identity_mappings", pending_mapping_rows)
-        if pending_approval_rows:
-            self.store.upsert_many("mapping_approvals", pending_approval_rows)
+        )
         return rows
 
     def seed_from_certified_outputs(
