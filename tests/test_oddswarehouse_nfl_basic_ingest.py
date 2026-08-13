@@ -843,7 +843,7 @@ def test_cli_prints_bounded_summary_only(
 
     completed = subprocess.run(
         [
-            str(repo_root / ".venv" / "bin" / "python"),
+            sys.executable,
             "-m",
             "scripts.run_oddswarehouse_nfl_basic_pilot",
             "--source",
