@@ -68,6 +68,7 @@ def test_core_math_risk_and_backtest_layers_import_safely(monkeypatch) -> None:
         "weighted_sum",
         "covariance",
         "correlation",
+        "covariance_matrix",
         "correlation_matrix",
         "portfolio_return",
         "portfolio_variance",

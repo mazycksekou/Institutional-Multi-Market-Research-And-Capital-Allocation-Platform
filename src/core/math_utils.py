@@ -348,6 +348,25 @@ def profit_units(odds: int | float, stake: float = 1.0) -> float:
 # Pure math foundation helpers (Stage 2B)
 # ---------------------------------------------------------------------------
 
+def _finite_float(value: Any, name: str) -> float:
+    numeric = _as_float(value, name)
+    if math.isnan(numeric):
+        raise ValueError(f"{name} must not be NaN.")
+    if math.isinf(numeric):
+        raise ValueError(f"{name} must be finite.")
+    return numeric
+
+
+def _numeric_series(values: Any, name: str) -> list[float]:
+    if isinstance(values, (str, bytes)):
+        raise ValueError(f"{name} must be a sequence of numeric values.")
+    try:
+        raw_values = list(values)
+    except TypeError as exc:
+        raise ValueError(f"{name} must be a sequence of numeric values.") from exc
+    return [_finite_float(value, f"{name}[{index}]") for index, value in enumerate(raw_values)]
+
+
 def mean(values: list[float]) -> float:
     """Arithmetic mean.
 
@@ -379,10 +398,11 @@ def variance(values: list[float], *, ddof: int = 1) -> float:
     Raises ValueError if `values` has fewer than 2 elements when ddof=1,
     or if empty.
     """
-    if len(values) < ddof + 1:
+    numeric_values = _numeric_series(values, "values")
+    if len(numeric_values) < ddof + 1:
         raise ValueError("Not enough data points for the requested degrees of freedom.")
-    mu = mean(values)
-    return sum((x - mu) ** 2 for x in values) / (len(values) - ddof)
+    mu = mean(numeric_values)
+    return sum((x - mu) ** 2 for x in numeric_values) / (len(numeric_values) - ddof)
 
 
 def std_dev(values: list[float], *, ddof: int = 1) -> float:
@@ -420,13 +440,15 @@ def covariance(x: list[float], y: list[float], *, ddof: int = 1) -> float:
 
     Raises ValueError if lengths differ or not enough points.
     """
-    if len(x) != len(y):
+    x_values = _numeric_series(x, "x")
+    y_values = _numeric_series(y, "y")
+    if len(x_values) != len(y_values):
         raise ValueError("Series must have the same length.")
-    if len(x) < ddof + 1:
+    if len(x_values) < ddof + 1:
         raise ValueError("Not enough data points.")
-    mu_x = mean(x)
-    mu_y = mean(y)
-    return sum((xi - mu_x) * (yi - mu_y) for xi, yi in zip(x, y)) / (len(x) - ddof)
+    mu_x = mean(x_values)
+    mu_y = mean(y_values)
+    return sum((xi - mu_x) * (yi - mu_y) for xi, yi in zip(x_values, y_values)) / (len(x_values) - ddof)
 
 
 def correlation(x: list[float], y: list[float]) -> float:
@@ -435,16 +457,42 @@ def correlation(x: list[float], y: list[float]) -> float:
     Raises ValueError if series lengths differ, only one point,
     or either series has zero variance.
     """
-    if len(x) != len(y):
+    x_values = _numeric_series(x, "x")
+    y_values = _numeric_series(y, "y")
+    if len(x_values) != len(y_values):
         raise ValueError("Series must have the same length.")
-    if len(x) < 2:
+    if len(x_values) < 2:
         raise ValueError("Need at least two data points.")
-    cov = covariance(x, y, ddof=1)
-    sx = std_dev(x, ddof=1)
-    sy = std_dev(y, ddof=1)
+    cov = covariance(x_values, y_values, ddof=1)
+    sx = std_dev(x_values, ddof=1)
+    sy = std_dev(y_values, ddof=1)
     if sx == 0 or sy == 0:
         raise ValueError("Zero variance in one of the series.")
     return cov / (sx * sy)
+
+
+def covariance_matrix(data: list[list[float]], *, ddof: int = 1) -> list[list[float]]:
+    """Pairwise covariance matrix in the same order as the supplied series."""
+    if not data:
+        return []
+
+    series = [_numeric_series(values, f"data[{index}]") for index, values in enumerate(data)]
+    observation_count = len(series[0])
+    for values in series[1:]:
+        if len(values) != observation_count:
+            raise ValueError("All series must have the same length.")
+    if observation_count < ddof + 1:
+        raise ValueError("Not enough data points.")
+
+    dimension_count = len(series)
+    matrix: list[list[float]] = [[0.0] * dimension_count for _ in range(dimension_count)]
+    for i in range(dimension_count):
+        matrix[i][i] = variance(series[i], ddof=ddof)
+        for j in range(i + 1, dimension_count):
+            cov = covariance(series[i], series[j], ddof=ddof)
+            matrix[i][j] = cov
+            matrix[j][i] = cov
+    return matrix
 
 
 def correlation_matrix(data: list[list[float]]) -> list[list[float]]:
