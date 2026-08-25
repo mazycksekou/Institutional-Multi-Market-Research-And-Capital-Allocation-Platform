@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pytest
 
+from src.core.math_utils import covariance_matrix
 from src.core.risk import (
     sharpe_ratio,
     max_drawdown,
@@ -40,6 +41,13 @@ def test_portfolio_risk() -> None:
     result = portfolio_risk(weights, cov)
     assert isinstance(result, float)
     assert result > 0
+
+
+def test_portfolio_risk_accepts_covariance_matrix_output() -> None:
+    weights = [0.75, 0.25]
+    cov = covariance_matrix([[1.0, 2.0, 3.0], [3.0, 2.0, 1.0]])
+    result = portfolio_risk(weights, cov)
+    assert result == pytest.approx(0.5, abs=1e-12)
 
 
 def test_exposure_summary() -> None:

@@ -6,6 +6,8 @@ from pathlib import Path
 
 import pytest
 
+from src.core.math_utils import covariance_matrix
+
 
 ROOT = Path(__file__).resolve().parents[1]
 DOCS = [
@@ -44,3 +46,13 @@ def test_portfolio_module_has_no_live_dependencies() -> None:
     text = (ROOT / "src/core/portfolio.py").read_text(encoding="utf-8").lower()
     for forbidden in ["requests", "httpx", "yfinance", "selenium", "playwright", "openai", "anthropic", "alpaca", "robinhood", "ib_insync", "ccxt"]:
         assert forbidden not in text
+
+
+def test_correlated_exposure_accepts_canonical_covariance_matrix(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(os, "getenv", lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("no env reads")))
+    portfolio = importlib.import_module("src.core.portfolio")
+
+    matrix = covariance_matrix([[1.0, 2.0, 3.0], [3.0, 2.0, 1.0]])
+    result = portfolio.correlated_exposure([0.75, 0.25], matrix)
+
+    assert result == pytest.approx(0.25, abs=1e-6)
