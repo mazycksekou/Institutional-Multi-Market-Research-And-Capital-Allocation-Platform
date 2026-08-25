@@ -43,11 +43,12 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "required starting document" in project_status_text.lower()
     assert "repository homepage" in project_status_text.lower()
     assert "current branch: `main`" in project_status_text
-    assert "active phase: `Covariance and Time-Dependent Risk Capability Audit`" in project_status_text
-    assert "next phase: `Implement only covariance and risk capabilities confirmed missing by that audit`" in project_status_text
+    assert "active phase: `Implement Confirmed Covariance And Time-Dependent Risk Gaps`" in project_status_text
+    assert "active checkpoint: `Group A — Canonical Covariance Math Completion`" in project_status_text
+    assert "next phase: `additional sports`" in project_status_text
     assert (
         "governed handoff after the active phase: "
-        "`Implement only covariance and risk capabilities confirmed missing by that audit`"
+        "`additional sports`"
         in project_status_text
     )
     assert (
@@ -120,7 +121,8 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "NFL Production Completion" in next_action_text
     assert "Universal Market Framework" in next_action_text
     assert "Phase 5.7 - Research Intelligence" in next_action_text
-    assert "Covariance and Time-Dependent Risk Capability Audit" in next_action_text
+    assert "Implement Confirmed Covariance And Time-Dependent Risk Gaps" in next_action_text
+    assert "Group A — Canonical Covariance Math Completion" in next_action_text
     assert "Research Intelligence" in next_action_text
     assert "covariance and time-dependent risk capability audit" in next_action_text.lower()
     assert "certified repository-owned oddswarehouse historical dataset" in next_action_text.lower()
@@ -128,7 +130,7 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "exact full replay is green" in next_action_text.lower()
     assert "dataset certification is complete" in next_action_text.lower()
     assert "repository-owned retrieval is verified" in next_action_text.lower()
-    assert "do not implement covariance or the risk engine during the audit." in next_action_text.lower()
+    assert "do not implement rolling covariance." in next_action_text.lower()
     assert "do not create a parallel ingestion, storage, certification, lifecycle, identity, reconciliation, or retrieval framework." in next_action_text.lower()
     assert "validation commands" in next_action_text.lower()
 

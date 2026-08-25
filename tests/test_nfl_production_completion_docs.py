@@ -60,6 +60,7 @@ def test_nfl_production_completion_docs_exist_and_cover_required_topics() -> Non
     assert "Data Identity, Reconciliation and Lakehouse Foundation" in project_status_text
     assert "First Controlled NFL Vendor Ingest" in project_status_text
     assert "Covariance and Time-Dependent Risk Capability Audit" in project_status_text
+    assert "Implement Confirmed Covariance And Time-Dependent Risk Gaps" in project_status_text
     assert "Data Identity, Reconciliation and Lakehouse Foundation (complete)" in project_status_text
     assert "NFL Production Completion (complete)" in project_status_text
     assert "docs/architecture/NFL_PRODUCTION_COMPLETION.md" in project_status_text
@@ -68,11 +69,12 @@ def test_nfl_production_completion_docs_exist_and_cover_required_topics() -> Non
     assert "Data Identity, Reconciliation and Lakehouse Foundation" in next_action_text
     assert "First Controlled NFL Vendor Ingest" in next_action_text
     assert "Portable External Research-Data Storage" in next_action_text
-    assert "Covariance and Time-Dependent Risk Capability Audit" in next_action_text
+    assert "Implement Confirmed Covariance And Time-Dependent Risk Gaps" in next_action_text
+    assert "Group A — Canonical Covariance Math Completion" in next_action_text
     assert "NFL Production Completion" in next_action_text
     assert "Universal Market Framework" in next_action_text
-    assert "Run only the Covariance and Time-Dependent Risk Capability Audit" in next_action_text
-    assert "Do not implement covariance or the risk engine during the audit." in next_action_text
+    assert "Implement only Group A — Canonical Covariance Math Completion" in next_action_text
+    assert "Do not implement rolling covariance." in next_action_text
     assert "Do not implement paper trading." in next_action_text
     assert "Do not implement live execution." in next_action_text
 

@@ -17,14 +17,16 @@ research.
 - remote tracking branch: `origin/main`
 - validated canonical branch: `main`
 - validated canonical HEAD: latest merged main tip (exact hash is reported in the latest merged task handoff)
-- active phase: `Covariance and Time-Dependent Risk Capability Audit`
-- previous completed active phase: `Portable External Research-Data Storage (complete)`
+- active phase: `Implement Confirmed Covariance And Time-Dependent Risk Gaps`
+- active checkpoint: `Group A — Canonical Covariance Math Completion`
+- previous completed active phase: `Covariance and Time-Dependent Risk Capability Audit (complete)`
+- previous completed active phase before that: `Portable External Research-Data Storage (complete)`
 - previous completed active phase before that: `First Controlled NFL Vendor Ingest (complete)`
 - previous completed active phase before that: `Data Identity, Reconciliation and Lakehouse Foundation (complete)`
 - previous completed active phase before that: `NFL Production Completion (complete)`
 - previous completed active phase before that: `Universal Market Framework (complete)`
 - active market profile: `sports:nfl`
-- active implementation lane: `NFL P0 profile-aware foundation + event-centric historical research database + master research engine specification + universal feature registry + universal math engine contracts + research asset runtime framework + historical dataset acquisition framework + historical dataset acquisition runtime + research asset source discovery and connector mapping framework + historical research asset certification runtime + research asset lifecycle runtime + NFL schedule research asset population + research asset coverage planner and provider selection framework + first production NFL schedule connector + certified NFL results research asset + certified NFL odds research asset + certified NFL weather research asset + certified NFL injuries research asset + certified NFL team statistics research asset + deterministic historical dataset population layer + deterministic feature snapshot population layer + deterministic mathematical engine population layer + deterministic signal population layer + deterministic decision row generation layer + deterministic baseline backtesting layer + deterministic pipeline validation and hardening layer + deterministic Research Intelligence layer + Universal Market Framework + NFL Production Completion + Data Identity, Reconciliation and Lakehouse Foundation + First Controlled NFL Vendor Ingest + Portable External Research-Data Storage + Covariance and Time-Dependent Risk Capability Audit`
+- active implementation lane: `NFL P0 profile-aware foundation + event-centric historical research database + master research engine specification + universal feature registry + universal math engine contracts + research asset runtime framework + historical dataset acquisition framework + historical dataset acquisition runtime + research asset source discovery and connector mapping framework + historical research asset certification runtime + research asset lifecycle runtime + NFL schedule research asset population + research asset coverage planner and provider selection framework + first production NFL schedule connector + certified NFL results research asset + certified NFL odds research asset + certified NFL weather research asset + certified NFL injuries research asset + certified NFL team statistics research asset + deterministic historical dataset population layer + deterministic feature snapshot population layer + deterministic mathematical engine population layer + deterministic signal population layer + deterministic decision row generation layer + deterministic baseline backtesting layer + deterministic pipeline validation and hardening layer + deterministic Research Intelligence layer + Universal Market Framework + NFL Production Completion + Data Identity, Reconciliation and Lakehouse Foundation + First Controlled NFL Vendor Ingest + Portable External Research-Data Storage + Covariance and Time-Dependent Risk Capability Audit + Implement Confirmed Covariance And Time-Dependent Risk Gaps`
 - completed phases:
   - `Phase 4.3.6 - Profile-Aware NFL P0 Validation`
   - `Phase 4.3.7 - Minimum Backtest Row Contract`
@@ -58,11 +60,13 @@ research.
   - `Data Identity, Reconciliation and Lakehouse Foundation`
   - `First Controlled NFL Vendor Ingest`
   - `Portable External Research-Data Storage`
-- current phase objective: Covariance and Time-Dependent Risk Capability Audit is active; inspect the certified repository-owned NFL historical dataset, baseline backtesting surfaces, and current market-profile contracts to determine exactly which covariance and time-dependent risk capabilities are genuinely missing before any implementation begins. Reuse the certified OddsWarehouse historical dataset, certification, lifecycle, lineage, retrieval, and Universal Market Framework owners. Do not implement new risk capability, another market, paper trading, or live execution in this audit phase.
-- next phase: `Implement only covariance and risk capabilities confirmed missing by that audit`
-- governed handoff after the active phase: `Implement only covariance and risk capabilities confirmed missing by that audit`
+  - `Covariance and Time-Dependent Risk Capability Audit`
+- current phase objective: Implement Confirmed Covariance And Time-Dependent Risk Gaps is active; the current checkpoint is Group A — Canonical Covariance Math Completion. Extend the canonical pure-math covariance owner only far enough to close covariance-matrix ownership and contract gaps proven by the completed audit, while preserving existing covariance, correlation, portfolio-variance, portfolio-volatility, drawdown, EV, and deterministic point-in-time replay behavior. Do not broaden into Groups B-F, another market, universal capital allocation, Live Model Testing, or execution in this checkpoint.
+- next phase: `additional sports`
+- governed handoff after the active phase: `additional sports`
 - current blockers: None
 - latest validation status:
+  - Covariance and Time-Dependent Risk Capability Audit is complete and validated: the repository inventory, canonical-owner review, certified mounted OddsWarehouse retrieval inspection, focused covariance/risk/pipeline tests, compileall, smoke, architecture, and document lifecycle checks confirmed the ordered implementation sequence A-F and bounded Group A as the first authorized implementation checkpoint.
   - Phase 4.7C runtime validation passed: compileall, certification runtime tests, smoke, architecture, document lifecycle, and ops checks are green.
   - Phase 4.8 lifecycle runtime code changes are complete and validated: compileall, focused lifecycle tests, smoke, architecture, document lifecycle, and ops checks are green.
   - Phase 4.9A schedule research asset population code changes are complete and validated: compileall, focused schedule runtime tests, smoke, architecture, document lifecycle, and ops checks are green.
@@ -199,4 +203,4 @@ Read these only when you need more detail than the project status page provides:
 
 ## Next Recommended Codex Task
 
-`Covariance and Time-Dependent Risk Capability Audit`
+`Group A — Canonical Covariance Math Completion`

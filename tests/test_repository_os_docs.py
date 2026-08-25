@@ -88,7 +88,8 @@ def test_repository_os_documents_exist_and_reference_canonical_governance() -> N
     assert "NFL Production Completion" in next_action_text
     assert "Universal Market Framework" in next_action_text
     assert "Phase 5.7 - Research Intelligence" in next_action_text
-    assert "Covariance and Time-Dependent Risk Capability Audit" in next_action_text
+    assert "Implement Confirmed Covariance And Time-Dependent Risk Gaps" in next_action_text
+    assert "Group A — Canonical Covariance Math Completion" in next_action_text
     assert "Parquet-based analytical storage" in next_action_text
     assert "Delta-compatible interfaces" in next_action_text
     assert "sole sequencing source" in next_action_text.lower()
