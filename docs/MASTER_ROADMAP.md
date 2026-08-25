@@ -202,16 +202,19 @@ Current NFL work follows the certified Phase 5 chain and the completed Universal
 - Universal Market Framework generalized the certified NFL research chain without changing certified NFL outputs.
 - Data Identity, Reconciliation and Lakehouse Foundation is complete and validated above the certified NFL production chain.
 - First Controlled NFL Vendor Ingest is complete and validated on top of the shared identity, reconciliation, quarantine, revision-aware, and lakehouse capabilities.
-- Portable External Research-Data Storage is the active governed phase and should begin only after the first controlled vendor slice is certified and portable-storage work is the remaining governed gap.
-- Covariance and Time-Dependent Risk Capability Audit follows portable external research-data storage and remains inspection-only until a later governed phase activates implementation.
-- Implement only covariance and risk capabilities confirmed missing by that audit follows the audit.
+- Portable External Research-Data Storage is complete and validated on top of the controlled vendor ingest and the shared identity, reconciliation, quarantine, revision-aware, and lakehouse owners.
+- Covariance and Time-Dependent Risk Capability Audit is complete and validated; it confirmed the ordered implementation sequence A-F and bounded Group A as the first authorized implementation checkpoint.
+- Implement Confirmed Covariance And Time-Dependent Risk Gaps is the active governed phase.
+- Group A — Canonical Covariance Math Completion is the active checkpoint inside that phase.
 - Phase 4.9I and Phase 4.9J remain deferred enrichment asset lanes after the first baseline dataset path is established.
 
 The master research engine specification is already the canonical name for the broader research-engine scope. If the repository later needs an even broader top-level research asset registry, that should be treated as a separate future phase rather than another rename of this specification.
 
 ## Current Project Status
 
-- Active branch: `feature/external-research-data-storage`
+- Active branch: `main`
+- Active governed phase: `Implement Confirmed Covariance And Time-Dependent Risk Gaps`
+- Active checkpoint: `Group A — Canonical Covariance Math Completion`
 - Active market profile: `sports:nfl`
 - Canonical project status: `docs/PROJECT_STATUS.md`
 - Canonical next action: `docs/NEXT_ACTION.md`
