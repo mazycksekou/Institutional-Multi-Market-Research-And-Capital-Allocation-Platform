@@ -63,7 +63,7 @@ The portable external research-data storage phase must:
 - preserve certified NFL reference behavior, Bronze, Silver, and Gold mapping, lineage, provenance, determinism, and point-in-time safety
 - avoid covariance implementation, additional markets, paper trading, and live execution in that phase
 
-The covariance audit must still inspect the repository before implementation and determine existing, partial, missing, duplicated, or deferred support for:
+The covariance audit completed repository inspection before implementation and determined existing, partial, missing, duplicated, or deferred support for:
 
 - covariance and correlation
 - rolling and exponentially weighted covariance
@@ -75,7 +75,7 @@ The covariance audit must still inspect the repository before implementation and
 - time-to-event and time-to-expiration risk
 - risk-horizon normalization and attribution
 
-Do not implement these capabilities during the sequencing correction, during the data identity foundation phase, during the first controlled NFL vendor ingest, or during the portable external research-data storage phase unless a later governed phase explicitly activates them.
+Do not implement these capabilities during the sequencing correction, during the data identity foundation phase, during the first controlled NFL vendor ingest, or during the portable external research-data storage phase unless a later governed phase explicitly activates them. Static covariance/matrix completion and Dynamic and Point-in-Time Covariance are now complete inside the governed covariance and risk implementation lane; Portfolio Exposure and Incremental Risk is the next active capability.
 
 ## Universal Market Lifecycle
 
@@ -203,9 +203,11 @@ Current NFL work follows the certified Phase 5 chain and the completed Universal
 - Data Identity, Reconciliation and Lakehouse Foundation is complete and validated above the certified NFL production chain.
 - First Controlled NFL Vendor Ingest is complete and validated on top of the shared identity, reconciliation, quarantine, revision-aware, and lakehouse capabilities.
 - Portable External Research-Data Storage is complete and validated on top of the controlled vendor ingest and the shared identity, reconciliation, quarantine, revision-aware, and lakehouse owners.
-- Covariance and Time-Dependent Risk Capability Audit is complete and validated; it confirmed the ordered implementation sequence A-F and bounded Group A as the first authorized implementation checkpoint.
+- Covariance and Time-Dependent Risk Capability Audit is complete and validated; it confirmed the implementation lane for only proven covariance and risk gaps.
+- Static Covariance and Matrix Completion is complete and validated.
+- Dynamic and Point-in-Time Covariance is complete and validated.
 - Implement Confirmed Covariance And Time-Dependent Risk Gaps is the active governed phase.
-- Group A — Canonical Covariance Math Completion is the active checkpoint inside that phase.
+- Portfolio Exposure and Incremental Risk is the active checkpoint inside that phase.
 - Phase 4.9I and Phase 4.9J remain deferred enrichment asset lanes after the first baseline dataset path is established.
 
 The master research engine specification is already the canonical name for the broader research-engine scope. If the repository later needs an even broader top-level research asset registry, that should be treated as a separate future phase rather than another rename of this specification.
@@ -214,7 +216,7 @@ The master research engine specification is already the canonical name for the b
 
 - Active branch: `main`
 - Active governed phase: `Implement Confirmed Covariance And Time-Dependent Risk Gaps`
-- Active checkpoint: `Group A — Canonical Covariance Math Completion`
+- Active checkpoint: `Portfolio Exposure and Incremental Risk`
 - Active market profile: `sports:nfl`
 - Canonical project status: `docs/PROJECT_STATUS.md`
 - Canonical next action: `docs/NEXT_ACTION.md`

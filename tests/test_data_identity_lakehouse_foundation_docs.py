@@ -75,8 +75,9 @@ def test_data_identity_lakehouse_foundation_docs_exist_and_cover_required_topics
     assert "Data Identity, Reconciliation and Lakehouse Foundation" in next_action_text
     assert "Covariance and Time-Dependent Risk Capability Audit" in next_action_text
     assert "Implement Confirmed Covariance And Time-Dependent Risk Gaps" in next_action_text
-    assert "Group A — Canonical Covariance Math Completion" in next_action_text
-    assert "Do not implement rolling covariance." in next_action_text
+    assert "Dynamic and Point-in-Time Covariance" in next_action_text
+    assert "Portfolio Exposure and Incremental Risk" in next_action_text
+    assert "Do not reimplement completed static covariance" in next_action_text
     assert "Do not create a parallel ingestion, storage, certification, lifecycle, identity, reconciliation, or retrieval framework." in next_action_text
 
     assert "The data identity foundation phase is complete and validated." in roadmap_text
