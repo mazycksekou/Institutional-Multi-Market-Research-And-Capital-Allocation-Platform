@@ -367,6 +367,24 @@ def _numeric_series(values: Any, name: str) -> list[float]:
     return [_finite_float(value, f"{name}[{index}]") for index, value in enumerate(raw_values)]
 
 
+def _positive_int(value: Any, name: str) -> int:
+    if isinstance(value, bool):
+        raise ValueError(f"{name} must be a positive integer.")
+    numeric = _finite_float(value, name)
+    if not numeric.is_integer() or numeric <= 0:
+        raise ValueError(f"{name} must be a positive integer.")
+    return int(numeric)
+
+
+def _non_negative_int(value: Any, name: str) -> int:
+    if isinstance(value, bool):
+        raise ValueError(f"{name} must be a non-negative integer.")
+    numeric = _finite_float(value, name)
+    if not numeric.is_integer() or numeric < 0:
+        raise ValueError(f"{name} must be a non-negative integer.")
+    return int(numeric)
+
+
 def mean(values: list[float]) -> float:
     """Arithmetic mean.
 
@@ -521,6 +539,224 @@ def correlation_matrix(data: list[list[float]]) -> list[list[float]]:
                 mat[i][j] = cor
                 mat[j][i] = cor
     return mat
+
+
+def rolling_covariance(
+    x: list[float],
+    y: list[float],
+    *,
+    window: int,
+    min_periods: int,
+    ddof: int = 1,
+) -> list[float | None]:
+    """Trailing rolling covariance by observation index.
+
+    Warmup periods and windows with insufficient history return ``None``.
+    No window uses observations after its own index.
+    """
+    x_values = _numeric_series(x, "x")
+    y_values = _numeric_series(y, "y")
+    if len(x_values) != len(y_values):
+        raise ValueError("Series must have the same length.")
+
+    window_size = _positive_int(window, "window")
+    minimum_periods = _positive_int(min_periods, "min_periods")
+    ddof_value = _non_negative_int(ddof, "ddof")
+    if minimum_periods > window_size:
+        raise ValueError("min_periods must be less than or equal to window.")
+    if ddof_value >= window_size:
+        raise ValueError("ddof must be smaller than window.")
+
+    required_observations = max(minimum_periods, ddof_value + 1)
+    output: list[float | None] = []
+    for index in range(len(x_values)):
+        start = max(0, index - window_size + 1)
+        x_window = x_values[start : index + 1]
+        y_window = y_values[start : index + 1]
+        if len(x_window) < required_observations:
+            output.append(None)
+            continue
+        cov = covariance(x_window, y_window, ddof=ddof_value)
+        if not math.isfinite(cov):
+            raise ValueError("Rolling covariance must be finite.")
+        output.append(cov)
+    return output
+
+
+def rolling_correlation(
+    x: list[float],
+    y: list[float],
+    *,
+    window: int,
+    min_periods: int,
+) -> list[float | None]:
+    """Trailing rolling correlation by observation index.
+
+    Warmup periods and constant-variance windows return ``None`` so the
+    output never fabricates a numeric value for an undefined correlation.
+    """
+    x_values = _numeric_series(x, "x")
+    y_values = _numeric_series(y, "y")
+    if len(x_values) != len(y_values):
+        raise ValueError("Series must have the same length.")
+
+    window_size = _positive_int(window, "window")
+    minimum_periods = _positive_int(min_periods, "min_periods")
+    if minimum_periods > window_size:
+        raise ValueError("min_periods must be less than or equal to window.")
+
+    required_observations = max(minimum_periods, 2)
+    output: list[float | None] = []
+    for index in range(len(x_values)):
+        start = max(0, index - window_size + 1)
+        x_window = x_values[start : index + 1]
+        y_window = y_values[start : index + 1]
+        if len(x_window) < required_observations:
+            output.append(None)
+            continue
+        try:
+            cor = correlation(x_window, y_window)
+        except ValueError as exc:
+            if str(exc) == "Zero variance in one of the series.":
+                output.append(None)
+                continue
+            raise
+        if not math.isfinite(cor):
+            raise ValueError("Rolling correlation must be finite.")
+        output.append(cor)
+    return output
+
+
+def _validated_ewma_alpha(alpha: Any) -> float:
+    if isinstance(alpha, bool):
+        raise ValueError("alpha must be greater than 0 and less than or equal to 1.")
+    value = _finite_float(alpha, "alpha")
+    if value <= 0.0 or value > 1.0:
+        raise ValueError("alpha must be greater than 0 and less than or equal to 1.")
+    return value
+
+
+def _normalized_ewma_weights(observation_count: int, alpha: float) -> list[float]:
+    raw_weights = [alpha * ((1.0 - alpha) ** (observation_count - index - 1)) for index in range(observation_count)]
+    total = math.fsum(raw_weights)
+    if total <= 0.0:
+        raise ValueError("EWMA weights must sum to a positive value.")
+    return [weight / total for weight in raw_weights]
+
+
+def _weighted_covariance(x_values: list[float], y_values: list[float], weights: list[float]) -> float:
+    mean_x = math.fsum(value * weight for value, weight in zip(x_values, weights))
+    mean_y = math.fsum(value * weight for value, weight in zip(y_values, weights))
+    return math.fsum(
+        weight * (x_value - mean_x) * (y_value - mean_y)
+        for x_value, y_value, weight in zip(x_values, y_values, weights)
+    )
+
+
+def _ewma_covariance_series(
+    x_values: list[float],
+    y_values: list[float],
+    *,
+    alpha: float,
+    min_periods: int,
+) -> list[float | None]:
+    required_observations = max(min_periods, 2)
+    output: list[float | None] = []
+    for index in range(len(x_values)):
+        count = index + 1
+        if count < required_observations:
+            output.append(None)
+            continue
+        x_window = x_values[:count]
+        y_window = y_values[:count]
+        weights = _normalized_ewma_weights(count, alpha)
+        cov = _weighted_covariance(x_window, y_window, weights)
+        if not math.isfinite(cov):
+            raise ValueError("EWMA covariance must be finite.")
+        output.append(cov)
+    return output
+
+
+def ewma_covariance(
+    x: list[float],
+    y: list[float],
+    *,
+    alpha: float,
+    min_periods: int,
+) -> list[float | None]:
+    """Exponentially weighted covariance by observation index.
+
+    Each index uses only observations up to and including that index, with
+    normalized weights ``alpha * (1 - alpha)^lag`` so newer observations
+    receive greater weight.
+    """
+    x_values = _numeric_series(x, "x")
+    y_values = _numeric_series(y, "y")
+    if len(x_values) != len(y_values):
+        raise ValueError("Series must have the same length.")
+    alpha_value = _validated_ewma_alpha(alpha)
+    minimum_periods = _positive_int(min_periods, "min_periods")
+    return _ewma_covariance_series(
+        x_values,
+        y_values,
+        alpha=alpha_value,
+        min_periods=minimum_periods,
+    )
+
+
+def ewma_correlation(
+    x: list[float],
+    y: list[float],
+    *,
+    alpha: float,
+    min_periods: int,
+) -> list[float | None]:
+    """Exponentially weighted correlation derived from EWMA covariance."""
+    x_values = _numeric_series(x, "x")
+    y_values = _numeric_series(y, "y")
+    if len(x_values) != len(y_values):
+        raise ValueError("Series must have the same length.")
+    alpha_value = _validated_ewma_alpha(alpha)
+    minimum_periods = _positive_int(min_periods, "min_periods")
+
+    covariance_series = _ewma_covariance_series(
+        x_values,
+        y_values,
+        alpha=alpha_value,
+        min_periods=minimum_periods,
+    )
+    variance_x_series = _ewma_covariance_series(
+        x_values,
+        x_values,
+        alpha=alpha_value,
+        min_periods=minimum_periods,
+    )
+    variance_y_series = _ewma_covariance_series(
+        y_values,
+        y_values,
+        alpha=alpha_value,
+        min_periods=minimum_periods,
+    )
+
+    output: list[float | None] = []
+    for cov, variance_x_value, variance_y_value in zip(
+        covariance_series,
+        variance_x_series,
+        variance_y_series,
+    ):
+        if cov is None or variance_x_value is None or variance_y_value is None:
+            output.append(None)
+            continue
+        std_x = math.sqrt(max(variance_x_value, 0.0))
+        std_y = math.sqrt(max(variance_y_value, 0.0))
+        if std_x == 0.0 or std_y == 0.0:
+            output.append(None)
+            continue
+        cor = cov / (std_x * std_y)
+        if not math.isfinite(cor):
+            raise ValueError("EWMA correlation must be finite.")
+        output.append(cor)
+    return output
 
 
 def portfolio_return(

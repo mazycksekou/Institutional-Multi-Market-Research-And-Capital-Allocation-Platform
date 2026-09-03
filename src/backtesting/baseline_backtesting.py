@@ -16,6 +16,12 @@ from src.backtesting.backtest_report_contracts import (
     BacktestPerformanceBucketContract,
     BacktestReportContract,
 )
+from src.core.math_utils import (
+    ewma_correlation,
+    ewma_covariance,
+    rolling_correlation,
+    rolling_covariance,
+)
 from src.backtesting.decision_row_population import (
     DEFAULT_DECISION_DATASET_ID,
     DEFAULT_DECISION_RESEARCH_ASSET_ID,
@@ -439,6 +445,214 @@ def _point_in_time_validation(
         "ok": all(checks.values()),
         "checks": checks,
     }
+
+
+def _ordered_observation_timestamps(
+    observation_timestamps: Sequence[Any],
+    *,
+    expected_count: int,
+) -> list[datetime]:
+    timestamps = list(observation_timestamps)
+    if len(timestamps) != expected_count:
+        raise ValueError("observation_timestamps must have the same length as the observation series.")
+
+    parsed: list[datetime] = []
+    previous: datetime | None = None
+    for index, value in enumerate(timestamps):
+        timestamp = _parse_iso(value)
+        if timestamp is None:
+            raise ValueError(f"observation_timestamps[{index}] must be a valid ISO-8601 timestamp.")
+        if previous is not None and timestamp < previous:
+            raise ValueError("observation_timestamps must be ordered ascending without internal resorting.")
+        parsed.append(timestamp)
+        previous = timestamp
+    return parsed
+
+
+def _point_in_time_series(
+    x: Sequence[float],
+    y: Sequence[float],
+    observation_timestamps: Sequence[Any],
+    *,
+    cutoff_time: Any,
+) -> tuple[list[float], list[float], list[datetime], str]:
+    x_values = list(x)
+    y_values = list(y)
+    if len(x_values) != len(y_values):
+        raise ValueError("Series must have the same length.")
+
+    cutoff = _parse_iso(cutoff_time)
+    if cutoff is None:
+        raise ValueError("cutoff_time must be a valid ISO-8601 timestamp.")
+
+    timestamps = _ordered_observation_timestamps(
+        observation_timestamps,
+        expected_count=len(x_values),
+    )
+    eligible_indexes = [index for index, timestamp in enumerate(timestamps) if timestamp <= cutoff]
+    filtered_x = [x_values[index] for index in eligible_indexes]
+    filtered_y = [y_values[index] for index in eligible_indexes]
+    filtered_timestamps = [timestamps[index] for index in eligible_indexes]
+    return filtered_x, filtered_y, filtered_timestamps, _to_iso8601_utc(cutoff)
+
+
+def _point_in_time_result(
+    *,
+    metric: str,
+    estimator: str,
+    cutoff_time: str,
+    included_observation_count: int,
+    total_observation_count: int,
+    estimator_parameters: Mapping[str, Any],
+    value: float | None,
+) -> dict[str, Any]:
+    return {
+        "ok": value is not None,
+        "status": "ready" if value is not None else "insufficient_history",
+        "metric": metric,
+        "estimator": estimator,
+        "cutoff_time": cutoff_time,
+        "included_observation_count": included_observation_count,
+        "excluded_future_observation_count": max(0, total_observation_count - included_observation_count),
+        "point_in_time_safe": True,
+        "estimator_parameters": dict(estimator_parameters),
+        "value": value,
+    }
+
+
+def reconstruct_point_in_time_covariance(
+    x: Sequence[float],
+    y: Sequence[float],
+    observation_timestamps: Sequence[Any],
+    *,
+    cutoff_time: Any,
+    estimator: str,
+    min_periods: int,
+    window: int | None = None,
+    ddof: int = 1,
+    alpha: float | None = None,
+) -> dict[str, Any]:
+    """Reconstruct the covariance available at a historical cutoff.
+
+    The caller is responsible for supplying already-aligned observations in
+    chronological order. This function owns cutoff exclusion only.
+    """
+    filtered_x, filtered_y, filtered_timestamps, normalized_cutoff = _point_in_time_series(
+        x,
+        y,
+        observation_timestamps,
+        cutoff_time=cutoff_time,
+    )
+    estimator_key = _normalize_text(estimator).lower()
+    if estimator_key == "rolling":
+        if window is None:
+            raise ValueError("window is required for rolling point-in-time covariance.")
+        series = rolling_covariance(
+            filtered_x,
+            filtered_y,
+            window=window,
+            min_periods=min_periods,
+            ddof=ddof,
+        )
+        return _point_in_time_result(
+            metric="covariance",
+            estimator="rolling",
+            cutoff_time=normalized_cutoff,
+            included_observation_count=len(filtered_timestamps),
+            total_observation_count=len(x),
+            estimator_parameters={
+                "window": window,
+                "min_periods": min_periods,
+                "ddof": ddof,
+            },
+            value=series[-1] if series else None,
+        )
+    if estimator_key == "ewma":
+        if alpha is None:
+            raise ValueError("alpha is required for EWMA point-in-time covariance.")
+        series = ewma_covariance(
+            filtered_x,
+            filtered_y,
+            alpha=alpha,
+            min_periods=min_periods,
+        )
+        return _point_in_time_result(
+            metric="covariance",
+            estimator="ewma",
+            cutoff_time=normalized_cutoff,
+            included_observation_count=len(filtered_timestamps),
+            total_observation_count=len(x),
+            estimator_parameters={
+                "alpha": alpha,
+                "min_periods": min_periods,
+            },
+            value=series[-1] if series else None,
+        )
+    raise ValueError("estimator must be 'rolling' or 'ewma'.")
+
+
+def reconstruct_point_in_time_correlation(
+    x: Sequence[float],
+    y: Sequence[float],
+    observation_timestamps: Sequence[Any],
+    *,
+    cutoff_time: Any,
+    estimator: str,
+    min_periods: int,
+    window: int | None = None,
+    alpha: float | None = None,
+) -> dict[str, Any]:
+    """Reconstruct the correlation available at a historical cutoff."""
+    filtered_x, filtered_y, filtered_timestamps, normalized_cutoff = _point_in_time_series(
+        x,
+        y,
+        observation_timestamps,
+        cutoff_time=cutoff_time,
+    )
+    estimator_key = _normalize_text(estimator).lower()
+    if estimator_key == "rolling":
+        if window is None:
+            raise ValueError("window is required for rolling point-in-time correlation.")
+        series = rolling_correlation(
+            filtered_x,
+            filtered_y,
+            window=window,
+            min_periods=min_periods,
+        )
+        return _point_in_time_result(
+            metric="correlation",
+            estimator="rolling",
+            cutoff_time=normalized_cutoff,
+            included_observation_count=len(filtered_timestamps),
+            total_observation_count=len(x),
+            estimator_parameters={
+                "window": window,
+                "min_periods": min_periods,
+            },
+            value=series[-1] if series else None,
+        )
+    if estimator_key == "ewma":
+        if alpha is None:
+            raise ValueError("alpha is required for EWMA point-in-time correlation.")
+        series = ewma_correlation(
+            filtered_x,
+            filtered_y,
+            alpha=alpha,
+            min_periods=min_periods,
+        )
+        return _point_in_time_result(
+            metric="correlation",
+            estimator="ewma",
+            cutoff_time=normalized_cutoff,
+            included_observation_count=len(filtered_timestamps),
+            total_observation_count=len(x),
+            estimator_parameters={
+                "alpha": alpha,
+                "min_periods": min_periods,
+            },
+            value=series[-1] if series else None,
+        )
+    raise ValueError("estimator must be 'rolling' or 'ewma'.")
 
 
 def _edge_bucket_label(pricing_gap: float | None) -> str:
@@ -1374,5 +1588,7 @@ __all__ = [
     "DEFAULT_BASELINE_BACKTEST_STRATEGY_NAME",
     "build_baseline_backtest_dashboard_snapshot",
     "get_baseline_backtest_snapshot_for_dashboard",
+    "reconstruct_point_in_time_correlation",
+    "reconstruct_point_in_time_covariance",
     "run_baseline_backtest",
 ]
