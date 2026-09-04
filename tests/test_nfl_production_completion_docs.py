@@ -72,9 +72,10 @@ def test_nfl_production_completion_docs_exist_and_cover_required_topics() -> Non
     assert "Implement Confirmed Covariance And Time-Dependent Risk Gaps" in next_action_text
     assert "Dynamic and Point-in-Time Covariance" in next_action_text
     assert "Portfolio Exposure and Incremental Risk" in next_action_text
+    assert "Time-Dependent Risk" in next_action_text
     assert "NFL Production Completion" in next_action_text
     assert "Universal Market Framework" in next_action_text
-    assert "Implement only Portfolio Exposure and Incremental Risk" in next_action_text
+    assert "Implement only Time-Dependent Risk" in next_action_text
     assert "Do not reimplement completed static covariance" in next_action_text
     assert "Do not implement paper trading." in next_action_text
     assert "Do not implement live execution." in next_action_text
