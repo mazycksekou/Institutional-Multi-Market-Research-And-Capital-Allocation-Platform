@@ -22,6 +22,11 @@ from src.core.math_utils import (
     rolling_correlation,
     rolling_covariance,
 )
+from src.core.market_clock import (
+    normalize_time_risk_timestamp,
+    time_dependent_risk_state,
+    to_iso8601_utc,
+)
 from src.backtesting.decision_row_population import (
     DEFAULT_DECISION_DATASET_ID,
     DEFAULT_DECISION_RESEARCH_ASSET_ID,
@@ -779,6 +784,108 @@ def reconstruct_point_in_time_covariance_matrix(
         "pairwise_statuses": pairwise_statuses,
         "matrix": matrix,
         "value": matrix,
+    }
+
+
+def reconstruct_point_in_time_time_dependent_risk_state(
+    observations: Sequence[Mapping[str, Any]],
+    *,
+    cutoff_time: Any,
+    information_time_field: str = "available_at",
+    event_time_field: str | None = "event_time",
+    base_confidence_field: str | None = "base_confidence",
+    freshness_half_life_seconds: Any | None = None,
+    holding_horizon_seconds: Any | None = None,
+    forecast_horizon_seconds: Any | None = None,
+    confidence_scale: str = "unit",
+) -> dict[str, Any]:
+    """Reconstruct time-dependent risk metadata available at a cutoff.
+
+    Observations must be supplied in chronological information-availability
+    order. The latest observation with information time at or before the
+    cutoff is selected without storage access or internal resorting.
+    """
+    if isinstance(observations, (str, bytes)):
+        raise ValueError("observations must be a sequence of mappings.")
+    try:
+        rows = list(observations)
+    except TypeError as exc:
+        raise ValueError("observations must be a sequence of mappings.") from exc
+
+    if not isinstance(information_time_field, str) or not information_time_field:
+        raise ValueError("information_time_field must be a non-empty string.")
+    if event_time_field is not None and (
+        not isinstance(event_time_field, str) or not event_time_field
+    ):
+        raise ValueError("event_time_field must be a non-empty string when provided.")
+    if base_confidence_field is not None and (
+        not isinstance(base_confidence_field, str) or not base_confidence_field
+    ):
+        raise ValueError("base_confidence_field must be a non-empty string when provided.")
+
+    cutoff = normalize_time_risk_timestamp(cutoff_time, name="cutoff_time")
+    previous_available_at: datetime | None = None
+    eligible: list[tuple[int, Mapping[str, Any]]] = []
+    for index, row in enumerate(rows):
+        if not isinstance(row, Mapping):
+            raise ValueError(f"observations[{index}] must be a mapping.")
+        if information_time_field not in row:
+            raise ValueError(f"observations[{index}] must contain {information_time_field}.")
+        available_at = normalize_time_risk_timestamp(
+            row[information_time_field],
+            name=f"observations[{index}].{information_time_field}",
+        )
+        if previous_available_at is not None and available_at < previous_available_at:
+            raise ValueError(
+                "observations must be ordered by information availability without internal resorting."
+            )
+        if available_at <= cutoff:
+            eligible.append((index, row))
+        previous_available_at = available_at
+
+    normalized_cutoff = to_iso8601_utc(cutoff)
+    if not eligible:
+        return {
+            "ok": False,
+            "status": "no_eligible_information",
+            "cutoff_time": normalized_cutoff,
+            "cutoff_policy": "information_available_at <= cutoff_time",
+            "eligible_observation_count": 0,
+            "selected_observation_index": None,
+            "point_in_time_safe": True,
+            "state": None,
+            "value": None,
+        }
+
+    selected_index, selected = eligible[-1]
+    event_time = selected.get(event_time_field) if event_time_field is not None else None
+    base_confidence = (
+        selected.get(base_confidence_field)
+        if base_confidence_field is not None and base_confidence_field in selected
+        else None
+    )
+    state = time_dependent_risk_state(
+        evaluation_time=cutoff,
+        information_available_at=selected[information_time_field],
+        event_time=event_time,
+        holding_horizon_seconds=holding_horizon_seconds,
+        forecast_horizon_seconds=forecast_horizon_seconds,
+        freshness_half_life_seconds=freshness_half_life_seconds,
+        base_confidence=base_confidence,
+        confidence_scale=confidence_scale,
+    )
+
+    return {
+        "ok": True,
+        "status": "ready",
+        "cutoff_time": normalized_cutoff,
+        "cutoff_policy": "information_available_at <= cutoff_time",
+        "eligible_observation_count": len(eligible),
+        "selected_observation_index": selected_index,
+        "selected_information_available_at": state["information_available_at"],
+        "point_in_time_safe": True,
+        "state": state,
+        "value": state,
     }
 
 
@@ -1718,5 +1825,6 @@ __all__ = [
     "reconstruct_point_in_time_correlation",
     "reconstruct_point_in_time_covariance",
     "reconstruct_point_in_time_covariance_matrix",
+    "reconstruct_point_in_time_time_dependent_risk_state",
     "run_baseline_backtest",
 ]

@@ -92,6 +92,7 @@ def test_repository_os_documents_exist_and_reference_canonical_governance() -> N
     assert "Dynamic and Point-in-Time Covariance" in next_action_text
     assert "Portfolio Exposure and Incremental Risk" in next_action_text
     assert "Time-Dependent Risk" in next_action_text
+    assert "Historical Research-Chain Population" in next_action_text
     assert "Parquet-based analytical storage" in next_action_text
     assert "Delta-compatible interfaces" in next_action_text
     assert "sole sequencing source" in next_action_text.lower()
