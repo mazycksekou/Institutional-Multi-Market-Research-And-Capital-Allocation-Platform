@@ -44,7 +44,7 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "repository homepage" in project_status_text.lower()
     assert "current branch: `main`" in project_status_text
     assert "active phase: `Implement Confirmed Covariance And Time-Dependent Risk Gaps`" in project_status_text
-    assert "active checkpoint: `Time-Dependent Risk`" in project_status_text
+    assert "active checkpoint: `Historical Research-Chain Population`" in project_status_text
     assert "next phase: `additional sports`" in project_status_text
     assert (
         "governed handoff after the active phase: "
@@ -80,6 +80,8 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "Static Covariance and Matrix Completion" in project_status_text
     assert "Dynamic and Point-in-Time Covariance" in project_status_text
     assert "Portfolio Exposure and Incremental Risk" in project_status_text
+    assert "Time-Dependent Risk" in project_status_text
+    assert "Historical Research-Chain Population" in project_status_text
     assert "exact 1,000-row replay" in project_status_text
     assert "full 5,075-row ingestion" in project_status_text
     assert "exact full replay is green" in project_status_text
@@ -128,7 +130,8 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "Dynamic and Point-in-Time Covariance" in next_action_text
     assert "Portfolio Exposure and Incremental Risk" in next_action_text
     assert "Time-Dependent Risk" in next_action_text
-    assert "Implement only Time-Dependent Risk" in next_action_text
+    assert "Historical Research-Chain Population" in next_action_text
+    assert "Implement only Historical Research-Chain Population" in next_action_text
     assert "Research Intelligence" in next_action_text
     assert "covariance and time-dependent risk capability audit" in next_action_text.lower()
     assert "certified repository-owned oddswarehouse historical dataset" in next_action_text.lower()
@@ -184,7 +187,8 @@ def test_project_status_governance_files_exist_and_are_canonical() -> None:
     assert "Covariance and Time-Dependent Risk Capability Audit" in roadmap_text
     assert "Dynamic and Point-in-Time Covariance is complete and validated." in roadmap_text
     assert "Portfolio Exposure and Incremental Risk is complete and validated." in roadmap_text
-    assert "Time-Dependent Risk is the active checkpoint inside that phase." in roadmap_text
+    assert "Time-Dependent Risk is complete and validated." in roadmap_text
+    assert "Historical Research-Chain Population is the active checkpoint inside that phase." in roadmap_text
     assert "Implement only covariance and risk capabilities confirmed missing by that audit" in roadmap_text
     assert "additional sports" in roadmap_text
     assert "universal risk and capital allocation" in roadmap_text

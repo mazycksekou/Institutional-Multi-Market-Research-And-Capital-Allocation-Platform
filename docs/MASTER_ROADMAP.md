@@ -75,7 +75,7 @@ The covariance audit completed repository inspection before implementation and d
 - time-to-event and time-to-expiration risk
 - risk-horizon normalization and attribution
 
-Do not implement these capabilities during the sequencing correction, during the data identity foundation phase, during the first controlled NFL vendor ingest, or during the portable external research-data storage phase unless a later governed phase explicitly activates them. Static covariance/matrix completion, Dynamic and Point-in-Time Covariance, and Portfolio Exposure and Incremental Risk are now complete inside the governed covariance and risk implementation lane; Time-Dependent Risk is the next active capability.
+Do not implement these capabilities during the sequencing correction, during the data identity foundation phase, during the first controlled National Football League (NFL) vendor ingest, or during the portable external research-data storage phase unless a later governed phase explicitly activates them. Static covariance/matrix completion, Dynamic and Point-in-Time Covariance, Portfolio Exposure and Incremental Risk, and Time-Dependent Risk are now complete inside the governed covariance and risk implementation lane; Historical Research-Chain Population is the next active capability.
 
 ## Universal Market Lifecycle
 
@@ -154,6 +154,7 @@ The Universal Market Framework completed the governed extraction of reusable mar
 The next governed step after Universal Market Framework completion is NFL Production Completion so the certified NFL reference implementation can be audited against production-complete requirements without duplicating reusable framework logic.
 After complete NFL production validation, the next governed lanes are Data Identity, Reconciliation and Lakehouse Foundation, then First Controlled NFL Vendor Ingest, then Portable External Research-Data Storage, then the Covariance and Time-Dependent Risk Capability Audit.
 Only after that audit completes should the repository implement the covariance and risk capabilities confirmed missing by the audit.
+Static covariance/matrix completion, Dynamic and Point-in-Time Covariance, Portfolio Exposure and Incremental Risk, and Time-Dependent Risk are complete and validated. The next governed capability is Historical Research-Chain Population.
 Later roadmap lanes continue with additional sports, prediction markets, Zero-DTE options, Worldview Intelligence, cross-market intelligence, universal risk and capital allocation, paper trading, controlled live execution, production platform and IP custody, institutional readiness, and autonomous development.
 
 Deferred enrichment lanes after the first minimum-schema dataset path remains stable:
@@ -207,8 +208,9 @@ Current NFL work follows the certified Phase 5 chain and the completed Universal
 - Static Covariance and Matrix Completion is complete and validated.
 - Dynamic and Point-in-Time Covariance is complete and validated.
 - Portfolio Exposure and Incremental Risk is complete and validated.
+- Time-Dependent Risk is complete and validated.
 - Implement Confirmed Covariance And Time-Dependent Risk Gaps is the active governed phase.
-- Time-Dependent Risk is the active checkpoint inside that phase.
+- Historical Research-Chain Population is the active checkpoint inside that phase.
 - Phase 4.9I and Phase 4.9J remain deferred enrichment asset lanes after the first baseline dataset path is established.
 
 The master research engine specification is already the canonical name for the broader research-engine scope. If the repository later needs an even broader top-level research asset registry, that should be treated as a separate future phase rather than another rename of this specification.
@@ -217,7 +219,7 @@ The master research engine specification is already the canonical name for the b
 
 - Active branch: `main`
 - Active governed phase: `Implement Confirmed Covariance And Time-Dependent Risk Gaps`
-- Active checkpoint: `Time-Dependent Risk`
+- Active checkpoint: `Historical Research-Chain Population`
 - Active market profile: `sports:nfl`
 - Canonical project status: `docs/PROJECT_STATUS.md`
 - Canonical next action: `docs/NEXT_ACTION.md`

@@ -22,29 +22,29 @@ That completed foundation phase added Parquet-based analytical storage, Delta-co
 `Static Covariance and Matrix Completion` then completed canonical covariance-matrix construction and direct `portfolio_variance()` compatibility in the existing pure-math owner.
 `Dynamic and Point-in-Time Covariance` then completed rolling covariance/correlation, Exponentially Weighted Moving Average covariance/correlation, and deterministic point-in-time covariance/correlation reconstruction using only observations known at or before each cutoff.
 `Portfolio Exposure and Incremental Risk` then completed canonical portfolio exposure, gross/net exposure, concentration, covariance-aware volatility, Marginal Contribution to Risk, component contribution to risk, incremental portfolio risk, diversification behavior, and point-in-time covariance-matrix composition.
+`Time-Dependent Risk` then completed canonical information age, freshness decay, confidence adjustment, time to event, holding-horizon metadata, forecast-horizon metadata, reproducible time-dependent risk state, and point-in-time time-risk reconstruction without mutating portfolio exposure or beginning capital allocation.
 
 ## Objective
 
-Implement only Time-Dependent Risk inside the active governed phase Implement Confirmed Covariance And Time-Dependent Risk Gaps.
-Reuse the canonical time, pure-math, risk, portfolio, certification, validation, and backtesting owners already present in the repository.
-Build only the minimum timing, horizon, freshness, and confidence-risk capability needed to distinguish opportunities whose risk depends on when evidence is observed and when exposure settles.
-Preserve all existing covariance, correlation, covariance-matrix, correlation-matrix, rolling covariance/correlation, Exponentially Weighted Moving Average covariance/correlation, point-in-time reconstruction, portfolio-variance, portfolio-volatility, portfolio exposure, incremental-risk, drawdown, Expected Value, and deterministic replay behavior.
+Implement only Historical Research-Chain Population inside the active governed phase Implement Confirmed Covariance And Time-Dependent Risk Gaps.
+Reuse the canonical historical dataset, feature, mathematical-engine, signal, decision-row, backtesting, validation, and research-intelligence owners already present in the repository.
+Build only the minimum historical research-chain population capability needed to produce reproducible repository-owned research rows from the certified National Football League (NFL) historical assets and completed risk primitives.
+Preserve all existing covariance, correlation, covariance-matrix, correlation-matrix, rolling covariance/correlation, Exponentially Weighted Moving Average covariance/correlation, point-in-time reconstruction, portfolio-variance, portfolio-volatility, portfolio exposure, incremental-risk, time-dependent-risk, drawdown, Expected Value, and deterministic replay behavior.
 Do not begin another market, Worldview, universal capital allocation, paper trading, Live Model Testing, or execution in this checkpoint.
 
 ## Allowed Actions
 
-- Reuse `src/core/math_utils.py` as the canonical pure covariance/correlation/matrix owner if repository evidence still supports it.
-- Reuse `src/core/risk.py` as the current portfolio-risk consumer and `src/core/portfolio.py` as the current portfolio/exposure helper surface.
+- Reuse the canonical historical dataset population owner, feature population owner, mathematical-engine population owner, signal population owner, decision-row owner, baseline-backtesting owner, pipeline-validation owner, and Research Intelligence owner if repository evidence still supports those boundaries.
+- Reuse `src/core/math_utils.py`, `src/core/risk.py`, `src/core/portfolio.py`, and `src/core/market_clock.py` as completed risk primitive owners only where the historical research-chain population must consume their existing public contracts.
 - Reuse `src/backtesting/baseline_backtesting.py` only for historical replay and point-in-time consumption if repository evidence still supports that ownership boundary.
-- Reuse `src/core/market_clock.py` or the actual canonical time owner only if repository inspection confirms it owns timing semantics.
-- Extend active tests around time horizon, holding period, time to event, evidence age, freshness, confidence, and point-in-time compatibility using only tiny deterministic fixtures.
-- Preserve all certified NFL reference behavior, lineage, provenance, determinism, and point-in-time integrity while implementing Time-Dependent Risk.
+- Extend active tests around historical research-chain population, deterministic ordering, point-in-time safety, owner reuse, and completed risk-primitive compatibility using only tiny deterministic fixtures or repository-owned retrieval surfaces.
+- Preserve all certified NFL reference behavior, lineage, provenance, determinism, and point-in-time integrity while implementing Historical Research-Chain Population.
 - Update project status, sequencing, and document indexes when the phase completes.
 - Keep `docs/PRODUCT_SPEC.md`, `docs/BUSINESS_STRATEGY.md`, and `docs/INTELLECTUAL_PROPERTY_REGISTER.md` as non-authoritative placeholders; update only references or indexes if required.
 
 ## Forbidden Actions
 
-- Do not reimplement completed static covariance, correlation, covariance-matrix, correlation-matrix, rolling covariance/correlation, Exponentially Weighted Moving Average covariance/correlation, point-in-time covariance/correlation reconstruction, portfolio exposure, or incremental portfolio risk.
+- Do not reimplement completed static covariance, correlation, covariance-matrix, correlation-matrix, rolling covariance/correlation, Exponentially Weighted Moving Average covariance/correlation, point-in-time covariance/correlation reconstruction, portfolio exposure, incremental portfolio risk, or Time-Dependent Risk.
 - Do not implement covariance regimes or covariance stability outputs.
 - Do not implement covariance-aware backtesting, scenario/stress risk, Value at Risk, Conditional Value at Risk, or Expected Shortfall.
 - Do not implement another sport.
@@ -58,29 +58,29 @@ Do not begin another market, Worldview, universal capital allocation, paper trad
 - Do not duplicate Universal Market Framework logic or create NFL-only replacements for reusable framework assets.
 - Do not create a parallel ingestion, storage, certification, lifecycle, identity, reconciliation, or retrieval framework.
 - Do not create `covariance_engine.py`, `nfl_covariance.py`, `covariance_service.py`, or another top-level covariance package.
-- Do not re-implement the completed controlled vendor ingest, bounded replay, dataset-certification workflow, completed covariance audit, completed static covariance math, completed dynamic point-in-time covariance work, or completed portfolio incremental-risk work in this phase.
-- Do not mutate certified OddsWarehouse outputs unless Time-Dependent Risk exposes a reproducible repository defect that requires governed remediation.
+- Do not re-implement the completed controlled vendor ingest, bounded replay, dataset-certification workflow, completed covariance audit, completed static covariance math, completed dynamic point-in-time covariance work, completed portfolio incremental-risk work, or completed time-dependent-risk work in this phase.
+- Do not mutate certified OddsWarehouse outputs unless Historical Research-Chain Population exposes a reproducible repository defect that requires governed remediation.
 - Do not populate `docs/PRODUCT_SPEC.md`, `docs/BUSINESS_STRATEGY.md`, or `docs/INTELLECTUAL_PROPERTY_REGISTER.md`.
 - Do not make uncontrolled network calls or require secrets in tests.
 
 ## Expected Deliverables
 
-- Canonical time-dependent risk representation reused or minimally extended from the existing time/risk/backtesting owners.
-- Holding-period, time-to-event, forecast-horizon, freshness, and confidence risk behavior defined without beginning capital allocation.
-- Point-in-time compatibility proven so historical risk calculations cannot use evidence unavailable at the cutoff.
-- Preserved certified NFL parity and unchanged certified NFL reference behavior during Time-Dependent Risk.
+- Historical research-chain population reuses the canonical historical dataset, feature, mathematical-engine, signal, decision-row, backtesting, validation, and research-intelligence owners.
+- Completed covariance, portfolio-risk, and time-dependent-risk primitives remain consumption dependencies, not duplicated implementation targets.
+- Point-in-time compatibility is preserved so historical research rows cannot use evidence unavailable at the cutoff.
+- Preserved certified NFL parity and unchanged certified NFL reference behavior during Historical Research-Chain Population.
 - Updated project status, sequencing, and document indexes when the phase completes.
 - Phase handoff:
-  Time-Dependent Risk
-  -> Covariance-Aware Baseline Backtest Integration
+  Historical Research-Chain Population
+  -> next governed capability to be confirmed by the status update
 
 ## Current Execution Checkpoint
 
-`Time-Dependent Risk`
+`Historical Research-Chain Population`
 
-The covariance/time-dependent-risk audit, static covariance math completion, Dynamic and Point-in-Time Covariance, and Portfolio Exposure and Incremental Risk are complete.
-The active governed phase remains Implement Confirmed Covariance And Time-Dependent Risk Gaps, and Time-Dependent Risk is the current checkpoint.
-Implement only the time-dependent risk work proven missing by the audit, using the existing time, math, risk, portfolio, and backtesting owners as the bounded surface.
+The covariance/time-dependent-risk audit, static covariance math completion, Dynamic and Point-in-Time Covariance, Portfolio Exposure and Incremental Risk, and Time-Dependent Risk are complete.
+The active governed phase remains Implement Confirmed Covariance And Time-Dependent Risk Gaps, and Historical Research-Chain Population is the current checkpoint.
+Implement only the historical research-chain population work authorized by the status documents, using the existing dataset, feature, mathematical-engine, signal, decision-row, backtesting, validation, and research-intelligence owners as the bounded surface.
 
 ## Validation Commands
 
