@@ -16,6 +16,7 @@ from .baseline_backtesting import (
     get_baseline_backtest_snapshot_for_dashboard,
     reconstruct_point_in_time_correlation,
     reconstruct_point_in_time_covariance,
+    reconstruct_point_in_time_covariance_matrix,
     run_baseline_backtest,
 )
 from .contracts import BacktestDatasetContract, ReplayPlanContract, SimulationPlanContract
@@ -73,6 +74,7 @@ __all__ = [
     "plan_replay_rows",
     "reconstruct_point_in_time_correlation",
     "reconstruct_point_in_time_covariance",
+    "reconstruct_point_in_time_covariance_matrix",
     "run_baseline_backtest",
     "run_simulation_plan",
     "list_decision_definition_ids",
