@@ -10,7 +10,7 @@ Follow `docs/architecture/REPOSITORY_OS.md` for discovery, validation, and owner
 
 ## Previous Phase
 
-`Phase 5.7 - Research Intelligence` built the deterministic explanatory layer on top of the certified and hardened National Football League (NFL) research pipeline.
+`Phase 5.7 - Research Intelligence` built the deterministic explanatory layer on top of the certified and hardened National Football League (NFL) research pipeline and preserved the certified and hardened NFL research pipeline as the immutable reference surface.
 `Universal Market Framework` built the first reusable market-agnostic framework surface on top of the certified NFL research pipeline and deterministic Research Intelligence layer. It preserves the NFL chain as immutable reference behavior while exposing reusable profile contracts, lifecycle gates, readiness surfaces, parity evidence, and dashboard/query interfaces for future market onboarding.
 `NFL Production Completion` audited the certified NFL implementation against production-complete requirements, reused the Universal Market Framework, added the canonical production audit/report/query surface, and preserved all certified NFL reference behavior.
 Close only verified NFL production gaps remained the governing closure rule for the completed NFL Production Completion phase.
