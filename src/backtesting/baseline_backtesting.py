@@ -655,6 +655,133 @@ def reconstruct_point_in_time_correlation(
     raise ValueError("estimator must be 'rolling' or 'ewma'.")
 
 
+def reconstruct_point_in_time_covariance_matrix(
+    series_by_position: Mapping[str, Sequence[float]],
+    observation_timestamps: Sequence[Any],
+    *,
+    cutoff_time: Any,
+    estimator: str,
+    min_periods: int,
+    window: int | None = None,
+    ddof: int = 1,
+    alpha: float | None = None,
+) -> dict[str, Any]:
+    """Reconstruct the covariance matrix available at a historical cutoff.
+
+    The caller owns return construction and timestamp alignment. This function
+    owns cutoff exclusion and pairwise matrix composition only.
+    """
+    if not isinstance(series_by_position, Mapping):
+        raise ValueError("series_by_position must be a mapping.")
+
+    cutoff = _parse_iso(cutoff_time)
+    if cutoff is None:
+        raise ValueError("cutoff_time must be a valid ISO-8601 timestamp.")
+    normalized_cutoff = _to_iso8601_utc(cutoff)
+
+    ordered_position_ids = list(series_by_position.keys())
+    if any(not isinstance(position_id, str) or not position_id for position_id in ordered_position_ids):
+        raise ValueError("Position identifiers must be non-empty strings.")
+    if not ordered_position_ids:
+        estimator_key = _normalize_text(estimator).lower()
+        if estimator_key not in {"rolling", "ewma"}:
+            raise ValueError("estimator must be 'rolling' or 'ewma'.")
+        return {
+            "ok": True,
+            "status": "ready",
+            "metric": "covariance_matrix",
+            "estimator": estimator_key,
+            "cutoff_time": normalized_cutoff,
+            "ordered_position_ids": [],
+            "included_observation_count": 0,
+            "excluded_future_observation_count": 0,
+            "point_in_time_safe": True,
+            "estimator_parameters": {
+                "window": window,
+                "min_periods": min_periods,
+                "ddof": ddof,
+                "alpha": alpha,
+            },
+            "matrix": [],
+            "value": [],
+        }
+
+    series = {position_id: list(series_by_position[position_id]) for position_id in ordered_position_ids}
+    expected_count = len(series[ordered_position_ids[0]])
+    for position_id in ordered_position_ids[1:]:
+        if len(series[position_id]) != expected_count:
+            raise ValueError("All position series must have the same length.")
+
+    timestamps = _ordered_observation_timestamps(
+        observation_timestamps,
+        expected_count=expected_count,
+    )
+    included_observation_count = sum(1 for timestamp in timestamps if timestamp <= cutoff)
+    estimator_key = _normalize_text(estimator).lower()
+    if estimator_key not in {"rolling", "ewma"}:
+        raise ValueError("estimator must be 'rolling' or 'ewma'.")
+
+    estimator_parameters = {
+        "window": window,
+        "min_periods": min_periods,
+        "ddof": ddof,
+        "alpha": alpha,
+    }
+    matrix: list[list[float]] = [[0.0 for _ in ordered_position_ids] for _ in ordered_position_ids]
+    pairwise_statuses: dict[str, str] = {}
+    for row_index, row_position_id in enumerate(ordered_position_ids):
+        for column_index in range(row_index, len(ordered_position_ids)):
+            column_position_id = ordered_position_ids[column_index]
+            result = reconstruct_point_in_time_covariance(
+                series[row_position_id],
+                series[column_position_id],
+                observation_timestamps,
+                cutoff_time=cutoff,
+                estimator=estimator_key,
+                min_periods=min_periods,
+                window=window,
+                ddof=ddof,
+                alpha=alpha,
+            )
+            pair_key = f"{row_position_id}|{column_position_id}"
+            pairwise_statuses[pair_key] = str(result["status"])
+            value = result["value"]
+            if value is None:
+                return {
+                    "ok": False,
+                    "status": "insufficient_history",
+                    "metric": "covariance_matrix",
+                    "estimator": estimator_key,
+                    "cutoff_time": normalized_cutoff,
+                    "ordered_position_ids": ordered_position_ids,
+                    "included_observation_count": included_observation_count,
+                    "excluded_future_observation_count": max(0, expected_count - included_observation_count),
+                    "point_in_time_safe": True,
+                    "estimator_parameters": estimator_parameters,
+                    "pairwise_statuses": pairwise_statuses,
+                    "matrix": None,
+                    "value": None,
+                }
+            matrix[row_index][column_index] = float(value)
+            matrix[column_index][row_index] = float(value)
+
+    return {
+        "ok": True,
+        "status": "ready",
+        "metric": "covariance_matrix",
+        "estimator": estimator_key,
+        "cutoff_time": normalized_cutoff,
+        "ordered_position_ids": ordered_position_ids,
+        "included_observation_count": included_observation_count,
+        "excluded_future_observation_count": max(0, expected_count - included_observation_count),
+        "point_in_time_safe": True,
+        "estimator_parameters": estimator_parameters,
+        "pairwise_statuses": pairwise_statuses,
+        "matrix": matrix,
+        "value": matrix,
+    }
+
+
 def _edge_bucket_label(pricing_gap: float | None) -> str:
     if pricing_gap is None:
         return "unknown"
@@ -1590,5 +1717,6 @@ __all__ = [
     "get_baseline_backtest_snapshot_for_dashboard",
     "reconstruct_point_in_time_correlation",
     "reconstruct_point_in_time_covariance",
+    "reconstruct_point_in_time_covariance_matrix",
     "run_baseline_backtest",
 ]

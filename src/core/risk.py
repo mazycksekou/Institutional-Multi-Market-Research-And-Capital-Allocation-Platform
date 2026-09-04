@@ -8,6 +8,8 @@ from __future__ import annotations
 import math
 from typing import Sequence
 
+from src.core.math_utils import portfolio_variance as _portfolio_variance
+
 
 RISK_PROFILE_SETTINGS = {
     "conservative": {
@@ -116,13 +118,10 @@ def portfolio_risk(
         raise ValueError("weights must not be empty.")
     if len(covariance_matrix) != n:
         raise ValueError("covariance_matrix dimension must match weight count.")
-    if not math.isclose(sum(w), 1.0, rel_tol=1e-6):
+    if not math.isclose(sum(w), 1.0, rel_tol=0.0, abs_tol=1e-12):
         raise ValueError("weights must sum to 1.")
 
-    variance = 0.0
-    for i in range(n):
-        for j in range(n):
-            variance += w[i] * w[j] * covariance_matrix[i][j]
+    variance = _portfolio_variance(w, [list(row) for row in covariance_matrix])
 
     return math.sqrt(max(0.0, variance))
 
